@@ -12,6 +12,8 @@ jobs:
     steps:
       - checkout
 
+      - run: sudo docker-php-ext-install pdo_mysql
+
       - restore_cache:
           keys:
             - composer-v1-{{ checksum "composer.lock" }}
