@@ -1,2 +1,6 @@
+.env
 .idea/
-vendor/
+/coverage/
+/vendor/
+/logs/*
+!/logs/README.md

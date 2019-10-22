@@ -1,0 +1,27 @@
+version: "3.7"
+
+volumes:
+  logs:
+    driver: local
+
+services:
+  app:
+    image: php:7-alpine
+    working_dir: /var/www
+    command: php -S 0.0.0.0:8080 -t public
+    environment:
+      docker: "true"
+    ports:
+      - 30030:8080
+    volumes:
+      - .:/var/www
+      - logs:/var/www/logs
+    env_file:
+      - .env
+
+  db:
+    image: mysql:8.0
+    ports:
+      - 30031:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: tbgLocal123
