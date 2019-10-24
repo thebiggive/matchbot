@@ -13,6 +13,7 @@
     "require": {
         "php": "7.2.*|7.3.*",
         "ext-json": "*",
+        "ext-pdo": "*",
         "ext-pdo_mysql": "*",
         "doctrine/migrations": "^2.1",
         "doctrine/orm": "^2.6",

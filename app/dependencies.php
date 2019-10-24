@@ -3,6 +3,12 @@
 declare(strict_types=1);
 
 use DI\ContainerBuilder;
+use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Cache\FilesystemCache;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
+use Doctrine\ORM\Tools\Setup;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Processor\UidProcessor;
@@ -11,6 +17,33 @@ use Psr\Log\LoggerInterface;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
+        EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
+            $settings = $c->get('settings');
+
+            $config = Setup::createAnnotationMetadataConfiguration(
+                $settings['doctrine']['metadata_dirs'],
+                $settings['doctrine']['dev_mode']
+            );
+
+            $config->setMetadataDriverImpl(
+                new AnnotationDriver(
+                    new AnnotationReader(),
+                    $settings['doctrine']['metadata_dirs']
+                )
+            );
+
+            $config->setMetadataCacheImpl(
+                new FilesystemCache(
+                    $settings['doctrine']['cache_dir']
+                )
+            );
+
+            return EntityManager::create(
+                $settings['doctrine']['connection'],
+                $config
+            );
+        },
+
         LoggerInterface::class => function (ContainerInterface $c) {
             $settings = $c->get('settings');
 
@@ -25,5 +58,23 @@ return function (ContainerBuilder $containerBuilder) {
 
             return $logger;
         },
+    ]);
+
+    // TODO remove?
+    $containerBuilder->addDefinitions([
+        PDO::class => function (ContainerInterface $c) {
+            $settings = $c->get('settings')['db'];
+
+            $pdo = new PDO(
+                'mysql:host=' . $settings['host'] . ';dbname=' . $settings['dbname'],
+                $settings['user'],
+                $settings['pass']
+            );
+
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+            return $pdo;
+        }
     ]);
 };
