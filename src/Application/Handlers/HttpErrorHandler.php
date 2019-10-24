@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Application\Handlers;
+namespace MatchBot\Application\Handlers;
 
-use App\Application\Actions\ActionError;
-use App\Application\Actions\ActionPayload;
 use Exception;
+use MatchBot\Application\Actions\ActionError;
+use MatchBot\Application\Actions\ActionPayload;
 use Psr\Http\Message\ResponseInterface as Response;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpException;

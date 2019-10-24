@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Application\Handlers\HttpErrorHandler;
-use App\Application\Handlers\ShutdownHandler;
-use App\Application\ResponseEmitter\ResponseEmitter;
+use MatchBot\Application\Handlers\HttpErrorHandler;
+use MatchBot\Application\Handlers\ShutdownHandler;
+use MatchBot\Application\ResponseEmitter\ResponseEmitter;
 use Slim\Factory\AppFactory;
 use Slim\Factory\ServerRequestCreatorFactory;
 
