@@ -34,7 +34,7 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "src/"
+            "MatchBot\\": "src/"
         }
     },
     "autoload-dev": {
@@ -45,6 +45,8 @@
     "scripts": {
         "lint:check": "phpcs --standard=phpcs.xml -s .",
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",
+        "migrate": "doctrine-migrations migrate",
+        "migrate:diff": "doctrine-migrations diff",
         "start": "php -S localhost:8080 -t public",
         "test": "phpunit"
     }

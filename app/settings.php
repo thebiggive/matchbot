@@ -33,7 +33,10 @@ return function (ContainerBuilder $containerBuilder) {
                     'dbname' => getenv('MYSQL_SCHEMA'),
                     'user' => getenv('MYSQL_USER'),
                     'password' => getenv('MYSQL_PASSWORD'),
-                    'charset' => 'utf-8'
+                    'charset' => 'utf8mb4',
+                    'default_table_options' => [
+                        'collate' => 'utf8mb4_unicode_ci',
+                    ],
                 ],
             ],
 
