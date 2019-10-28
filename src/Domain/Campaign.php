@@ -8,24 +8,16 @@ use DateTime;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity()
- * @ORM\Table()
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @ORM\Table
+ *
+ * Represents any Campaign type in Salesforce which can receive donations. Note that this does NOT include Master
+ * record type(s). The only way Salesforce type impacts this model is in setting `$isMatched` appropriately.
  */
-class Campaign
+class Campaign extends SalesforceProxy
 {
-    /**
-     * @ORM\Column(type="integer")
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="AUTO")
-     * @var int
-     */
-    protected $id;
-
-    /**
-     * @ORM\Column(type="string", length=18, unique=true)
-     * @var string
-     */
-    protected $salesforceId;
+    use TimestampsTrait;
 
     /**
      * @ORM\ManyToOne(targetEntity="Charity")
@@ -43,12 +35,6 @@ class Campaign
      * @ORM\Column(type="datetime")
      * @var DateTime
      */
-    protected $salesforceLastUpdate;
-
-    /**
-     * @ORM\Column(type="datetime")
-     * @var DateTime
-     */
     protected $startDate;
 
     /**
@@ -56,4 +42,26 @@ class Campaign
      * @var DateTime
      */
     protected $endDate;
+
+    /**
+     * @ORM\Column(type="boolean")
+     * @var bool    Whether the Campaign has any match funds
+     */
+    protected $isMatched;
+
+    /**
+     * @return bool
+     */
+    public function isMatched(): bool
+    {
+        return $this->isMatched;
+    }
+
+    /**
+     * @param bool $isMatched
+     */
+    public function setIsMatched(bool $isMatched): void
+    {
+        $this->isMatched = $isMatched;
+    }
 }

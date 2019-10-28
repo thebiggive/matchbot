@@ -4,22 +4,16 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use DateTime;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity()
- * @ORM\Table()
+ * @ORM\Entity
+ * @ORM\HasLifecycleCallbacks
+ * @ORM\Table
  */
-class FundingWithdrawal
+class FundingWithdrawal extends Model
 {
-    /**
-     * @ORM\Column(type="integer")
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="AUTO")
-     * @var int
-     */
-    protected $id;
+    use TimestampsTrait;
 
     /**
      * @ORM\ManyToOne(targetEntity="Donation")
@@ -28,15 +22,8 @@ class FundingWithdrawal
     protected $donation;
 
     /**
-     * @ORM\Column(type="datetime")
-     * @var DateTime
+     * @ORM\Column(type="decimal", precision=18, scale=2)
+     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
-    protected $createdDate;
-
-    /**
-     * @ORM\Column(type="datetime")
-     * @var DateTime
-     */
-    protected $updatedDate;
-    // TODO amount
+    protected $amount;
 }

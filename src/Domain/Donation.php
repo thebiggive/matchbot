@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use DateTime;
 use Doctrine\Common\Persistence\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * @ORM\Entity
  * @ORM\HasLifecycleCallbacks
  * @ORM\Table
- * @todo copy this type of auto timstamp for ALL OTHER entities
  */
-class Donation
+class Donation extends SalesforceProxyReadWrite
 {
+    use TimestampsTrait;
+
     /** @var int */
     private $minimumAmount = 5;
     /** @var int */
@@ -36,14 +37,15 @@ class Donation
 
     private $successStatuses = ['Collected', 'Paid'];
 
-    // TODO give these UUIDs?
     /**
-     * @ORM\Column(type="integer")
-     * @ORM\Id
-     * @ORM\GeneratedValue(strategy="AUTO")
-     * @var int
+     * The donation ID for Charity Checkout and public APIs.
+     *
+     * @ORM\Column(type="uuid", unique=true)
+     * @ORM\GeneratedValue(strategy="CUSTOM")
+     * @ORM\CustomIdGenerator(class="Ramsey\Uuid\Doctrine\UuidGenerator")
+     * @var UuidInterface
      */
-    protected $id;
+    protected $uuid;
 
     /**
      * @ORM\ManyToOne(targetEntity="Campaign")
@@ -52,22 +54,19 @@ class Donation
     protected $campaign;
 
     /**
-     * @ORM\Column(type="datetime")
-     * @var DateTime
-     */
-    protected $createdDate;
-
-    /**
-     * @ORM\Column(type="datetime")
-     * @var DateTime
-     */
-    protected $updatedDate;
-
-    /**
      * @ORM\Column(type="decimal", precision=18, scale=2)
-     * @var
+     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
     protected $amount;
+
+    /**
+     * @ORM\Column(type="string")
+     * @var string  A status, as sent by Charity Checkout verbatim.
+     *              One of: NotSet, Pending, Collected, Paid, Cancelled, Refunded, Failed, Chargedback,
+     *              RefundingPending, PendingCancellation.
+     * @link https://docs.google.com/document/d/11ukX2jOxConiVT3BhzbUKzLfSybG8eie7MX0b0kG89U/edit?usp=sharing
+     */
+    protected $donationStatus = 'NotSet';
 
     /**
      * @ORM\Column(type="boolean")
@@ -76,58 +75,10 @@ class Donation
     protected $charityComms;
 
     /**
-     * @ORM\Column(type="string")
-     * @var string  A status, as sent by Charity Checkout verbatim. @todo document better
-     */
-    protected $donationStatus;
-
-    /**
-     * @ORM\Column(type="string")
-     * @var string
-     */
-    protected $donorEmailAddress;
-
-    /**
-     * @ORM\Column(type="string")
-     * @var string
-     */
-    protected $donorFirstName;
-
-    /**
-     * @ORM\Column(type="string")
-     * @var string
-     */
-    protected $donorLastName;
-
-    /**
-     * @ORM\Column(type="string")
-     * @var string
-     */
-    protected $donorPostalAddress;
-
-    /**
-     * @ORM\Column(type="string")
-     * @var string  e.g. Mx, ...
-     */
-    protected $donorTitle;
-
-    /**
      * @ORM\Column(type="boolean")
      * @var bool
      */
     protected $giftAid;
-
-    /**
-     * @ORM\Column(type="datetime")
-     * @var DateTime
-     */
-    protected $salesforcePushDate;
-
-    /**
-     * @ORM\Column(type="string")
-     * @var string  One of 'not-sent', 'pending' or 'complete'
-     */
-    protected $salesforcePushStatus;
 
     /**
      * @ORM\Column(type="boolean")
@@ -136,19 +87,51 @@ class Donation
     protected $tbgComms;
 
     /**
-     * @ORM\PrePersist Check that the amount is in the permitted range; set created + updated timestamps
+     * @ORM\Column(type="string", nullable=true)
+     * @var string  Set on Charity Checkout callback
+     */
+    protected $donorEmailAddress;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     * @var string  Set on Charity Checkout callback
+     */
+    protected $donorFirstName;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     * @var string  Set on Charity Checkout callback
+     */
+    protected $donorLastName;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     * @var string  Set on Charity Checkout callback
+     */
+    protected $donorPostalAddress;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     * @var string  e.g. Mx, ... Set on Charity Checkout callback
+     */
+    protected $donorTitle;
+
+    /**
+     * @ORM\PrePersist Check that the amount is in the permitted range
      */
     public function prePersist(): void
     {
-        if ($this->amount < $this->minimumAmount || $this->amount > $this->maximumAmount) {
+        // Decimal-safe check that amount if in the allowed range
+        if (
+            bccomp($this->amount, (string) $this->minimumAmount, 2) === -1 ||
+            bccomp($this->amount, (string) $this->maximumAmount, 2) === 1
+        ) {
             throw new \UnexpectedValueException("Amount must be £{$this->minimumAmount}-{$this->maximumAmount}");
         }
-        $this->createdDate = new \DateTime('now');
-        $this->updatedDate = new \DateTime('now');
     }
 
     /**
-     * @ORM\PreUpdate Check that the amount is never changed; set updated timestamp
+     * @ORM\PreUpdate Check that the amount is never changed
      * @param PreUpdateEventArgs $args
      * @throws \LogicException if amount is changed
      */
@@ -157,7 +140,6 @@ class Donation
         if ($args->getOldValue('amount') !== $args->getNewValue('amount')) {
             throw new \LogicException('Amount may not be changed after a donation is created');
         }
-        $this->updatedDate = new \DateTime('now');
     }
 
     /**
@@ -204,22 +186,6 @@ class Donation
     public function setCampaign(Campaign $campaign): void
     {
         $this->campaign = $campaign;
-    }
-
-    /**
-     * @return DateTime
-     */
-    public function getCreatedDate(): DateTime
-    {
-        return $this->createdDate;
-    }
-
-    /**
-     * @return DateTime
-     */
-    public function getUpdatedDate(): DateTime
-    {
-        return $this->updatedDate;
     }
 
     /**
@@ -335,38 +301,6 @@ class Donation
     }
 
     /**
-     * @return DateTime
-     */
-    public function getSalesforcePushDate(): DateTime
-    {
-        return $this->salesforcePushDate;
-    }
-
-    /**
-     * @param DateTime $salesforcePushDate
-     */
-    public function setSalesforcePushDate(DateTime $salesforcePushDate): void
-    {
-        $this->salesforcePushDate = $salesforcePushDate;
-    }
-
-    /**
-     * @return string
-     */
-    public function getSalesforcePushStatus(): string
-    {
-        return $this->salesforcePushStatus;
-    }
-
-    /**
-     * @param string $salesforcePushStatus
-     */
-    public function setSalesforcePushStatus(string $salesforcePushStatus): void
-    {
-        $this->salesforcePushStatus = $salesforcePushStatus;
-    }
-
-    /**
      * @return bool
      */
     public function getTbgComms(): bool
@@ -380,5 +314,21 @@ class Donation
     public function setTbgComms(bool $tbgComms): void
     {
         $this->tbgComms = $tbgComms;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAmount(): string
+    {
+        return $this->amount;
+    }
+
+    /**
+     * @param string $amount
+     */
+    public function setAmount(string $amount): void
+    {
+        $this->amount = $amount;
     }
 }
