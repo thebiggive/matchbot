@@ -6,11 +6,6 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity
- * @ORM\HasLifecycleCallbacks
- * @ORM\Table
- */
 abstract class Model
 {
     /**
