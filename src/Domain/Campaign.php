@@ -11,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Entity()
  * @ORM\Table()
  */
-class Charity
+class Campaign
 {
     /**
      * @ORM\Column(type="integer")
@@ -28,6 +28,12 @@ class Charity
     protected $salesforceId;
 
     /**
+     * @ORM\ManyToOne(targetEntity="Charity")
+     * @var Charity
+     */
+    protected $charity;
+
+    /**
      * @ORM\Column(type="string")
      * @var string
      */
@@ -38,4 +44,16 @@ class Charity
      * @var DateTime
      */
     protected $salesforceLastUpdate;
+
+    /**
+     * @ORM\Column(type="datetime")
+     * @var DateTime
+     */
+    protected $startDate;
+
+    /**
+     * @ORM\Column(type="datetime")
+     * @var DateTime
+     */
+    protected $endDate;
 }

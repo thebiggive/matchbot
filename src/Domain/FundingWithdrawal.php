@@ -11,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Entity()
  * @ORM\Table()
  */
-class Charity
+class FundingWithdrawal
 {
     /**
      * @ORM\Column(type="integer")
@@ -22,20 +22,21 @@ class Charity
     protected $id;
 
     /**
-     * @ORM\Column(type="string", length=18, unique=true)
-     * @var string
+     * @ORM\ManyToOne(targetEntity="Donation")
+     * @var Donation
      */
-    protected $salesforceId;
-
-    /**
-     * @ORM\Column(type="string")
-     * @var string
-     */
-    protected $name;
+    protected $donation;
 
     /**
      * @ORM\Column(type="datetime")
      * @var DateTime
      */
-    protected $salesforceLastUpdate;
+    protected $createdDate;
+
+    /**
+     * @ORM\Column(type="datetime")
+     * @var DateTime
+     */
+    protected $updatedDate;
+    // TODO amount
 }
