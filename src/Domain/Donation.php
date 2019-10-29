@@ -13,7 +13,7 @@ use Ramsey\Uuid\UuidInterface;
  * @ORM\HasLifecycleCallbacks
  * @ORM\Table
  */
-class Donation extends SalesforceProxyReadWrite
+class Donation extends SalesforceWriteProxy
 {
     use TimestampsTrait;
 

@@ -13,7 +13,6 @@ class DonationTest extends TestCase
 
         $this->assertFalse($donation->isSuccessful());
         $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
-        $this->assertNull($donation->getSalesforceLastPull());
         $this->assertNull($donation->getSalesforceLastPush());
         $this->assertNull($donation->getSalesforceId());
     }

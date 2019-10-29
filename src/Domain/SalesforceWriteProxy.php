@@ -7,7 +7,12 @@ namespace MatchBot\Domain;
 use DateTime;
 use Doctrine\ORM\Mapping as ORM;
 
-abstract class SalesforceProxyReadWrite extends SalesforceProxy
+/**
+ * Base for domains where MatchBot is the authoritative data source and pushes to Salesforce.
+ *
+ * @see SalesforceReadProxy
+ */
+abstract class SalesforceWriteProxy extends SalesforceProxy
 {
     /**
      * @ORM\Column(type="datetime", nullable=true)

@@ -11,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\HasLifecycleCallbacks
  * @ORM\Table
  */
-class Charity extends SalesforceProxy
+class Charity extends SalesforceReadProxy
 {
     use TimestampsTrait;
 
