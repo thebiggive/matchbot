@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="CampaignFundingRepository")
  * @ORM\HasLifecycleCallbacks
  * @ORM\Table
  */
@@ -56,6 +57,11 @@ class CampaignFunding extends Model
      * @var int     Order of preference as a rank, i.e. lower numbers have their funds used first.
      */
     protected $order;
+
+    public function __construct()
+    {
+        $this->campaigns = new ArrayCollection();
+    }
 
     public function isShared(): bool
     {

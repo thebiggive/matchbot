@@ -42,7 +42,7 @@ class DonationRepository extends SalesforceProxyReadWriteRepository
         // We want the whole set of `CampaignFunding`s to have a write-ready lock, so the transaction must surround the
         // whole allocation loop.
         $this->getEntityManager()->beginTransaction();
-        /** @var CampaigNFunding[] $fundings */
+        /** @var CampaignFunding[] $fundings */
         $fundings = $this->getEntityManager()
             ->getRepository(CampaignFunding::class)
             ->getAvailableFundings($donation->getCampaign());

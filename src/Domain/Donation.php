@@ -9,7 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\UuidInterface;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="DonationRepository")
  * @ORM\HasLifecycleCallbacks
  * @ORM\Table
  */
