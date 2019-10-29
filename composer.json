@@ -12,13 +12,16 @@
     ],
     "require": {
         "php": "7.2.*|7.3.*",
+        "ext-bcmath": "*",
         "ext-json": "*",
+        "ext-pdo": "*",
         "ext-pdo_mysql": "*",
         "doctrine/migrations": "^2.1",
         "doctrine/orm": "^2.6",
         "guzzlehttp/guzzle": "^6.3",
         "monolog/monolog": "^2.0",
         "php-di/php-di": "^6.0",
+        "ramsey/uuid-doctrine": "^1.5",
         "slim/psr7": "^0.6.0",
         "slim/slim": "^4.3"
     },
@@ -33,15 +36,19 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "src/"
+            "MatchBot\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/"
+            "MatchBot\\Tests\\": "tests/"
         }
     },
     "scripts": {
+        "doctrine:cache:clear": "doctrine orm:clear-cache:metadata",
+        "doctrine:migrate": "doctrine-migrations migrate",
+        "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
+        "doctrine:validate": "doctrine orm:validate-schema",
         "lint:check": "phpcs --standard=phpcs.xml -s .",
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",
         "start": "php -S localhost:8080 -t public",
