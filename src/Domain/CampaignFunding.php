@@ -17,6 +17,15 @@ class CampaignFunding extends Model
 
     /**
      * @ORM\ManyToMany(targetEntity="Campaign")
+     * @ORM\JoinTable(
+     *  name="Campaign_CampaignFunding",
+     *  joinColumns={
+     *      @ORM\JoinColumn(name="campaignfunding_id", referencedColumnName="id")
+     *  },
+     *  inverseJoinColumns={
+     *      @ORM\JoinColumn(name="campaign_id", referencedColumnName="id")
+     *  }
+     * )
      * @var Campaign[]
      */
     protected $campaigns;
@@ -34,6 +43,15 @@ class CampaignFunding extends Model
     protected $amount;
 
     /**
+     * The amount of this funding allocation not already claimed. If you plan to allocate funds, always read this
+     * with a PESSIMISTIC_WRITE lock and modify it in the same transaction you create a FundingWithdrawal.
+     *
+     * @ORM\Column(type="decimal", precision=18, scale=2)
+     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     */
+    protected $amountAvailable;
+
+    /**
      * @ORM\Column(type="integer")
      * @var int     Order of preference as a rank, i.e. lower numbers have their funds used first.
      */
@@ -42,5 +60,37 @@ class CampaignFunding extends Model
     public function isShared(): bool
     {
         return (count($this->campaigns) > 1);
+    }
+
+    /**
+     * @return string
+     */
+    public function getAmount(): string
+    {
+        return $this->amount;
+    }
+
+    /**
+     * @param string $amount
+     */
+    public function setAmount(string $amount): void
+    {
+        $this->amount = $amount;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAmountAvailable(): string
+    {
+        return $this->amountAvailable;
+    }
+
+    /**
+     * @param string $amountAvailable
+     */
+    public function setAmountAvailable(string $amountAvailable): void
+    {
+        $this->amountAvailable = $amountAvailable;
     }
 }

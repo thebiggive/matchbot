@@ -58,10 +58,42 @@ class Campaign extends SalesforceProxy
     }
 
     /**
+     * @param Charity $charity
+     */
+    public function setCharity(Charity $charity): void
+    {
+        $this->charity = $charity;
+    }
+
+    /**
      * @param bool $isMatched
      */
     public function setIsMatched(bool $isMatched): void
     {
         $this->isMatched = $isMatched;
+    }
+
+    /**
+     * @param string $name
+     */
+    public function setName(string $name): void
+    {
+        $this->name = $name;
+    }
+
+    /**
+     * @param DateTime $startDate
+     */
+    public function setStartDate(DateTime $startDate): void
+    {
+        $this->startDate = $startDate;
+    }
+
+    /**
+     * @param DateTime $endDate
+     */
+    public function setEndDate(DateTime $endDate): void
+    {
+        $this->endDate = $endDate;
     }
 }
