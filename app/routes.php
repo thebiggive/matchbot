@@ -14,7 +14,7 @@ return function (App $app) {
         $repo = $em->getRepository(\MatchBot\Domain\CampaignFunding::class);
         $campaign = $em->find(\MatchBot\Domain\Campaign::class, 1);
 
-        $em->transactional(function($em) use ($repo, $campaign) {
+        $em->transactional(function ($em) use ($repo, $campaign) {
             var_dump($repo->getAvailableFundings($campaign));
         });
 
