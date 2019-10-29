@@ -8,10 +8,17 @@ use Slim\App;
 
 return function (App $app) {
     $app->get('/', function (Request $request, Response $response) {
-        /** @var PDO $pdo */
-        $pdo = $this->get(PDO::class);
+        // TODO scrap temporary entity repo test
+        /** @var \Doctrine\ORM\EntityManager $em */
+        $em = $this->get(\Doctrine\ORM\EntityManagerInterface::class);
+        $repo = $em->getRepository(\MatchBot\Domain\CampaignFunding::class);
+        $campaign = $em->find(\MatchBot\Domain\Campaign::class, 1);
 
-        $response->getBody()->write('Hello world! - PDO code: ' . $pdo->errorCode());
+        $em->transactional(function($em) use ($repo, $campaign) {
+            var_dump($repo->getAvailableFundings($campaign));
+        });
+
+        $response->getBody()->write('Hello world!');
         return $response;
     });
 };

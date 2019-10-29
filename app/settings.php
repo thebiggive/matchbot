@@ -11,14 +11,6 @@ return function (ContainerBuilder $containerBuilder) {
         'settings' => [
             'displayErrorDetails' => (getenv('APPLICATION_ENV') === 'local'),
 
-            // TODO can we remove native DB config & PDO DI service?
-            'db' => [
-                'host' => getenv('MYSQL_HOST'),
-                'dbname' => getenv('MYSQL_SCHEMA'),
-                'user' => getenv('MYSQL_USER'),
-                'pass' => getenv('MYSQL_PASSWORD'),
-            ],
-
             'doctrine' => [
                 // if true, metadata caching is forcefully disabled
                 'dev_mode' => (getenv('APPLICATION_ENV') === 'local'),
