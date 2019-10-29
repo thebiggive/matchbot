@@ -3,8 +3,9 @@
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Donation;
+use PHPUnit\Framework\TestCase;
 
-class DonationTest extends EntityTest
+class DonationTest extends TestCase
 {
     public function testBasicsAsExpectedOnInstantion(): void
     {
@@ -21,29 +22,31 @@ class DonationTest extends EntityTest
     {
         $donation = new Donation();
         $donation->setAmount('100.00');
-        $this->em->persist($donation);
-        $this->em->flush();
+        // Invoking real Doctrine events but with a fake driver, for isolated unit testing, is
+        // both complex and not very valuable, so for now we just manually pretend the object is
+        // about to be persisted rather than bootstrapping a whole fake EntityManager.
+        $donation->prePersist();
 
         $this->addToAssertionCount(1); // Just check persist doesn't hit lifecycle hook exceptions
     }
 
     public function testAmountTooLowNotPersisted(): void
     {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Amount must be £5-25000');
+
         $donation = new Donation();
         $donation->setAmount('4.99');
-        $this->em->persist($donation);
-        $this->em->flush();
-
-        $this->expectException(\UnexpectedValueException::class); // todo right exception
+        $donation->prePersist();
     }
 
     public function testAmountTooHighNotPersisted(): void
     {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Amount must be £5-25000');
+
         $donation = new Donation();
         $donation->setAmount('25000.01');
-        $this->em->persist($donation);
-        $this->em->flush();
-
-        $this->expectException(\UnexpectedValueException::class); // todo right exception
+        $donation->prePersist();
     }
 }

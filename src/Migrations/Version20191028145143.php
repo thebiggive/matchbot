@@ -8,18 +8,17 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
- * Auto-generated Migration: Please modify to your needs!
+ * Initial schema bootstrap
  */
 final class Version20191028145143 extends AbstractMigration
 {
     public function getDescription() : string
     {
-        return '';
+        return 'Initial schema bootstrap';
     }
 
     public function up(Schema $schema) : void
     {
-        // this up() migration is auto-generated, please modify it to your needs
         $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('CREATE TABLE Fund (id INT UNSIGNED AUTO_INCREMENT NOT NULL, fundType VARCHAR(8) NOT NULL, amount NUMERIC(18, 2) NOT NULL, salesforceId VARCHAR(18) DEFAULT NULL, salesforceLastPull DATETIME DEFAULT NULL, createdAt DATETIME NOT NULL, updatedAt DATETIME NOT NULL, UNIQUE INDEX UNIQ_7CA0912ED8961D21 (salesforceId), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB');
@@ -39,7 +38,6 @@ final class Version20191028145143 extends AbstractMigration
 
     public function down(Schema $schema) : void
     {
-        // this down() migration is auto-generated, please modify it to your needs
         $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('ALTER TABLE CampaignFunding DROP FOREIGN KEY FK_B00548FA25A38F89');
