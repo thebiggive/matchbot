@@ -26,4 +26,20 @@ class FundingWithdrawal extends Model
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
     protected $amount;
+
+    /**
+     * @param Donation $donation
+     */
+    public function setDonation(Donation $donation): void
+    {
+        $this->donation = $donation;
+    }
+
+    /**
+     * @param string $amount
+     */
+    public function setAmount(string $amount): void
+    {
+        $this->amount = $amount;
+    }
 }

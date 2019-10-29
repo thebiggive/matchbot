@@ -7,7 +7,7 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="FundRepository")
  * @ORM\InheritanceType("SINGLE_TABLE")
  * @ORM\DiscriminatorColumn(name="fundType", type="string")
  * @ORM\DiscriminatorMap({"championFund" = "ChampionFund", "pledge" = "Pledge", "unknownFund" = "Fund"})

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use Doctrine\ORM\ORMException;
+
 class DonationRepository extends SalesforceProxyReadWriteRepository
 {
     /**
@@ -25,12 +27,55 @@ class DonationRepository extends SalesforceProxyReadWriteRepository
     }
 
     /**
-     * TODO get CampaignFunding with a pessimistic write lock.
-     * @link https://stackoverflow.com/questions/12971249/doctrine2-orm-select-for-update/17721736
-     * @link https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/transactions-and-concurrency.html#locking-support
+     * Create all funding allocations, with `FundingWithdrawal` links to this donation, and safely update the funds'
+     * available amount figures.
+     *
+     * @param Donation $donation
+     * @return string Total amount of matching allocated
+     * @see CampaignFundingRepository::getAvailableFundings() for lock acquisition detail
      */
-    public function allocateMatchFunds(Donation $donation)
+    public function allocateMatchFunds(Donation $donation): string
     {
-//        $campaign = $donation->getCampaign();
+        $amountLeftToMatch = $donation->getAmount();
+        $currentFundingIndex = 0;
+
+        // We want the whole set of `CampaignFunding`s to have a write-ready lock, so the transaction must surround the
+        // whole allocation loop.
+        $this->getEntityManager()->beginTransaction();
+        /** @var CampaignFunding[] $fundings */
+        $fundings = $this->getEntityManager()
+            ->getRepository(CampaignFunding::class)
+            ->getAvailableFundings($donation->getCampaign());
+
+        try {
+            // Loop as long as there are still campaign funds not allocated and we have allocated less than the donation
+            // amount
+            while ($currentFundingIndex < count($fundings) && bccomp($amountLeftToMatch, '0.00', 2) === 1) {
+                $funding = $fundings[$currentFundingIndex];
+
+                $startAmountAvailable = $funding->getAmountAvailable();
+                if (bccomp($funding->getAmountAvailable(), $amountLeftToMatch, 2) === -1) {
+                    $amountToAllocateNow = $startAmountAvailable;
+                } else {
+                    $amountToAllocateNow = $amountLeftToMatch;
+                }
+
+                $amountLeftToMatch = bcsub($amountLeftToMatch, $amountToAllocateNow, 2);
+
+                $funding->setAmountAvailable(bcsub($startAmountAvailable, $amountToAllocateNow, 2));
+                $this->getEntityManager()->persist($funding);
+
+                $withdrawal = new FundingWithdrawal();
+                $withdrawal->setDonation($donation);
+                $withdrawal->setAmount($amountToAllocateNow);
+                $this->getEntityManager()->persist($withdrawal);
+            }
+            $this->getEntityManager()->commit();
+        } catch (ORMException $exception) {
+            // TODO log this
+            $this->getEntityManager()->rollback();
+        }
+
+        return bcsub($donation->getAmount(), $amountLeftToMatch, 2);
     }
 }
