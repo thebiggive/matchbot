@@ -34,7 +34,7 @@ return function (ContainerBuilder $containerBuilder) {
 
             'logger' => [
                 'name' => 'matchbot',
-                'path' => isset($_ENV['docker']) ? 'php://stdout' : __DIR__ . '/../logs/app.log',
+                'path' => 'php://stdout',
                 'level' => Logger::DEBUG,
             ],
 
