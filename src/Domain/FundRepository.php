@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-class FundRepository extends SalesforceProxyRepository
+use MatchBot\Client;
+
+class FundRepository extends SalesforceReadProxyRepository
 {
-    public function doPull(SalesforceProxy $fund): SalesforceProxy
+    public function doPull(SalesforceReadProxy $fund): SalesforceReadProxy
     {
         if ($fund instanceof ChampionFund) {
             return $this->pullChampionFund($fund);
@@ -24,8 +26,13 @@ class FundRepository extends SalesforceProxyRepository
         // todo
     }
 
-    private function pullPledge(SalesforceProxy $fund)
+    private function pullPledge(SalesforceReadProxy $fund)
     {
         // todo
+    }
+
+    protected function getClient(): Client\Common
+    {
+        // TODO: Implement getClient() method.
     }
 }

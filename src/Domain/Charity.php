@@ -7,7 +7,7 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="CharityRepository")
  * @ORM\HasLifecycleCallbacks
  * @ORM\Table
  */
@@ -20,4 +20,12 @@ class Charity extends SalesforceReadProxy
      * @var string
      */
     protected $name;
+
+    /**
+     * @param string $name
+     */
+    public function setName(string $name): void
+    {
+        $this->name = $name;
+    }
 }

@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\ORMException;
+use MatchBot\Client;
 
-class DonationRepository extends SalesforceProxyReadWriteRepository
+class DonationRepository extends SalesforceWriteProxyRepository
 {
     /**
      * @param Donation $proxy
      * @return bool|void
      */
-    public function doPush(SalesforceProxyReadWrite $proxy): bool
+    public function doPush(SalesforceWriteProxy $proxy): bool
     {
         // TODO push with Salesforce API client
     }
@@ -21,9 +22,9 @@ class DonationRepository extends SalesforceProxyReadWriteRepository
      * @param Donation $proxy
      * @return Donation
      */
-    public function doPull(SalesforceProxy $proxy): SalesforceProxy
+    public function doPull(SalesforceReadProxy $proxy): SalesforceReadProxy
     {
-        // TODO pull with Salesforce API client
+        throw new \LogicException('Donation data should not currently be pulled from Salesforce');
     }
 
     /**
@@ -77,5 +78,10 @@ class DonationRepository extends SalesforceProxyReadWriteRepository
         }
 
         return bcsub($donation->getAmount(), $amountLeftToMatch, 2);
+    }
+
+    protected function getClient(): Client\Common
+    {
+        // TODO: Implement getClient() method.
     }
 }

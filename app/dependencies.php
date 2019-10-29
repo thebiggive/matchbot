@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Tools\Setup;
+use MatchBot\Client;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Processor\UidProcessor;
@@ -17,6 +18,12 @@ use Psr\Log\LoggerInterface;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
+        Client\Campaign::class => function (ContainerInterface $c): Client\Campaign {
+            $settings = $c->get('settings');
+
+            return new Client\Campaign($settings);
+        },
+
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
             $settings = $c->get('settings');
 

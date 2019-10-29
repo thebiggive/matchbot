@@ -6,11 +6,11 @@ namespace MatchBot\Domain;
 
 use DateTime;
 
-abstract class SalesforceProxyReadWriteRepository extends SalesforceProxyRepository
+abstract class SalesforceWriteProxyRepository extends SalesforceReadProxyRepository
 {
-    abstract public function doPush(SalesforceProxyReadWrite $proxy): bool;
+    abstract public function doPush(SalesforceWriteProxy $proxy): bool;
 
-    public function push(SalesforceProxyReadWrite $proxy): bool
+    public function push(SalesforceWriteProxy $proxy): bool
     {
         $proxy->setSalesforcePushStatus('pending');
 
