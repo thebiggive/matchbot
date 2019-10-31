@@ -23,4 +23,26 @@ abstract class Fund extends SalesforceReadProxy
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
     protected $amount;
+
+    /**
+     * @ORM\Column(type="string")
+     * @var string
+     */
+    protected $name;
+
+    /**
+     * @param string $amount
+     */
+    public function setAmount(string $amount): void
+    {
+        $this->amount = $amount;
+    }
+
+    /**
+     * @param string $name
+     */
+    public function setName(string $name): void
+    {
+        $this->name = $name;
+    }
 }

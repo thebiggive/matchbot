@@ -99,4 +99,17 @@ class CampaignFunding extends Model
     {
         $this->amountAvailable = $amountAvailable;
     }
+
+    /**
+     * @param Fund $fund
+     */
+    public function setFund(Fund $fund): void
+    {
+        $this->fund = $fund;
+    }
+
+    public function addCampaign(Campaign $campaign): void
+    {
+        $this->campaigns->add($campaign);
+    }
 }
