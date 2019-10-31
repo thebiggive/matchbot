@@ -16,9 +16,6 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
      * @return SalesforceReadProxy
      */
     abstract protected function doPull(SalesforceReadProxy $proxy): SalesforceReadProxy;
-    // TODO I don't think a general purpose repo pull method makes sense, it's diverging too much across models
-    // What we probably DO want is a single entity method to update itself, which can throw if ever called
-    // when it doesn't support independent single-item updates (e.g. Charity)
 
     public function pull(SalesforceReadProxy $proxy, $autoSave = true): SalesforceReadProxy
     {

@@ -35,4 +35,18 @@ class CampaignFundingRepository extends EntityRepository
 
         return $query->getArrayResult();
     }
+
+    public function getFunding(Campaign $campaign, Fund $fund): ?CampaignFunding
+    {
+        $query = $this->getEntityManager()->createQuery('
+            SELECT cf FROM MatchBot\Domain\CampaignFunding cf
+            WHERE :campaign MEMBER OF cf.campaigns
+            AND cf.fund = :fund
+        ')->setMaxResults(1);
+        $query->setParameter('campaign', new ArrayCollection([$campaign]));
+        $query->setParameter('fund', $fund);
+        $query->execute();
+
+        return $query->getOneOrNullResult();
+    }
 }

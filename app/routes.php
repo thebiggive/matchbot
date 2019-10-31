@@ -12,7 +12,7 @@ return function (App $app) {
     $app->get('/', function (Request $request, Response $response) {
         // TODO scrap entity logic in temporary test endpoint
         $campaign = new Campaign();
-        $campaign->setSalesforceId('a051r00001HIB2qAAH');
+        $campaign->setSalesforceId('a051r00001HoxCLAAZ');
         $campaign = $this->get(CampaignRepository::class)->pull($campaign);
 
         var_dump($campaign);

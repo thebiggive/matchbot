@@ -7,7 +7,7 @@ namespace MatchBot\Client;
 class Fund extends Common
 {
     /**
-     * @param string $fundId
+     * @param string $fundId    Salesforce ID for Champion Funding or Pledge
      * @return array Single Fund, as associative array
      * @throws NotFoundException if Fund with given ID not found
      */

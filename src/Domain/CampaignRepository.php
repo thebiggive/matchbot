@@ -9,6 +9,14 @@ use MatchBot\Client;
 
 class CampaignRepository extends SalesforceReadProxyRepository
 {
+    /** @var FundRepository */
+    private $fundRepository;
+
+    public function setFundRepository(FundRepository $repository): void
+    {
+        $this->fundRepository = $repository;
+    }
+
     /**
      * @param Campaign $campaign
      * @return Campaign
@@ -20,18 +28,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $client = $this->getClient();
         $campaignData = $client->getById($campaign->getSalesforceId());
 
-        $charity = $this->getEntityManager()
-            ->getRepository(Charity::class)
-            ->findOneBy(['salesforceId' => $campaignData['charity']['id']]);
-        if (!$charity) {
-            $charity = new Charity();
-            $charity->setSalesforceId($campaignData['charity']['id']);
-        }
-        $charity->setName($campaignData['charity']['name']);
-        $charity->setSalesforceLastPull(new DateTime('now'));
-        // We don't need to persist the Campaign, but because this is a bit side-effect-y we do need to handle the
-        // Charity here for now since the base `pull()` doesn't know about this object.
-        $this->getEntityManager()->persist($charity);
+        $charity = $this->pullCharity($campaignData['charity']['id'], $campaignData['charity']['name']);
 
         $campaign->setCharity($charity);
         $campaign->setEndDate(new DateTime($campaignData['endDate']));
@@ -39,6 +36,36 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign->setName($campaignData['title']);
         $campaign->setStartDate(new DateTime($campaignData['startDate']));
 
+        $this->pullFunds($campaign);
+
         return $campaign;
+    }
+
+    /**
+     * Upsert a Charity based on ID & name, persist and return it.
+     * @param string $salesforceCharityId
+     * @param string $charityName
+     * @return Charity
+     * @throws \Doctrine\ORM\ORMException on failed persist()
+     */
+    private function pullCharity(string $salesforceCharityId, string $charityName): Charity
+    {
+        $charity = $this->getEntityManager()
+            ->getRepository(Charity::class)
+            ->findOneBy(['salesforceId' => $salesforceCharityId]);
+        if (!$charity) {
+            $charity = new Charity();
+            $charity->setSalesforceId($salesforceCharityId);
+        }
+        $charity->setName($charityName);
+        $charity->setSalesforceLastPull(new DateTime('now'));
+        $this->getEntityManager()->persist($charity);
+
+        return $charity;
+    }
+
+    private function pullFunds(Campaign $campaign): void
+    {
+        $this->fundRepository->pullForCampaign($campaign);
     }
 }
