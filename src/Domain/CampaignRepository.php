@@ -41,16 +41,4 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         return $campaign;
     }
-
-    /**
-     * @return Client\Campaign
-     */
-    protected function getClient(): Client\Common
-    {
-        if (!$this->client) {
-            $this->client = new Client\Campaign();
-        }
-
-        return $this->client;
-    }
 }

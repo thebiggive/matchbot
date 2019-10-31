@@ -77,11 +77,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $this->getEntityManager()->rollback();
         }
 
-        return bcsub($donation->getAmount(), $amountLeftToMatch, 2);
-    }
+        // TODO log matching allocations in general? - total amount would be handy to see at a glance
 
-    protected function getClient(): Client\Common
-    {
-        // TODO: Implement getClient() method.
+        return bcsub($donation->getAmount(), $amountLeftToMatch, 2);
     }
 }
