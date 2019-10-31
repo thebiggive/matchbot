@@ -19,9 +19,11 @@ use Psr\Log\LoggerInterface;
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
         Client\Campaign::class => function (ContainerInterface $c): Client\Campaign {
-            $settings = $c->get('settings');
+            return new Client\Campaign($c->get('settings'));
+        },
 
-            return new Client\Campaign($settings);
+        Client\Fund::class => function (ContainerInterface $c): Client\Fund {
+            return new Client\Fund($c->get('settings'));
         },
 
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
