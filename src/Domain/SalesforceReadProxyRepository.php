@@ -5,16 +5,9 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
-use Doctrine\ORM\EntityRepository;
-use MatchBot\Client;
 
-abstract class SalesforceReadProxyRepository extends EntityRepository
+abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
 {
-    /**
-     * @var Client\Common
-     */
-    protected $client;
-
     /**
      * Get live data for the object (which might be empty apart from the Salesforce ID) and return a full object.
      * No need to `setSalesforceLastPull()`, or EM `persist()` - just populate the fields specific to the object.
@@ -23,6 +16,9 @@ abstract class SalesforceReadProxyRepository extends EntityRepository
      * @return SalesforceReadProxy
      */
     abstract protected function doPull(SalesforceReadProxy $proxy): SalesforceReadProxy;
+    // TODO I don't think a general purpose repo pull method makes sense, it's diverging too much across models
+    // What we probably DO want is a single entity method to update itself, which can throw if ever called
+    // when it doesn't support independent single-item updates (e.g. Charity)
 
     public function pull(SalesforceReadProxy $proxy, $autoSave = true): SalesforceReadProxy
     {
@@ -40,19 +36,5 @@ abstract class SalesforceReadProxyRepository extends EntityRepository
         }
 
         return $proxy;
-    }
-
-    public function setClient(Client\Common $client)
-    {
-        $this->client = $client;
-    }
-
-    protected function getClient(): Client\Common
-    {
-        if (!$this->client) {
-            throw new \LogicException('Set a Client in DI config for this Repository to pull data');
-        }
-
-        return $this->client;
     }
 }
