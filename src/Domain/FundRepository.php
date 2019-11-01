@@ -4,28 +4,81 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-class FundRepository extends SalesforceProxyRepository
+use MatchBot\Client;
+
+class FundRepository extends SalesforceReadProxyRepository
 {
-    public function doPull(SalesforceProxy $fund): SalesforceProxy
+    /** @var CampaignFundingRepository */
+    private $campaignFundingRepository;
+
+    public function setCampaignFundingRepository(CampaignFundingRepository $repository): void
     {
-        if ($fund instanceof ChampionFund) {
-            return $this->pullChampionFund($fund);
-        }
-
-        if ($fund instanceof Pledge) {
-            return $this->pullPledge($fund);
-        }
-
-        throw new \UnexpectedValueException('Can only pull ChampionFund or Pledge from Salesforce');
+        $this->campaignFundingRepository = $repository;
     }
 
-    private function pullChampionFund(ChampionFund $fund)
+    /**
+     * @param Campaign  $campaign
+     * @throws Client\NotFoundException if Campaign not found on Salesforce
+     */
+    public function pullForCampaign(Campaign $campaign): void
     {
-        // todo
+        $client = $this->getClient();
+        $fundsData = $client->getForCampaign($campaign->getSalesforceId());
+        foreach ($fundsData as $fundData) {
+            // For each fund linked to the campaign, look it up or create it if unknown
+            $fund = $this->findOneBy(['salesforceId' => $fundData['id']]);
+            if (!$fund) {
+                if ($fundData['type'] === 'pledge') {
+                    $fund = new Pledge();
+                } elseif ($fundData['type'] === 'championFund') {
+                    $fund = new ChampionFund();
+                } else {
+                    throw new \UnexpectedValueException("Unknown fund type '{$fundData['type']}'");
+                }
+                $fund->setSalesforceId($fundData['id']);
+            }
+
+            // Then whether new or existing, set its key info
+            $fund->setAmount((string) $fundData['totalAmount']);
+            $fund->setName($fundData['name']);
+            $this->getEntityManager()->persist($fund);
+            $this->getEntityManager()->flush(); // Need the fund ID for the CampaignFunding find
+
+            // If there's already a CampaignFunding for this campaign+fund combination, use that
+            $campaignFunding = $this->campaignFundingRepository->getFunding($campaign, $fund);
+            // Otherwise create one
+            if (!$campaignFunding) {
+                $campaignFunding = new CampaignFunding();
+                $campaignFunding->setFund($fund);
+                $campaignFunding->addCampaign($campaign);
+                if ($fund instanceof Pledge) {
+                    $campaignFunding->setAllocationOrder(100);
+                } else {
+                    $campaignFunding->setAllocationOrder(200);
+                }
+            }
+
+            $campaignFunding->setAmountAvailable((string) $fundData['amountForCampaign']);
+            $campaignFunding->setAmount((string) $fundData['amountForCampaign']);
+
+            $this->getEntityManager()->persist($campaignFunding);
+        }
     }
 
-    private function pullPledge(SalesforceProxy $fund)
+    /**
+     * Get live data for the object (which might be empty apart from the Salesforce ID) and return a full object.
+     * No need to `setSalesforceLastPull()`, or EM `persist()` - just populate the fields specific to the object.
+     *
+     * @param Fund $fund
+     * @return SalesforceReadProxy
+     */
+    protected function doPull(SalesforceReadProxy $fund): SalesforceReadProxy
     {
-        // todo
+        $fundData = $this->getClient()->getById($fund->getSalesforceId());
+
+        $fund->setAmount($fundData['totalAmount']);
+        $fund->setName($fundData['name']);
+
+        return $fund;
     }
 }

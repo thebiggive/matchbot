@@ -2,21 +2,20 @@
 
 declare(strict_types=1);
 
+use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
 
 return function (App $app) {
     $app->get('/', function (Request $request, Response $response) {
-        // TODO scrap temporary entity repo test
-        /** @var \Doctrine\ORM\EntityManager $em */
-        $em = $this->get(\Doctrine\ORM\EntityManagerInterface::class);
-        $repo = $em->getRepository(\MatchBot\Domain\CampaignFunding::class);
-        $campaign = $em->find(\MatchBot\Domain\Campaign::class, 1);
+        // TODO scrap entity logic in temporary test endpoint
+        $campaign = new Campaign();
+        $campaign->setSalesforceId('a051r00001HoxCLAAZ');
+        $campaign = $this->get(CampaignRepository::class)->pull($campaign);
 
-        $em->transactional(function ($em) use ($repo, $campaign) {
-            var_dump($repo->getAvailableFundings($campaign));
-        });
+        var_dump($campaign);
 
         $response->getBody()->write('Hello world!');
         return $response;

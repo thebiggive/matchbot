@@ -17,9 +17,9 @@ abstract class Model
     protected $id;
 
     /**
-     * @return string
+     * @return int|null
      */
-    public function getId(): int
+    public function getId(): ?int
     {
         return $this->id;
     }

@@ -56,7 +56,7 @@ class CampaignFunding extends Model
      * @ORM\Column(type="integer")
      * @var int     Order of preference as a rank, i.e. lower numbers have their funds used first.
      */
-    protected $order;
+    protected $allocationOrder;
 
     public function __construct()
     {
@@ -98,5 +98,26 @@ class CampaignFunding extends Model
     public function setAmountAvailable(string $amountAvailable): void
     {
         $this->amountAvailable = $amountAvailable;
+    }
+
+    /**
+     * @param Fund $fund
+     */
+    public function setFund(Fund $fund): void
+    {
+        $this->fund = $fund;
+    }
+
+    public function addCampaign(Campaign $campaign): void
+    {
+        $this->campaigns->add($campaign);
+    }
+
+    /**
+     * @param int $allocationOrder
+     */
+    public function setAllocationOrder(int $allocationOrder): void
+    {
+        $this->allocationOrder = $allocationOrder;
     }
 }

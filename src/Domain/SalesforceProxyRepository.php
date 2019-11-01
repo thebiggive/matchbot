@@ -4,18 +4,27 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use DateTime;
 use Doctrine\ORM\EntityRepository;
+use MatchBot\Client;
 
 abstract class SalesforceProxyRepository extends EntityRepository
 {
-    abstract public function doPull(SalesforceProxy $proxy): SalesforceProxy;
+    /**
+     * @var Client\Common
+     */
+    protected $client;
 
-    public function pull(SalesforceProxy $proxy): SalesforceProxy
+    public function setClient(Client\Common $client): void
     {
-        $proxy = $this->doPull($proxy);
-        $proxy->setSalesforceLastPull(new DateTime('now'));
+        $this->client = $client;
+    }
 
-        return $proxy;
+    protected function getClient(): Client\Common
+    {
+        if (!$this->client) {
+            throw new \LogicException('Set a Client in DI config for this Repository to sync data');
+        }
+
+        return $this->client;
     }
 }
