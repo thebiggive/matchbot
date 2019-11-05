@@ -96,4 +96,12 @@ class Campaign extends SalesforceReadProxy
     {
         $this->endDate = $endDate;
     }
+
+    /**
+     * @return Charity
+     */
+    public function getCharity(): Charity
+    {
+        return $this->charity;
+    }
 }

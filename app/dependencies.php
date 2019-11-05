@@ -15,6 +15,10 @@ use Monolog\Logger;
 use Monolog\Processor\UidProcessor;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Serializer\SerializerInterface;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -67,5 +71,12 @@ return function (ContainerBuilder $containerBuilder) {
 
             return $logger;
         },
+
+        SerializerInterface::class => static function (ContainerInterface $c) {
+            $encoders = [new JsonEncoder()];
+            $normalizers = [new ObjectNormalizer()];
+
+            return new Serializer($normalizers, $encoders);
+        }
     ]);
 };

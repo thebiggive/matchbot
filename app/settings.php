@@ -42,6 +42,9 @@ return function (ContainerBuilder $containerBuilder) {
                 'campaign' => [
                     'baseUri' => getenv('SALESFORCE_CAMPAIGN_API'),
                 ],
+                'donation' => [
+                    'baseUri' => getenv('SALESFORCE_DONATION_API'),
+                ],
                 'fund' => [
                     'baseUri' => getenv('SALESFORCE_FUND_API'),
                 ],

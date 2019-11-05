@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\Common\Persistence\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
+use MatchBot\Application\DonationCreateRequest;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -140,6 +141,22 @@ class Donation extends SalesforceWriteProxy
         if ($args->getOldValue('amount') !== $args->getNewValue('amount')) {
             throw new \LogicException('Amount may not be changed after a donation is created');
         }
+    }
+
+    public function toApiJson(): string
+    {
+        // We omit `donationId` and let Salesforce set its own, which we then persist back to the MatchBot DB on
+        // success.
+        return json_encode([
+            'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
+            'charityName' => $this->getCampaign()->getCharity()->getName(),
+            'donationAmount' => $this->getAmount(),
+            'donationMatched' => $this->getCampaign()->isMatched(),
+            'giftAid' => $this->isGiftAid(),
+            'optInCharityEmail' => $this->getCharityComms(),
+            'optInTbgEmail' => $this->getTbgComms(),
+            'projectId' => $this->getCampaign()->getSalesforceId(),
+        ]);
     }
 
     /**

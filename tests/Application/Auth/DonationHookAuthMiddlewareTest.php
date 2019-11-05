@@ -17,7 +17,7 @@ use Slim\Routing\Route;
 
 class DonationHookAuthMiddlewareTest extends TestCase
 {
-    public function testMissingAuthRejected()
+    public function testMissingAuthRejected(): void
     {
         $body = bin2hex(random_bytes(100));
         $request = $this->buildRequest($body, null);
@@ -27,7 +27,7 @@ class DonationHookAuthMiddlewareTest extends TestCase
         $this->assertEquals(401, $response->getStatusCode());
     }
 
-    public function testWrongAuthRejected()
+    public function testWrongAuthRejected(): void
     {
         $body = bin2hex(random_bytes(100));
         $hash = hash_hmac('sha256', $body, 'the-wrong-secret');
@@ -38,7 +38,7 @@ class DonationHookAuthMiddlewareTest extends TestCase
         $this->assertEquals(401, $response->getStatusCode());
     }
 
-    public function testWrongHashAlgoRejected()
+    public function testWrongHashAlgoRejected(): void
     {
         $body = bin2hex(random_bytes(100));
         $hash = hash_hmac('md5', $body, 'unitTestCchSecret');
@@ -49,7 +49,7 @@ class DonationHookAuthMiddlewareTest extends TestCase
         $this->assertEquals(401, $response->getStatusCode());
     }
 
-    public function testCorrectAuthAccepted()
+    public function testCorrectAuthAccepted(): void
     {
         $body = bin2hex(random_bytes(100));
         $hash = hash_hmac('sha256', $body, 'unitTestCchSecret');

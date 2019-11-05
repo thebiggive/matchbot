@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\ORMException;
-use MatchBot\Client;
+use MatchBot\Application\DonationCreatePayload;
 
 class DonationRepository extends SalesforceWriteProxyRepository
 {
     /**
-     * @param Donation $proxy
+     * @param Donation $donation
      * @return bool|void
      */
-    public function doPush(SalesforceWriteProxy $proxy): bool
+    public function doPush(SalesforceWriteProxy $donation): bool
     {
+        $this->getClient()->create($donation);
         // TODO push with Salesforce API client
     }
 
@@ -25,6 +26,22 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function doPull(SalesforceReadProxy $proxy): SalesforceReadProxy
     {
         throw new \LogicException('Donation data should not currently be pulled from Salesforce');
+    }
+
+    public function buildFromApiRequest(DonationCreatePayload $donationData): Donation
+    {
+        /** @var Campaign $campaign */
+        $campaign = $this->getEntityManager()->getRepository(Campaign::class)
+            ->findOneBy(['salesforceId' => $donationData->projectId]);
+
+        $donation = new Donation();
+        $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
+        $donation->setAmount($donationData->donationAmount);
+        $donation->setGiftAid($donationData->giftAid);
+        $donation->setCharityComms($donationData->optInCharityEmail);
+        $donation->setTbgComms($donationData->optInTbgEmail);
+
+        return $donation;
     }
 
     /**
