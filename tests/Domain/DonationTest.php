@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Donation;
