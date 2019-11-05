@@ -14,7 +14,7 @@ class DonationHookAuthMiddleware implements MiddlewareInterface
 {
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (!$this->login($request)) {
+        if (!$this->verify($request)) {
             return new Response(401);
         }
 
@@ -22,12 +22,10 @@ class DonationHookAuthMiddleware implements MiddlewareInterface
     }
 
     /**
-     * Check the user credentials and return the username or false.
-     *
      * @param ServerRequestInterface $request
-     * @return bool
+     * @return bool Whether the verification hash header value validates the given request body.
      */
-    private function login(ServerRequestInterface $request): bool
+    private function verify(ServerRequestInterface $request): bool
     {
         $givenHash = $request->getHeaderLine('X-Webhook-Verify-Hash');
 
