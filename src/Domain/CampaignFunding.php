@@ -32,7 +32,7 @@ class CampaignFunding extends Model
     protected $campaigns;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Fund")
+     * @ORM\ManyToOne(targetEntity="Fund", cascade={"persist"})
      * @var Fund
      */
     protected $fund;

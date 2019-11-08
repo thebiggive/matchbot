@@ -20,11 +20,12 @@
         "doctrine/orm": "^2.6",
         "firebase/php-jwt": "^5.0",
         "guzzlehttp/guzzle": "^6.3",
+        "medz/cors": "^1.4",
         "monolog/monolog": "^2.0",
         "php-di/php-di": "^6.0",
-        "ramsey/uuid-doctrine": "^1.5",
         "slim/psr7": "^0.6.0",
         "slim/slim": "^4.3",
+        "symfony/property-access": "^4.3",
         "symfony/serializer": "^4.3"
     },
     "require-dev": {

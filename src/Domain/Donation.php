@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Persistence\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
-use MatchBot\Application\DonationCreateRequest;
-use Ramsey\Uuid\UuidInterface;
 
 /**
  * @ORM\Entity(repositoryClass="DonationRepository")
@@ -39,12 +38,12 @@ class Donation extends SalesforceWriteProxy
     private $successStatuses = ['Collected', 'Paid'];
 
     /**
-     * The donation ID for Charity Checkout and public APIs.
+     * The donation ID for Charity Checkout and public APIs. Not the same as the internal auto-increment $id used
+     * by Doctrine internally for fast joins.
      *
-     * @ORM\Column(type="uuid", unique=true)
-     * @ORM\GeneratedValue(strategy="CUSTOM")
-     * @ORM\CustomIdGenerator(class="Ramsey\Uuid\Doctrine\UuidGenerator")
-     * @var UuidInterface
+     * @ORM\Column(type="string", length=36, unique=true)
+     * @ORM\GeneratedValue(strategy="UUID")
+     * @var string
      */
     protected $uuid;
 
@@ -53,6 +52,12 @@ class Donation extends SalesforceWriteProxy
      * @var Campaign
      */
     protected $campaign;
+
+    /**
+     * @ORM\Column(type="string", unique=true, nullable=true)
+     * @var string  Charity Checkout transaction ID assigned on their processing.
+     */
+    protected $transactionId;
 
     /**
      * @ORM\Column(type="decimal", precision=18, scale=2)
@@ -88,6 +93,12 @@ class Donation extends SalesforceWriteProxy
     protected $tbgComms;
 
     /**
+     * @ORM\Column(type="string", length=2, nullable=true)
+     * @var string  Set on Charity Checkout callback
+     */
+    protected $donorCountryCode;
+
+    /**
      * @ORM\Column(type="string", nullable=true)
      * @var string  Set on Charity Checkout callback
      */
@@ -118,6 +129,17 @@ class Donation extends SalesforceWriteProxy
     protected $donorTitle;
 
     /**
+     * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation")
+     * @var ArrayCollection|FundingWithdrawal[]
+     */
+    protected $fundingWithdrawals;
+
+    public function __construct()
+    {
+        $this->fundingWithdrawals = new ArrayCollection();
+    }
+
+    /**
      * @ORM\PrePersist Check that the amount is in the permitted range
      */
     public function prePersist(): void
@@ -143,11 +165,11 @@ class Donation extends SalesforceWriteProxy
         }
     }
 
-    public function toApiJson(): string
+    public function toApiJson($create = true): string
     {
         // We omit `donationId` and let Salesforce set its own, which we then persist back to the MatchBot DB on
         // success.
-        return json_encode([
+        $data = [
             'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
             'charityName' => $this->getCampaign()->getCharity()->getName(),
             'donationAmount' => $this->getAmount(),
@@ -156,7 +178,26 @@ class Donation extends SalesforceWriteProxy
             'optInCharityEmail' => $this->getCharityComms(),
             'optInTbgEmail' => $this->getTbgComms(),
             'projectId' => $this->getCampaign()->getSalesforceId(),
-        ]);
+        ];
+
+        if (!$create) {
+            $data['billingPostalAddress'] = $this->getDonorPostalAddress();
+            $data['countryCode'] = $this->getDonorCountryCode();
+            $data['emailAddress'] = $this->getDonorEmailAddress();
+            $data['firstName'] = $this->getDonorFirstName();
+            $data['lastName'] = $this->getDonorLastName();
+            $data['status'] = $this->getDonationStatus();
+            $data['transactionId'] = $this->getTransactionId();
+
+            $data['matchedAmount'] = $data['matchReservedAmount'] = 0;
+            if ($this->isSuccessful()) {
+                $data['matchedAmount'] = (float) $this->getFundingWithdrawalTotal();
+            } elseif (in_array($this->getDonationStatus(), ['Pending', 'Reserved'], true)) {
+                $data['matchReservedAmount'] = (float) $this->getFundingWithdrawalTotal();
+            }
+        }
+
+        return json_encode($data);
     }
 
     /**
@@ -347,5 +388,50 @@ class Donation extends SalesforceWriteProxy
     public function setAmount(string $amount): void
     {
         $this->amount = $amount;
+    }
+
+    /**
+     * @param string $transactionId
+     */
+    public function setTransactionId(string $transactionId): void
+    {
+        $this->transactionId = $transactionId;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDonorCountryCode(): string
+    {
+        return $this->donorCountryCode;
+    }
+
+    /**
+     * @return string
+     */
+    public function getFundingWithdrawalTotal(): string
+    {
+        $withdrawalTotal = '0.0';
+        foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
+            $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
+        }
+
+        return $withdrawalTotal;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTransactionId(): string
+    {
+        return $this->transactionId;
+    }
+
+    /**
+     * @return string
+     */
+    public function getUuid(): string
+    {
+        return $this->uuid;
     }
 }

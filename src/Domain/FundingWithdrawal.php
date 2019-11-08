@@ -16,7 +16,7 @@ class FundingWithdrawal extends Model
     use TimestampsTrait;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Donation")
+     * @ORM\ManyToOne(targetEntity="Donation", inversedBy="fundingWithdrawals")
      * @var Donation
      */
     protected $donation;
@@ -41,5 +41,13 @@ class FundingWithdrawal extends Model
     public function setAmount(string $amount): void
     {
         $this->amount = $amount;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAmount(): string
+    {
+        return $this->amount;
     }
 }

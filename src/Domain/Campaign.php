@@ -20,7 +20,7 @@ class Campaign extends SalesforceReadProxy
     use TimestampsTrait;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Charity")
+     * @ORM\ManyToOne(targetEntity="Charity", cascade={"persist"})
      * @var Charity
      */
     protected $charity;

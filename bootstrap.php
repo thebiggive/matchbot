@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 // Instantiate PHP-DI ContainerBuilder
 use DI\ContainerBuilder;
-use Ramsey\Uuid\Doctrine\UuidType;
 
 require __DIR__ . '/vendor/autoload.php';
 
@@ -25,8 +24,6 @@ $dependencies($containerBuilder);
 // Set up repositories
 $repositories = require __DIR__ . '/app/repositories.php';
 $repositories($containerBuilder);
-
-\Doctrine\DBAL\Types\Type::addType('uuid', UuidType::class);
 
 // Build PHP-DI Container instance
 return $containerBuilder->build();

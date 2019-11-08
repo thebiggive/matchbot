@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\ORMException;
-use MatchBot\Application\DonationCreatePayload;
+use MatchBot\Application\HttpModels\DonationCreate;
 
 class DonationRepository extends SalesforceWriteProxyRepository
 {
@@ -16,7 +16,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function doPush(SalesforceWriteProxy $donation): bool
     {
         $this->getClient()->create($donation);
-        // TODO push with Salesforce API client
     }
 
     /**
@@ -28,11 +27,15 @@ class DonationRepository extends SalesforceWriteProxyRepository
         throw new \LogicException('Donation data should not currently be pulled from Salesforce');
     }
 
-    public function buildFromApiRequest(DonationCreatePayload $donationData): Donation
+    public function buildFromApiRequest(DonationCreate $donationData): Donation
     {
         /** @var Campaign $campaign */
         $campaign = $this->getEntityManager()->getRepository(Campaign::class)
             ->findOneBy(['salesforceId' => $donationData->projectId]);
+
+        if (!$campaign) {
+            throw new \LogicException('Campaign not known');
+        }
 
         $donation = new Donation();
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
@@ -59,6 +62,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         // We want the whole set of `CampaignFunding`s to have a write-ready lock, so the transaction must surround the
         // whole allocation loop.
+        $lockStartTime = microtime();
         $this->getEntityManager()->beginTransaction();
         /** @var CampaignFunding[] $fundings */
         $fundings = $this->getEntityManager()
@@ -89,13 +93,29 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $this->getEntityManager()->persist($withdrawal);
             }
             $this->getEntityManager()->commit();
+            $lockEndTime = microtime();
         } catch (ORMException $exception) {
-            // TODO log this
+            // Release the lock ASAP, then log what went wrong
             $this->getEntityManager()->rollback();
+            $this->logError(
+                'ID ' . $donation->getId() . ' got ' . get_class($exception) .
+                ' allocating match funds: ' . $exception->getMessage()
+            );
+
+            return '0';
         }
 
-        // TODO log matching allocations in general? - total amount would be handy to see at a glance
+        $amountMatched = bcsub($donation->getAmount(), $amountLeftToMatch, 2);
+        $this->logInfo('ID ' . $donation->getId() . ' allocated match funds totalling ' . $amountMatched);
 
-        return bcsub($donation->getAmount(), $amountLeftToMatch, 2);
+        // Monitor allocation times so we can get a sense of how risky the locking behaviour is with different DB sizes
+        $this->logInfo('Allocation took ' . bcsub($lockEndTime, $lockStartTime, 6) . ' seconds');
+
+        return $amountMatched;
+    }
+
+    public function releaseMatchFunds()
+    {
+        // TODO soon think about what this looks like
     }
 }

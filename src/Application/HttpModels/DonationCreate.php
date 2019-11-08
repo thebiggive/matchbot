@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
-namespace MatchBot\Application;
+namespace MatchBot\Application\HttpModels;
 
-class DonationCreatePayload
+/**
+ * Request-only payload for setting up new donations.
+ */
+class DonationCreate
 {
     /** @var string */
     public $donationAmount;

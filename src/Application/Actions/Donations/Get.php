@@ -6,15 +6,33 @@ namespace MatchBot\Application\Actions\Donations;
 
 use MatchBot\Application\Actions\Action;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
+use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
-use Slim\Exception\HttpBadRequestException;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class Get extends Action
 {
+    /** @var DonationRepository */
+    private $donationRepository;
+    /** @var SerializerInterface */
+    private $serializer;
+
+    public function __construct(
+        DonationRepository $donationRepository,
+        LoggerInterface $logger,
+        SerializerInterface $serializer
+    ) {
+        $this->donationRepository = $donationRepository;
+        $this->serializer = $serializer;
+
+        parent::__construct($logger);
+    }
+
     /**
      * @return Response
      * @throws DomainRecordNotFoundException
-     * @throws HttpBadRequestException
      */
     protected function action(): Response
     {
@@ -22,6 +40,13 @@ class Get extends Action
             throw new DomainRecordNotFoundException('Invalid donation ID');
         }
 
-        // TODO look up donation by SF ID and also throw that ^ if not found
+        /** @var Donation $donation */
+        $donation = $this->donationRepository->findOneBy(['uuid' => $this->args['donationId']]);
+
+        if (!$donation) {
+            throw new DomainRecordNotFoundException('Donation not found');
+        }
+
+        return $this->respondWithData($this->serializer->serialize($donation, 'json'));
     }
 }

@@ -27,13 +27,13 @@ class CampaignFundingRepository extends EntityRepository
             SELECT cf FROM MatchBot\Domain\CampaignFunding cf
             WHERE :campaign MEMBER OF cf.campaigns
             AND cf.amountAvailable > 0
-            ORDER BY cf.order, cf.id
+            ORDER BY cf.allocationOrder, cf.id
         ');
-        $query->setParameter('campaign', new ArrayCollection([$campaign]));
+        $query->setParameter('campaign', new ArrayCollection([$campaign->getId()]));
         $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
         $query->execute();
 
-        return $query->getArrayResult();
+        return $query->getResult();
     }
 
     public function getFunding(Campaign $campaign, Fund $fund): ?CampaignFunding
@@ -43,8 +43,8 @@ class CampaignFundingRepository extends EntityRepository
             WHERE :campaign MEMBER OF cf.campaigns
             AND cf.fund = :fund
         ')->setMaxResults(1);
-        $query->setParameter('campaign', new ArrayCollection([$campaign]));
-        $query->setParameter('fund', $fund);
+        $query->setParameter('campaign', new ArrayCollection([$campaign->getId()]));
+        $query->setParameter('fund', $fund->getId());
         $query->execute();
 
         return $query->getOneOrNullResult();
