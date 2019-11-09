@@ -26,6 +26,9 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             $this->logError('...error pushing ' . get_class($proxy) . ' ' . $proxy->getId());
         }
 
+        $this->getEntityManager()->persist($proxy);
+        $this->getEntityManager()->flush();
+
         return $success;
     }
 }

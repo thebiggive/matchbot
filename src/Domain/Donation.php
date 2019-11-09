@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Persistence\Event\PreUpdateEventArgs;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\UuidInterface;
 
@@ -160,6 +160,10 @@ class Donation extends SalesforceWriteProxy
      */
     public function preUpdate(PreUpdateEventArgs $args): void
     {
+        if (!$args->hasChangedField('amount')) {
+            return;
+        }
+
         if ($args->getOldValue('amount') !== $args->getNewValue('amount')) {
             throw new \LogicException('Amount may not be changed after a donation is created');
         }
