@@ -60,12 +60,12 @@ class Create extends Action
         $this->entityManager->flush(); // We need the UUID generated to generate a JWT.
 
         $response = new DonationCreatedResponse();
-        $response->donation = $donation;
+        $response->donation = $donation->toApiModel();
         $response->jwt = Token::create($donation->getUuid());
 
         // TODO check this handles errors without crashing. Consider only queueing so we're not waiting for SF.
         $this->donationRepository->push($donation); // Attempt immediate sync to Salesforce
 
-        return $this->respondWithData($this->serializer->serialize($response, 'json'));
+        return $this->respondWithData($response);
     }
 }
