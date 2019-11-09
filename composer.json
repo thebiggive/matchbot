@@ -51,6 +51,11 @@
         "doctrine:cache:clear": "doctrine orm:clear-cache:metadata",
         "doctrine:migrate": "doctrine-migrations migrate",
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
+        "doctrine:delete-and-recreate": [
+            "doctrine orm:schema-tool:drop --force",
+            "doctrine orm:schema-tool:create",
+            "@doctrine:migrate"
+        ],
         "doctrine:validate": "doctrine orm:validate-schema",
         "lint:check": "phpcs --standard=phpcs.xml -s .",
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",
