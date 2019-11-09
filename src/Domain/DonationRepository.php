@@ -39,7 +39,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $donation = new Donation();
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
-        $donation->setAmount($donationData->donationAmount);
+        $donation->setAmount((string) $donationData->donationAmount);
         $donation->setGiftAid($donationData->giftAid);
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setTbgComms($donationData->optInTbgEmail);
