@@ -37,12 +37,11 @@ class Cancel extends Action
     /**
      * @return Response
      * @throws DomainRecordNotFoundException
-     * @throws HttpBadRequestException
      */
     protected function action(): Response
     {
-        if (strlen($this->args['donationId']) !== 18) {
-            throw new DomainRecordNotFoundException('Invalid donation ID');
+        if (empty($this->args['donationId'])) { // When MatchBot made a donation, this is now a UUID
+            throw new DomainRecordNotFoundException('Missing donation ID');
         }
 
         /** @var Donation $donation */
@@ -65,6 +64,8 @@ class Cancel extends Action
             return $this->respond(new ActionPayload(400, null, $error));
         }
 
-        return $this->respondWithData($this->serializer->serialize($donation, 'json'));
+        $donation->setDonationStatus('Cancelled');
+
+        return $this->respondWithData($donation->toApiModel(false));
     }
 }

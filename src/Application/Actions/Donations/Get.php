@@ -36,8 +36,8 @@ class Get extends Action
      */
     protected function action(): Response
     {
-        if (strlen($this->args['donationId']) !== 18) {
-            throw new DomainRecordNotFoundException('Invalid donation ID');
+        if (empty($this->args['donationId'])) { // When MatchBot made a donation, this is now a UUID
+            throw new DomainRecordNotFoundException('Missing donation ID');
         }
 
         /** @var Donation $donation */
@@ -47,6 +47,6 @@ class Get extends Action
             throw new DomainRecordNotFoundException('Donation not found');
         }
 
-        return $this->respondWithData($this->serializer->serialize($donation, 'json'));
+        return $this->respondWithData($donation->toApiModel(false));
     }
 }
