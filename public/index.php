@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 use MatchBot\Application\Handlers\HttpErrorHandler;
 use MatchBot\Application\Handlers\ShutdownHandler;
-use MatchBot\Application\ResponseEmitter\ResponseEmitter;
 use Slim\Factory\AppFactory;
 use Slim\Factory\ServerRequestCreatorFactory;
+use Slim\ResponseEmitter;
 
 $container = require __DIR__ . '/../bootstrap.php';
 

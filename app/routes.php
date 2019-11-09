@@ -12,6 +12,7 @@ use MatchBot\Domain\FundRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
+use Slim\Exception\HttpNotFoundException;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app) {
@@ -28,25 +29,25 @@ return function (App $app) {
         return $response;
     });
 
-    // TODO sort CORS, tidy up
-//    $corsSettings = [
-//        'allow-credentials' => false, // set "Access-Control-Allow-Credentials" 👉 string "false" or "true".
-//        'allow-headers'      => ['*'], // ex: Content-Type, Accept, X-Requested-With
-//        'expose-headers'     => [],
-//        'origins'            => [
-//            'http://localhost:4000', // Local via Docker SSR
-//            'http://localhost:4200', // Local via native `ng serve`
-//            'https://donate-ecs-staging.thebiggivetest.org.uk', // ECS staging direct
-//            'https://donate-staging.thebiggivetest.org.uk', // ECS + S3 staging via CloudFront
-//            'https://donate-ecs-regression.thebiggivetest.org.uk', // ECS regression direct
-//            'https://donate-regression.thebiggivetest.org.uk', // ECS + S3 regression via CloudFront
-//            'https://donate-ecs-production.thebiggive.org.uk', // ECS production direct
-//            'https://donate-production.thebiggive.org.uk', // ECS + S3 production via CloudFront
-//            'https://donate.thebiggive.org.uk' // ECS + S3 production via CloudFront, short alias
-//        ],
-//        'methods'            => ['*'], // ex: GET, POST, PUT, PATCH, DELETE
-//        'max-age'            => 0,
-//    ];
+    // TODO tidy up
+    $corsSettings = [
+        'allow-credentials' => true, // set "Access-Control-Allow-Credentials" 👉 string "false" or "true".
+        'allow-headers'      => ['*'], // ex: Content-Type, Accept, X-Requested-With
+        'expose-headers'     => [],
+        'origins'            => [
+            'http://localhost:4000', // Local via Docker SSR
+            'http://localhost:4200', // Local via native `ng serve`
+            'https://donate-ecs-staging.thebiggivetest.org.uk', // ECS staging direct
+            'https://donate-staging.thebiggivetest.org.uk', // ECS + S3 staging via CloudFront
+            'https://donate-ecs-regression.thebiggivetest.org.uk', // ECS regression direct
+            'https://donate-regression.thebiggivetest.org.uk', // ECS + S3 regression via CloudFront
+            'https://donate-ecs-production.thebiggive.org.uk', // ECS production direct
+            'https://donate-production.thebiggive.org.uk', // ECS + S3 production via CloudFront
+            'https://donate.thebiggive.org.uk' // ECS + S3 production via CloudFront, short alias
+        ],
+        'methods'            => ['*'], // ex: GET, POST, PUT, PATCH, DELETE
+        'max-age'            => 0,
+    ];
 
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
         $versionGroup->post('/donations', Donations\Create::class); // Currently the only unauthenticated endpoint.
@@ -60,5 +61,20 @@ return function (App $app) {
         $versionGroup->post('/hooks/donation/{donationId:[a-z0-9-]{36}}', Hooks\DonationUpdate::class)
             ->add(DonationHookAuthMiddleware::class);
     });
-//        ->add(new Medz\Cors\Slim\Cors($corsSettings));
+
+    $app->options('/{routes:.+}', function ($request, $response, $args) {
+        return $response;
+    });
+
+    $app->add(function ($request, $handler) {
+        $response = $handler->handle($request);
+        return $response
+            ->withHeader('Access-Control-Allow-Origin', 'http://localhost:4200') // TODO make dynamic
+            ->withHeader('Access-Control-Allow-Headers', 'X-Tbg-Auth, X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    });
+
+    $app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], '/{routes:.+}', function ($request, $response) {
+        throw new HttpNotFoundException($request);
+    });
 };

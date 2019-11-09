@@ -173,6 +173,7 @@ class Donation extends SalesforceWriteProxy
             'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
             'charityName' => $this->getCampaign()->getCharity()->getName(),
             'donationAmount' => (float) $this->getAmount(),
+            'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
             'giftAid' => $this->isGiftAid(),
             'optInCharityEmail' => $this->getCharityComms(),
