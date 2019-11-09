@@ -41,7 +41,7 @@ class Donation extends SalesforceWriteProxy
      * The donation ID for Charity Checkout and public APIs. Not the same as the internal auto-increment $id used
      * by Doctrine internally for fast joins.
      *
-     * @ORM\Column(type="string", length=36, unique=true)
+     * @ORM\Column(type="guid")
      * @ORM\GeneratedValue(strategy="UUID")
      * @var string
      */
