@@ -26,6 +26,7 @@ return static function (ContainerBuilder $containerBuilder) {
             $repo = $c->get(EntityManagerInterface::class)->getRepository(Campaign::class);
             $repo->setClient($c->get(Client\Campaign::class));
             $repo->setFundRepository($c->get(FundRepository::class));
+            $repo->setLogger($c->get(LoggerInterface::class));
 
             return $repo;
         },
@@ -41,6 +42,7 @@ return static function (ContainerBuilder $containerBuilder) {
             $repo = $c->get(EntityManagerInterface::class)->getRepository(Fund::class);
             $repo->setClient($c->get(Client\Fund::class));
             $repo->setCampaignFundingRepository($c->get(CampaignFundingRepository::class));
+            $repo->setLogger($c->get(LoggerInterface::class));
 
             return $repo;
         }

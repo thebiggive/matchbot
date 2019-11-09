@@ -12,6 +12,8 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 
     public function push(SalesforceWriteProxy $proxy): bool
     {
+        $this->logInfo('Pushing ' . get_class($proxy) . ' ' . $proxy->getSalesforceId() . '...');
+
         $proxy->setSalesforcePushStatus('pending');
 
         $success = $this->doPush($proxy);
@@ -19,6 +21,9 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
         if ($success) {
             $proxy->setSalesforceLastPush(new DateTime('now'));
             $proxy->setSalesforcePushStatus('complete');
+            $this->logInfo('...pushed ' . get_class($proxy) . ' ' . $proxy->getSalesforceId());
+        } else {
+            $this->logError('...error pushing ' . get_class($proxy) . ' ' . $proxy->getSalesforceId());
         }
 
         return $success;
