@@ -73,7 +73,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         // We want the whole set of `CampaignFunding`s to have a write-ready lock, so the transaction must surround the
         // whole allocation loop.
-        $lockStartTime = microtime();
+        $lockStartTime = microtime(true);
         $this->getEntityManager()->beginTransaction();
         /** @var CampaignFunding[] $fundings */
         $fundings = $this->getEntityManager()
@@ -102,9 +102,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $withdrawal->setDonation($donation);
                 $withdrawal->setAmount($amountToAllocateNow);
                 $this->getEntityManager()->persist($withdrawal);
+
+                $donation->addFundingWithdrawal($withdrawal);
             }
+            $this->getEntityManager()->persist($donation);
             $this->getEntityManager()->commit();
-            $lockEndTime = microtime();
+            $lockEndTime = microtime(true);
         } catch (ORMException $exception) {
             // Release the lock ASAP, then log what went wrong
             $this->getEntityManager()->rollback();
@@ -120,12 +123,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->logInfo('ID ' . $donation->getUuid() . ' allocated match funds totalling ' . $amountMatched);
 
         // Monitor allocation times so we can get a sense of how risky the locking behaviour is with different DB sizes
-        $this->logInfo('Allocation took ' . bcsub($lockEndTime, $lockStartTime, 8) . ' seconds');
+        $this->logInfo('Allocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
 
         return $amountMatched;
     }
 
-    public function releaseMatchFunds()
+    public function releaseMatchFunds(Donation $donation): void
     {
         // TODO soon think about what this looks like
     }

@@ -65,6 +65,9 @@ class Cancel extends Action
         }
 
         $donation->setDonationStatus('Cancelled');
+        if ($donation->getCampaign()->isMatched()) {
+            $this->donationRepository->releaseMatchFunds($donation);
+        }
 
         return $this->respondWithData($donation->toApiModel(false));
     }

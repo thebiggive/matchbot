@@ -57,7 +57,7 @@ class Create extends Action
         }
 
         $this->entityManager->persist($donation);
-        $this->entityManager->flush(); // We need the UUID generated to generate a JWT.
+        $this->entityManager->flush();
 
         $response = new DonationCreatedResponse();
         $response->donation = $donation->toApiModel();

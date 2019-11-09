@@ -129,7 +129,7 @@ class Donation extends SalesforceWriteProxy
     protected $donorTitle;
 
     /**
-     * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation")
+     * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
      * @var ArrayCollection|FundingWithdrawal[]
      */
     protected $fundingWithdrawals;
@@ -181,6 +181,10 @@ class Donation extends SalesforceWriteProxy
             'projectId' => $this->getCampaign()->getSalesforceId(),
         ];
 
+        if (in_array($this->getDonationStatus(), ['Pending', 'Reserved'], true)) {
+            $data['matchReservedAmount'] = (float) $this->getFundingWithdrawalTotal();
+        }
+
         if (!$create) {
             $data['billingPostalAddress'] = $this->getDonorPostalAddress();
             $data['countryCode'] = $this->getDonorCountryCode();
@@ -193,8 +197,6 @@ class Donation extends SalesforceWriteProxy
             $data['matchedAmount'] = $data['matchReservedAmount'] = 0;
             if ($this->isSuccessful()) {
                 $data['matchedAmount'] = (float) $this->getFundingWithdrawalTotal();
-            } elseif (in_array($this->getDonationStatus(), ['Pending', 'Reserved'], true)) {
-                $data['matchReservedAmount'] = (float) $this->getFundingWithdrawalTotal();
             }
         }
 
@@ -421,5 +423,10 @@ class Donation extends SalesforceWriteProxy
     public function setUuid(UuidInterface $uuid): void
     {
         $this->uuid = $uuid;
+    }
+
+    public function addFundingWithdrawal(FundingWithdrawal $fundingWithdrawal): void
+    {
+        $this->fundingWithdrawals->add($fundingWithdrawal);
     }
 }
