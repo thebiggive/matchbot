@@ -176,6 +176,7 @@ class Donation extends SalesforceWriteProxy
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
             'giftAid' => $this->isGiftAid(),
+            'matchReservedAmount' => 0,
             'optInCharityEmail' => $this->getCharityComms(),
             'optInTbgEmail' => $this->getTbgComms(),
             'projectId' => $this->getCampaign()->getSalesforceId(),
@@ -193,11 +194,7 @@ class Donation extends SalesforceWriteProxy
             $data['lastName'] = $this->getDonorLastName();
             $data['status'] = $this->getDonationStatus();
             $data['transactionId'] = $this->getTransactionId();
-
-            $data['matchedAmount'] = $data['matchReservedAmount'] = 0;
-            if ($this->isSuccessful()) {
-                $data['matchedAmount'] = (float) $this->getFundingWithdrawalTotal();
-            }
+            $data['matchedAmount'] = $this->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0;
         }
 
         return $data;

@@ -10,22 +10,17 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Serializer\SerializerInterface;
 
 class Get extends Action
 {
     /** @var DonationRepository */
     private $donationRepository;
-    /** @var SerializerInterface */
-    private $serializer;
 
     public function __construct(
         DonationRepository $donationRepository,
-        LoggerInterface $logger,
-        SerializerInterface $serializer
+        LoggerInterface $logger
     ) {
         $this->donationRepository = $donationRepository;
-        $this->serializer = $serializer;
 
         parent::__construct($logger);
     }
