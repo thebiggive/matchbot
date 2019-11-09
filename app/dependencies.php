@@ -26,6 +26,10 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\Campaign($c->get('settings'));
         },
 
+        Client\Donation::class => function (ContainerInterface $c): Client\Donation {
+            return new Client\Donation($c->get('settings'));
+        },
+
         Client\Fund::class => function (ContainerInterface $c): Client\Fund {
             return new Client\Fund($c->get('settings'));
         },

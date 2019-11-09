@@ -6,6 +6,8 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\ORMException;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Client\BadRequestException;
+use Ramsey\Uuid\Doctrine\UuidGenerator;
 
 class DonationRepository extends SalesforceWriteProxyRepository
 {
@@ -15,7 +17,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function doPush(SalesforceWriteProxy $donation): bool
     {
-        $this->getClient()->create($donation);
+        try {
+            $salesforceDonationId = $this->getClient()->create($donation);
+            $donation->setSalesforceId($salesforceDonationId);
+        } catch (BadRequestException $exception) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -38,6 +47,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         $donation = new Donation();
+        $donation->setUuid((new UuidGenerator())->generate($this->getEntityManager(), $donation));
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
         $donation->setAmount((string) $donationData->donationAmount);
         $donation->setGiftAid($donationData->giftAid);
@@ -106,10 +116,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         $amountMatched = bcsub($donation->getAmount(), $amountLeftToMatch, 2);
-        $this->logInfo('ID ' . $donation->getId() . ' allocated match funds totalling ' . $amountMatched);
+        $this->logInfo('ID ' . $donation->getUuid() . ' allocated match funds totalling ' . $amountMatched);
 
         // Monitor allocation times so we can get a sense of how risky the locking behaviour is with different DB sizes
-        $this->logInfo('Allocation took ' . bcsub($lockEndTime, $lockStartTime, 6) . ' seconds');
+        $this->logInfo('Allocation took ' . bcsub($lockEndTime, $lockStartTime, 8) . ' seconds');
 
         return $amountMatched;
     }

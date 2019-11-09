@@ -7,6 +7,7 @@ namespace MatchBot\Domain;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Persistence\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * @ORM\Entity(repositoryClass="DonationRepository")
@@ -41,9 +42,8 @@ class Donation extends SalesforceWriteProxy
      * The donation ID for Charity Checkout and public APIs. Not the same as the internal auto-increment $id used
      * by Doctrine internally for fast joins.
      *
-     * @ORM\Column(type="guid")
-     * @ORM\GeneratedValue(strategy="UUID")
-     * @var string
+     * @ORM\Column(type="uuid", unique=true)
+     * @var UuidInterface|null
      */
     protected $uuid;
 
@@ -55,7 +55,7 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\Column(type="string", unique=true, nullable=true)
-     * @var string  Charity Checkout transaction ID assigned on their processing.
+     * @var string|null Charity Checkout transaction ID assigned on their processing.
      */
     protected $transactionId;
 
@@ -100,31 +100,31 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string  Set on Charity Checkout callback
+     * @var string|null Set on Charity Checkout callback
      */
     protected $donorEmailAddress;
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string  Set on Charity Checkout callback
+     * @var string|null Set on Charity Checkout callback
      */
     protected $donorFirstName;
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string  Set on Charity Checkout callback
+     * @var string|null Set on Charity Checkout callback
      */
     protected $donorLastName;
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string  Set on Charity Checkout callback
+     * @var string|null Set on Charity Checkout callback
      */
     protected $donorPostalAddress;
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string  e.g. Mx, ... Set on Charity Checkout callback
+     * @var string|null e.g. Mx, ... Set on Charity Checkout callback
      */
     protected $donorTitle;
 
@@ -165,14 +165,14 @@ class Donation extends SalesforceWriteProxy
         }
     }
 
-    public function toApiJson($create = true): string
+    public function toApiModel($create = true): array
     {
         // We omit `donationId` and let Salesforce set its own, which we then persist back to the MatchBot DB on
         // success.
         $data = [
             'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
             'charityName' => $this->getCampaign()->getCharity()->getName(),
-            'donationAmount' => $this->getAmount(),
+            'donationAmount' => (float) $this->getAmount(),
             'donationMatched' => $this->getCampaign()->isMatched(),
             'giftAid' => $this->isGiftAid(),
             'optInCharityEmail' => $this->getCharityComms(),
@@ -197,7 +197,7 @@ class Donation extends SalesforceWriteProxy
             }
         }
 
-        return json_encode($data);
+        return $data;
     }
 
     /**
@@ -246,10 +246,7 @@ class Donation extends SalesforceWriteProxy
         $this->campaign = $campaign;
     }
 
-    /**
-     * @return string
-     */
-    public function getDonorEmailAddress(): string
+    public function getDonorEmailAddress(): ?string
     {
         return $this->donorEmailAddress;
     }
@@ -278,10 +275,7 @@ class Donation extends SalesforceWriteProxy
         $this->charityComms = $charityComms;
     }
 
-    /**
-     * @return string
-     */
-    public function getDonorFirstName(): string
+    public function getDonorFirstName(): ?string
     {
         return $this->donorFirstName;
     }
@@ -294,10 +288,7 @@ class Donation extends SalesforceWriteProxy
         $this->donorFirstName = $donorFirstName;
     }
 
-    /**
-     * @return string
-     */
-    public function getDonorLastName(): string
+    public function getDonorLastName(): ?string
     {
         return $this->donorLastName;
     }
@@ -310,10 +301,7 @@ class Donation extends SalesforceWriteProxy
         $this->donorLastName = $donorLastName;
     }
 
-    /**
-     * @return string
-     */
-    public function getDonorPostalAddress(): string
+    public function getDonorPostalAddress(): ?string
     {
         return $this->donorPostalAddress;
     }
@@ -326,10 +314,7 @@ class Donation extends SalesforceWriteProxy
         $this->donorPostalAddress = $donorPostalAddress;
     }
 
-    /**
-     * @return string
-     */
-    public function getDonorTitle(): string
+    public function getDonorTitle(): ?string
     {
         return $this->donorTitle;
     }
@@ -398,10 +383,7 @@ class Donation extends SalesforceWriteProxy
         $this->transactionId = $transactionId;
     }
 
-    /**
-     * @return string
-     */
-    public function getDonorCountryCode(): string
+    public function getDonorCountryCode(): ?string
     {
         return $this->donorCountryCode;
     }
@@ -419,10 +401,7 @@ class Donation extends SalesforceWriteProxy
         return $withdrawalTotal;
     }
 
-    /**
-     * @return string
-     */
-    public function getTransactionId(): string
+    public function getTransactionId(): ?string
     {
         return $this->transactionId;
     }
@@ -432,6 +411,14 @@ class Donation extends SalesforceWriteProxy
      */
     public function getUuid(): string
     {
-        return $this->uuid;
+        return $this->uuid->toString();
+    }
+
+    /**
+     * @param UuidInterface $uuid
+     */
+    public function setUuid(UuidInterface $uuid): void
+    {
+        $this->uuid = $uuid;
     }
 }

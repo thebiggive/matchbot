@@ -10,36 +10,22 @@ class Donation extends Common
 {
     /**
      * @param DonationModel $donation
-     * @return bool
-     * @throws NotFoundException
+     * @return string Salesforce donation ID
+     * @throws BadRequestException
      */
-    public function create(DonationModel $donation): bool
+    public function create(DonationModel $donation): string
     {
         $response = $this->getHttpClient()->post(
             $this->getSetting('donation', 'baseUri'),
-            ['json' => $donation->toApiJson()]
+            ['json' => $donation->toApiModel()]
         );
 
         if ($response->getStatusCode() !== 200) {
-            throw new NotFoundException('Fund not found');
+            throw new BadRequestException('Donation not created');
         }
 
-        return json_decode($response->getBody()->getContents(), true);
-    }
+        $donationCreatedResponse = json_decode($response->getBody()->getContents(), true);
 
-    /**
-     * @param string $campaignId
-     * @return array Array of Funds, each as associative array
-     * @throws NotFoundException if Campaign with given ID not found
-     */
-    public function getForCampaign(string $campaignId): array
-    {
-        $response = $this->getHttpClient()->get("{$this->getSetting('campaign', 'baseUri')}/$campaignId/funds");
-
-        if ($response->getStatusCode() !== 200) {
-            throw new NotFoundException('Campaign not found');
-        }
-
-        return json_decode($response->getBody()->getContents(), true);
+        return $donationCreatedResponse['donation']['donationId'];
     }
 }
