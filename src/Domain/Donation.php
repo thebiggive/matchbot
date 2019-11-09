@@ -184,6 +184,7 @@ class Donation extends SalesforceWriteProxy
             'optInCharityEmail' => $this->getCharityComms(),
             'optInTbgEmail' => $this->getTbgComms(),
             'projectId' => $this->getCampaign()->getSalesforceId(),
+            'status' => $this->getDonationStatus(),
         ];
 
         if (in_array($this->getDonationStatus(), ['Pending', 'Reserved'], true)) {
@@ -196,7 +197,6 @@ class Donation extends SalesforceWriteProxy
             $data['emailAddress'] = $this->getDonorEmailAddress();
             $data['firstName'] = $this->getDonorFirstName();
             $data['lastName'] = $this->getDonorLastName();
-            $data['status'] = $this->getDonationStatus();
             $data['transactionId'] = $this->getTransactionId();
             $data['matchedAmount'] = $this->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0;
         }
