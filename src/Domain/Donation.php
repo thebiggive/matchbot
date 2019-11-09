@@ -170,7 +170,7 @@ class Donation extends SalesforceWriteProxy
         // We omit `donationId` and let Salesforce set its own, which we then persist back to the MatchBot DB on
         // success.
         $data = [
-            'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
+            'charityId' => $this->getCampaign()->getCharity()->getDonateLinkId(),
             'charityName' => $this->getCampaign()->getCharity()->getName(),
             'donationAmount' => (float) $this->getAmount(),
             'donationId' => $this->getUuid(),

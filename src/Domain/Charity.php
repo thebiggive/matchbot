@@ -17,6 +17,14 @@ class Charity extends SalesforceReadProxy
 
     /**
      * @ORM\Column(type="string")
+     * @var string  The ID Charity Checkout expect us to identify the charity by. Currently matches
+     *              `$id` for new charities but has a numeric value for those imported from the
+     *              legacy database.
+     */
+    protected $donateLinkId;
+
+    /**
+     * @ORM\Column(type="string")
      * @var string
      */
     protected $name;
@@ -35,5 +43,15 @@ class Charity extends SalesforceReadProxy
     public function getName(): string
     {
         return $this->name;
+    }
+
+    public function getDonateLinkId(): string
+    {
+        return $this->donateLinkId;
+    }
+
+    public function setDonateLinkId(string $donateLinkId): void
+    {
+        $this->donateLinkId = $donateLinkId;
     }
 }
