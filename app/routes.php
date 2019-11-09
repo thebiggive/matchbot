@@ -8,6 +8,7 @@ use MatchBot\Application\Auth\DonationHookAuthMiddleware;
 use MatchBot\Application\Auth\DonationPublicAuthMiddleware;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\FundRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
@@ -19,6 +20,7 @@ return function (App $app) {
         $campaign = new Campaign();
         $campaign->setSalesforceId('a051r00001HoxCLAAZ');
         $campaign = $this->get(CampaignRepository::class)->pull($campaign);
+        $this->get(FundRepository::class)->pullForCampaign($campaign);
 
         var_dump($campaign);
 

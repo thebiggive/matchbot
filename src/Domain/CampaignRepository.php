@@ -36,8 +36,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign->setName($campaignData['title']);
         $campaign->setStartDate(new DateTime($campaignData['startDate']));
 
-        $this->pullFunds($campaign);
-
         return $campaign;
     }
 
@@ -62,10 +60,5 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $this->getEntityManager()->persist($charity);
 
         return $charity;
-    }
-
-    private function pullFunds(Campaign $campaign): void
-    {
-        $this->fundRepository->pullForCampaign($campaign);
     }
 }
