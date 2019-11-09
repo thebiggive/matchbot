@@ -29,24 +29,17 @@ return function (App $app) {
         return $response;
     });
 
-    // TODO tidy up
-    $corsSettings = [
-        'allow-credentials' => true, // set "Access-Control-Allow-Credentials" 👉 string "false" or "true".
-        'allow-headers'      => ['*'], // ex: Content-Type, Accept, X-Requested-With
-        'expose-headers'     => [],
-        'origins'            => [
-            'http://localhost:4000', // Local via Docker SSR
-            'http://localhost:4200', // Local via native `ng serve`
-            'https://donate-ecs-staging.thebiggivetest.org.uk', // ECS staging direct
-            'https://donate-staging.thebiggivetest.org.uk', // ECS + S3 staging via CloudFront
-            'https://donate-ecs-regression.thebiggivetest.org.uk', // ECS regression direct
-            'https://donate-regression.thebiggivetest.org.uk', // ECS + S3 regression via CloudFront
-            'https://donate-ecs-production.thebiggive.org.uk', // ECS production direct
-            'https://donate-production.thebiggive.org.uk', // ECS + S3 production via CloudFront
-            'https://donate.thebiggive.org.uk' // ECS + S3 production via CloudFront, short alias
-        ],
-        'methods'            => ['*'], // ex: GET, POST, PUT, PATCH, DELETE
-        'max-age'            => 0,
+    // TODO tidy up + implement CORS whitelist
+    $corsOrigins = [
+        'http://localhost:4000', // Local via Docker SSR
+        'http://localhost:4200', // Local via native `ng serve`
+        'https://donate-ecs-staging.thebiggivetest.org.uk', // ECS staging direct
+        'https://donate-staging.thebiggivetest.org.uk', // ECS + S3 staging via CloudFront
+        'https://donate-ecs-regression.thebiggivetest.org.uk', // ECS regression direct
+        'https://donate-regression.thebiggivetest.org.uk', // ECS + S3 regression via CloudFront
+        'https://donate-ecs-production.thebiggive.org.uk', // ECS production direct
+        'https://donate-production.thebiggive.org.uk', // ECS + S3 production via CloudFront
+        'https://donate.thebiggive.org.uk' // ECS + S3 production via CloudFront, short alias
     ];
 
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
@@ -70,7 +63,10 @@ return function (App $app) {
         $response = $handler->handle($request);
         return $response
             ->withHeader('Access-Control-Allow-Origin', 'http://localhost:4200') // TODO make dynamic
-            ->withHeader('Access-Control-Allow-Headers', 'X-Tbg-Auth, X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader(
+                'Access-Control-Allow-Headers',
+                'X-Tbg-Auth, X-Requested-With, Content-Type, Accept, Origin, Authorization'
+            )
             ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     });
 
