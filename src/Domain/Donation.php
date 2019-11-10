@@ -449,4 +449,12 @@ class Donation extends SalesforceWriteProxy
     {
         $this->fundingWithdrawals->add($fundingWithdrawal);
     }
+
+    /**
+     * @return ArrayCollection|FundingWithdrawal[]
+     */
+    public function getFundingWithdrawals()
+    {
+        return $this->fundingWithdrawals;
+    }
 }

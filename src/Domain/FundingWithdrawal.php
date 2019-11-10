@@ -28,6 +28,12 @@ class FundingWithdrawal extends Model
     protected $amount;
 
     /**
+     * @ORM\ManyToOne(targetEntity="CampaignFunding")
+     * @var CampaignFunding
+     */
+    protected $campaignFunding;
+
+    /**
      * @param Donation $donation
      */
     public function setDonation(Donation $donation): void
@@ -49,5 +55,21 @@ class FundingWithdrawal extends Model
     public function getAmount(): string
     {
         return $this->amount;
+    }
+
+    /**
+     * @param CampaignFunding $campaignFunding
+     */
+    public function setCampaignFunding(CampaignFunding $campaignFunding): void
+    {
+        $this->campaignFunding = $campaignFunding;
+    }
+
+    /**
+     * @return CampaignFunding
+     */
+    public function getCampaignFunding(): CampaignFunding
+    {
+        return $this->campaignFunding;
     }
 }

@@ -112,6 +112,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
                 $withdrawal = new FundingWithdrawal();
                 $withdrawal->setDonation($donation);
+                $withdrawal->setCampaignFunding($funding);
                 $withdrawal->setAmount($amountToAllocateNow);
                 $this->getEntityManager()->persist($withdrawal);
 
@@ -142,6 +143,35 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     public function releaseMatchFunds(Donation $donation): void
     {
-        // TODO soon think about what this looks like
+        // We need all `CampaignFunding`s to be updated in the same transaction as the withdrawal deletions.
+        $lockStartTime = microtime(true);
+        $this->getEntityManager()->beginTransaction();
+        $totalAmountReleased = '0.00';
+
+        try {
+            foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+                $funding = $fundingWithdrawal->getCampaignFunding();
+                $amountAvailable = bcadd($funding->getAmountAvailable(), $fundingWithdrawal->getAmount(), 2);
+                $funding->setAmountAvailable($amountAvailable);
+                $this->getEntityManager()->remove($fundingWithdrawal);
+                $this->getEntityManager()->persist($funding);
+
+                $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
+            }
+            $this->getEntityManager()->commit();
+            $lockEndTime = microtime(true);
+        } catch (ORMException $exception) {
+            // Release the lock ASAP, then log what went wrong
+            $this->getEntityManager()->rollback();
+            $this->logError(
+                'ID ' . $donation->getId() . ' got ' . get_class($exception) .
+                ' releasing match funds: ' . $exception->getMessage()
+            );
+
+            return;
+        }
+
+        $this->logInfo("Cancelling ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
+        $this->logInfo('Deallocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
     }
 }
