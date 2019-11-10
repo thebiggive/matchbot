@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use DateTime;
 use MatchBot\Client;
 
 class FundRepository extends SalesforceReadProxyRepository
@@ -41,6 +42,7 @@ class FundRepository extends SalesforceReadProxyRepository
             // Then whether new or existing, set its key info
             $fund->setAmount((string) $fundData['totalAmount']);
             $fund->setName($fundData['name']);
+            $fund->setSalesforceLastPull(new DateTime('now'));
             $this->getEntityManager()->persist($fund);
             $this->getEntityManager()->flush(); // Need the fund ID for the CampaignFunding find
 
