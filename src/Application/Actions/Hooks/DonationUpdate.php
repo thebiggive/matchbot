@@ -71,8 +71,10 @@ class DonationUpdate extends Action
 
         $this->entityManager->persist($donation);
 
-        // TODO check this handles errors without crashing. Consider only queueing so we're not waiting for SF.
-        $this->donationRepository->push($donation); // Attempt immediate sync to Salesforce
+        // We log if this fails but don't worry the webhook-sending payment client
+        // about it. We'll re-try sending the updated status to Salesforce in a future
+        // batch sync.
+        $this->donationRepository->put($donation); // Attempt immediate sync to Salesforce
 
         return $this->respondWithData($this->serializer->serialize($donation, 'json'));
     }

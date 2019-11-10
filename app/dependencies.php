@@ -23,15 +23,15 @@ use Symfony\Component\Serializer\SerializerInterface;
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
         Client\Campaign::class => function (ContainerInterface $c): Client\Campaign {
-            return new Client\Campaign($c->get('settings'));
+            return new Client\Campaign($c->get('settings'), $c->get(LoggerInterface::class));
         },
 
         Client\Donation::class => function (ContainerInterface $c): Client\Donation {
-            return new Client\Donation($c->get('settings'));
+            return new Client\Donation($c->get('settings'), $c->get(LoggerInterface::class));
         },
 
         Client\Fund::class => function (ContainerInterface $c): Client\Fund {
-            return new Client\Fund($c->get('settings'));
+            return new Client\Fund($c->get('settings'), $c->get(LoggerInterface::class));
         },
 
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {

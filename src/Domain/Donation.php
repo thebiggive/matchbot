@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
@@ -167,6 +168,24 @@ class Donation extends SalesforceWriteProxy
         if ($args->getOldValue('amount') !== $args->getNewValue('amount')) {
             throw new \LogicException('Amount may not be changed after a donation is created');
         }
+    }
+
+    public function toHookModel(): array
+    {
+        $data = $this->toApiModel(false);
+
+        $data['createdTime'] = $this->getCreatedDate()->format(DateTime::ATOM);
+        $data['updatedTime'] = $this->getUpdatedDate()->format(DateTime::ATOM);
+
+        unset(
+            $data['charityName'],
+            $data['donationId'],
+            $data['matchReservedAmount'],
+            $data['matchedAmount'],
+            $data['optInCharityEmail']
+        );
+
+        return $data;
     }
 
     public function toApiModel($create = true): array

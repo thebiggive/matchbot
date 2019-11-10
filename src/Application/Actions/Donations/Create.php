@@ -63,8 +63,8 @@ class Create extends Action
         $response->donation = $donation->toApiModel();
         $response->jwt = Token::create($donation->getUuid());
 
-        // TODO check this handles errors without crashing. Consider only queueing so we're not waiting for SF.
-        $this->donationRepository->push($donation); // Attempt immediate sync to Salesforce
+        // Attempt immediate sync. Buffered for a future batch sync if the SF call fails.
+        $this->donationRepository->push($donation);
 
         return $this->respondWithData($response);
     }

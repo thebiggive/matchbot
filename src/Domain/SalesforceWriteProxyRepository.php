@@ -13,11 +13,22 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
     public function push(SalesforceWriteProxy $proxy): bool
     {
         $this->logInfo('Pushing ' . get_class($proxy) . ' ' . $proxy->getId() . '...');
-
-        $proxy->setSalesforcePushStatus('pending');
+        $this->prePush($proxy);
 
         $success = $this->doPush($proxy);
 
+        $this->postPush($success, $proxy);
+
+        return $success;
+    }
+
+    protected function prePush(SalesforceWriteProxy $proxy): void
+    {
+        $proxy->setSalesforcePushStatus('pending');
+    }
+
+    protected function postPush(bool $success, SalesforceWriteProxy $proxy): void
+    {
         if ($success) {
             $proxy->setSalesforceLastPush(new DateTime('now'));
             $proxy->setSalesforcePushStatus('complete');
@@ -28,7 +39,5 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 
         $this->getEntityManager()->persist($proxy);
         $this->getEntityManager()->flush();
-
-        return $success;
     }
 }

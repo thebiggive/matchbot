@@ -27,6 +27,18 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return true;
     }
 
+    public function put(Donation $donation): bool
+    {
+        $this->logInfo('Updating ' . get_class($donation) . ' ' . $donation->getId() . '...');
+        $this->prePush($donation);
+
+        $success = $this->getClient()->put($donation);
+
+        $this->postPush($success, $donation);
+
+        return $success;
+    }
+
     /**
      * @param Donation $proxy
      * @return Donation

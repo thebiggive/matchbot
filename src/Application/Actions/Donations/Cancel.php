@@ -13,7 +13,6 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
-use Slim\Exception\HttpBadRequestException;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class Cancel extends Action
@@ -68,6 +67,10 @@ class Cancel extends Action
         if ($donation->getCampaign()->isMatched()) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
+
+        // We log if this fails but don't worry the client about it. We'll just re-try
+        // sending the updated status to Salesforce in a future batch sync.
+        $this->donationRepository->put($donation);
 
         return $this->respondWithData($donation->toApiModel(false));
     }

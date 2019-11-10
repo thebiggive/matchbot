@@ -35,7 +35,7 @@ class Token
             ],
         ];
 
-        return JWT::encode($claims, getenv('JWT_DONATION_SECRET'), static::$algorithm);
+        return JWT::encode($claims, static::getSecret(), static::$algorithm);
     }
 
     /**
@@ -47,7 +47,7 @@ class Token
     public static function check(string $donationId, string $jws, LoggerInterface $logger): bool
     {
         try {
-            $decodedJwtBody = JWT::decode($jws, getenv('JWT_DONATION_SECRET'), [static::$algorithm]);
+            $decodedJwtBody = JWT::decode($jws, static::getSecret(), [static::$algorithm]);
         } catch (\Exception $exception) {
             $type = get_class($exception);
             $logger->error("JWT error: decoding for donation ID $donationId: $type - {$exception->getMessage()}");
@@ -55,7 +55,7 @@ class Token
             return false;
         }
 
-        if ($decodedJwtBody->iss !== getenv('APP_URL')) {
+        if ($decodedJwtBody->iss !== getenv('BASE_URI')) {
             $logger->error("JWT error: issued by wrong site {$decodedJwtBody->iss}");
 
             return false;
@@ -68,5 +68,10 @@ class Token
         }
 
         return true;
+    }
+
+    private static function getSecret(): string
+    {
+        return getenv('JWT_DONATION_SECRET');
     }
 }
