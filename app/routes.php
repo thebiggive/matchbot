@@ -67,6 +67,8 @@ return function (App $app) {
             $corsAllowedOrigin = $givenOrigin;
         }
 
+        // Basic approach based on https://www.slimframework.com/docs/v4/cookbook/enable-cors.html
+        // - adapted to allow for multiple potential origins per-MatchBot instance.
         return $response
             ->withHeader('Access-Control-Allow-Origin', $corsAllowedOrigin)
             ->withHeader(
