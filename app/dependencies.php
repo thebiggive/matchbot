@@ -16,6 +16,8 @@ use Monolog\Logger;
 use Monolog\Processor\UidProcessor;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Lock\Factory as LockFactory;
+use Symfony\Component\Lock\Store\PdoStore;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -69,6 +71,13 @@ return function (ContainerBuilder $containerBuilder) {
                 $settings['doctrine']['connection'],
                 $config
             );
+        },
+
+        LockFactory::class => function (ContainerInterface $c): LockFactory {
+            $em = $c->get(EntityManagerInterface::class);
+            $lockStore = new PdoStore($em->getConnection(), ['db_table' => 'CommandLockKeys']);
+
+            return new LockFactory($lockStore);
         },
 
         LoggerInterface::class => function (ContainerInterface $c) {

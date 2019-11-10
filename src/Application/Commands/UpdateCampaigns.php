@@ -7,11 +7,9 @@ namespace MatchBot\Application\Commands;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\FundRepository;
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class UpdateCampaigns extends Command
+class UpdateCampaigns extends LockingCommand
 {
     protected static $defaultName = 'matchbot:pull-campaigns';
 
@@ -32,12 +30,8 @@ class UpdateCampaigns extends Command
         $this->setDescription('Pulls down and saves the latest details of already-known Campaigns from Salesforce');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function doExecute(OutputInterface $output)
     {
-        // TODO generalise log output boilerplate across all Commands
-        // TODO acquire locks to prevent overlapping runs
-        $output->writeln($this->getName() . ' starting!');
-
         /** @var Campaign[] $campaigns */
         $campaigns = $this->campaignRepository->findAll();
         foreach ($campaigns as $campaign) {
@@ -45,7 +39,5 @@ class UpdateCampaigns extends Command
             $this->fundRepository->pullForCampaign($campaign);
             $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
         }
-
-        $output->writeln($this->getName() . ' complete!');
     }
 }
