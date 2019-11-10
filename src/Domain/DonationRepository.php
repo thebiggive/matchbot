@@ -13,9 +13,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
 {
     /**
      * @param Donation $donation
-     * @return bool|void
+     * @return bool
      */
-    public function doPush(SalesforceWriteProxy $donation): bool
+    public function doCreate(SalesforceWriteProxy $donation): bool
     {
         try {
             $salesforceDonationId = $this->getClient()->create($donation);
@@ -27,25 +27,13 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return true;
     }
 
-    public function put(Donation $donation): bool
-    {
-        $this->logInfo('Updating ' . get_class($donation) . ' ' . $donation->getId() . '...');
-        $this->prePush($donation);
-
-        $success = $this->getClient()->put($donation);
-
-        $this->postPush($success, $donation);
-
-        return $success;
-    }
-
     /**
-     * @param Donation $proxy
-     * @return Donation
+     * @param Donation $donation
+     * @return bool
      */
-    public function doPull(SalesforceReadProxy $proxy): SalesforceReadProxy
+    public function doUpdate(SalesforceWriteProxy $donation): bool
     {
-        throw new \LogicException('Donation data should not currently be pulled from Salesforce');
+        return $this->getClient()->put($donation);
     }
 
     public function buildFromApiRequest(DonationCreate $donationData): Donation

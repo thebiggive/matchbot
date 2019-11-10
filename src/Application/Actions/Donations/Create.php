@@ -64,7 +64,7 @@ class Create extends Action
         $response->jwt = Token::create($donation->getUuid());
 
         // Attempt immediate sync. Buffered for a future batch sync if the SF call fails.
-        $this->donationRepository->push($donation);
+        $this->donationRepository->push($donation, true);
 
         return $this->respondWithData($response);
     }

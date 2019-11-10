@@ -74,7 +74,7 @@ class DonationUpdate extends Action
         // We log if this fails but don't worry the webhook-sending payment client
         // about it. We'll re-try sending the updated status to Salesforce in a future
         // batch sync.
-        $this->donationRepository->put($donation); // Attempt immediate sync to Salesforce
+        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
         return $this->respondWithData($this->serializer->serialize($donation, 'json'));
     }

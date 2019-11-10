@@ -70,7 +70,7 @@ class Cancel extends Action
 
         // We log if this fails but don't worry the client about it. We'll just re-try
         // sending the updated status to Salesforce in a future batch sync.
-        $this->donationRepository->put($donation);
+        $this->donationRepository->push($donation, false);
 
         return $this->respondWithData($donation->toApiModel(false));
     }
