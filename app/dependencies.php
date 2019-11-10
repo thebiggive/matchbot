@@ -76,8 +76,10 @@ return function (ContainerBuilder $containerBuilder) {
         LockFactory::class => function (ContainerInterface $c): LockFactory {
             $em = $c->get(EntityManagerInterface::class);
             $lockStore = new PdoStore($em->getConnection(), ['db_table' => 'CommandLockKeys']);
+            $factory = new LockFactory($lockStore);
+            $factory->setLogger($c->get(LoggerInterface::class));
 
-            return new LockFactory($lockStore);
+            return $factory;
         },
 
         LoggerInterface::class => function (ContainerInterface $c) {
