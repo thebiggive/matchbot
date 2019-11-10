@@ -14,7 +14,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
     public function push(SalesforceWriteProxy $proxy, bool $isNew): bool
     {
         $this->logInfo(($isNew ? 'Pushing ' : 'Updating ') . get_class($proxy) . ' ' . $proxy->getId() . '...');
-        $this->prePush($proxy);
+        $this->prePush($proxy, $isNew);
 
         $success = ($isNew ? $this->doCreate($proxy) : $this->doUpdate($proxy));
 
@@ -23,9 +23,27 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
         return $success;
     }
 
-    protected function prePush(SalesforceWriteProxy $proxy): void
+    /**
+     * @return int  Number of objects pushed
+     */
+    public function pushAllPending(): int
     {
-        $proxy->setSalesforcePushStatus('pending');
+        $proxiesToCreate = $this->findBy(['salesforcePushStatus' => 'pending-create']);
+        foreach ($proxiesToCreate as $proxy) {
+            $this->push($proxy, true);
+        }
+
+        $proxiesToUpdate = $this->findBy(['salesforcePushStatus' => 'pending-update']);
+        foreach ($proxiesToUpdate as $proxy) {
+            $this->push($proxy, false);
+        }
+
+        return count($proxiesToCreate) + count($proxiesToUpdate);
+    }
+
+    protected function prePush(SalesforceWriteProxy $proxy, bool $isNew): void
+    {
+        $proxy->setSalesforcePushStatus('pending-' . ($isNew ? 'create' : 'update'));
     }
 
     protected function postPush(bool $success, SalesforceWriteProxy $proxy): void

@@ -61,8 +61,9 @@
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
         "lint:check": "phpcs --standard=phpcs.xml -s .",
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",
-        "matchbot:update-campaigns": "php matchbot-cli.php matchbot:update-campaigns",
+        "matchbot:push-donations": "php matchbot-cli.php matchbot:push-donations",
         "matchbot:release-locks": "php matchbot-cli.php matchbot:release-locks",
+        "matchbot:update-campaigns": "php matchbot-cli.php matchbot:update-campaigns",
         "start": "php -S localhost:8080 -t public",
         "test": "phpunit"
     }
