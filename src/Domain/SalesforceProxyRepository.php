@@ -57,7 +57,7 @@ abstract class SalesforceProxyRepository extends EntityRepository
         return $this->client;
     }
 
-    protected function getLogger(): LoggerInterface
+    protected function getLogger(): ?LoggerInterface
     {
         return $this->logger;
     }

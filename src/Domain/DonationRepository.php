@@ -11,6 +11,11 @@ use Ramsey\Uuid\Doctrine\UuidGenerator;
 
 class DonationRepository extends SalesforceWriteProxyRepository
 {
+    /** @var CampaignRepository */
+    private $campaignRepository;
+    /** @var FundRepository */
+    private $fundRepository;
+
     /**
      * @param Donation $donation
      * @return bool
@@ -39,11 +44,15 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function buildFromApiRequest(DonationCreate $donationData): Donation
     {
         /** @var Campaign $campaign */
-        $campaign = $this->getEntityManager()->getRepository(Campaign::class)
-            ->findOneBy(['salesforceId' => $donationData->projectId]);
+        $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId]);
 
         if (!$campaign) {
-            throw new \LogicException('Campaign not known');
+            // Fetch data for as-yet-unknown campaigns on-demand
+            $this->logInfo("Loading unknown campaign ID {$donationData->projectId} on-demand");
+            $campaign = new Campaign();
+            $campaign->setSalesforceId($donationData->projectId);
+            $campaign = $this->campaignRepository->pull($campaign);
+            $this->fundRepository->pullForCampaign($campaign);
         }
 
         $donation = new Donation();
@@ -161,5 +170,21 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $this->logInfo("Cancelling ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
         $this->logInfo('Deallocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
+    }
+
+    /**
+     * @param mixed $campaignRepository
+     */
+    public function setCampaignRepository($campaignRepository): void
+    {
+        $this->campaignRepository = $campaignRepository;
+    }
+
+    /**
+     * @param FundRepository $fundRepository
+     */
+    public function setFundRepository(FundRepository $fundRepository): void
+    {
+        $this->fundRepository = $fundRepository;
     }
 }

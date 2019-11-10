@@ -33,7 +33,9 @@ return static function (ContainerBuilder $containerBuilder) {
 
         DonationRepository::class => static function (ContainerInterface $c): DonationRepository {
             $repo = $c->get(EntityManagerInterface::class)->getRepository(Donation::class);
+            $repo->setCampaignRepository($c->get(CampaignRepository::class));
             $repo->setClient($c->get(Client\Donation::class));
+            $repo->setFundRepository($c->get(FundRepository::class));
             $repo->setLogger($c->get(LoggerInterface::class));
 
             return $repo;
