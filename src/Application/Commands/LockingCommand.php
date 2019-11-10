@@ -20,13 +20,6 @@ abstract class LockingCommand extends Command
         $this->lockFactory = $lockFactory;
     }
 
-    public function forceReleaseLock(): void
-    {
-        if ($this->lock) {
-            $this->lock->release();
-        }
-    }
-
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->start($output);
@@ -44,7 +37,7 @@ abstract class LockingCommand extends Command
         $this->lock = $this->lockFactory->createLock(
             $this->getName(),
             30 * 60,    // 30 minute lock
-            false       // no auto-release
+            true        // auto-release on process end, inc. crashes
         );
 
         return $this->lock->acquire(false);
