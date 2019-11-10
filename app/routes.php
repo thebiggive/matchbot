@@ -6,30 +6,12 @@ use MatchBot\Application\Actions\Donations;
 use MatchBot\Application\Actions\Hooks;
 use MatchBot\Application\Auth\DonationHookAuthMiddleware;
 use MatchBot\Application\Auth\DonationPublicAuthMiddleware;
-use MatchBot\Domain\Campaign;
-use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\FundRepository;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app) {
-    $app->get('/', function (Request $request, Response $response) {
-        // TODO scrap entity logic in temporary test endpoint
-        $campaign = new Campaign();
-        $campaign->setSalesforceId('a051r00001HoxCLAAZ');
-        $campaign = $this->get(CampaignRepository::class)->pull($campaign);
-        $this->get(FundRepository::class)->pullForCampaign($campaign);
-
-        var_dump($campaign);
-
-        $response->getBody()->write('Hello world!');
-        return $response;
-    });
-
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
         $versionGroup->post('/donations', Donations\Create::class); // Currently the only unauthenticated endpoint.
 
