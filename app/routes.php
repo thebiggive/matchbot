@@ -9,6 +9,7 @@ use MatchBot\Application\Auth\DonationPublicAuthMiddleware;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\FundRepository;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
@@ -29,19 +30,6 @@ return function (App $app) {
         return $response;
     });
 
-    // TODO tidy up + implement CORS whitelist
-    $corsOrigins = [
-        'http://localhost:4000', // Local via Docker SSR
-        'http://localhost:4200', // Local via native `ng serve`
-        'https://donate-ecs-staging.thebiggivetest.org.uk', // ECS staging direct
-        'https://donate-staging.thebiggivetest.org.uk', // ECS + S3 staging via CloudFront
-        'https://donate-ecs-regression.thebiggivetest.org.uk', // ECS regression direct
-        'https://donate-regression.thebiggivetest.org.uk', // ECS + S3 regression via CloudFront
-        'https://donate-ecs-production.thebiggive.org.uk', // ECS production direct
-        'https://donate-production.thebiggive.org.uk', // ECS + S3 production via CloudFront
-        'https://donate.thebiggive.org.uk' // ECS + S3 production via CloudFront, short alias
-    ];
-
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
         $versionGroup->post('/donations', Donations\Create::class); // Currently the only unauthenticated endpoint.
 
@@ -59,10 +47,28 @@ return function (App $app) {
         return $response;
     });
 
-    $app->add(function ($request, $handler) {
+    $app->add(function (RequestInterface $request, $handler) {
         $response = $handler->handle($request);
+
+        $givenOrigin = $request->getHeaderLine('Origin');
+        $corsAllowedOrigin = 'https://donate.thebiggive.org.uk';
+        $corsAllowedOrigins = [
+            'http://localhost:4000', // Local via Docker SSR
+            'http://localhost:4200', // Local via native `ng serve`
+            'https://donate-ecs-staging.thebiggivetest.org.uk', // ECS staging direct
+            'https://donate-staging.thebiggivetest.org.uk', // ECS + S3 staging via CloudFront
+            'https://donate-ecs-regression.thebiggivetest.org.uk', // ECS regression direct
+            'https://donate-regression.thebiggivetest.org.uk', // ECS + S3 regression via CloudFront
+            'https://donate-ecs-production.thebiggive.org.uk', // ECS production direct
+            'https://donate-production.thebiggive.org.uk', // ECS + S3 production via CloudFront
+            'https://donate.thebiggive.org.uk' // ECS + S3 production via CloudFront, short alias
+        ];
+        if (!empty($givenOrigin) && in_array($givenOrigin, $corsAllowedOrigins, true)) {
+            $corsAllowedOrigin = $givenOrigin;
+        }
+
         return $response
-            ->withHeader('Access-Control-Allow-Origin', 'http://localhost:4200') // TODO make dynamic
+            ->withHeader('Access-Control-Allow-Origin', $corsAllowedOrigin)
             ->withHeader(
                 'Access-Control-Allow-Headers',
                 'X-Tbg-Auth, X-Requested-With, Content-Type, Accept, Origin, Authorization'
