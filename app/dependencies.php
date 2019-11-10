@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Tools\Setup;
+use MatchBot\Application\Auth;
 use MatchBot\Client;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
@@ -22,6 +23,15 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
+        Auth\DonationHookAuthMiddleware::class => function (ContainerInterface $c): Auth\DonationHookAuthMiddleware {
+            return new Auth\DonationHookAuthMiddleware($c->get(LoggerInterface::class));
+        },
+
+        Auth\DonationPublicAuthMiddleware::class
+            => function (ContainerInterface $c): Auth\DonationPublicAuthMiddleware {
+                return new Auth\DonationPublicAuthMiddleware($c->get(LoggerInterface::class));
+            },
+
         Client\Campaign::class => function (ContainerInterface $c): Client\Campaign {
             return new Client\Campaign($c->get('settings'), $c->get(LoggerInterface::class));
         },

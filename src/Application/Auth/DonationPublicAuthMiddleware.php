@@ -9,11 +9,12 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
-use Slim\Psr7\Response;
 use Slim\Routing\Route;
 
 class DonationPublicAuthMiddleware implements MiddlewareInterface
 {
+    use ErrorTrait;
+
     /** @var LoggerInterface */
     private $logger;
 
@@ -29,7 +30,7 @@ class DonationPublicAuthMiddleware implements MiddlewareInterface
         $donationId = $route->getArgument('donationId');
 
         if (!Token::check($donationId, $request->getHeaderLine('x-tbg-auth'), $this->logger)) {
-            return new Response(401);
+            return $this->unauthorised($this->logger);
         }
 
         return $handler->handle($request);

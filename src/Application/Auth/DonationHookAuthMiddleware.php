@@ -8,14 +8,24 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Slim\Psr7\Response;
+use Psr\Log\LoggerInterface;
 
 class DonationHookAuthMiddleware implements MiddlewareInterface
 {
+    use ErrorTrait;
+
+    /** @var LoggerInterface */
+    private $logger;
+
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (!$this->verify($request)) {
-            return new Response(401);
+            return $this->unauthorised($this->logger);
         }
 
         return $handler->handle($request);

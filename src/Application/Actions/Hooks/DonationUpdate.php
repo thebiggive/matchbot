@@ -6,6 +6,8 @@ namespace MatchBot\Application\Actions\Hooks;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Actions\ActionError;
+use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
@@ -62,12 +64,30 @@ class DonationUpdate extends Action
             'json'
         );
 
+        $missingRequiredField = (
+            empty($donationData->status) ||
+            empty($donationData->billingPostalAddress) ||
+            empty($donationData->countryCode) ||
+            empty($donationData->emailAddress) ||
+            empty($donationData->firstName) ||
+            empty($donationData->lastName) ||
+            !isset($donationData->giftAid, $donationData->optInTbgEmail) ||
+            empty($donationData->transactionId)
+        );
+        if ($missingRequiredField) {
+            $message = 'Hook missing required values';
+            $this->logger->warning("Donation ID {$this->args['donationId']}: {$message}");
+            $error = new ActionError(ActionError::BAD_REQUEST, $message);
+
+            return $this->respond(new ActionPayload(400, null, $error));
+        }
+
         $donation->setDonationStatus($donationData->status);
+        $donation->setDonorPostalAddress($donationData->billingPostalAddress);
         $donation->setDonorCountryCode($donationData->countryCode);
         $donation->setDonorEmailAddress($donationData->emailAddress);
         $donation->setDonorFirstName($donationData->firstName);
-        $donation->setDonorLastName($donationData->firstName);
-        $donation->setDonorPostalAddress($donationData->billingPostalAddress);
+        $donation->setDonorLastName($donationData->lastName);
         $donation->setGiftAid($donationData->giftAid);
         $donation->setTbgComms($donationData->optInTbgEmail);
         $donation->setTransactionId($donationData->transactionId);
