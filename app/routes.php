@@ -50,10 +50,10 @@ return function (App $app) {
             $group->put('', Donations\Cancel::class);
         })
             ->add(DonationPublicAuthMiddleware::class);
-
-        $versionGroup->post('/hooks/donation/{donationId:[a-z0-9-]{36}}', Hooks\DonationUpdate::class)
-            ->add(DonationHookAuthMiddleware::class);
     });
+
+    $app->put('/hooks/donation/{donationId:.{36}}', Hooks\DonationUpdate::class)
+        ->add(DonationHookAuthMiddleware::class);
 
     $app->options('/{routes:.+}', function ($request, $response, $args) {
         return $response;

@@ -124,12 +124,6 @@ class Donation extends SalesforceWriteProxy
     protected $donorPostalAddress;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
-     * @var string|null e.g. Mx, ... Set on Charity Checkout callback
-     */
-    protected $donorTitle;
-
-    /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
      * @var ArrayCollection|FundingWithdrawal[]
      */
@@ -337,19 +331,6 @@ class Donation extends SalesforceWriteProxy
         $this->donorPostalAddress = $donorPostalAddress;
     }
 
-    public function getDonorTitle(): ?string
-    {
-        return $this->donorTitle;
-    }
-
-    /**
-     * @param string $donorTitle
-     */
-    public function setDonorTitle(string $donorTitle): void
-    {
-        $this->donorTitle = $donorTitle;
-    }
-
     /**
      * @return bool
      */
@@ -456,5 +437,13 @@ class Donation extends SalesforceWriteProxy
     public function getFundingWithdrawals()
     {
         return $this->fundingWithdrawals;
+    }
+
+    /**
+     * @param string $donorCountryCode
+     */
+    public function setDonorCountryCode(string $donorCountryCode): void
+    {
+        $this->donorCountryCode = $donorCountryCode;
     }
 }

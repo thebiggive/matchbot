@@ -27,12 +27,12 @@ class DonationHookAuthMiddleware implements MiddlewareInterface
      */
     private function verify(ServerRequestInterface $request): bool
     {
-        $givenHash = $request->getHeaderLine('X-Webhook-Verify-Hash');
+        $givenHash = $request->getHeaderLine('x-webhook-verify-hash');
 
         $expectedHash = hash_hmac(
             'sha256',
             trim($request->getBody()->getContents()),
-            getenv('CHARITY_CHECKOUT_DONATION_SECRET')
+            getenv('WEBHOOK_DONATION_SECRET')
         );
 
         return ($givenHash === $expectedHash);
