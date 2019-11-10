@@ -25,6 +25,8 @@
         "ramsey/uuid-doctrine": "^1.5",
         "slim/psr7": "^0.6.0",
         "slim/slim": "^4.3",
+        "symfony/console": "^4.3",
+        "symfony/lock": "^4.3",
         "symfony/property-access": "^4.3",
         "symfony/serializer": "^4.3"
     },
@@ -59,6 +61,7 @@
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
         "lint:check": "phpcs --standard=phpcs.xml -s .",
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",
+        "matchbot:pull-campaigns": "php matchbot-cli.php matchbot:pull-campaigns",
         "start": "php -S localhost:8080 -t public",
         "test": "phpunit"
     }
