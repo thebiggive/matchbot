@@ -19,7 +19,7 @@ class CampaignFundingRepository extends EntityRepository
      *
      * @param Campaign $campaign
      * @return CampaignFunding[]
-     * @throws \Doctrine\ORM\TransactionRequiredException if you call this outside a surrounding transaction
+     * @throws \Doctrine\ORM\TransactionRequiredException if called this outside a surrounding transaction
      */
     public function getAvailableFundings(Campaign $campaign): array
     {
@@ -30,6 +30,34 @@ class CampaignFundingRepository extends EntityRepository
             ORDER BY cf.allocationOrder, cf.id
         ');
         $query->setParameter('campaign', new ArrayCollection([$campaign->getId()]));
+        $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
+        $query->execute();
+
+        return $query->getResult();
+    }
+
+    /**
+     * Get `CampaignFunding`s with a `FundingWithdrawal` linked to the given donation, with a pessimistic
+     * write lock so their totals can be safely updated alongside deleting the withdrawals.
+     * @see CampaignFundingRepository::getAvailableFundings() for more explanation.
+     *
+     * @param Donation $donation
+     * @return CampaignFunding[]
+     * @throws \Doctrine\ORM\TransactionRequiredException if called outside a surrounding transaction
+     */
+    public function getDonationFundings(Donation $donation)
+    {
+        $campaignFundingIds = [];
+        foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+            $campaignFundingIds[] = $fundingWithdrawal->getCampaignFunding()->getId();
+        }
+        $this->findBy(['id' => $campaignFundingIds]);
+        // While this is a simple one, we use a custom Query in order to set a pessimistic lock.
+        $query = $this->getEntityManager()->createQuery('
+            SELECT cf FROM MatchBot\Domain\CampaignFunding cf
+            WHERE cf.id IN (:campaignFundings)
+        ');
+        $query->setParameter('campaignFundings', $campaignFundingIds);
         $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
         $query->execute();
 

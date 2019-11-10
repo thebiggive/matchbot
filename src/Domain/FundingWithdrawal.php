@@ -28,7 +28,7 @@ class FundingWithdrawal extends Model
     protected $amount;
 
     /**
-     * @ORM\ManyToOne(targetEntity="CampaignFunding")
+     * @ORM\ManyToOne(targetEntity="CampaignFunding", fetch="EAGER")
      * @var CampaignFunding
      */
     protected $campaignFunding;

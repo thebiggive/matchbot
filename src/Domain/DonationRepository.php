@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use DateTime;
 use Doctrine\ORM\ORMException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Client\BadRequestException;
@@ -15,6 +16,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
     private $campaignRepository;
     /** @var FundRepository */
     private $fundRepository;
+    /** @var int */
+    private $expirySeconds = 20 * 60; // 20 minutes: 15 min official timed window plus 5 mins grace.
 
     /**
      * @param Donation $donation
@@ -140,10 +143,16 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     public function releaseMatchFunds(Donation $donation): void
     {
-        // We need all `CampaignFunding`s to be updated in the same transaction as the withdrawal deletions.
-        $lockStartTime = microtime(true);
-        $this->getEntityManager()->beginTransaction();
         $totalAmountReleased = '0.00';
+        $lockStartTime = microtime(true);
+
+        // We need all `CampaignFunding`s to be updated in the same transaction as the withdrawal deletions.
+        $this->getEntityManager()->beginTransaction();
+
+        // The point of this is just to lock the fundings we know we will update alongside deletions below.
+        // We don't directly use the returned Doctrine objects because `getCampaignFunding()` gets the same ones
+        // in the `foreach` loop where we're deleting FundingWithdrawals.
+        $this->getEntityManager()->getRepository(CampaignFunding::class)->getDonationFundings($donation);
 
         try {
             foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
@@ -155,6 +164,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
                 $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
             }
+            $this->getEntityManager()->flush();
             $this->getEntityManager()->commit();
             $lockEndTime = microtime(true);
         } catch (ORMException $exception) {
@@ -168,8 +178,28 @@ class DonationRepository extends SalesforceWriteProxyRepository
             return;
         }
 
-        $this->logInfo("Cancelling ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
+        $this->logInfo("Taking from ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
         $this->logInfo('Deallocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
+    }
+
+    /**
+     * @return Donation[]
+     */
+    public function findWithExpiredMatching(): array
+    {
+        $cutoff = (new DateTime('now'))->sub(new \DateInterval("PT{$this->expirySeconds}S"));
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('d')
+            ->from(Donation::class, 'd')
+            ->leftJoin('d.fundingWithdrawals', 'fw')
+            ->where('d.donationStatus = :expireWithStatus')
+            ->andWhere('d.createdAt < :expireBefore')
+            ->groupBy('d')
+            ->having('COUNT(fw) > 0')
+            ->setParameter('expireWithStatus', 'Pending')
+            ->setParameter('expireBefore', $cutoff);
+
+        return $qb->getQuery()->getResult();
     }
 
     /**

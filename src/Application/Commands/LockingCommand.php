@@ -37,7 +37,7 @@ abstract class LockingCommand extends Command
         $this->lock = $this->lockFactory->createLock(
             $this->getName(),
             30 * 60,    // 30 minute lock
-            true        // auto-release on process end, inc. crashes
+            true        // auto-release on process end
         );
 
         return $this->lock->acquire(false);
