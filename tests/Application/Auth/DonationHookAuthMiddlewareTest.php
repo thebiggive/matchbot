@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Auth;
 use GuzzleHttp\Psr7;
 use MatchBot\Application\Auth\DonationHookAuthMiddleware;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 use Slim\CallableResolver;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Headers;
@@ -22,7 +23,7 @@ class DonationHookAuthMiddlewareTest extends TestCase
         $body = bin2hex(random_bytes(100));
         $request = $this->buildRequest($body, null);
 
-        $response = (new DonationHookAuthMiddleware())->process($request, $this->getSuccessHandler());
+        $response = $this->getInstance()->process($request, $this->getSuccessHandler());
 
         $this->assertEquals(401, $response->getStatusCode());
     }
@@ -33,7 +34,7 @@ class DonationHookAuthMiddlewareTest extends TestCase
         $hash = hash_hmac('sha256', $body, 'the-wrong-secret');
         $request = $this->buildRequest($body, $hash);
 
-        $response = (new DonationHookAuthMiddleware())->process($request, $this->getSuccessHandler());
+        $response = $this->getInstance()->process($request, $this->getSuccessHandler());
 
         $this->assertEquals(401, $response->getStatusCode());
     }
@@ -44,7 +45,7 @@ class DonationHookAuthMiddlewareTest extends TestCase
         $hash = hash_hmac('md5', $body, 'unitTestCchSecret');
         $request = $this->buildRequest($body, $hash);
 
-        $response = (new DonationHookAuthMiddleware())->process($request, $this->getSuccessHandler());
+        $response = $this->getInstance()->process($request, $this->getSuccessHandler());
 
         $this->assertEquals(401, $response->getStatusCode());
     }
@@ -55,7 +56,7 @@ class DonationHookAuthMiddlewareTest extends TestCase
         $hash = hash_hmac('sha256', $body, 'unitTestCchSecret');
 
         $request = $this->buildRequest($body, $hash);
-        $response = (new DonationHookAuthMiddleware())->process($request, $this->getSuccessHandler());
+        $response = $this->getInstance()->process($request, $this->getSuccessHandler());
 
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -89,5 +90,10 @@ class DonationHookAuthMiddlewareTest extends TestCase
             new ResponseFactory(),
             new CallableResolver()
         );
+    }
+
+    private function getInstance(): DonationHookAuthMiddleware
+    {
+        return new DonationHookAuthMiddleware(new NullLogger());
     }
 }
