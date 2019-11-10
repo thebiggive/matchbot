@@ -20,6 +20,13 @@ abstract class LockingCommand extends Command
         $this->lockFactory = $lockFactory;
     }
 
+    public function forceReleaseLock(): void
+    {
+        if ($this->lock) {
+            $this->lock->release();
+        }
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->start($output);

@@ -11,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class UpdateCampaigns extends LockingCommand
 {
-    protected static $defaultName = 'matchbot:pull-campaigns';
+    protected static $defaultName = 'matchbot:update-campaigns';
 
     /** @var CampaignRepository */
     private $campaignRepository;
