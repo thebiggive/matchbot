@@ -9,11 +9,11 @@ return function (ContainerBuilder $containerBuilder) {
     // Global Settings Object
     $containerBuilder->addDefinitions([
         'settings' => [
-            'displayErrorDetails' => (getenv('APPLICATION_ENV') === 'local'),
+            'displayErrorDetails' => (getenv('APP_ENV') === 'local'),
 
             'doctrine' => [
                 // if true, metadata caching is forcefully disabled
-                'dev_mode' => (getenv('APPLICATION_ENV') === 'local'),
+                'dev_mode' => (getenv('APP_ENV') === 'local'),
 
                 'cache_dir' => __DIR__ . '/../var/doctrine',
                 'metadata_dirs' => [__DIR__ . '/../src/Domain'],
