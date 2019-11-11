@@ -51,7 +51,7 @@
     },
     "scripts": {
         "doctrine:cache:clear": "doctrine orm:clear-cache:metadata",
-        "doctrine:migrate": "doctrine-migrations migrate",
+        "doctrine:migrate": "doctrine-migrations migrate --no-interaction --allow-no-migration",
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
         "doctrine:delete-and-recreate": [
             "doctrine orm:schema-tool:drop --force",
