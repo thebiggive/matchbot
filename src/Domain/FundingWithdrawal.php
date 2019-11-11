@@ -16,7 +16,7 @@ class FundingWithdrawal extends Model
     use TimestampsTrait;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Donation")
+     * @ORM\ManyToOne(targetEntity="Donation", inversedBy="fundingWithdrawals", fetch="EAGER")
      * @var Donation
      */
     protected $donation;
@@ -26,6 +26,12 @@ class FundingWithdrawal extends Model
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
     protected $amount;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="CampaignFunding", fetch="EAGER")
+     * @var CampaignFunding
+     */
+    protected $campaignFunding;
 
     /**
      * @param Donation $donation
@@ -41,5 +47,29 @@ class FundingWithdrawal extends Model
     public function setAmount(string $amount): void
     {
         $this->amount = $amount;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAmount(): string
+    {
+        return $this->amount;
+    }
+
+    /**
+     * @param CampaignFunding $campaignFunding
+     */
+    public function setCampaignFunding(CampaignFunding $campaignFunding): void
+    {
+        $this->campaignFunding = $campaignFunding;
+    }
+
+    /**
+     * @return CampaignFunding
+     */
+    public function getCampaignFunding(): CampaignFunding
+    {
+        return $this->campaignFunding;
     }
 }

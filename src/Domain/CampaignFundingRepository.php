@@ -19,7 +19,7 @@ class CampaignFundingRepository extends EntityRepository
      *
      * @param Campaign $campaign
      * @return CampaignFunding[]
-     * @throws \Doctrine\ORM\TransactionRequiredException if you call this outside a surrounding transaction
+     * @throws \Doctrine\ORM\TransactionRequiredException if called this outside a surrounding transaction
      */
     public function getAvailableFundings(Campaign $campaign): array
     {
@@ -27,13 +27,41 @@ class CampaignFundingRepository extends EntityRepository
             SELECT cf FROM MatchBot\Domain\CampaignFunding cf
             WHERE :campaign MEMBER OF cf.campaigns
             AND cf.amountAvailable > 0
-            ORDER BY cf.order, cf.id
+            ORDER BY cf.allocationOrder, cf.id
         ');
-        $query->setParameter('campaign', new ArrayCollection([$campaign]));
+        $query->setParameter('campaign', new ArrayCollection([$campaign->getId()]));
         $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
         $query->execute();
 
-        return $query->getArrayResult();
+        return $query->getResult();
+    }
+
+    /**
+     * Get `CampaignFunding`s with a `FundingWithdrawal` linked to the given donation, with a pessimistic
+     * write lock so their totals can be safely updated alongside deleting the withdrawals.
+     * @see CampaignFundingRepository::getAvailableFundings() for more explanation.
+     *
+     * @param Donation $donation
+     * @return CampaignFunding[]
+     * @throws \Doctrine\ORM\TransactionRequiredException if called outside a surrounding transaction
+     */
+    public function getDonationFundings(Donation $donation)
+    {
+        $campaignFundingIds = [];
+        foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+            $campaignFundingIds[] = $fundingWithdrawal->getCampaignFunding()->getId();
+        }
+        $this->findBy(['id' => $campaignFundingIds]);
+        // While this is a simple one, we use a custom Query in order to set a pessimistic lock.
+        $query = $this->getEntityManager()->createQuery('
+            SELECT cf FROM MatchBot\Domain\CampaignFunding cf
+            WHERE cf.id IN (:campaignFundings)
+        ');
+        $query->setParameter('campaignFundings', $campaignFundingIds);
+        $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
+        $query->execute();
+
+        return $query->getResult();
     }
 
     public function getFunding(Campaign $campaign, Fund $fund): ?CampaignFunding
@@ -43,8 +71,8 @@ class CampaignFundingRepository extends EntityRepository
             WHERE :campaign MEMBER OF cf.campaigns
             AND cf.fund = :fund
         ')->setMaxResults(1);
-        $query->setParameter('campaign', new ArrayCollection([$campaign]));
-        $query->setParameter('fund', $fund);
+        $query->setParameter('campaign', new ArrayCollection([$campaign->getId()]));
+        $query->setParameter('fund', $fund->getId());
         $query->execute();
 
         return $query->getOneOrNullResult();

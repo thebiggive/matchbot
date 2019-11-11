@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 use MatchBot\Application\Handlers\HttpErrorHandler;
 use MatchBot\Application\Handlers\ShutdownHandler;
-use MatchBot\Application\ResponseEmitter\ResponseEmitter;
 use Slim\Factory\AppFactory;
 use Slim\Factory\ServerRequestCreatorFactory;
+use Slim\ResponseEmitter;
 
 $container = require __DIR__ . '/../bootstrap.php';
 
@@ -14,10 +14,6 @@ $container = require __DIR__ . '/../bootstrap.php';
 AppFactory::setContainer($container);
 $app = AppFactory::create();
 $callableResolver = $app->getCallableResolver();
-
-// Register middleware
-$middleware = require __DIR__ . '/../app/middleware.php';
-$middleware($app);
 
 // Register routes
 $routes = require __DIR__ . '/../app/routes.php';

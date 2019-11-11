@@ -1,8 +1,9 @@
 FROM php:7.3-apache
 
-RUN apt-get update -qq && apt-get install -y git-core
+RUN apt-get update -qq && apt-get install -y git-core libzip-dev
 
-RUN docker-php-ext-install bcmath pdo_mysql
+RUN docker-php-ext-configure zip --with-libzip
+RUN docker-php-ext-install bcmath pdo_mysql zip
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN composer global require hirak/prestissimo # Composer parallel installs

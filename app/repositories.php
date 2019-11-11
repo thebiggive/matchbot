@@ -9,9 +9,12 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundRepository;
 use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
 
 return static function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -23,6 +26,17 @@ return static function (ContainerBuilder $containerBuilder) {
             $repo = $c->get(EntityManagerInterface::class)->getRepository(Campaign::class);
             $repo->setClient($c->get(Client\Campaign::class));
             $repo->setFundRepository($c->get(FundRepository::class));
+            $repo->setLogger($c->get(LoggerInterface::class));
+
+            return $repo;
+        },
+
+        DonationRepository::class => static function (ContainerInterface $c): DonationRepository {
+            $repo = $c->get(EntityManagerInterface::class)->getRepository(Donation::class);
+            $repo->setCampaignRepository($c->get(CampaignRepository::class));
+            $repo->setClient($c->get(Client\Donation::class));
+            $repo->setFundRepository($c->get(FundRepository::class));
+            $repo->setLogger($c->get(LoggerInterface::class));
 
             return $repo;
         },
@@ -31,6 +45,7 @@ return static function (ContainerBuilder $containerBuilder) {
             $repo = $c->get(EntityManagerInterface::class)->getRepository(Fund::class);
             $repo->setClient($c->get(Client\Fund::class));
             $repo->setCampaignFundingRepository($c->get(CampaignFundingRepository::class));
+            $repo->setLogger($c->get(LoggerInterface::class));
 
             return $repo;
         }

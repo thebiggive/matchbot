@@ -8,26 +8,28 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
- * Remove `salesforceLastPull` from push-only Donation object
+ * Add Charity.donationLinkId to support charities identified by legacy numeric IDs.
  */
-final class Version20191029162114 extends AbstractMigration
+final class Version20191109215947 extends AbstractMigration
 {
     public function getDescription() : string
     {
-        return 'Remove `salesforceLastPull` from push-only Donation object';
+        return 'Add Charity.donationLinkId';
     }
 
     public function up(Schema $schema) : void
     {
+        // this up() migration is auto-generated, please modify it to your needs
         $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
 
-        $this->addSql('ALTER TABLE Donation DROP salesforceLastPull');
+        $this->addSql('ALTER TABLE Charity ADD donateLinkId VARCHAR(255) NOT NULL');
     }
 
     public function down(Schema $schema) : void
     {
+        // this down() migration is auto-generated, please modify it to your needs
         $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
 
-        $this->addSql('ALTER TABLE Donation ADD salesforceLastPull DATETIME DEFAULT NULL');
+        $this->addSql('ALTER TABLE Charity DROP donateLinkId');
     }
 }

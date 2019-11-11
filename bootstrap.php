@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 // Instantiate PHP-DI ContainerBuilder
 use DI\ContainerBuilder;
-use Ramsey\Uuid\Doctrine\UuidType;
+use Doctrine\DBAL\Types\Type;
 
 require __DIR__ . '/vendor/autoload.php';
 
 $containerBuilder = new ContainerBuilder();
 
-if (getenv('APPLICATION_ENV') !== 'local') { // Compile cache on staging & production
+if (getenv('APP_ENV') !== 'local') { // Compile cache on staging & production
     $containerBuilder->enableCompilation(__DIR__ . '/../var/cache');
 }
 
@@ -26,7 +26,7 @@ $dependencies($containerBuilder);
 $repositories = require __DIR__ . '/app/repositories.php';
 $repositories($containerBuilder);
 
-\Doctrine\DBAL\Types\Type::addType('uuid', UuidType::class);
+Type::addType('uuid', Ramsey\Uuid\Doctrine\UuidType::class);
 
 // Build PHP-DI Container instance
 return $containerBuilder->build();

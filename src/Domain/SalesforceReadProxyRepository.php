@@ -22,7 +22,10 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
         // Make sure we update existing object if passed in a partial copy and we already have that Salesforce object
         // persisted, otherwise we'll try to insert a duplicate and get an ORM crash.
         if (!$proxy->getId() && ($existingProxy = $this->findOneBy(['salesforceId' => $proxy->getSalesforceId()]))) {
+            $this->logInfo('Updating ' . get_class($proxy) . ' ' . $proxy->getSalesforceId() . '...');
             $proxy = $existingProxy;
+        } else {
+            $this->logInfo('Creating ' . get_class($proxy) . ' ' . $proxy->getSalesforceId());
         }
 
         $proxy = $this->doPull($proxy);
@@ -31,6 +34,8 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
         if ($autoSave) {
             $this->getEntityManager()->flush();
         }
+
+        $this->logInfo('Done persisting ' . get_class($proxy) . ' ' . $proxy->getSalesforceId());
 
         return $proxy;
     }

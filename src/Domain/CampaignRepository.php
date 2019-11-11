@@ -28,15 +28,17 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $client = $this->getClient();
         $campaignData = $client->getById($campaign->getSalesforceId());
 
-        $charity = $this->pullCharity($campaignData['charity']['id'], $campaignData['charity']['name']);
+        $charity = $this->pullCharity(
+            $campaignData['charity']['id'],
+            $campaignData['charity']['name'],
+            $campaignData['charity']['donateLinkId']
+        );
 
         $campaign->setCharity($charity);
         $campaign->setEndDate(new DateTime($campaignData['endDate']));
         $campaign->setIsMatched($campaignData['isMatched']);
         $campaign->setName($campaignData['title']);
         $campaign->setStartDate(new DateTime($campaignData['startDate']));
-
-        $this->pullFunds($campaign);
 
         return $campaign;
     }
@@ -45,11 +47,15 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * Upsert a Charity based on ID & name, persist and return it.
      * @param string $salesforceCharityId
      * @param string $charityName
+     * @param string $donateLinkId
      * @return Charity
      * @throws \Doctrine\ORM\ORMException on failed persist()
      */
-    private function pullCharity(string $salesforceCharityId, string $charityName): Charity
-    {
+    private function pullCharity(
+        string $salesforceCharityId,
+        string $charityName,
+        string $donateLinkId
+    ): Charity {
         $charity = $this->getEntityManager()
             ->getRepository(Charity::class)
             ->findOneBy(['salesforceId' => $salesforceCharityId]);
@@ -57,15 +63,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $charity = new Charity();
             $charity->setSalesforceId($salesforceCharityId);
         }
+        $charity->setDonateLinkId($donateLinkId);
         $charity->setName($charityName);
         $charity->setSalesforceLastPull(new DateTime('now'));
         $this->getEntityManager()->persist($charity);
 
         return $charity;
-    }
-
-    private function pullFunds(Campaign $campaign): void
-    {
-        $this->fundRepository->pullForCampaign($campaign);
     }
 }

@@ -20,7 +20,7 @@ class Campaign extends SalesforceReadProxy
     use TimestampsTrait;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Charity")
+     * @ORM\ManyToOne(targetEntity="Charity", cascade={"persist"})
      * @var Charity
      */
     protected $charity;
@@ -95,5 +95,13 @@ class Campaign extends SalesforceReadProxy
     public function setEndDate(DateTime $endDate): void
     {
         $this->endDate = $endDate;
+    }
+
+    /**
+     * @return Charity
+     */
+    public function getCharity(): Charity
+    {
+        return $this->charity;
     }
 }
