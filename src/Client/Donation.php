@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Client;
 
-use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\RequestException;
 use MatchBot\Domain\Donation as DonationModel;
 
 class Donation extends Common
@@ -16,12 +16,18 @@ class Donation extends Common
      */
     public function create(DonationModel $donation): string
     {
-        $response = $this->getHttpClient()->post(
-            $this->getSetting('donation', 'baseUri'),
-            ['json' => $donation->toApiModel()]
-        );
+        try {
+            $response = $this->getHttpClient()->post(
+                $this->getSetting('donation', 'baseUri'),
+                ['json' => $donation->toApiModel()]
+            );
+        } catch (RequestException $ex) {
+            $this->logger->error('Donation create exception ' . get_class($ex) . ": {$ex->getMessage()}");
+            throw new BadRequestException('Donation not created');
+        }
 
         if ($response->getStatusCode() !== 200) {
+            $this->logger->error('Donation create got non-success code ' . $response->getStatusCode());
             throw new BadRequestException('Donation not created');
         }
 
@@ -52,8 +58,8 @@ class Donation extends Common
                     ],
                 ]
             );
-        } catch (ClientException $exception) {
-            $this->logger->error("Donation update failed: {$exception->getMessage()}");
+        } catch (RequestException $ex) {
+            $this->logger->error('Donation update exception ' . get_class($ex) . ": {$ex->getMessage()}");
 
             return false;
         }
