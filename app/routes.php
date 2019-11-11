@@ -9,9 +9,14 @@ use MatchBot\Application\Auth\DonationPublicAuthMiddleware;
 use Psr\Http\Message\RequestInterface;
 use Slim\App;
 use Slim\Exception\HttpNotFoundException;
+use Slim\Psr7\Response;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app) {
+    $app->get('/ping', function ($request, $response, $args) {
+        return new Response(200);
+    });
+
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
         $versionGroup->post('/donations', Donations\Create::class); // Currently the only unauthenticated endpoint.
 
