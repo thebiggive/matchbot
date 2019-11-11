@@ -58,6 +58,7 @@
             "doctrine orm:schema-tool:create",
             "@doctrine:migrate"
         ],
+        "doctrine:ensure-prod": "doctrine orm:ensure-production-settings",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
         "lint:check": "phpcs --standard=phpcs.xml -s .",
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",

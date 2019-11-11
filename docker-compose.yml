@@ -6,12 +6,10 @@ volumes:
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: ./DockerfileLocal
-    command: php -S 0.0.0.0:8080 -t public
+    # TODO sort out Docker Hub and switch to :latest
+    image: thebiggive/php:local-tmp
     ports:
-      - 30030:8080
+      - 30030:80
     volumes:
       - .:/var/www/html
     env_file:
