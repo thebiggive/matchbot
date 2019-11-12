@@ -44,14 +44,14 @@ workflows:
 
   deploy-staging:
     jobs:
-      - pre-deploy-test:
+      - test:
           filters:
             branches:
               only:
                 - develop
       - aws-ecr/build-and-push-image:
           requires:
-            - pre-deploy-test
+            - test
           repo: '${AWS_ECR_REPO_NAME}'
           region: AWS_REGION
           tag: 'staging,staging-${CIRCLE_SHA1}'
