@@ -65,7 +65,9 @@ class HttpErrorHandler extends SlimErrorHandler
         $response = $this->responseFactory->createResponse($statusCode);
         $response->getBody()->write($encodedPayload);
 
-        $this->logError(get_class($this->exception) . ": {$this->exception->getMessage()}");
+        $this->logError(
+            get_class($this->exception) . ": {$this->exception->getMessage()} - {$this->exception->getTraceAsString()}"
+        );
 
         return $response->withHeader('Content-Type', 'application/json');
     }
