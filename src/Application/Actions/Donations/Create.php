@@ -6,6 +6,8 @@ namespace MatchBot\Application\Actions\Donations;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Actions\ActionError;
+use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\Token;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
@@ -42,22 +44,29 @@ class Create extends Action
     protected function action(): Response
     {
         /** @var DonationCreate $donationData */
-        $this->request->getBody();
-        $this->logger->info('REQUEST: ' . $this->request->getBody());
-
         $donationData = $this->serializer->deserialize(
             $this->request->getBody(),
             DonationCreate::class,
             'json'
         );
+
         $donation = $this->donationRepository->buildFromApiRequest($donationData);
 
-        if ($donation->getCampaign()->isMatched()) {
-            $this->donationRepository->allocateMatchFunds($donation);
-        }
+        try {
+            if ($donation->getCampaign()->isMatched()) {
+                // This implicitly calls @prePersist on the Donation, so is part of the try{...}
+                $this->donationRepository->allocateMatchFunds($donation);
+            }
 
-        $this->entityManager->persist($donation);
-        $this->entityManager->flush();
+            $this->entityManager->persist($donation);
+            $this->entityManager->flush();
+        } catch (\UnexpectedValueException $exception) {
+            $message = 'Donation Create data failed validation';
+            $this->logger->warning($message);
+            $error = new ActionError(ActionError::BAD_REQUEST, $message);
+
+            return $this->respond(new ActionPayload(400, null, $error));
+        }
 
         $response = new DonationCreatedResponse();
         $response->donation = $donation->toApiModel();

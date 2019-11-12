@@ -1,6 +1,8 @@
 version: 2.1
 
 orbs:
+  aws-ecr: circleci/aws-ecr@6.5.0
+  aws-ecs: circleci/aws-ecs@1.0.0
   jira: circleci/jira@1.0.6
   slack: circleci/slack@3.4.0
 
@@ -39,3 +41,38 @@ workflows:
                 job_type: build
                 environment_type: development
             - slack/notify-on-failure: ~
+
+  deploy-staging:
+    jobs:
+      - test:
+          filters:
+            branches:
+              only:
+                - develop
+      - aws-ecr/build-and-push-image:
+          requires:
+            - test
+          extra-build-args: '--build-arg BUILD_ENV=staging'
+          repo: '${AWS_ECR_REPO_NAME}'
+          region: AWS_REGION
+          tag: 'staging,staging-${CIRCLE_SHA1}'
+      - aws-ecs/deploy-service-update:
+          requires:
+            - aws-ecr/build-and-push-image
+          aws-region: '${AWS_REGION}'
+          family: 'tbg-staging-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}'
+          cluster-name: 'tbg-staging-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}'
+          container-image-name-updates: 'container=matchbot_tasks,tag=staging-${CIRCLE_SHA1}'
+          post-steps:
+            - slack/notify-on-failure: ~
+            - aws-ecs/update-service:
+                family: 'tbg-staging-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_WEB}'
+                cluster-name: 'tbg-staging-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_WEB}'
+                container-image-name-updates: 'container=matchbot_web,tag=staging-${CIRCLE_SHA1}'
+            - jira/notify:
+                job_type: deployment
+                environment_type: staging
+            - slack/notify:
+                color: '#009900'
+                message: 'We use rolling blue/green deploys. All visitors to staging will see the updated app version within ~30 minutes.'
+                title: 'Staging: MatchBot deployed!'

@@ -51,13 +51,14 @@
     },
     "scripts": {
         "doctrine:cache:clear": "doctrine orm:clear-cache:metadata",
-        "doctrine:migrate": "doctrine-migrations migrate",
+        "doctrine:migrate": "doctrine-migrations migrate --no-interaction --allow-no-migration",
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
         "doctrine:delete-and-recreate": [
             "doctrine orm:schema-tool:drop --force",
             "doctrine orm:schema-tool:create",
             "@doctrine:migrate"
         ],
+        "doctrine:ensure-prod": "doctrine orm:ensure-production-settings",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
         "lint:check": "phpcs --standard=phpcs.xml -s .",
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",
