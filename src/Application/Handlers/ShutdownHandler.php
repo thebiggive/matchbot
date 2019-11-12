@@ -79,7 +79,7 @@ class ShutdownHandler
                 $this->request,
                 $exception,
                 $this->displayErrorDetails,
-                false,
+                false, // Don't log via the less flexible built-in Slim fn; HttpErrorHandler does it via LoggerInterface
                 false
             );
 
