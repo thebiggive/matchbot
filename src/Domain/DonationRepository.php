@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use DateTime;
 use Doctrine\ORM\ORMException;
+use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Client\BadRequestException;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
@@ -54,7 +55,11 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $this->logInfo("Loading unknown campaign ID {$donationData->projectId} on-demand");
             $campaign = new Campaign();
             $campaign->setSalesforceId($donationData->projectId);
-            $campaign = $this->campaignRepository->pull($campaign);
+            try {
+                $campaign = $this->campaignRepository->pull($campaign);
+            } catch (ClientException $exception) {
+                throw new \UnexpectedValueException('Campaign does not exist');
+            }
             $this->fundRepository->pullForCampaign($campaign);
         }
 

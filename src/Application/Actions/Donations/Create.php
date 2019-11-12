@@ -50,7 +50,15 @@ class Create extends Action
             'json'
         );
 
-        $donation = $this->donationRepository->buildFromApiRequest($donationData);
+        try {
+            $donation = $this->donationRepository->buildFromApiRequest($donationData);
+        } catch (\UnexpectedValueException $exception) {
+            $message = 'Donation Create data initial model load';
+            $this->logger->warning($message . ': ' . $exception->getMessage());
+            $error = new ActionError(ActionError::BAD_REQUEST, $message);
+
+            return $this->respond(new ActionPayload(400, null, $error));
+        }
 
         try {
             if ($donation->getCampaign()->isMatched()) {
