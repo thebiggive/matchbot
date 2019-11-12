@@ -6,8 +6,7 @@ FROM quay.io/noellh/tbg-php-tmp:latest
 RUN echo 'opcache.validate_timestamps = 0' >> /usr/local/etc/php/conf.d/opcache-ecs.ini
 
 # Install the AWS CLI - needed to load in secrets safely from S3. See https://aws.amazon.com/blogs/security/how-to-manage-secrets-for-amazon-ec2-container-service-based-applications-by-using-amazon-s3-and-docker/
-# Also now installs mysql-client so we have the CLI commands to efficiently make an obfuscated DB copy.
-RUN apt-get update -qq && apt-get install -y mysql-client python unzip && \
+RUN apt-get update -qq && apt-get install -y python unzip && \
     cd /tmp && \
     curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip" && \
     unzip awscli-bundle.zip && \
