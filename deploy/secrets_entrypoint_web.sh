@@ -18,6 +18,7 @@ export $(aws s3 cp s3://${SECRETS_BUCKET_NAME}/secrets - | grep -v '^#' | xargs)
 # migrate will just be no-ops and leave the main process to start normally.
 echo "Running migrations before start if necessary..."
 composer doctrine:migrate
+composer doctrine:generate-proxies
 
 echo "Starting Apache..."
 # Call the normal web server entry-point script
