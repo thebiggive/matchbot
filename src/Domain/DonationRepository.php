@@ -18,7 +18,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /** @var FundRepository */
     private $fundRepository;
     /** @var int */
-    private $expirySeconds = 20 * 60; // 20 minutes: 15 min official timed window plus 5 mins grace.
+    private $expirySeconds = 17 * 60; // 17 minutes: 15 min official timed window plus 2 mins grace.
 
     /**
      * @param Donation $donation
