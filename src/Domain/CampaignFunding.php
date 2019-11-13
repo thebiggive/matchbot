@@ -10,7 +10,9 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ORM\Entity(repositoryClass="CampaignFundingRepository")
  * @ORM\HasLifecycleCallbacks
- * @ORM\Table
+ * @ORM\Table(indexes={
+ *   @ORM\Index(name="available_fundings", columns={"amountAvailable", "allocationOrder", "id"}),
+ * })
  */
 class CampaignFunding extends Model
 {
