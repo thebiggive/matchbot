@@ -12,11 +12,10 @@ fi
 # Load the S3 secrets file contents into the environment variables
 export $(aws s3 cp s3://${SECRETS_BUCKET_NAME}/secrets - | grep -v '^#' | xargs)
 
-composer doctrine:ensure-prod
-
 echo "Running migrations before start if necessary..."
 composer doctrine:migrate
 composer doctrine:generate-proxies
+composer doctrine:ensure-prod
 
 echo "Starting task..."
 # Call the normal CLI entry-point script, passing on script name and any other arguments
