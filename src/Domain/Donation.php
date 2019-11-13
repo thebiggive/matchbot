@@ -13,7 +13,10 @@ use Ramsey\Uuid\UuidInterface;
 /**
  * @ORM\Entity(repositoryClass="DonationRepository")
  * @ORM\HasLifecycleCallbacks
- * @ORM\Table
+ * @ORM\Table(indexes={
+ *   @ORM\Index(name="date_and_status", columns={"createdAt", "donationStatus"}),
+ *   @ORM\Index(name="salesforcePushStatus", columns={"salesforcePushStatus"}),
+ * })
  */
 class Donation extends SalesforceWriteProxy
 {
