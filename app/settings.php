@@ -9,6 +9,23 @@ return function (ContainerBuilder $containerBuilder) {
     // Global Settings Object
     $containerBuilder->addDefinitions([
         'settings' => [
+            'apiClient' => [
+                'campaign' => [
+                    'baseUri' => getenv('SALESFORCE_CAMPAIGN_API'),
+                ],
+                'donation' => [
+                    'baseUri' => getenv('SALESFORCE_DONATION_API'),
+                ],
+                'fund' => [
+                    'baseUri' => getenv('SALESFORCE_FUND_API'),
+                ],
+                'webhook' => [
+                    'baseUri' => getenv('SALESFORCE_WEBHOOK_RECEIVER'),
+                ],
+            ],
+
+            'appEnv' => getenv('APP_ENV'),
+
             'displayErrorDetails' => (getenv('APP_ENV') === 'local'),
 
             'doctrine' => [
@@ -38,20 +55,9 @@ return function (ContainerBuilder $containerBuilder) {
                 'level' => Logger::DEBUG,
             ],
 
-            'apiClient' => [
-                'campaign' => [
-                    'baseUri' => getenv('SALESFORCE_CAMPAIGN_API'),
-                ],
-                'donation' => [
-                    'baseUri' => getenv('SALESFORCE_DONATION_API'),
-                ],
-                'fund' => [
-                    'baseUri' => getenv('SALESFORCE_FUND_API'),
-                ],
-                'webhook' => [
-                    'baseUri' => getenv('SALESFORCE_WEBHOOK_RECEIVER'),
-                ],
-            ],
+            'redis' => [
+                'host' => getenv('REDIS_HOST'),
+            ]
         ],
     ]);
 };
