@@ -20,6 +20,5 @@ ADD . /var/www/html
 RUN chmod 777 /var/www/html/var/cache /var/www/html/var/doctrine
 
 RUN composer install --no-interaction --quiet --optimize-autoloader --no-dev
-RUN composer doctrine:ensure-prod
 
 EXPOSE 80

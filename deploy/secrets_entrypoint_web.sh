@@ -12,6 +12,8 @@ fi
 # Load the S3 secrets file contents into the environment variables
 export $(aws s3 cp s3://${SECRETS_BUCKET_NAME}/secrets - | grep -v '^#' | xargs)
 
+composer doctrine:ensure-prod
+
 # This is a bit hack-y because on a deploy that includes a new migration, several containers may be in
 # a race to try to run it. However because migrations are versioned and run transactionally, and we
 # call Doctrine with `--allow-no-migration`, it *should* be safe and subsequent instances' attempts to
