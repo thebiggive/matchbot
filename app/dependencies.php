@@ -5,6 +5,7 @@ declare(strict_types=1);
 use DI\ContainerBuilder;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Cache\FilesystemCache;
+use Doctrine\Common\Cache\RedisCache;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
@@ -49,9 +50,21 @@ return function (ContainerBuilder $containerBuilder) {
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
             $settings = $c->get('settings');
 
+            if ($settings['redis']['host']) {
+                $redis = new Redis();
+                $redis->connect($settings['redis']['host']);
+                $cache = new RedisCache();
+                $cache->setRedis($redis);
+                $cache->setNamespace("matchbot-{$settings['appEnv']}");
+            } else {
+                $cache = new FilesystemCache($settings['doctrine']['cache_dir']);
+            }
+
             $config = Setup::createAnnotationMetadataConfiguration(
                 $settings['doctrine']['metadata_dirs'],
-                $settings['doctrine']['dev_mode']
+                $settings['doctrine']['dev_mode'],
+                null,
+                $cache
             );
 
             $config->setMetadataDriverImpl(
@@ -61,11 +74,11 @@ return function (ContainerBuilder $containerBuilder) {
                 )
             );
 
-            $config->setMetadataCacheImpl(
-                new FilesystemCache(
-                    $settings['doctrine']['cache_dir']
-                )
-            );
+            $config->setMetadataCacheImpl($cache);
+
+            // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
+            // files indefinitely.
+            $config->setAutoGenerateProxyClasses($settings['doctrine']['dev_mode']);
 
             return EntityManager::create(
                 $settings['doctrine']['connection'],
