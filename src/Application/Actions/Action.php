@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Application\Actions;
+namespace MatchBot\Application\Actions;
 
-use App\Domain\DomainException\DomainRecordNotFoundException;
+use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -101,6 +101,9 @@ abstract class Action
     {
         $json = json_encode($payload, JSON_PRETTY_PRINT);
         $this->response->getBody()->write($json);
-        return $this->response->withHeader('Content-Type', 'application/json');
+
+        return $this->response
+            ->withStatus($payload->getStatusCode())
+            ->withHeader('Content-Type', 'application/json');
     }
 }

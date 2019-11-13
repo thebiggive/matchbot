@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Application\Actions;
+namespace MatchBot\Application\Actions;
 
 use JsonSerializable;
 
@@ -67,14 +67,10 @@ class ActionPayload implements JsonSerializable
      */
     public function jsonSerialize()
     {
-        $payload = [
-            'statusCode' => $this->statusCode,
-        ];
-
         if ($this->data !== null) {
-            $payload['data'] = $this->data;
+            $payload = $this->data;
         } elseif ($this->error !== null) {
-            $payload['error'] = $this->error;
+            $payload = ['error' => $this->error];
         }
 
         return $payload;
