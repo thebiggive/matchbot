@@ -61,6 +61,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 throw new \UnexpectedValueException('Campaign does not exist');
             }
             $this->fundRepository->pullForCampaign($campaign);
+
+            $this->getEntityManager()->flush();
         }
 
         $donation = new Donation();
