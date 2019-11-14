@@ -7,14 +7,16 @@ use MatchBot\Application\Actions\Hooks;
 use MatchBot\Application\Auth\DonationHookAuthMiddleware;
 use MatchBot\Application\Auth\DonationPublicAuthMiddleware;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Slim\App;
 use Slim\Exception\HttpNotFoundException;
-use Slim\Psr7\Response;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app) {
-    $app->get('/ping', function ($request, $response, $args) {
-        return new Response(200);
+    $app->get('/ping', function (RequestInterface $request, ResponseInterface $response) {
+        $response->getBody()->write('OK');
+
+        return $response;
     });
 
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
