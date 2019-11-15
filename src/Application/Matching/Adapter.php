@@ -10,16 +10,30 @@ abstract class Adapter
 {
     /** @var bool */
     private $inTransaction = false;
-    /** @var string[] Amounts as bcmath precision strings. Associative, keyed on fund ID. */
-    private $knownAmounts = [];
 
     /**
      * @param callable $function
      * @return mixed The given `$function`'s return value
      */
-    abstract public function doRunTransactionally(callable $function);
-    abstract protected function doGetAmount(CampaignFunding $funding): string;
-    abstract protected function doSetAmount(CampaignFunding $funding, string $amount): bool;
+    abstract protected function doRunTransactionally(callable $function);
+
+    /**
+     * Release funds atomically or within a transaction.
+     *
+     * @param CampaignFunding $funding
+     * @param string $amount
+     * @return string New amount as bcmath-ready string
+     */
+    abstract protected function doAddAmount(CampaignFunding $funding, string $amount): string;
+
+    /**
+     * Allocate funds atomically or within a transaction.
+     *
+     * @param CampaignFunding $funding
+     * @param string $amount
+     * @return string New amount as bcmath-ready string
+     */
+    abstract protected function doSubtractAmount(CampaignFunding $funding, string $amount): string;
 
     /**
      * @param callable $function
@@ -34,51 +48,21 @@ abstract class Adapter
         return $result;
     }
 
-    /**
-     * Gets amount available in the fund, looking it up from the store only the first time each fund is used in the
-     * transaction.
-     *
-     * @param CampaignFunding $funding
-     * @return string
-     */
-    public function getAmount(CampaignFunding $funding): string
+    public function addAmount(CampaignFunding $funding, string $amount): string
     {
         if (!$this->inTransaction) {
             throw new \LogicException('Matching adapter work must be in a transaction');
         }
 
-        if (!isset($this->knownAmounts[$funding->getId()])) {
-            $this->knownAmounts[$funding->getId()] = $this->doGetAmount($funding);
-        }
-
-        return $this->knownAmounts[$funding->getId()];
+        return $this->doAddAmount($funding, $amount);
     }
 
-    public function addAmount(CampaignFunding $funding, string $amount): void
+    public function subtractAmount(CampaignFunding $funding, string $amount): string
     {
         if (!$this->inTransaction) {
             throw new \LogicException('Matching adapter work must be in a transaction');
         }
 
-        $startAmount = $this->getAmount($funding);
-        $newAmount = bcadd($startAmount, $amount, 2);
-
-        $this->doSetAmount($funding, $amount);
-
-        $this->knownAmounts[$funding->getId()] = $newAmount;
-    }
-
-    public function subtractAmount(CampaignFunding $funding, string $amount): void
-    {
-        if (!$this->inTransaction) {
-            throw new \LogicException('Matching adapter work must be in a transaction');
-        }
-
-        $startAmount = $this->getAmount($funding);
-        $newAmount = bcsub($startAmount, $amount, 2);
-
-        $this->doSetAmount($funding, $newAmount);
-
-        $this->knownAmounts[$funding->getId()] = $newAmount;
+        return $this->doSubtractAmount($funding, $amount);
     }
 }

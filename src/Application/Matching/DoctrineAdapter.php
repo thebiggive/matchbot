@@ -23,10 +23,13 @@ class DoctrineAdapter extends Adapter
     public function doRunTransactionally(callable $function)
     {
         try {
-            return $this->entityManager->transactional($function);
+            $result = $this->entityManager->transactional($function);
         } catch (DBALException $exception) {
             throw $this->buildLockException($exception);
         }
+
+        // Work around Doctrine bailing out of transaction with bools when we expect an array of withdrawals.
+        return (is_bool($result) ? [] : $result);
     }
 
     protected function doGetAmount(CampaignFunding $fund): string
@@ -47,13 +50,27 @@ class DoctrineAdapter extends Adapter
         return $fund->getAmountAvailable();
     }
 
-    protected function doSetAmount(CampaignFunding $fund, string $amount): bool
+    protected function doAddAmount(CampaignFunding $funding, string $amount): string
+    {
+        $newAmount = bcadd($funding->getAmountAvailable(), $amount, 2);
+        $this->setAmount($funding, $newAmount);
+
+        return $newAmount;
+    }
+
+    protected function doSubtractAmount(CampaignFunding $funding, string $amount): string
+    {
+        $newAmount = bcsub($funding->getAmountAvailable(), $amount, 2);
+        $this->setAmount($funding, $newAmount);
+
+        return $newAmount;
+    }
+
+    private function setAmount(CampaignFunding $funding, string $amount): void
     {
         try {
-            $fund->setAmountAvailable($amount);
-            $this->entityManager->persist($fund);
-
-            return true;
+            $funding->setAmountAvailable($amount);
+            $this->entityManager->persist($funding);
         } catch (DBALException $exception) {
             throw $this->buildLockException($exception);
         }

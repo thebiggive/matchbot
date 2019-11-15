@@ -50,7 +50,9 @@ return function (ContainerBuilder $containerBuilder) {
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
             $settings = $c->get('settings');
 
-            $redis = $c->get(Redis::class);
+            // Must be a distinct instance from the one used for fund allocation maths.
+            $redis = new Redis();
+            $redis->connect($c->get('settings')['redis']['host']);
             $cache = new RedisCache();
             $cache->setRedis($redis);
             $cache->setNamespace("matchbot-{$settings['appEnv']}");
@@ -108,15 +110,18 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
-            // TODO pick an adapter
 //            return new Matching\DoctrineAdapter($c->get(EntityManagerInterface::class));
-            return new Matching\RedisAdapter($c->get(Redis::class), $c->get(EntityManagerInterface::class));
+//            return new Matching\LockingRedisAdapter($c->get(Redis::class), $c->get(EntityManagerInterface::class));
+            return new Matching\OptimisticRedisAdapter($c->get(Redis::class), $c->get(EntityManagerInterface::class));
         },
 
+        /**
+         * Do NOT pass this instance to Doctrine, which will set it to PHP serialisation and break incr/decr math!
+         */
         Redis::class => static function (ContainerInterface $c): Redis {
             $redis = new Redis();
             $redis->connect($c->get('settings')['redis']['host']);
-            $redis->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP);
+            $redis->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_NONE); // Required for incr/decr commands
 
             return $redis;
         },
