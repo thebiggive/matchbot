@@ -80,7 +80,7 @@ return function (ContainerBuilder $containerBuilder) {
             // files indefinitely.
             $config->setAutoGenerateProxyClasses($settings['doctrine']['dev_mode']);
 
-            $config->setProxyDir($settings['doctrine']['cache_dir'] . '/');
+            $config->setProxyDir($settings['doctrine']['cache_dir'] . '/proxies');
 
             return EntityManager::create(
                 $settings['doctrine']['connection'],
