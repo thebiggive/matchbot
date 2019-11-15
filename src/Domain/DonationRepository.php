@@ -10,6 +10,7 @@ use Doctrine\DBAL\Exception\RetryableException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Client\BadRequestException;
+use MatchBot\Domain\DomainException\DomainLockContentionException;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
 
 class DonationRepository extends SalesforceWriteProxyRepository
@@ -116,16 +117,27 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
                 $allocationDone = true;
             } catch (RetryableException $exception) {
+                $this->getEntityManager()->rollback(); // Free up database locks
+
                 $allocationTries++;
-            } catch (DBALException $exception) {
-                // Not retryable in this case => free up the lock
-                $this->getEntityManager()->rollback();
+                $this->logError(
+                    'ID ' . $donation->getId() . ' got RECOVERABLE ' . get_class($exception) .
+                    ' allocating match funds: ' . $exception->getMessage() . ' - try #' . $allocationTries
+                );
+            } catch (\Exception $exception) { // Includes non-retryable `DBALException`s
+                $this->getEntityManager()->rollback(); // Free up database locks
                 $this->logError(
                     'ID ' . $donation->getId() . ' got ' . get_class($exception) .
                     ' allocating match funds: ' . $exception->getMessage()
                 );
                 throw $exception; // Re-throw exception after logging the details if not recoverable
             }
+        }
+
+        if (!$allocationDone) {
+            $this->logger->error('Donation Create failed to match after '  . $allocationTries . ' tries');
+
+            throw new DomainLockContentionException();
         }
 
         $this->logInfo('ID ' . $donation->getUuid() . ' allocated match funds totalling ' . $amountMatched);

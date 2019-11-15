@@ -11,6 +11,7 @@ use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\Token;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
+use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
@@ -74,6 +75,10 @@ class Create extends Action
             $error = new ActionError(ActionError::BAD_REQUEST, $message);
 
             return $this->respond(new ActionPayload(400, null, $error));
+        } catch (DomainLockContentionException $exception) {
+            $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
+
+            return $this->respond(new ActionPayload(503, null, $error));
         }
 
         $response = new DonationCreatedResponse();
