@@ -125,7 +125,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
                 $allocationDone = true;
             } catch (RetryableException $exception) {
-                $this->getEntityManager()->rollback(); // Free up database locks
+                try {
+                    $this->getEntityManager()->rollback(); // Free up database locks
+                } catch (ConnectionException $rollbackException) {
+                    // There might be no active transaction if Doctrine already bailed out and closed it. This may or
+                    // may not be the case depending on the main $exception we just caught.
+                }
                 $allocationTries++;
                 $waitTime = round(microtime(true) - $lockStartTime, 6);
                 $this->logError(
