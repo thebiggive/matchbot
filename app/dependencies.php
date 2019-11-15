@@ -108,13 +108,15 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
+            // TODO pick an adapter
 //            return new Matching\DoctrineAdapter($c->get(EntityManagerInterface::class));
-            return new Matching\RedisAdapter($c->get(Redis::class));
+            return new Matching\RedisAdapter($c->get(Redis::class), $c->get(EntityManagerInterface::class));
         },
 
         Redis::class => static function (ContainerInterface $c): Redis {
             $redis = new Redis();
             $redis->connect($c->get('settings')['redis']['host']);
+            $redis->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_PHP);
 
             return $redis;
         },

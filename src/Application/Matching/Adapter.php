@@ -9,25 +9,29 @@ use MatchBot\Domain\CampaignFunding;
 abstract class Adapter
 {
     /** @var bool */
-    private $started = false;
+    private $inTransaction = false;
     /** @var string[] Amounts as bcmath precision strings. Associative, keyed on fund ID. */
     private $knownAmounts = [];
 
-    abstract protected function doStart(): void;
-    abstract protected function doFinish(): void;
+    /**
+     * @param callable $function
+     * @return mixed The given `$function`'s return value
+     */
+    abstract public function doRunTransactionally(callable $function);
     abstract protected function doGetAmount(CampaignFunding $funding): string;
-    abstract protected function doSetAmount(CampaignFunding $funding, string $amount): void;
+    abstract protected function doSetAmount(CampaignFunding $funding, string $amount): bool;
 
-    public function start(): void
+    /**
+     * @param callable $function
+     * @return mixed The given `$function`'s return value
+     */
+    public function runTransactionally(callable $function)
     {
-        $this->doStart();
-        $this->started = true;
-    }
+        $this->inTransaction = true;
+        $result = $this->doRunTransactionally($function);
+        $this->inTransaction = false;
 
-    public function finish(): void
-    {
-        $this->doFinish();
-        $this->started = false;
+        return $result;
     }
 
     /**
@@ -39,8 +43,8 @@ abstract class Adapter
      */
     public function getAmount(CampaignFunding $funding): string
     {
-        if (!$this->started) {
-            throw new \LogicException('Matching adapter work must be between start() and finish() calls');
+        if (!$this->inTransaction) {
+            throw new \LogicException('Matching adapter work must be in a transaction');
         }
 
         if (!isset($this->knownAmounts[$funding->getId()])) {
@@ -52,8 +56,8 @@ abstract class Adapter
 
     public function addAmount(CampaignFunding $funding, string $amount): void
     {
-        if (!$this->started) {
-            throw new \LogicException('Matching adapter work must be between start() and finish() calls');
+        if (!$this->inTransaction) {
+            throw new \LogicException('Matching adapter work must be in a transaction');
         }
 
         $startAmount = $this->getAmount($funding);
@@ -66,8 +70,8 @@ abstract class Adapter
 
     public function subtractAmount(CampaignFunding $funding, string $amount): void
     {
-        if (!$this->started) {
-            throw new \LogicException('Matching adapter work must be between start() and finish() calls');
+        if (!$this->inTransaction) {
+            throw new \LogicException('Matching adapter work must be in a transaction');
         }
 
         $startAmount = $this->getAmount($funding);

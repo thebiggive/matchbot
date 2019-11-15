@@ -20,20 +20,11 @@ class DoctrineAdapter extends Adapter
         $this->entityManager = $entityManager;
     }
 
-    protected function doStart(): void
+    public function doRunTransactionally(callable $function)
     {
         try {
-            $this->entityManager->beginTransaction();
-        } catch (DBALException $exception) {
-            throw $this->buildLockException($exception);
-        }
-    }
-
-    protected function doFinish(): void
-    {
-        try {
-            $this->entityManager->commit();
-        } catch (DBALException $exception) {
+            return $this->entityManager->transactional($function);
+        }  catch (DBALException $exception) {
             throw $this->buildLockException($exception);
         }
     }
@@ -56,11 +47,13 @@ class DoctrineAdapter extends Adapter
         return $fund->getAmountAvailable();
     }
 
-    protected function doSetAmount(CampaignFunding $fund, string $amount): void
+    protected function doSetAmount(CampaignFunding $fund, string $amount): bool
     {
         try {
             $fund->setAmountAvailable($amount);
             $this->entityManager->persist($fund);
+
+            return true;
         } catch (DBALException $exception) {
             throw $this->buildLockException($exception);
         }

@@ -112,11 +112,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     ->getAvailableFundings($donation->getCampaign());
 
                 $lockStartTime = microtime(true);
-                $this->matchingAdapter->start();
-
-                $newWithdrawals = $this->safelyAllocateFunds($donation, $likelyAvailableFunds);
-
-                $this->matchingAdapter->finish();
+                $newWithdrawals = $this->matchingAdapter->runTransactionally(function () use ($donation, $likelyAvailableFunds) {
+                    $this->safelyAllocateFunds($donation, $likelyAvailableFunds);
+                });
                 $lockEndTime = microtime(true);
 
                 $this->persistQueued();
@@ -176,17 +174,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $totalAmountReleased = '0.00';
             try {
                 $lockStartTime = microtime(true);
-                $this->matchingAdapter->start();
-
-                foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-                    $funding = $fundingWithdrawal->getCampaignFunding();
-                    $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
-                    $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
-                }
-
-                $this->matchingAdapter->finish();
+                $totalAmountReleased = $this->matchingAdapter->runTransactionally(function () use ($donation, $totalAmountReleased) {
+                    foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+                        $funding = $fundingWithdrawal->getCampaignFunding();
+                        $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
+                        $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
+                    }
+                });
                 $lockEndTime = microtime(true);
-
                 $releaseDone = true;
             } catch (Matching\RetryableLockException $exception) {
                 $releaseTries++;
