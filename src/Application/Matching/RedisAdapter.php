@@ -49,9 +49,7 @@ class RedisAdapter extends Adapter
 
     protected function doGetAmount(CampaignFunding $funding): string
     {
-        $value = $this->getMutex()->synchronized(function () use ($funding) {
-            return $this->redis->get($this->buildKey($funding));
-        });
+        $value = $this->redis->get($this->buildKey($funding));
 
         if ($value === false) {
             $value = $funding->getAmountAvailable();
@@ -65,9 +63,7 @@ class RedisAdapter extends Adapter
 
     public function doSetAmount(CampaignFunding $funding, string $amount): bool
     {
-        $setResult = $this->getMutex()->check(function () use ($funding, $amount) {
-            return $this->redis->set($this->buildKey($funding), $amount);
-        });
+        $setResult = $this->redis->set($this->buildKey($funding), $amount);
 
         if (!$setResult) {
             return false;

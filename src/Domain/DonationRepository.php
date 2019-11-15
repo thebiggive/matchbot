@@ -112,9 +112,11 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     ->getAvailableFundings($donation->getCampaign());
 
                 $lockStartTime = microtime(true);
-                $newWithdrawals = $this->matchingAdapter->runTransactionally(function () use ($donation, $likelyAvailableFunds) {
-                    $this->safelyAllocateFunds($donation, $likelyAvailableFunds);
-                });
+                $newWithdrawals = $this->matchingAdapter->runTransactionally(
+                    function () use ($donation, $likelyAvailableFunds) {
+                        return $this->safelyAllocateFunds($donation, $likelyAvailableFunds);
+                    }
+                );
                 $lockEndTime = microtime(true);
 
                 $this->persistQueued();
