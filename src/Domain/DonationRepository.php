@@ -118,12 +118,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $allocationDone = true;
             } catch (RetryableException $exception) {
                 $this->getEntityManager()->rollback(); // Free up database locks
-
                 $allocationTries++;
                 $this->logError(
                     'ID ' . $donation->getId() . ' got RECOVERABLE ' . get_class($exception) .
                     ' allocating match funds: ' . $exception->getMessage() . ' - try #' . $allocationTries
                 );
+                usleep(random_int(1, 1000000)); // Wait between 0 and 1 seconds before retrying
             } catch (\Exception $exception) { // Includes non-retryable `DBALException`s
                 $this->getEntityManager()->rollback(); // Free up database locks
                 $this->logError(

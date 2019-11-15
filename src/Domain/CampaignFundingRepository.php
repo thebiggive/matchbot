@@ -18,7 +18,7 @@ class CampaignFundingRepository extends EntityRepository
      * @link https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/transactions-and-concurrency.html#locking-support
      *
      * @param Campaign $campaign
-     * @return CampaignFunding[]
+     * @return CampaignFunding[]    Sorted in the order funds should be allocated
      * @throws \Doctrine\ORM\TransactionRequiredException if called this outside a surrounding transaction
      */
     public function getAvailableFundings(Campaign $campaign): array
