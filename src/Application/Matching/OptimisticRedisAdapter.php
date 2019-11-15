@@ -58,7 +58,12 @@ class OptimisticRedisAdapter extends Adapter
             throw new RetryableLockException('Fund balance would drop below zero with that allocation');
         }
 
-        return ((string) ($newValueInPence / 100));
+        $newValue = (string) ($newValueInPence / 100);
+
+        $funding->setAmountAvailable($newValue);
+        $this->fundingsToPersist[] = $funding;
+
+        return $newValue;
     }
 
     public function doAddAmount(CampaignFunding $funding, string $amount): string
