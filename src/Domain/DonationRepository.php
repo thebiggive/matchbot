@@ -124,6 +124,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     'ID ' . $donation->getId() . ' got ' . get_class($exception) .
                     ' allocating match funds: ' . $exception->getMessage()
                 );
+                throw $exception; // Re-throw exception after logging the details if not recoverable
             }
         }
 
@@ -162,14 +163,15 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $this->getEntityManager()->commit();
             $lockEndTime = microtime(true);
         } catch (DBALException $exception) {
+            // TODO implement retries for releasing match funds too
+
             // Release the lock ASAP, then log what went wrong
             $this->getEntityManager()->rollback();
             $this->logError(
                 'ID ' . $donation->getId() . ' got ' . get_class($exception) .
                 ' releasing match funds: ' . $exception->getMessage()
             );
-
-            return;
+            throw $exception; // Re-throw exception after logging the details if not recoverable
         }
 
         $this->logInfo("Taking from ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
