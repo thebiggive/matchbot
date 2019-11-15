@@ -119,16 +119,18 @@ class DonationRepository extends SalesforceWriteProxyRepository
             } catch (RetryableException $exception) {
                 $this->getEntityManager()->rollback(); // Free up database locks
                 $allocationTries++;
+                $waitTime = microtime(true) - $lockStartTime;
                 $this->logError(
-                    'ID ' . $donation->getId() . ' got RECOVERABLE ' . get_class($exception) .
-                    ' allocating match funds: ' . $exception->getMessage() . ' - try #' . $allocationTries
+                    "Match allocate RECOVERABLE error: ID {$donation->getId()} got " . get_class($exception) .
+                    " after {$waitTime}s on try #$allocationTries: {$exception->getMessage()}"
                 );
                 usleep(random_int(1, 1000000)); // Wait between 0 and 1 seconds before retrying
             } catch (\Exception $exception) { // Includes non-retryable `DBALException`s
                 $this->getEntityManager()->rollback(); // Free up database locks
+                $waitTime = microtime(true) - $lockStartTime;
                 $this->logError(
-                    'ID ' . $donation->getId() . ' got ' . get_class($exception) .
-                    ' allocating match funds: ' . $exception->getMessage()
+                    "Match allocate FINAL error: ID {$donation->getId()} got " . get_class($exception) .
+                    " after {$waitTime}s: {$exception->getMessage()}"
                 );
                 throw $exception; // Re-throw exception after logging the details if not recoverable
             }
