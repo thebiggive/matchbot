@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\DBAL\ConnectionException;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Exception\RetryableException;
 use GuzzleHttp\Exception\ClientException;
@@ -119,17 +120,22 @@ class DonationRepository extends SalesforceWriteProxyRepository
             } catch (RetryableException $exception) {
                 $this->getEntityManager()->rollback(); // Free up database locks
                 $allocationTries++;
-                $waitTime = microtime(true) - $lockStartTime;
+                $waitTime = round(microtime(true) - $lockStartTime, 6);
                 $this->logError(
-                    "Match allocate RECOVERABLE error: ID {$donation->getId()} got " . get_class($exception) .
+                    "Match allocate RECOVERABLE error: ID {$donation->getUuid()} got " . get_class($exception) .
                     " after {$waitTime}s on try #$allocationTries: {$exception->getMessage()}"
                 );
                 usleep(random_int(1, 1000000)); // Wait between 0 and 1 seconds before retrying
             } catch (\Exception $exception) { // Includes non-retryable `DBALException`s
-                $this->getEntityManager()->rollback(); // Free up database locks
-                $waitTime = microtime(true) - $lockStartTime;
+                try {
+                    $this->getEntityManager()->rollback(); // Free up database locks
+                } catch (ConnectionException $rollbackException) {
+                    // There might be no active transaction if Doctrine already bailed out and closed it. This may or
+                    // may not be the case depending on the main $exception we just caught.
+                }
+                $waitTime = round(microtime(true) - $lockStartTime, 6);
                 $this->logError(
-                    "Match allocate FINAL error: ID {$donation->getId()} got " . get_class($exception) .
+                    "Match allocate FINAL error: ID {$donation->getUuid()} got " . get_class($exception) .
                     " after {$waitTime}s: {$exception->getMessage()}"
                 );
                 throw $exception; // Re-throw exception after logging the details if not recoverable
@@ -137,7 +143,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         if (!$allocationDone) {
-            $this->logger->error('Donation Create failed to match after '  . $allocationTries . ' tries');
+            $this->logger->error(
+                "Match allocate FINAL error: ID {$donation->getUuid()} failed matching after $allocationTries tries"
+            );
 
             throw new DomainLockContentionException();
         }
@@ -182,7 +190,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             // Release the lock ASAP, then log what went wrong
             $this->getEntityManager()->rollback();
             $this->logError(
-                'ID ' . $donation->getId() . ' got ' . get_class($exception) .
+                'ID ' . $donation->getUuid() . ' got ' . get_class($exception) .
                 ' releasing match funds: ' . $exception->getMessage()
             );
             throw $exception; // Re-throw exception after logging the details if not recoverable
