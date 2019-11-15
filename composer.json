@@ -21,6 +21,7 @@
         "doctrine/orm": "^2.6",
         "firebase/php-jwt": "^5.0",
         "guzzlehttp/guzzle": "^6.3",
+        "malkusch/lock": "^2.1",
         "monolog/monolog": "^2.0",
         "php-di/php-di": "^6.0",
         "ramsey/uuid-doctrine": "^1.5",

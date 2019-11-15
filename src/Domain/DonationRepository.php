@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
-use Doctrine\DBAL\ConnectionException;
-use Doctrine\DBAL\DBALException;
-use Doctrine\DBAL\Exception\RetryableException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Matching;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
@@ -23,7 +21,16 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /** @var int */
     private $expirySeconds = 17 * 60; // 17 minutes: 15 min official timed window plus 2 mins grace.
     /** @var int */
-    private $maxAllocationTries = 5;
+    private $maxLockTries = 5;
+    /** @var Matching\Adapter */
+    private $matchingAdapter;
+    /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
+    private $queuedForPersist;
+
+    public function setMatchingAdapter(Matching\Adapter $adapter)
+    {
+        $this->matchingAdapter = $adapter;
+    }
 
     /**
      * @param Donation $donation
@@ -94,7 +101,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     {
         $allocationDone = false;
         $allocationTries = 0;
-        while (!$allocationDone && $allocationTries < $this->maxAllocationTries) {
+        while (!$allocationDone && $allocationTries < $this->maxLockTries) {
             try {
                 // We need write-ready locks for `CampaignFunding`s but also to keep the time we have them as short
                 // as possible, so get the prelimary list without a lock, before the transaction.
@@ -105,12 +112,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     ->getAvailableFundings($donation->getCampaign());
 
                 $lockStartTime = microtime(true);
-                $this->getEntityManager()->beginTransaction();
-
-                $newWithdrawals = $this->safelyAllocateFunds($donation, $likelyAvailableFunds);
-
-                $this->getEntityManager()->commit();
+                $newWithdrawals = $this->matchingAdapter->runTransactionally(
+                    function () use ($donation, $likelyAvailableFunds) {
+                        return $this->safelyAllocateFunds($donation, $likelyAvailableFunds);
+                    }
+                );
                 $lockEndTime = microtime(true);
+
+                $this->persistQueued();
 
                 // We end the transaction prior to inserting the funding withdrawal records, to keep the lock time
                 // short. These are new entities, so except in a system crash the withdrawal totals will almost
@@ -124,13 +133,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $this->getEntityManager()->flush();
 
                 $allocationDone = true;
-            } catch (RetryableException $exception) {
-                try {
-                    $this->getEntityManager()->rollback(); // Free up database locks
-                } catch (ConnectionException $rollbackException) {
-                    // There might be no active transaction if Doctrine already bailed out and closed it. This may or
-                    // may not be the case depending on the main $exception we just caught.
-                }
+            } catch (Matching\RetryableLockException $exception) {
                 $allocationTries++;
                 $waitTime = round(microtime(true) - $lockStartTime, 6);
                 $this->logError(
@@ -138,17 +141,11 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     " after {$waitTime}s on try #$allocationTries: {$exception->getMessage()}"
                 );
                 usleep(random_int(1, 1000000)); // Wait between 0 and 1 seconds before retrying
-            } catch (\Exception $exception) { // Includes non-retryable `DBALException`s
-                try {
-                    $this->getEntityManager()->rollback(); // Free up database locks
-                } catch (ConnectionException $rollbackException) {
-                    // There might be no active transaction if Doctrine already bailed out and closed it. This may or
-                    // may not be the case depending on the main $exception we just caught.
-                }
+            } catch (Matching\TerminalLockException $exception) { // Includes non-retryable `DBALException`s
                 $waitTime = round(microtime(true) - $lockStartTime, 6);
                 $this->logError(
                     "Match allocate FINAL error: ID {$donation->getUuid()} got " . get_class($exception) .
-                    " after {$waitTime}s: {$exception->getMessage()}"
+                    " after {$waitTime}s on try #$allocationTries: {$exception->getMessage()}"
                 );
                 throw $exception; // Re-throw exception after logging the details if not recoverable
             }
@@ -172,40 +169,47 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     public function releaseMatchFunds(Donation $donation): void
     {
-        $totalAmountReleased = '0.00';
-        $lockStartTime = microtime(true);
+        $releaseTries = 0;
+        $releaseDone = false;
 
-        // We need all `CampaignFunding`s to be updated in the same transaction as the withdrawal deletions.
-        $this->getEntityManager()->beginTransaction();
-
-        // The point of this is just to lock the fundings we know we will update alongside deletions below.
-        // We don't directly use the returned Doctrine objects because `getCampaignFunding()` gets the same ones
-        // in the `foreach` loop where we're deleting FundingWithdrawals.
-        $this->getEntityManager()->getRepository(CampaignFunding::class)->getDonationFundings($donation);
-
-        try {
-            foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-                $funding = $fundingWithdrawal->getCampaignFunding();
-                $amountAvailable = bcadd($funding->getAmountAvailable(), $fundingWithdrawal->getAmount(), 2);
-                $funding->setAmountAvailable($amountAvailable);
-                $this->getEntityManager()->remove($fundingWithdrawal);
-                $this->getEntityManager()->persist($funding);
-
-                $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
+        while (!$releaseDone && $releaseTries < $this->maxLockTries) {
+            $totalAmountReleased = '0.00';
+            try {
+                $lockStartTime = microtime(true);
+                $totalAmountReleased = $this->matchingAdapter->runTransactionally(
+                    function () use ($donation, $totalAmountReleased) {
+                        foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+                            $funding = $fundingWithdrawal->getCampaignFunding();
+                            $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
+                            $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
+                        }
+                    }
+                );
+                $lockEndTime = microtime(true);
+                $releaseDone = true;
+            } catch (Matching\RetryableLockException $exception) {
+                $releaseTries++;
+                $waitTime = round(microtime(true) - $lockStartTime, 6);
+                $this->logError(
+                    "Match release RECOVERABLE error: ID {$donation->getUuid()} got " . get_class($exception) .
+                    " after {$waitTime}s on try #$releaseTries: {$exception->getMessage()}"
+                );
+                usleep(random_int(0, 1000000)); // Wait between 0 and 1 seconds before retrying
+            } catch (Matching\TerminalLockException $exception) {
+                $this->logError(
+                    'Match release FINAL error: ID ' . $donation->getUuid() . ' got ' . get_class($exception) .
+                    " after {$waitTime}s on try #$releaseTries: {$exception->getMessage()}"
+                );
+                throw $exception; // Re-throw exception after logging the details if not recoverable
             }
-            $this->getEntityManager()->flush();
-            $this->getEntityManager()->commit();
-            $lockEndTime = microtime(true);
-        } catch (DBALException $exception) {
-            // TODO implement retries for releasing match funds too
+        }
 
-            // Release the lock ASAP, then log what went wrong
-            $this->getEntityManager()->rollback();
-            $this->logError(
-                'ID ' . $donation->getUuid() . ' got ' . get_class($exception) .
-                ' releasing match funds: ' . $exception->getMessage()
+        if (!$releaseDone) {
+            $this->logger->error(
+                "Match release FINAL error: ID {$donation->getUuid()} failed releasing after $releaseTries tries"
             );
-            throw $exception; // Re-throw exception after logging the details if not recoverable
+
+            throw new DomainLockContentionException();
         }
 
         $this->logInfo("Taking from ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
@@ -267,11 +271,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // Loop as long as there are still campaign funds not allocated and we have allocated less than the donation
         // amount
         while ($currentFundingIndex < count($fundings) && bccomp($amountLeftToMatch, '0.00', 2) === 1) {
-            $funding = $this->getEntityManager()
-                ->getRepository(CampaignFunding::class)
-                ->getOneWithWriteLock($fundings[$currentFundingIndex]);
+            $funding = $fundings[$currentFundingIndex];
+            $startAmountAvailable = $this->matchingAdapter->getAmount($fundings[$currentFundingIndex]);
 
-            $startAmountAvailable = $funding->getAmountAvailable();
             if (bccomp($funding->getAmountAvailable(), $amountLeftToMatch, 2) === -1) {
                 $amountToAllocateNow = $startAmountAvailable;
             } else {
@@ -280,8 +282,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
             $amountLeftToMatch = bcsub($amountLeftToMatch, $amountToAllocateNow, 2);
 
-            $funding->setAmountAvailable(bcsub($startAmountAvailable, $amountToAllocateNow, 2));
-            $this->getEntityManager()->persist($funding);
+            $this->matchingAdapter->subtractAmount($funding, $amountToAllocateNow);
 
             $withdrawal = new FundingWithdrawal();
             $withdrawal->setDonation($donation);
@@ -289,8 +290,21 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $withdrawal->setAmount($amountToAllocateNow);
             $newWithdrawals[] = $withdrawal;
         }
-        $this->getEntityManager()->persist($donation);
+
+        $this->queueForPersist($donation);
 
         return $newWithdrawals;
+    }
+
+    private function queueForPersist(Donation $donation): void
+    {
+        $this->queuedForPersist[] = $donation;
+    }
+
+    private function persistQueued(): void
+    {
+        foreach ($this->queuedForPersist as $donation) {
+            $this->getEntityManager()->persist($donation);
+        }
     }
 }
