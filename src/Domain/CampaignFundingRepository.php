@@ -29,11 +29,9 @@ class CampaignFundingRepository extends EntityRepository
             AND cf.amountAvailable > 0
             ORDER BY cf.allocationOrder, cf.id
         ');
-        $query->setParameter('campaign', new ArrayCollection([$campaign->getId()]));
-        $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
-        $query->execute();
+        $query->setParameter('campaign', $campaign->getId());
 
-        return $query->getResult();
+        return $this->getWithWriteLock($query->getResult());
     }
 
     /**
@@ -51,17 +49,10 @@ class CampaignFundingRepository extends EntityRepository
         foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
             $campaignFundingIds[] = $fundingWithdrawal->getCampaignFunding()->getId();
         }
-        $this->findBy(['id' => $campaignFundingIds]);
-        // While this is a simple one, we use a custom Query in order to set a pessimistic lock.
-        $query = $this->getEntityManager()->createQuery('
-            SELECT cf FROM MatchBot\Domain\CampaignFunding cf
-            WHERE cf.id IN (:campaignFundings)
-        ');
-        $query->setParameter('campaignFundings', $campaignFundingIds);
-        $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
-        $query->execute();
 
-        return $query->getResult();
+        return $this->getWithWriteLock(
+            $this->findBy(['id' => $campaignFundingIds])
+        );
     }
 
     public function getFunding(Campaign $campaign, Fund $fund): ?CampaignFunding
@@ -76,5 +67,19 @@ class CampaignFundingRepository extends EntityRepository
         $query->execute();
 
         return $query->getOneOrNullResult();
+    }
+
+    /**
+     * @param CampaignFunding[] $campaignFundings
+     * @return CampaignFunding[] The `CampaignFunding`s passed in, but with the latest data + pessimistic write lock
+     */
+    private function getWithWriteLock(array $campaignFundings): array
+    {
+        $fundingsLocked = [];
+        foreach ($campaignFundings as $funding) {
+            $fundingsLocked[] = $this->find($funding->getId(), LockMode::PESSIMISTIC_WRITE);
+        }
+
+        return $fundingsLocked;
     }
 }
