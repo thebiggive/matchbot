@@ -13,12 +13,12 @@ use malkusch\lock\mutex\PHPRedisMutex;
 use MatchBot\Domain\CampaignFunding;
 use Redis;
 
-class RedisAdapter extends Adapter
+class LockingRedisAdapter extends Adapter
 {
     /** @var EntityManagerInterface */
     private $entityManager;
     /** @var CampaignFunding[] */
-    private $fundingsToPersist;
+    private $fundingsToPersist = [];
     /** @var Mutex */
     private $mutex;
     /** @var Redis */
@@ -47,21 +47,7 @@ class RedisAdapter extends Adapter
         return $result;
     }
 
-    protected function doGetAmount(CampaignFunding $funding): string
-    {
-        $value = $this->redis->get($this->buildKey($funding));
-
-        if ($value === false) {
-            $value = $funding->getAmountAvailable();
-            if (!$this->doSetAmount($funding, $value)) {
-                throw new \LogicException('Could not set initial value in Redis');
-            }
-        }
-
-        return $value;
-    }
-
-    public function doSetAmount(CampaignFunding $funding, string $amount): bool
+    private function setAmount(CampaignFunding $funding, string $amount): bool
     {
         $setResult = $this->redis->set($this->buildKey($funding), $amount);
 
@@ -73,6 +59,32 @@ class RedisAdapter extends Adapter
         $this->fundingsToPersist[] = $funding;
 
         return true;
+    }
+
+    protected function doAddAmount(CampaignFunding $funding, string $amount): string
+    {
+        // If considering using this in anger, look at setnx() for this one too, as with OptimisticRedisAdapter.
+        $initialValue = $this->redis->get($this->buildKey($funding));
+        if ($initialValue === false) {
+            $initialValue = $funding->getAmountAvailable();
+        }
+        $newAmount = bcadd($initialValue, $amount, 2);
+        $this->setAmount($funding, $newAmount);
+
+        return $newAmount;
+    }
+
+    protected function doSubtractAmount(CampaignFunding $funding, string $amount): string
+    {
+        // If considering using this in anger, look at setnx() for this one too, as with OptimisticRedisAdapter.
+        $initialValue = $this->redis->get($this->buildKey($funding));
+        if ($initialValue === false) {
+            $initialValue = $funding->getAmountAvailable();
+        }
+        $newAmount = bcsub($initialValue, $amount, 2);
+        $this->setAmount($funding, $newAmount);
+
+        return $newAmount;
     }
 
     private function buildKey(CampaignFunding $funding)

@@ -140,7 +140,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     "Match allocate RECOVERABLE error: ID {$donation->getUuid()} got " . get_class($exception) .
                     " after {$waitTime}s on try #$allocationTries: {$exception->getMessage()}"
                 );
-                usleep(random_int(1, 1000000)); // Wait between 0 and 1 seconds before retrying
+                usleep(random_int(0, 1000000)); // Wait between 0 and 1 seconds before retrying
             } catch (Matching\TerminalLockException $exception) { // Includes non-retryable `DBALException`s
                 $waitTime = round(microtime(true) - $lockStartTime, 6);
                 $this->logError(
@@ -183,6 +183,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
                             $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
                             $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
                         }
+
+                        return $totalAmountReleased;
                     }
                 );
                 $lockEndTime = microtime(true);
@@ -272,7 +274,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // amount
         while ($currentFundingIndex < count($fundings) && bccomp($amountLeftToMatch, '0.00', 2) === 1) {
             $funding = $fundings[$currentFundingIndex];
-            $startAmountAvailable = $this->matchingAdapter->getAmount($fundings[$currentFundingIndex]);
+            $startAmountAvailable = $fundings[$currentFundingIndex]->getAmountAvailable();
 
             if (bccomp($funding->getAmountAvailable(), $amountLeftToMatch, 2) === -1) {
                 $amountToAllocateNow = $startAmountAvailable;
@@ -280,9 +282,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $amountToAllocateNow = $amountLeftToMatch;
             }
 
-            $amountLeftToMatch = bcsub($amountLeftToMatch, $amountToAllocateNow, 2);
-
             $this->matchingAdapter->subtractAmount($funding, $amountToAllocateNow);
+
+            $amountLeftToMatch = bcsub($amountLeftToMatch, $amountToAllocateNow, 2);
 
             $withdrawal = new FundingWithdrawal();
             $withdrawal->setDonation($donation);
@@ -303,6 +305,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     private function persistQueued(): void
     {
+        if (count($this->queuedForPersist) === 0) {
+            return;
+        }
+
         foreach ($this->queuedForPersist as $donation) {
             $this->getEntityManager()->persist($donation);
         }
