@@ -30,27 +30,6 @@ class CampaignFundingRepository extends EntityRepository
         return $query->getResult();
     }
 
-    /**
-     * Get `CampaignFunding`s with a `FundingWithdrawal` linked to the given donation, with a pessimistic
-     * write lock so their totals can be safely updated alongside deleting the withdrawals.
-     * @see CampaignFundingRepository::getAvailableFundings() for more explanation.
-     *
-     * @param Donation $donation
-     * @return CampaignFunding[]
-     * @throws \Doctrine\ORM\TransactionRequiredException if called outside a surrounding transaction
-     */
-    public function getDonationFundings(Donation $donation)
-    {
-        $campaignFundingIds = [];
-        foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-            $campaignFundingIds[] = $fundingWithdrawal->getCampaignFunding()->getId();
-        }
-
-        return $this->getManyWithWriteLock(
-            $this->findBy(['id' => $campaignFundingIds])
-        );
-    }
-
     public function getFunding(Campaign $campaign, Fund $fund): ?CampaignFunding
     {
         $query = $this->getEntityManager()->createQuery('
@@ -77,19 +56,5 @@ class CampaignFundingRepository extends EntityRepository
     public function getOneWithWriteLock(CampaignFunding $campaignFunding): CampaignFunding
     {
         return $this->find($campaignFunding->getId(), LockMode::PESSIMISTIC_WRITE);
-    }
-
-    /**
-     * @param CampaignFunding[] $campaignFundings
-     * @return CampaignFunding[] The `CampaignFunding`s passed in, but with the latest data + pessimistic write lock
-     */
-    private function getManyWithWriteLock(array $campaignFundings): array
-    {
-        $fundingsLocked = [];
-        foreach ($campaignFundings as $funding) {
-            $fundingsLocked[] = $this->getOneWithWriteLock($funding);
-        }
-
-        return $fundingsLocked;
     }
 }

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 use DI\ContainerBuilder;
 use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\Common\Cache\FilesystemCache;
 use Doctrine\Common\Cache\RedisCache;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Tools\Setup;
 use MatchBot\Application\Auth;
+use MatchBot\Application\Matching;
 use MatchBot\Client;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
@@ -50,15 +50,10 @@ return function (ContainerBuilder $containerBuilder) {
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
             $settings = $c->get('settings');
 
-            if ($settings['redis']['host']) {
-                $redis = new Redis();
-                $redis->connect($settings['redis']['host']);
-                $cache = new RedisCache();
-                $cache->setRedis($redis);
-                $cache->setNamespace("matchbot-{$settings['appEnv']}");
-            } else {
-                $cache = new FilesystemCache($settings['doctrine']['cache_dir']);
-            }
+            $redis = $c->get(Redis::class);
+            $cache = new RedisCache();
+            $cache->setRedis($redis);
+            $cache->setNamespace("matchbot-{$settings['appEnv']}");
 
             $config = Setup::createAnnotationMetadataConfiguration(
                 $settings['doctrine']['metadata_dirs'],
@@ -112,7 +107,19 @@ return function (ContainerBuilder $containerBuilder) {
             return $logger;
         },
 
-        SerializerInterface::class => static function (ContainerInterface $c) {
+        Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
+//            return new Matching\DoctrineAdapter($c->get(EntityManagerInterface::class));
+            return new Matching\RedisAdapter($c->get(Redis::class));
+        },
+
+        Redis::class => static function (ContainerInterface $c): Redis {
+            $redis = new Redis();
+            $redis->connect($c->get('settings')['redis']['host']);
+
+            return $redis;
+        },
+
+        SerializerInterface::class => static function (ContainerInterface $c): SerializerInterface {
             $encoders = [new JsonEncoder()];
             $normalizers = [new ObjectNormalizer()];
 
