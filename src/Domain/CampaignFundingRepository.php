@@ -11,11 +11,7 @@ use Doctrine\ORM\EntityRepository;
 class CampaignFundingRepository extends EntityRepository
 {
     /**
-     * Get available-for-allocation `CampaignFunding`s with a pessimistic write lock. Suitable for use inside a
-     * transaction which will reduce the `amountAvailable` and create a `FundingWithdrawal`.
-     *
-     * @link https://stackoverflow.com/questions/12971249/doctrine2-orm-select-for-update/17721736
-     * @link https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/transactions-and-concurrency.html#locking-support
+     * Get available-for-allocation `CampaignFunding`s, without a lock.
      *
      * @param Campaign $campaign
      * @return CampaignFunding[]    Sorted in the order funds should be allocated
@@ -31,7 +27,7 @@ class CampaignFundingRepository extends EntityRepository
         ');
         $query->setParameter('campaign', $campaign->getId());
 
-        return $this->getWithWriteLock($query->getResult());
+        return $query->getResult();
     }
 
     /**
@@ -50,7 +46,7 @@ class CampaignFundingRepository extends EntityRepository
             $campaignFundingIds[] = $fundingWithdrawal->getCampaignFunding()->getId();
         }
 
-        return $this->getWithWriteLock(
+        return $this->getManyWithWriteLock(
             $this->findBy(['id' => $campaignFundingIds])
         );
     }
@@ -70,14 +66,28 @@ class CampaignFundingRepository extends EntityRepository
     }
 
     /**
+     * Use inside a transaction which will change a fund's `amountAvailable`.
+     *
+     * @link https://stackoverflow.com/questions/12971249/doctrine2-orm-select-for-update/17721736
+     * @link https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/transactions-and-concurrency.html#locking-support
+     *
+     * @param CampaignFunding $campaignFunding
+     * @return CampaignFunding The same object passed in but with current data and a write-ready lock
+     */
+    public function getOneWithWriteLock(CampaignFunding $campaignFunding): CampaignFunding
+    {
+        return $this->find($campaignFunding->getId(), LockMode::PESSIMISTIC_WRITE);
+    }
+
+    /**
      * @param CampaignFunding[] $campaignFundings
      * @return CampaignFunding[] The `CampaignFunding`s passed in, but with the latest data + pessimistic write lock
      */
-    private function getWithWriteLock(array $campaignFundings): array
+    private function getManyWithWriteLock(array $campaignFundings): array
     {
         $fundingsLocked = [];
         foreach ($campaignFundings as $funding) {
-            $fundingsLocked[] = $this->find($funding->getId(), LockMode::PESSIMISTIC_WRITE);
+            $fundingsLocked[] = $this->getOneWithWriteLock($funding);
         }
 
         return $fundingsLocked;

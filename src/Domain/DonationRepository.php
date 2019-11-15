@@ -96,18 +96,25 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $allocationTries = 0;
         while (!$allocationDone && $allocationTries < $this->maxAllocationTries) {
             try {
-                // We want the whole set of `CampaignFunding`s to have a write-ready lock, so the transaction must
-                // surround the whole allocation loop. But we can persist the `FundingWithdrawals` outside the lock
-                // to keep it quick.
+                // We need write-ready locks for `CampaignFunding`s but also to keep the time we have them as short
+                // as possible, so get the prelimary list without a lock, before the transaction.
+
+                // Get these without a lock initially
+                $likelyAvailableFunds = $this->getEntityManager()
+                    ->getRepository(CampaignFunding::class)
+                    ->getAvailableFundings($donation->getCampaign());
+
                 $lockStartTime = microtime(true);
                 $this->getEntityManager()->beginTransaction();
 
-                $newWithdrawals = $this->safelyAllocateFunds($donation);
+                $newWithdrawals = $this->safelyAllocateFunds($donation, $likelyAvailableFunds);
 
                 $this->getEntityManager()->commit();
                 $lockEndTime = microtime(true);
 
-                // Persist funding withdrawals after we've freed up the lock on funds themselves.
+                // We end the transaction prior to inserting the funding withdrawal records, to keep the lock time
+                // short. These are new entities, so except in a system crash the withdrawal totals will almost
+                // immediately match the amount deducted from the fund.
                 $amountMatched = '0.0';
                 foreach ($newWithdrawals as $newWithdrawal) {
                     $this->getEntityManager()->persist($newWithdrawal);
@@ -241,24 +248,23 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * and retried.
      *
      * @param Donation $donation
+     * @param CampaignFunding[] $fundings   Fundings likely to have funds available. To be re-queried with a
+     *                                      pessimistic write lock before allocation.
      * @return FundingWithdrawal[]
      */
-    private function safelyAllocateFunds(Donation $donation): array
+    private function safelyAllocateFunds(Donation $donation, array $fundings): array
     {
         $amountLeftToMatch = $donation->getAmount();
         $currentFundingIndex = 0;
         /** @var FundingWithdrawal[] $newWithdrawals Track these to persist outside the lock window, to keep it short */
         $newWithdrawals = [];
 
-        /** @var CampaignFunding[] $fundings */
-        $fundings = $this->getEntityManager()
-            ->getRepository(CampaignFunding::class)
-            ->getAvailableFundings($donation->getCampaign());
-
         // Loop as long as there are still campaign funds not allocated and we have allocated less than the donation
         // amount
         while ($currentFundingIndex < count($fundings) && bccomp($amountLeftToMatch, '0.00', 2) === 1) {
-            $funding = $fundings[$currentFundingIndex];
+            $funding = $this->getEntityManager()
+                ->getRepository(CampaignFunding::class)
+                ->getOneWithWriteLock($fundings[$currentFundingIndex]);
 
             $startAmountAvailable = $funding->getAmountAvailable();
             if (bccomp($funding->getAmountAvailable(), $amountLeftToMatch, 2) === -1) {
