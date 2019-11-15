@@ -15,7 +15,7 @@ jobs:
       - checkout
 
       - run: sudo docker-php-ext-configure zip --with-libzip
-      - run: sudo docker-php-ext-install bcmath pdo_mysql zip
+      - run: sudo docker-php-ext-install bcmath pdo_mysql redis zip
 
       - restore_cache:
           keys:
