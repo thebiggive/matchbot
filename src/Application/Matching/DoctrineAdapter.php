@@ -24,7 +24,7 @@ class DoctrineAdapter extends Adapter
     {
         try {
             return $this->entityManager->transactional($function);
-        }  catch (DBALException $exception) {
+        } catch (DBALException $exception) {
             throw $this->buildLockException($exception);
         }
     }

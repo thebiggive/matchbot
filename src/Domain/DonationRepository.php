@@ -176,13 +176,15 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $totalAmountReleased = '0.00';
             try {
                 $lockStartTime = microtime(true);
-                $totalAmountReleased = $this->matchingAdapter->runTransactionally(function () use ($donation, $totalAmountReleased) {
-                    foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-                        $funding = $fundingWithdrawal->getCampaignFunding();
-                        $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
-                        $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
+                $totalAmountReleased = $this->matchingAdapter->runTransactionally(
+                    function () use ($donation, $totalAmountReleased) {
+                        foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+                            $funding = $fundingWithdrawal->getCampaignFunding();
+                            $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
+                            $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
+                        }
                     }
-                });
+                );
                 $lockEndTime = microtime(true);
                 $releaseDone = true;
             } catch (Matching\RetryableLockException $exception) {
