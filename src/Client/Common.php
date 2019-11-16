@@ -14,6 +14,7 @@ abstract class Common
 
     /** @var Client */
     private $httpClient;
+
     /** @var LoggerInterface */
     protected $logger;
 

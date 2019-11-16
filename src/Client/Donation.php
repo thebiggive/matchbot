@@ -16,6 +16,11 @@ class Donation extends Common
      */
     public function create(DonationModel $donation): string
     {
+        if (getenv('DISABLE_CLIENT_PUSH')) {
+            $this->logger->info("Client push off: Skipping create of donation {$donation->getUUid()}");
+            throw new BadRequestException('Client push is off');
+        }
+
         try {
             $response = $this->getHttpClient()->post(
                 $this->getSetting('donation', 'baseUri'),
@@ -48,6 +53,12 @@ class Donation extends Common
      */
     public function put(DonationModel $donation): bool
     {
+        if (getenv('DISABLE_CLIENT_PUSH')) {
+            $this->logger->info("Client push off: Skipping update of donation {$donation->getUUid()}");
+
+            return false;
+        }
+
         try {
             $response = $this->getHttpClient()->put(
                 $this->getSetting('webhook', 'baseUri') . "/donation/{$donation->getSalesforceId()}",
