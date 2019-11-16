@@ -85,7 +85,7 @@ class OptimisticRedisAdapter extends Adapter
 
     private function buildKey(CampaignFunding $funding)
     {
-        return "fund-{$funding->getId()}-available-op8";
+        return "fund-{$funding->getId()}-available-opt";
     }
 
     private function getPenceAvailable(CampaignFunding $funding): int
