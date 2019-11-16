@@ -77,7 +77,8 @@ class OptimisticRedisAdapter extends Adapter
                 $fundBalanceInPence = $this->redis->incrBy($this->buildKey($funding), $amountAllocatedInPence);
                 $this->setFundingValue($funding, (string) ($fundBalanceInPence / 100));
                 throw new TerminalLockException(
-                    "Fund {$funding->getId()} balance sub-zero after $retries attempts. Releasing final $amountAllocatedInPence"
+                    "Fund {$funding->getId()} balance sub-zero after $retries attempts. " .
+                    "Releasing final $amountAllocatedInPence pence"
                 );
             }
 
