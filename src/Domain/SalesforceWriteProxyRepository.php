@@ -16,7 +16,19 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
         $this->logInfo(($isNew ? 'Pushing ' : 'Updating ') . get_class($proxy) . ' ' . $proxy->getId() . '...');
         $this->prePush($proxy, $isNew);
 
-        $success = ($isNew ? $this->doCreate($proxy) : $this->doUpdate($proxy));
+        if ($isNew) {
+            $success = $this->doCreate($proxy);
+        } elseif (empty($proxy->getSalesforceId())) {
+            // We've been asked to update an object before we have confirmation back from Salesforce that
+            // it was created in the first place. There's no way this can work - we need the Salesforce
+            // ID to identify what we're updating - so log an error and ensure the object is left in
+            // 'pending-create' state locally for a scheduled task to try again at pushing its full current
+            // local state.
+            $this->logError("Can't update " . get_class($proxy) . " {$proxy->getId()} without a Salesforce ID");
+            $success = false;
+        } else {
+            $success = $this->doUpdate($proxy);
+        }
 
         $this->postPush($success, $proxy);
 
@@ -43,7 +55,11 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 
     protected function prePush(SalesforceWriteProxy $proxy, bool $isNew): void
     {
-        $proxy->setSalesforcePushStatus('pending-' . ($isNew ? 'create' : 'update'));
+        if ($isNew || empty($proxy->getSalesforceId())) {
+            $proxy->setSalesforcePushStatus('pending-create');
+        } else {
+            $proxy->setSalesforcePushStatus('pending-update');
+        }
     }
 
     protected function postPush(bool $success, SalesforceWriteProxy $proxy): void
