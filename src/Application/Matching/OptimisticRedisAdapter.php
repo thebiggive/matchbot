@@ -8,12 +8,20 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\CampaignFunding;
 use Redis;
 
+/**
+ * Keep in mind that because this adapter is not actually locking, it must *NOT* throw the RetryableLockException!
+ * It won't roll back existing allocations so further allocation cannot proceed safely if this were to happen. This
+ * is the rationale for having an internal retry / adjust mechanism in this adapter to handle the case where a fund's
+ * just running out and the database copy of the amount available was out of date.
+ */
 class OptimisticRedisAdapter extends Adapter
 {
     /** @var EntityManagerInterface */
     private $entityManager;
     /** @var CampaignFunding[] */
     private $fundingsToPersist = [];
+    /** @var int Number of times to immediately try to allocate a smaller amount if the fund's running low */
+    private $maxPartialAllocateTries = 5;
     /** @var Redis */
     private $redis;
 
@@ -36,13 +44,13 @@ class OptimisticRedisAdapter extends Adapter
     {
         $decrementInPence = (int) (((float) $amount) * 100);
 
-        list($initResponse, $newValueInPence) = $this->redis->multi()
+        [$initResponse, $fundBalanceInPence] = $this->redis->multi()
             ->setnx($this->buildKey($funding), $this->getPenceAvailable($funding)) // Init if new to Redis
             ->decrBy($this->buildKey($funding), $decrementInPence)
             ->exec();
 
-        if ($newValueInPence < 0) {
-            // We have just hit the unlucky edge case where not having strict, slow locks falls down. We atomically
+        if ($fundBalanceInPence < 0) {
+            // We have hit the edge case where not having strict, slow locks falls down. We atomically
             // allocated some match funds based on the amount available when we queried the database, but since our
             // query somebody else got some match funds and now taking the amount we wanted would take the fund's
             // balance below zero.
@@ -53,34 +61,52 @@ class OptimisticRedisAdapter extends Adapter
             //
             // So, let's do exactly that and then fail in a way that tells the caller to retry, getting the new fund
             // total first. This is essentially a DIY optimistic lock exception.
-            $this->doAddAmount($funding, $amount);
 
-            throw new RetryableLockException('Fund balance would drop below zero to £' . ($newValueInPence / 100));
+            $retries = 0;
+            $amountAllocatedInPence = $decrementInPence;
+            while ($retries++ < $this->maxPartialAllocateTries && $fundBalanceInPence < 0) {
+                // Try deallocating just the difference until the fund has exactly zero
+                $overspendInPence = 0 - $fundBalanceInPence;
+                $fundBalanceInPence = $this->redis->incrBy($this->buildKey($funding), $overspendInPence);
+                $amountAllocatedInPence -= $overspendInPence;
+            }
+
+            if ($fundBalanceInPence < 0) {
+                // We couldn't get the values to work within the maximum number of iterations, so release whatever
+                // we tried to hold back to the match pot and bail out.
+                $fundBalanceInPence = $this->redis->incrBy($this->buildKey($funding), $amountAllocatedInPence);
+                $this->setFundingValue($funding, (string) ($fundBalanceInPence / 100));
+                throw new TerminalLockException(
+                    "Fund {$funding->getId()} balance sub-zero after $retries attempts. Releasing final $amountAllocatedInPence"
+                );
+            }
+
+            $this->setFundingValue($funding, (string) ($fundBalanceInPence / 100));
+            throw new LessThanRequestedAllocatedException(
+                (string) ($amountAllocatedInPence / 100),
+                (string) ($fundBalanceInPence / 100)
+            );
         }
 
-        $newValue = (string) ($newValueInPence / 100);
+        $fundBalance = (string) ($fundBalanceInPence / 100);
+        $this->setFundingValue($funding, $fundBalance);
 
-        $funding->setAmountAvailable($newValue);
-        $this->fundingsToPersist[] = $funding;
-
-        return $newValue;
+        return $fundBalance;
     }
 
     public function doAddAmount(CampaignFunding $funding, string $amount): string
     {
         $incrementInPence = (int) ((float) $amount * 100);
 
-        list($initResponse, $newValueInPence) = $this->redis->multi()
+        [$initResponse, $fundBalanceInPence] = $this->redis->multi()
             ->setnx($this->buildKey($funding), $this->getPenceAvailable($funding)) // Init if new to Redis
             ->incrBy($this->buildKey($funding), $incrementInPence)
             ->exec();
 
-        $newValue = (string) ($newValueInPence / 100);
+        $fundBalance = (string) ($fundBalanceInPence / 100);
+        $this->setFundingValue($funding, $fundBalance);
 
-        $funding->setAmountAvailable($newValue);
-        $this->fundingsToPersist[] = $funding;
-
-        return $newValue;
+        return $fundBalance;
     }
 
     private function buildKey(CampaignFunding $funding)
@@ -105,5 +131,13 @@ class OptimisticRedisAdapter extends Adapter
                 $this->entityManager->persist($funding);
             }
         });
+    }
+
+    private function setFundingValue(CampaignFunding $funding, string $newValue): void
+    {
+        $funding->setAmountAvailable($newValue);
+        if (!in_array($funding, $this->fundingsToPersist, true)) {
+            $this->fundingsToPersist[] = $funding;
+        }
     }
 }

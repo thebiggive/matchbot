@@ -22,7 +22,7 @@ abstract class Adapter
      *
      * @param CampaignFunding $funding
      * @param string $amount
-     * @return string New amount as bcmath-ready string
+     * @return string New fund balance as bcmath-ready string
      */
     abstract protected function doAddAmount(CampaignFunding $funding, string $amount): string;
 
@@ -31,7 +31,8 @@ abstract class Adapter
      *
      * @param CampaignFunding $funding
      * @param string $amount
-     * @return string New amount as bcmath-ready string
+     * @return string New fund balance as bcmath-ready string
+     * @throws LessThanRequestedAllocatedException if the adapter allocated less than requested for matching
      */
     abstract protected function doSubtractAmount(CampaignFunding $funding, string $amount): string;
 

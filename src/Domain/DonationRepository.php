@@ -304,18 +304,29 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $amountToAllocateNow = $amountLeftToMatch;
             }
 
-            $this->matchingAdapter->subtractAmount($funding, $amountToAllocateNow);
+            try {
+                $this->matchingAdapter->subtractAmount($funding, $amountToAllocateNow);
+                $amountAllocated = $amountToAllocateNow; // If no exception thrown
+            } catch (Matching\LessThanRequestedAllocatedException $exception) {
+                $amountAllocated = $exception->getAmountAllocated();
+                $this->logInfo(
+                    "Amount available from funding {$funding->getId()} changed: - got $amountAllocated " .
+                    "of requested $amountToAllocateNow"
+                );
+            }
 
-            $amountLeftToMatch = bcsub($amountLeftToMatch, $amountToAllocateNow, 2);
+            $amountLeftToMatch = bcsub($amountLeftToMatch, $amountAllocated, 2);
 
-            $withdrawal = new FundingWithdrawal();
-            $withdrawal->setDonation($donation);
-            $withdrawal->setCampaignFunding($funding);
-            $withdrawal->setAmount($amountToAllocateNow);
-            $newWithdrawals[] = $withdrawal;
+            if (bccomp($amountAllocated, '0.00', 2) === 1) {
+                $withdrawal = new FundingWithdrawal();
+                $withdrawal->setDonation($donation);
+                $withdrawal->setCampaignFunding($funding);
+                $withdrawal->setAmount($amountAllocated);
+                $newWithdrawals[] = $withdrawal;
+                $this->logInfo("Successfully withdrew $amountAllocated from funding {$funding->getId()}");
+            }
+
             $currentFundingIndex++;
-
-            $this->logInfo("Successfully withdrew $amountToAllocateNow from funding {$funding->getId()}");
         }
 
         $this->queueForPersist($donation);
