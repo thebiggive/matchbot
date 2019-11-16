@@ -291,6 +291,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $withdrawal->setCampaignFunding($funding);
             $withdrawal->setAmount($amountToAllocateNow);
             $newWithdrawals[] = $withdrawal;
+            $currentFundingIndex++;
         }
 
         $this->queueForPersist($donation);

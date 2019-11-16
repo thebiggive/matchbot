@@ -55,7 +55,7 @@ class OptimisticRedisAdapter extends Adapter
             // total first. This is essentially a DIY optimistic lock exception.
             $this->doAddAmount($funding, $amount);
 
-            throw new RetryableLockException('Fund balance would drop below zero with that allocation');
+            throw new RetryableLockException('Fund balance would drop below zero to £' . ($newValueInPence / 100));
         }
 
         $newValue = (string) ($newValueInPence / 100);
