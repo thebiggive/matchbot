@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\DBAL\Exception\RetryableException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
@@ -20,8 +21,13 @@ class DonationRepository extends SalesforceWriteProxyRepository
     private $fundRepository;
     /** @var int */
     private $expirySeconds = 17 * 60; // 17 minutes: 15 min official timed window plus 2 mins grace.
-    /** @var int */
+    /** @var int When using a locking matching adapter, maximum number of tries for real-time operations */
     private $maxLockTries = 5;
+    /**
+     * @var int For non-matching updates that always use Doctrine, maximum number of times to try again when
+     *          Doctrine reports that the error is recoverable and that retrying makes sense
+     */
+    private $maxDoctrineDeadlockRetries = 3;
     /** @var Matching\Adapter */
     private $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
@@ -130,7 +136,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     $donation->addFundingWithdrawal($newWithdrawal);
                     $amountMatched = bcadd($amountMatched, $newWithdrawal->getAmount(), 2);
                 }
-                $this->getEntityManager()->flush();
+                $this->flushResiliently();
 
                 $allocationDone = true;
             } catch (Matching\RetryableLockException $exception) {
@@ -194,7 +200,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
                     $this->getEntityManager()->remove($fundingWithdrawal);
                 }
-                $this->getEntityManager()->flush();
+                $this->flushResiliently();
             } catch (Matching\RetryableLockException $exception) {
                 $releaseTries++;
                 $waitTime = round(microtime(true) - $lockStartTime, 6);
@@ -320,6 +326,30 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         foreach ($this->queuedForPersist as $donation) {
             $this->getEntityManager()->persist($donation);
+        }
+    }
+
+    private function flushResiliently(): void
+    {
+        $done = false;
+        $tries = 0;
+
+        while (!$done && $tries++ < $this->maxDoctrineDeadlockRetries) {
+            try {
+                $this->getEntityManager()->beginTransaction();
+                $this->getEntityManager()->flush();
+                $this->getEntityManager()->commit();
+                $done = true;
+            } catch (RetryableException $exception) {
+                $this->getEntityManager()->rollback();
+                usleep(random_int(0, 200000)); // Wait between 0 and 0.2 seconds before retrying
+                // Carry on to next loop cycle if retryable, unless we're out of tries
+            } // Any other exception is left uncaught
+        }
+
+        if (!$done) {
+            // Because this isn't real-time data this is usually not absolutely critical; we can log but not bail out.
+            $this->logError("Doctrine could not flush after $tries tries");
         }
     }
 }
