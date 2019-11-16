@@ -119,7 +119,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 );
                 $lockEndTime = microtime(true);
 
-                $this->persistQueued();
+                $this->persistQueuedDonations();
 
                 // We end the transaction prior to inserting the funding withdrawal records, to keep the lock time
                 // short. These are new entities, so except in a system crash the withdrawal totals will almost
@@ -182,6 +182,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                             $funding = $fundingWithdrawal->getCampaignFunding();
                             $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
                             $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
+                            $this->logInfo("Released {$fundingWithdrawal->getAmount()} to funding {$funding->getId()}");
                         }
 
                         return $totalAmountReleased;
@@ -189,6 +190,11 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 );
                 $lockEndTime = microtime(true);
                 $releaseDone = true;
+
+                foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+                    $this->getEntityManager()->remove($fundingWithdrawal);
+                }
+                $this->getEntityManager()->flush();
             } catch (Matching\RetryableLockException $exception) {
                 $releaseTries++;
                 $waitTime = round(microtime(true) - $lockStartTime, 6);
@@ -292,6 +298,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $withdrawal->setAmount($amountToAllocateNow);
             $newWithdrawals[] = $withdrawal;
             $currentFundingIndex++;
+
+            $this->logInfo("Successfully withdrew $amountToAllocateNow from funding {$funding->getId()}");
         }
 
         $this->queueForPersist($donation);
@@ -304,7 +312,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->queuedForPersist[] = $donation;
     }
 
-    private function persistQueued(): void
+    private function persistQueuedDonations(): void
     {
         if (count($this->queuedForPersist) === 0) {
             return;
