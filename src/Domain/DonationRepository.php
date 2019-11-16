@@ -336,12 +336,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         while (!$done && $tries++ < $this->maxDoctrineDeadlockRetries) {
             try {
-                $this->getEntityManager()->beginTransaction();
                 $this->getEntityManager()->flush();
-                $this->getEntityManager()->commit();
                 $done = true;
             } catch (RetryableException $exception) {
-                $this->getEntityManager()->rollback();
                 $this->logInfo(
                     "Doctrine flush got a retryable error on attempt #$tries - " .
                     get_class($exception) . " {$exception->getMessage()}"
