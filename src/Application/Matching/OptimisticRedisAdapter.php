@@ -100,8 +100,10 @@ class OptimisticRedisAdapter extends Adapter
      */
     private function saveFundingsToDatabase(): void
     {
-        foreach ($this->fundingsToPersist as $funding) {
-            $this->entityManager->persist($funding);
-        }
+        $this->entityManager->transactional(function () {
+            foreach ($this->fundingsToPersist as $funding) {
+                $this->entityManager->persist($funding);
+            }
+        });
     }
 }

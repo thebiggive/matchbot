@@ -5,12 +5,13 @@ declare(strict_types=1);
 use DI\ContainerBuilder;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Cache\RedisCache;
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Tools\Setup;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
@@ -48,41 +49,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
-            $settings = $c->get('settings');
-
-            // Must be a distinct instance from the one used for fund allocation maths.
-            $redis = new Redis();
-            $redis->connect($c->get('settings')['redis']['host']);
-            $cache = new RedisCache();
-            $cache->setRedis($redis);
-            $cache->setNamespace("matchbot-{$settings['appEnv']}");
-
-            $config = Setup::createAnnotationMetadataConfiguration(
-                $settings['doctrine']['metadata_dirs'],
-                $settings['doctrine']['dev_mode'],
-                null,
-                $cache
-            );
-
-            $config->setMetadataDriverImpl(
-                new AnnotationDriver(
-                    new AnnotationReader(),
-                    $settings['doctrine']['metadata_dirs']
-                )
-            );
-
-            $config->setMetadataCacheImpl($cache);
-
-            // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
-            // files indefinitely.
-            $config->setAutoGenerateProxyClasses($settings['doctrine']['dev_mode']);
-
-            $config->setProxyDir($settings['doctrine']['cache_dir'] . '/proxies');
-
-            return EntityManager::create(
-                $settings['doctrine']['connection'],
-                $config
-            );
+            return $c->get(RetrySafeEntityManager::class);
         },
 
         LockFactory::class => function (ContainerInterface $c): LockFactory {
@@ -112,7 +79,40 @@ return function (ContainerBuilder $containerBuilder) {
         Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
 //            return new Matching\DoctrineAdapter($c->get(EntityManagerInterface::class));
 //            return new Matching\LockingRedisAdapter($c->get(Redis::class), $c->get(EntityManagerInterface::class));
-            return new Matching\OptimisticRedisAdapter($c->get(Redis::class), $c->get(EntityManagerInterface::class));
+            return new Matching\OptimisticRedisAdapter($c->get(Redis::class), $c->get(RetrySafeEntityManager::class));
+        },
+
+        ORM\Configuration::class => static function (ContainerInterface $c): ORM\Configuration {
+            $settings = $c->get('settings');
+
+            // Must be a distinct instance from the one used for fund allocation maths. Never re-created ever when the
+            // EntityManager is, so for now we can safely do this on construct.
+            $redis = new Redis();
+            $redis->connect($c->get('settings')['redis']['host']);
+            $cache = new RedisCache();
+            $cache->setRedis($redis);
+            $cache->setNamespace("matchbot-{$settings['appEnv']}");
+
+            $config = Setup::createAnnotationMetadataConfiguration(
+                $settings['doctrine']['metadata_dirs'],
+                $settings['doctrine']['dev_mode'],
+                null,
+                $cache
+            );
+
+            $config->setMetadataDriverImpl(
+                new AnnotationDriver(new AnnotationReader(), $settings['doctrine']['metadata_dirs'])
+            );
+
+            $config->setMetadataCacheImpl($cache);
+
+            // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
+            // files indefinitely.
+            $config->setAutoGenerateProxyClasses($settings['doctrine']['dev_mode']);
+
+            $config->setProxyDir($settings['doctrine']['cache_dir'] . '/proxies');
+
+            return $config;
         },
 
         /**
@@ -124,6 +124,14 @@ return function (ContainerBuilder $containerBuilder) {
             $redis->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_NONE); // Required for incr/decr commands
 
             return $redis;
+        },
+
+        RetrySafeEntityManager::class => static function (ContainerInterface $c): RetrySafeEntityManager {
+            return new RetrySafeEntityManager(
+                $c->get(ORM\Configuration::class),
+                $c->get('settings')['doctrine']['connection'],
+                $c->get(LoggerInterface::class),
+            );
         },
 
         SerializerInterface::class => static function (ContainerInterface $c): SerializerInterface {
