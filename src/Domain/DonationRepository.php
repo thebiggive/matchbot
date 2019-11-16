@@ -342,6 +342,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $done = true;
             } catch (RetryableException $exception) {
                 $this->getEntityManager()->rollback();
+                $this->logInfo(
+                    "Doctrine flush got a retryable error on attempt #$tries - " .
+                    get_class($exception) . " {$exception->getMessage()}"
+                );
                 usleep(random_int(0, 200000)); // Wait between 0 and 0.2 seconds before retrying
                 // Carry on to next loop cycle if retryable, unless we're out of tries
             } // Any other exception is left uncaught
