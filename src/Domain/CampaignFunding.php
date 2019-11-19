@@ -122,4 +122,12 @@ class CampaignFunding extends Model
     {
         $this->allocationOrder = $allocationOrder;
     }
+
+    /**
+     * @return Fund
+     */
+    public function getFund(): Fund
+    {
+        return $this->fund;
+    }
 }

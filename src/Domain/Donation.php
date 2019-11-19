@@ -173,6 +173,8 @@ class Donation extends SalesforceWriteProxy
 
         $data['createdTime'] = $this->getCreatedDate()->format(DateTime::ATOM);
         $data['updatedTime'] = $this->getUpdatedDate()->format(DateTime::ATOM);
+        $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
+        $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
 
         unset(
             $data['charityName'],
@@ -396,13 +398,49 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string
+     * @return string   Total amount in withdrawals - not necessarily finalised.
      */
     public function getFundingWithdrawalTotal(): string
     {
         $withdrawalTotal = '0.0';
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
             $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
+        }
+
+        return $withdrawalTotal;
+    }
+
+    /**
+     * @return string Total amount *finalised*, matched by `Fund`s of type "championFund"
+     */
+    public function getConfirmedChampionWithdrawalTotal(): string
+    {
+        $withdrawalTotal = '0.0';
+        foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
+            // Rely on Doctrine `SINGLE_TABLE` inheritance structure to derive the type from the concrete class.
+            if ($fundingWithdrawal->getCampaignFunding()->getFund() instanceof ChampionFund) {
+                $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
+            }
+        }
+
+        return $withdrawalTotal;
+    }
+
+    /**
+     * @return string Total amount *finalised*, matched by `Fund`s of type "pledge"
+     */
+    public function getConfirmedPledgeWithdrawalTotal(): string
+    {
+        if (!$this->isSuccessful()) {
+            return '0.0';
+        }
+
+        $withdrawalTotal = '0.0';
+        foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
+            // Rely on Doctrine `SINGLE_TABLE` inheritance structure to derive the type from the concrete class.
+            if ($fundingWithdrawal->getCampaignFunding()->getFund() instanceof Pledge) {
+                $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
+            }
         }
 
         return $withdrawalTotal;
