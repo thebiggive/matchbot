@@ -127,6 +127,12 @@ class Donation extends SalesforceWriteProxy
     protected $donorPostalAddress;
 
     /**
+     * @ORM\Column(type="decimal", precision=18, scale=2, options={"default": "0.00"})
+     * @var string  Amount donor chose to tip. Precision numeric string. Set on Charity Checkout callback
+     */
+    protected $tipAmount = '0.00';
+
+    /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
      * @var ArrayCollection|FundingWithdrawal[]
      */
@@ -217,6 +223,7 @@ class Donation extends SalesforceWriteProxy
             $data['lastName'] = $this->getDonorLastName();
             $data['transactionId'] = $this->getTransactionId();
             $data['matchedAmount'] = $this->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0;
+            $data['tipAmount'] = (float) $this->getTipAmount();
         }
 
         return $data;
@@ -486,5 +493,21 @@ class Donation extends SalesforceWriteProxy
     public function setDonorCountryCode(string $donorCountryCode): void
     {
         $this->donorCountryCode = $donorCountryCode;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTipAmount(): string
+    {
+        return $this->tipAmount;
+    }
+
+    /**
+     * @param string $tipAmount
+     */
+    public function setTipAmount(string $tipAmount): void
+    {
+        $this->tipAmount = $tipAmount;
     }
 }

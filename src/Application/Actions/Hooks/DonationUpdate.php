@@ -92,6 +92,10 @@ class DonationUpdate extends Action
         $donation->setTbgComms($donationData->optInTbgEmail);
         $donation->setTransactionId($donationData->transactionId);
 
+        if ($donationData->tipAmount > 0) {
+            $donation->setTipAmount((string) $donationData->tipAmount);
+        }
+
         $this->entityManager->persist($donation);
 
         // We log if this fails but don't worry the webhook-sending payment client
