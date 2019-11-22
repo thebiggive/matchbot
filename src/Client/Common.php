@@ -14,6 +14,7 @@ abstract class Common
 
     /** @var Client */
     private $httpClient;
+
     /** @var LoggerInterface */
     protected $logger;
 
@@ -31,7 +32,9 @@ abstract class Common
     protected function getHttpClient(): Client
     {
         if (!$this->httpClient) {
-            $this->httpClient = new Client();
+            $this->httpClient = new Client([
+                'timeout' => $this->clientSettings['global']['timeout'],
+            ]);
         }
 
         return $this->httpClient;

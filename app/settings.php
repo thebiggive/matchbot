@@ -10,6 +10,9 @@ return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
         'settings' => [
             'apiClient' => [
+                'global' => [
+                    'timeout' => getenv('SALESFORCE_CLIENT_TIMEOUT'), // in seconds
+                ],
                 'campaign' => [
                     'baseUri' => getenv('SALESFORCE_CAMPAIGN_API'),
                 ],

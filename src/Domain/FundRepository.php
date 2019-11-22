@@ -40,7 +40,7 @@ class FundRepository extends SalesforceReadProxyRepository
             }
 
             // Then whether new or existing, set its key info
-            $fund->setAmount((string) $fundData['totalAmount']);
+            $fund->setAmount($fundData['totalAmount'] === null ? '0.00' : (string) $fundData['totalAmount']);
             $fund->setName($fundData['name']);
             $fund->setSalesforceLastPull(new DateTime('now'));
             $this->getEntityManager()->persist($fund);
@@ -58,10 +58,16 @@ class FundRepository extends SalesforceReadProxyRepository
                 } else {
                     $campaignFunding->setAllocationOrder(200);
                 }
-            }
 
-            $campaignFunding->setAmountAvailable((string) $fundData['amountForCampaign']);
-            $campaignFunding->setAmount((string) $fundData['amountForCampaign']);
+                // It's crucial we don't try to 'update' the `amountAvailable` after MatchBot has created the entity,
+                // i.e. only call this when the entity is new. We also assume the amount for each fund is immutable
+                // and so only call `setAmount()` here too.
+                $amountForCampaign = $fundData['amountForCampaign'] === null
+                    ? '0.00'
+                    : (string) $fundData['amountForCampaign'];
+                $campaignFunding->setAmountAvailable($amountForCampaign);
+                $campaignFunding->setAmount($amountForCampaign);
+            }
 
             $this->getEntityManager()->persist($campaignFunding);
         }
