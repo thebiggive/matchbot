@@ -15,6 +15,11 @@ use Doctrine\ORM\Mapping as ORM;
 abstract class SalesforceWriteProxy extends SalesforceProxy
 {
     /**
+     * @return bool Whether the entity has been modified in MatchBot subsequently after its creation.
+     */
+    abstract public function hasPostCreateUpdates(): bool;
+
+    /**
      * @ORM\Column(type="datetime", nullable=true)
      * @var DateTime
      */
