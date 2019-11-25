@@ -94,6 +94,9 @@ class DonationUpdate extends Action
 
         if ($donationData->tipAmount > 0) {
             $donation->setTipAmount((string) $donationData->tipAmount);
+            $this->logger->info('Set tip amount from input value: ' . $donationData->tipAmount);
+        } else {
+            $this->logger->info('Did NOT set tip amount. Verbatim input value: ' . $donationData->tipAmount);
         }
 
         $this->entityManager->persist($donation);
@@ -103,6 +106,6 @@ class DonationUpdate extends Action
         // batch sync.
         $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
-        return $this->respondWithData($this->serializer->serialize($donation, 'json'));
+        return $this->respondWithData($donation->toApiModel(false));
     }
 }
