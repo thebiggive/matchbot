@@ -66,8 +66,21 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
     {
         if ($success) {
             $proxy->setSalesforceLastPush(new DateTime('now'));
-            $proxy->setSalesforcePushStatus('complete');
+            if ($proxy->getSalesforcePushStatus() === 'pending-create' && $proxy->hasPostCreateUpdates()) {
+                $proxy->setSalesforcePushStatus('pending-update');
+            } else {
+                $proxy->setSalesforcePushStatus('complete');
+            }
             $this->logInfo('...pushed ' . get_class($proxy) . " {$proxy->getId()}: SF ID {$proxy->getSalesforceId()}");
+
+            if ($proxy->hasPostCreateUpdates()) {
+                if ($this->doUpdate($proxy)) { // Make sure *not* to call push() again to avoid doing this recursively!
+                    $proxy->setSalesforcePushStatus('complete');
+                    $this->logInfo('...plus interim updates for ' . get_class($proxy) . " {$proxy->getId()}");
+                } else {
+                    $this->logError('...with error on interim updates for ' . get_class($proxy) . " {$proxy->getId()}");
+                }
+            }
         } else {
             $this->logError('...error pushing ' . get_class($proxy) . ' ' . $proxy->getId());
         }
