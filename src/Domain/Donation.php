@@ -129,7 +129,7 @@ class Donation extends SalesforceWriteProxy
     protected $donorPostalAddress;
 
     /**
-     * @ORM\Column(type="decimal", precision=18, scale=2, options={"default": "0.00"})
+     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string  Amount donor chose to tip. Precision numeric string. Set on Charity Checkout callback
      */
     protected $tipAmount = '0.00';
