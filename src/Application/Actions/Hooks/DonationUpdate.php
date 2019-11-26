@@ -94,15 +94,9 @@ class DonationUpdate extends Action
 
         if ($donationData->tipAmount > 0) {
             $donation->setTipAmount((string) $donationData->tipAmount);
-            $this->logger->info('TIP DEBUG: Set tip amount from input value: ' . $donationData->tipAmount);
-        } else {
-            $this->logger->info('TIP DEBUG: Did NOT set tip amount. Verbatim input value: ' . $donationData->tipAmount);
         }
 
         $this->entityManager->persist($donation);
-        $this->entityManager->flush();
-
-        $this->logger->info("TIP DEBUG: ID {$donation->getId()} tip amount: {$donation->getTipAmount()}");
 
         // We log if this fails but don't worry the webhook-sending payment client
         // about it. We'll re-try sending the updated status to Salesforce in a future
