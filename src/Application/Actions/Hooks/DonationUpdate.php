@@ -95,6 +95,11 @@ class DonationUpdate extends Action
         $this->logger->info("{$donation->getUuid()} tip amount set from: {$donationData->tipAmount}");
         $donation->setTipAmount((string) ($donationData->tipAmount ?? 0.0));
 
+        $this->logger->info(
+            "{$donation->getUuid()} tip to persist EM open? " .
+            ($this->entityManager->isOpen() ? 'YES' : 'NO')
+        );
+
         $this->entityManager->persist($donation);
         $this->entityManager->flush();
 
