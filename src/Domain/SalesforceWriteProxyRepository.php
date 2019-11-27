@@ -27,6 +27,14 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             $this->logError("Can't update " . get_class($proxy) . " {$proxy->getId()} without a Salesforce ID");
             $success = false;
         } else {
+            if ($proxy instanceof Donation) {
+                $this->logInfo("Push tip debugA: {$proxy->getUuid()} tip amount pre refresh: {$proxy->getTipAmount()}");
+            }
+            $this->getEntityManager()->refresh($proxy);
+            if ($proxy instanceof Donation) {
+                $this->logInfo("Push tip debugB: {$proxy->getUuid()} tip amount pre refresh: {$proxy->getTipAmount()}");
+            }
+
             $success = $this->doUpdate($proxy);
         }
 
