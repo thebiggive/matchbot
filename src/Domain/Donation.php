@@ -152,7 +152,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function prePersist(): void
     {
-        error_log("Tip debug: {$this->getUuid()} prepersist. Tip: {$args->getNewValue('tipAmount')}");
+        error_log("Tip debug: {$this->getUuid()} prepersist. Tip: {$this->tipAmount}");
 
         // Decimal-safe check that amount if in the allowed range
         if (
@@ -469,9 +469,9 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return string
      */
-    public function getUuid(): string
+    public function getUuid(): ?string
     {
-        return $this->uuid->toString();
+        return $this->uuid ? $this->uuid->toString() : null;
     }
 
     /**
