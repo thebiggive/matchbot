@@ -17,6 +17,7 @@ composer doctrine:ensure-prod
 echo "Running migrations before start if necessary..."
 composer doctrine:migrate
 composer doctrine:generate-proxies
+composer doctrine:cache:clear
 
 echo "Starting task..."
 # Call the normal CLI entry-point script, passing on script name and any other arguments
