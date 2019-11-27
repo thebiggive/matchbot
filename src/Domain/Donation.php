@@ -40,6 +40,8 @@ class Donation extends SalesforceWriteProxy
         'PendingCancellation',
     ];
 
+    private $newStatuses = ['NotSet', 'Pending'];
+
     private $successStatuses = ['Collected', 'Paid'];
 
     /**
@@ -127,7 +129,7 @@ class Donation extends SalesforceWriteProxy
     protected $donorPostalAddress;
 
     /**
-     * @ORM\Column(type="decimal", precision=18, scale=2, options={"default": "0.00"})
+     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string  Amount donor chose to tip. Precision numeric string. Set on Charity Checkout callback
      */
     protected $tipAmount = '0.00';
@@ -509,5 +511,14 @@ class Donation extends SalesforceWriteProxy
     public function setTipAmount(string $tipAmount): void
     {
         $this->tipAmount = $tipAmount;
+    }
+
+    /**
+     * @return bool Whether the donation has a hook-updated status and should therefore be updated in Salesforce after
+     *              creation, if successful SF create doesn't happen before MatchBot processes the hook.
+     */
+    public function hasPostCreateUpdates(): bool
+    {
+        return !in_array($this->getDonationStatus(), $this->newStatuses, true);
     }
 }

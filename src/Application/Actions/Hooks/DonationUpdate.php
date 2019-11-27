@@ -103,6 +103,6 @@ class DonationUpdate extends Action
         // batch sync.
         $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
-        return $this->respondWithData($this->serializer->serialize($donation, 'json'));
+        return $this->respondWithData($donation->toApiModel(false));
     }
 }
