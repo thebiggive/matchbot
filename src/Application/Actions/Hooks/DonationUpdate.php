@@ -97,6 +97,7 @@ class DonationUpdate extends Action
         }
 
         $this->entityManager->persist($donation);
+        $this->entityManager->flush();
 
         // We log if this fails but don't worry the webhook-sending payment client
         // about it. We'll re-try sending the updated status to Salesforce in a future
