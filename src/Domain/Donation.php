@@ -170,7 +170,11 @@ class Donation extends SalesforceWriteProxy
      */
     public function preUpdate(PreUpdateEventArgs $args): void
     {
-        error_log("Tip debug: {$this->getUuid()} preupdate. Tip: {$args->getNewValue('tipAmount')}");
+        if ($args->hasChangedField('tipAmount')) {
+            error_log("Tip debug: {$this->getUuid()} preupdate. Tip: {$args->getNewValue('tipAmount')}");
+        } else {
+            error_log("Tip debug: {$this->getUuid()} preupdate. Tip already: {$this->tipAmount}");
+        }
 
         if (!$args->hasChangedField('amount')) {
             return;
