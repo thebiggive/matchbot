@@ -48,6 +48,6 @@ class Donation
     /** @var string */
     public $projectId;
 
-    /** @var float */
+    /** @var string */
     public $tipAmount;
 }

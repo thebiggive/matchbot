@@ -93,7 +93,7 @@ class DonationUpdate extends Action
         $donation->setTransactionId($donationData->transactionId);
 
         $this->logger->info("{$donation->getUuid()} tip amount set from: {$donationData->tipAmount}");
-        $donation->setTipAmount((string) ($donationData->tipAmount ?? 0.0));
+        $donation->setTipAmount(bcadd('0.00', (string) $donationData->tipAmount, 2));
 
         $this->logger->info(
             "{$donation->getUuid()} tip to persist EM open? " .

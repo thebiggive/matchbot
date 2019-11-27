@@ -143,6 +143,8 @@ class Donation extends SalesforceWriteProxy
     public function __construct()
     {
         $this->fundingWithdrawals = new ArrayCollection();
+
+        error_log('Tip debug: Constructing a new Donation'); // TODO remove log hacks
     }
 
     /**
@@ -500,8 +502,10 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return string
      */
-    public function getTipAmount(): string
+    public function getTipAmount(): ?string // TODO make non-nullable?
     {
+        error_log('Tip debug: getting amount ' . $this->tipAmount); // TODO rm
+
         return $this->tipAmount;
     }
 
@@ -510,6 +514,8 @@ class Donation extends SalesforceWriteProxy
      */
     public function setTipAmount(string $tipAmount): void
     {
+        error_log('Tip debug: Set amount ' . $tipAmount); // TODO remove log hack
+
         $this->tipAmount = $tipAmount;
     }
 

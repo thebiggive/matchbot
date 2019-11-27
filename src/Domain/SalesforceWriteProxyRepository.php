@@ -28,11 +28,11 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             $success = false;
         } else {
             if ($proxy instanceof Donation) {
-                $this->logInfo("Push tip debugA: {$proxy->getUuid()} tip amount pre refresh: {$proxy->getTipAmount()}");
+                $this->logInfo("Tip debug: {$proxy->getUuid()} tip amount pre refresh: {$proxy->getTipAmount()}");
             }
             $this->getEntityManager()->refresh($proxy);
             if ($proxy instanceof Donation) {
-                $this->logInfo("Push tip debugB: {$proxy->getUuid()} tip amount pre refresh: {$proxy->getTipAmount()}");
+                $this->logInfo("Tip debug: {$proxy->getUuid()} tip amount postrefresh: {$proxy->getTipAmount()}");
             }
 
             $success = $this->doUpdate($proxy);
