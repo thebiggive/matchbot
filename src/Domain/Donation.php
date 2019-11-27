@@ -132,7 +132,7 @@ class Donation extends SalesforceWriteProxy
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string  Amount donor chose to tip. Precision numeric string. Set on Charity Checkout callback
      */
-    protected $tipAmount;
+    protected $tipAmount = '0.00';
 
     /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
