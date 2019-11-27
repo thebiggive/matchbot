@@ -92,9 +92,8 @@ class DonationUpdate extends Action
         $donation->setTbgComms($donationData->optInTbgEmail);
         $donation->setTransactionId($donationData->transactionId);
 
-        if ($donationData->tipAmount > 0) {
-            $donation->setTipAmount((string) $donationData->tipAmount);
-        }
+        $this->logger->info("{$donation->getUuid()} tip amount set from: {$donationData->tipAmount}");
+        $donation->setTipAmount((string) ($donationData->tipAmount ?? 0.0));
 
         $this->entityManager->persist($donation);
         $this->entityManager->flush();
