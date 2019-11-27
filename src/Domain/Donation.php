@@ -135,7 +135,7 @@ class Donation extends SalesforceWriteProxy
     protected $tipAmount = '0.00';
 
     /**
-     * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation")
+     * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
      * @var ArrayCollection|FundingWithdrawal[]
      */
     protected $fundingWithdrawals;
@@ -143,8 +143,6 @@ class Donation extends SalesforceWriteProxy
     public function __construct()
     {
         $this->fundingWithdrawals = new ArrayCollection();
-
-        error_log('Tip debug: Constructing a new Donation'); // TODO remove log hacks
     }
 
     /**
@@ -152,8 +150,6 @@ class Donation extends SalesforceWriteProxy
      */
     public function prePersist(): void
     {
-        error_log("Tip debug: {$this->getUuid()} prepersist. Tip: {$this->tipAmount}");
-
         // Decimal-safe check that amount if in the allowed range
         if (
             bccomp($this->amount, (string) $this->minimumAmount, 2) === -1 ||
@@ -170,12 +166,6 @@ class Donation extends SalesforceWriteProxy
      */
     public function preUpdate(PreUpdateEventArgs $args): void
     {
-        if ($args->hasChangedField('tipAmount')) {
-            error_log("Tip debug: {$this->getUuid()} preupdate. Tip: {$args->getNewValue('tipAmount')}");
-        } else {
-            error_log("Tip debug: {$this->getUuid()} preupdate. Tip already: {$this->tipAmount}");
-        }
-
         if (!$args->hasChangedField('amount')) {
             return;
         }
@@ -473,9 +463,9 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return string
      */
-    public function getUuid(): ?string
+    public function getUuid(): string
     {
-        return $this->uuid ? $this->uuid->toString() : null;
+        return $this->uuid->toString();
     }
 
     /**
@@ -510,10 +500,8 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return string
      */
-    public function getTipAmount(): ?string // TODO make non-nullable?
+    public function getTipAmount(): string
     {
-        error_log('Tip debug: getting amount ' . $this->tipAmount); // TODO rm
-
         return $this->tipAmount;
     }
 
@@ -522,8 +510,6 @@ class Donation extends SalesforceWriteProxy
      */
     public function setTipAmount(string $tipAmount): void
     {
-        error_log('Tip debug: Set amount ' . $tipAmount); // TODO remove log hack
-
         $this->tipAmount = $tipAmount;
     }
 

@@ -92,16 +92,11 @@ class DonationUpdate extends Action
         $donation->setTbgComms($donationData->optInTbgEmail);
         $donation->setTransactionId($donationData->transactionId);
 
-        $this->logger->info("{$donation->getUuid()} tip amount set from: {$donationData->tipAmount}");
-        $donation->setTipAmount(bcadd('0.00', (string) $donationData->tipAmount, 2));
-
-        $this->logger->info(
-            "{$donation->getUuid()} tip to persist EM open? " .
-            ($this->entityManager->isOpen() ? 'YES' : 'NO')
-        );
+        if ($donationData->tipAmount > 0) {
+            $donation->setTipAmount((string) $donationData->tipAmount);
+        }
 
         $this->entityManager->persist($donation);
-        $this->entityManager->flush();
 
         // We log if this fails but don't worry the webhook-sending payment client
         // about it. We'll re-try sending the updated status to Salesforce in a future

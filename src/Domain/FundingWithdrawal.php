@@ -16,7 +16,7 @@ class FundingWithdrawal extends Model
     use TimestampsTrait;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Donation", inversedBy="fundingWithdrawals")
+     * @ORM\ManyToOne(targetEntity="Donation", inversedBy="fundingWithdrawals", fetch="EAGER")
      * @var Donation
      */
     protected $donation;
