@@ -135,7 +135,7 @@ class Donation extends SalesforceWriteProxy
     protected $tipAmount = '0.00';
 
     /**
-     * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
+     * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation")
      * @var ArrayCollection|FundingWithdrawal[]
      */
     protected $fundingWithdrawals;
@@ -152,6 +152,8 @@ class Donation extends SalesforceWriteProxy
      */
     public function prePersist(): void
     {
+        error_log("Tip debug: {$this->getUuid()} prepersist. Tip: {$args->getNewValue('tipAmount')}");
+
         // Decimal-safe check that amount if in the allowed range
         if (
             bccomp($this->amount, (string) $this->minimumAmount, 2) === -1 ||
@@ -168,6 +170,8 @@ class Donation extends SalesforceWriteProxy
      */
     public function preUpdate(PreUpdateEventArgs $args): void
     {
+        error_log("Tip debug: {$this->getUuid()} preupdate. Tip: {$args->getNewValue('tipAmount')}");
+
         if (!$args->hasChangedField('amount')) {
             return;
         }
