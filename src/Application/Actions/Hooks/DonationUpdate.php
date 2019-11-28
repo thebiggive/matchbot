@@ -96,6 +96,14 @@ class DonationUpdate extends Action
             $donation->setTipAmount((string) $donationData->tipAmount);
         }
 
+        // In the future, we should support releasing match funds in a wider range of (semi-)permanent failed
+        // statuses. But we should clarify with Charity Checkout exactly which ones they expect to be safe to deem
+        // failed (e.g. what does 'RefundingPending' mean?) And for now, the only non-success hook status they send
+        // us is 'Refunded'.
+        if ($donation->getDonationStatus() === 'Refunded' && $donation->getCampaign()->isMatched()) {
+            $this->donationRepository->releaseMatchFunds($donation);
+        }
+
         $this->entityManager->persist($donation);
 
         // We log if this fails but don't worry the webhook-sending payment client
