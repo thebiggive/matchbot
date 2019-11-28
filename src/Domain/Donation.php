@@ -424,6 +424,10 @@ class Donation extends SalesforceWriteProxy
      */
     public function getConfirmedChampionWithdrawalTotal(): string
     {
+        if (!$this->isSuccessful()) {
+            return '0.0';
+        }
+
         $withdrawalTotal = '0.0';
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
             // Rely on Doctrine `SINGLE_TABLE` inheritance structure to derive the type from the concrete class.
