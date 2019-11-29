@@ -61,6 +61,14 @@ class Create extends Action
             return $this->respond(new ActionPayload(400, null, $error));
         }
 
+        if (!$donation->getCampaign()->isOpen()) {
+            $message = "Campaign {$donation->getCampaign()->getSalesforceId()} is not open";
+            $this->logger->warning($message);
+            $error = new ActionError(ActionError::BAD_REQUEST, $message);
+
+            return $this->respond(new ActionPayload(400, null, $error));
+        }
+
         try {
             if ($donation->getCampaign()->isMatched()) {
                 // This implicitly calls @prePersist on the Donation, so is part of the try{...}
