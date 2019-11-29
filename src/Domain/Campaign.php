@@ -104,4 +104,9 @@ class Campaign extends SalesforceReadProxy
     {
         return $this->charity;
     }
+
+    public function isOpen(): bool
+    {
+        return ($this->startDate <= new DateTime('now') && $this->endDate > new DateTime('now'));
+    }
 }
