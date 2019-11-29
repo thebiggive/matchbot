@@ -37,7 +37,6 @@ class ExpireMatchFunds extends LockingCommand
 
         foreach ($toRelease as $donation) {
             $this->donationRepository->releaseMatchFunds($donation);
-            $this->donationRepository->push($donation, false);
         }
 
         $numberExpired = count($toRelease);
