@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Client;
 
 class FundRepository extends SalesforceReadProxyRepository
@@ -27,24 +28,26 @@ class FundRepository extends SalesforceReadProxyRepository
         $fundsData = $client->getForCampaign($campaign->getSalesforceId());
         foreach ($fundsData as $fundData) {
             // For each fund linked to the campaign, look it up or create it if unknown
+            /** @var Fund $fund */
             $fund = $this->findOneBy(['salesforceId' => $fundData['id']]);
             if (!$fund) {
-                if ($fundData['type'] === 'pledge') {
-                    $fund = new Pledge();
-                } elseif ($fundData['type'] === 'championFund') {
-                    $fund = new ChampionFund();
-                } else {
-                    throw new \UnexpectedValueException("Unknown fund type '{$fundData['type']}'");
-                }
-                $fund->setSalesforceId($fundData['id']);
+                $fund = $this->getNewFund($fundData);
             }
 
             // Then whether new or existing, set its key info
-            $fund->setAmount($fundData['totalAmount'] === null ? '0.00' : (string) $fundData['totalAmount']);
-            $fund->setName($fundData['name']);
-            $fund->setSalesforceLastPull(new DateTime('now'));
-            $this->getEntityManager()->persist($fund);
-            $this->getEntityManager()->flush(); // Need the fund ID for the CampaignFunding find
+            $this->setAnyFundData($fund, $fundData);
+
+            try {
+                $this->getEntityManager()->persist($fund);
+                $this->getEntityManager()->flush(); // Need the fund ID for the CampaignFunding find
+            } catch (UniqueConstraintViolationException $exception) {
+                // Somebody else made the fund with this SF ID during the previous operations.
+                $this->logError('Skipping fund create as unique constraint failed on SF ID ' . $fundData['id']);
+
+                $fund = $this->findOneBy(['salesforceId' => $fundData['id']]);
+                $fund = $this->setAnyFundData($fund, $fundData);
+                $this->getEntityManager()->persist($fund);
+            }
 
             // If there's already a CampaignFunding for this campaign+fund combination, use that
             $campaignFunding = $this->campaignFundingRepository->getFunding($campaign, $fund);
@@ -69,8 +72,40 @@ class FundRepository extends SalesforceReadProxyRepository
                 $campaignFunding->setAmount($amountForCampaign);
             }
 
-            $this->getEntityManager()->persist($campaignFunding);
+            try {
+                $this->getEntityManager()->persist($campaignFunding);
+                $this->getEntityManager()->flush();
+            } catch (UniqueConstraintViolationException $exception) {
+                // Somebody else created the specific funding -> proceed without modifying it.
+                $this->logError(
+                    'Skipping campaign funding create as constraint failed with campaign ' .
+                    $campaign->getId() . ', fund ' . $fund->getId()
+                );
+            }
         }
+    }
+
+    protected function setAnyFundData(Fund $fund, array $fundData): Fund
+    {
+        $fund->setAmount($fundData['totalAmount'] === null ? '0.00' : (string) $fundData['totalAmount']);
+        $fund->setName($fundData['name']);
+        $fund->setSalesforceLastPull(new DateTime('now'));
+
+        return $fund;
+    }
+
+    protected function getNewFund(array $fundData): Fund
+    {
+        if ($fundData['type'] === 'pledge') {
+            $fund = new Pledge();
+        } elseif ($fundData['type'] === 'championFund') {
+            $fund = new ChampionFund();
+        } else {
+            throw new \UnexpectedValueException("Unknown fund type '{$fundData['type']}'");
+        }
+        $fund->setSalesforceId($fundData['id']);
+
+        return $fund;
     }
 
     /**
