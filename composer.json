@@ -67,6 +67,7 @@
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",
         "matchbot:expire-match-funds": "php matchbot-cli.php matchbot:expire-match-funds",
         "matchbot:push-donations": "php matchbot-cli.php matchbot:push-donations",
+        "matchbot:retrospectively-match": "php matchbot-cli.php matchbot:retrospectively-match",
         "matchbot:update-campaigns": "php matchbot-cli.php matchbot:update-campaigns",
         "start": "php -S localhost:8080 -t public",
         "test": "phpunit"
