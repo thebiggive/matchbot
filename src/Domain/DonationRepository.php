@@ -95,13 +95,18 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * available amount figures.
      *
      * @param Donation $donation
-     * @return string Total amount of matching allocated
+     * @return string Total amount of matching *newly* allocated
      * @see CampaignFundingRepository::getAvailableFundings() for lock acquisition detail
      */
     public function allocateMatchFunds(Donation $donation): string
     {
         $allocationDone = false;
         $allocationTries = 0;
+        // We look up matching withdrawals to allow for the case where retrospective matching was required
+        // and the donation is not new, and *some* (or full) matching already occurred. The collection of withdrawals
+        // is most often empty (for new donations) so this will frequently be 0.00.
+        $amountMatchedAtStart = $donation->getFundingWithdrawalTotal();
+
         while (!$allocationDone && $allocationTries < $this->maxLockTries) {
             try {
                 // We need write-ready locks for `CampaignFunding`s but also to keep the time we have them as short
@@ -114,8 +119,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
                 $lockStartTime = microtime(true);
                 $newWithdrawals = $this->matchingAdapter->runTransactionally(
-                    function () use ($donation, $likelyAvailableFunds) {
-                        return $this->safelyAllocateFunds($donation, $likelyAvailableFunds);
+                    function () use ($donation, $likelyAvailableFunds, $amountMatchedAtStart) {
+                        return $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart);
                     }
                 );
                 $lockEndTime = microtime(true);
@@ -126,18 +131,18 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 // We end the transaction prior to inserting the funding withdrawal records, to keep the lock time
                 // short. These are new entities, so except in a system crash the withdrawal totals will almost
                 // immediately match the amount deducted from the fund.
-                $amountMatched = '0.0';
+                $amountNewlyMatched = '0.0';
 
                 try {
-                    $amountMatched = $this->getEntityManager()->transactional(
-                        function () use ($newWithdrawals, $donation, $amountMatched) {
+                    $amountNewlyMatched = $this->getEntityManager()->transactional(
+                        function () use ($newWithdrawals, $donation, $amountNewlyMatched) {
                             foreach ($newWithdrawals as $newWithdrawal) {
                                 $this->getEntityManager()->persist($newWithdrawal);
                                 $donation->addFundingWithdrawal($newWithdrawal);
-                                $amountMatched = bcadd($amountMatched, $newWithdrawal->getAmount(), 2);
+                                $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawal->getAmount(), 2);
                             }
 
-                            return $amountMatched;
+                            return $amountNewlyMatched;
                         }
                     );
                 } catch (DBALException $exception) {
@@ -169,12 +174,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
             throw new DomainLockContentionException();
         }
 
-        $this->logInfo('ID ' . $donation->getUuid() . ' allocated match funds totalling ' . $amountMatched);
+        $this->logInfo('ID ' . $donation->getUuid() . ' allocated new match funds totalling ' . $amountNewlyMatched);
 
         // Monitor allocation times so we can get a sense of how risky the locking behaviour is with different DB sizes
         $this->logInfo('Allocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
 
-        return $amountMatched;
+        return $amountNewlyMatched;
     }
 
     public function releaseMatchFunds(Donation $donation): void
@@ -261,6 +266,29 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
+     * @return Donation[]
+     */
+    public function findRecentNotFullyMatchedToMatchCampaigns(): array
+    {
+        $checkAfter = (new DateTime('now'))->sub(new \DateInterval('P2D'));
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('d')
+            ->from(Donation::class, 'd')
+            ->join('d.campaign', 'c')
+            ->leftJoin('d.fundingWithdrawals', 'fw')
+            ->where('d.donationStatus IN (:completeStatuses)')
+            ->andWhere('c.isMatched = :campaignMatched')
+            ->andWhere('d.createdAt >= :checkAfter')
+            ->groupBy('d')
+            ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
+            ->setParameter('completeStatuses', Donation::getSuccessStatuses())
+            ->setParameter('campaignMatched', true)
+            ->setParameter('checkAfter', $checkAfter);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
      * @param mixed $campaignRepository
      */
     public function setCampaignRepository($campaignRepository): void
@@ -283,11 +311,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * @param Donation $donation
      * @param CampaignFunding[] $fundings   Fundings likely to have funds available. To be re-queried with a
      *                                      pessimistic write lock before allocation.
+     * @param string                        Amount of match funds already allocated to the donation when we started.
      * @return FundingWithdrawal[]
      */
-    private function safelyAllocateFunds(Donation $donation, array $fundings): array
+    private function safelyAllocateFunds(Donation $donation, array $fundings, string $amountMatchedAtStart): array
     {
-        $amountLeftToMatch = $donation->getAmount();
+        $amountLeftToMatch = bcsub($donation->getAmount(), $amountMatchedAtStart, 2);
         $currentFundingIndex = 0;
         /** @var FundingWithdrawal[] $newWithdrawals Track these to persist outside the lock window, to keep it short */
         $newWithdrawals = [];

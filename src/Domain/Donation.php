@@ -42,7 +42,7 @@ class Donation extends SalesforceWriteProxy
 
     private $newStatuses = ['NotSet', 'Pending'];
 
-    private $successStatuses = ['Collected', 'Paid'];
+    private static $successStatuses = ['Collected', 'Paid'];
 
     /**
      * The donation ID for Charity Checkout and public APIs. Not the same as the internal auto-increment $id used
@@ -238,7 +238,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function isSuccessful(): bool
     {
-        return in_array($this->donationStatus, $this->successStatuses, true);
+        return in_array($this->donationStatus, self::$successStatuses, true);
     }
 
     /**
@@ -524,5 +524,13 @@ class Donation extends SalesforceWriteProxy
     public function hasPostCreateUpdates(): bool
     {
         return !in_array($this->getDonationStatus(), $this->newStatuses, true);
+    }
+
+    /**
+     * @return string[]
+     */
+    public static function getSuccessStatuses(): array
+    {
+        return self::$successStatuses;
     }
 }
