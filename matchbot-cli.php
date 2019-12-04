@@ -6,6 +6,7 @@ $psr11App = require __DIR__ . '/bootstrap.php';
 
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\PushDonations;
+use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Application\Commands\UpdateCampaigns;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
@@ -18,6 +19,7 @@ $cliApp = new Application();
 $commands = [
     new ExpireMatchFunds($psr11App->get(DonationRepository::class)),
     new PushDonations($psr11App->get(DonationRepository::class)),
+    new RetrospectivelyMatch($psr11App->get(DonationRepository::class)),
     new UpdateCampaigns($psr11App->get(CampaignRepository::class), $psr11App->get(FundRepository::class)),
 ];
 foreach ($commands as $command) {
