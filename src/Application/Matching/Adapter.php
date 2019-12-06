@@ -49,6 +49,11 @@ abstract class Adapter
         return $result;
     }
 
+    /**
+     * @param CampaignFunding $funding
+     * @param string $amount
+     * @return string New fund balance as bcmath-ready string
+     */
     public function addAmount(CampaignFunding $funding, string $amount): string
     {
         if (!$this->inTransaction) {
@@ -58,6 +63,11 @@ abstract class Adapter
         return $this->doAddAmount($funding, $amount);
     }
 
+    /**
+     * @param CampaignFunding $funding
+     * @param string $amount
+     * @return string New fund balance as bcmath-ready string
+     */
     public function subtractAmount(CampaignFunding $funding, string $amount): string
     {
         if (!$this->inTransaction) {

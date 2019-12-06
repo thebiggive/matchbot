@@ -58,10 +58,31 @@ class Cancel extends Action
         );
 
         if ($donationData->status !== 'Cancelled') {
+            $this->logger->warning(
+                "Donation ID {$this->args['donationId']} could not be set to status {$donationData->status}"
+            );
             $error = new ActionError(ActionError::BAD_REQUEST, 'Only cancellations supported');
 
             return $this->respond(new ActionPayload(400, null, $error));
         }
+
+        if ($donation->getDonationStatus() === 'Cancelled') {
+            $this->logger->info("Donation ID {$this->args['donationId']} was already Cancelled");
+            return $this->respondWithData($donation->toApiModel(false));
+        }
+
+        if ($donation->isSuccessful()) {
+            // If a donor uses browser back before loading the thank you page, it is possible for them to get
+            // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
+            $this->logger->warning(
+                "Donation ID {$this->args['donationId']} could not be cancelled as {$donation->getDonationStatus()}"
+            );
+            $error = new ActionError(ActionError::BAD_REQUEST, 'Donation already finalised');
+
+            return $this->respond(new ActionPayload(400, null, $error));
+        }
+
+        $this->logger->info("Donor cancelled ID {$this->args['donationId']}");
 
         $donation->setDonationStatus('Cancelled');
         if ($donation->getCampaign()->isMatched()) {

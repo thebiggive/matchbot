@@ -65,9 +65,19 @@
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
         "lint:check": "phpcs --standard=phpcs.xml -s .",
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",
-        "matchbot:expire-match-funds": "php matchbot-cli.php matchbot:expire-match-funds",
+        "matchbot:expire-match-funds": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:expire-match-funds"
+        ],
+        "matchbot:fix-out-of-sync-funds": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:fix-out-of-sync-funds"
+        ],
         "matchbot:push-donations": "php matchbot-cli.php matchbot:push-donations",
-        "matchbot:retrospectively-match": "php matchbot-cli.php matchbot:retrospectively-match",
+        "matchbot:retrospectively-match": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:retrospectively-match"
+        ],
         "matchbot:update-campaigns": "php matchbot-cli.php matchbot:update-campaigns",
         "start": "php -S localhost:8080 -t public",
         "test": "phpunit"

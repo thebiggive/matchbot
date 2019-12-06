@@ -13,6 +13,8 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
+use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\FundingWithdrawalRepository;
 use MatchBot\Domain\FundRepository;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -50,6 +52,10 @@ return static function (ContainerBuilder $containerBuilder) {
             $repo->setLogger($c->get(LoggerInterface::class));
 
             return $repo;
+        },
+
+        FundingWithdrawalRepository::class => static function (ContainerInterface $c): FundingWithdrawalRepository {
+            return $c->get(EntityManagerInterface::class)->getRepository(FundingWithdrawal::class);
         }
     ]);
 };

@@ -195,9 +195,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     function () use ($donation, $totalAmountReleased) {
                         foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
                             $funding = $fundingWithdrawal->getCampaignFunding();
-                            $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
+                            $newTotal = $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
                             $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
                             $this->logInfo("Released {$fundingWithdrawal->getAmount()} to funding {$funding->getId()}");
+                            $this->logInfo("New fund total for {$funding->getId()}: $newTotal");
                         }
 
                         return $totalAmountReleased;
@@ -268,9 +269,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * @return Donation[]
      */
-    public function findRecentNotFullyMatchedToMatchCampaigns(): array
+    public function findRecentNotFullyMatchedToMatchCampaigns(DateTime $sinceDate): array
     {
-        $checkAfter = (new DateTime('now'))->sub(new \DateInterval('P2D'));
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
@@ -283,7 +283,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
             ->setParameter('completeStatuses', Donation::getSuccessStatuses())
             ->setParameter('campaignMatched', true)
-            ->setParameter('checkAfter', $checkAfter);
+            ->setParameter('checkAfter', $sinceDate);
 
         return $qb->getQuery()->getResult();
     }
@@ -334,7 +334,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             }
 
             try {
-                $this->matchingAdapter->subtractAmount($funding, $amountToAllocateNow);
+                $newTotal = $this->matchingAdapter->subtractAmount($funding, $amountToAllocateNow);
                 $amountAllocated = $amountToAllocateNow; // If no exception thrown
             } catch (Matching\LessThanRequestedAllocatedException $exception) {
                 $amountAllocated = $exception->getAmountAllocated();
@@ -353,6 +353,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $withdrawal->setAmount($amountAllocated);
                 $newWithdrawals[] = $withdrawal;
                 $this->logInfo("Successfully withdrew $amountAllocated from funding {$funding->getId()}");
+                $this->logInfo("New fund total for {$funding->getId()}: $newTotal");
             }
 
             $currentFundingIndex++;
