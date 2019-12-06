@@ -5,19 +5,14 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Commands;
 
 use Symfony\Component\Lock\Key;
-use Symfony\Component\Lock\StoreInterface;
+use Symfony\Component\Lock\PersistingStoreInterface;
 
 /**
  * Dummy Lock Store which always gives an available lock, for unit testing Commands.
  */
-class AlwaysAvailableLockStore implements StoreInterface
+class AlwaysAvailableLockStore implements PersistingStoreInterface
 {
     public function save(Key $key)
-    {
-        // Do nothing
-    }
-
-    public function waitAndSave(Key $key)
     {
         // Do nothing
     }
