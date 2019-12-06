@@ -24,7 +24,7 @@ abstract class LockingCommand extends Command
     {
         $this->start($output);
         if ($this->getLock()) {
-            $this->doExecute($output);
+            $this->doExecute($input, $output);
             $this->releaseLock();
         } else {
             $output->writeln($this->getName() . ' did nothing as another instance had the lock.');
