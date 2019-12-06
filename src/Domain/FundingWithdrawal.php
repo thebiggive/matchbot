@@ -7,7 +7,7 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="FundingWithdrawalRepository")
  * @ORM\HasLifecycleCallbacks
  * @ORM\Table
  */
