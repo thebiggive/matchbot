@@ -6,7 +6,7 @@ namespace MatchBot\Application\Commands;
 
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Lock\Factory as LockFactory;
+use Symfony\Component\Lock\LockFactory;
 
 abstract class LockingCommand extends Command
 {

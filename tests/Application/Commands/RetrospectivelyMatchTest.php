@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
-use Symfony\Component\Lock;
+use Symfony\Component\Lock\LockFactory;
 
 class RetrospectivelyMatchTest extends TestCase
 {
@@ -25,7 +25,7 @@ class RetrospectivelyMatchTest extends TestCase
         $donationRepo->findRecentNotFullyMatchedToMatchCampaigns(Argument::type(DateTime::class))->willReturn([]);
 
         $this->command = new RetrospectivelyMatch($donationRepo->reveal());
-        $this->command->setLockFactory(new Lock\Factory(new AlwaysAvailableLockStore()));
+        $this->command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
     }
 
     public function testMissingDaysBackRefusesToRun(): void
