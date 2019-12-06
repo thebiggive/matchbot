@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use DateTime;
 use MatchBot\Domain\DonationRepository;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -27,13 +30,28 @@ class RetrospectivelyMatch extends LockingCommand
     protected function configure(): void
     {
         $this->setDescription(
-            "Allocates matching from the last 48 hours' donations if they missed it due to pending reservations"
+            "Allocates matching from the last N days' donations if they missed it due to pending reservations"
+        );
+        $this->addArgument(
+            'days-back',
+            InputArgument::REQUIRED,
+            'Number of days back to look for donations that could be matched.'
         );
     }
 
-    protected function doExecute(OutputInterface $output)
+    protected function doExecute(InputInterface $input, OutputInterface $output)
     {
-        $toCheckForMatching = $this->donationRepository->findRecentNotFullyMatchedToMatchCampaigns();
+        if (!is_numeric($input->getArgument('days-back'))) {
+            $output->writeln('Cannot proceed with non-numeric days-back argument');
+            return;
+        }
+
+        $daysBack = round($input->getArgument('days-back'));
+        $output->writeln("Looking at past $daysBack days' donations");
+
+        $sinceDate = (new DateTime('now'))->sub(new \DateInterval("P{$daysBack}D"));
+        $toCheckForMatching = $this->donationRepository->findRecentNotFullyMatchedToMatchCampaigns($sinceDate);
+
         $numChecked = count($toCheckForMatching);
         $distinctCampaignIds = [];
         $numWithMatchingAllocated = 0;

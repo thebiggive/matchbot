@@ -268,9 +268,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * @return Donation[]
      */
-    public function findRecentNotFullyMatchedToMatchCampaigns(): array
+    public function findRecentNotFullyMatchedToMatchCampaigns(DateTime $sinceDate): array
     {
-        $checkAfter = (new DateTime('now'))->sub(new \DateInterval('P2D'));
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
@@ -283,7 +282,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
             ->setParameter('completeStatuses', Donation::getSuccessStatuses())
             ->setParameter('campaignMatched', true)
-            ->setParameter('checkAfter', $checkAfter);
+            ->setParameter('checkAfter', $sinceDate);
 
         return $qb->getQuery()->getResult();
     }
