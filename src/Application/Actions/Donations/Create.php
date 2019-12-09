@@ -42,6 +42,7 @@ class Create extends Action
 
     /**
      * @return Response
+     * @throws \MatchBot\Application\Matching\TerminalLockException if the matching adapter can't allocate funds
      */
     protected function action(): Response
     {
@@ -67,7 +68,8 @@ class Create extends Action
         } catch (\UnexpectedValueException $exception) {
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $exception->getMessage());
-            $error = new ActionError(ActionError::BAD_REQUEST, $message);
+            $this->logger->info("Donation Create model load failure payload was: {$this->request->getBody()}");
+            $error = new ActionError(ActionError::BAD_REQUEST, $exception->getMessage());
 
             return $this->respond(new ActionPayload(400, null, $error));
         }
@@ -80,24 +82,17 @@ class Create extends Action
             return $this->respond(new ActionPayload(400, null, $error));
         }
 
-        try {
-            if ($donation->getCampaign()->isMatched()) {
-                // This implicitly calls @prePersist on the Donation, so is part of the try{...}
+        $this->entityManager->persist($donation);
+        $this->entityManager->flush();
+
+        if ($donation->getCampaign()->isMatched()) {
+            try {
                 $this->donationRepository->allocateMatchFunds($donation);
+            } catch (DomainLockContentionException $exception) {
+                $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
+
+                return $this->respond(new ActionPayload(503, null, $error));
             }
-
-            $this->entityManager->persist($donation);
-            $this->entityManager->flush();
-        } catch (\UnexpectedValueException $exception) {
-            $message = 'Donation Create data failed validation';
-            $this->logger->warning($message);
-            $error = new ActionError(ActionError::BAD_REQUEST, $message);
-
-            return $this->respond(new ActionPayload(400, null, $error));
-        } catch (DomainLockContentionException $exception) {
-            $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
-
-            return $this->respond(new ActionPayload(503, null, $error));
         }
 
         $response = new DonationCreatedResponse();

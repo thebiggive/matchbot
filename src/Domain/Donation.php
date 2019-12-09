@@ -146,20 +146,6 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @ORM\PrePersist Check that the amount is in the permitted range
-     */
-    public function prePersist(): void
-    {
-        // Decimal-safe check that amount if in the allowed range
-        if (
-            bccomp($this->amount, (string) $this->minimumAmount, 2) === -1 ||
-            bccomp($this->amount, (string) $this->maximumAmount, 2) === 1
-        ) {
-            throw new \UnexpectedValueException("Amount must be £{$this->minimumAmount}-{$this->maximumAmount}");
-        }
-    }
-
-    /**
      * @ORM\PreUpdate Check that the amount is never changed
      * @param PreUpdateEventArgs $args
      * @throws \LogicException if amount is changed
@@ -390,6 +376,13 @@ class Donation extends SalesforceWriteProxy
      */
     public function setAmount(string $amount): void
     {
+        if (
+            bccomp($amount, (string) $this->minimumAmount, 2) === -1 ||
+            bccomp($amount, (string) $this->maximumAmount, 2) === 1
+        ) {
+            throw new \UnexpectedValueException("Amount must be £{$this->minimumAmount}-{$this->maximumAmount}");
+        }
+
         $this->amount = $amount;
     }
 

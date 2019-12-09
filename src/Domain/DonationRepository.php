@@ -58,8 +58,21 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return $this->getClient()->put($donation);
     }
 
+    /**
+     * @param DonationCreate $donationData
+     * @return Donation
+     * @throws \UnexpectedValueException if inputs invalid, including projectId being unrecognised
+     */
     public function buildFromApiRequest(DonationCreate $donationData): Donation
     {
+        if (!isset($donationData->giftAid, $donationData->optInCharityEmail, $donationData->optInTbgEmail)) {
+            throw new \UnexpectedValueException('Required boolean fields not set');
+        }
+
+        if (empty($donationData->projectId)) {
+            throw new \UnexpectedValueException('Required field "projectId" not set');
+        }
+
         /** @var Campaign $campaign */
         $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId]);
 
