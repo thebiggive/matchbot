@@ -42,6 +42,7 @@ class Create extends Action
 
     /**
      * @return Response
+     * @throws \MatchBot\Application\Matching\TerminalLockException if the matching adapter can't allocate funds
      */
     protected function action(): Response
     {
@@ -67,7 +68,8 @@ class Create extends Action
         } catch (\UnexpectedValueException $exception) {
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $exception->getMessage());
-            $error = new ActionError(ActionError::BAD_REQUEST, $message);
+            $this->logger->info("Donation Create model load failure payload was: {$this->request->getBody()}");
+            $error = new ActionError(ActionError::BAD_REQUEST, $exception->getMessage());
 
             return $this->respond(new ActionPayload(400, null, $error));
         }
