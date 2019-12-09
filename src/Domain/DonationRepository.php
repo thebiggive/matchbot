@@ -69,6 +69,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
             throw new \UnexpectedValueException('Required boolean fields not set');
         }
 
+        if (empty($donationData->projectId)) {
+            throw new \UnexpectedValueException('Required field "projectId" not set');
+        }
+
         /** @var Campaign $campaign */
         $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId]);
 
