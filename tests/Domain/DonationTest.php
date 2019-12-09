@@ -23,12 +23,8 @@ class DonationTest extends TestCase
     {
         $donation = new Donation();
         $donation->setAmount('100.00');
-        // Invoking real Doctrine events but with a fake driver, for isolated unit testing, is
-        // both complex and not very valuable, so for now we just manually pretend the object is
-        // about to be persisted rather than bootstrapping a whole fake EntityManager.
-        $donation->prePersist();
 
-        $this->addToAssertionCount(1); // Just check persist doesn't hit lifecycle hook exceptions
+        $this->addToAssertionCount(1); // Just check setAmount() doesn't hit an exception
     }
 
     public function testAmountTooLowNotPersisted(): void
@@ -38,7 +34,6 @@ class DonationTest extends TestCase
 
         $donation = new Donation();
         $donation->setAmount('4.99');
-        $donation->prePersist();
     }
 
     public function testAmountTooHighNotPersisted(): void
@@ -48,6 +43,5 @@ class DonationTest extends TestCase
 
         $donation = new Donation();
         $donation->setAmount('25000.01');
-        $donation->prePersist();
     }
 }

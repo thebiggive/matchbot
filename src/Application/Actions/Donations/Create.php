@@ -80,20 +80,14 @@ class Create extends Action
             return $this->respond(new ActionPayload(400, null, $error));
         }
 
+        $this->entityManager->persist($donation);
+        $this->entityManager->flush();
+
         try {
             if ($donation->getCampaign()->isMatched()) {
                 // This implicitly calls @prePersist on the Donation, so is part of the try{...}
                 $this->donationRepository->allocateMatchFunds($donation);
             }
-
-            $this->entityManager->persist($donation);
-            $this->entityManager->flush();
-        } catch (\UnexpectedValueException $exception) {
-            $message = 'Donation Create data failed validation';
-            $this->logger->warning($message);
-            $error = new ActionError(ActionError::BAD_REQUEST, $message);
-
-            return $this->respond(new ActionPayload(400, null, $error));
         } catch (DomainLockContentionException $exception) {
             $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
 
