@@ -26,9 +26,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  *  3. you expect donations to be at a low volume when you run this, reducing the risk of things
  *     getting back out of sync because of donations coming in while it runs
  */
-class FixOutOfSyncFunds extends LockingCommand
+class HandleOutOfSyncFunds extends LockingCommand
 {
-    protected static $defaultName = 'matchbot:fix-out-of-sync-funds';
+    protected static $defaultName = 'matchbot:handle-out-of-sync-funds';
 
     /** @var CampaignFundingRepository */
     private $campaignFundingRepository;
