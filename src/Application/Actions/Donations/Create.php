@@ -85,15 +85,14 @@ class Create extends Action
         $this->entityManager->persist($donation);
         $this->entityManager->flush();
 
-        try {
-            if ($donation->getCampaign()->isMatched()) {
-                // This implicitly calls @prePersist on the Donation, so is part of the try{...}
+        if ($donation->getCampaign()->isMatched()) {
+            try {
                 $this->donationRepository->allocateMatchFunds($donation);
-            }
-        } catch (DomainLockContentionException $exception) {
-            $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
+            } catch (DomainLockContentionException $exception) {
+                $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
 
-            return $this->respond(new ActionPayload(503, null, $error));
+                return $this->respond(new ActionPayload(503, null, $error));
+            }
         }
 
         $response = new DonationCreatedResponse();
