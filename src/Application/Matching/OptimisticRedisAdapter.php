@@ -40,6 +40,13 @@ class OptimisticRedisAdapter extends Adapter
         return $result;
     }
 
+    public function getAmountAvailable(CampaignFunding $funding): string
+    {
+        $fundBalanceInPence = $this->redis->get($this->buildKey($funding)) ?: 0;
+
+        return (string) ($fundBalanceInPence / 100);
+    }
+
     protected function doSubtractAmount(CampaignFunding $funding, string $amount): string
     {
         $decrementInPence = (int) (((float) $amount) * 100);

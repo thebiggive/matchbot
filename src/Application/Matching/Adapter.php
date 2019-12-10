@@ -12,6 +12,18 @@ abstract class Adapter
     private $inTransaction = false;
 
     /**
+     * Get a snapshot of the amount of match funds available in the given `$funding`. This should not be used to start
+     * allocation maths except in emergencies where things appear to have got out of sync, because there is no
+     * guarantee with this function that another thread will not reserve or release funds before you have finished
+     * your work. You should instead use `addAmount()` and `subtractAmount()` which are built to work atomically or
+     * transactionally so that they are safe for high-volume, multi-thread use.
+     *
+     * @param CampaignFunding $funding
+     * @return string Amount available as bcmath-ready decimal string
+     */
+    abstract public function getAmountAvailable(CampaignFunding $funding): string;
+
+    /**
      * @param callable $function
      * @return mixed The given `$function`'s return value
      */

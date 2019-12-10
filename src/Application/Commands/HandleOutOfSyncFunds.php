@@ -84,7 +84,8 @@ class HandleOutOfSyncFunds extends LockingCommand
             /** @var CampaignFunding $funding */
 
             // Amount allocated from the CampaignFunding
-            $campaignFundingAllocated = bcsub($funding->getAmount(), $funding->getAmountAvailable(), 2);
+            $fundingAvailable = $this->matchingAdapter->getAmountAvailable($funding);
+            $campaignFundingAllocated = bcsub($funding->getAmount(), $fundingAvailable, 2);
 
             // Get the sum of all FundingWithdrawals for donations, whether complete or active reservations.
             $fundingWithdrawalTotal = $this->fundingWithdrawalRepository->getWithdrawalsTotal($funding);
