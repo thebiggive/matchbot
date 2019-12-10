@@ -44,6 +44,8 @@ class Donation extends SalesforceWriteProxy
 
     private static $successStatuses = ['Collected', 'Paid'];
 
+    private static $reversedStatuses = ['Refunded', 'Failed', 'Chargedback'];
+
     /**
      * The donation ID for Charity Checkout and public APIs. Not the same as the internal auto-increment $id used
      * by Doctrine internally for fast joins.
@@ -225,6 +227,11 @@ class Donation extends SalesforceWriteProxy
     public function isSuccessful(): bool
     {
         return in_array($this->donationStatus, self::$successStatuses, true);
+    }
+
+    public function isReversed(): bool
+    {
+        return in_array($this->donationStatus, self::$reversedStatuses, true);
     }
 
     /**
