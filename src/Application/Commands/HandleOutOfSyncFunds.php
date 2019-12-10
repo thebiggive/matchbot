@@ -31,9 +31,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  * taking action based on a reported mismatch, run the command a second time and check the same funds and amounts
  * are listed as the first time.
  */
-class FixOutOfSyncFunds extends LockingCommand
+class HandleOutOfSyncFunds extends LockingCommand
 {
-    protected static $defaultName = 'matchbot:fix-out-of-sync-funds';
+    protected static $defaultName = 'matchbot:handle-out-of-sync-funds';
 
     /** @var CampaignFundingRepository */
     private $campaignFundingRepository;

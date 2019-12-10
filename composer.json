@@ -69,9 +69,13 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:expire-match-funds"
         ],
+        "matchbot:check-out-of-sync-funds": [
+          "Composer\\Config::disableProcessTimeout",
+          "php matchbot-cli.php matchbot:matchbot:handle-out-of-sync-funds check"
+        ],
         "matchbot:fix-out-of-sync-funds": [
             "Composer\\Config::disableProcessTimeout",
-            "php matchbot-cli.php matchbot:fix-out-of-sync-funds"
+            "php matchbot-cli.php matchbot:matchbot:handle-out-of-sync-funds fix"
         ],
         "matchbot:push-donations": "php matchbot-cli.php matchbot:push-donations",
         "matchbot:retrospectively-match": [
