@@ -5,7 +5,7 @@ declare(strict_types=1);
 $psr11App = require __DIR__ . '/bootstrap.php';
 
 use MatchBot\Application\Commands\ExpireMatchFunds;
-use MatchBot\Application\Commands\FixOutOfSyncFunds;
+use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Application\Commands\UpdateCampaigns;
@@ -22,7 +22,7 @@ $cliApp = new Application();
 
 $commands = [
     new ExpireMatchFunds($psr11App->get(DonationRepository::class)),
-    new FixOutOfSyncFunds(
+    new HandleOutOfSyncFunds(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(FundingWithdrawalRepository::class),
         $psr11App->get(Matching\Adapter::class)

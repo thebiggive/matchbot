@@ -47,6 +47,13 @@ class LockingRedisAdapter extends Adapter
         return $result;
     }
 
+    public function getAmountAvailable(CampaignFunding $funding): string
+    {
+        $fundBalanceInPence = $this->redis->get($this->buildKey($funding)) ?: 0;
+
+        return (string) ($fundBalanceInPence / 100);
+    }
+
     private function setAmount(CampaignFunding $funding, string $amount): bool
     {
         $setResult = $this->redis->set($this->buildKey($funding), $amount);

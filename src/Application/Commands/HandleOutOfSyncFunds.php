@@ -25,10 +25,15 @@ use Symfony\Component\Console\Output\OutputInterface;
  *  2. you understand why that has happened and are sure it won't happen again
  *  3. you expect donations to be at a low volume when you run this, reducing the risk of things
  *     getting back out of sync because of donations coming in while it runs
+ *
+ * Keep in mind that it is also normal while reservations are happening for funds to *briefly* diverge and show up
+ * in the output of this command (this underscores the reason it's important to use the 'fix' mode sparingly!) Before
+ * taking action based on a reported mismatch, run the command a second time and check the same funds and amounts
+ * are listed as the first time.
  */
-class FixOutOfSyncFunds extends LockingCommand
+class HandleOutOfSyncFunds extends LockingCommand
 {
-    protected static $defaultName = 'matchbot:fix-out-of-sync-funds';
+    protected static $defaultName = 'matchbot:handle-out-of-sync-funds';
 
     /** @var CampaignFundingRepository */
     private $campaignFundingRepository;
@@ -79,7 +84,8 @@ class FixOutOfSyncFunds extends LockingCommand
             /** @var CampaignFunding $funding */
 
             // Amount allocated from the CampaignFunding
-            $campaignFundingAllocated = bcsub($funding->getAmount(), $funding->getAmountAvailable(), 2);
+            $fundingAvailable = $this->matchingAdapter->getAmountAvailable($funding);
+            $campaignFundingAllocated = bcsub($funding->getAmount(), $fundingAvailable, 2);
 
             // Get the sum of all FundingWithdrawals for donations, whether complete or active reservations.
             $fundingWithdrawalTotal = $this->fundingWithdrawalRepository->getWithdrawalsTotal($funding);

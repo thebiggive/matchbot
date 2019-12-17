@@ -20,6 +20,11 @@ class DoctrineAdapter extends Adapter
         $this->entityManager = $entityManager;
     }
 
+    public function getAmountAvailable(CampaignFunding $funding): string
+    {
+        return $funding->getAmountAvailable();
+    }
+
     public function doRunTransactionally(callable $function)
     {
         try {
@@ -30,24 +35,6 @@ class DoctrineAdapter extends Adapter
 
         // Work around Doctrine bailing out of transaction with bools when we expect an array of withdrawals.
         return (is_bool($result) ? [] : $result);
-    }
-
-    protected function doGetAmount(CampaignFunding $fund): string
-    {
-        try {
-            $this->entityManager->getRepository(CampaignFunding::class)->getOneWithWriteLock($fund);
-        } catch (DBALException $exception) {
-            try {
-                // Release the lock before we return
-                $this->entityManager->rollback();
-            } catch (ConnectionException $rollbackException) {
-                // Rollback bails out if transaction was already terminated
-            }
-
-            throw $this->buildLockException($exception);
-        }
-
-        return $fund->getAmountAvailable();
     }
 
     protected function doAddAmount(CampaignFunding $funding, string $amount): string
