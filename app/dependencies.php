@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use DI\ContainerBuilder;
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Cache\ArrayCache;
 use Doctrine\Common\Cache\RedisCache;
 use Doctrine\ORM;
 use Doctrine\ORM\EntityManagerInterface;
@@ -84,20 +85,33 @@ return function (ContainerBuilder $containerBuilder) {
         ORM\Configuration::class => static function (ContainerInterface $c): ORM\Configuration {
             $settings = $c->get('settings');
 
-            // Must be a distinct instance from the one used for fund allocation maths. Never re-created ever when the
-            // EntityManager is, so for now we can safely do this on construct.
+            // Must be a distinct instance from the one used for fund allocation maths, as Doctrine's PHP serialisation
+            // is incompatible with that needed for Redis commands that modify integer values in place. This injected
+            // Configuration is never re-created even when the EntityManager is, so for now we can safely do this here
+            // on construct.
             $redis = new Redis();
-            $redis->connect($c->get('settings')['redis']['host']);
-            $cache = new RedisCache();
-            $cache->setRedis($redis);
-            $cache->setNamespace("matchbot-{$settings['appEnv']}");
+            try {
+                $redis->connect($c->get('settings')['redis']['host']);
+                $cache = new RedisCache();
+                $cache->setRedis($redis);
+                $cache->setNamespace("matchbot-{$settings['appEnv']}");
+            } catch (RedisException $exception) {
+                // This essentially means Doctrine is not using a cache. `/ping` should fail separately based on
+                // Redis being down whenever this happens, so we should find out without relying on this warning log.
+                $c->get(LoggerInterface::class)->warning('Doctrine falling back to array cache');
+                $cache = new ArrayCache();
+            }
 
             $config = Setup::createAnnotationMetadataConfiguration(
                 $settings['doctrine']['metadata_dirs'],
                 $settings['doctrine']['dev_mode'],
-                null,
+                $settings['doctrine']['cache_dir'] . '/proxies',
                 $cache
             );
+
+            // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
+            // files indefinitely.
+            $config->setAutoGenerateProxyClasses($settings['doctrine']['dev_mode']);
 
             $config->setMetadataDriverImpl(
                 new AnnotationDriver(new AnnotationReader(), $settings['doctrine']['metadata_dirs'])
@@ -105,22 +119,24 @@ return function (ContainerBuilder $containerBuilder) {
 
             $config->setMetadataCacheImpl($cache);
 
-            // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
-            // files indefinitely.
-            $config->setAutoGenerateProxyClasses($settings['doctrine']['dev_mode']);
-
-            $config->setProxyDir($settings['doctrine']['cache_dir'] . '/proxies');
-
             return $config;
         },
 
         /**
-         * Do NOT pass this instance to Doctrine, which will set it to PHP serialisation and break incr/decr math!
+         * Do NOT pass this instance to Doctrine, which will set it to PHP serialisation, breaking incr/decr maths
+         * which is *CRITICAL FOR MATCHING*!
          */
-        Redis::class => static function (ContainerInterface $c): Redis {
+        Redis::class => static function (ContainerInterface $c): ?Redis {
             $redis = new Redis();
-            $redis->connect($c->get('settings')['redis']['host']);
-            $redis->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_NONE); // Required for incr/decr commands
+            try {
+                $connected = $redis->connect($c->get('settings')['redis']['host']);
+                if ($connected) {
+                    // Required for incr/decr commands
+                    $redis->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_NONE);
+                }
+            } catch (RedisException $exception) {
+                return null;
+            }
 
             return $redis;
         },
