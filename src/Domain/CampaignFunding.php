@@ -37,13 +37,13 @@ class CampaignFunding extends Model
      * @ORM\ManyToOne(targetEntity="Fund", cascade={"persist"})
      * @var Fund
      */
-    protected $fund;
+    protected Fund $fund;
 
     /**
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
-    protected $amount;
+    protected string $amount;
 
     /**
      * The amount of this funding allocation not already claimed. If you plan to allocate funds, always read this
@@ -52,13 +52,13 @@ class CampaignFunding extends Model
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
-    protected $amountAvailable;
+    protected string $amountAvailable;
 
     /**
      * @ORM\Column(type="integer")
      * @var int     Order of preference as a rank, i.e. lower numbers have their funds used first.
      */
-    protected $allocationOrder;
+    protected int $allocationOrder;
 
     public function __construct()
     {

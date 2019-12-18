@@ -6,10 +6,8 @@ namespace MatchBot\Application\Matching;
 
 class LessThanRequestedAllocatedException extends \Exception
 {
-    /** @var string */
-    private $amountAllocated;
-    /** @var string */
-    private $fundRemainingAmount;
+    private string $amountAllocated;
+    private string $fundRemainingAmount;
 
     /**
      * @param string $amountAllocated       May be zero if somebody else just secured the last funds.

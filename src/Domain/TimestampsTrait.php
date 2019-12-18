@@ -16,13 +16,13 @@ trait TimestampsTrait
      * @ORM\Column(type="datetime")
      * @var DateTime
      */
-    protected $createdAt;
+    protected DateTime $createdAt;
 
     /**
      * @ORM\Column(type="datetime")
      * @var DateTime
      */
-    protected $updatedAt;
+    protected DateTime $updatedAt;
 
     /**
      * @ORM\PrePersist Set created + updated timestamps

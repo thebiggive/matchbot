@@ -19,19 +19,19 @@ class FundingWithdrawal extends Model
      * @ORM\ManyToOne(targetEntity="Donation", inversedBy="fundingWithdrawals", fetch="EAGER")
      * @var Donation
      */
-    protected $donation;
+    protected Donation $donation;
 
     /**
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
-    protected $amount;
+    protected string $amount;
 
     /**
      * @ORM\ManyToOne(targetEntity="CampaignFunding", fetch="EAGER")
      * @var CampaignFunding
      */
-    protected $campaignFunding;
+    protected CampaignFunding $campaignFunding;
 
     /**
      * @param Donation $donation

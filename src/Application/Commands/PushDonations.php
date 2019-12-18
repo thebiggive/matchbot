@@ -12,8 +12,7 @@ class PushDonations extends LockingCommand
 {
     protected static $defaultName = 'matchbot:push-donations';
 
-    /** @var DonationRepository */
-    private $donationRepository;
+    private DonationRepository $donationRepository;
 
     public function __construct(DonationRepository $donationRepository)
     {

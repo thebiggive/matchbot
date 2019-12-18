@@ -9,9 +9,6 @@ namespace MatchBot\Application\HttpModels;
  */
 class DonationCreatedResponse
 {
-    /** @var Donation */
-    public $donation;
-
-    /** @var string */
-    public $jwt;
+    public Donation $donation;
+    public string $jwt;
 }

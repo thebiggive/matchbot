@@ -15,8 +15,7 @@ use Symfony\Component\Lock\LockFactory;
 
 class RetrospectivelyMatchTest extends TestCase
 {
-    /** @var RetrospectivelyMatch */
-    private $command;
+    private RetrospectivelyMatch $command;
 
     public function setUp(): void
     {

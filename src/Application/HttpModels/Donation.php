@@ -9,45 +9,18 @@ namespace MatchBot\Application\HttpModels;
  */
 class Donation
 {
-    /** @var string */
-    public $transactionId;
-
-    /** @var string */
-    public $status;
-
-    /** @var string */
-    public $charityId;
-
-    /** @var float */
-    public $donationAmount;
-
-    /** @var bool */
-    public $giftAid;
-
-    /** @var bool */
-    public $donationMatched;
-
-    /** @var string */
-    public $firstName;
-
-    /** @var string */
-    public $lastName;
-
-    /** @var string */
-    public $emailAddress;
-
-    /** @var string */
-    public $billingPostalAddress;
-
-    /** @var string */
-    public $countryCode;
-
-    /** @var bool */
-    public $optInTbgEmail;
-
-    /** @var string */
-    public $projectId;
-
-    /** @var float */
-    public $tipAmount;
+    public string $transactionId;
+    public string $status;
+    public string $charityId;
+    public float $donationAmount;
+    public bool $giftAid;
+    public bool $donationMatched;
+    public string $firstName;
+    public string $lastName;
+    public string $emailAddress;
+    public string $billingPostalAddress;
+    public string $countryCode;
+    public bool $optInTbgEmail;
+    public string $projectId;
+    public float $tipAmount;
 }

@@ -22,13 +22,13 @@ abstract class Fund extends SalesforceReadProxy
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
-    protected $amount;
+    protected string $amount;
 
     /**
      * @ORM\Column(type="string")
      * @var string
      */
-    protected $name;
+    protected string $name;
 
     /**
      * @param string $amount

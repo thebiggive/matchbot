@@ -15,20 +15,16 @@ use Ramsey\Uuid\Doctrine\UuidGenerator;
 
 class DonationRepository extends SalesforceWriteProxyRepository
 {
-    /** @var CampaignRepository */
-    private $campaignRepository;
-    /** @var FundRepository */
-    private $fundRepository;
-    /** @var int */
-    private $expirySeconds = 17 * 60; // 17 minutes: 15 min official timed window plus 2 mins grace.
+    private CampaignRepository $campaignRepository;
+    private FundRepository $fundRepository;
+    private int $expirySeconds = 17 * 60; // 17 minutes: 15 min official timed window plus 2 mins grace.
     /** @var int When using a locking matching adapter, maximum number of tries for real-time operations */
-    private $maxLockTries = 5;
-    /** @var Matching\Adapter */
-    private $matchingAdapter;
+    private int $maxLockTries = 5;
+    private Matching\Adapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
-    private $queuedForPersist;
+    private array $queuedForPersist;
 
-    public function setMatchingAdapter(Matching\Adapter $adapter)
+    public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
         $this->matchingAdapter = $adapter;
     }
