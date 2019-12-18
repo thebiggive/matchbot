@@ -44,6 +44,9 @@ class Donation extends SalesforceWriteProxy
 
     private static $successStatuses = ['Collected', 'Paid'];
 
+    /**
+     * @link https://thebiggive.slack.com/archives/GGQRV08BZ/p1576070168066200?thread_ts=1575655432.161800&cid=GGQRV08BZ
+     */
     private static $reversedStatuses = ['Refunded', 'Failed', 'Chargedback'];
 
     /**
@@ -229,6 +232,9 @@ class Donation extends SalesforceWriteProxy
         return in_array($this->donationStatus, self::$successStatuses, true);
     }
 
+    /**
+     * @return bool Whether this donation is in a reversed / failed state.
+     */
     public function isReversed(): bool
     {
         return in_array($this->donationStatus, self::$reversedStatuses, true);

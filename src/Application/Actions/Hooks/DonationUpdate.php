@@ -92,14 +92,12 @@ class DonationUpdate extends Action
         $donation->setTbgComms($donationData->optInTbgEmail);
         $donation->setTransactionId($donationData->transactionId);
 
-        if ($donationData->tipAmount > 0) {
+        if (isset($donationData->tipAmount)) {
             $donation->setTipAmount((string) $donationData->tipAmount);
         }
 
-        // In the future, we should support releasing match funds in a wider range of (semi-)permanent failed
-        // statuses. But we should clarify with Charity Checkout exactly which ones they expect to be safe to deem
-        // failed (e.g. what does 'RefundingPending' mean?) And for now, the only non-success hook statuses they send
-        // us appear to be 'Refunded' (expected) and 'Failed' (not documented but observed in CC19).
+        // Charity Checkout are now sending hooks with a few statuses that represent something 'refund-like'. All known
+        // statuses that should act like this appear in `Donation::$reversedStatuses`.
         if ($donation->isReversed() && $donation->getCampaign()->isMatched()) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
