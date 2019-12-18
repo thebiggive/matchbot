@@ -9,12 +9,12 @@ orbs:
 jobs:
   test: # Also lints first
     docker:
-      - image: circleci/php:7.3
+      - image: circleci/php:7.4
 
     steps:
       - checkout
 
-      - run: sudo docker-php-ext-configure zip --with-libzip
+      - run: sudo apt-get install -y libzip-dev zip
       - run: sudo docker-php-ext-install bcmath pdo_mysql zip
       - run: sudo pecl install redis && sudo docker-php-ext-enable redis
 
