@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Commands;
 
+use Symfony\Component\Lock\BlockingStoreInterface;
 use Symfony\Component\Lock\Key;
-use Symfony\Component\Lock\StoreInterface;
 
 /**
  * Dummy Lock Store which always gives an available lock, for unit testing Commands.
  */
-class AlwaysAvailableLockStore implements StoreInterface
+class AlwaysAvailableLockStore implements BlockingStoreInterface
 {
     public function save(Key $key)
     {
