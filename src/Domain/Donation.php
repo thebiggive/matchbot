@@ -143,7 +143,7 @@ class Donation extends SalesforceWriteProxy
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
      * @var ArrayCollection|FundingWithdrawal[]
      */
-    protected ArrayCollection $fundingWithdrawals;
+    protected $fundingWithdrawals;
 
     public function __construct()
     {
