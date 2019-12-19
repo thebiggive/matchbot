@@ -15,21 +15,15 @@ use Psr\Log\LoggerInterface;
  */
 class RetrySafeEntityManager extends EntityManagerDecorator
 {
-    /** @var array */
-    private $connectionSettings;
-    /** @var EntityManagerInterface */
-    private $entityManager;
+    private array $connectionSettings;
+    private EntityManagerInterface $entityManager;
     /**
      * @var int For non-matching updates that always use Doctrine, maximum number of times to try again when
      *          Doctrine reports that the error is recoverable and that retrying makes sense
      */
-    private $maxLockRetries = 3;
-    /** @var ORM\Configuration */
-    private $ormConfig;
-    /** @var array */
-    private $settings;
-    /** @var LoggerInterface */
-    private $logger;
+    private int $maxLockRetries = 3;
+    private ORM\Configuration $ormConfig;
+    private LoggerInterface $logger;
 
     public function __construct(ORM\Configuration $ormConfig, array $connectionSettings, LoggerInterface $logger)
     {

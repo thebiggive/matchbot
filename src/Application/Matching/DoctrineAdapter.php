@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Matching;
 
-use Doctrine\DBAL\ConnectionException;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Exception\RetryableException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -12,8 +11,7 @@ use MatchBot\Domain\CampaignFunding;
 
 class DoctrineAdapter extends Adapter
 {
-    /** @var EntityManagerInterface */
-    private $entityManager;
+    private EntityManagerInterface $entityManager;
 
     public function __construct(EntityManagerInterface $entityManager)
     {

@@ -14,10 +14,8 @@ use Slim\Exception\HttpBadRequestException;
 
 class Status extends Action
 {
-    /** @var EntityManagerInterface */
-    private $entityManager;
-    /** @var Redis|null */
-    private $redis;
+    private EntityManagerInterface $entityManager;
+    private ?Redis $redis;
 
     public function __construct(
         EntityManagerInterface $entityManager,

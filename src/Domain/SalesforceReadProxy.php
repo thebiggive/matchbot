@@ -15,16 +15,9 @@ use Doctrine\ORM\Mapping as ORM;
 abstract class SalesforceReadProxy extends SalesforceProxy
 {
     /**
-     * @ORM\Column(type="string", length=18, unique=true, nullable=true)
-     * @var string  Nullable because read-write proxies may be created before the first Salesforce push
-     */
-    protected $salesforceId;
-
-    /**
      * @ORM\Column(type="datetime", nullable=true)
-     * @var DateTime    Nullable because read-write proxies might not be pulled from Salesforce
      */
-    protected $salesforceLastPull;
+    protected ?DateTime $salesforceLastPull = null;
 
     /**
      * @return DateTime

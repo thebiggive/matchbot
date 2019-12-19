@@ -15,8 +15,7 @@ class DonationPublicAuthMiddleware implements MiddlewareInterface
 {
     use ErrorTrait;
 
-    /** @var LoggerInterface */
-    private $logger;
+    private LoggerInterface $logger;
 
     public function __construct(LoggerInterface $logger)
     {

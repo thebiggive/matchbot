@@ -21,13 +21,13 @@ class Charity extends SalesforceReadProxy
      *              `$id` for new charities but has a numeric value for those imported from the
      *              legacy database.
      */
-    protected $donateLinkId;
+    protected string $donateLinkId;
 
     /**
      * @ORM\Column(type="string")
      * @var string
      */
-    protected $name;
+    protected string $name;
 
     /**
      * @param string $name

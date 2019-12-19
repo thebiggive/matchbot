@@ -13,25 +13,10 @@ use Slim\Exception\HttpNotFoundException;
 
 abstract class Action
 {
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
-
-    /**
-     * @var Request
-     */
-    protected $request;
-
-    /**
-     * @var Response
-     */
-    protected $response;
-
-    /**
-     * @var array
-     */
-    protected $args;
+    protected LoggerInterface $logger;
+    protected Request $request;
+    protected Response $response;
+    protected array $args;
 
     /**
      * @param LoggerInterface $logger

@@ -20,12 +20,9 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class Create extends Action
 {
-    /** @var DonationRepository */
-    private $donationRepository;
-    /** @var EntityManagerInterface */
-    private $entityManager;
-    /** @var SerializerInterface */
-    private $serializer;
+    private DonationRepository $donationRepository;
+    private EntityManagerInterface $entityManager;
+    private SerializerInterface $serializer;
 
     public function __construct(
         DonationRepository $donationRepository,

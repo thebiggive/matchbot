@@ -17,10 +17,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class Cancel extends Action
 {
-    /** @var DonationRepository */
-    private $donationRepository;
-    /** @var SerializerInterface */
-    private $serializer;
+    private DonationRepository $donationRepository;
+    private SerializerInterface $serializer;
 
     public function __construct(
         DonationRepository $donationRepository,

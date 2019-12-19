@@ -8,8 +8,7 @@ use MatchBot\Domain\CampaignFunding;
 
 abstract class Adapter
 {
-    /** @var bool */
-    private $inTransaction = false;
+    private bool $inTransaction = false;
 
     /**
      * Get a snapshot of the amount of match funds available in the given `$funding`. This should not be used to start

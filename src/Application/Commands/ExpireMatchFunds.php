@@ -18,8 +18,7 @@ class ExpireMatchFunds extends LockingCommand
 {
     protected static $defaultName = 'matchbot:expire-match-funds';
 
-    /** @var DonationRepository */
-    private $donationRepository;
+    private DonationRepository $donationRepository;
 
     public function __construct(DonationRepository $donationRepository)
     {

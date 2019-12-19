@@ -18,8 +18,7 @@ class RetrospectivelyMatch extends LockingCommand
 {
     protected static $defaultName = 'matchbot:retrospectively-match';
 
-    /** @var DonationRepository */
-    private $donationRepository;
+    private DonationRepository $donationRepository;
 
     public function __construct(DonationRepository $donationRepository)
     {

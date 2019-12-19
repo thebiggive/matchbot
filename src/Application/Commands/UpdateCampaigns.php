@@ -14,10 +14,8 @@ class UpdateCampaigns extends LockingCommand
 {
     protected static $defaultName = 'matchbot:update-campaigns';
 
-    /** @var CampaignRepository */
-    private $campaignRepository;
-    /** @var FundRepository */
-    private $fundRepository;
+    private CampaignRepository $campaignRepository;
+    private FundRepository $fundRepository;
 
     public function __construct(CampaignRepository $campaignRepository, FundRepository $fundRepository)
     {
