@@ -105,9 +105,9 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\Column(type="string", length=2, nullable=true)
-     * @var string  Set on Charity Checkout callback
+     * @var string|null  Set on Charity Checkout callback
      */
-    protected string $donorCountryCode;
+    protected ?string $donorCountryCode = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
@@ -143,7 +143,7 @@ class Donation extends SalesforceWriteProxy
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
      * @var ArrayCollection|FundingWithdrawal[]
      */
-    protected ArrayCollection $fundingWithdrawals;
+    protected $fundingWithdrawals;
 
     public function __construct()
     {
