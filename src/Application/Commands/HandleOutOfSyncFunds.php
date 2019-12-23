@@ -61,12 +61,12 @@ class HandleOutOfSyncFunds extends LockingCommand
         );
     }
 
-    protected function doExecute(InputInterface $input, OutputInterface $output)
+    protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $mode = $input->getArgument('mode');
         if (!in_array($mode, ['check', 'fix'], true)) {
             $output->writeln('Please set the mode to "check" or "fix"');
-            return;
+            return 1;
         }
 
         $numFundingsCorrect = 0;
@@ -128,5 +128,7 @@ class HandleOutOfSyncFunds extends LockingCommand
             "Checked $numFundings fundings. Found $numFundingsCorrect with correct allocations, " .
             "$numFundingsOvermatched over-matched and $numFundingsUndermatched under-matched."
         );
+
+        return 0;
     }
 }

@@ -19,16 +19,19 @@ abstract class LockingCommand extends Command
         $this->lockFactory = $lockFactory;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->start($output);
         if ($this->getLock()) {
-            $this->doExecute($input, $output);
+            $return = $this->doExecute($input, $output);
             $this->releaseLock();
         } else {
             $output->writeln($this->getName() . ' did nothing as another instance had the lock.');
+            return 10;
         }
         $this->finish($output);
+
+        return $return;
     }
 
     private function getLock(): bool

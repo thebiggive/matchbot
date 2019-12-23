@@ -27,7 +27,7 @@
         "ramsey/uuid-doctrine": "^1.5",
         "slim/psr7": "^0.6.0",
         "slim/slim": "^4.3",
-        "symfony/console": "^4.4",
+        "symfony/console": "^5.0",
         "symfony/lock": "^5.0",
         "symfony/property-access": "^5.0",
         "symfony/serializer": "^5.0"
