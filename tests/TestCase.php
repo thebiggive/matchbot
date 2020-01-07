@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Tests;
+namespace MatchBot\Tests;
 
 use DI\ContainerBuilder;
 use Exception;
-use PHPUnit\Framework\TestCase as PHPUnit_TestCase;
+use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\App;
 use Slim\Factory\AppFactory;
@@ -15,7 +15,7 @@ use Slim\Psr7\Headers;
 use Slim\Psr7\Request as SlimRequest;
 use Slim\Psr7\Uri;
 
-class TestCase extends PHPUnit_TestCase
+class TestCase extends PHPUnitTestCase
 {
     /**
      * @return App

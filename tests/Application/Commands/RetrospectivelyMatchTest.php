@@ -7,7 +7,7 @@ namespace MatchBot\Tests\Application\Commands;
 use DateTime;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Domain\DonationRepository;
-use PHPUnit\Framework\TestCase;
+use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;

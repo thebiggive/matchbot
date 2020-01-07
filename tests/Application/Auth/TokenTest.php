@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Auth;
 
 use MatchBot\Application\Auth\Token;
-use PHPUnit\Framework\TestCase;
+use MatchBot\Tests\TestCase;
 use Psr\Log\NullLogger;
 
 class TokenTest extends TestCase

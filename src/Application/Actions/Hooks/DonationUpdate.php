@@ -43,10 +43,6 @@ class DonationUpdate extends Action
      */
     protected function action(): Response
     {
-        if (empty($this->args['donationId'])) { // When MatchBot made a donation, this is now a UUID
-            throw new DomainRecordNotFoundException('Missing donation ID');
-        }
-
         /** @var Donation $donation */
         $donation = $this->donationRepository->findOneBy(['uuid' => $this->args['donationId']]);
 
