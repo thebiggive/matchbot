@@ -9,7 +9,7 @@ use MatchBot\Tests\TestCase;
 
 class StatusTest extends TestCase
 {
-    public function testSuccess(): void
+    public function testRedisErrorWithDummyHostname(): void
     {
         $app = $this->getAppInstance();
 
@@ -17,9 +17,10 @@ class StatusTest extends TestCase
         $response = $app->handle($request);
         $payload = (string) $response->getBody();
 
-        $expectedPayload = new ActionPayload(200, ['status' => 'OK']);
+        $expectedPayload = new ActionPayload(500, ['error' => 'Redis not connected']);
         $serializedPayload = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
+        $this->assertEquals(500, $response->getStatusCode());
         $this->assertEquals($serializedPayload, $payload);
     }
 }
