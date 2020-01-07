@@ -17,7 +17,7 @@ class StatusTest extends TestCase
         $response = $app->handle($request);
         $payload = (string) $response->getBody();
 
-        $expectedPayload = new ActionPayload(500, ['error' => 'Redis not connected']);
+        $expectedPayload = new ActionPayload(500, ['error' => 'Database connection failed']);
         $serializedPayload = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
         $this->assertEquals(500, $response->getStatusCode());
