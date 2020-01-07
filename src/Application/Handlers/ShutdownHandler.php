@@ -10,20 +10,9 @@ use Slim\Exception\HttpInternalServerErrorException;
 
 class ShutdownHandler
 {
-    /**
-     * @var Request
-     */
-    private $request;
-
-    /**
-     * @var HttpErrorHandler
-     */
-    private $errorHandler;
-
-    /**
-     * @var bool
-     */
-    private $displayErrorDetails;
+    private Request $request;
+    private HttpErrorHandler $errorHandler;
+    private bool $displayErrorDetails;
 
     /**
      * ShutdownHandler constructor.
@@ -72,6 +61,17 @@ class ShutdownHandler
                         $message .= " on line {$errorLine} in file {$errorFile}.";
                         break;
                 }
+            }
+
+            // Skip emitting a shutdown response from native warnings on non-dev envs, since events like Redis
+            // connection failures cause these. These are already logged and if error-like output is emitted
+            // alongside `/ping`'s more helpful output, its response body is left malformatted.
+            $isServiceResolutionWarning = (
+                $errorType === E_WARNING &&
+                strpos($message, 'getaddrinfo failed: Name or service not known') !== false
+            );
+            if ($isServiceResolutionWarning) {
+                return;
             }
 
             $exception = new HttpInternalServerErrorException($this->request, $message);

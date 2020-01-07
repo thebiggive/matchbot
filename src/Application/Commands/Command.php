@@ -10,12 +10,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class Command extends SymfonyCommand
 {
-    abstract protected function doExecute(OutputInterface $output);
+    abstract protected function doExecute(InputInterface $input, OutputInterface $output);
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->start($output);
-        $this->doExecute($output);
+        $this->doExecute($input, $output);
         $this->finish($output);
     }
 

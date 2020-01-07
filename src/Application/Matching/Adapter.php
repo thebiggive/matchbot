@@ -8,8 +8,19 @@ use MatchBot\Domain\CampaignFunding;
 
 abstract class Adapter
 {
-    /** @var bool */
-    private $inTransaction = false;
+    private bool $inTransaction = false;
+
+    /**
+     * Get a snapshot of the amount of match funds available in the given `$funding`. This should not be used to start
+     * allocation maths except in emergencies where things appear to have got out of sync, because there is no
+     * guarantee with this function that another thread will not reserve or release funds before you have finished
+     * your work. You should instead use `addAmount()` and `subtractAmount()` which are built to work atomically or
+     * transactionally so that they are safe for high-volume, multi-thread use.
+     *
+     * @param CampaignFunding $funding
+     * @return string Amount available as bcmath-ready decimal string
+     */
+    abstract public function getAmountAvailable(CampaignFunding $funding): string;
 
     /**
      * @param callable $function
@@ -49,6 +60,11 @@ abstract class Adapter
         return $result;
     }
 
+    /**
+     * @param CampaignFunding $funding
+     * @param string $amount
+     * @return string New fund balance as bcmath-ready string
+     */
     public function addAmount(CampaignFunding $funding, string $amount): string
     {
         if (!$this->inTransaction) {
@@ -58,6 +74,11 @@ abstract class Adapter
         return $this->doAddAmount($funding, $amount);
     }
 
+    /**
+     * @param CampaignFunding $funding
+     * @param string $amount
+     * @return string New fund balance as bcmath-ready string
+     */
     public function subtractAmount(CampaignFunding $funding, string $amount): string
     {
         if (!$this->inTransaction) {

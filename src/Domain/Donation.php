@@ -23,12 +23,12 @@ class Donation extends SalesforceWriteProxy
     use TimestampsTrait;
 
     /** @var int */
-    private $minimumAmount = 5;
+    private int $minimumAmount = 5;
     /** @var int */
-    private $maximumAmount = 25000;
+    private int $maximumAmount = 25000;
 
     /** @var string[] */
-    private $possibleStatuses = [
+    private array $possibleStatuses = [
         'Pending',
         'Collected',
         'Paid',
@@ -40,9 +40,14 @@ class Donation extends SalesforceWriteProxy
         'PendingCancellation',
     ];
 
-    private $newStatuses = ['NotSet', 'Pending'];
+    private array $newStatuses = ['NotSet', 'Pending'];
 
-    private static $successStatuses = ['Collected', 'Paid'];
+    private static array $successStatuses = ['Collected', 'Paid'];
+
+    /**
+     * @link https://thebiggive.slack.com/archives/GGQRV08BZ/p1576070168066200?thread_ts=1575655432.161800&cid=GGQRV08BZ
+     */
+    private static array $reversedStatuses = ['Refunded', 'Failed', 'Chargedback'];
 
     /**
      * The donation ID for Charity Checkout and public APIs. Not the same as the internal auto-increment $id used
@@ -51,25 +56,25 @@ class Donation extends SalesforceWriteProxy
      * @ORM\Column(type="uuid", unique=true)
      * @var UuidInterface|null
      */
-    protected $uuid;
+    protected ?UuidInterface $uuid = null;
 
     /**
      * @ORM\ManyToOne(targetEntity="Campaign")
      * @var Campaign
      */
-    protected $campaign;
+    protected Campaign $campaign;
 
     /**
      * @ORM\Column(type="string", unique=true, nullable=true)
      * @var string|null Charity Checkout transaction ID assigned on their processing.
      */
-    protected $transactionId;
+    protected ?string $transactionId = null;
 
     /**
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
-    protected $amount;
+    protected string $amount;
 
     /**
      * @ORM\Column(type="string")
@@ -78,61 +83,61 @@ class Donation extends SalesforceWriteProxy
      *              RefundingPending, PendingCancellation.
      * @link https://docs.google.com/document/d/11ukX2jOxConiVT3BhzbUKzLfSybG8eie7MX0b0kG89U/edit?usp=sharing
      */
-    protected $donationStatus = 'NotSet';
+    protected string $donationStatus = 'NotSet';
 
     /**
      * @ORM\Column(type="boolean")
      * @var bool    Whether the donor opted to receive email from the charity running the campaign
      */
-    protected $charityComms;
+    protected bool $charityComms;
 
     /**
      * @ORM\Column(type="boolean")
      * @var bool
      */
-    protected $giftAid;
+    protected bool $giftAid;
 
     /**
      * @ORM\Column(type="boolean")
      * @var bool    Whether the donor opted to receive email from the Big Give
      */
-    protected $tbgComms;
+    protected bool $tbgComms;
 
     /**
      * @ORM\Column(type="string", length=2, nullable=true)
-     * @var string  Set on Charity Checkout callback
+     * @var string|null  Set on Charity Checkout callback
      */
-    protected $donorCountryCode;
+    protected ?string $donorCountryCode = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
      * @var string|null Set on Charity Checkout callback
      */
-    protected $donorEmailAddress;
+    protected ?string $donorEmailAddress = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
      * @var string|null Set on Charity Checkout callback
      */
-    protected $donorFirstName;
+    protected ?string $donorFirstName = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
      * @var string|null Set on Charity Checkout callback
      */
-    protected $donorLastName;
+    protected ?string $donorLastName = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
      * @var string|null Set on Charity Checkout callback
      */
-    protected $donorPostalAddress;
+    protected ?string $donorPostalAddress = null;
 
     /**
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string  Amount donor chose to tip. Precision numeric string. Set on Charity Checkout callback
      */
-    protected $tipAmount = '0.00';
+    protected string $tipAmount = '0.00';
 
     /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
@@ -143,20 +148,6 @@ class Donation extends SalesforceWriteProxy
     public function __construct()
     {
         $this->fundingWithdrawals = new ArrayCollection();
-    }
-
-    /**
-     * @ORM\PrePersist Check that the amount is in the permitted range
-     */
-    public function prePersist(): void
-    {
-        // Decimal-safe check that amount if in the allowed range
-        if (
-            bccomp($this->amount, (string) $this->minimumAmount, 2) === -1 ||
-            bccomp($this->amount, (string) $this->maximumAmount, 2) === 1
-        ) {
-            throw new \UnexpectedValueException("Amount must be £{$this->minimumAmount}-{$this->maximumAmount}");
-        }
     }
 
     /**
@@ -239,6 +230,14 @@ class Donation extends SalesforceWriteProxy
     public function isSuccessful(): bool
     {
         return in_array($this->donationStatus, self::$successStatuses, true);
+    }
+
+    /**
+     * @return bool Whether this donation is in a reversed / failed state.
+     */
+    public function isReversed(): bool
+    {
+        return in_array($this->donationStatus, self::$reversedStatuses, true);
     }
 
     /**
@@ -390,6 +389,13 @@ class Donation extends SalesforceWriteProxy
      */
     public function setAmount(string $amount): void
     {
+        if (
+            bccomp($amount, (string) $this->minimumAmount, 2) === -1 ||
+            bccomp($amount, (string) $this->maximumAmount, 2) === 1
+        ) {
+            throw new \UnexpectedValueException("Amount must be £{$this->minimumAmount}-{$this->maximumAmount}");
+        }
+
         $this->amount = $amount;
     }
 

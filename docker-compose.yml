@@ -6,8 +6,7 @@ volumes:
 
 services:
   app:
-    # TODO sort out Docker Hub and switch to :latest
-    image: quay.io/noellh/tbg-php-tmp:latest
+    image: thebiggive/php:7.4
     ports:
       - 30030:80
     volumes:

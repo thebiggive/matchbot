@@ -12,9 +12,9 @@ abstract class Model
      * @ORM\Id
      * @ORM\Column(type="integer", options={"unsigned": true})
      * @ORM\GeneratedValue(strategy="AUTO")
-     * @var int
+     * @var int|null
      */
-    protected $id;
+    protected ?int $id = null;
 
     /**
      * @return int|null

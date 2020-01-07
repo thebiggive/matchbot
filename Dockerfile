@@ -1,5 +1,4 @@
-# TODO migrate when Docker Hub stops giving us grief
-FROM quay.io/noellh/tbg-php-tmp:latest
+FROM thebiggive/php:7.4
 
 # Artifacts are immutable so *never* bother re-checking files - this makes opcache.revalidate_freq irrelevant
 # See https://www.scalingphpbook.com/blog/2014/02/14/best-zend-opcache-settings.html

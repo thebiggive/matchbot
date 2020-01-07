@@ -16,14 +16,12 @@ use Redis;
  */
 class OptimisticRedisAdapter extends Adapter
 {
-    /** @var EntityManagerInterface */
-    private $entityManager;
+    private EntityManagerInterface $entityManager;
     /** @var CampaignFunding[] */
-    private $fundingsToPersist = [];
+    private array $fundingsToPersist = [];
     /** @var int Number of times to immediately try to allocate a smaller amount if the fund's running low */
-    private $maxPartialAllocateTries = 5;
-    /** @var Redis */
-    private $redis;
+    private int $maxPartialAllocateTries = 5;
+    private Redis $redis;
 
     public function __construct(Redis $redis, EntityManagerInterface $entityManager)
     {
@@ -38,6 +36,13 @@ class OptimisticRedisAdapter extends Adapter
         $this->saveFundingsToDatabase();
 
         return $result;
+    }
+
+    public function getAmountAvailable(CampaignFunding $funding): string
+    {
+        $fundBalanceInPence = $this->redis->get($this->buildKey($funding)) ?: 0;
+
+        return (string) ($fundBalanceInPence / 100);
     }
 
     protected function doSubtractAmount(CampaignFunding $funding, string $amount): string

@@ -7,16 +7,15 @@ namespace MatchBot\Application\Commands;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\FundRepository;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class UpdateCampaigns extends LockingCommand
 {
     protected static $defaultName = 'matchbot:update-campaigns';
 
-    /** @var CampaignRepository */
-    private $campaignRepository;
-    /** @var FundRepository */
-    private $fundRepository;
+    private CampaignRepository $campaignRepository;
+    private FundRepository $fundRepository;
 
     public function __construct(CampaignRepository $campaignRepository, FundRepository $fundRepository)
     {
@@ -30,7 +29,7 @@ class UpdateCampaigns extends LockingCommand
         $this->setDescription('Pulls down and saves the latest details of already-known Campaigns from Salesforce');
     }
 
-    protected function doExecute(OutputInterface $output)
+    protected function doExecute(InputInterface $input, OutputInterface $output)
     {
         /** @var Campaign[] $campaigns */
         $campaigns = $this->campaignRepository->findAll();

@@ -15,20 +15,16 @@ use Ramsey\Uuid\Doctrine\UuidGenerator;
 
 class DonationRepository extends SalesforceWriteProxyRepository
 {
-    /** @var CampaignRepository */
-    private $campaignRepository;
-    /** @var FundRepository */
-    private $fundRepository;
-    /** @var int */
-    private $expirySeconds = 17 * 60; // 17 minutes: 15 min official timed window plus 2 mins grace.
+    private CampaignRepository $campaignRepository;
+    private FundRepository $fundRepository;
+    private int $expirySeconds = 17 * 60; // 17 minutes: 15 min official timed window plus 2 mins grace.
     /** @var int When using a locking matching adapter, maximum number of tries for real-time operations */
-    private $maxLockTries = 5;
-    /** @var Matching\Adapter */
-    private $matchingAdapter;
+    private int $maxLockTries = 5;
+    private Matching\Adapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
-    private $queuedForPersist;
+    private array $queuedForPersist;
 
-    public function setMatchingAdapter(Matching\Adapter $adapter)
+    public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
         $this->matchingAdapter = $adapter;
     }
@@ -58,8 +54,21 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return $this->getClient()->put($donation);
     }
 
+    /**
+     * @param DonationCreate $donationData
+     * @return Donation
+     * @throws \UnexpectedValueException if inputs invalid, including projectId being unrecognised
+     */
     public function buildFromApiRequest(DonationCreate $donationData): Donation
     {
+        if (!isset($donationData->giftAid, $donationData->optInCharityEmail, $donationData->optInTbgEmail)) {
+            throw new \UnexpectedValueException('Required boolean fields not set');
+        }
+
+        if (empty($donationData->projectId)) {
+            throw new \UnexpectedValueException('Required field "projectId" not set');
+        }
+
         /** @var Campaign $campaign */
         $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId]);
 
@@ -155,7 +164,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     "Match allocate RECOVERABLE error: ID {$donation->getUuid()} got " . get_class($exception) .
                     " after {$waitTime}s on try #$allocationTries: {$exception->getMessage()}"
                 );
-                usleep(random_int(0, 1000000)); // Wait between 0 and 1 seconds before retrying
+                usleep(random_int(0, 1_000_000)); // Wait between 0 and 1 seconds before retrying
             } catch (Matching\TerminalLockException $exception) { // Includes non-retryable `DBALException`s
                 $waitTime = round(microtime(true) - $lockStartTime, 6);
                 $this->logError(
@@ -195,9 +204,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     function () use ($donation, $totalAmountReleased) {
                         foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
                             $funding = $fundingWithdrawal->getCampaignFunding();
-                            $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
+                            $newTotal = $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
                             $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
                             $this->logInfo("Released {$fundingWithdrawal->getAmount()} to funding {$funding->getId()}");
+                            $this->logInfo("New fund total for {$funding->getId()}: $newTotal");
                         }
 
                         return $totalAmountReleased;
@@ -222,7 +232,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     "Match release RECOVERABLE error: ID {$donation->getUuid()} got " . get_class($exception) .
                     " after {$waitTime}s on try #$releaseTries: {$exception->getMessage()}"
                 );
-                usleep(random_int(0, 1000000)); // Wait between 0 and 1 seconds before retrying
+                usleep(random_int(0, 1_000_000)); // Wait between 0 and 1 seconds before retrying
             } catch (Matching\TerminalLockException $exception) {
                 $waitTime = round(microtime(true) - $lockStartTime, 6);
                 $this->logError(
@@ -268,9 +278,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * @return Donation[]
      */
-    public function findRecentNotFullyMatchedToMatchCampaigns(): array
+    public function findRecentNotFullyMatchedToMatchCampaigns(DateTime $sinceDate): array
     {
-        $checkAfter = (new DateTime('now'))->sub(new \DateInterval('P2D'));
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
@@ -283,7 +292,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
             ->setParameter('completeStatuses', Donation::getSuccessStatuses())
             ->setParameter('campaignMatched', true)
-            ->setParameter('checkAfter', $checkAfter);
+            ->setParameter('checkAfter', $sinceDate);
 
         return $qb->getQuery()->getResult();
     }
@@ -334,7 +343,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             }
 
             try {
-                $this->matchingAdapter->subtractAmount($funding, $amountToAllocateNow);
+                $newTotal = $this->matchingAdapter->subtractAmount($funding, $amountToAllocateNow);
                 $amountAllocated = $amountToAllocateNow; // If no exception thrown
             } catch (Matching\LessThanRequestedAllocatedException $exception) {
                 $amountAllocated = $exception->getAmountAllocated();
@@ -353,6 +362,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $withdrawal->setAmount($amountAllocated);
                 $newWithdrawals[] = $withdrawal;
                 $this->logInfo("Successfully withdrew $amountAllocated from funding {$funding->getId()}");
+                $this->logInfo("New fund total for {$funding->getId()}: $newTotal");
             }
 
             $currentFundingIndex++;

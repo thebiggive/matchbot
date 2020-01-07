@@ -23,31 +23,31 @@ class Campaign extends SalesforceReadProxy
      * @ORM\ManyToOne(targetEntity="Charity", cascade={"persist"})
      * @var Charity
      */
-    protected $charity;
+    protected Charity $charity;
 
     /**
      * @ORM\Column(type="string")
      * @var string
      */
-    protected $name;
+    protected string $name;
 
     /**
      * @ORM\Column(type="datetime")
      * @var DateTime
      */
-    protected $startDate;
+    protected DateTime $startDate;
 
     /**
      * @ORM\Column(type="datetime")
      * @var DateTime
      */
-    protected $endDate;
+    protected DateTime $endDate;
 
     /**
      * @ORM\Column(type="boolean")
      * @var bool    Whether the Campaign has any match funds
      */
-    protected $isMatched;
+    protected bool $isMatched;
 
     /**
      * @return bool

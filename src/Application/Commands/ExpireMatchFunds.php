@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use MatchBot\Domain\DonationRepository;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -17,8 +18,7 @@ class ExpireMatchFunds extends LockingCommand
 {
     protected static $defaultName = 'matchbot:expire-match-funds';
 
-    /** @var DonationRepository */
-    private $donationRepository;
+    private DonationRepository $donationRepository;
 
     public function __construct(DonationRepository $donationRepository)
     {
@@ -31,7 +31,7 @@ class ExpireMatchFunds extends LockingCommand
         $this->setDescription('Frees up match funding from stale Pending donations');
     }
 
-    protected function doExecute(OutputInterface $output)
+    protected function doExecute(InputInterface $input, OutputInterface $output)
     {
         $toRelease = $this->donationRepository->findWithExpiredMatching();
 

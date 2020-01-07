@@ -6,14 +6,13 @@ namespace MatchBot\Application\Commands;
 
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Lock\Factory as LockFactory;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\LockInterface;
 
 abstract class LockingCommand extends Command
 {
-    /** @var LockFactory */
-    private $lockFactory;
-    /** @var \Symfony\Component\Lock\Lock */
-    private $lock;
+    private LockFactory $lockFactory;
+    private LockInterface $lock;
 
     public function setLockFactory(LockFactory $lockFactory): void
     {
@@ -24,7 +23,7 @@ abstract class LockingCommand extends Command
     {
         $this->start($output);
         if ($this->getLock()) {
-            $this->doExecute($output);
+            $this->doExecute($input, $output);
             $this->releaseLock();
         } else {
             $output->writeln($this->getName() . ' did nothing as another instance had the lock.');
