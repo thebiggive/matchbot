@@ -36,13 +36,14 @@ class CreateTest extends TestCase
         $response = $app->handle($request);
 
         $payload = (string) $response->getBody();
+
         $expectedPayload = new ActionPayload(400, ['error' => [
             'type' => 'BAD_REQUEST',
             'description' => 'Donation Create data deserialise',
         ]]);
-        $serializedPayload = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($serializedPayload, $payload);
+        $this->assertEquals($expectedSerialised, $payload);
         $this->assertEquals(400, $response->getStatusCode());
     }
 
@@ -96,9 +97,9 @@ class CreateTest extends TestCase
             'type' => 'BAD_REQUEST',
             'description' => 'Campaign 123CampaignId is not open',
         ]]);
-        $serializedPayload = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($serializedPayload, $payload);
+        $this->assertEquals($expectedSerialised, $payload);
         $this->assertEquals(400, $response->getStatusCode());
     }
 

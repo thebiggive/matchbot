@@ -18,9 +18,9 @@ class StatusTest extends TestCase
         $payload = (string) $response->getBody();
 
         $expectedPayload = new ActionPayload(500, ['error' => 'Database connection failed']);
-        $serializedPayload = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
         $this->assertEquals(500, $response->getStatusCode());
-        $this->assertEquals($serializedPayload, $payload);
+        $this->assertEquals($expectedSerialised, $payload);
     }
 }

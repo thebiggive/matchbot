@@ -80,9 +80,9 @@ class DonationUpdateTest extends TestCase
 
         $payload = (string) $response->getBody();
         $expectedPayload = new ActionPayload(401, ['error' => 'Unauthorized']);
-        $serializedPayload = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($serializedPayload, $payload);
+        $this->assertEquals($expectedSerialised, $payload);
         $this->assertEquals(401, $response->getStatusCode());
     }
 
@@ -143,9 +143,9 @@ class DonationUpdateTest extends TestCase
             'type' => 'BAD_REQUEST',
             'description' => 'Hook missing required values',
         ]]);
-        $serializedPayload = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($serializedPayload, $payload);
+        $this->assertEquals($expectedSerialised, $payload);
         $this->assertEquals(400, $response->getStatusCode());
     }
 
@@ -155,10 +155,14 @@ class DonationUpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
+        $donation = $this->getTestDonation();
+        // Check tip updates come through in hook responses, while remaining null by default.
+        $donation->setTipAmount('4.32');
+
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation())
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
@@ -171,8 +175,7 @@ class DonationUpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $donation = $this->getHttpDonation(true);
-        $body = json_encode($donation);
+        $body = json_encode($donation->toHookModel());
 
         $request = $this->createRequest(
             'PUT',
@@ -193,7 +196,7 @@ class DonationUpdateTest extends TestCase
         $this->assertTrue($payloadArray['optInCharityEmail']);
         $this->assertFalse($payloadArray['optInTbgEmail']);
         $this->assertEquals(0, $payloadArray['matchedAmount']);
-        $this->assertEquals(0, $payloadArray['tipAmount']);
+        $this->assertEquals(4.32, $payloadArray['tipAmount']);
     }
 
     private function getHttpDonation(bool $valid): array
