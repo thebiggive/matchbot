@@ -8,6 +8,8 @@ use DI\ContainerBuilder;
 use Exception;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Slim\App;
 use Slim\Factory\AppFactory;
 use Slim\Psr7\Factory\StreamFactory;
@@ -42,6 +44,8 @@ class TestCase extends PHPUnitTestCase
 
         // Build PHP-DI Container instance
         $container = $containerBuilder->build();
+
+        $container->set(LoggerInterface::class, new NullLogger());
 
         // Instantiate the app
         AppFactory::setContainer($container);
