@@ -119,14 +119,14 @@ class HandleOutOfSyncFunds extends LockingCommand
                     }
                 );
 
-                $output->writeln("Released {$undermatchAmount} to funding {$funding->getId()}");
-                $output->writeln("New fund total for {$funding->getId()}: $newTotal");
+                $output->writeln("Released {$undermatchAmount} to funding ID {$funding->getId()}");
+                $output->writeln("New fund total for funding ID {$funding->getId()}: $newTotal");
             }
         }
 
         $output->writeln(
             "Checked $numFundings fundings. Found $numFundingsCorrect with correct allocations, " .
-            "$numFundingsOvermatched over-matched and $numFundingsUndermatched under-matched."
+            "$numFundingsOvermatched over-matched and $numFundingsUndermatched under-matched"
         );
     }
 }
