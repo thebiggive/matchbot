@@ -8,17 +8,17 @@ use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\Donation as HttpDonation;
-use MatchBot\Domain\Campaign;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
-use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpNotFoundException;
 
 class DonationUpdateTest extends TestCase
 {
+    use DonationTestDataTrait;
+
     public function testMissingDonationId(): void
     {
         $app = $this->getAppInstance();
@@ -47,10 +47,11 @@ class DonationUpdateTest extends TestCase
         $response = $app->handle($request);
 
         $payload = (string) $response->getBody();
-        $expectedPayload = new ActionPayload(401, ['error' => 'Unauthorized']);
-        $serializedPayload = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
-        $this->assertEquals($serializedPayload, $payload);
+        $expectedPayload = new ActionPayload(401, ['error' => 'Unauthorized']);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $this->assertEquals($expectedSerialised, $payload);
         $this->assertEquals(401, $response->getStatusCode());
     }
 
@@ -179,8 +180,8 @@ class DonationUpdateTest extends TestCase
             $body
         )
             ->withHeader('X-Webhook-Verify-Hash', $this->getValidAuth($body));
-        $response = $app->handle($request);
 
+        $response = $app->handle($request);
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
@@ -209,37 +210,6 @@ class DonationUpdateTest extends TestCase
         $httpDonation->projectId = 'someProject123';
 
         return (array) $httpDonation;
-    }
-
-    private function getTestDonation(): Donation
-    {
-        $charity = new Charity();
-        $charity->setDonateLinkId('123CharityId');
-        $charity->setName('Test charity');
-
-        $campaign = new Campaign();
-        $campaign->setCharity($charity);
-        $campaign->setIsMatched(true);
-        $campaign->setName('Test campaign');
-        $campaign->setSalesforceId('456ProjectId');
-
-        $donation = new Donation();
-        $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
-        $donation->setAmount('123.45');
-        $donation->setCampaign($campaign);
-        $donation->setCharityComms(true);
-        $donation->setDonationStatus('Collected');
-        $donation->setDonorCountryCode('GB');
-        $donation->setDonorEmailAddress('john.doe@example.com');
-        $donation->setDonorFirstName('John');
-        $donation->setDonorLastName('Doe');
-        $donation->setDonorPostalAddress('1 Main St, London N1 1AA');
-        $donation->setGiftAid(true);
-        $donation->setTbgComms(false);
-        $donation->setTransactionId('some-external-txn-id');
-        $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
-
-        return $donation;
     }
 
     private function getValidAuth(string $body): string
