@@ -57,21 +57,28 @@ class TestCase extends PHPUnitTestCase
     /**
      * @param string $method
      * @param string $path
-     * @param array  $headers
-     * @param array  $serverParams
-     * @param array  $cookies
+     * @param string $bodyString
+     * @param array $headers
+     * @param array $serverParams
+     * @param array $cookies
      * @return Request
      */
     protected function createRequest(
         string $method,
         string $path,
+        string $bodyString = '',
         array $headers = ['HTTP_ACCEPT' => 'application/json'],
         array $serverParams = [],
         array $cookies = []
     ): Request {
         $uri = new Uri('', '', 80, $path);
         $handle = fopen('php://temp', 'w+');
-        $stream = (new StreamFactory())->createStreamFromResource($handle);
+
+        if ($bodyString === '') {
+            $stream = (new StreamFactory())->createStreamFromResource($handle);
+        } else {
+            $stream = (new StreamFactory())->createStream($bodyString);
+        }
 
         $h = new Headers();
         foreach ($headers as $name => $value) {
