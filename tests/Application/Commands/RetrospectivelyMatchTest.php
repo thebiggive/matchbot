@@ -13,6 +13,10 @@ use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 
+/**
+ * TODO tests should also cover the case where there are actual donations to match, rather than solely input param
+ * handling.
+ */
 class RetrospectivelyMatchTest extends TestCase
 {
     private RetrospectivelyMatch $command;
