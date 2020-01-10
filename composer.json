@@ -26,7 +26,7 @@
         "php-di/php-di": "^6.0",
         "ramsey/uuid-doctrine": "^1.5",
         "slim/psr7": "^0.6.0",
-        "slim/slim": "^4.3",
+        "slim/slim": "^4.4",
         "symfony/console": "^4.4",
         "symfony/lock": "^5.0",
         "symfony/property-access": "^5.0",

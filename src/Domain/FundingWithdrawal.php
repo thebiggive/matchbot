@@ -29,9 +29,9 @@ class FundingWithdrawal extends Model
 
     /**
      * @ORM\ManyToOne(targetEntity="CampaignFunding", fetch="EAGER")
-     * @var CampaignFunding
+     * @var CampaignFunding|null
      */
-    protected CampaignFunding $campaignFunding;
+    protected ?CampaignFunding $campaignFunding = null;
 
     /**
      * @param Donation $donation
@@ -65,10 +65,7 @@ class FundingWithdrawal extends Model
         $this->campaignFunding = $campaignFunding;
     }
 
-    /**
-     * @return CampaignFunding
-     */
-    public function getCampaignFunding(): CampaignFunding
+    public function getCampaignFunding(): ?CampaignFunding
     {
         return $this->campaignFunding;
     }

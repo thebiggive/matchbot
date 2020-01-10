@@ -40,7 +40,7 @@ class DonationHookAuthMiddleware implements MiddlewareInterface
 
         $expectedHash = hash_hmac(
             'sha256',
-            trim($request->getBody()->getContents()),
+            trim((string) $request->getBody()),
             getenv('WEBHOOK_DONATION_SECRET')
         );
 
