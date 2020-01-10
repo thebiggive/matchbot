@@ -6,6 +6,11 @@ use DI\ContainerBuilder;
 use Monolog\Logger;
 
 return function (ContainerBuilder $containerBuilder) {
+    $doctrineConnectionOptions = [];
+    if (getenv('APP_ENV') !== 'local') {
+        $doctrineConnectionOptions[PDO::MYSQL_ATTR_SSL_CA] = dirname(__DIR__) . '/deploy/rds-ca-2019-root.pem';
+    }
+
     // Global Settings Object
     $containerBuilder->addDefinitions([
         'settings' => [
@@ -49,6 +54,7 @@ return function (ContainerBuilder $containerBuilder) {
                     'default_table_options' => [
                         'collate' => 'utf8mb4_unicode_ci',
                     ],
+                    'options' => $doctrineConnectionOptions,
                 ],
             ],
 

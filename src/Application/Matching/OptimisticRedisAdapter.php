@@ -22,6 +22,13 @@ class OptimisticRedisAdapter extends Adapter
     /** @var int Number of times to immediately try to allocate a smaller amount if the fund's running low */
     private int $maxPartialAllocateTries = 5;
     private Redis $redis;
+    /**
+     * @var int How many seconds the authoritative source for real-time match funds should keep data, as a minimum.
+     *          Because Redis sets an updated value on each change to the balance, the case where using the database
+     *          value could be problematic (race conditions with high volume access) should not overlap with the case
+     *          where Redis copies of available fund balances are expired and have to be re-fetched.
+     */
+    private static int $storageDurationSeconds = 86_400; // 1 day
 
     public function __construct(Redis $redis, EntityManagerInterface $entityManager)
     {
@@ -50,7 +57,12 @@ class OptimisticRedisAdapter extends Adapter
         $decrementInPence = (int) (((float) $amount) * 100);
 
         [$initResponse, $fundBalanceInPence] = $this->redis->multi()
-            ->setnx($this->buildKey($funding), $this->getPenceAvailable($funding)) // Init if new to Redis
+            // Init if and only if new to Redis or expired (after 24 hours), using database value.
+            ->set(
+                $this->buildKey($funding),
+                $this->getPenceAvailable($funding),
+                ['nx', 'ex' => static::$storageDurationSeconds],
+            )
             ->decrBy($this->buildKey($funding), $decrementInPence)
             ->exec();
 
@@ -105,7 +117,12 @@ class OptimisticRedisAdapter extends Adapter
         $incrementInPence = (int) ((float) $amount * 100);
 
         [$initResponse, $fundBalanceInPence] = $this->redis->multi()
-            ->setnx($this->buildKey($funding), $this->getPenceAvailable($funding)) // Init if new to Redis
+            // Init if and only if new to Redis or expired (after 24 hours), using database value.
+            ->set(
+                $this->buildKey($funding),
+                $this->getPenceAvailable($funding),
+                ['nx', 'ex' => static::$storageDurationSeconds],
+            )
             ->incrBy($this->buildKey($funding), $incrementInPence)
             ->exec();
 
