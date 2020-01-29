@@ -38,11 +38,11 @@ class RetrospectivelyMatch extends LockingCommand
         );
     }
 
-    protected function doExecute(InputInterface $input, OutputInterface $output)
+    protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         if (!is_numeric($input->getArgument('days-back'))) {
             $output->writeln('Cannot proceed with non-numeric days-back argument');
-            return;
+            return 1;
         }
 
         $daysBack = round($input->getArgument('days-back'));
@@ -76,5 +76,7 @@ class RetrospectivelyMatch extends LockingCommand
             "Retrospectively matched $numWithMatchingAllocated of $numChecked donations. " .
             "£$totalNewMatching total new matching, across $numDistinctCampaigns campaigns."
         );
+
+        return 0;
     }
 }

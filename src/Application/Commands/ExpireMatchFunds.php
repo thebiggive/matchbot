@@ -31,7 +31,7 @@ class ExpireMatchFunds extends LockingCommand
         $this->setDescription('Frees up match funding from stale Pending donations');
     }
 
-    protected function doExecute(InputInterface $input, OutputInterface $output)
+    protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $toRelease = $this->donationRepository->findWithExpiredMatching();
 
@@ -41,5 +41,7 @@ class ExpireMatchFunds extends LockingCommand
 
         $numberExpired = count($toRelease);
         $output->writeln("Released $numberExpired donations' matching");
+
+        return 0;
     }
 }

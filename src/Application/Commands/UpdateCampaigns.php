@@ -29,7 +29,7 @@ class UpdateCampaigns extends LockingCommand
         $this->setDescription('Pulls down and saves the latest details of already-known Campaigns from Salesforce');
     }
 
-    protected function doExecute(InputInterface $input, OutputInterface $output)
+    protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         /** @var Campaign[] $campaigns */
         $campaigns = $this->campaignRepository->findAll();
@@ -38,5 +38,7 @@ class UpdateCampaigns extends LockingCommand
             $this->fundRepository->pullForCampaign($campaign);
             $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
         }
+
+        return 0;
     }
 }
