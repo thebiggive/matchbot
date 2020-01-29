@@ -55,6 +55,8 @@ class TestCase extends PHPUnitTestCase
         $routes = require __DIR__ . '/../app/routes.php';
         $routes($app);
 
+        $app->addRoutingMiddleware();
+
         return $app;
     }
 
