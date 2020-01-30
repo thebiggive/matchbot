@@ -38,6 +38,7 @@ class HandleOutOfSyncFundsTest extends TestCase
             'matchbot:handle-out-of-sync-funds complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
     public function testFix(): void
@@ -62,6 +63,7 @@ class HandleOutOfSyncFundsTest extends TestCase
             'matchbot:handle-out-of-sync-funds complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
     public function testWithModeMissing(): void
@@ -98,6 +100,7 @@ class HandleOutOfSyncFundsTest extends TestCase
             'matchbot:handle-out-of-sync-funds complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(1, $commandTester->getStatusCode());
     }
 
     /**

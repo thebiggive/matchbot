@@ -32,6 +32,7 @@ class ExpireMatchFundsTest extends TestCase
             'matchbot:expire-match-funds complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
     public function testTwoExpiries(): void
@@ -53,6 +54,7 @@ class ExpireMatchFundsTest extends TestCase
             'matchbot:expire-match-funds complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
     private function getCommand(ObjectProphecy $donationRepoProphecy): ExpireMatchFunds

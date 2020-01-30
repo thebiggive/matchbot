@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Commands;
 
 use MatchBot\Application\Commands\UpdateCampaigns;
+use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\FundRepository;
@@ -14,7 +15,7 @@ use Symfony\Component\Lock\LockFactory;
 
 class UpdateCampaignsTest extends TestCase
 {
-    public function testSingleUpdate(): void
+    public function testSingleUpdateSuccess(): void
     {
         $campaign = new Campaign();
         $campaign->setSalesforceId('someCampaignId');
@@ -39,5 +40,36 @@ class UpdateCampaignsTest extends TestCase
             'matchbot:update-campaigns complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
+    }
+
+    public function testSingleUpdateNotFoundOnSalesforceOutsideProduction()
+    {
+        // This case should be skipped over without crashing, in non-production envs.
+
+        $campaign = new Campaign();
+        $campaign->setSalesforceId('missingOnSfCampaignId');
+        $campaignRepoPropehcy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoPropehcy->findAll()
+            ->willReturn([$campaign])
+            ->shouldBeCalledOnce();
+        $campaignRepoPropehcy->pull($campaign)->willThrow(NotFoundException::class)->shouldBeCalledOnce();
+
+        $fundRepoProphecy = $this->prophesize(FundRepository::class);
+        $fundRepoProphecy->pullForCampaign($campaign)->shouldNotBeCalled(); // Exception reached before this call
+
+        $command = new UpdateCampaigns($campaignRepoPropehcy->reveal(), $fundRepoProphecy->reveal());
+        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+
+        $commandTester = new CommandTester($command);
+        $commandTester->execute([]);
+
+        $expectedOutputLines = [
+            'matchbot:update-campaigns starting!',
+            'Skipping unknown sandbox campaign missingOnSfCampaignId',
+            'matchbot:update-campaigns complete!',
+        ];
+        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
     }
 }
