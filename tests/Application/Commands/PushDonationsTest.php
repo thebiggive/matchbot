@@ -31,5 +31,6 @@ class PushDonationsTest extends TestCase
             'matchbot:push-donations complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
     }
 }

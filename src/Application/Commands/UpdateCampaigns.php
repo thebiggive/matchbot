@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\FundRepository;
@@ -34,9 +35,18 @@ class UpdateCampaigns extends LockingCommand
         /** @var Campaign[] $campaigns */
         $campaigns = $this->campaignRepository->findAll();
         foreach ($campaigns as $campaign) {
-            $this->campaignRepository->pull($campaign);
-            $this->fundRepository->pullForCampaign($campaign);
-            $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
+            try {
+                $this->campaignRepository->pull($campaign);
+                $this->fundRepository->pullForCampaign($campaign);
+                $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
+            } catch (NotFoundException $exception) {
+                if (getenv('APP_ENV') === 'production') {
+                    throw $exception;
+                }
+
+                // Chances are a sandbox refresh has led to this campaign being deleted in the Salesforce sandbox.
+                $output->writeln('Skipping unknown sandbox campaign ' . $campaign->getSalesforceId());
+            }
         }
 
         return 0;
