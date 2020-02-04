@@ -84,7 +84,8 @@ this prefix. e.g. there is a `doctrine:` script to completely empty and reset yo
 ### Discovering more about MatchBot scripts
 
 The headline for each script's purpose is defined in its description in the PHP class. There is a Composer script
-`matchbot:list` which calls `list` to read these. So with an already-running Docker `app` container, you can run
+`matchbot:list-commands` which calls `list` to read these. So with an already-running Docker `app` container, you can
+run
 
     docker-compose exec app composer matchbot:list-commands
 
