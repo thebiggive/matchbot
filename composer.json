@@ -83,7 +83,10 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:retrospectively-match"
         ],
-        "matchbot:update-campaigns": "php matchbot-cli.php matchbot:update-campaigns",
+        "matchbot:update-campaigns": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:update-campaigns"
+        ],
         "start": "php -S localhost:8080 -t public",
         "test": "phpunit"
     }
