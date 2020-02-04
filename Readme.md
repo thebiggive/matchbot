@@ -182,14 +182,14 @@ These branches are protected on GitHub and you should have a good reason for ski
 
 ### ECS runtime containers
 
-ECS builds do only two additional things compared to a local run:
+ECS builds have two additional steps compared to a local run:
 
-* the build in [`Dockerfile`](./Dockerfile) adds the AWS CLI for S3 secrets access, pulls in the app files, tweaks
+* during build, the [`Dockerfile`](./Dockerfile) adds the AWS CLI for S3 secrets access, pulls in the app files, tweaks
   temporary directory permissions and runs `composer install`. These things don't happen automatically with the [base
   PHP image](https://github.com/thebiggive/docker-php) as they don't usually make sense for local runs;
 * during startup, the entrypoint scripts load in runtime secrets securely from S3 and run some Doctrine tasks to ensure
-  database metadata is valid and the database itself is in sync with the new app code. This is all handled in the `.sh`
-  scripts in [`deploy`](./deploy).
+  database metadata is valid and the database itself is in sync with the new app code. This is handled in the two
+  `.sh` scripts in [`deploy`](./deploy) - one for web instances and one for tasks.
 
 ### Phased deploys
 
