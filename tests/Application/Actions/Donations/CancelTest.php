@@ -7,9 +7,11 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 use DI\Container;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\Token;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 use Slim\Exception\HttpNotFoundException;
 
 class CancelTest extends TestCase
@@ -38,6 +40,12 @@ class CancelTest extends TestCase
         $donationRepoProphecy
             ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
@@ -63,6 +71,12 @@ class CancelTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -92,6 +106,12 @@ class CancelTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -123,6 +143,12 @@ class CancelTest extends TestCase
             ->findOneBy(['uuid' => '87654321-1234-1234-1234-ba0987654321'])
             ->willReturn(null)
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
@@ -150,6 +176,12 @@ class CancelTest extends TestCase
             ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
@@ -174,6 +206,53 @@ class CancelTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
+    public function testMissingStatus(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+        $donation->setDonationStatus('Pending');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $donationData = $donation->toApiModel();
+        unset($donationData['status']); // Simulate an API client omitting the status JSON field
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($donationData),
+        )
+            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'New status is required',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertEquals(400, $response->getStatusCode());
+    }
+
     public function testCancelRequestAfterDonationFinalised(): void
     {
         $app = $this->getAppInstance();
@@ -191,6 +270,12 @@ class CancelTest extends TestCase
             ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationResponse)
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
@@ -215,7 +300,7 @@ class CancelTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
-    public function testSuccessWithNonStatusChangesIgnored(): void
+    public function testSuccessWithNoStatusChangesIgnored(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -236,6 +321,71 @@ class CancelTest extends TestCase
             ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
+        // Cancel is a no-op -> no fund release or push to SF
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($donation->toApiModel()),
+        )
+            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+        $this->assertEquals('Cancelled', $payloadArray['status']);
+        $this->assertEquals('1 Main St, London N1 1AA', $payloadArray['billingPostalAddress']);
+        $this->assertTrue($payloadArray['giftAid']);
+        $this->assertTrue($payloadArray['optInCharityEmail']);
+        $this->assertFalse($payloadArray['optInTbgEmail']);
+        $this->assertEquals(123.45, $payloadArray['donationAmount']); // Attempt to patch this is ignored
+        $this->assertEquals(0, $payloadArray['matchedAmount']);
+        $this->assertEquals(0, $payloadArray['tipAmount']);
+    }
+
+    public function testNormalSuccess(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+        $donation->setDonationStatus('Cancelled');
+        // Check this is ignored and only status patched. N.B. this is currently a bit circular as we simulate both
+        // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
+        // at all.
+        $donation->setAmount('999.99');
+
+        $responseDonation = $this->getTestDonation();
+        // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
+        // mock donation.
+        $responseDonation->setDonationStatus('Pending');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($responseDonation)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce(); // Cancel was a new change -> expect a push to SF
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
