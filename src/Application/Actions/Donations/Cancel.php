@@ -55,6 +55,15 @@ class Cancel extends Action
             'json'
         );
 
+        if (!isset($donationData->status)) {
+            $this->logger->warning(
+                "Donation ID {$this->args['donationId']} could not be updated with missing status"
+            );
+            $error = new ActionError(ActionError::BAD_REQUEST, 'New status is required');
+
+            return $this->respond(new ActionPayload(400, null, $error));
+        }
+
         if ($donationData->status !== 'Cancelled') {
             $this->logger->warning(
                 "Donation ID {$this->args['donationId']} could not be set to status {$donationData->status}"
