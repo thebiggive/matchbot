@@ -43,8 +43,8 @@ class Create extends Action
      */
     protected function action(): Response
     {
-        /** @var DonationCreate $donationData */
         try {
+            /** @var DonationCreate $donationData */
             $donationData = $this->serializer->deserialize(
                 $this->request->getBody(),
                 DonationCreate::class,
