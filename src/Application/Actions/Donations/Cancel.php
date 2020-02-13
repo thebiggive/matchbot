@@ -57,7 +57,7 @@ class Cancel extends Action
                 'json'
             );
         } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
-            $message = 'Donation Cancel data deserialise';
+            $message = 'Donation Cancel data deserialise error';
             $exceptionType = get_class($exception);
             $this->logger->warning("$message: $exceptionType - {$exception->getMessage()}");
             $this->logger->info("Donation Cancel non-serialisable payload was: {$this->request->getBody()}");

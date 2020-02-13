@@ -39,7 +39,7 @@ class CreateTest extends TestCase
 
         $expectedPayload = new ActionPayload(400, ['error' => [
             'type' => 'BAD_REQUEST',
-            'description' => 'Donation Create data deserialise',
+            'description' => 'Donation Create data deserialise error',
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 

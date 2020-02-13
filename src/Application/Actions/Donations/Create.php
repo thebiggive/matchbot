@@ -51,7 +51,7 @@ class Create extends Action
                 'json'
             );
         } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
-            $message = 'Donation Create data deserialise';
+            $message = 'Donation Create data deserialise error';
             $exceptionType = get_class($exception);
             $this->logger->warning("$message: $exceptionType - {$exception->getMessage()}");
             $this->logger->info("Donation Create non-serialisable payload was: {$this->request->getBody()}");
