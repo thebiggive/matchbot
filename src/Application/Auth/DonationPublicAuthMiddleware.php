@@ -9,14 +9,13 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
-use Slim\Routing\Route;
+use Slim\Routing\RouteContext;
 
 class DonationPublicAuthMiddleware implements MiddlewareInterface
 {
     use ErrorTrait;
 
-    /** @var LoggerInterface */
-    private $logger;
+    private LoggerInterface $logger;
 
     public function __construct(LoggerInterface $logger)
     {
@@ -25,8 +24,8 @@ class DonationPublicAuthMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        /** @var $route Route */
-        $route = $request->getAttribute('route');
+        $routeContext = RouteContext::fromRequest($request);
+        $route = $routeContext->getRoute();
         $donationId = $route->getArgument('donationId');
 
         if (!Token::check($donationId, $request->getHeaderLine('x-tbg-auth'), $this->logger)) {

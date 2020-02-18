@@ -6,7 +6,7 @@ namespace MatchBot\Tests\Application\Auth;
 
 use GuzzleHttp\Psr7;
 use MatchBot\Application\Auth\DonationHookAuthMiddleware;
-use PHPUnit\Framework\TestCase;
+use MatchBot\Tests\TestCase;
 use Psr\Log\NullLogger;
 use Slim\CallableResolver;
 use Slim\Psr7\Factory\ResponseFactory;

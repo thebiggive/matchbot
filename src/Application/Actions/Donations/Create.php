@@ -20,12 +20,9 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class Create extends Action
 {
-    /** @var DonationRepository */
-    private $donationRepository;
-    /** @var EntityManagerInterface */
-    private $entityManager;
-    /** @var SerializerInterface */
-    private $serializer;
+    private DonationRepository $donationRepository;
+    private EntityManagerInterface $entityManager;
+    private SerializerInterface $serializer;
 
     public function __construct(
         DonationRepository $donationRepository,
@@ -46,15 +43,15 @@ class Create extends Action
      */
     protected function action(): Response
     {
-        /** @var DonationCreate $donationData */
         try {
+            /** @var DonationCreate $donationData */
             $donationData = $this->serializer->deserialize(
                 $this->request->getBody(),
                 DonationCreate::class,
                 'json'
             );
         } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
-            $message = 'Donation Create data deserialise';
+            $message = 'Donation Create data deserialise error';
             $exceptionType = get_class($exception);
             $this->logger->warning("$message: $exceptionType - {$exception->getMessage()}");
             $this->logger->info("Donation Create non-serialisable payload was: {$this->request->getBody()}");

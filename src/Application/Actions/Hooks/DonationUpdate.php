@@ -19,12 +19,9 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class DonationUpdate extends Action
 {
-    /** @var DonationRepository */
-    private $donationRepository;
-    /** @var EntityManagerInterface */
-    private $entityManager;
-    /** @var SerializerInterface */
-    private $serializer;
+    private DonationRepository $donationRepository;
+    private EntityManagerInterface $entityManager;
+    private SerializerInterface $serializer;
 
     public function __construct(
         DonationRepository $donationRepository,
@@ -46,10 +43,6 @@ class DonationUpdate extends Action
      */
     protected function action(): Response
     {
-        if (empty($this->args['donationId'])) { // When MatchBot made a donation, this is now a UUID
-            throw new DomainRecordNotFoundException('Missing donation ID');
-        }
-
         /** @var Donation $donation */
         $donation = $this->donationRepository->findOneBy(['uuid' => $this->args['donationId']]);
 

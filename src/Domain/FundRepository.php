@@ -10,8 +10,7 @@ use MatchBot\Client;
 
 class FundRepository extends SalesforceReadProxyRepository
 {
-    /** @var CampaignFundingRepository */
-    private $campaignFundingRepository;
+    private CampaignFundingRepository $campaignFundingRepository;
 
     public function setCampaignFundingRepository(CampaignFundingRepository $repository): void
     {

@@ -13,14 +13,13 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class Cancel extends Action
 {
-    /** @var DonationRepository */
-    private $donationRepository;
-    /** @var SerializerInterface */
-    private $serializer;
+    private DonationRepository $donationRepository;
+    private SerializerInterface $serializer;
 
     public function __construct(
         DonationRepository $donationRepository,
@@ -50,12 +49,31 @@ class Cancel extends Action
             throw new DomainRecordNotFoundException('Donation not found');
         }
 
-        /** @var HttpModels\Donation $donationData */
-        $donationData = $this->serializer->deserialize(
-            $this->request->getBody(),
-            HttpModels\Donation::class,
-            'json'
-        );
+        try {
+            /** @var HttpModels\Donation $donationData */
+            $donationData = $this->serializer->deserialize(
+                $this->request->getBody(),
+                HttpModels\Donation::class,
+                'json'
+            );
+        } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
+            $message = 'Donation Cancel data deserialise error';
+            $exceptionType = get_class($exception);
+            $this->logger->warning("$message: $exceptionType - {$exception->getMessage()}");
+            $this->logger->info("Donation Cancel non-serialisable payload was: {$this->request->getBody()}");
+            $error = new ActionError(ActionError::BAD_REQUEST, $message);
+
+            return $this->respond(new ActionPayload(400, null, $error));
+        }
+
+        if (!isset($donationData->status)) {
+            $this->logger->warning(
+                "Donation ID {$this->args['donationId']} could not be updated with missing status"
+            );
+            $error = new ActionError(ActionError::BAD_REQUEST, 'New status is required');
+
+            return $this->respond(new ActionPayload(400, null, $error));
+        }
 
         if ($donationData->status !== 'Cancelled') {
             $this->logger->warning(

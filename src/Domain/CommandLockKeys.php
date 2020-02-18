@@ -17,17 +17,17 @@ class CommandLockKeys
      * @ORM\Column(type="string", length=64)
      * @var string
      */
-    public $key_id;
+    public string $key_id;
 
     /**
      * @ORM\Column(type="string", length=44)
      * @var string
      */
-    public $key_token;
+    public string $key_token;
 
     /**
      * @ORM\Column(type="integer", options={"unsigned"=true})
      * @var int
      */
-    public $key_expiration;
+    public int $key_expiration;
 }

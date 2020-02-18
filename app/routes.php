@@ -16,7 +16,8 @@ return function (App $app) {
     $app->get('/ping', Status::class);
 
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
-        $versionGroup->post('/donations', Donations\Create::class); // Currently the only unauthenticated endpoint.
+        // Currently the only unauthenticated endpoint besides `/ping`, and the only one in the `/v1` group.
+        $versionGroup->post('/donations', Donations\Create::class);
 
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {
             $group->get('', Donations\Get::class);

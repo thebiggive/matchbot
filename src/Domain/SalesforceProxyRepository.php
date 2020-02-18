@@ -10,11 +10,8 @@ use Psr\Log\LoggerInterface;
 
 abstract class SalesforceProxyRepository extends EntityRepository
 {
-    /** @var Client\Common */
-    protected $client;
-
-    /** @var LoggerInterface */
-    protected $logger;
+    protected Client\Common $client;
+    protected LoggerInterface $logger;
 
     public function logError(string $message): void
     {

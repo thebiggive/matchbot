@@ -12,8 +12,7 @@ class PushDonations extends LockingCommand
 {
     protected static $defaultName = 'matchbot:push-donations';
 
-    /** @var DonationRepository */
-    private $donationRepository;
+    private DonationRepository $donationRepository;
 
     public function __construct(DonationRepository $donationRepository)
     {
@@ -26,9 +25,11 @@ class PushDonations extends LockingCommand
         $this->setDescription('Pushes details of any new or updated donations not yet synced to Salesforce');
     }
 
-    protected function doExecute(InputInterface $input, OutputInterface $output)
+    protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $numberPushed = $this->donationRepository->pushAllPending();
         $output->writeln("Pushed $numberPushed donations to Salesforce");
+
+        return 0;
     }
 }

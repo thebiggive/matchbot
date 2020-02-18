@@ -35,14 +35,9 @@ class HandleOutOfSyncFunds extends LockingCommand
 {
     protected static $defaultName = 'matchbot:handle-out-of-sync-funds';
 
-    /** @var CampaignFundingRepository */
-    private $campaignFundingRepository;
-
-    /** @var FundingWithdrawalRepository */
-    private $fundingWithdrawalRepository;
-
-    /** @var Matching\Adapter */
-    private $matchingAdapter;
+    private CampaignFundingRepository $campaignFundingRepository;
+    private FundingWithdrawalRepository $fundingWithdrawalRepository;
+    private Matching\Adapter $matchingAdapter;
 
     public function __construct(
         CampaignFundingRepository $campaignFundingRepository,
@@ -66,12 +61,12 @@ class HandleOutOfSyncFunds extends LockingCommand
         );
     }
 
-    protected function doExecute(InputInterface $input, OutputInterface $output)
+    protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $mode = $input->getArgument('mode');
         if (!in_array($mode, ['check', 'fix'], true)) {
             $output->writeln('Please set the mode to "check" or "fix"');
-            return;
+            return 1;
         }
 
         $numFundingsCorrect = 0;
@@ -124,14 +119,16 @@ class HandleOutOfSyncFunds extends LockingCommand
                     }
                 );
 
-                $output->writeln("Released {$undermatchAmount} to funding {$funding->getId()}");
-                $output->writeln("New fund total for {$funding->getId()}: $newTotal");
+                $output->writeln("Released {$undermatchAmount} to funding ID {$funding->getId()}");
+                $output->writeln("New fund total for funding ID {$funding->getId()}: $newTotal");
             }
         }
 
         $output->writeln(
             "Checked $numFundings fundings. Found $numFundingsCorrect with correct allocations, " .
-            "$numFundingsOvermatched over-matched and $numFundingsUndermatched under-matched."
+            "$numFundingsOvermatched over-matched and $numFundingsUndermatched under-matched"
         );
+
+        return 0;
     }
 }

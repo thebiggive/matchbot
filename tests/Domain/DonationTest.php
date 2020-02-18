@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Donation;
-use PHPUnit\Framework\TestCase;
+use MatchBot\Tests\TestCase;
 
 class DonationTest extends TestCase
 {

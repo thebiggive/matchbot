@@ -21,15 +21,14 @@ abstract class SalesforceWriteProxy extends SalesforceProxy
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
-     * @var DateTime
      */
-    protected $salesforceLastPush;
+    protected ?DateTime $salesforceLastPush = null;
 
     /**
      * @ORM\Column(type="string")
      * @var string  One of 'not-sent', 'pending-create', 'pending-update' or 'complete'
      */
-    protected $salesforcePushStatus = 'not-sent';
+    protected string $salesforcePushStatus = 'not-sent';
 
     /**
      * @return DateTime

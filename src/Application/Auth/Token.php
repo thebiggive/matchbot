@@ -14,7 +14,7 @@ class Token
      * algorithm choice. Since we use the secret only server-side and will secure it like other secrets,
      * and symmetric is faster, it's the best and simplest fit for this use case.
      */
-    private static $algorithm = 'HS256';
+    private static string $algorithm = 'HS256';
 
     /**
      * @param string $donationId UUID for a donation

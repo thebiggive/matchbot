@@ -13,8 +13,7 @@ use Psr\Log\LoggerInterface;
 
 class Get extends Action
 {
-    /** @var DonationRepository */
-    private $donationRepository;
+    private DonationRepository $donationRepository;
 
     public function __construct(
         DonationRepository $donationRepository,

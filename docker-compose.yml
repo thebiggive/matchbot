@@ -6,7 +6,7 @@ volumes:
 
 services:
   app:
-    image: thebiggive/php:7.3
+    image: thebiggive/php:7.4
     ports:
       - 30030:80
     volumes:

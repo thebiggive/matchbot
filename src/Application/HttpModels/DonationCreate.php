@@ -9,18 +9,9 @@ namespace MatchBot\Application\HttpModels;
  */
 class DonationCreate
 {
-    /** @var string */
-    public $donationAmount;
-
-    /** @var bool */
-    public $giftAid;
-
-    /** @var bool */
-    public $optInCharityEmail;
-
-    /** @var bool */
-    public $optInTbgEmail;
-
-    /** @var string */
-    public $projectId;
+    public string $donationAmount;
+    public bool $giftAid;
+    public bool $optInCharityEmail;
+    public bool $optInTbgEmail;
+    public string $projectId;
 }

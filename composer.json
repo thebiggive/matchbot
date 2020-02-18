@@ -11,7 +11,7 @@
         }
     ],
     "require": {
-        "php": "7.3.* || 7.4.*",
+        "php": "7.4.*",
         "ext-bcmath": "*",
         "ext-json": "*",
         "ext-pdo": "*",
@@ -19,15 +19,14 @@
         "ext-redis": "*",
         "doctrine/migrations": "^2.2",
         "doctrine/orm": "^2.7",
-        "doctrine/persistence": "1.2.*",
         "firebase/php-jwt": "^5.0",
-        "guzzlehttp/guzzle": "^6.3",
+        "guzzlehttp/guzzle": "^6.5",
         "monolog/monolog": "^2.0",
         "php-di/php-di": "^6.0",
-        "ramsey/uuid-doctrine": "^1.5",
-        "slim/psr7": "^0.6.0",
-        "slim/slim": "^4.3",
-        "symfony/console": "^4.4",
+        "ramsey/uuid-doctrine": "^1.6",
+        "slim/psr7": "^1.0",
+        "slim/slim": "^4.4",
+        "symfony/console": "^5.0",
         "symfony/lock": "^5.0",
         "symfony/property-access": "^5.0",
         "symfony/serializer": "^5.0"
@@ -77,12 +76,16 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:handle-out-of-sync-funds fix"
         ],
+        "matchbot:list-commands": "php matchbot-cli.php list",
         "matchbot:push-donations": "php matchbot-cli.php matchbot:push-donations",
         "matchbot:retrospectively-match": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:retrospectively-match"
         ],
-        "matchbot:update-campaigns": "php matchbot-cli.php matchbot:update-campaigns",
+        "matchbot:update-campaigns": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:update-campaigns"
+        ],
         "start": "php -S localhost:8080 -t public",
         "test": "phpunit"
     }

@@ -7,16 +7,19 @@ namespace MatchBot\Tests\Application\Commands;
 use DateTime;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Domain\DonationRepository;
-use PHPUnit\Framework\TestCase;
+use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 
+/**
+ * TODO tests should also cover the case where there are actual donations to match, rather than solely input param
+ * handling.
+ */
 class RetrospectivelyMatchTest extends TestCase
 {
-    /** @var RetrospectivelyMatch */
-    private $command;
+    private RetrospectivelyMatch $command;
 
     public function setUp(): void
     {
@@ -49,6 +52,7 @@ class RetrospectivelyMatchTest extends TestCase
             'matchbot:retrospectively-match complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(1, $commandTester->getStatusCode());
     }
 
     public function testNonWholeDaysBackIsRounded(): void
@@ -63,6 +67,7 @@ class RetrospectivelyMatchTest extends TestCase
             'matchbot:retrospectively-match complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
     public function testWholeDaysBackProceeds(): void
@@ -77,5 +82,6 @@ class RetrospectivelyMatchTest extends TestCase
             'matchbot:retrospectively-match complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
     }
 }
