@@ -68,12 +68,12 @@ Redis is used for Doctrine caches but also for real-time matching allocations, t
 worrying about database locks. When Redis is the matching adapter (currently always), match data is normally sent to
 MySQL after the fact, but Redis handles fund balances so that MySQL is never involved in race conditions.
 
-In [`OptimisticRedisAdapter`](./src/Application/Matching/OptimisticRedisAdapter.php) we use atomic multi-step Redis
-operations which can init a value if empty and increment/decrement it in one go, eliminating the need for locks. In the
-rare edge case where two processes do this near-simultaneously based on slightly out of date database values, and a
-fund's balance drops below zero, the thread which last changed the value immediately 'knows' this happened from the
-return value and will reverse and re-try the operation based on the new state of play, just as quickly as the first
-attempt.
+In [`OptimisticRedisAdapter`](./src/Application/Matching/OptimisticRedisAdapter.php) we use atomic, multiple Redis
+operations which can both init a value (if empty) and increment/decrement it (unconditionally), eliminating the need
+for locks. In the rare edge case where two processes do this near-simultaneously based on slightly out of date database
+values, and a fund's balance drops below zero, the thread which last changed the value immediately 'knows' this happened
+from the return value and will reverse and re-try the operation based on the new state of play, just as quickly as the
+first attempt.
 
 ## Scripts and Docker
 
@@ -112,7 +112,7 @@ Generally this structure follows normal conventions for a modern PHP app:
 
 * Dependencies are defined (only) in `composer.json`, including PHP version and extensions
 * Source code lives in [`src`](./src)
-* Unit tests live in [`tests`](./tests), at a path matching that of the class they cover in `src`
+* PHPUnit tests live in [`tests`](./tests), at a path matching that of the class they cover in `src`
 * Slim configuration logic and routing live in [`app`](./app)
 
 ### Configuration in `app`
@@ -171,11 +171,11 @@ have enough inline documentation to be reasonably easy to understand, when you e
 ## Deployment
 
 Deploys are rolled out by [CirlceCI](https://circleci.com/), as [configured here](./.circleci/config.yml), to an
-[ECS](https://aws.amazon.com/ecs/) cluster, where instances run the app live inside Docker conatiners.
+[ECS](https://aws.amazon.com/ecs/) cluster, where instances run the app live inside Docker containers.
 
 As you can see in the configuration file,
 
-* `develop` commits trigger deploys to staging; and
+* `develop` commits trigger deploys to staging and regression environments; and
 * `master` commits trigger deploys to production
 
 These branches are protected on GitHub and you should have a good reason for skipping any checks before merging to them!
@@ -196,3 +196,7 @@ ECS builds have two additional steps compared to a local run:
 Other AWS infrastructure includes a load balancer, and ECS rolls out new app versions gradually to try and keep a
 working version live even if a broken release is ever deployed. Because of this, new code may not reach all users until
 about 30 minutes after CircleCI reports that a deploy is done. You can monitor this in the AWS Console.
+
+When things are working correctly, any environment with at least two tasks in its ECS Service should get new app
+versions with no downtime. If you make schema changes, be careful to use a [parallel change (expand / contract)](https://www.martinfowler.com/bliki/ParallelChange.html)]
+pattern to ensure this remains true.
