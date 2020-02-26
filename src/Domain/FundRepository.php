@@ -52,15 +52,18 @@ class FundRepository extends SalesforceReadProxyRepository
             $campaignFunding = $this->campaignFundingRepository->getFunding($campaign, $fund);
             // Otherwise create one
             if (!$campaignFunding) {
-                $campaignFunding = new CampaignFunding();
-                $campaignFunding->setFund($fund);
-                $campaignFunding->addCampaign($campaign);
-                if ($fund instanceof Pledge) {
-                    $campaignFunding->setAllocationOrder(100);
-                } else {
-                    $campaignFunding->setAllocationOrder(200);
+                $availableFunds = getAvailableFundings($campaign);
+                // Only create and link the campaignFunding for the given campaign if it has not been created
+                if (!in_array($fund, $availableFunds)) {
+                    $campaignFunding = new CampaignFunding();
+                    $campaignFunding->setFund($fund);
+                    $campaignFunding->addCampaign($campaign);
+                    if ($fund instanceof Pledge) {
+                        $campaignFunding->setAllocationOrder(100);
+                    } else {
+                        $campaignFunding->setAllocationOrder(200);
+                    }
                 }
-
                 // It's crucial we don't try to 'update' the `amountAvailable` after MatchBot has created the entity,
                 // i.e. only call this when the entity is new. We also assume the amount for each fund is immutable
                 // and so only call `setAmount()` here too.
