@@ -45,4 +45,20 @@ abstract class Fund extends SalesforceReadProxy
     {
         $this->name = $name;
     }
+
+    /**
+     * @return string
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAmount(): string
+    {
+        return $this->amount;
+    }
 }

@@ -6,15 +6,25 @@ namespace MatchBot\Domain;
 
 use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use MatchBot\Application\Matching;
 use MatchBot\Client;
 
 class FundRepository extends SalesforceReadProxyRepository
 {
     private CampaignFundingRepository $campaignFundingRepository;
+    private Matching\Adapter $matchingAdapter;
 
     public function setCampaignFundingRepository(CampaignFundingRepository $repository): void
     {
         $this->campaignFundingRepository = $repository;
+    }
+
+    /**
+     * @param Matching\Adapter $matchingAdapter
+     */
+    public function setMatchingAdapter(Matching\Adapter $matchingAdapter): void
+    {
+        $this->matchingAdapter = $matchingAdapter;
     }
 
     /**
@@ -48,28 +58,47 @@ class FundRepository extends SalesforceReadProxyRepository
                 $this->getEntityManager()->persist($fund);
             }
 
-            // If there's already a CampaignFunding for this campaign+fund combination, use that
-            $campaignFunding = $this->campaignFundingRepository->getFunding($campaign, $fund);
-            // Otherwise create one
-            if (!$campaignFunding) {
+            // If there's already a CampaignFunding for this fund, use that
+            $campaignFunding = $this->campaignFundingRepository->getFunding($fund);
+
+            // We must now support funds' totals changing over time, even after a campaign opens. This must play
+            // well with high volume real-time adapters, so we must first check for a likely change and then push the
+            // change to the matching adapter when needed.
+            $amountForCampaign = $fundData['amountForCampaign'] === null
+                ? '0.00'
+                : (string) $fundData['amountForCampaign'];
+
+            if ($campaignFunding) {
+                // Existing campaign -> check for balance increase and apply any in a high-volume-safe way.
+                // Note that a balance DECREASE on the API side is unsupported and would be ignored, as this
+                // risks invalidating in-progress donation matches.
+                $increaseInAmount = bcsub($amountForCampaign, $campaignFunding->getAmount(), 2);
+
+                if (bccomp($increaseInAmount, '0.00', 2) === 1) {
+                    $this->logger->info("Funding {$campaignFunding->getId()} balance increased £{$increaseInAmount} to £{$amountForCampaign}");
+
+                    // Also calls Doctrine model's `setAmountAvailable()` in a not-guaranteed-realtime way.
+                    $this->matchingAdapter->addAmount($campaignFunding, $increaseInAmount);
+
+                    $campaignFunding->setAmount($amountForCampaign);
+                }
+            } else {
+                // Not a previously existing campaign -> create one and set balances without checking for existing ones.
                 $campaignFunding = new CampaignFunding();
                 $campaignFunding->setFund($fund);
-                $campaignFunding->addCampaign($campaign);
-                if ($fund instanceof Pledge) {
-                    $campaignFunding->setAllocationOrder(100);
-                } else {
-                    $campaignFunding->setAllocationOrder(200);
-                }
-
-                // It's crucial we don't try to 'update' the `amountAvailable` after MatchBot has created the entity,
-                // i.e. only call this when the entity is new. We also assume the amount for each fund is immutable
-                // and so only call `setAmount()` here too.
-                $amountForCampaign = $fundData['amountForCampaign'] === null
-                    ? '0.00'
-                    : (string) $fundData['amountForCampaign'];
                 $campaignFunding->setAmountAvailable($amountForCampaign);
                 $campaignFunding->setAmount($amountForCampaign);
             }
+
+            if ($fund instanceof Pledge) {
+                $campaignFunding->setAllocationOrder(100);
+            } else {
+                $campaignFunding->setAllocationOrder(200);
+            }
+
+            // Make the CampaignFunding available to the Campaign. This method is immutable and won't add duplicates
+            // if a campaign is already among those linked to the CampaignFunding.
+            $campaignFunding->addCampaign($campaign);
 
             try {
                 $this->getEntityManager()->persist($campaignFunding);

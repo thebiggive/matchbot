@@ -110,8 +110,17 @@ class CampaignFunding extends Model
         $this->fund = $fund;
     }
 
+    /**
+     * Add a Campaign to those for which this CampaignFunding is available, *if* not already linked.
+     *
+     * @param Campaign $campaign
+     */
     public function addCampaign(Campaign $campaign): void
     {
+        if ($this->campaigns->contains($campaign)) {
+            return;
+        }
+
         $this->campaigns->add($campaign);
     }
 
