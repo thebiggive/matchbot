@@ -75,7 +75,10 @@ class FundRepository extends SalesforceReadProxyRepository
                 $increaseInAmount = bcsub($amountForCampaign, $campaignFunding->getAmount(), 2);
 
                 if (bccomp($increaseInAmount, '0.00', 2) === 1) {
-                    $this->logger->info("Funding {$campaignFunding->getId()} balance increased £{$increaseInAmount} to £{$amountForCampaign}");
+                    $this->logger->info(
+                        "Funding {$campaignFunding->getId()} balance increased " .
+                        "£{$increaseInAmount} to £{$amountForCampaign}"
+                    );
 
                     // Also calls Doctrine model's `setAmountAvailable()` in a not-guaranteed-realtime way.
                     $this->matchingAdapter->addAmount($campaignFunding, $increaseInAmount);

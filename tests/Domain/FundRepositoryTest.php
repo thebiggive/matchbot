@@ -102,8 +102,8 @@ class FundRepositoryTest extends TestCase
     {
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
-        // Validate that with an existing fund on a new campaign, the Doctrine EM is asked to persist the campaign funding newly,
-        // as well as the Fund with an updated Amount.
+        // Validate that with an existing fund on a new campaign, the Doctrine EM is asked to persist the
+        // campaign funding newly, as well as the Fund with an updated amount.
         $entityManagerProphecy
             ->persist(Argument::type(ChampionFund::class))
             ->shouldBeCalledOnce();
@@ -147,8 +147,8 @@ class FundRepositoryTest extends TestCase
     {
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
-        // Validate that with an existing fund on a new campaign, the Doctrine EM is asked to persist the campaign funding newly,
-        // as well as the Fund with an updated Amount.
+        // Validate that with an existing fund on an existing campaign, the Doctrine EM is asked to persist the
+        // campaign funding and Fund, with updated amounts.
         $entityManagerProphecy
             ->persist(Argument::type(ChampionFund::class))
             ->shouldBeCalledOnce();
@@ -258,8 +258,7 @@ class FundRepositoryTest extends TestCase
         $fundClient,
         $matchingAdapter,
         ?Fund $existingFund
-    ): FundRepository
-    {
+    ): FundRepository {
         $mockBuilder = $this->getMockBuilder(FundRepository::class);
         $mockBuilder->setConstructorArgs([$entityManager, new ClassMetadata(CampaignFunding::class)]);
         $mockBuilder->onlyMethods(['findOneBy']);
