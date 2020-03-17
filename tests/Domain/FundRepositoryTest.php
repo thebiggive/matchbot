@@ -172,10 +172,11 @@ class FundRepositoryTest extends TestCase
             ->shouldBeCalledOnce();
 
         $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
-        // Validate that the matching adapter DOES have its `addAmount()` called and the £100 increase in
-        // match funding from £400 to £500 is reflected.
-        $matchingAdapterProphecy
-            ->addAmount(Argument::type(CampaignFunding::class), '100')
+
+        // Validate that the matching adapter DOES have its `addAmount()` called inside a safe transaction
+        // wrapper, and the £100 increase in match funding from £400 to £500 is reflected.
+        $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
+            ->willReturn('100.00') // Amount available after adjustment
             ->shouldBeCalledOnce();
 
         $repo = $this->getFundRepoPartialMock(
