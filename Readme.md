@@ -40,6 +40,14 @@ To get PHP dependencies and an initial data in structure in place, you'll need t
 
 If dependencies change you may occasionally need to re-run the `composer install`.
 
+### Data clearing on subsequent runs
+
+If you have already run local tests with fund balances being updated in Redis,
+you will need to flush Redis data to start afresh. You can remove and re-create the
+Docker container, or just flush the data store:
+
+    docker-compose exec redis redis-cli FLUSHALL
+
 ## Run unit tests
 
 Once you have the app running, you can test with: 
