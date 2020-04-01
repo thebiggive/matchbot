@@ -32,10 +32,9 @@ return function (ContainerBuilder $containerBuilder) {
             return new Auth\DonationHookAuthMiddleware($c->get(LoggerInterface::class));
         },
 
-        Auth\DonationPublicAuthMiddleware::class
-            => function (ContainerInterface $c): Auth\DonationPublicAuthMiddleware {
-                return new Auth\DonationPublicAuthMiddleware($c->get(LoggerInterface::class));
-            },
+        Auth\DonationPublicAuthMiddleware::class => function (ContainerInterface $c): Auth\DonationPublicAuthMiddleware {
+            return new Auth\DonationPublicAuthMiddleware($c->get(LoggerInterface::class));
+        },
 
         Client\Campaign::class => function (ContainerInterface $c): Client\Campaign {
             return new Client\Campaign($c->get('settings'), $c->get(LoggerInterface::class));
