@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityRepository;
 
@@ -44,6 +45,20 @@ class CampaignFundingRepository extends EntityRepository
             SELECT cf FROM MatchBot\Domain\CampaignFunding cf
             WHERE cf.fund = :fund
         ')->setMaxResults(1);
+        $query->setParameter('fund', $fund->getId());
+        $query->execute();
+
+        return $query->getOneOrNullResult();
+    }
+
+    public function getFundingForCampaign(Campaign $campaign, Fund $fund): ?CampaignFunding
+    {
+        $query = $this->getEntityManager()->createQuery('
+            SELECT cf FROM MatchBot\Domain\CampaignFunding cf
+            WHERE :campaign MEMBER OF cf.campaigns
+            AND cf.fund = :fund
+        ')->setMaxResults(1);
+        $query->setParameter('campaign', new ArrayCollection([$campaign->getId()]));
         $query->setParameter('fund', $fund->getId());
         $query->execute();
 
