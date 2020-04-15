@@ -296,16 +296,6 @@ class FundRepositoryTest extends TestCase
 
         $repo = $mockBuilder->getMock();
 
-//        $repo->expects($this->once())
-//            ->method('findOneBy')
-//            ->with(['salesforceId' => 'sfFundId123'])
-//            ->willReturn($existingFundNonShared);
-//
-//        $repo->expects($this->once())
-//            ->method('findOneBy')
-//            ->with(['salesforceId' => 'sfFundId456'])
-//            ->willReturn($existingFundShared);
-
         $repo->expects($this->exactly(2))
             ->method('findOneBy')
             ->withConsecutive([['salesforceId' => 'sfFundId123']], [['salesforceId' => 'sfFundId456']])
