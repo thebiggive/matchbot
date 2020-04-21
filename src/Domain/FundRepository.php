@@ -58,8 +58,14 @@ class FundRepository extends SalesforceReadProxyRepository
                 $this->getEntityManager()->persist($fund);
             }
 
-            // If there's already a CampaignFunding for this fund, use that
-            $campaignFunding = $this->campaignFundingRepository->getFunding($fund);
+            // If there's already a CampaignFunding for this fund, use that regardless of existing campaigns
+            // iff the fund is shareable. Otherwise look up only fundings for this campaign. In both cases,
+            // if the funding is new the lookup result is null and we must make a new funding.
+            if ($fundData['isShared']) {
+                $campaignFunding = $this->campaignFundingRepository->getFunding($fund);
+            } else {
+                $campaignFunding = $this->campaignFundingRepository->getFundingForCampaign($campaign, $fund);
+            }
 
             // We must now support funds' totals changing over time, even after a campaign opens. This must play
             // well with high volume real-time adapters, so we must first check for a likely change and then push the
@@ -69,7 +75,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 : (string) $fundData['amountForCampaign'];
 
             if ($campaignFunding) {
-                // Existing campaign -> check for balance increase and apply any in a high-volume-safe way.
+                // Existing funding -> check for balance increase and apply any in a high-volume-safe way.
                 // Note that a balance DECREASE on the API side is unsupported and would be ignored, as this
                 // risks invalidating in-progress donation matches.
                 $increaseInAmount = bcsub($amountForCampaign, $campaignFunding->getAmount(), 2);

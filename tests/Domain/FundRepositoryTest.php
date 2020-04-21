@@ -61,10 +61,10 @@ class FundRepositoryTest extends TestCase
         // Validate that with everything new, the Doctrine EM is asked to persist the fund and campaign funding.
         $entityManagerProphecy
             ->persist(Argument::type(ChampionFund::class))
-            ->shouldBeCalledOnce();
+            ->shouldBeCalledTimes(2);
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
-            ->shouldBeCalledOnce();
+            ->shouldBeCalledTimes(2);
 
         // This is not mututally exclusive with the above call expectations. It's a quick way to double check
         // that both persists are setting their respective object's amount to £500, even when the pre-existing
@@ -73,7 +73,7 @@ class FundRepositoryTest extends TestCase
             ->persist(Argument::which('getAmount', '500'))
             ->shouldBeCalledTimes(2);
 
-        $entityManagerProphecy->flush()->shouldBeCalledTimes(2); // One flush after each of the above persists.
+        $entityManagerProphecy->flush()->shouldBeCalledTimes(4);
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
 
@@ -89,7 +89,8 @@ class FundRepositoryTest extends TestCase
             $campaignFundingRepoProphecy->reveal(),
             $this->getFundClientForPerCampaignLookup(),
             $matchingAdapterProphecy->reveal(),
-            null // No existing fund
+            null, // No existing funds
+            null
         );
 
         $campaign = new Campaign();
@@ -106,10 +107,10 @@ class FundRepositoryTest extends TestCase
         // campaign funding newly, as well as the Fund with an updated amount.
         $entityManagerProphecy
             ->persist(Argument::type(ChampionFund::class))
-            ->shouldBeCalledOnce();
+            ->shouldBeCalledTimes(2);
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
-            ->shouldBeCalledOnce();
+            ->shouldBeCalledTimes(2);
 
         // This is not mututally exclusive with the above call expectations. It's a quick way to double check
         // that both persists are setting their respective object's amount to £500, even when the pre-existing
@@ -118,7 +119,7 @@ class FundRepositoryTest extends TestCase
             ->persist(Argument::which('getAmount', '500'))
             ->shouldBeCalledTimes(2);
 
-        $entityManagerProphecy->flush()->shouldBeCalledTimes(2); // One flush after each of the above persists.
+        $entityManagerProphecy->flush()->shouldBeCalledTimes(4);
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
 
@@ -134,7 +135,8 @@ class FundRepositoryTest extends TestCase
             $campaignFundingRepoProphecy->reveal(),
             $this->getFundClientForPerCampaignLookup(),
             $matchingAdapterProphecy->reveal(),
-            $this->getExistingFund(),
+            $this->getExistingFund(false),
+            $this->getExistingFund(true),
         );
 
         $campaign = new Campaign();
@@ -151,10 +153,10 @@ class FundRepositoryTest extends TestCase
         // campaign funding and Fund, with updated amounts.
         $entityManagerProphecy
             ->persist(Argument::type(ChampionFund::class))
-            ->shouldBeCalledOnce();
+            ->shouldBeCalledTimes(2);
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
-            ->shouldBeCalledOnce();
+            ->shouldBeCalledTimes(2);
 
         // This is not mututally exclusive with the above call expectations. It's a quick way to double check
         // that both persists are setting their respective object's amount to £500, even when the pre-existing
@@ -163,12 +165,26 @@ class FundRepositoryTest extends TestCase
             ->persist(Argument::which('getAmount', '500'))
             ->shouldBeCalledTimes(2);
 
-        $entityManagerProphecy->flush()->shouldBeCalledTimes(2); // One flush after each of the two persists.
+        $entityManagerProphecy->flush()->shouldBeCalledTimes(4);
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
+
+        // For a non-shared fund, we expect to call `getFundingForCampaign()` to determine
+        // whether there's an existing funding *specifically for the campaign*.
+
         $campaignFundingRepoProphecy
-            ->getFunding(Argument::which('getSalesforceId', 'sfFundId123'))
-            ->willReturn($this->getExistingCampaignFunding())
+            ->getFundingForCampaign(
+                Argument::which('getSalesforceId', 'sfFakeId987'),
+                Argument::which('getSalesforceId', 'sfFundId123')
+            )
+            ->willReturn($this->getExistingCampaignFunding(false))
+            ->shouldBeCalledOnce();
+
+        // For a shared fund, we expect to call `getFunding()` to determine
+        // whether there's an existing funding, linked to *any* campaign.
+        $campaignFundingRepoProphecy
+            ->getFunding(Argument::which('getSalesforceId', 'sfFundId456'))
+            ->willReturn($this->getExistingCampaignFunding(true))
             ->shouldBeCalledOnce();
 
         $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
@@ -177,14 +193,15 @@ class FundRepositoryTest extends TestCase
         // wrapper, and the £100 increase in match funding from £400 to £500 is reflected.
         $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
             ->willReturn('100.00') // Amount available after adjustment
-            ->shouldBeCalledOnce();
+            ->shouldBeCalledTimes(2);
 
         $repo = $this->getFundRepoPartialMock(
             $entityManagerProphecy->reveal(),
             $campaignFundingRepoProphecy->reveal(),
             $this->getFundClientForPerCampaignLookup(),
             $matchingAdapterProphecy->reveal(),
-            $this->getExistingFund(),
+            $this->getExistingFund(false),
+            $this->getExistingFund(true),
         );
 
         $campaign = new Campaign();
@@ -193,21 +210,21 @@ class FundRepositoryTest extends TestCase
         $repo->pullForCampaign($campaign);
     }
 
-    private function getExistingFund(): Fund
+    private function getExistingFund(bool $shared): Fund
     {
         $existingFund = new ChampionFund();
-        $existingFund->setSalesforceId('sfFundId123');
+        $existingFund->setSalesforceId($shared ? 'sfFundId456' : 'sfFundId123');
         $existingFund->setSalesforceLastPull(new \DateTime());
-        $existingFund->setAmount('400');
-        $existingFund->setName('Test Champion Fund 123');
+        $existingFund->setAmount($shared ? '1500' : '400');
+        $existingFund->setName($shared ? 'Test Shared Champion Fund 456' : 'Test Champion Fund 123');
 
         return $existingFund;
     }
 
-    private function getExistingCampaignFunding(): CampaignFunding
+    private function getExistingCampaignFunding(bool $shared): CampaignFunding
     {
         $campaignFunding = new CampaignFunding();
-        $campaignFunding->setFund($this->getExistingFund());
+        $campaignFunding->setFund($this->getExistingFund($shared));
         $campaignFunding->setAmount('400');
         $campaignFunding->setAllocationOrder(200);
 
@@ -234,6 +251,17 @@ class FundRepositoryTest extends TestCase
                 'totalAmount' => 500,
                 'amountForCampaign' => 500,
                 'logoUri' => 'https://httpbin.org/image/png',
+                'isShared' => false,
+            ],
+            [
+                'id' => 'sfFundId456',
+                'type' => 'championFund',
+                'name' => 'Test Shared Champion Fund 456',
+                'amountRaised' => '0.00',
+                'totalAmount' => 1500,
+                'amountForCampaign' => 1500,
+                'logoUri' => 'https://httpbin.org/image/png',
+                'isShared' => true,
             ],
         ]);
 
@@ -250,7 +278,8 @@ class FundRepositoryTest extends TestCase
      * @param CampaignFundingRepository $campaignFundingRepo
      * @param Client\Fund               $fundClient
      * @param Matching\Adapter          $matchingAdapter
-     * @param Fund|null                 $existingFund
+     * @param Fund|null                 $existingFundNonShared
+     * @param Fund|null                 $existingFundShared
      * @return FundRepository|MockObject
      */
     private function getFundRepoPartialMock(
@@ -258,7 +287,8 @@ class FundRepositoryTest extends TestCase
         $campaignFundingRepo,
         $fundClient,
         $matchingAdapter,
-        ?Fund $existingFund
+        ?Fund $existingFundNonShared,
+        ?Fund $existingFundShared
     ): FundRepository {
         $mockBuilder = $this->getMockBuilder(FundRepository::class);
         $mockBuilder->setConstructorArgs([$entityManager, new ClassMetadata(CampaignFunding::class)]);
@@ -266,10 +296,10 @@ class FundRepositoryTest extends TestCase
 
         $repo = $mockBuilder->getMock();
 
-        $repo->expects($this->once())
+        $repo->expects($this->exactly(2))
             ->method('findOneBy')
-            ->with(['salesforceId' => 'sfFundId123'])
-            ->willReturn($existingFund);
+            ->withConsecutive([['salesforceId' => 'sfFundId123']], [['salesforceId' => 'sfFundId456']])
+            ->willReturnOnConsecutiveCalls($existingFundNonShared, $existingFundShared);
 
         $repo->setCampaignFundingRepository($campaignFundingRepo);
         $repo->setClient($fundClient);

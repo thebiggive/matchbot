@@ -6,11 +6,9 @@ namespace MatchBot\Application\Actions;
 
 use Doctrine\DBAL\DBALException;
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
 use Redis;
-use Slim\Exception\HttpBadRequestException;
 
 class Status extends Action
 {
@@ -30,8 +28,6 @@ class Status extends Action
 
     /**
      * @return Response
-     * @throws DomainRecordNotFoundException
-     * @throws HttpBadRequestException
      */
     protected function action(): Response
     {

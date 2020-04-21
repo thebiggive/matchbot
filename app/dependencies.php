@@ -32,8 +32,8 @@ return function (ContainerBuilder $containerBuilder) {
             return new Auth\DonationHookAuthMiddleware($c->get(LoggerInterface::class));
         },
 
-        Auth\DonationPublicAuthMiddleware::class
-            => function (ContainerInterface $c): Auth\DonationPublicAuthMiddleware {
+        Auth\DonationPublicAuthMiddleware::class =>
+            function (ContainerInterface $c): Auth\DonationPublicAuthMiddleware {
                 return new Auth\DonationPublicAuthMiddleware($c->get(LoggerInterface::class));
             },
 
