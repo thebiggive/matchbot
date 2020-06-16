@@ -282,7 +282,13 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->setParameter('expireWithStatus', 'Pending')
             ->setParameter('expireBefore', $cutoff);
 
-        return $qb->getQuery()->getResult();
+        // As this is used by the only regular task working with donations,
+        // `ExpireMatchFunds`, it makes more sense to opt it out of query caching
+        // here rather than take the performance hit of a full query cache clear
+        // after every single persisted donation.
+        return $qb->getQuery()
+            ->disableResultCache()
+            ->getResult();
     }
 
     /**
@@ -304,7 +310,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->setParameter('campaignMatched', true)
             ->setParameter('checkAfter', $sinceDate);
 
-        return $qb->getQuery()->getResult();
+        // Result caching rationale as per `findWithExpiredMatching()`, except this is
+        // currently used only in the rarer case of manually invoking
+        // `RetrospectivelyMatch`.
+        return $qb->getQuery()
+            ->disableResultCache()
+            ->getResult();
     }
 
     /**
