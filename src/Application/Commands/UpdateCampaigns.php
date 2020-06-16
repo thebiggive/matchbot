@@ -27,8 +27,7 @@ class UpdateCampaigns extends LockingCommand
         CampaignRepository $campaignRepository,
         EntityManagerInterface $entityManager,
         FundRepository $fundRepository
-    )
-    {
+    ) {
         $this->campaignRepository = $campaignRepository;
         $this->entityManager = $entityManager;
         $this->fundRepository = $fundRepository;
