@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\DBALException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -86,6 +87,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $this->fundRepository->pullForCampaign($campaign);
 
             $this->getEntityManager()->flush();
+
+            // Because this case of campaigns being set up individually is relatively rare,
+            // it is the one place outside of `UpdateCampaigns` where we clear the whole
+            // result cache. It's currently the only user-invoked or single item place where
+            // we do so.
+            /** @var CacheProvider $cacheDriver */
+            $cacheDriver = $this->getEntityManager()->getConfiguration()->getResultCacheImpl();
+            $cacheDriver->deleteAll();
         }
 
         $donation = new Donation();
