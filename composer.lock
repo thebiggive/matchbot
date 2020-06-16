@@ -2855,16 +2855,16 @@
         },
         {
             "name": "symfony/console",
-            "version": "v5.1.1",
+            "version": "v5.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/console.git",
-                "reference": "0f0a271bc9b7d02a053d36fcdcb12662e2a8096e"
+                "reference": "34ac555a3627e324b660e318daa07572e1140123"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/console/zipball/0f0a271bc9b7d02a053d36fcdcb12662e2a8096e",
-                "reference": "0f0a271bc9b7d02a053d36fcdcb12662e2a8096e",
+                "url": "https://api.github.com/repos/symfony/console/zipball/34ac555a3627e324b660e318daa07572e1140123",
+                "reference": "34ac555a3627e324b660e318daa07572e1140123",
                 "shasum": ""
             },
             "require": {
@@ -2944,7 +2944,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2020-06-07T19:47:44+00:00"
+            "time": "2020-06-15T12:59:21+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
@@ -3008,7 +3008,7 @@
         },
         {
             "name": "symfony/inflector",
-            "version": "v5.1.1",
+            "version": "v5.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/inflector.git",
@@ -3081,7 +3081,7 @@
         },
         {
             "name": "symfony/lock",
-            "version": "v5.1.1",
+            "version": "v5.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/lock.git",
@@ -3751,7 +3751,7 @@
         },
         {
             "name": "symfony/property-access",
-            "version": "v5.1.1",
+            "version": "v5.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/property-access.git",
@@ -3834,16 +3834,16 @@
         },
         {
             "name": "symfony/property-info",
-            "version": "v5.1.1",
+            "version": "v5.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/property-info.git",
-                "reference": "8bec4622480515449873913ab687bf0fc86374c2"
+                "reference": "75d79faca45092829b55eb83f73068e34c6567c5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/property-info/zipball/8bec4622480515449873913ab687bf0fc86374c2",
-                "reference": "8bec4622480515449873913ab687bf0fc86374c2",
+                "url": "https://api.github.com/repos/symfony/property-info/zipball/75d79faca45092829b55eb83f73068e34c6567c5",
+                "reference": "75d79faca45092829b55eb83f73068e34c6567c5",
                 "shasum": ""
             },
             "require": {
@@ -3858,7 +3858,7 @@
             },
             "require-dev": {
                 "doctrine/annotations": "~1.7",
-                "phpdocumentor/reflection-docblock": "^3.0|^4.0",
+                "phpdocumentor/reflection-docblock": "^3.0|^4.0|^5.0",
                 "symfony/cache": "^4.4|^5.0",
                 "symfony/dependency-injection": "^4.4|^5.0",
                 "symfony/serializer": "^4.4|^5.0"
@@ -3921,11 +3921,11 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2020-06-04T09:56:18+00:00"
+            "time": "2020-06-15T11:50:15+00:00"
         },
         {
             "name": "symfony/serializer",
-            "version": "v5.1.1",
+            "version": "v5.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/serializer.git",
@@ -4094,7 +4094,7 @@
         },
         {
             "name": "symfony/stopwatch",
-            "version": "v5.1.1",
+            "version": "v5.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/stopwatch.git",
@@ -4158,7 +4158,7 @@
         },
         {
             "name": "symfony/string",
-            "version": "v5.1.1",
+            "version": "v5.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/string.git",
@@ -4912,16 +4912,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "8.5.5",
+            "version": "8.5.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "63dda3b212a0025d380a745f91bdb4d8c985adb7"
+                "reference": "3f9c4079d1407cd84c51c02c6ad1df6ec2ed1348"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/63dda3b212a0025d380a745f91bdb4d8c985adb7",
-                "reference": "63dda3b212a0025d380a745f91bdb4d8c985adb7",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/3f9c4079d1407cd84c51c02c6ad1df6ec2ed1348",
+                "reference": "3f9c4079d1407cd84c51c02c6ad1df6ec2ed1348",
                 "shasum": ""
             },
             "require": {
@@ -5001,7 +5001,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2020-05-22T13:51:52+00:00"
+            "time": "2020-06-15T10:45:47+00:00"
         },
         {
             "name": "roave/security-advisories",
