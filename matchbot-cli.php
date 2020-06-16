@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 $psr11App = require __DIR__ . '/bootstrap.php';
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\PushDonations;
@@ -29,7 +30,11 @@ $commands = [
     ),
     new PushDonations($psr11App->get(DonationRepository::class)),
     new RetrospectivelyMatch($psr11App->get(DonationRepository::class)),
-    new UpdateCampaigns($psr11App->get(CampaignRepository::class), $psr11App->get(FundRepository::class)),
+    new UpdateCampaigns(
+        $psr11App->get(CampaignRepository::class),
+        $psr11App->get(EntityManagerInterface::class),
+        $psr11App->get(FundRepository::class),
+    ),
 ];
 foreach ($commands as $command) {
     $command->setLockFactory($psr11App->get(LockFactory::class));
