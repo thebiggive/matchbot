@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Commands;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\UpdateCampaigns;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
@@ -28,7 +29,11 @@ class UpdateCampaignsTest extends TestCase
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
         $fundRepoProphecy->pullForCampaign($campaign)->shouldbeCalledOnce();
 
-        $command = new UpdateCampaigns($campaignRepoPropehcy->reveal(), $fundRepoProphecy->reveal());
+        $command = new UpdateCampaigns(
+            $campaignRepoPropehcy->reveal(),
+            $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
+            $fundRepoProphecy->reveal(),
+        );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
 
         $commandTester = new CommandTester($command);
@@ -58,7 +63,11 @@ class UpdateCampaignsTest extends TestCase
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
         $fundRepoProphecy->pullForCampaign($campaign)->shouldNotBeCalled(); // Exception reached before this call
 
-        $command = new UpdateCampaigns($campaignRepoPropehcy->reveal(), $fundRepoProphecy->reveal());
+        $command = new UpdateCampaigns(
+            $campaignRepoPropehcy->reveal(),
+            $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
+            $fundRepoProphecy->reveal(),
+        );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
 
         $commandTester = new CommandTester($command);

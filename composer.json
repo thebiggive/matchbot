@@ -51,7 +51,11 @@
         }
     },
     "scripts": {
-        "doctrine:cache:clear": "doctrine orm:clear-cache:metadata",
+        "doctrine:cache:clear": [
+            "doctrine orm:clear-cache:metadata",
+            "doctrine orm:clear-cache:query",
+            "doctrine orm:clear-cache:result"
+        ],
         "doctrine:delete-and-recreate": [
             "doctrine orm:schema-tool:drop --force",
             "doctrine orm:schema-tool:create",

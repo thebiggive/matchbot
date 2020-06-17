@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\DBALException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -86,6 +87,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $this->fundRepository->pullForCampaign($campaign);
 
             $this->getEntityManager()->flush();
+
+            // Because this case of campaigns being set up individually is relatively rare,
+            // it is the one place outside of `UpdateCampaigns` where we clear the whole
+            // result cache. It's currently the only user-invoked or single item place where
+            // we do so.
+            /** @var CacheProvider $cacheDriver */
+            $cacheDriver = $this->getEntityManager()->getConfiguration()->getResultCacheImpl();
+            $cacheDriver->deleteAll();
         }
 
         $donation = new Donation();
@@ -273,7 +282,13 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->setParameter('expireWithStatus', 'Pending')
             ->setParameter('expireBefore', $cutoff);
 
-        return $qb->getQuery()->getResult();
+        // As this is used by the only regular task working with donations,
+        // `ExpireMatchFunds`, it makes more sense to opt it out of query caching
+        // here rather than take the performance hit of a full query cache clear
+        // after every single persisted donation.
+        return $qb->getQuery()
+            ->disableResultCache()
+            ->getResult();
     }
 
     /**
@@ -295,7 +310,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->setParameter('campaignMatched', true)
             ->setParameter('checkAfter', $sinceDate);
 
-        return $qb->getQuery()->getResult();
+        // Result caching rationale as per `findWithExpiredMatching()`, except this is
+        // currently used only in the rarer case of manually invoking
+        // `RetrospectivelyMatch`.
+        return $qb->getQuery()
+            ->disableResultCache()
+            ->getResult();
     }
 
     /**
