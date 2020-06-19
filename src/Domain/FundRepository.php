@@ -129,7 +129,7 @@ class FundRepository extends SalesforceReadProxyRepository
     protected function setAnyFundData(Fund $fund, array $fundData): Fund
     {
         $fund->setAmount($fundData['totalAmount'] === null ? '0.00' : (string) $fundData['totalAmount']);
-        $fund->setName($fundData['name']);
+        $fund->setName($fundData['name'] ?? '');
         $fund->setSalesforceLastPull(new DateTime('now'));
 
         return $fund;
@@ -161,7 +161,7 @@ class FundRepository extends SalesforceReadProxyRepository
         $fundData = $this->getClient()->getById($fund->getSalesforceId());
 
         $fund->setAmount($fundData['totalAmount']);
-        $fund->setName($fundData['name']);
+        $fund->setName($fundData['name'] ?? '');
 
         return $fund;
     }
