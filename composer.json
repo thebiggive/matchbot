@@ -91,6 +91,7 @@
             "php matchbot-cli.php matchbot:update-campaigns"
         ],
         "start": "php -S localhost:8080 -t public",
-        "test": "phpunit"
+        "test": "phpunit",
+        "test-with-coverage": "phpdbg -qrr ./vendor/bin/phpunit --coverage-clover=coverage.xml"
     }
 }

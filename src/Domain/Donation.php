@@ -50,7 +50,7 @@ class Donation extends SalesforceWriteProxy
     private static array $reversedStatuses = ['Refunded', 'Failed', 'Chargedback'];
 
     /**
-     * The donation ID for Charity Checkout and public APIs. Not the same as the internal auto-increment $id used
+     * The donation ID for PSPs and public APIs. Not the same as the internal auto-increment $id used
      * by Doctrine internally for fast joins.
      *
      * @ORM\Column(type="uuid", unique=true)
@@ -66,7 +66,7 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\Column(type="string", unique=true, nullable=true)
-     * @var string|null Charity Checkout transaction ID assigned on their processing.
+     * @var string|null PSP's transaction ID assigned on their processing.
      */
     protected ?string $transactionId = null;
 
@@ -105,37 +105,38 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\Column(type="string", length=2, nullable=true)
-     * @var string|null  Set on Charity Checkout callback
+     * @var string|null  Set on PSP callback
      */
     protected ?string $donorCountryCode = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string|null Set on Charity Checkout callback
+     * @var string|null Set on PSP callback
      */
     protected ?string $donorEmailAddress = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string|null Set on Charity Checkout callback
+     * @var string|null Set on PSP callback
      */
     protected ?string $donorFirstName = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string|null Set on Charity Checkout callback
+     * @var string|null Set on PSP callback
      */
     protected ?string $donorLastName = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string|null Set on Charity Checkout callback
+     * @var string|null Set on PSP callback
      */
     protected ?string $donorPostalAddress = null;
 
     /**
      * @ORM\Column(type="decimal", precision=18, scale=2)
-     * @var string  Amount donor chose to tip. Precision numeric string. Set on Charity Checkout callback
+     * @var string  Amount donor chose to tip. Precision numeric string.
+     *              Set during setup when using Stripe, and on Enthuse callback otherwise.
      */
     protected string $tipAmount = '0.00';
 
