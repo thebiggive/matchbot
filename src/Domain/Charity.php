@@ -17,7 +17,7 @@ class Charity extends SalesforceReadProxy
 
     /**
      * @ORM\Column(type="string")
-     * @var string  The ID Charity Checkout expect us to identify the charity by. Currently matches
+     * @var string  The ID PSPs expect us to identify the charity by. Currently matches
      *              `$id` for new charities but has a numeric value for those imported from the
      *              legacy database.
      */
