@@ -33,6 +33,7 @@ trait DonationTestDataTrait
         $donation->setDonorLastName('Doe');
         $donation->setDonorPostalAddress('1 Main St, London N1 1AA');
         $donation->setGiftAid(true);
+        $donation->setPsp('enthuse');
         $donation->setTbgComms(false);
         $donation->setTransactionId('some-external-txn-id');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));

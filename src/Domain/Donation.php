@@ -218,6 +218,7 @@ class Donation extends SalesforceWriteProxy
             'optInCharityEmail' => $this->getCharityComms(),
             'optInTbgEmail' => $this->getTbgComms(),
             'projectId' => $this->getCampaign()->getSalesforceId(),
+            'psp' => $this->getPsp(),
             'status' => $this->getDonationStatus(),
         ];
 
