@@ -29,6 +29,7 @@
         <env name="JWT_DONATION_SECRET" value="unitTestJWTSecret" force="true" />
         <env name="MYSQL_HOST" value="dummy-mysql-hostname" force="true" />
         <env name="REDIS_HOST" value="dummy-redis-hostname" force="true" />
+        <env name="STRIPE_SECRET_KEY" value="sk_test_unitTestFakeKey" force="true" />
         <env name="WEBHOOK_DONATION_SECRET" value="unitTestCchSecret" force="true" />
     </php>
 </phpunit>

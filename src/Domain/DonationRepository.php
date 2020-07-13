@@ -98,6 +98,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         $donation = new Donation();
+        $donation->setPsp($donationData->psp);
         $donation->setDonationStatus('Pending');
         $donation->setUuid((new UuidGenerator())->generate($this->getEntityManager(), $donation));
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this

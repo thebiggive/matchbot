@@ -26,6 +26,7 @@
         "ramsey/uuid-doctrine": "^1.6",
         "slim/psr7": "^1.0",
         "slim/slim": "^4.5",
+        "stripe/stripe-php": "^7.40",
         "symfony/console": "^5.0",
         "symfony/lock": "^5.0",
         "symfony/property-access": "^5.0",

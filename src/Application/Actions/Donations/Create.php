@@ -15,6 +15,8 @@ use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
+use Stripe\Exception\ApiErrorException;
+use Stripe\StripeClient;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -23,16 +25,19 @@ class Create extends Action
     private DonationRepository $donationRepository;
     private EntityManagerInterface $entityManager;
     private SerializerInterface $serializer;
+    private StripeClient $stripeClient;
 
     public function __construct(
         DonationRepository $donationRepository,
         EntityManagerInterface $entityManager,
         LoggerInterface $logger,
-        SerializerInterface $serializer
+        SerializerInterface $serializer,
+        StripeClient $stripeClient
     ) {
         $this->donationRepository = $donationRepository;
         $this->entityManager = $entityManager;
         $this->serializer = $serializer;
+        $this->stripeClient = $stripeClient;
 
         parent::__construct($logger);
     }
@@ -77,6 +82,20 @@ class Create extends Action
             $error = new ActionError(ActionError::BAD_REQUEST, $message);
 
             return $this->respond(new ActionPayload(400, null, $error));
+        }
+
+        if ($donation->getPsp() === 'stripe') {
+            try {
+                $intent = $this->stripeClient->paymentIntents->create([
+                    'amount' => (float)$donationData->donationAmount,
+                    'currency' => 'gbp',
+                ]);
+            } catch (ApiErrorException $exception) {
+                $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent');
+                return $this->respond(new ActionPayload(500, null, $error));
+            }
+
+            $donation->setClientSecret($intent->client_secret);
         }
 
         $this->entityManager->persist($donation);

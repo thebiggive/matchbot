@@ -259,6 +259,7 @@ class CreateTest extends TestCase
         $donation->setCampaign($campaign);
         $donation->setCharityComms(false);
         $donation->setGiftAid(false);
+        $donation->setPsp('enthuse');
         $donation->setTbgComms(false);
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
 
