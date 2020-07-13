@@ -87,10 +87,13 @@ class Create extends Action
         if ($donation->getPsp() === 'stripe') {
             try {
                 $intent = $this->stripeClient->paymentIntents->create([
-                    'amount' => (float)$donationData->donationAmount,
+                    // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
+                    // See https://stripe.com/docs/api/payment_intents/object
+                    'amount' => (100 * $donation->getAmount()),
                     'currency' => 'gbp',
                 ]);
             } catch (ApiErrorException $exception) {
+                $this->logger->error('Stripe Payment Intent create error: ' . get_class($exception) . ': ' . $exception->getMessage());
                 $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent');
                 return $this->respond(new ActionPayload(500, null, $error));
             }
