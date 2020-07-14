@@ -1,6 +1,6 @@
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/8.4/phpunit.xsd"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/8.5/phpunit.xsd"
     backupGlobals="false"
     backupStaticAttributes="false"
     beStrictAboutTestsThatDoNotTestAnything="true"
@@ -21,7 +21,10 @@
     </testsuites>
     <filter>
         <whitelist processUncoveredFilesFromWhitelist="true">
-            <directory suffix=".php">./src/</directory>
+            <directory suffix=".php">./src</directory>
+            <exclude>
+                <directory suffix=".php">./src/Migrations</directory>
+            </exclude>
         </whitelist>
     </filter>
     <php>
@@ -29,6 +32,7 @@
         <env name="JWT_DONATION_SECRET" value="unitTestJWTSecret" force="true" />
         <env name="MYSQL_HOST" value="dummy-mysql-hostname" force="true" />
         <env name="REDIS_HOST" value="dummy-redis-hostname" force="true" />
+        <env name="STRIPE_SECRET_KEY" value="sk_test_unitTestFakeKey" force="true" />
         <env name="WEBHOOK_DONATION_SECRET" value="unitTestCchSecret" force="true" />
     </php>
 </phpunit>
