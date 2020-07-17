@@ -192,6 +192,7 @@ class Donation extends SalesforceWriteProxy
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
 
         unset(
+            $data['clientSecret'],
             $data['charityName'],
             $data['donationId'],
             $data['matchReservedAmount'],
