@@ -60,12 +60,13 @@ class Donation extends Common
         }
 
         try {
+            $requestBody = $donation->toHookModel();
             $response = $this->getHttpClient()->put(
                 $this->getSetting('webhook', 'baseUri') . "/donation/{$donation->getSalesforceId()}",
                 [
-                    'json' => $donation->toHookModel(),
+                    'json' => $requestBody,
                     'headers' => [
-                        'X-Webhook-Verify-Hash' => $this->hash(json_encode($donation->toHookModel())),
+                        'X-Webhook-Verify-Hash' => $this->hash(json_encode($requestBody)),
                     ],
                 ]
             );
