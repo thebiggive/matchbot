@@ -102,6 +102,7 @@ class Create extends Action
             }
 
             $donation->setClientSecret($intent->client_secret);
+            $donation->setTransactionId($intent->id);
         }
 
         $this->entityManager->persist($donation);

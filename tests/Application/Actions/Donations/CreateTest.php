@@ -194,6 +194,8 @@ class CreateTest extends TestCase
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
         $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
         $this->assertEquals('Pending', $payloadArray['donation']['status']);
+        $this->assertNull($payloadArray['donation']['transactionId']);
+        $this->assertNull($payloadArray['donation']['clientSecret']);
     }
 
     public function testSuccessWithMatchedCampaignUsingStripe(): void
@@ -272,6 +274,7 @@ class CreateTest extends TestCase
         $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
         $this->assertEquals('Pending', $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
+        $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
         $this->assertEquals('pi_dummySecret_123', $payloadArray['donation']['clientSecret']);
     }
 
