@@ -30,6 +30,12 @@ class Charity extends SalesforceReadProxy
     protected string $name;
 
     /**
+     * @ORM\Column(type="string", length=255, unique=true, nullable=true)
+     * @var string
+     */
+    protected ?string $stripeAccountId = null;
+
+    /**
      * @param string $name
      */
     public function setName(string $name): void
@@ -53,5 +59,21 @@ class Charity extends SalesforceReadProxy
     public function setDonateLinkId(string $donateLinkId): void
     {
         $this->donateLinkId = $donateLinkId;
+    }
+
+    /**
+     * @return string
+     */
+    public function getStripeAccountId(): string
+    {
+        return $this->stripeAccountId;
+    }
+
+    /**
+     * @param string $stripeAccountId
+     */
+    public function setStripeAccountId(string $stripeAccountId): void
+    {
+        $this->stripeAccountId = $stripeAccountId;
     }
 }

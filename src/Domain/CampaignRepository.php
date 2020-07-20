@@ -30,7 +30,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charity = $this->pullCharity(
             $campaignData['charity']['id'],
             $campaignData['charity']['name'],
-            $campaignData['charity']['donateLinkId']
+            $campaignData['charity']['donateLinkId'],
+            $campaignData['charity']['stripeAccountId'],
         );
 
         $campaign->setCharity($charity);
@@ -44,16 +45,18 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     /**
      * Upsert a Charity based on ID & name, persist and return it.
-     * @param string $salesforceCharityId
-     * @param string $charityName
-     * @param string $donateLinkId
+     * @param string        $salesforceCharityId
+     * @param string        $charityName
+     * @param string        $donateLinkId
+     * @param string|null   $stripeAccountId
      * @return Charity
      * @throws \Doctrine\ORM\ORMException on failed persist()
      */
     private function pullCharity(
         string $salesforceCharityId,
         string $charityName,
-        string $donateLinkId
+        string $donateLinkId,
+        ?string $stripeAccountId
     ): Charity {
         $charity = $this->getEntityManager()
             ->getRepository(Charity::class)
@@ -64,6 +67,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         }
         $charity->setDonateLinkId($donateLinkId);
         $charity->setName($charityName);
+        $charity->setStripeAccountId($stripeAccountId);
         $charity->setSalesforceLastPull(new DateTime('now'));
         $this->getEntityManager()->persist($charity);
 
