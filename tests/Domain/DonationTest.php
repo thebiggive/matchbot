@@ -17,6 +17,7 @@ class DonationTest extends TestCase
         $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
         $this->assertNull($donation->getSalesforceLastPush());
         $this->assertNull($donation->getSalesforceId());
+        $this->assertNull($donation->getClientSecret());
     }
 
     public function testValidDataPersisted(): void
@@ -43,5 +44,22 @@ class DonationTest extends TestCase
 
         $donation = new Donation();
         $donation->setAmount('25000.01');
+    }
+
+    public function testInvalidPspRejected()
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage("Unexpected PSP 'paypal'");
+
+        $donation = new Donation();
+        $donation->setPsp('paypal');
+    }
+
+    public function testValidPspAccepted()
+    {
+        $donation = new Donation();
+        $donation->setPsp('enthuse');
+
+        $this->addToAssertionCount(1); // Just check setPsp() doesn't hit an exception
     }
 }

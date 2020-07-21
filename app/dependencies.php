@@ -19,6 +19,7 @@ use Monolog\Logger;
 use Monolog\Processor\UidProcessor;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use Stripe\StripeClient;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\PdoStore;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
@@ -156,6 +157,13 @@ return function (ContainerBuilder $containerBuilder) {
             $normalizers = [new ObjectNormalizer()];
 
             return new Serializer($normalizers, $encoders);
-        }
+        },
+
+        StripeClient::class => static function (ContainerInterface $c): StripeClient {
+            return new StripeClient([
+                'api_key' => $c->get('settings')['stripe']['apiKey'],
+                'stripe_version' => $c->get('settings')['stripe']['apiVersion'],
+            ]);
+        },
     ]);
 };

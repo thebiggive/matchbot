@@ -55,6 +55,12 @@ Once you have the app running, you can test with:
 
     docker-compose exec app composer run test
 
+or
+
+    docker-compose exec app composer run test-with-coverage
+
+to save coverage data to `./coverage.xml`.
+
 Linting is run with
 
     docker-compose exec app composer run lint:check

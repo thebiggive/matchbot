@@ -89,7 +89,7 @@ class DonationUpdate extends Action
             $donation->setTipAmount((string) $donationData->tipAmount);
         }
 
-        // Charity Checkout are now sending hooks with a few statuses that represent something 'refund-like'. All known
+        // Enthuse are now sending hooks with a few statuses that represent something 'refund-like'. All known
         // statuses that should act like this appear in `Donation::$reversedStatuses`.
         if ($donation->isReversed() && $donation->getCampaign()->isMatched()) {
             $this->donationRepository->releaseMatchFunds($donation);

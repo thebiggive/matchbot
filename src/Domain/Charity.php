@@ -17,7 +17,7 @@ class Charity extends SalesforceReadProxy
 
     /**
      * @ORM\Column(type="string")
-     * @var string  The ID Charity Checkout expect us to identify the charity by. Currently matches
+     * @var string  The ID PSPs expect us to identify the charity by. Currently matches
      *              `$id` for new charities but has a numeric value for those imported from the
      *              legacy database.
      */
@@ -28,6 +28,12 @@ class Charity extends SalesforceReadProxy
      * @var string
      */
     protected string $name;
+
+    /**
+     * @ORM\Column(type="string", length=255, unique=true, nullable=true)
+     * @var string
+     */
+    protected ?string $stripeAccountId = null;
 
     /**
      * @param string $name
@@ -53,5 +59,21 @@ class Charity extends SalesforceReadProxy
     public function setDonateLinkId(string $donateLinkId): void
     {
         $this->donateLinkId = $donateLinkId;
+    }
+
+    /**
+     * @return string
+     */
+    public function getStripeAccountId(): string
+    {
+        return $this->stripeAccountId;
+    }
+
+    /**
+     * @param string $stripeAccountId
+     */
+    public function setStripeAccountId(string $stripeAccountId): void
+    {
+        $this->stripeAccountId = $stripeAccountId;
     }
 }

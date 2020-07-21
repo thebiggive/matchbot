@@ -9,9 +9,11 @@ namespace MatchBot\Application\HttpModels;
  */
 class DonationCreate
 {
+    /** @var string In full pounds GBP */
     public string $donationAmount;
     public bool $giftAid;
     public bool $optInCharityEmail;
     public bool $optInTbgEmail;
     public string $projectId;
+    public string $psp;
 }

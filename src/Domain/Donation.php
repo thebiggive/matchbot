@@ -40,6 +40,8 @@ class Donation extends SalesforceWriteProxy
         'PendingCancellation',
     ];
 
+    private array $possiblePSPs = ['enthuse', 'stripe'];
+
     private array $newStatuses = ['NotSet', 'Pending'];
 
     private static array $successStatuses = ['Collected', 'Paid'];
@@ -50,7 +52,7 @@ class Donation extends SalesforceWriteProxy
     private static array $reversedStatuses = ['Refunded', 'Failed', 'Chargedback'];
 
     /**
-     * The donation ID for Charity Checkout and public APIs. Not the same as the internal auto-increment $id used
+     * The donation ID for PSPs and public APIs. Not the same as the internal auto-increment $id used
      * by Doctrine internally for fast joins.
      *
      * @ORM\Column(type="uuid", unique=true)
@@ -65,8 +67,20 @@ class Donation extends SalesforceWriteProxy
     protected Campaign $campaign;
 
     /**
+     * @ORM\Column(type="string", length=20)
+     * @var string  Which Payment Service Provider (PSP) is expected to (or did) process the donation.
+     */
+    protected string $psp;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     * @var string  Token for the client to complete payment, set by PSPs like Stripe for Payment Intents.
+     */
+    protected ?string $clientSecret = null;
+
+    /**
      * @ORM\Column(type="string", unique=true, nullable=true)
-     * @var string|null Charity Checkout transaction ID assigned on their processing.
+     * @var string|null PSP's transaction ID assigned on their processing.
      */
     protected ?string $transactionId = null;
 
@@ -78,7 +92,8 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\Column(type="string")
-     * @var string  A status, as sent by Charity Checkout verbatim.
+     * @var string  A status, as sent by the PSP verbatim.
+     * @todo Consider vs. Stripe options
      *              One of: NotSet, Pending, Collected, Paid, Cancelled, Refunded, Failed, Chargedback,
      *              RefundingPending, PendingCancellation.
      * @link https://docs.google.com/document/d/11ukX2jOxConiVT3BhzbUKzLfSybG8eie7MX0b0kG89U/edit?usp=sharing
@@ -105,37 +120,38 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\Column(type="string", length=2, nullable=true)
-     * @var string|null  Set on Charity Checkout callback
+     * @var string|null  Set on PSP callback
      */
     protected ?string $donorCountryCode = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string|null Set on Charity Checkout callback
+     * @var string|null Set on PSP callback
      */
     protected ?string $donorEmailAddress = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string|null Set on Charity Checkout callback
+     * @var string|null Set on PSP callback
      */
     protected ?string $donorFirstName = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string|null Set on Charity Checkout callback
+     * @var string|null Set on PSP callback
      */
     protected ?string $donorLastName = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string|null Set on Charity Checkout callback
+     * @var string|null Set on PSP callback
      */
     protected ?string $donorPostalAddress = null;
 
     /**
      * @ORM\Column(type="decimal", precision=18, scale=2)
-     * @var string  Amount donor chose to tip. Precision numeric string. Set on Charity Checkout callback
+     * @var string  Amount donor chose to tip. Precision numeric string.
+     *              Set during setup when using Stripe, and on Enthuse callback otherwise.
      */
     protected string $tipAmount = '0.00';
 
@@ -176,6 +192,7 @@ class Donation extends SalesforceWriteProxy
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
 
         unset(
+            $data['clientSecret'],
             $data['charityName'],
             $data['donationId'],
             $data['matchReservedAmount'],
@@ -191,6 +208,7 @@ class Donation extends SalesforceWriteProxy
         // We omit `donationId` and let Salesforce set its own, which we then persist back to the MatchBot DB on
         // success.
         $data = [
+            'clientSecret' => $this->getClientSecret(),
             'charityId' => $this->getCampaign()->getCharity()->getDonateLinkId(),
             'charityName' => $this->getCampaign()->getCharity()->getName(),
             'donationAmount' => (float) $this->getAmount(),
@@ -201,7 +219,9 @@ class Donation extends SalesforceWriteProxy
             'optInCharityEmail' => $this->getCharityComms(),
             'optInTbgEmail' => $this->getTbgComms(),
             'projectId' => $this->getCampaign()->getSalesforceId(),
+            'psp' => $this->getPsp(),
             'status' => $this->getDonationStatus(),
+            'transactionId' => $this->getTransactionId(),
         ];
 
         if (in_array($this->getDonationStatus(), ['Pending', 'Reserved'], true)) {
@@ -214,7 +234,6 @@ class Donation extends SalesforceWriteProxy
             $data['emailAddress'] = $this->getDonorEmailAddress();
             $data['firstName'] = $this->getDonorFirstName();
             $data['lastName'] = $this->getDonorLastName();
-            $data['transactionId'] = $this->getTransactionId();
             $data['matchedAmount'] = $this->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0;
             $data['tipAmount'] = (float) $this->getTipAmount();
         }
@@ -377,7 +396,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string
+     * @return string   In full pounds GBP.
      */
     public function getAmount(): string
     {
@@ -385,7 +404,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @param string $amount
+     * @param string $amount    In full pounds GBP.
      */
     public function setAmount(string $amount): void
     {
@@ -505,6 +524,42 @@ class Donation extends SalesforceWriteProxy
     public function setDonorCountryCode(string $donorCountryCode): void
     {
         $this->donorCountryCode = $donorCountryCode;
+    }
+
+    /**
+     * @return string   Payment Service Provider short identifier, e.g. 'stripe'.
+     */
+    public function getPsp(): string
+    {
+        return $this->psp;
+    }
+
+    /**
+     * @param string $psp   Payment Service Provider short identifier, e.g. 'stripe'.
+     */
+    public function setPsp(string $psp): void
+    {
+        if (!in_array($psp, $this->possiblePSPs, true)) {
+            throw new \UnexpectedValueException("Unexpected PSP '$psp'");
+        }
+
+        $this->psp = $psp;
+    }
+
+    /**
+     * @return string
+     */
+    public function getClientSecret(): ?string
+    {
+        return $this->clientSecret;
+    }
+
+    /**
+     * @param string $clientSecret
+     */
+    public function setClientSecret(string $clientSecret): void
+    {
+        $this->clientSecret = $clientSecret;
     }
 
     /**

@@ -66,7 +66,12 @@ return function (ContainerBuilder $containerBuilder) {
 
             'redis' => [
                 'host' => getenv('REDIS_HOST'),
-            ]
+            ],
+
+            'stripe' => [
+                'apiKey' => getenv('STRIPE_SECRET_KEY'),
+                'apiVersion' => '2020-03-02',
+            ],
         ],
     ]);
 };
