@@ -72,7 +72,7 @@ class Charity extends SalesforceReadProxy
     /**
      * @param string $stripeAccountId
      */
-    public function setStripeAccountId(string $stripeAccountId): void
+    public function setStripeAccountId(?string $stripeAccountId): void
     {
         $this->stripeAccountId = $stripeAccountId;
     }
