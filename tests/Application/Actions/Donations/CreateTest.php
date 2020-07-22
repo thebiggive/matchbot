@@ -227,7 +227,11 @@ class CreateTest extends TestCase
 
         $expectedPaymentIntentArgs = [
             'amount' => 1200,
-            'currency' => 'gbp'
+            'currency' => 'gbp',
+            'transfer_data' => [
+                'amount' => 1166,
+                'destination' => 'unitTest_stripeAccount_123',
+            ],
         ];
         // Most properites we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
@@ -326,6 +330,7 @@ class CreateTest extends TestCase
         $charity = new Charity();
         $charity->setDonateLinkId('567CharitySFID');
         $charity->setName('Create test charity');
+        $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
         $campaign = new Campaign();
         $campaign->setCharity($charity);

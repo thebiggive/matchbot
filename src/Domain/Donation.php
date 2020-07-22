@@ -85,6 +85,8 @@ class Donation extends SalesforceWriteProxy
     protected ?string $transactionId = null;
 
     /**
+     * Core donation amount excluding any tip.
+     *
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
@@ -404,7 +406,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @param string $amount    In full pounds GBP.
+     * @param string $amount    Core donation amount, excluding any tip, in full pounds GBP.
      */
     public function setAmount(string $amount): void
     {
@@ -588,10 +590,52 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
+     * @return string   The amount of the core donation, in £, which is to be paid out
+     *                  to the charity. This is the amount paid by the donor minus
+     *                  (a) any part of that amount which was a tip to the Big Give; and
+     *                  (b) fees on the remaining donation amount.
+     *                  It does not include separately sourced funds like matching or
+     *                  Gift Aid.
+     */
+    public function getAmountForCharity(): string
+    {
+        $feeRatio = '0.012';        // 1.2% of amount for charity (exc. tip)
+        $feeAmountFixed = '0.20';   // 20p fixed per-donation
+
+        // bcmath truncates values beyond the scale it's working at, so to get 1.2% and round
+        // in the normal mathematical way we need to start with 3 d.p. scale and round with a
+        // workaround.
+        $feeAmountFromPercentageComponent = $this->roundAmount(
+            bcmul($this->getAmount(), $feeRatio, 3)
+        );
+
+        return bcsub(
+            bcsub($this->getAmount(), $feeAmountFromPercentageComponent, 2),
+            $feeAmountFixed,
+            2
+        );
+    }
+
+    /**
      * @return string[]
      */
     public static function getSuccessStatuses(): array
     {
         return self::$successStatuses;
+    }
+
+    /**
+     * Takes a bcmath string amount with 3 or more decimal places and rounds to
+     * 2 places, with 0.005 rounding up and below rounding down.
+     *
+     * @param string $amount    Simplified from https://stackoverflow.com/a/51390451/2803757 for
+     *                          fixed scale and only positive inputs.
+     * @return string
+     */
+    private function roundAmount(string $amount): string
+    {
+        $e = '1000'; // Base 10 ^ 3
+
+        return bcdiv(bcadd(bcmul($amount, $e, 0), '5'), $e, 2);
     }
 }

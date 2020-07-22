@@ -91,6 +91,11 @@ class Create extends Action
                     // See https://stripe.com/docs/api/payment_intents/object
                     'amount' => (100 * $donation->getAmount()),
                     'currency' => 'gbp',
+                    // See https://stripe.com/docs/connect/destination-charges
+                    'transfer_data' => [
+                        'amount' => (100 * $donation->getAmountForCharity()),
+                        'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
+                    ],
                 ]);
             } catch (ApiErrorException $exception) {
                 $this->logger->error(
