@@ -228,6 +228,13 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'amount' => 1200,
             'currency' => 'gbp',
+            'metadata' => [
+                'campaignId' => '123CampaignId',
+                'charityName' => 'Create test charity',
+                'env' => getenv('APP_ENV'),
+                'isGiftAid' => false,
+                'matchedAmount' => '8.00',
+            ],
             'transfer_data' => [
                 'amount' => 1166,
                 'destination' => 'unitTest_stripeAccount_123',
