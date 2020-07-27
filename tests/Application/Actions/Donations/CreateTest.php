@@ -157,7 +157,12 @@ class CreateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->buildFromApiRequest(Argument::type(DonationCreate::class))->willReturn($donationToReturn);
+        $donationRepoProphecy
+            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->willReturn($donationToReturn);
+
+        // This and several subsequent Prophecy calls are defined in order to assert that they are *not* called in
+        // this error case, because we bail out before they would normally happen.
         $donationRepoProphecy->push(Argument::type(Donation::class), Argument::type('bool'))->shouldNotBeCalled();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
@@ -166,7 +171,7 @@ class CreateTest extends TestCase
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->create(Argument::any())->shouldNotBeCalled(); // No PaymentIntent should be set up
+        $stripePaymentIntentsProphecy->create(Argument::any())->shouldNotBeCalled();
 
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();

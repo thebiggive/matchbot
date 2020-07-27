@@ -86,9 +86,10 @@ class Create extends Action
 
         if ($donation->getPsp() === 'stripe') {
             if (empty($donation->getCampaign()->getCharity()->getStripeAccountId())) {
-                $this->logger->error(
-                    "Stripe Payment Intent create error: Stripe Account ID not set for {$donation->getCampaign()->getCharity()->getSalesforceId()}"
-                );
+                $this->logger->error(sprintf(
+                    'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
+                    $donation->getCampaign()->getCharity()->getSalesforceId(),
+                ));
                 $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (A)');
                 return $this->respond(new ActionPayload(500, null, $error));
             }
