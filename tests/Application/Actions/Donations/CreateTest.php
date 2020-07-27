@@ -144,6 +144,52 @@ class CreateTest extends TestCase
         $this->assertEquals(503, $response->getStatusCode());
     }
 
+    public function testStripeWithMissingStripeAccountID(): void
+    {
+        $donation = $this->getTestDonation(true, true);
+        $donation->setPsp('stripe');
+        $donation->getCampaign()->getCharity()->setStripeAccountId(null);
+
+        $donationToReturn = $donation;
+        $donationToReturn->setDonationStatus('Pending');
+
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy->buildFromApiRequest(Argument::type(DonationCreate::class))->willReturn($donationToReturn);
+        $donationRepoProphecy->push(Argument::type(Donation::class), Argument::type('bool'))->shouldNotBeCalled();
+        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy->flush()->shouldNotBeCalled();
+
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+        $stripePaymentIntentsProphecy->create(Argument::any())->shouldNotBeCalled(); // No PaymentIntent should be set up
+
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $data = json_encode($donation->toApiModel(true));
+        $request = $this->createRequest('POST', '/v1/donations', $data);
+        $response = $app->handle($request);
+
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(500, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+
+        $this->assertEquals('SERVER_ERROR', $payloadArray['error']['type']);
+        $this->assertEquals('Could not make Stripe Payment Intent (A)', $payloadArray['error']['description']);
+    }
+
     public function testSuccessWithMatchedCampaignUsingEnthuse(): void
     {
         $donation = $this->getTestDonation(true, true);
