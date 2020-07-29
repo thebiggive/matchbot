@@ -11,6 +11,7 @@ use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\Token;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -86,12 +87,22 @@ class Create extends Action
 
         if ($donation->getPsp() === 'stripe') {
             if (empty($donation->getCampaign()->getCharity()->getStripeAccountId())) {
-                $this->logger->error(sprintf(
-                    'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
-                    $donation->getCampaign()->getCharity()->getSalesforceId(),
-                ));
-                $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (A)');
-                return $this->respond(new ActionPayload(500, null, $error));
+                // Try re-pulling in case charity has very recently onboarded with for Stripe.
+                $campaign = $this->entityManager->getRepository(Campaign::class)
+                    ->pull($donation->getCampaign());
+
+                // If still empty, error out
+                if (empty($campaign->getCharity()->getStripeAccountId())) {
+                    $this->logger->error(sprintf(
+                        'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
+                        $donation->getCampaign()->getCharity()->getSalesforceId(),
+                    ));
+                    $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (A)');
+                    return $this->respond(new ActionPayload(500, null, $error));
+                }
+
+                // Else we found new Stripe info and can proceed
+                $donation->setCampaign($campaign);
             }
 
             try {

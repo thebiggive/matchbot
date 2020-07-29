@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\Donation;
@@ -166,7 +167,16 @@ class CreateTest extends TestCase
         $donationRepoProphecy->push(Argument::type(Donation::class), Argument::type('bool'))->shouldNotBeCalled();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        // No change – campaign still has a charity without a Stripe Account ID.
+        $campaignRepoProphecy->pull(Argument::type(Campaign::class))
+            ->willReturn($donation->getCampaign())
+            ->shouldBeCalledOnce();
+
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->getRepository(Campaign::class)
+            ->willReturn($campaignRepoProphecy->reveal())
+            ->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
@@ -193,6 +203,108 @@ class CreateTest extends TestCase
 
         $this->assertEquals('SERVER_ERROR', $payloadArray['error']['type']);
         $this->assertEquals('Could not make Stripe Payment Intent (A)', $payloadArray['error']['description']);
+    }
+
+    public function testSuccessWithStripeAccountIDMissingInitiallyButFoundOnRefetch(): void
+    {
+        $donation = $this->getTestDonation(true, true);
+        $donation->setPsp('stripe');
+        $donation->getCampaign()->getCharity()->setStripeAccountId(null);
+
+        $fundingWithdrawalForMatch = new FundingWithdrawal();
+        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
+        $fundingWithdrawalForMatch->setDonation($donation);
+
+        $donationToReturn = $donation;
+        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->willReturn($donationToReturn);
+        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
+        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
+
+        // Cloning & use of new objects is necessary here, so we don't set
+        // the Stripe value on the copy of the object which is meant to be
+        // missing it for the test to follow that logic branch.
+        $charityWhichNowHasStripeAccountID = clone $donation->getCampaign()->getCharity();
+        $charityWhichNowHasStripeAccountID
+            ->setStripeAccountId('unitTest_newStripeAccount_456');
+        $campaignWithCharityWhichNowHasStripeAccountID = clone  $donation->getCampaign();
+        $campaignWithCharityWhichNowHasStripeAccountID->setCharity($charityWhichNowHasStripeAccountID);
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->pull(Argument::type(Campaign::class))
+            ->willReturn($campaignWithCharityWhichNowHasStripeAccountID)
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->getRepository(Campaign::class)
+            ->willReturn($campaignRepoProphecy->reveal())
+            ->shouldBeCalledOnce();
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+
+        $expectedPaymentIntentArgs = [
+            'amount' => 1200,
+            'currency' => 'gbp',
+            'transfer_data' => [
+                'amount' => 1166,
+                'destination' => 'unitTest_newStripeAccount_456',
+            ],
+        ];
+        // Most properites we don't use omitted.
+        // See https://stripe.com/docs/api/payment_intents/object
+        $paymentIntentMockResult = (object) [
+            'id' => 'pi_dummyIntent456_id',
+            'object' => 'payment_intent',
+            'amount' => 1200,
+            'client_secret' => 'pi_dummySecret_456',
+            'confirmation_method' => 'automatic',
+            'currency' => 'gbp',
+        ];
+
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+        $stripePaymentIntentsProphecy->create($expectedPaymentIntentArgs)
+            ->willReturn($paymentIntentMockResult)
+            ->shouldBeCalledOnce();
+
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $data = json_encode($donation->toApiModel(true));
+        $request = $this->createRequest('POST', '/v1/donations', $data);
+        $response = $app->handle($request);
+
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+
+        $this->assertIsString($payloadArray['jwt']);
+        $this->assertNotEmpty($payloadArray['jwt']);
+        $this->assertIsArray($payloadArray['donation']);
+        $this->assertFalse($payloadArray['donation']['giftAid']);
+        $this->assertEquals(12, $payloadArray['donation']['donationAmount']);
+        $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
+        $this->assertEquals(8, $payloadArray['donation']['matchReservedAmount']);
+        $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
+        $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
+        $this->assertEquals('Pending', $payloadArray['donation']['status']);
+        $this->assertEquals('stripe', $payloadArray['donation']['psp']);
+        $this->assertEquals('pi_dummyIntent456_id', $payloadArray['donation']['transactionId']);
+        $this->assertEquals('pi_dummySecret_456', $payloadArray['donation']['clientSecret']);
     }
 
     public function testSuccessWithMatchedCampaignUsingEnthuse(): void
