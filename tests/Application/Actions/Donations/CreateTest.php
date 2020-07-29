@@ -262,6 +262,8 @@ class CreateTest extends TestCase
                 'environment' => getenv('APP_ENV'),
                 'isGiftAid' => false,
                 'matchedAmount' => '8.00',
+                'optInCharityEmail' => false,
+                'optInTbgEmail' => false,
                 'tbgTipGiftAid' => false,
             ],
             'transfer_data' => [
@@ -411,6 +413,8 @@ class CreateTest extends TestCase
                 'environment' => getenv('APP_ENV'),
                 'isGiftAid' => false,
                 'matchedAmount' => '8.00',
+                'optInCharityEmail' => false,
+                'optInTbgEmail' => false,
                 'tbgTipGiftAid' => false,
             ],
             'transfer_data' => [

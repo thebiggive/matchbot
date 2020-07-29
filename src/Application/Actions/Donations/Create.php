@@ -120,6 +120,8 @@ class Create extends Action
                         'environment' => getenv('APP_ENV'),
                         'isGiftAid' => $donation->isGiftAid(),
                         'matchedAmount' => $donation->getFundingWithdrawalTotal(),
+                        'optInCharityEmail' => $donation->getCharityComms(),
+                        'optInTbgEmail' => $donation->getTbgComms(),
                         'tbgTipGiftAid' => $donation->isGiftAid(), // TODO use real value after MVP
                     ],
                     // See https://stripe.com/docs/connect/destination-charges
