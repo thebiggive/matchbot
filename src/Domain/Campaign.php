@@ -108,7 +108,7 @@ class Campaign extends SalesforceReadProxy
     /**
      * @return string
      */
-    public function getCampaignName(): String
+    public function getCampaignName(): string
     {
         return $this->name;
     }
