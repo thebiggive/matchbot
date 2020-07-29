@@ -253,6 +253,17 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'amount' => 1200,
             'currency' => 'gbp',
+            'metadata' => [
+                'campaignId' => '123CampaignId',
+                'campaignName' => '123CampaignName',
+                'charityId' => '567CharitySFID',
+                'charityName' => 'Create test charity',
+                'coreDonationGiftAid' => false,
+                'environment' => getenv('APP_ENV'),
+                'isGiftAid' => false,
+                'matchedAmount' => '8.00',
+                'tbgTipGiftAid' => false,
+            ],
             'transfer_data' => [
                 'amount' => 1166,
                 'destination' => 'unitTest_newStripeAccount_456',
@@ -393,10 +404,14 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
             'metadata' => [
                 'campaignId' => '123CampaignId',
+                'campaignName' => '123CampaignName',
+                'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
-                'env' => getenv('APP_ENV'),
+                'coreDonationGiftAid' => false,
+                'environment' => getenv('APP_ENV'),
                 'isGiftAid' => false,
                 'matchedAmount' => '8.00',
+                'tbgTipGiftAid' => false,
             ],
             'transfer_data' => [
                 'amount' => 1166,
@@ -503,6 +518,7 @@ class CreateTest extends TestCase
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
         $campaign = new Campaign();
+        $campaign->setName('123CampaignName');
         $campaign->setCharity($charity);
         $campaign->setIsMatched($campaignMatched);
         $campaign->setSalesforceId('123CampaignId');

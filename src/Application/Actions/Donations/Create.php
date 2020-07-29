@@ -113,10 +113,14 @@ class Create extends Action
                     'currency' => 'gbp',
                     'metadata' => [
                         'campaignId' => $donation->getCampaign()->getSalesforceId(),
+                        'campaignName' => $donation->getCampaign()->getCampaignName(),
+                        'charityId' => $donation->getCampaign()->getCharity()->getDonateLinkId(),
                         'charityName' => $donation->getCampaign()->getCharity()->getName(),
-                        'env' => getenv('APP_ENV'),
+                        'coreDonationGiftAid' => $donation->isGiftAid(), // TODO use real value after MVP
+                        'environment' => getenv('APP_ENV'),
                         'isGiftAid' => $donation->isGiftAid(),
                         'matchedAmount' => $donation->getFundingWithdrawalTotal(),
+                        'tbgTipGiftAid' => $donation->isGiftAid(), // TODO use real value after MVP
                     ],
                     // See https://stripe.com/docs/connect/destination-charges
                     'transfer_data' => [
