@@ -68,6 +68,27 @@ class Create extends Action
 
         try {
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
+
+            // Optionally set these donation fields if available
+            if (isset($donationData->billingPostalAddress)) {
+                $donation->setDonorPostalAddress((string) $donationData->billingPostalAddress);
+            }
+
+            if (isset($donationData->emailAddress)) {
+                $donation->setDonorEmailAddress((string) $donationData->emailAddress);
+            }
+    
+            if (isset($donationData->firstName)) {
+                $donation->setDonorFirstName((string) $donationData->firstName);
+            }
+
+            if (isset($donationData->lastName)) {
+                $donation->setDonorLastName((string) $donationData->lastName);
+            }
+
+            if (isset($donationData->tipAmount)) {
+                $donation->setTipAmount((string) $donationData->tipAmount);
+            }
         } catch (\UnexpectedValueException $exception) {
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $exception->getMessage());
