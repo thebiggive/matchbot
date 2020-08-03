@@ -128,8 +128,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $donation->setDonorLastName($donationData->lastName);
         }
 
-        if (!empty($donationData->tipAmount)) {
-            $donation->setTipAmount($donationData->tipAmount);
+        if (isset($donationData->tipAmount)) {
+            $donation->setTipAmount((string) $donationData->tipAmount);
         }
 
         return $donation;
