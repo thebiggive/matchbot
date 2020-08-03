@@ -107,6 +107,31 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setTbgComms($donationData->optInTbgEmail);
 
+        // Optionally set these donation fields if available
+        if (!empty($donationData->billingPostalAddress)) {
+            $donation->setDonorPostalAddress($donationData->billingPostalAddress);
+        }
+
+        if (!empty($donationData->countryCode)) {
+            $donation->getDonorCountryCode($donationData->countryCode);
+        }
+
+        if (!empty($donationData->emailAddress)) {
+            $donation->setDonorEmailAddress($donationData->emailAddress);
+        }
+
+        if (!empty($donationData->firstName)) {
+            $donation->setDonorFirstName($donationData->firstName);
+        }
+
+        if (!empty($donationData->lastName)) {
+            $donation->setDonorLastName($donationData->lastName);
+        }
+
+        if (isset($donationData->tipAmount)) {
+            $donation->setTipAmount((string) $donationData->tipAmount);
+        }
+
         return $donation;
     }
 

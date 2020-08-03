@@ -111,6 +111,19 @@ class Create extends Action
                     // See https://stripe.com/docs/api/payment_intents/object
                     'amount' => (100 * $donation->getAmount()),
                     'currency' => 'gbp',
+                    'metadata' => [
+                        'campaignId' => $donation->getCampaign()->getSalesforceId(),
+                        'campaignName' => $donation->getCampaign()->getCampaignName(),
+                        'charityId' => $donation->getCampaign()->getCharity()->getDonateLinkId(),
+                        'charityName' => $donation->getCampaign()->getCharity()->getName(),
+                        'coreDonationGiftAid' => $donation->isGiftAid(), // TODO use real value after MVP
+                        'environment' => getenv('APP_ENV'),
+                        'isGiftAid' => $donation->isGiftAid(),
+                        'matchedAmount' => $donation->getFundingWithdrawalTotal(),
+                        'optInCharityEmail' => $donation->getCharityComms(),
+                        'optInTbgEmail' => $donation->getTbgComms(),
+                        'tbgTipGiftAid' => $donation->isGiftAid(), // TODO use real value after MVP
+                    ],
                     // See https://stripe.com/docs/connect/destination-charges
                     'transfer_data' => [
                         'amount' => (100 * $donation->getAmountForCharity()),

@@ -105,6 +105,14 @@ class Campaign extends SalesforceReadProxy
         return $this->charity;
     }
 
+    /**
+     * @return string
+     */
+    public function getCampaignName(): string
+    {
+        return $this->name;
+    }
+
     public function isOpen(): bool
     {
         return ($this->startDate <= new DateTime('now') && $this->endDate > new DateTime('now'));
