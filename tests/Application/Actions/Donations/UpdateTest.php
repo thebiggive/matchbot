@@ -413,4 +413,117 @@ class UpdateTest extends TestCase
         $this->assertEquals(0, $payloadArray['matchedAmount']);
         $this->assertEquals(0, $payloadArray['tipAmount']);
     }
+
+    public function testAddDataAttemptWithDifferentAmount(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+        $donation->setAmount('99.99');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($this->getTestDonation()) // Get a new mock object so it's £123.45.
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($donation->toApiModel()),
+        )
+            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'Amount updates are not supported',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertEquals(400, $response->getStatusCode());
+    }
+
+    public function testAddDataSuccess(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+        $donation->setDonorCountryCode('US');
+        $donation->setTipAmount('3.21');
+        $donation->setGiftAid(true);
+        $donation->setTipGiftAid(false);
+        $donation->setDonorHomeAddressLine1('99 Updated St');
+        $donation->setDonorHomePostcode('X1 1XY');
+        $donation->setDonorFirstName('Saul');
+        $donation->setDonorLastName('Williams');
+        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setTbgComms(true);
+        $donation->setCharityComms(false);
+        $donation->setDonorBillingAddress('Y1 1YX');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($donation->toApiModel()),
+        )
+            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+
+        // These two values are unchanged but still returned.
+        $this->assertEquals(123.45, $payloadArray['donationAmount']);
+        $this->assertEquals('Collected', $payloadArray['status']);
+
+        // Remaining properties should be updated.
+        $this->assertEquals('US', $payloadArray['countryCode']);
+        $this->assertEquals('3.21', $payloadArray['tipAmount']);
+        $this->assertTrue($payloadArray['giftAid']);
+        $this->assertFalse($payloadArray['tipGiftAid']);
+        $this->assertEquals('99 Updated St', $payloadArray['homeAddress']);
+        $this->assertEquals('X1 1XY', $payloadArray['homePostcode']);
+        $this->assertEquals('Saul', $payloadArray['firstName']);
+        $this->assertEquals('Williams', $payloadArray['lastName']);
+        $this->assertEquals('saul@example.com', $payloadArray['emailAddress']);
+        $this->assertTrue($payloadArray['optInTbgEmail']);
+        $this->assertFalse($payloadArray['optInCharityEmail']);
+        $this->assertEquals('Y1 1YX', $payloadArray['billingPostalAddress']);
+    }
 }

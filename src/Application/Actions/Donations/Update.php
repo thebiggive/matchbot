@@ -120,7 +120,6 @@ class Update extends Action
 
         // All calls using the new two-step approach should set all the remaining values in this
         // method every time they `addData()`.
-        $donation->setTipAmount((string) $donationData->tipAmount);
         $donation->setGiftAid($donationData->giftAid);
         $donation->setTipGiftAid($donationData->tipGiftAid ?? $donationData->giftAid);
         $donation->setDonorHomeAddressLine1($donationData->homeAddress);
