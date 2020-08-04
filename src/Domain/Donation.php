@@ -103,22 +103,22 @@ class Donation extends SalesforceWriteProxy
     protected string $donationStatus = 'NotSet';
 
     /**
-     * @ORM\Column(type="boolean")
+     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether the donor opted to receive email from the charity running the campaign
      */
-    protected bool $charityComms;
+    protected ?bool $charityComms = null;
 
     /**
-     * @ORM\Column(type="boolean")
+     * @ORM\Column(type="boolean", nullable=true)
      * @var bool
      */
-    protected bool $giftAid;
+    protected ?bool $giftAid = null;
 
     /**
-     * @ORM\Column(type="boolean")
+     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether the donor opted to receive email from the Big Give
      */
-    protected bool $tbgComms;
+    protected ?bool $tbgComms = null;
 
     /**
      * @ORM\Column(type="string", length=2, nullable=true)
@@ -310,18 +310,12 @@ class Donation extends SalesforceWriteProxy
         $this->donorEmailAddress = $donorEmailAddress;
     }
 
-    /**
-     * @return bool
-     */
-    public function getCharityComms(): bool
+    public function getCharityComms(): ?bool
     {
         return $this->charityComms;
     }
 
-    /**
-     * @param bool $charityComms
-     */
-    public function setCharityComms(bool $charityComms): void
+    public function setCharityComms(?bool $charityComms): void
     {
         $this->charityComms = $charityComms;
     }
@@ -365,34 +359,22 @@ class Donation extends SalesforceWriteProxy
         $this->donorPostalAddress = $donorPostalAddress;
     }
 
-    /**
-     * @return bool
-     */
-    public function isGiftAid(): bool
+    public function isGiftAid(): ?bool
     {
         return $this->giftAid;
     }
 
-    /**
-     * @param bool $giftAid
-     */
-    public function setGiftAid(bool $giftAid): void
+    public function setGiftAid(?bool $giftAid): void
     {
         $this->giftAid = $giftAid;
     }
 
-    /**
-     * @return bool
-     */
-    public function getTbgComms(): bool
+    public function getTbgComms(): ?bool
     {
         return $this->tbgComms;
     }
 
-    /**
-     * @param bool $tbgComms
-     */
-    public function setTbgComms(bool $tbgComms): void
+    public function setTbgComms(?bool $tbgComms): void
     {
         $this->tbgComms = $tbgComms;
     }

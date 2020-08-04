@@ -11,9 +11,9 @@ class DonationCreate
 {
     /** @var string In full pounds GBP */
     public string $donationAmount;
-    public bool $giftAid;
-    public bool $optInCharityEmail;
-    public bool $optInTbgEmail;
+    public ?bool $giftAid = null;
+    public ?bool $optInCharityEmail = null;
+    public ?bool $optInTbgEmail = null;
     public string $projectId;
     public string $psp;
 }

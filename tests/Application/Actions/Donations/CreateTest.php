@@ -514,8 +514,58 @@ class CreateTest extends TestCase
         $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
     }
 
-    private function getTestDonation(bool $campaignOpen, bool $campaignMatched): Donation
+    /**
+     * Use unmatched campaign in previous test but also omit all donor-supplied
+     * detail except donation amount, to test optional 2-step setup.
+     */
+    public function testSuccessWithMinimalData()
     {
+        $donation = $this->getTestDonation(true, false, true);
+
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->willReturn($donation);
+        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
+        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+
+        $data = json_encode($donation->toApiModel(true));
+        $request = $this->createRequest('POST', '/v1/donations', $data);
+        $response = $app->handle($request);
+
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+
+        $this->assertIsString($payloadArray['jwt']);
+        $this->assertNotEmpty($payloadArray['jwt']);
+        $this->assertIsArray($payloadArray['donation']);
+        $this->assertNull($payloadArray['donation']['giftAid']);
+        $this->assertEquals(12, $payloadArray['donation']['donationAmount']);
+        $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
+        $this->assertEquals(0, $payloadArray['donation']['matchReservedAmount']);
+        $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
+        $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
+    }
+
+    private function getTestDonation(
+        bool $campaignOpen,
+        bool $campaignMatched,
+        bool $minimalSetupData = false
+    ): Donation {
         $charity = new Charity();
         $charity->setDonateLinkId('567CharitySFID');
         $charity->setName('Create test charity');
@@ -536,11 +586,14 @@ class CreateTest extends TestCase
         $donation = new Donation();
         $donation->setAmount('12.00');
         $donation->setCampaign($campaign);
-        $donation->setCharityComms(false);
-        $donation->setGiftAid(false);
         $donation->setPsp('enthuse');
-        $donation->setTbgComms(false);
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
+
+        if (!$minimalSetupData) {
+            $donation->setCharityComms(false);
+            $donation->setGiftAid(false);
+            $donation->setTbgComms(false);
+        }
 
         return $donation;
     }
