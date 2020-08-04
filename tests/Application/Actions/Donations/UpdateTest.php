@@ -14,7 +14,7 @@ use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Slim\Exception\HttpNotFoundException;
 
-class CancelTest extends TestCase
+class UpdateTest extends TestCase
 {
     use DonationTestDataTrait;
     use PublicJWTAuthTrait;
@@ -300,7 +300,7 @@ class CancelTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
-    public function testSuccessWithNoStatusChangesIgnored(): void
+    public function testCancelSuccessWithNoStatusChangesIgnored(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -356,7 +356,7 @@ class CancelTest extends TestCase
         $this->assertEquals(0, $payloadArray['tipAmount']);
     }
 
-    public function testNormalSuccess(): void
+    public function testCancelSuccessWithChange(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */

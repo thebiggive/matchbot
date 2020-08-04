@@ -22,7 +22,7 @@ return function (App $app) {
 
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {
             $group->get('', Donations\Get::class);
-            $group->put('', Donations\Cancel::class);
+            $group->put('', Donations\Update::class); // Includes cancelling.
         })
             ->add(DonationPublicAuthMiddleware::class);
     });

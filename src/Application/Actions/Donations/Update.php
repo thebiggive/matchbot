@@ -16,7 +16,11 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
-class Cancel extends Action
+/**
+ * Apply a donor-authorised PUT action to update an existing donation. The purpose
+ * of the update can be to cancel the donation, or to add more details to it.
+ */
+class Update extends Action
 {
     private DonationRepository $donationRepository;
     private SerializerInterface $serializer;
