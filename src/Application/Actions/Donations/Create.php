@@ -118,7 +118,6 @@ class Create extends Action
                         'charityName' => $donation->getCampaign()->getCharity()->getName(),
                         'coreDonationGiftAid' => $donation->hasGiftAid(),
                         'environment' => getenv('APP_ENV'),
-                        'isGiftAid' => $donation->isGiftAid(),
                         'matchedAmount' => $donation->getFundingWithdrawalTotal(),
                         'optInCharityEmail' => $donation->getCharityComms(),
                         'optInTbgEmail' => $donation->getTbgComms(),
