@@ -76,7 +76,7 @@ class DonationUpdate extends Action
         }
 
         $donation->setDonationStatus($donationData->status);
-        $donation->setDonorPostalAddress($donationData->billingPostalAddress);
+        $donation->setDonorBillingAddress($donationData->billingPostalAddress);
         $donation->setDonorCountryCode($donationData->countryCode);
         $donation->setDonorEmailAddress($donationData->emailAddress);
         $donation->setDonorFirstName($donationData->firstName);

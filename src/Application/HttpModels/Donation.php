@@ -20,7 +20,11 @@ class Donation
     public ?string $emailAddress = null;
     public ?string $billingPostalAddress = null;
     public ?string $countryCode = null;
+    public ?string $homeAddress = null;
+    public ?string $homePostcode = null;
     public bool $optInTbgEmail;
+    public ?bool $optInCharityEmail = null;
     public string $projectId;
     public ?float $tipAmount = null;
+    public ?bool $tipGiftAid = null;
 }

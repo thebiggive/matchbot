@@ -116,13 +116,13 @@ class Create extends Action
                         'campaignName' => $donation->getCampaign()->getCampaignName(),
                         'charityId' => $donation->getCampaign()->getCharity()->getDonateLinkId(),
                         'charityName' => $donation->getCampaign()->getCharity()->getName(),
-                        'coreDonationGiftAid' => $donation->isGiftAid(), // TODO use real value after MVP
+                        'coreDonationGiftAid' => $donation->hasGiftAid(),
                         'environment' => getenv('APP_ENV'),
                         'isGiftAid' => $donation->isGiftAid(),
                         'matchedAmount' => $donation->getFundingWithdrawalTotal(),
                         'optInCharityEmail' => $donation->getCharityComms(),
                         'optInTbgEmail' => $donation->getTbgComms(),
-                        'tbgTipGiftAid' => $donation->isGiftAid(), // TODO use real value after MVP
+                        'tbgTipGiftAid' => $donation->hasTipGiftAid(),
                     ],
                     // See https://stripe.com/docs/connect/destination-charges
                     'transfer_data' => [

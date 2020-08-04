@@ -31,7 +31,7 @@ trait DonationTestDataTrait
         $donation->setDonorEmailAddress('john.doe@example.com');
         $donation->setDonorFirstName('John');
         $donation->setDonorLastName('Doe');
-        $donation->setDonorPostalAddress('1 Main St, London N1 1AA');
+        $donation->setDonorBillingAddress('1 Main St, London N1 1AA');
         $donation->setGiftAid(true);
         $donation->setPsp('enthuse');
         $donation->setTbgComms(false);
