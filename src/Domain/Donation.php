@@ -213,6 +213,7 @@ class Donation extends SalesforceWriteProxy
             'clientSecret' => $this->getClientSecret(),
             'charityId' => $this->getCampaign()->getCharity()->getDonateLinkId(),
             'charityName' => $this->getCampaign()->getCharity()->getName(),
+            'countryCode' => $this->getDonorCountryCode(),
             'donationAmount' => (float) $this->getAmount(),
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
@@ -223,6 +224,7 @@ class Donation extends SalesforceWriteProxy
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
             'status' => $this->getDonationStatus(),
+            'tipAmount' => $this->getTipAmount(),
             'transactionId' => $this->getTransactionId(),
         ];
 

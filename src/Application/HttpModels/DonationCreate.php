@@ -9,6 +9,7 @@ namespace MatchBot\Application\HttpModels;
  */
 class DonationCreate
 {
+    public ?string $countryCode = null;
     /** @var string In full pounds GBP */
     public string $donationAmount;
     public ?bool $giftAid = null;
@@ -16,4 +17,5 @@ class DonationCreate
     public ?bool $optInTbgEmail = null;
     public string $projectId;
     public string $psp;
+    public ?string $tipAmount = '0.00';
 }

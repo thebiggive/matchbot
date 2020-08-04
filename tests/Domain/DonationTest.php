@@ -18,14 +18,19 @@ class DonationTest extends TestCase
         $this->assertNull($donation->getSalesforceLastPush());
         $this->assertNull($donation->getSalesforceId());
         $this->assertNull($donation->getClientSecret());
+        $this->assertNull($donation->isGiftAid());
+        $this->assertNull($donation->getCharityComms());
+        $this->assertNull($donation->getTbgComms());
     }
 
     public function testValidDataPersisted(): void
     {
         $donation = new Donation();
         $donation->setAmount('100.00');
+        $donation->setTipAmount('11.11');
 
-        $this->addToAssertionCount(1); // Just check setAmount() doesn't hit an exception
+        $this->assertEquals('100.00', $donation->getAmount());
+        $this->assertEquals('11.11', $donation->getTipAmount());
     }
 
     public function testAmountTooLowNotPersisted(): void
