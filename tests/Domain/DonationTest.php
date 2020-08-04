@@ -31,16 +31,16 @@ class DonationTest extends TestCase
     public function testAmountTooLowNotPersisted(): void
     {
         $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Amount must be £5-25000');
+        $this->expectExceptionMessage('Amount must be £1-25000');
 
         $donation = new Donation();
-        $donation->setAmount('4.99');
+        $donation->setAmount('0.99');
     }
 
     public function testAmountTooHighNotPersisted(): void
     {
         $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Amount must be £5-25000');
+        $this->expectExceptionMessage('Amount must be £1-25000');
 
         $donation = new Donation();
         $donation->setAmount('25000.01');

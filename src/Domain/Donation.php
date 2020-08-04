@@ -23,7 +23,7 @@ class Donation extends SalesforceWriteProxy
     use TimestampsTrait;
 
     /** @var int */
-    private int $minimumAmount = 5;
+    private int $minimumAmount = 1;
     /** @var int */
     private int $maximumAmount = 25000;
 
