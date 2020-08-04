@@ -193,6 +193,7 @@ class DonationUpdateTest extends TestCase
         $payloadArray = json_decode($payload, true);
         $this->assertEquals('1 Main St, London N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
+        $this->assertTrue($payloadArray['tipGiftAid']);
         $this->assertTrue($payloadArray['optInCharityEmail']);
         $this->assertFalse($payloadArray['optInTbgEmail']);
         $this->assertEquals(0, $payloadArray['matchedAmount']);
