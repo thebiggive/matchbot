@@ -174,7 +174,7 @@ class UpdateTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donation)
+            ->willReturn($this->getTestDonation()) // Get a new mock object so it's 'Collected'.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -198,7 +198,7 @@ class UpdateTest extends TestCase
 
         $expectedPayload = new ActionPayload(400, ['error' => [
             'type' => 'BAD_REQUEST',
-            'description' => 'Only cancellations supported',
+            'description' => 'Status update is only supported for cancellation',
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 

@@ -61,10 +61,10 @@ class Update extends Action
                 'json'
             );
         } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
-            $message = 'Donation Cancel data deserialise error';
+            $message = 'Donation Update data deserialise error';
             $exceptionType = get_class($exception);
             $this->logger->warning("$message: $exceptionType - {$exception->getMessage()}");
-            $this->logger->info("Donation Cancel non-serialisable payload was: {$this->request->getBody()}");
+            $this->logger->info("Donation Update non-serialisable payload was: {$this->request->getBody()}");
             $error = new ActionError(ActionError::BAD_REQUEST, $message);
 
             return $this->respond(new ActionPayload(400, null, $error));
@@ -79,15 +79,64 @@ class Update extends Action
             return $this->respond(new ActionPayload(400, null, $error));
         }
 
-        if ($donationData->status !== 'Cancelled') {
+        if ($donationData->status === 'Cancelled') {
+            return $this->cancel($donation);
+        }
+
+        if ($donationData->status !== $donation->getDonationStatus()) {
             $this->logger->warning(
                 "Donation ID {$this->args['donationId']} could not be set to status {$donationData->status}"
             );
-            $error = new ActionError(ActionError::BAD_REQUEST, 'Only cancellations supported');
+            $error = new ActionError(ActionError::BAD_REQUEST, 'Status update is only supported for cancellation');
 
             return $this->respond(new ActionPayload(400, null, $error));
         }
 
+        return $this->addData($donation, $donationData);
+    }
+
+    private function addData(Donation $donation, HttpModels\Donation $donationData): Response
+    {
+        // If the app tries to PUT with a different amount, something has gone very wrong and we should
+        // explicitly fail instead of ignoring that field.
+        if ($donation->getAmount() !== (string) $donationData->donationAmount) {
+            $this->logger->warning(
+                "Donation ID {$this->args['donationId']} amount did not match"
+            );
+            $error = new ActionError(ActionError::BAD_REQUEST, 'Amount updates are not supported');
+
+            return $this->respond(new ActionPayload(400, null, $error));
+        }
+
+        // These two fields are currently set up early in the journey, but are harmless and more flexible
+        // to support setting later. The frontend will probably leave these set and do a no-op update
+        // when it makes the PUT call.
+        if (isset($donationData->countryCode)) {
+            $donation->setDonorCountryCode($donationData->countryCode);
+        }
+        if (isset($donationData->tipAmount)) {
+            $donation->setTipAmount((string) $donationData->tipAmount);
+        }
+
+        // All calls using the new two-step approach should set all the remaining values in this
+        // method every time they `addData()`.
+        $donation->setTipAmount((string) $donationData->tipAmount);
+        $donation->setGiftAid($donationData->giftAid);
+        $donation->setTipGiftAid($donationData->tipGiftAid ?? $donationData->giftAid);
+        $donation->setDonorHomeAddressLine1($donationData->homeAddress);
+        $donation->setDonorHomePostcode($donationData->homePostcode);
+        $donation->setDonorFirstName($donationData->firstName);
+        $donation->setDonorLastName($donationData->lastName);
+        $donation->setDonorEmailAddress($donationData->emailAddress);
+        $donation->setTbgComms($donationData->optInTbgEmail);
+        $donation->setCharityComms($donationData->optInCharityEmail);
+        $donation->setDonorBillingAddress($donationData->billingPostalAddress);
+
+        return $this->respondWithData($donation->toApiModel(false));
+    }
+
+    private function cancel(Donation $donation): Response
+    {
         if ($donation->getDonationStatus() === 'Cancelled') {
             $this->logger->info("Donation ID {$this->args['donationId']} was already Cancelled");
             return $this->respondWithData($donation->toApiModel(false));
