@@ -94,7 +94,7 @@ class Update extends Action
     {
         // If the app tries to PUT with a different amount, something has gone very wrong and we should
         // explicitly fail instead of ignoring that field.
-        if ($donation->getAmount() !== (string) $donationData->donationAmount) {
+        if (bccomp($donation->getAmount(), (string) $donationData->donationAmount) !== 0) {
             return $this->validationError(
                 "Donation ID {$this->args['donationId']} amount did not match",
                 'Amount updates are not supported'
