@@ -204,7 +204,7 @@ class Donation extends SalesforceWriteProxy
 
     public function toHookModel(): array
     {
-        $data = $this->toApiModel(false);
+        $data = $this->toApiModel();
 
         $data['createdTime'] = $this->getCreatedDate()->format(DateTime::ATOM);
         $data['updatedTime'] = $this->getUpdatedDate()->format(DateTime::ATOM);
@@ -223,7 +223,7 @@ class Donation extends SalesforceWriteProxy
         return $data;
     }
 
-    public function toApiModel($create = true): array
+    public function toApiModel(): array
     {
         $data = [
             'billingPostalAddress' => $this->getDonorBillingAddress(),
@@ -240,6 +240,7 @@ class Donation extends SalesforceWriteProxy
             'homeAddress' => $this->getDonorHomeAddressLine1(),
             'homePostcode' => $this->getDonorHomePostcode(),
             'lastName' => $this->getDonorLastName(),
+            'matchedAmount' => $this->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0,
             'matchReservedAmount' => 0,
             'optInCharityEmail' => $this->getCharityComms(),
             'optInTbgEmail' => $this->getTbgComms(),
@@ -253,16 +254,6 @@ class Donation extends SalesforceWriteProxy
 
         if (in_array($this->getDonationStatus(), ['Pending', 'Reserved'], true)) {
             $data['matchReservedAmount'] = (float) $this->getFundingWithdrawalTotal();
-        }
-
-        if (!$create) {
-            $data['billingPostalAddress'] = $this->getDonorBillingAddress();
-            $data['countryCode'] = $this->getDonorCountryCode();
-            $data['emailAddress'] = $this->getDonorEmailAddress();
-            $data['firstName'] = $this->getDonorFirstName();
-            $data['lastName'] = $this->getDonorLastName();
-            $data['matchedAmount'] = $this->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0;
-            $data['tipAmount'] = (float) $this->getTipAmount();
         }
 
         return $data;

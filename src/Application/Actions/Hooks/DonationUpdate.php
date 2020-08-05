@@ -102,6 +102,6 @@ class DonationUpdate extends Action
         // batch sync.
         $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
-        return $this->respondWithData($donation->toApiModel(false));
+        return $this->respondWithData($donation->toApiModel());
     }
 }

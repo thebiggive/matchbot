@@ -91,7 +91,7 @@ class CreateTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel(true));
+        $data = json_encode($donation->toApiModel());
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -129,7 +129,7 @@ class CreateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel(true));
+        $data = json_encode($donation->toApiModel());
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -187,7 +187,7 @@ class CreateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel(true));
+        $data = json_encode($donation->toApiModel());
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -289,7 +289,7 @@ class CreateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel(true));
+        $data = json_encode($donation->toApiModel());
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -349,7 +349,7 @@ class CreateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel(true));
+        $data = json_encode($donation->toApiModel());
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -452,7 +452,7 @@ class CreateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel(true));
+        $data = json_encode($donation->toApiModel());
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -504,7 +504,7 @@ class CreateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel(true));
+        $data = json_encode($donation->toApiModel());
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -556,7 +556,7 @@ class CreateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel(true));
+        $data = json_encode($donation->toApiModel());
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 

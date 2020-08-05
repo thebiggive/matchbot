@@ -156,14 +156,14 @@ class Update extends Action
 
         $this->pushToSalesforce($donation);
 
-        return $this->respondWithData($donation->toApiModel(false));
+        return $this->respondWithData($donation->toApiModel());
     }
 
     private function cancel(Donation $donation): Response
     {
         if ($donation->getDonationStatus() === 'Cancelled') {
             $this->logger->info("Donation ID {$this->args['donationId']} was already Cancelled");
-            return $this->respondWithData($donation->toApiModel(false));
+            return $this->respondWithData($donation->toApiModel());
         }
 
         if ($donation->isSuccessful()) {
@@ -197,7 +197,7 @@ class Update extends Action
 
         $this->pushToSalesforce($donation);
 
-        return $this->respondWithData($donation->toApiModel(false));
+        return $this->respondWithData($donation->toApiModel());
     }
 
     private function pushToSalesforce(Donation $donation): void

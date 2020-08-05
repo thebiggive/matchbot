@@ -521,6 +521,11 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
+        $donation->setPsp('enthuse');
+
+        $donationExistingState = $this->getTestDonation();
+        $donationExistingState->setPsp('enthuse');
+
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTbgComms(true);
@@ -529,7 +534,7 @@ class UpdateTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->willReturn($donationExistingState)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
