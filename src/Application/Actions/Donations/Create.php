@@ -104,7 +104,7 @@ class Create extends Action
                 $intent = $this->stripeClient->paymentIntents->create([
                     // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
                     // See https://stripe.com/docs/api/payment_intents/object
-                    'amount' => (100 * $donation->getAmount()),
+                    'amount' => (100 * $donation->getAmount()) + (100 * $donation->getTipAmount() ?? 0),
                     'currency' => 'gbp',
                     'metadata' => [
                         'campaignId' => $donation->getCampaign()->getSalesforceId(),

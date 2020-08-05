@@ -251,7 +251,7 @@ class CreateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $expectedPaymentIntentArgs = [
-            'amount' => 1200,
+            'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
             'metadata' => [
                 'campaignId' => '123CampaignId',
@@ -275,7 +275,7 @@ class CreateTest extends TestCase
         $paymentIntentMockResult = (object) [
             'id' => 'pi_dummyIntent456_id',
             'object' => 'payment_intent',
-            'amount' => 1200,
+            'amount' => 1311,
             'client_secret' => 'pi_dummySecret_456',
             'confirmation_method' => 'automatic',
             'currency' => 'gbp',
@@ -411,7 +411,7 @@ class CreateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $expectedPaymentIntentArgs = [
-            'amount' => 1200,
+            'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
             'metadata' => [
                 'campaignId' => '123CampaignId',
@@ -435,7 +435,7 @@ class CreateTest extends TestCase
         $paymentIntentMockResult = (object) [
             'id' => 'pi_dummyIntent_id',
             'object' => 'payment_intent',
-            'amount' => 1200,
+            'amount' => 1311,
             'client_secret' => 'pi_dummySecret_123',
             'confirmation_method' => 'automatic',
             'currency' => 'gbp',
