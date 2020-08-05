@@ -246,7 +246,7 @@ class Donation extends SalesforceWriteProxy
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
             'status' => $this->getDonationStatus(),
-            'tipAmount' => $this->getTipAmount(),
+            'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
             'transactionId' => $this->getTransactionId(),
         ];
