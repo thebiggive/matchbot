@@ -251,6 +251,7 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
+            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
                 'campaignId' => '123CampaignId',
                 'campaignName' => '123CampaignName',
@@ -261,6 +262,7 @@ class CreateTest extends TestCase
                 'matchedAmount' => '8.00',
                 'tipAmount' => '1.11',
             ],
+            'statement_descriptor' => 'The Big Give Create te',
             'transfer_data' => [
                 'amount' => 1166,
                 'destination' => 'unitTest_newStripeAccount_456',
@@ -410,6 +412,7 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
+            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
                 'campaignId' => '123CampaignId',
                 'campaignName' => '123CampaignName',
@@ -420,6 +423,7 @@ class CreateTest extends TestCase
                 'matchedAmount' => '8.00',
                 'tipAmount' => '1.11',
             ],
+            'statement_descriptor' => 'The Big Give Create te',
             'transfer_data' => [
                 'amount' => 1166,
                 'destination' => 'unitTest_stripeAccount_123',
