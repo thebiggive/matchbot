@@ -42,7 +42,7 @@ class Donation extends Common
     }
 
     /**
-     * For now, cancellations with Salesforce use the webhook receiver and not the Donations API
+     * For now, updates with Salesforce use the webhook receiver and not the Donations API
      * with JWT auth. As a server app there's no huge downside to using a fixed key, and getting
      * the Salesforce certificate's private part in the right format to use for RS256 JWT signature
      * creation was pretty involved. By sticking with this we can use the faster HS256 algorithm
