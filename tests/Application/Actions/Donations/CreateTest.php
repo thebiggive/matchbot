@@ -570,6 +570,7 @@ class CreateTest extends TestCase
         $this->assertIsString($payloadArray['jwt']);
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
+        $this->assertNotEmpty($payloadArray['donation']['createdTime']);
         $this->assertNull($payloadArray['donation']['giftAid']);
         $this->assertNull($payloadArray['donation']['optInCharityEmail']);
         $this->assertNull($payloadArray['donation']['optInTbgEmail']);
@@ -605,6 +606,7 @@ class CreateTest extends TestCase
         }
 
         $donation = new Donation();
+        $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setAmount('12.00');
         $donation->setCampaign($campaign);
         $donation->setPsp('enthuse');
