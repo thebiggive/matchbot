@@ -13,7 +13,7 @@ class Donation
     public string $status;
     public string $charityId;
     public float $donationAmount;
-    public bool $giftAid;
+    public ?bool $giftAid;
     public bool $donationMatched;
     public ?string $firstName = null;
     public ?string $lastName = null;
@@ -22,7 +22,7 @@ class Donation
     public ?string $countryCode = null;
     public ?string $homeAddress = null;
     public ?string $homePostcode = null;
-    public bool $optInTbgEmail;
+    public ?bool $optInTbgEmail;
     public ?bool $optInCharityEmail = null;
     public string $projectId;
     public ?float $tipAmount = null;
