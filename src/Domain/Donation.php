@@ -327,10 +327,7 @@ class Donation extends SalesforceWriteProxy
         return $this->donorEmailAddress;
     }
 
-    /**
-     * @param string $donorEmailAddress
-     */
-    public function setDonorEmailAddress(string $donorEmailAddress): void
+    public function setDonorEmailAddress(?string $donorEmailAddress): void
     {
         $this->donorEmailAddress = $donorEmailAddress;
     }
@@ -350,10 +347,7 @@ class Donation extends SalesforceWriteProxy
         return $this->donorFirstName;
     }
 
-    /**
-     * @param string $donorFirstName
-     */
-    public function setDonorFirstName(string $donorFirstName): void
+    public function setDonorFirstName(?string $donorFirstName): void
     {
         $this->donorFirstName = $donorFirstName;
     }
@@ -363,10 +357,7 @@ class Donation extends SalesforceWriteProxy
         return $this->donorLastName;
     }
 
-    /**
-     * @param string $donorLastName
-     */
-    public function setDonorLastName(string $donorLastName): void
+    public function setDonorLastName(?string $donorLastName): void
     {
         $this->donorLastName = $donorLastName;
     }
@@ -376,7 +367,7 @@ class Donation extends SalesforceWriteProxy
         return $this->donorPostalAddress;
     }
 
-    public function setDonorBillingAddress(string $donorPostalAddress): void
+    public function setDonorBillingAddress(?string $donorPostalAddress): void
     {
         $this->donorPostalAddress = $donorPostalAddress;
     }

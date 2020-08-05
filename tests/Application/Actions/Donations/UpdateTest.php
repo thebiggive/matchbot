@@ -514,7 +514,60 @@ class UpdateTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
-    public function testAddDataSuccess(): void
+    public function testAddDataSuccessWithOnlyEnthuseValues(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+        $donation->setTipAmount('3.21');
+        $donation->setGiftAid(true);
+        $donation->setTbgComms(true);
+        $donation->setCharityComms(false);
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldBeCalledOnce(); // Updates pushed to Salesforce
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($donation->toApiModel()),
+        )
+            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+
+        // These two values are unchanged but still returned.
+        $this->assertEquals(123.45, $payloadArray['donationAmount']);
+        $this->assertEquals('Collected', $payloadArray['status']);
+
+        // Remaining properties should be updated.
+        $this->assertTrue($payloadArray['giftAid']);
+        $this->assertTrue($payloadArray['tipGiftAid']);
+        $this->assertTrue($payloadArray['optInTbgEmail']);
+        $this->assertFalse($payloadArray['optInCharityEmail']);
+    }
+
+    public function testAddDataSuccessWithAllValues(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
