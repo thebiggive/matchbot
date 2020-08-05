@@ -57,32 +57,41 @@ class Create extends Action
                 'json'
             );
         } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
+            $this->logger->info("Donation Create non-serialisable payload was: {$this->request->getBody()}");
+
             $message = 'Donation Create data deserialise error';
             $exceptionType = get_class($exception);
-            $this->logger->warning("$message: $exceptionType - {$exception->getMessage()}");
-            $this->logger->info("Donation Create non-serialisable payload was: {$this->request->getBody()}");
-            $error = new ActionError(ActionError::BAD_REQUEST, $message);
 
-            return $this->respond(new ActionPayload(400, null, $error));
+            return $this->validationError("$message: $exceptionType - {$exception->getMessage()}", $message);
         }
 
         try {
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
         } catch (\UnexpectedValueException $exception) {
+            $this->logger->info("Donation Create model load failure payload was: {$this->request->getBody()}");
+
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $exception->getMessage());
-            $this->logger->info("Donation Create model load failure payload was: {$this->request->getBody()}");
-            $error = new ActionError(ActionError::BAD_REQUEST, $exception->getMessage());
 
-            return $this->respond(new ActionPayload(400, null, $error));
+            return $this->validationError($message . ': ' . $exception->getMessage(), $exception->getMessage());
         }
 
         if (!$donation->getCampaign()->isOpen()) {
-            $message = "Campaign {$donation->getCampaign()->getSalesforceId()} is not open";
-            $this->logger->warning($message);
-            $error = new ActionError(ActionError::BAD_REQUEST, $message);
+            return $this->validationError("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
+        }
 
-            return $this->respond(new ActionPayload(400, null, $error));
+        // Must persist before Stripe work to have ID available.
+        $this->entityManager->persist($donation);
+        $this->entityManager->flush();
+
+        if ($donation->getCampaign()->isMatched()) {
+            try {
+                $this->donationRepository->allocateMatchFunds($donation);
+            } catch (DomainLockContentionException $exception) {
+                $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
+
+                return $this->respond(new ActionPayload(503, null, $error));
+            }
         }
 
         if ($donation->getPsp() === 'stripe') {
@@ -109,20 +118,17 @@ class Create extends Action
                 $intent = $this->stripeClient->paymentIntents->create([
                     // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
                     // See https://stripe.com/docs/api/payment_intents/object
-                    'amount' => (100 * $donation->getAmount()),
+                    'amount' => (100 * $donation->getAmount()) + (100 * $donation->getTipAmount() ?? 0),
                     'currency' => 'gbp',
                     'metadata' => [
                         'campaignId' => $donation->getCampaign()->getSalesforceId(),
                         'campaignName' => $donation->getCampaign()->getCampaignName(),
                         'charityId' => $donation->getCampaign()->getCharity()->getDonateLinkId(),
                         'charityName' => $donation->getCampaign()->getCharity()->getName(),
-                        'coreDonationGiftAid' => $donation->isGiftAid(), // TODO use real value after MVP
+                        'donationId' => $donation->getUuid(),
                         'environment' => getenv('APP_ENV'),
-                        'isGiftAid' => $donation->isGiftAid(),
                         'matchedAmount' => $donation->getFundingWithdrawalTotal(),
-                        'optInCharityEmail' => $donation->getCharityComms(),
-                        'optInTbgEmail' => $donation->getTbgComms(),
-                        'tbgTipGiftAid' => $donation->isGiftAid(), // TODO use real value after MVP
+                        'tipAmount' => $donation->getTipAmount(),
                     ],
                     // See https://stripe.com/docs/connect/destination-charges
                     'transfer_data' => [
@@ -141,19 +147,9 @@ class Create extends Action
 
             $donation->setClientSecret($intent->client_secret);
             $donation->setTransactionId($intent->id);
-        }
 
-        $this->entityManager->persist($donation);
-        $this->entityManager->flush();
-
-        if ($donation->getCampaign()->isMatched()) {
-            try {
-                $this->donationRepository->allocateMatchFunds($donation);
-            } catch (DomainLockContentionException $exception) {
-                $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
-
-                return $this->respond(new ActionPayload(503, null, $error));
-            }
+            $this->entityManager->persist($donation);
+            $this->entityManager->flush();
         }
 
         $response = new DonationCreatedResponse();

@@ -103,22 +103,22 @@ class Donation extends SalesforceWriteProxy
     protected string $donationStatus = 'NotSet';
 
     /**
-     * @ORM\Column(type="boolean")
+     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether the donor opted to receive email from the charity running the campaign
      */
-    protected bool $charityComms;
+    protected ?bool $charityComms = null;
 
     /**
-     * @ORM\Column(type="boolean")
+     * @ORM\Column(type="boolean", nullable=true)
      * @var bool
      */
-    protected bool $giftAid;
+    protected ?bool $giftAid = null;
 
     /**
-     * @ORM\Column(type="boolean")
+     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether the donor opted to receive email from the Big Give
      */
-    protected bool $tbgComms;
+    protected ?bool $tbgComms = null;
 
     /**
      * @ORM\Column(type="string", length=2, nullable=true)
@@ -146,9 +146,21 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\Column(type="string", nullable=true)
-     * @var string|null Set on PSP callback
+     * @var string|null Assumed to be billing address going forward.
      */
     protected ?string $donorPostalAddress = null;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     * @var string|null From residential address, if donor is claiming Gift Aid.
+     */
+    protected ?string $donorHomeAddressLine1 = null;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     * @var string|null From residential address, if donor is claiming Gift Aid.
+     */
+    protected ?string $donorHomePostcode = null;
 
     /**
      * @ORM\Column(type="decimal", precision=18, scale=2)
@@ -156,6 +168,12 @@ class Donation extends SalesforceWriteProxy
      *              Set during setup when using Stripe, and on Enthuse callback otherwise.
      */
     protected string $tipAmount = '0.00';
+
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     * @var bool    Whether Gift Aid was claimed on the 'tip' donation to the Big Give.
+     */
+    protected ?bool $tipGiftAid = null;
 
     /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
@@ -186,7 +204,7 @@ class Donation extends SalesforceWriteProxy
 
     public function toHookModel(): array
     {
-        $data = $this->toApiModel(false);
+        $data = $this->toApiModel();
 
         $data['createdTime'] = $this->getCreatedDate()->format(DateTime::ATOM);
         $data['updatedTime'] = $this->getUpdatedDate()->format(DateTime::ATOM);
@@ -205,39 +223,37 @@ class Donation extends SalesforceWriteProxy
         return $data;
     }
 
-    public function toApiModel($create = true): array
+    public function toApiModel(): array
     {
-        // We omit `donationId` and let Salesforce set its own, which we then persist back to the MatchBot DB on
-        // success.
         $data = [
+            'billingPostalAddress' => $this->getDonorBillingAddress(),
             'clientSecret' => $this->getClientSecret(),
             'charityId' => $this->getCampaign()->getCharity()->getDonateLinkId(),
             'charityName' => $this->getCampaign()->getCharity()->getName(),
+            'countryCode' => $this->getDonorCountryCode(),
             'donationAmount' => (float) $this->getAmount(),
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
-            'giftAid' => $this->isGiftAid(),
+            'emailAddress' => $this->getDonorEmailAddress(),
+            'firstName' => $this->getDonorFirstName(),
+            'giftAid' => $this->hasGiftAid(),
+            'homeAddress' => $this->getDonorHomeAddressLine1(),
+            'homePostcode' => $this->getDonorHomePostcode(),
+            'lastName' => $this->getDonorLastName(),
+            'matchedAmount' => $this->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0,
             'matchReservedAmount' => 0,
             'optInCharityEmail' => $this->getCharityComms(),
             'optInTbgEmail' => $this->getTbgComms(),
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
             'status' => $this->getDonationStatus(),
+            'tipAmount' => (float) $this->getTipAmount(),
+            'tipGiftAid' => $this->hasTipGiftAid(),
             'transactionId' => $this->getTransactionId(),
         ];
 
         if (in_array($this->getDonationStatus(), ['Pending', 'Reserved'], true)) {
             $data['matchReservedAmount'] = (float) $this->getFundingWithdrawalTotal();
-        }
-
-        if (!$create) {
-            $data['billingPostalAddress'] = $this->getDonorPostalAddress();
-            $data['countryCode'] = $this->getDonorCountryCode();
-            $data['emailAddress'] = $this->getDonorEmailAddress();
-            $data['firstName'] = $this->getDonorFirstName();
-            $data['lastName'] = $this->getDonorLastName();
-            $data['matchedAmount'] = $this->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0;
-            $data['tipAmount'] = (float) $this->getTipAmount();
         }
 
         return $data;
@@ -302,26 +318,17 @@ class Donation extends SalesforceWriteProxy
         return $this->donorEmailAddress;
     }
 
-    /**
-     * @param string $donorEmailAddress
-     */
-    public function setDonorEmailAddress(string $donorEmailAddress): void
+    public function setDonorEmailAddress(?string $donorEmailAddress): void
     {
         $this->donorEmailAddress = $donorEmailAddress;
     }
 
-    /**
-     * @return bool
-     */
-    public function getCharityComms(): bool
+    public function getCharityComms(): ?bool
     {
         return $this->charityComms;
     }
 
-    /**
-     * @param bool $charityComms
-     */
-    public function setCharityComms(bool $charityComms): void
+    public function setCharityComms(?bool $charityComms): void
     {
         $this->charityComms = $charityComms;
     }
@@ -331,10 +338,7 @@ class Donation extends SalesforceWriteProxy
         return $this->donorFirstName;
     }
 
-    /**
-     * @param string $donorFirstName
-     */
-    public function setDonorFirstName(string $donorFirstName): void
+    public function setDonorFirstName(?string $donorFirstName): void
     {
         $this->donorFirstName = $donorFirstName;
     }
@@ -344,55 +348,44 @@ class Donation extends SalesforceWriteProxy
         return $this->donorLastName;
     }
 
-    /**
-     * @param string $donorLastName
-     */
-    public function setDonorLastName(string $donorLastName): void
+    public function setDonorLastName(?string $donorLastName): void
     {
         $this->donorLastName = $donorLastName;
     }
 
-    public function getDonorPostalAddress(): ?string
+    public function getDonorBillingAddress(): ?string
     {
         return $this->donorPostalAddress;
     }
 
-    /**
-     * @param string $donorPostalAddress
-     */
-    public function setDonorPostalAddress(string $donorPostalAddress): void
+    public function setDonorBillingAddress(?string $donorPostalAddress): void
     {
         $this->donorPostalAddress = $donorPostalAddress;
     }
 
-    /**
-     * @return bool
-     */
-    public function isGiftAid(): bool
+    public function hasGiftAid(): ?bool
     {
         return $this->giftAid;
     }
 
-    /**
-     * @param bool $giftAid
-     */
-    public function setGiftAid(bool $giftAid): void
+    public function setGiftAid(?bool $giftAid): void
     {
         $this->giftAid = $giftAid;
+
+        // Default tip Gift Aid to main Gift Aid value. If it is set explicitly
+        // first this will be skipped. If set explicitly after, the later call
+        // will persist.
+        if ($this->tipGiftAid === null) {
+            $this->tipGiftAid = $giftAid;
+        }
     }
 
-    /**
-     * @return bool
-     */
-    public function getTbgComms(): bool
+    public function getTbgComms(): ?bool
     {
         return $this->tbgComms;
     }
 
-    /**
-     * @param bool $tbgComms
-     */
-    public function setTbgComms(bool $tbgComms): void
+    public function setTbgComms(?bool $tbgComms): void
     {
         $this->tbgComms = $tbgComms;
     }
@@ -578,6 +571,36 @@ class Donation extends SalesforceWriteProxy
     public function setTipAmount(string $tipAmount): void
     {
         $this->tipAmount = $tipAmount;
+    }
+
+    public function hasTipGiftAid(): ?bool
+    {
+        return $this->tipGiftAid;
+    }
+
+    public function setTipGiftAid(?bool $tipGiftAid): void
+    {
+        $this->tipGiftAid = $tipGiftAid;
+    }
+
+    public function getDonorHomeAddressLine1(): ?string
+    {
+        return $this->donorHomeAddressLine1;
+    }
+
+    public function setDonorHomeAddressLine1(?string $donorHomeAddressLine1): void
+    {
+        $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
+    }
+
+    public function getDonorHomePostcode(): ?string
+    {
+        return $this->donorHomePostcode;
+    }
+
+    public function setDonorHomePostcode(?string $donorHomePostcode): void
+    {
+        $this->donorHomePostcode = $donorHomePostcode;
     }
 
     /**
