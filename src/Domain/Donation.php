@@ -186,6 +186,11 @@ class Donation extends SalesforceWriteProxy
         $this->fundingWithdrawals = new ArrayCollection();
     }
 
+    public function __toString()
+    {
+        return "Donation {$this->getUuid()} to {$this->getCampaign()->getCharity()->getName()}";
+    }
+
     /**
      * @ORM\PreUpdate Check that the amount is never changed
      * @param PreUpdateEventArgs $args

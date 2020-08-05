@@ -12,6 +12,7 @@ use MatchBot\Application\Auth\Token;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\Charity;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -120,6 +121,7 @@ class Create extends Action
                     // See https://stripe.com/docs/api/payment_intents/object
                     'amount' => (100 * $donation->getAmount()) + (100 * $donation->getTipAmount() ?? 0),
                     'currency' => 'gbp',
+                    'description' => $donation->__toString(),
                     'metadata' => [
                         'campaignId' => $donation->getCampaign()->getSalesforceId(),
                         'campaignName' => $donation->getCampaign()->getCampaignName(),
@@ -130,6 +132,7 @@ class Create extends Action
                         'matchedAmount' => $donation->getFundingWithdrawalTotal(),
                         'tipAmount' => $donation->getTipAmount(),
                     ],
+                    'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
                     // See https://stripe.com/docs/connect/destination-charges
                     'transfer_data' => [
                         'amount' => (100 * $donation->getAmountForCharity()),
@@ -160,5 +163,13 @@ class Create extends Action
         $this->donationRepository->push($donation, true);
 
         return $this->respondWithData($response);
+    }
+
+    private function getStatementDescriptor(Charity $charity): string
+    {
+        $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
+        $prefix = 'The Big Give ';
+
+        return $prefix . substr($charity->getName(), 0, $maximumLength - strlen($prefix));
     }
 }
