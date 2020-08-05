@@ -61,22 +61,16 @@ class Update extends Action
                 'json'
             );
         } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
+            $this->logger->info("Donation Update non-serialisable payload was: {$this->request->getBody()}");
+
             $message = 'Donation Update data deserialise error';
             $exceptionType = get_class($exception);
-            $this->logger->warning("$message: $exceptionType - {$exception->getMessage()}");
-            $this->logger->info("Donation Update non-serialisable payload was: {$this->request->getBody()}");
-            $error = new ActionError(ActionError::BAD_REQUEST, $message);
 
-            return $this->respond(new ActionPayload(400, null, $error));
+            return $this->validationError("$message: $exceptionType - {$exception->getMessage()}", $message);
         }
 
         if (!isset($donationData->status)) {
-            $this->logger->warning(
-                "Donation ID {$this->args['donationId']} could not be updated with missing status"
-            );
-            $error = new ActionError(ActionError::BAD_REQUEST, 'New status is required');
-
-            return $this->respond(new ActionPayload(400, null, $error));
+            return $this->validationError("Donation ID {$this->args['donationId']} could not be updated with missing status", 'New status is required');
         }
 
         if ($donationData->status === 'Cancelled') {
@@ -84,12 +78,10 @@ class Update extends Action
         }
 
         if ($donationData->status !== $donation->getDonationStatus()) {
-            $this->logger->warning(
-                "Donation ID {$this->args['donationId']} could not be set to status {$donationData->status}"
+            return $this->validationError(
+                "Donation ID {$this->args['donationId']} could not be set to status {$donationData->status}",
+                'Status update is only supported for cancellation'
             );
-            $error = new ActionError(ActionError::BAD_REQUEST, 'Status update is only supported for cancellation');
-
-            return $this->respond(new ActionPayload(400, null, $error));
         }
 
         return $this->addData($donation, $donationData);
@@ -100,12 +92,10 @@ class Update extends Action
         // If the app tries to PUT with a different amount, something has gone very wrong and we should
         // explicitly fail instead of ignoring that field.
         if ($donation->getAmount() !== (string) $donationData->donationAmount) {
-            $this->logger->warning(
-                "Donation ID {$this->args['donationId']} amount did not match"
+            return $this->validationError(
+                "Donation ID {$this->args['donationId']} amount did not match",
+                'Amount updates are not supported'
             );
-            $error = new ActionError(ActionError::BAD_REQUEST, 'Amount updates are not supported');
-
-            return $this->respond(new ActionPayload(400, null, $error));
         }
 
         if (!isset($donationData->giftAid, $donationData->optInCharityEmail, $donationData->optInTbgEmail)) {
@@ -148,12 +138,10 @@ class Update extends Action
         if ($donation->isSuccessful()) {
             // If a donor uses browser back before loading the thank you page, it is possible for them to get
             // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
-            $this->logger->warning(
-                "Donation ID {$this->args['donationId']} could not be cancelled as {$donation->getDonationStatus()}"
+            return $this->validationError(
+                "Donation ID {$this->args['donationId']} could not be cancelled as {$donation->getDonationStatus()}",
+                'Donation already finalised'
             );
-            $error = new ActionError(ActionError::BAD_REQUEST, 'Donation already finalised');
-
-            return $this->respond(new ActionPayload(400, null, $error));
         }
 
         $this->logger->info("Donor cancelled ID {$this->args['donationId']}");

@@ -57,32 +57,27 @@ class Create extends Action
                 'json'
             );
         } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
+            $this->logger->info("Donation Create non-serialisable payload was: {$this->request->getBody()}");
+
             $message = 'Donation Create data deserialise error';
             $exceptionType = get_class($exception);
-            $this->logger->warning("$message: $exceptionType - {$exception->getMessage()}");
-            $this->logger->info("Donation Create non-serialisable payload was: {$this->request->getBody()}");
-            $error = new ActionError(ActionError::BAD_REQUEST, $message);
 
-            return $this->respond(new ActionPayload(400, null, $error));
+            return $this->validationError("$message: $exceptionType - {$exception->getMessage()}", $message);
         }
 
         try {
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
         } catch (\UnexpectedValueException $exception) {
+            $this->logger->info("Donation Create model load failure payload was: {$this->request->getBody()}");
+
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $exception->getMessage());
-            $this->logger->info("Donation Create model load failure payload was: {$this->request->getBody()}");
-            $error = new ActionError(ActionError::BAD_REQUEST, $exception->getMessage());
 
-            return $this->respond(new ActionPayload(400, null, $error));
+            return $this->validationError($message . ': ' . $exception->getMessage(), $exception->getMessage());
         }
 
         if (!$donation->getCampaign()->isOpen()) {
-            $message = "Campaign {$donation->getCampaign()->getSalesforceId()} is not open";
-            $this->logger->warning($message);
-            $error = new ActionError(ActionError::BAD_REQUEST, $message);
-
-            return $this->respond(new ActionPayload(400, null, $error));
+            return $this->validationError("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
         }
 
         if ($donation->getPsp() === 'stripe') {
