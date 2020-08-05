@@ -161,11 +161,8 @@ class CreateTest extends TestCase
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willReturn($donationToReturn);
-
-        // This and several subsequent Prophecy calls are defined in order to assert that they are *not* called in
-        // this error case, because we bail out before they would normally happen.
+        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
         $donationRepoProphecy->push(Argument::type(Donation::class), Argument::type('bool'))->shouldNotBeCalled();
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -177,8 +174,8 @@ class CreateTest extends TestCase
         $entityManagerProphecy->getRepository(Campaign::class)
             ->willReturn($campaignRepoProphecy->reveal())
             ->shouldBeCalledOnce();
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
-        $entityManagerProphecy->flush()->shouldNotBeCalled();
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->create(Argument::any())->shouldNotBeCalled();
@@ -247,8 +244,9 @@ class CreateTest extends TestCase
         $entityManagerProphecy->getRepository(Campaign::class)
             ->willReturn($campaignRepoProphecy->reveal())
             ->shouldBeCalledOnce();
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        // These are called once after initial ID setup and once after Stripe fields added.
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
+        $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
@@ -258,12 +256,10 @@ class CreateTest extends TestCase
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
-                'coreDonationGiftAid' => false,
+                'donationId' => '12345678-1234-1234-1234-1234567890ab',
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '8.00',
-                'optInCharityEmail' => true,
-                'optInTbgEmail' => false,
-                'tbgTipGiftAid' => false,
+                'tipAmount' => '1.11',
             ],
             'transfer_data' => [
                 'amount' => 1166,
@@ -407,8 +403,9 @@ class CreateTest extends TestCase
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        // These are called once after initial ID setup and once after Stripe fields added.
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
+        $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
@@ -418,12 +415,10 @@ class CreateTest extends TestCase
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
-                'coreDonationGiftAid' => false,
+                'donationId' => '12345678-1234-1234-1234-1234567890ab',
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '8.00',
-                'optInCharityEmail' => true,
-                'optInTbgEmail' => false,
-                'tbgTipGiftAid' => false,
+                'tipAmount' => '1.11',
             ],
             'transfer_data' => [
                 'amount' => 1166,
@@ -445,6 +440,10 @@ class CreateTest extends TestCase
         $stripePaymentIntentsProphecy->create($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
+
+//        $stripePaymentIntentsProphecy->create(Argument::type('array'))
+//            ->willReturn($paymentIntentMockResult)
+//            ->shouldBeCalledOnce();
 
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
@@ -609,6 +608,7 @@ class CreateTest extends TestCase
         $donation->setAmount('12.00');
         $donation->setCampaign($campaign);
         $donation->setPsp('enthuse');
+        $donation->setSalesforceId('SF-DON-123');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
         $donation->setDonorCountryCode('GB');
         $donation->setTipAmount('1.11');

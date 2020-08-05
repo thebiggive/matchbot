@@ -535,7 +535,7 @@ class UpdateTest extends TestCase
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
-            ->shouldNotBeCalled();
+            ->shouldBeCalledOnce(); // Updates pushed to Salesforce
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 

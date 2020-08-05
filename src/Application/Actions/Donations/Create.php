@@ -80,6 +80,20 @@ class Create extends Action
             return $this->validationError("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
         }
 
+        // Must persist before Stripe work to have ID available.
+        $this->entityManager->persist($donation);
+        $this->entityManager->flush();
+
+        if ($donation->getCampaign()->isMatched()) {
+            try {
+                $this->donationRepository->allocateMatchFunds($donation);
+            } catch (DomainLockContentionException $exception) {
+                $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
+
+                return $this->respond(new ActionPayload(503, null, $error));
+            }
+        }
+
         if ($donation->getPsp() === 'stripe') {
             if (empty($donation->getCampaign()->getCharity()->getStripeAccountId())) {
                 // Try re-pulling in case charity has very recently onboarded with for Stripe.
@@ -111,12 +125,10 @@ class Create extends Action
                         'campaignName' => $donation->getCampaign()->getCampaignName(),
                         'charityId' => $donation->getCampaign()->getCharity()->getDonateLinkId(),
                         'charityName' => $donation->getCampaign()->getCharity()->getName(),
-                        'coreDonationGiftAid' => $donation->hasGiftAid(),
+                        'donationId' => $donation->getUuid(),
                         'environment' => getenv('APP_ENV'),
                         'matchedAmount' => $donation->getFundingWithdrawalTotal(),
-                        'optInCharityEmail' => $donation->getCharityComms(),
-                        'optInTbgEmail' => $donation->getTbgComms(),
-                        'tbgTipGiftAid' => $donation->hasTipGiftAid(),
+                        'tipAmount' => $donation->getTipAmount(),
                     ],
                     // See https://stripe.com/docs/connect/destination-charges
                     'transfer_data' => [
@@ -135,19 +147,9 @@ class Create extends Action
 
             $donation->setClientSecret($intent->client_secret);
             $donation->setTransactionId($intent->id);
-        }
 
-        $this->entityManager->persist($donation);
-        $this->entityManager->flush();
-
-        if ($donation->getCampaign()->isMatched()) {
-            try {
-                $this->donationRepository->allocateMatchFunds($donation);
-            } catch (DomainLockContentionException $exception) {
-                $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
-
-                return $this->respond(new ActionPayload(503, null, $error));
-            }
+            $this->entityManager->persist($donation);
+            $this->entityManager->flush();
         }
 
         $response = new DonationCreatedResponse();

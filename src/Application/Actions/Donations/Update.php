@@ -13,6 +13,8 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
+use Stripe\Exception\ApiErrorException;
+use Stripe\StripeClient;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -24,14 +26,17 @@ class Update extends Action
 {
     private DonationRepository $donationRepository;
     private SerializerInterface $serializer;
+    private StripeClient $stripeClient;
 
     public function __construct(
         DonationRepository $donationRepository,
         LoggerInterface $logger,
-        SerializerInterface $serializer
+        SerializerInterface $serializer,
+        StripeClient $stripeClient
     ) {
         $this->donationRepository = $donationRepository;
         $this->serializer = $serializer;
+        $this->stripeClient = $stripeClient;
 
         parent::__construct($logger);
     }
@@ -128,6 +133,29 @@ class Update extends Action
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setDonorBillingAddress($donationData->billingPostalAddress);
 
+        if ($donation->getPsp() === 'stripe') {
+            try {
+                $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
+                    'metadata' => [
+                        'coreDonationGiftAid' => $donation->hasGiftAid(),
+                        'optInCharityEmail' => $donation->getCharityComms(),
+                        'optInTbgEmail' => $donation->getTbgComms(),
+                        'salesforceId' => $donation->getSalesforceId(),
+                        'tbgTipGiftAid' => $donation->hasTipGiftAid(),
+                    ],
+                ]);
+            } catch (ApiErrorException $exception) {
+                $this->logger->error(
+                    'Stripe Payment Intent update error: ' .
+                    get_class($exception) . ': ' . $exception->getMessage()
+                );
+                $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent');
+                return $this->respond(new ActionPayload(500, null, $error));
+            }
+        }
+
+        $this->pushToSalesforce($donation);
+
         return $this->respondWithData($donation->toApiModel(false));
     }
 
@@ -154,10 +182,28 @@ class Update extends Action
             $this->donationRepository->releaseMatchFunds($donation);
         }
 
+        if ($donation->getPsp() === 'stripe') {
+            try {
+                $this->stripeClient->paymentIntents->cancel($donation->getTransactionId());
+            } catch (ApiErrorException $exception) {
+                $this->logger->error(
+                    'Stripe Payment Intent cancel error: ' .
+                    get_class($exception) . ': ' . $exception->getMessage()
+                );
+                $error = new ActionError(ActionError::SERVER_ERROR, 'Could not cancel Stripe Payment Intent');
+                return $this->respond(new ActionPayload(500, null, $error));
+            }
+        }
+
+        $this->pushToSalesforce($donation);
+
+        return $this->respondWithData($donation->toApiModel(false));
+    }
+
+    private function pushToSalesforce(Donation $donation): void
+    {
         // We log if this fails but don't worry the client about it. We'll just re-try
         // sending the updated status to Salesforce in a future batch sync.
         $this->donationRepository->push($donation, false);
-
-        return $this->respondWithData($donation->toApiModel(false));
     }
 }
