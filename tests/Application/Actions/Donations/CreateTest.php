@@ -441,10 +441,6 @@ class CreateTest extends TestCase
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
 
-//        $stripePaymentIntentsProphecy->create(Argument::type('array'))
-//            ->willReturn($paymentIntentMockResult)
-//            ->shouldBeCalledOnce();
-
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
