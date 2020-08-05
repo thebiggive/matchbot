@@ -70,7 +70,10 @@ class Update extends Action
         }
 
         if (!isset($donationData->status)) {
-            return $this->validationError("Donation ID {$this->args['donationId']} could not be updated with missing status", 'New status is required');
+            return $this->validationError(
+                "Donation ID {$this->args['donationId']} could not be updated with missing status",
+                'New status is required'
+            );
         }
 
         if ($donationData->status === 'Cancelled') {
