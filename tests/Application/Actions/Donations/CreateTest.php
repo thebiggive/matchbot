@@ -58,7 +58,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->buildFromApiRequest(new DonationCreate()) // empty DonationCreate == {} deserialised.
-            ->willThrow(new UnexpectedValueException('Required boolean fields not set'));
+            ->willThrow(new UnexpectedValueException('Required field "projectId" not set'));
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
@@ -69,7 +69,7 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
         $expectedPayload = new ActionPayload(400, ['error' => [
             'type' => 'BAD_REQUEST',
-            'description' => 'Required boolean fields not set',
+            'description' => 'Required field "projectId" not set',
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 

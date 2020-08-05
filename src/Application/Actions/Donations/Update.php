@@ -108,6 +108,10 @@ class Update extends Action
             return $this->respond(new ActionPayload(400, null, $error));
         }
 
+        if (!isset($donationData->giftAid, $donationData->optInCharityEmail, $donationData->optInTbgEmail)) {
+            return $this->validationError('Required boolean fields not set');
+        }
+
         // These two fields are currently set up early in the journey, but are harmless and more flexible
         // to support setting later. The frontend will probably leave these set and do a no-op update
         // when it makes the PUT call.
