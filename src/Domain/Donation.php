@@ -389,6 +389,13 @@ class Donation extends SalesforceWriteProxy
     public function setGiftAid(?bool $giftAid): void
     {
         $this->giftAid = $giftAid;
+
+        // Default tip Gift Aid to main Gift Aid value. If it is set explicitly
+        // first this will be skipped. If set explicitly after, the later call
+        // will persist.
+        if ($this->tipGiftAid === null) {
+            $this->tipGiftAid = $giftAid;
+        }
     }
 
     public function getTbgComms(): ?bool

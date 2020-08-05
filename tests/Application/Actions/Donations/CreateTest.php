@@ -608,7 +608,6 @@ class CreateTest extends TestCase
         $donation->setAmount('12.00');
         $donation->setCampaign($campaign);
         $donation->setPsp('enthuse');
-        $donation->setSalesforceId('SF-DON-123');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
         $donation->setDonorCountryCode('GB');
         $donation->setTipAmount('1.11');

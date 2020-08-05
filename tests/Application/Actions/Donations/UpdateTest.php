@@ -13,6 +13,8 @@ use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Slim\Exception\HttpNotFoundException;
+use Stripe\Service\PaymentIntentService;
+use Stripe\StripeClient;
 
 class UpdateTest extends TestCase
 {
@@ -387,7 +389,14 @@ class UpdateTest extends TestCase
             ->willReturn(true)
             ->shouldBeCalledOnce(); // Cancel was a new change -> expect a push to SF
 
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+        $stripePaymentIntentsProphecy->cancel('pi_externalId_123')
+            ->shouldBeCalledOnce();
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -537,7 +546,22 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce(); // Updates pushed to Salesforce
 
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+            'metadata' => [
+                'coreDonationGiftAid' => true,
+                'optInCharityEmail' => false,
+                'optInTbgEmail' => true,
+                'salesforceId' => 'sfDonation369',
+                'tbgTipGiftAid' => false,
+            ],
+        ])
+            ->shouldBeCalledOnce();
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',

@@ -33,9 +33,10 @@ trait DonationTestDataTrait
         $donation->setDonorLastName('Doe');
         $donation->setDonorBillingAddress('1 Main St, London N1 1AA');
         $donation->setGiftAid(true);
-        $donation->setPsp('enthuse');
+        $donation->setPsp('stripe');
+        $donation->setSalesforceId('sfDonation369');
         $donation->setTbgComms(false);
-        $donation->setTransactionId('some-external-txn-id');
+        $donation->setTransactionId('pi_externalId_123');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
 
         return $donation;
