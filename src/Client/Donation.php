@@ -17,7 +17,7 @@ class Donation extends Common
     public function create(DonationModel $donation): string
     {
         if (getenv('DISABLE_CLIENT_PUSH')) {
-            $this->logger->info("Client push off: Skipping create of donation {$donation->getUUid()}");
+            $this->logger->info("Client push off: Skipping create of donation {$donation->getUuid()}");
             throw new BadRequestException('Client push is off');
         }
 
@@ -54,13 +54,13 @@ class Donation extends Common
     public function put(DonationModel $donation): bool
     {
         if (getenv('DISABLE_CLIENT_PUSH')) {
-            $this->logger->info("Client push off: Skipping update of donation {$donation->getUUid()}");
+            $this->logger->info("Client push off: Skipping update of donation {$donation->getUuid()}");
 
             return false;
         }
 
         if (empty($donation->getDonorFirstName()) || empty($donation->getDonorLastName())) {
-            $this->logger->info("Donor details missing: Skipping update of donation {$donation->getUUid()}");
+            $this->logger->info("Donor details missing: Skipping update of donation {$donation->getUuid()}");
 
             return false;
         }
