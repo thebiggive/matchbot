@@ -41,7 +41,7 @@ class StripeUpdate extends Action
     {
         $payload = $this->request->getBody();
         $signature = $this->request->getHeaderLine('stripe-signature');
-        $webhookSecret = getenv('STRIPE_WEBHOOK_SECRET');
+        $webhookSecret = getenv('STRIPE_WEBHOOK_SIGNING_SECRET');
 
         try {
             $event = \Stripe\Webhook::constructEvent($payload, $signature, $webhookSecret);
