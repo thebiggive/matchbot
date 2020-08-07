@@ -83,9 +83,9 @@ class StripeUpdate extends Action
             empty($event->data->object->billing_details->address->country) ||
             empty($event->data->object->billing_details->email) ||
             empty($event->data->object->billing_details->name) ||
-            !isset($event->data->metadata->coreDonationGiftAid,
-            $event->data->metadata->optInTbgEmail,
-            $event->data->metadata->tipAmount) ||
+            !isset($event->data->metadata->coreDonationGiftAid) ||
+            !isset($event->data->metadata->optInTbgEmail) ||
+            !isset($event->data->metadata->tipAmount) ||
             empty($event->data->object->id));
 
         if ($missingRequiredField) {
