@@ -29,7 +29,7 @@ return function (App $app) {
     $app->put('/hooks/donation/{donationId:.{36}}', Hooks\DonationUpdate::class)
         ->add(DonationHookAuthMiddleware::class);
 
-    // Unauthenticated as Stripes SDK handles signature verification
+    // Authenticated through Stripes SDK signature verification
     $app->post('/hooks/stripe', Hooks\StripeUpdate::class);
 
     $app->options('/{routes:.+}', function ($request, $response, $args) {

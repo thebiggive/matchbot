@@ -45,49 +45,50 @@ class StripeUpdate extends Action
 
         try {
             $event = \Stripe\Webhook::constructEvent($payload, $signature, $webhookSecret);
-        } catch(\UnexpectedValueException $e) {
+        } catch (\UnexpectedValueException $e) {
             $logMessage = 'Invalid Payload';
             $this->logger->warning($logMessage);
             $error = new ActionError(ActionError::BAD_REQUEST, null ?? $logMessage);
             return $this->respond(new ActionPayload(400, null, $error));
-        } catch(\Stripe\Exception\SignatureVerificationException $e) {
+        } catch (\Stripe\Exception\SignatureVerificationException $e) {
             $logMessage = 'Invalid Signature';
             $this->logger->warning($logMessage);
             $error = new ActionError(ActionError::BAD_REQUEST, null ?? $logMessage);
             return $this->respond(new ActionPayload(400, null, $error));
         }
 
-        // $payload = new ActionPayload(200, $event->data->object);
+        /** @var Donation $donation */
+        $donation = $this->donationRepository->findOneBy(['transactionId' => $event->data->object->id]);
 
-        // Handle the event
-        switch ($event->type) {
-            case 'payment_intent.succeeded':
-                $this->handlePaymentIntentSucceeded($event);
-                break;
-            case 'payment_intent.created':
-                $logMessage = 'Unsupported Action';
-                $this->logger->warning($logMessage);
-                $error = new ActionError(ActionError::BAD_REQUEST, null ?? $logMessage);
-                return $this->respond(new ActionPayload(400, null, $error));
-            default:
-                $logMessage = 'Unsupported Action';
-                $this->logger->warning($logMessage);
-                $error = new ActionError(ActionError::BAD_REQUEST, null ?? $logMessage);
-                return $this->respond(new ActionPayload(400, null, $error));
-            }
+        if ($event instanceof StripeEvent && $donation) {
+             // Handle the event
+            switch ($event->type) {
+                case 'payment_intent.succeeded':
+                    $this->handlePaymentIntentSucceeded($event);
+                    break;
+                case 'payment_intent.created':
+                    $logMessage = 'Unsupported Action';
+                    $this->logger->warning($logMessage);
+                    $error = new ActionError(ActionError::BAD_REQUEST, null ?? $logMessage);
+                    return $this->respond(new ActionPayload(400, null, $error));
+                default:
+                    $logMessage = 'Unsupported Action';
+                    $this->logger->warning($logMessage);
+                    $error = new ActionError(ActionError::BAD_REQUEST, null ?? $logMessage);
+                    return $this->respond(new ActionPayload(400, null, $error));
+                }
+        } else {
+            $logMessage = 'No Content';
+            $this->logger->warning($logMessage);
+            $error = new ActionError(ActionError::BAD_REQUEST, null ?? $logMessage);
+            return $this->respond(new ActionPayload(204, null, $error));
+        }
 
         return $this->respondWithData($event->data->object);
     }
 
     public function handlePaymentIntentSucceeded(StripeEvent $event): Response
     {
-        /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['transactionId' => $event->data->object->id]);
-
-        if (!$donation) {
-            throw new DomainRecordNotFoundException('Donation not found');
-        }
-
         $missingRequiredField = (
             empty($event->status) ||
             empty($event->data->object->billing_details->address->postal_code) ||
