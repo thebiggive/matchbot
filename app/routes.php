@@ -16,8 +16,7 @@ return function (App $app) {
     $app->get('/ping', Status::class);
 
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
-        // Currently the only unauthenticated endpoint besides `/ping` app-wide,
-        // and the only unauthenticated endpoint in the `/v1` group.
+        // Current unauthenticated endpoint in the `/v1` group.
         $versionGroup->post('/donations', Donations\Create::class);
 
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {
@@ -29,6 +28,9 @@ return function (App $app) {
 
     $app->put('/hooks/donation/{donationId:.{36}}', Hooks\DonationUpdate::class)
         ->add(DonationHookAuthMiddleware::class);
+
+    // Authenticated through Stripes SDK signature verification
+    $app->post('/hooks/stripe', Hooks\StripeUpdate::class);
 
     $app->options('/{routes:.+}', function ($request, $response, $args) {
         return $response;
