@@ -6,14 +6,14 @@ namespace MatchBot\Application\Actions\Hooks;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
+use Stripe\Event;
 use Symfony\Component\Serializer\SerializerInterface;
-use Stripe\Event as StripeEvent;
 
 /**
  * @return Response
@@ -23,8 +23,10 @@ class StripeUpdate extends Action
     private DonationRepository $donationRepository;
     private EntityManagerInterface $entityManager;
     private SerializerInterface $serializer;
+    private string $webhookSecret;
 
     public function __construct(
+        ContainerInterface $container,
         DonationRepository $donationRepository,
         EntityManagerInterface $entityManager,
         LoggerInterface $logger,
@@ -33,6 +35,8 @@ class StripeUpdate extends Action
         $this->donationRepository = $donationRepository;
         $this->entityManager = $entityManager;
         $this->serializer = $serializer;
+        // As `settings` is just an array for now, I think we have to inject Container to do this.
+        $this->webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
 
         parent::__construct($logger);
     }
@@ -41,17 +45,16 @@ class StripeUpdate extends Action
     {
         $payload = $this->request->getBody();
         $signature = $this->request->getHeaderLine('stripe-signature');
-        $webhookSecret = getenv('STRIPE_WEBHOOK_SIGNING_SECRET');
 
         try {
-            $event = \Stripe\Webhook::constructEvent($payload, $signature, $webhookSecret);
+            $event = \Stripe\Webhook::constructEvent($payload, $signature, $this->webhookSecret);
         } catch (\UnexpectedValueException $e) {
-            return $this->validationError("Invalid Payload");
+            return $this->validationError('Invalid Payload');
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
-            return $this->validationError("Invalid Signature");
+            return $this->validationError('Invalid Signature');
         }
 
-        if ($event instanceof StripeEvent) {
+        if ($event instanceof Event) {
             /** @var Donation $donation */
             $donation = $this->donationRepository->findOneBy(['transactionId' => $event->data->object->id]);
 
@@ -61,29 +64,29 @@ class StripeUpdate extends Action
                         $this->handlePaymentIntentSucceeded($event, $donation);
                         break;
                     default:
-                        return $this->validationError("Unsupported Action");
+                        return $this->validationError('Unsupported Action');
                 }
             } else {
                 $logMessage = "No Content from event {$event->type} with Id {$event->data->object->id}";
                 $this->logger->info($logMessage);
-                return $this->respond(new ActionPayload(204, null, null));
+                return $this->respond(new ActionPayload(204));
             }
         } else {
-            return $this->validationError("Invalid Instance");
+            return $this->validationError('Invalid Instance');
         }
 
         return $this->respondWithData($event->data->object);
     }
 
-    public function handlePaymentIntentSucceeded(StripeEvent $event, $donation): Response
+    public function handlePaymentIntentSucceeded(Event $event, $donation): Response
     {
         // For now we support the happy success path,
         // as this is the only event type we're handling right now,
         // convert status to the one SF uses.
-        if ($event->status == 'succeeded') {
+        if ($event->status === 'succeeded') {
             $donation->setDonationStatus('Collected');
         } else {
-            return $this->validationError("Unsupported Status");
+            return $this->validationError('Unsupported Status');
         }
 
         if ($donation->isReversed() && $event->data->metadata->matchedAmount > 0) {
