@@ -8,16 +8,16 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Application\HttpModels;
-use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
-use Slim\Exception\HttpBadRequestException;
 use Symfony\Component\Serializer\SerializerInterface;
 use Stripe\Event as StripeEvent;
 
+/**
+ * @return Response
+ */
 class StripeUpdate extends Action
 {
     private DonationRepository $donationRepository;
