@@ -53,13 +53,15 @@ class StripeUpdate extends Action
 
         if ($event instanceof StripeEvent) {
             /** @var Donation $donation */
-            $donation = $this->donationRepository->findOneBy(['transactionId' => $event->data->object->id]);
+            $donation = $this->donationRepository->findOneBy(['transactionId' => $event->data->object->charges->data[0]->balance_transaction]);
 
             if ($donation) {
                 switch ($event->type) {
                     case 'payment_intent.succeeded':
                         $this->handlePaymentIntentSucceeded($event, $donation);
                         break;
+                    case 'payout.paid':
+                        $this->handlePayout($event, $donation);
                     default:
                         return $this->validationError("Unsupported Action", null);
                 }
@@ -79,13 +81,13 @@ class StripeUpdate extends Action
     public function handlePaymentIntentSucceeded(StripeEvent $event, $donation): Response
     {
         $missingRequiredField = (empty($event->status) ||
-            empty($event->data->object->billing_details->address->postal_code) ||
-            empty($event->data->object->billing_details->address->country) ||
-            empty($event->data->object->billing_details->email) ||
-            empty($event->data->object->billing_details->name) ||
-            !isset($event->data->metadata->coreDonationGiftAid) ||
-            !isset($event->data->metadata->optInTbgEmail) ||
-            !isset($event->data->metadata->tipAmount) ||
+            empty($event->data->object->charges->data[0]->billing_details->address->postal_code) ||
+            empty($event->data->object->charges->data[0]->billing_details->address->country) ||
+            empty($event->data->object->charges->data[0]->email) ||
+            empty($event->data->object->charges->data[0]->name) ||
+            !isset($event->data->object->charges->data[0]->metadata->coreDonationGiftAid) ||
+            !isset($event->data->object->charges->data[0]->metadata->optInTbgEmail) ||
+            !isset($event->data->object->charges->data[0]->metadata->tipAmount) ||
             empty($event->data->object->id));
 
         if ($missingRequiredField) {
@@ -114,6 +116,17 @@ class StripeUpdate extends Action
         // batch sync.
         $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
+        return $this->respondWithData($event->data->object);
+    }
+
+    public function handlePayout(StripeEvent $event, $donation): Response
+    {
+        // If we've received a `Payout.paid` event then it must've
+        // been paid out successfully, so we go ahead and persist the status
+        // change and attempt to push to SF.
+        $donation->setDonationStatus('Paid');
+        $this->entityManager->persist($donation);
+        $this->donationRepository->push($donation, false);
         return $this->respondWithData($event->data->object);
     }
 }
