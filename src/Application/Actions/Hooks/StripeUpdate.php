@@ -46,9 +46,9 @@ class StripeUpdate extends Action
         try {
             $event = \Stripe\Webhook::constructEvent($payload, $signature, $webhookSecret);
         } catch (\UnexpectedValueException $e) {
-            return $this->validationError("Invalid Payload", null);
+            return $this->validationError("Invalid Payload");
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
-            return $this->validationError("Invalid Signature", null);
+            return $this->validationError("Invalid Signature");
         }
 
         if ($event instanceof StripeEvent) {
@@ -61,16 +61,15 @@ class StripeUpdate extends Action
                         $this->handlePaymentIntentSucceeded($event, $donation);
                         break;
                     default:
-                        return $this->validationError("Unsupported Action", null);
+                        return $this->validationError("Unsupported Action");
                 }
             } else {
-                $logMessage = 'No Content';
-                $this->logger->warning($logMessage);
-                $error = new ActionError(ActionError::BAD_REQUEST, null ?? $logMessage);
-                return $this->respond(new ActionPayload(204, null, $error));
+                $logMessage = "No Content from event {$event->type} with Id {$event->data->object->id}";
+                $this->logger->info($logMessage);
+                return $this->respond(new ActionPayload(204, null, null));
             }
         } else {
-            return $this->validationError("Invalid Instance", null);
+            return $this->validationError("Invalid Instance");
         }
 
         return $this->respondWithData($event->data->object);
@@ -84,7 +83,7 @@ class StripeUpdate extends Action
         if ($event->status == 'succeeded') {
             $donation->setDonationStatus('Collected');
         } else {
-            return $this->validationError("Unsupported Status", null);
+            return $this->validationError("Unsupported Status");
         }
 
         if ($donation->isReversed() && $event->data->metadata->matchedAmount > 0) {
