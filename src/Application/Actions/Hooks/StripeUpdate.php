@@ -36,7 +36,7 @@ class StripeUpdate extends Action
 
         parent::__construct($logger);
     }
-    
+
     protected function action(): Response
     {
         $payload = $this->request->getBody();
@@ -61,10 +61,10 @@ class StripeUpdate extends Action
         $donation = $this->donationRepository->findOneBy(['transactionId' => $event->data->object->id]);
 
         if ($event instanceof StripeEvent && $donation) {
-             // Handle the event
+            // Handle the event
             switch ($event->type) {
                 case 'payment_intent.succeeded':
-                    $this->handlePaymentIntentSucceeded($event);
+                    $this->handlePaymentIntentSucceeded($event, $donation);
                     break;
                 case 'payment_intent.created':
                     $logMessage = 'Unsupported Action';
@@ -76,7 +76,7 @@ class StripeUpdate extends Action
                     $this->logger->warning($logMessage);
                     $error = new ActionError(ActionError::BAD_REQUEST, null ?? $logMessage);
                     return $this->respond(new ActionPayload(400, null, $error));
-                }
+            }
         } else {
             $logMessage = 'No Content';
             $this->logger->warning($logMessage);
@@ -87,17 +87,15 @@ class StripeUpdate extends Action
         return $this->respondWithData($event->data->object);
     }
 
-    public function handlePaymentIntentSucceeded(StripeEvent $event): Response
+    public function handlePaymentIntentSucceeded(StripeEvent $event, $donation): Response
     {
-        $missingRequiredField = (
-            empty($event->status) ||
+        $missingRequiredField = (empty($event->status) ||
             empty($event->data->object->billing_details->address->postal_code) ||
             empty($event->data->object->billing_details->address->country) ||
             empty($event->data->object->billing_details->email) ||
             empty($event->data->object->billing_details->name) ||
             !isset($event->data->metadata->coreDonationGiftAid, $event->data->metadata->optInTbgEmail) ||
-            empty($event->data->object->id)
-        );
+            empty($event->data->object->id));
         if ($missingRequiredField) {
             $message = 'Hook missing required values';
             $this->logger->warning("Donation ID {$event->data->object->id}: {$message}");
@@ -109,7 +107,7 @@ class StripeUpdate extends Action
         $donation->setDonationStatus($event->status);
         $donation->setDonorBillingAddress($event->data->object->billing_details->address->postal_code);
         $donation->setDonorCountryCode($event->data->object->billing_details->address->country);
-        $donation->setDonorEmailAddress($donationData->emailAddress);
+        $donation->setDonorEmailAddress($event->data->object->billing_details->email);
         $donation->setDonorFirstName($event->data->object->billing_details->name);
         $donation->setGiftAid($event->data->metadata->coreDonationGiftAid);
         $donation->setTbgComms($event->data->metadata->optInTbgEmail);
