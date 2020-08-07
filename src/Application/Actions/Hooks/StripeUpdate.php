@@ -92,6 +92,8 @@ class StripeUpdate extends Action
             return $this->validationError("Hook missing required values", null);
         }
 
+        $donation->setTransactionId($event->id);
+
         // For now we support the happy success path,
         // as this is the only event type we're handling right now,
         // convert status to the one SF uses.
