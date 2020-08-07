@@ -56,7 +56,6 @@ class StripeUpdate extends Action
             $donation = $this->donationRepository->findOneBy(['transactionId' => $event->data->object->id]);
 
             if ($donation) {
-                // Handle the event
                 switch ($event->type) {
                     case 'payment_intent.succeeded':
                         $this->handlePaymentIntentSucceeded($event, $donation);
@@ -91,7 +90,14 @@ class StripeUpdate extends Action
             return $this->validationError("Hook missing required values", null);
         }
 
-        $donation->setDonationStatus($event->status);
+        // For now we support the happy success path,
+        // as this is the only event type we're handling right now,
+        // convert status to the one SF uses.
+        if ($event->status == 'succeeded') {
+            $donation->setDonationStatus('Collected');
+        } else {
+            return $this->validationError("Unsupported Status", null);
+        }
 
         if ($donation->isReversed() && $event->data->metadata->matchedAmount > 0) {
             $this->donationRepository->releaseMatchFunds($donation);
