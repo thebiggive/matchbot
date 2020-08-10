@@ -83,7 +83,7 @@ class StripeUpdate extends Action
         // For now we support the happy success path,
         // as this is the only event type we're handling right now,
         // convert status to the one SF uses.
-        if ($event->status === 'succeeded') {
+        if ($event->data->object->status === 'succeeded') {
             $donation->setDonationStatus('Collected');
         } else {
             return $this->validationError('Unsupported Status');
