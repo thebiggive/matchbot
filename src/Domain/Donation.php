@@ -217,6 +217,11 @@ class Donation extends SalesforceWriteProxy
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
         $data['optInCharityEmail'] = $this->getCharityComms();
 
+        // For backwards compatability with Enthuse
+        if ($this->getPsp() != 'stripe') {
+            unset($data['optInCharityEmail']);
+        }
+
         unset(
             $data['clientSecret'],
             $data['charityName'],
