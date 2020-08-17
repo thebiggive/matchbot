@@ -215,10 +215,7 @@ class Donation extends SalesforceWriteProxy
         $data['updatedTime'] = $this->getUpdatedDate()->format(DateTime::ATOM);
         $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
-
-        if ($this->getCharityComms() || $this->getCharityComms() === null) {
-            $data['optInCharityEmail'] = $this->getCharityComms();
-        }
+        $data['optInCharityEmail'] = $this->getCharityComms();
 
         unset(
             $data['clientSecret'],
