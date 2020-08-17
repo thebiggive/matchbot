@@ -2,10 +2,9 @@
 
 namespace MatchBot\Domain;
 
-use \Stripe\Webhook;
+use Stripe\Webhook;
 
 class StripeWebhook extends Webhook
 {
 
 }
-?>
