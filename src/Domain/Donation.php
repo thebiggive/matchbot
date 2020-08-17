@@ -216,7 +216,7 @@ class Donation extends SalesforceWriteProxy
         $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
 
-        if ($this->getCharityComms) {
+        if ($this->getCharityComms() || $this->getCharityComms() === null) {
             $data['optInCharityEmail'] = $this->getCharityComms();
         }
 
