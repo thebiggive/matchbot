@@ -14,6 +14,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
 use Stripe\Event;
 use Symfony\Component\Serializer\SerializerInterface;
+use MatchBot\Domain\StripeWebhook;
 
 /**
  * @return Response
@@ -22,7 +23,7 @@ class StripeUpdate extends Action
 {
     private DonationRepository $donationRepository;
     private EntityManagerInterface $entityManager;
-    private SerializerInterface $serializer;
+    private StripeWebhook $stripeWebhook;
     private string $webhookSecret;
 
     public function __construct(
@@ -30,11 +31,13 @@ class StripeUpdate extends Action
         DonationRepository $donationRepository,
         EntityManagerInterface $entityManager,
         LoggerInterface $logger,
-        SerializerInterface $serializer
+        SerializerInterface $serializer,
+        StripeWebhook $stripeWebhook
     ) {
         $this->donationRepository = $donationRepository;
         $this->entityManager = $entityManager;
         $this->serializer = $serializer;
+        $this->stripeWebhook = $stripeWebhook;
         // As `settings` is just an array for now, I think we have to inject Container to do this.
         $this->webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
 
@@ -47,7 +50,7 @@ class StripeUpdate extends Action
         $signature = $this->request->getHeaderLine('stripe-signature');
 
         try {
-            $event = \Stripe\Webhook::constructEvent($payload, $signature, $this->webhookSecret);
+            $event = $this->stripeWebhook->constructEvent($payload, $signature, $this->webhookSecret);
         } catch (\UnexpectedValueException $e) {
             return $this->validationError('Invalid Payload');
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
