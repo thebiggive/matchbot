@@ -36,7 +36,8 @@ class StripeUpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $stripeSignature = 't=' . time() . 'v1=' . $this->getValidAuth($body) . 'v0=' . $this->getValidAuth($body);
+        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
+        $stripeSignature = 't=' . time() . 'v1=' . $this->getValidAuth($body, $webhookSecret) . 'v0=' . $this->getValidAuth($body, $webhookSecret);
 
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('stripe-signature', $stripeSignature);
@@ -52,8 +53,8 @@ class StripeUpdateTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
-    private function getValidAuth(string $body): string
+    private function getValidAuth(string $body, string $webhookSecret): string
     {
-        return hash_hmac('sha256', $body, getenv('STRIPE_WEBHOOK_SIGNING_SECRET'));
+        return hash_hmac('sha256', $body, $webhookSecret);
     }
 }
