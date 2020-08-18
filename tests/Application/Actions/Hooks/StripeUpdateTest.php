@@ -131,7 +131,7 @@ class StripeUpdateTest extends TestCase
 
         $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/success.json');
         $donation = $this->getTestDonation();
-        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
+        $webhookSecret = (string) $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
