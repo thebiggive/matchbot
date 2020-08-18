@@ -26,7 +26,7 @@ class StripeUpdateTest extends TestCase
 
         $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/canceled.json');
         $donation = $this->getTestDonation();
-        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
+        $webhookSecret = (string) $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -66,7 +66,7 @@ class StripeUpdateTest extends TestCase
         $container = $app->getContainer();
 
         $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/invalid.json');
-        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
+        $webhookSecret = (string) $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -161,12 +161,12 @@ class StripeUpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    private function generateSignature(string $time, string $body, string $webhookSecret)
+    private function generateSignature(string $time, string $body, string $webhookSecret): string
     {
         return 't=' . $time . ',' . 'v1=' . $this->getValidAuth($this->getSignedPayload($time, $body), $webhookSecret);
     }
 
-    private function getSignedPayload(string $time, string $body)
+    private function getSignedPayload(string $time, string $body): string
     {
         $time = (string) time();
         return $time . '.' . $body;
