@@ -1,0 +1,80 @@
+{
+ "id": "evt_1HHBrZKkGuKkxwBNlDn9I3Q5",
+  "object": "event",
+  "api_version": "2020-03-02",
+  "created": 1597684273,
+  "data": {
+    "object": {
+      "id": "pi_1HHBmoKkGuKkxwBNnNRyyBJL",
+      "object": "payment_intent",
+      "amount": 44800,
+      "amount_capturable": 0,
+      "amount_received": 0,
+      "application": null,
+      "application_fee_amount": null,
+      "canceled_at": 1597684273,
+      "cancellation_reason": null,
+      "capture_method": "automatic",
+      "charges": {
+        "object": "list",
+        "data": [
+        ],
+        "has_more": false,
+        "total_count": 0,
+        "url": "/v1/charges?payment_intent=pi_1HHBmoKkGuKkxwBNnNRyyBJL"
+      },
+      "client_secret": "pi_1HHBmoKkGuKkxwBNnNRyyBJL_secret_oBEVSBUSBPdLTYBZYm4QOKK9l",
+      "confirmation_method": "automatic",
+      "created": 1597683978,
+      "currency": "gbp",
+      "customer": null,
+      "description": "Donation adec5b12-c3c3-43e7-81a1-691717f80b2d to 28 Too Many",
+      "invoice": null,
+      "last_payment_error": null,
+      "livemode": false,
+      "metadata": {
+        "campaignId": "a051q00000CXU2wAAH",
+        "campaignName": "My matched campaign to save the world",
+        "charityId": "66901",
+        "charityName": "28 Too Many",
+        "donationId": "adec5b12-c3c3-43e7-81a1-691717f80b2d",
+        "environment": "staging",
+        "matchedAmount": "444.00",
+        "tipAmount": "4"
+      },
+      "next_action": null,
+      "on_behalf_of": null,
+      "payment_method": null,
+      "payment_method_options": {
+        "card": {
+          "installments": null,
+          "network": null,
+          "request_three_d_secure": "automatic"
+        }
+      },
+      "payment_method_types": [
+        "card"
+      ],
+      "receipt_email": null,
+      "review": null,
+      "setup_future_usage": null,
+      "shipping": null,
+      "source": null,
+      "statement_descriptor": "The Big Give 28 Too Ma",
+      "statement_descriptor_suffix": null,
+      "status": "canceled",
+      "transfer_data": {
+        "amount": 43847,
+        "destination": "acct_1HD7NZCMA7Mnsadx"
+      },
+      "transfer_group": null
+    }
+  },
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": {
+    "id": "req_kfVG3qfU5HeEvt",
+    "idempotency_key": null
+  },
+  "type": "payment_intent.canceled"
+}
