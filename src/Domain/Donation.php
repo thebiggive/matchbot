@@ -222,7 +222,6 @@ class Donation extends SalesforceWriteProxy
             $data['donationId'],
             $data['matchReservedAmount'],
             $data['matchedAmount'],
-            $data['optInCharityEmail']
         );
 
         return $data;
