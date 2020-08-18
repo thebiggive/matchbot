@@ -42,8 +42,8 @@ class StripeUpdate extends Action
     }
 
     protected function action(): Response
-    {   
-        $webhook = new StripeWebhook;
+    {
+        $webhook = new StripeWebhook();
         $payload = $this->request->getBody();
         $signature = $this->request->getHeaderLine('stripe-signature');
 

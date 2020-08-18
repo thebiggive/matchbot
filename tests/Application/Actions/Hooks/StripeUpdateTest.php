@@ -161,11 +161,13 @@ class StripeUpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    private function generateSignature(string $time, string $body, string $webhookSecret) {
+    private function generateSignature(string $time, string $body, string $webhookSecret)
+    {
         return 't=' . $time . ',' . 'v1=' . $this->getValidAuth($this->getSignedPayload($time, $body), $webhookSecret);
     }
 
-    private function getSignedPayload(string $time, string $body) {
+    private function getSignedPayload(string $time, string $body)
+    {
         $time = (string) time();
         return $time . '.' . $body;
     }
