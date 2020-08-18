@@ -27,34 +27,53 @@ class StripeUpdateTest extends TestCase
         $container = $app->getContainer();
 
         $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/canceled.json');
+        $donation = $this->getTestDonation();
+        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
+        $time = (string) time();
 
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['transactionId' => 'pi_externalId_123'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $stripeRepoProphecy = $this->prophesize(StripeWebhook::class);
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
 
         $container->set(StripeWebhook::class, $stripeRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
-        $stripeSignature = 't=' . time() . 'v1=' . $this->getValidAuth($body, $webhookSecret) . 'v0=' . $this->getValidAuth($body, $webhookSecret);
-
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
-            ->withHeader('stripe-signature', $stripeSignature);
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
         
         $response = $app->handle($request);
 
         $payload = (string) $response->getBody();
 
-        $expectedPayload = new ActionPayload(400, ['error' => 'Unsupported Action']);
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'Unsupported Action',
+        ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
         $this->assertEquals($expectedSerialised, $payload);
         $this->assertEquals(400, $response->getStatusCode());
     }
 
-    private function getValidAuth(string $body, string $webhookSecret): string
+
+    private function generateSignature(string $time, string $body, string $webhookSecret) {
+        return 't=' . $time . ',' . 'v1=' . $this->getValidAuth($this->getSignedPayload($time, $body), $webhookSecret);
+    }
+
+    private function getSignedPayload(string $time, string $body) {
+        $time = (string) time();
+        return $time . '.' . $body;
+    }
+
+    private function getValidAuth(string $signedPayload, string $webhookSecret): string
     {
-        return hash_hmac('sha256', $body, $webhookSecret);
+        return hash_hmac('sha256', $signedPayload, $webhookSecret);
     }
 }
