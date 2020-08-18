@@ -7,14 +7,12 @@ namespace MatchBot\Tests\Application\Actions\Hooks;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Application\HttpModels\Donation as HttpDonation;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\StripeWebhook;
 use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
-use Slim\Exception\HttpNotFoundException;
 
 class StripeUpdateTest extends TestCase
 {
@@ -39,7 +37,6 @@ class StripeUpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $stripeRepoProphecy = $this->prophesize(StripeWebhook::class);
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(StripeWebhook::class, $stripeRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -62,6 +59,107 @@ class StripeUpdateTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
+    public function testUnrecognisedTransactionId(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/invalid.json');
+        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
+        $time = (string) time();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['transactionId' => 'pi_invalidId_123'])
+            ->willReturn(null)
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $stripeRepoProphecy = $this->prophesize(StripeWebhook::class);
+
+        $container->set(StripeWebhook::class, $stripeRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+        
+        $response = $app->handle($request);
+
+        $this->assertEquals(204, $response->getStatusCode());
+    }
+
+    public function testMissingSignature(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/success.json');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $stripeRepoProphecy = $this->prophesize(StripeWebhook::class);
+
+        $container->set(StripeWebhook::class, $stripeRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', '');
+        
+        $response = $app->handle($request);
+
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'Invalid Signature',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $payload = (string) $response->getBody();
+
+        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertEquals(400, $response->getStatusCode());
+    }
+
+    public function testSuccess(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/success.json');
+        $donation = $this->getTestDonation();
+        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
+        $time = (string) time();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['transactionId' => 'pi_externalId_123'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $stripeRepoProphecy = $this->prophesize(StripeWebhook::class);
+
+        $container->set(StripeWebhook::class, $stripeRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+        
+        $response = $app->handle($request);
+
+        $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals(200, $response->getStatusCode());
+    }
 
     private function generateSignature(string $time, string $body, string $webhookSecret) {
         return 't=' . $time . ',' . 'v1=' . $this->getValidAuth($this->getSignedPayload($time, $body), $webhookSecret);
