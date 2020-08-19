@@ -9,12 +9,12 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Application\HttpModels\StripeWebhook;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
 use Stripe\Event;
 use Symfony\Component\Serializer\SerializerInterface;
-use MatchBot\Domain\StripeWebhook;
 
 /**
  * @return Response
