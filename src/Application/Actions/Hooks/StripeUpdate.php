@@ -36,7 +36,7 @@ class StripeUpdate extends Action
         $this->entityManager = $entityManager;
         $this->serializer = $serializer;
         // As `settings` is just an array for now, I think we have to inject Container to do this.
-        $this->webhookSecret = (string) $container->get('settings')['stripe']['webhookSecret'];
+        $this->webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
 
         parent::__construct($logger);
     }

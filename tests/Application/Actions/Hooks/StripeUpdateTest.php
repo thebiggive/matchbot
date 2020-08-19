@@ -25,7 +25,7 @@ class StripeUpdateTest extends TestCase
 
         $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_canceled.json');
         $donation = $this->getTestDonation();
-        $webhookSecret = (string) $container->get('settings')['stripe']['webhookSecret'];
+        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -63,7 +63,7 @@ class StripeUpdateTest extends TestCase
         $container = $app->getContainer();
 
         $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_invalid_id.json');
-        $webhookSecret = (string) $container->get('settings')['stripe']['webhookSecret'];
+        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -124,7 +124,7 @@ class StripeUpdateTest extends TestCase
 
         $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_succeeded.json');
         $donation = $this->getTestDonation();
-        $webhookSecret = (string) $container->get('settings')['stripe']['webhookSecret'];
+        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
