@@ -1,6 +1,6 @@
 <?php
 
-namespace MatchBot\Domain;
+namespace MatchBot\Application\HttpModels;
 
 use Stripe\Webhook;
 
