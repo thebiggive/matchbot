@@ -22,7 +22,6 @@ class StripeUpdate extends Action
 {
     private DonationRepository $donationRepository;
     private EntityManagerInterface $entityManager;
-    private SerializerInterface $serializer;
     private string $webhookSecret;
 
     public function __construct(
@@ -43,11 +42,12 @@ class StripeUpdate extends Action
 
     protected function action(): Response
     {
-        $payload = $this->request->getBody();
-        $signature = $this->request->getHeaderLine('stripe-signature');
-
         try {
-            $event = \Stripe\Webhook::constructEvent($payload, $signature, $this->webhookSecret);
+            $event = \Stripe\Webhook::constructEvent(
+                $this->request->getBody(),
+                $this->request->getHeaderLine('stripe-signature'),
+                $this->webhookSecret
+            );
         } catch (\UnexpectedValueException $e) {
             return $this->validationError('Invalid Payload');
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
