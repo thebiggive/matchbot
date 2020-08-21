@@ -9,7 +9,6 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
-use MatchBot\Application\HttpModels\StripeWebhook;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
@@ -43,12 +42,12 @@ class StripeUpdate extends Action
 
     protected function action(): Response
     {
-        $webhook = new StripeWebhook();
-        $payload = $this->request->getBody();
-        $signature = $this->request->getHeaderLine('stripe-signature');
-
         try {
-            $event = $webhook->constructEvent($payload, $signature, $this->webhookSecret);
+            $event = \Stripe\Webhook::constructEvent(
+                $this->request->getBody(),
+                $this->request->getHeaderLine('stripe-signature'),
+                $this->webhookSecret
+            );
         } catch (\UnexpectedValueException $e) {
             return $this->validationError('Invalid Payload');
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
