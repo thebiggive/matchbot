@@ -13,14 +13,18 @@ class Donation
     public string $status;
     public string $charityId;
     public float $donationAmount;
-    public bool $giftAid;
+    public ?bool $giftAid;
     public bool $donationMatched;
     public ?string $firstName = null;
     public ?string $lastName = null;
     public ?string $emailAddress = null;
     public ?string $billingPostalAddress = null;
     public ?string $countryCode = null;
-    public bool $optInTbgEmail;
+    public ?string $homeAddress = null;
+    public ?string $homePostcode = null;
+    public ?bool $optInTbgEmail;
+    public ?bool $optInCharityEmail = null;
     public string $projectId;
     public ?float $tipAmount = null;
+    public ?bool $tipGiftAid = null;
 }

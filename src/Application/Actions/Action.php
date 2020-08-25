@@ -69,6 +69,19 @@ abstract class Action
     }
 
     /**
+     * @param string        $logMessage
+     * @param string|null   $publicMessage  Falls back to $logMessage if null.
+     * @return Response with 400 HTTP response code.
+     */
+    protected function validationError(string $logMessage, ?string $publicMessage = null): Response
+    {
+        $this->logger->warning($logMessage);
+        $error = new ActionError(ActionError::BAD_REQUEST, $publicMessage ?? $logMessage);
+
+        return $this->respond(new ActionPayload(400, null, $error));
+    }
+
+    /**
      * @param  array|object|null $data
      * @return Response
      */

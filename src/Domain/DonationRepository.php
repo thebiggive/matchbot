@@ -62,10 +62,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function buildFromApiRequest(DonationCreate $donationData): Donation
     {
-        if (!isset($donationData->giftAid, $donationData->optInCharityEmail, $donationData->optInTbgEmail)) {
-            throw new \UnexpectedValueException('Required boolean fields not set');
-        }
-
         if (empty($donationData->projectId)) {
             throw new \UnexpectedValueException('Required field "projectId" not set');
         }
@@ -106,6 +102,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $donation->setGiftAid($donationData->giftAid);
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setTbgComms($donationData->optInTbgEmail);
+
+        if (!empty($donationData->countryCode)) {
+            $donation->setDonorCountryCode($donationData->countryCode);
+        }
+
+        if (isset($donationData->tipAmount)) {
+            $donation->setTipAmount((string) $donationData->tipAmount);
+        }
 
         return $donation;
     }

@@ -41,6 +41,6 @@ class Get extends Action
             throw new DomainRecordNotFoundException('Donation not found');
         }
 
-        return $this->respondWithData($donation->toApiModel(false));
+        return $this->respondWithData($donation->toApiModel());
     }
 }

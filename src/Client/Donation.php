@@ -17,7 +17,7 @@ class Donation extends Common
     public function create(DonationModel $donation): string
     {
         if (getenv('DISABLE_CLIENT_PUSH')) {
-            $this->logger->info("Client push off: Skipping create of donation {$donation->getUUid()}");
+            $this->logger->info("Client push off: Skipping create of donation {$donation->getUuid()}");
             throw new BadRequestException('Client push is off');
         }
 
@@ -42,7 +42,7 @@ class Donation extends Common
     }
 
     /**
-     * For now, cancellations with Salesforce use the webhook receiver and not the Donations API
+     * For now, updates with Salesforce use the webhook receiver and not the Donations API
      * with JWT auth. As a server app there's no huge downside to using a fixed key, and getting
      * the Salesforce certificate's private part in the right format to use for RS256 JWT signature
      * creation was pretty involved. By sticking with this we can use the faster HS256 algorithm
@@ -54,7 +54,13 @@ class Donation extends Common
     public function put(DonationModel $donation): bool
     {
         if (getenv('DISABLE_CLIENT_PUSH')) {
-            $this->logger->info("Client push off: Skipping update of donation {$donation->getUUid()}");
+            $this->logger->info("Client push off: Skipping update of donation {$donation->getUuid()}");
+
+            return false;
+        }
+
+        if (empty($donation->getDonorFirstName()) || empty($donation->getDonorLastName())) {
+            $this->logger->info("Donor details missing: Skipping update of donation {$donation->getUuid()}");
 
             return false;
         }
