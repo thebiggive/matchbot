@@ -77,7 +77,7 @@ class StripeUpdate extends Action
         return $this->respondWithData($event->data->object);
     }
 
-    public function handleChargeSucceeded(Event $event)
+    public function handleChargeSucceeded(Event $event): Response
     {
         /** @var Donation $donation */
         $donation = $this->donationRepository->findOneBy(['transactionId' => $event->data->object->payment_intent]);
