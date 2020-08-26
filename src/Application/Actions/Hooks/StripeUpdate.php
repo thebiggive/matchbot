@@ -96,7 +96,7 @@ class StripeUpdate extends Action
             return $this->validationError('Unsupported Status');
         }
 
-        if ($donation->isReversed() && $event->data->metadata->matchedAmount > 0) {
+        if ($donation->isReversed() && $event->data->object->metadata->matchedAmount > 0) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
 
