@@ -85,6 +85,12 @@ class Donation extends SalesforceWriteProxy
     protected ?string $transactionId = null;
 
     /**
+     * @ORM\Column(type="string", unique=true, nullable=true)
+     * @var string|null PSP's charge ID assigned on their processing.
+     */
+    protected ?string $chargeId = null;
+
+    /**
      * Core donation amount excluding any tip.
      *
      * @ORM\Column(type="decimal", precision=18, scale=2)
@@ -426,6 +432,14 @@ class Donation extends SalesforceWriteProxy
         $this->transactionId = $transactionId;
     }
 
+        /**
+     * @param string $chargeId
+     */
+    public function setChargeId(string $chargeId): void
+    {
+        $this->chargeId = $chargeId;
+    }
+
     public function getDonorCountryCode(): ?string
     {
         return $this->donorCountryCode;
@@ -487,6 +501,11 @@ class Donation extends SalesforceWriteProxy
     public function getTransactionId(): ?string
     {
         return $this->transactionId;
+    }
+
+    public function getChargeId(): ?string
+    {
+        return $this->chargeId;
     }
 
     /**
