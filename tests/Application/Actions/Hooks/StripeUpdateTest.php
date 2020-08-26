@@ -25,7 +25,6 @@ class StripeUpdateTest extends TestCase
         $container = $app->getContainer();
 
         $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_canceled.json');
-        $donation = $this->getTestDonation();
         $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
 
