@@ -12,6 +12,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Slim\Exception\HttpNotFoundException;
 
 class StripeUpdateTest extends TestCase
 {
@@ -29,11 +30,6 @@ class StripeUpdateTest extends TestCase
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->findOneBy(['transactionId' => 'pi_externalId_123'])
-            ->willReturn($donation)
-            ->shouldBeCalledOnce();
-
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -44,16 +40,7 @@ class StripeUpdateTest extends TestCase
         
         $response = $app->handle($request);
 
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(400, ['error' => [
-            'type' => 'BAD_REQUEST',
-            'description' => 'Unsupported Action',
-        ]]);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertEquals(204, $response->getStatusCode());
     }
 
     public function testUnrecognisedTransactionId(): void
@@ -62,7 +49,7 @@ class StripeUpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_invalid_id.json');
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_invalid_id.json');
         $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
 
@@ -79,10 +66,10 @@ class StripeUpdateTest extends TestCase
 
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
-        
-        $response = $app->handle($request);
 
-        $this->assertEquals(204, $response->getStatusCode());
+        $this->expectException(HttpNotFoundException::class);
+        
+        $app->handle($request);
     }
 
     public function testMissingSignature(): void
@@ -91,7 +78,7 @@ class StripeUpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_succeeded.json');
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_succeeded.json');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -122,7 +109,7 @@ class StripeUpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_succeeded.json');
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_succeeded.json');
         $donation = $this->getTestDonation();
         $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
@@ -148,6 +135,7 @@ class StripeUpdateTest extends TestCase
         
         $response = $app->handle($request);
 
+        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
         $this->assertEquals('Collected', $donation->getDonationStatus());
         $this->assertEquals(200, $response->getStatusCode());
     }
