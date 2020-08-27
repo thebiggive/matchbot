@@ -14,7 +14,7 @@ final class Version20200826135513 extends AbstractMigration
 {
     public function getDescription() : string
     {
-        return '';
+        return 'Add new Donation field chargeId';
     }
 
     public function up(Schema $schema) : void

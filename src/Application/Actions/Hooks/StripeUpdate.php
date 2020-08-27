@@ -83,7 +83,10 @@ class StripeUpdate extends Action
         $donation = $this->donationRepository->findOneBy(['transactionId' => $event->data->object->payment_intent]);
 
         if (!$donation) {
-            throw new DomainRecordNotFoundException('Donation not found');
+            $logger = 'Donation not found';
+            $this->logger->info($logger);
+            throw new DomainRecordNotFoundException($logger);
+            return $this->respond(new ActionPayload(204));
         }
         
         // For now we support the happy success path,
