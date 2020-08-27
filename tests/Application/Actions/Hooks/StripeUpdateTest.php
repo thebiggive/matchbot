@@ -29,9 +29,6 @@ class StripeUpdateTest extends TestCase
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-
-        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
