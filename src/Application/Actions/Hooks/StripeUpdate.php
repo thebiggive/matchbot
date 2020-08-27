@@ -7,11 +7,13 @@ namespace MatchBot\Application\Actions\Hooks;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
+use Slim\Exception\HttpBadRequestException;
 use Stripe\Event;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -40,6 +42,11 @@ class StripeUpdate extends Action
         parent::__construct($logger);
     }
 
+    /**
+     * @return Response
+     * @throws DomainRecordNotFoundException
+     * @throws HttpBadRequestException
+     */
     protected function action(): Response
     {
         try {
@@ -55,21 +62,13 @@ class StripeUpdate extends Action
         }
 
         if ($event instanceof Event) {
-            /** @var Donation $donation */
-            $donation = $this->donationRepository->findOneBy(['transactionId' => $event->data->object->id]);
-
-            if ($donation) {
-                switch ($event->type) {
-                    case 'payment_intent.succeeded':
-                        $this->handlePaymentIntentSucceeded($event, $donation);
-                        break;
-                    default:
-                        return $this->validationError('Unsupported Action');
-                }
-            } else {
-                $logMessage = "No Content from event {$event->type} with Id {$event->data->object->id}";
-                $this->logger->info($logMessage);
-                return $this->respond(new ActionPayload(204));
+            switch ($event->type) {
+                case 'charge.succeeded':
+                    $this->handleChargeSucceeded($event);
+                    break;
+                default:
+                    $this->logger->info('Unsupported Action');
+                    return $this->respond(new ActionPayload(204));
             }
         } else {
             return $this->validationError('Invalid Instance');
@@ -78,18 +77,29 @@ class StripeUpdate extends Action
         return $this->respondWithData($event->data->object);
     }
 
-    public function handlePaymentIntentSucceeded(Event $event, $donation): Response
+    public function handleChargeSucceeded(Event $event): Response
     {
+        /** @var Donation $donation */
+        $donation = $this->donationRepository->findOneBy(['transactionId' => $event->data->object->payment_intent]);
+
+        if (!$donation) {
+            $logger = 'Donation not found';
+            $this->logger->info($logger);
+            throw new DomainRecordNotFoundException($logger);
+            return $this->respond(new ActionPayload(204));
+        }
+        
         // For now we support the happy success path,
         // as this is the only event type we're handling right now,
         // convert status to the one SF uses.
         if ($event->data->object->status === 'succeeded') {
+            $donation->setChargeId($event->data->object->id);
             $donation->setDonationStatus('Collected');
         } else {
             return $this->validationError('Unsupported Status');
         }
 
-        if ($donation->isReversed() && $event->data->metadata->matchedAmount > 0) {
+        if ($donation->isReversed() && $event->data->object->metadata->matchedAmount > 0) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
 
