@@ -37,6 +37,7 @@ class StripeUpdate extends Action
         $this->entityManager = $entityManager;
         $this->serializer = $serializer;
         // As `settings` is just an array for now, I think we have to inject Container to do this.
+        $this->apiKey = $container->get('settings')['stripe']['apiKey'];
         $this->webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
 
         parent::__construct($logger);
@@ -66,6 +67,8 @@ class StripeUpdate extends Action
                 case 'charge.succeeded':
                     $this->handleChargeSucceeded($event);
                     break;
+                case 'payout.paid':
+                    $this->handlePayoutPaid($event);
                 default:
                     $this->logger->info('Unsupported Action');
                     return $this->respond(new ActionPayload(204));
@@ -111,5 +114,71 @@ class StripeUpdate extends Action
         $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
         return $this->respondWithData($event->data->object);
+    }
+
+    public function handlePayoutPaid(Event $event)
+    {
+        $stripeClient = new \Stripe\StripeClient($this->apiKey);
+
+        $payoutId = $event->data->object->id;
+
+        $this->logger->info('Getting all charges related to payout Id: ' . $payoutId);
+
+        $hasMore = true;
+        $lastBalanceTransactionId = null;
+        $paidChargeIds = [];
+        $attributes = [
+            'limit' => 100,
+            'payout' => $payoutId,
+            'type' => 'charge',
+        ];
+
+        while ($hasMore) {
+            $balanceTransactions = $stripeClient->balanceTransactions->all($attributes);
+
+            foreach ($balanceTransactions->data as $balanceTransaction) {
+                $paidChargeIds[] = $balanceTransaction->source;
+                $lastBalanceTransactionId = $balanceTransaction->id;
+            }
+
+            $hasMore = $balanceTransactions->has_more;
+
+            // We get a Stripe exception if we start this with a null or empty value,
+            // so we only include this if there's more items to iterate.
+            if ($hasMore) {
+                $attributes['start_after'] = $lastBalanceTransactionId;
+            }
+        }
+        $this->logger->info('Getting all paid charge Ids complete, found: ' . sizeof($paidChargeIds));
+
+        if (sizeof($paidChargeIds) > 0) {
+
+            $count = 0;
+
+            foreach ($paidChargeIds as $Id) {
+                /** @var Donation $donation */
+                $donation = $this->donationRepository->findOneBy(['chargeId' => $Id]);
+
+                if ($donation) {
+                    // We're confident to set donation status to paid because this
+                    // method is called only when Stripe event `payout.paid` is received.
+                    $donation->setDonationStatus('Paid');
+
+                    $this->entityManager->persist($donation);
+
+                    $this->donationRepository->push($donation, false);
+
+                    $count++;
+                } else {
+                    // If a donation was not found, error log it but don't
+                    // stop iterating the remaining charges.
+                    if (!$donation) {
+                        $this->logger->error('Donation with chargeId: ' . $Id . ' not found');
+                    }
+                }
+            }
+
+            $this->logger->info('Acknowledging paid donations complete, persisted: ' . $count . ' donations');
+        }
     }
 }
