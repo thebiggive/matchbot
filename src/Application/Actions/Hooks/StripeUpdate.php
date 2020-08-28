@@ -69,6 +69,7 @@ class StripeUpdate extends Action
                     break;
                 case 'payout.paid':
                     $this->handlePayoutPaid($event);
+                    break;
                 default:
                     $this->logger->info('Unsupported Action');
                     return $this->respond(new ActionPayload(204));
@@ -152,7 +153,6 @@ class StripeUpdate extends Action
         $this->logger->info('Getting all paid charge Ids complete, found: ' . sizeof($paidChargeIds));
 
         if (sizeof($paidChargeIds) > 0) {
-
             $count = 0;
 
             foreach ($paidChargeIds as $Id) {
