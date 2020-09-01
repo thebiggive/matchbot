@@ -24,6 +24,7 @@ class StripeUpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
+        // Payment Intent events, including cancellations, return a 204 No Content no-op for now.
         $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_canceled.json');
         $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
@@ -33,7 +34,7 @@ class StripeUpdateTest extends TestCase
 
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
-        
+
         $response = $app->handle($request);
 
         $this->assertEquals(204, $response->getStatusCode());
@@ -56,16 +57,16 @@ class StripeUpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        
+
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
 
-        $this->expectException(HttpNotFoundException::class);
-        
-        $app->handle($request);
+        $response = $app->handle($request);
+
+        $this->assertEquals(204, $response->getStatusCode());
     }
 
     public function testMissingSignature(): void
@@ -84,7 +85,7 @@ class StripeUpdateTest extends TestCase
 
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', '');
-        
+
         $response = $app->handle($request);
 
         $expectedPayload = new ActionPayload(400, ['error' => [
@@ -128,7 +129,7 @@ class StripeUpdateTest extends TestCase
 
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
-        
+
         $response = $app->handle($request);
 
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
