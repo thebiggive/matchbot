@@ -57,7 +57,7 @@ class StripeUpdate extends Action
                 $this->webhookSecret
             );
         } catch (\UnexpectedValueException $e) {
-            return $this->validationError('Invalid Payload');
+            return $this->validationError("Invalid Payload: {$e->getMessage()}", 'Invalid Payload');
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
             return $this->validationError('Invalid Signature');
         }
@@ -65,34 +65,28 @@ class StripeUpdate extends Action
         if ($event instanceof Event) {
             switch ($event->type) {
                 case 'charge.succeeded':
-                    $this->handleChargeSucceeded($event);
-                    break;
-                case 'payout.paid':
-                    $this->handlePayoutPaid($event);
-                    break;
+                    return $this->handleChargeSucceeded($event);
                 default:
                     $this->logger->info('Unsupported Action');
                     return $this->respond(new ActionPayload(204));
             }
-        } else {
-            return $this->validationError('Invalid Instance');
         }
 
-        return $this->respondWithData($event->data->object);
+        return $this->validationError('Invalid event');
     }
 
-    public function handleChargeSucceeded(Event $event): Response
+    private function handleChargeSucceeded(Event $event): Response
     {
+        $intentId = $event->data->object->payment_intent;
+
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['transactionId' => $event->data->object->payment_intent]);
+        $donation = $this->donationRepository->findOneBy(['transactionId' => $intentId]);
 
         if (!$donation) {
-            $logger = 'Donation not found';
-            $this->logger->info($logger);
-            throw new DomainRecordNotFoundException($logger);
+            $this->logger->info(sprintf('Donation not found with Payment Intent ID %s', $intentId));
             return $this->respond(new ActionPayload(204));
         }
-        
+
         // For now we support the happy success path,
         // as this is the only event type we're handling right now,
         // convert status to the one SF uses.
@@ -100,7 +94,7 @@ class StripeUpdate extends Action
             $donation->setChargeId($event->data->object->id);
             $donation->setDonationStatus('Collected');
         } else {
-            return $this->validationError('Unsupported Status');
+            return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
         }
 
         if ($donation->isReversed() && $event->data->object->metadata->matchedAmount > 0) {
