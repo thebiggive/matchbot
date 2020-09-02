@@ -114,7 +114,7 @@ class StripeUpdate extends Action
     {
         $payoutId = $event->data->object->id;
 
-        $this->logger->info('Getting all charges related to payout Id: ' . $payoutId);
+        $this->logger->info(sprintf('Getting all charges related to Payout ID: %s', $payoutId));
 
         $hasMore = true;
         $lastBalanceTransactionId = null;
