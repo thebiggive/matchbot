@@ -7,16 +7,13 @@ namespace MatchBot\Application\Actions\Hooks;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
-use Slim\Exception\HttpBadRequestException;
 use Stripe\Event;
 use Stripe\StripeClient;
-use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * @return Response
@@ -33,12 +30,10 @@ class StripeUpdate extends Action
         DonationRepository $donationRepository,
         EntityManagerInterface $entityManager,
         LoggerInterface $logger,
-        SerializerInterface $serializer,
         StripeClient $stripeClient
     ) {
         $this->donationRepository = $donationRepository;
         $this->entityManager = $entityManager;
-        $this->serializer = $serializer;
         $this->stripeClient = $stripeClient;
         // As `settings` is just an array for now, I think we have to inject Container to do this.
         $this->apiKey = $container->get('settings')['stripe']['apiKey'];
@@ -49,8 +44,6 @@ class StripeUpdate extends Action
 
     /**
      * @return Response
-     * @throws DomainRecordNotFoundException
-     * @throws HttpBadRequestException
      */
     protected function action(): Response
     {
