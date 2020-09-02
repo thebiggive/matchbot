@@ -145,7 +145,9 @@ class StripeUpdateTest extends TestCase
         $container = $app->getContainer();
 
         $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/po_paid.json');
-        $balanceTxnResponse = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_invalid.json');
+        $balanceTxnResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_invalid.json'
+        );
         $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
 
@@ -188,7 +190,9 @@ class StripeUpdateTest extends TestCase
         $container = $app->getContainer();
 
         $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/po_paid.json');
-        $balanceTxnResponse = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_success.json');
+        $balanceTxnResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_success.json'
+        );
         $donation = $this->getTestDonation();
         $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
