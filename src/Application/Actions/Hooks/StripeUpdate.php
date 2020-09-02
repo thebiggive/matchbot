@@ -15,6 +15,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 use Stripe\Event;
+use Stripe\StripeClient;
 use Symfony\Component\Serializer\SerializerInterface;
 
 /**
@@ -24,6 +25,7 @@ class StripeUpdate extends Action
 {
     private DonationRepository $donationRepository;
     private EntityManagerInterface $entityManager;
+    private StripeClient $stripeClient;
     private string $webhookSecret;
 
     public function __construct(
@@ -31,11 +33,13 @@ class StripeUpdate extends Action
         DonationRepository $donationRepository,
         EntityManagerInterface $entityManager,
         LoggerInterface $logger,
-        SerializerInterface $serializer
+        SerializerInterface $serializer,
+        StripeClient $stripeClient
     ) {
         $this->donationRepository = $donationRepository;
         $this->entityManager = $entityManager;
         $this->serializer = $serializer;
+        $this->stripeClient = $stripeClient;
         // As `settings` is just an array for now, I think we have to inject Container to do this.
         $this->apiKey = $container->get('settings')['stripe']['apiKey'];
         $this->webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
@@ -66,6 +70,8 @@ class StripeUpdate extends Action
             switch ($event->type) {
                 case 'charge.succeeded':
                     return $this->handleChargeSucceeded($event);
+                case 'payout.paid':
+                    return $this->handlePayoutPaid($event);
                 default:
                     $this->logger->info('Unsupported Action');
                     return $this->respond(new ActionPayload(204));
@@ -111,10 +117,8 @@ class StripeUpdate extends Action
         return $this->respondWithData($event->data->object);
     }
 
-    public function handlePayoutPaid(Event $event)
+    public function handlePayoutPaid(Event $event): Response
     {
-        $stripeClient = new \Stripe\StripeClient($this->apiKey);
-
         $payoutId = $event->data->object->id;
 
         $this->logger->info('Getting all charges related to payout Id: ' . $payoutId);
@@ -129,7 +133,7 @@ class StripeUpdate extends Action
         ];
 
         while ($hasMore) {
-            $balanceTransactions = $stripeClient->balanceTransactions->all($attributes);
+            $balanceTransactions = $this->stripeClient->balanceTransactions->all($attributes);
 
             foreach ($balanceTransactions->data as $balanceTransaction) {
                 $paidChargeIds[] = $balanceTransaction->source;
@@ -144,14 +148,14 @@ class StripeUpdate extends Action
                 $attributes['start_after'] = $lastBalanceTransactionId;
             }
         }
-        $this->logger->info('Getting all paid charge Ids complete, found: ' . sizeof($paidChargeIds));
+        $this->logger->info(sprintf('Getting all paid Charge IDs complete, found: %s', count($paidChargeIds)));
 
-        if (sizeof($paidChargeIds) > 0) {
+        if (count($paidChargeIds) > 0) {
             $count = 0;
 
-            foreach ($paidChargeIds as $Id) {
+            foreach ($paidChargeIds as $chargeId) {
                 /** @var Donation $donation */
-                $donation = $this->donationRepository->findOneBy(['chargeId' => $Id]);
+                $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
 
                 if ($donation) {
                     if ($donation->getDonationStatus() === 'Collected') {
@@ -163,19 +167,22 @@ class StripeUpdate extends Action
                         $this->donationRepository->push($donation, false);
 
                         $count++;
-                    } else {
-                        $this->logger->error('Unexpected donation status found for charge Id: ' . $Id);
+                    }
+                    
+                    if ($donation->getDonationStatus() !== 'Collected' || $donation->getDonationStatus() !== 'Paid') {
+                        $this->logger->error(sprintf('Unexpected donation status found for Charge ID %s', $chargeId));
                     }
                 } else {
-                    // If a donation was not found, error log it but don't
-                    // stop iterating the remaining charges.
-                    if (!$donation) {
-                        $this->logger->error('Donation with charge Id: ' . $Id . ' not found');
-                    }
+                    // If a donation was not found, then it's most likely from a different
+                    // sandbox and therefore we info log this and respond with 204.
+                    $this->logger->info(sprintf('Donation not found with Charge ID %s', $chargeId));
+                    return $this->respond(new ActionPayload(204));
                 }
             }
 
-            $this->logger->info('Acknowledging paid donations complete, persisted: ' . $count . ' donations');
+            $this->logger->info(sprintf('Acknowledging paid donations complete, persisted: %s', $count));
         }
+
+        return $this->respondWithData($event->data->object);
     }
 }
