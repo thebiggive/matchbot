@@ -101,7 +101,7 @@ class StripeUpdateTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
-    public function testSuccess(): void
+    public function testSuccessfulPayment(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
