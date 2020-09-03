@@ -136,8 +136,9 @@ class StripeUpdate extends Action
             $hasMore = $balanceTransactions->has_more;
 
             // We get a Stripe exception if we start this with a null or empty value,
-            // so we only include this if there's more items to iterate.
-            if ($hasMore) {
+            // so we only include this once we've iterated the first time and captured
+            // a transaciton Id.
+            if ($lastBalanceTransactionId !== null) {
                 $attributes['start_after'] = $lastBalanceTransactionId;
             }
         }
@@ -150,32 +151,30 @@ class StripeUpdate extends Action
                 /** @var Donation $donation */
                 $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
 
-                if ($donation) {
-                    if ($donation->getDonationStatus() === 'Collected') {
-                        // We're confident to set donation status to paid because this
-                        // method is called only when Stripe event `payout.paid` is received.
-                        $donation->setDonationStatus('Paid');
-
-                        $this->entityManager->persist($donation);
-                        $this->donationRepository->push($donation, false);
-
-                        $count++;
-                    }
-                    
-                    if ($donation->getDonationStatus() !== 'Collected' || $donation->getDonationStatus() !== 'Paid') {
-                        $this->logger->error(sprintf('Unexpected donation status found for Charge ID %s', $chargeId));
-                    }
-                } else {
-                    // If a donation was not found, then it's most likely from a different
-                    // sandbox and therefore we info log this and respond with 204.
+                // If a donation was not found, then it's most likely from a different
+                // sandbox and therefore we info log this and respond with 204.
+                if (!$donation) {
                     $this->logger->info(sprintf('Donation not found with Charge ID %s', $chargeId));
                     return $this->respond(new ActionPayload(204));
+                }
+
+                if ($donation->getDonationStatus() === 'Collected') {
+                    // We're confident to set donation status to paid because this
+                    // method is called only when Stripe event `payout.paid` is received.
+                    $donation->setDonationStatus('Paid');
+
+                    $this->entityManager->persist($donation);
+                    $this->donationRepository->push($donation, false);
+
+                    $count++;
+                } else if ($donation->getDonationStatus() !== 'Paid' || $donation->getDonationStatus() !== 'Collected') {
+                    $this->logger->error(sprintf('Unexpected donation status found for Charge ID %s', $chargeId));
+                    return $this->respond(new ActionPayload(400));
                 }
             }
 
             $this->logger->info(sprintf('Acknowledging paid donations complete, persisted: %s', $count));
+            return $this->respondWithData($event->data->object);
         }
-
-        return $this->respondWithData($event->data->object);
     }
 }

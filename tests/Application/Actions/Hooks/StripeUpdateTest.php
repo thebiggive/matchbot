@@ -226,11 +226,12 @@ class StripeUpdateTest extends TestCase
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
 
-        $app->handle($request);
+        $response = $app->handle($request);
 
         // Despite handling Stripe payout logic, we expect donations
         // that are not in 'Collected' status to remain the same.
         $this->assertEquals('Failed', $donation->getDonationStatus());
+        $this->assertEquals(400, $response->getStatusCode());
     }
 
     public function testSuccessfulPayout(): void
@@ -279,9 +280,10 @@ class StripeUpdateTest extends TestCase
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
 
-        $app->handle($request);
+        $response = $app->handle($request);
 
         $this->assertEquals('Paid', $donation->getDonationStatus());
+        $this->assertEquals(200, $response->getStatusCode());
     }
 
     private function generateSignature(string $time, string $body, string $webhookSecret): string
