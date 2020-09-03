@@ -167,7 +167,10 @@ class StripeUpdate extends Action
                     $this->donationRepository->push($donation, false);
 
                     $count++;
-                } else if ($donation->getDonationStatus() !== 'Paid' || $donation->getDonationStatus() !== 'Collected') {
+                } elseif (
+                    $donation->getDonationStatus() !== 'Collected' ||
+                    $donation->getDonationStatus() !== 'Paid'
+                    ) {
                     $this->logger->error(sprintf('Unexpected donation status found for Charge ID %s', $chargeId));
                     return $this->respond(new ActionPayload(400));
                 }
