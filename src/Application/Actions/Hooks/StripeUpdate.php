@@ -7,15 +7,13 @@ namespace MatchBot\Application\Actions\Hooks;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
-use Slim\Exception\HttpBadRequestException;
 use Stripe\Event;
-use Symfony\Component\Serializer\SerializerInterface;
+use Stripe\StripeClient;
 
 /**
  * @return Response
@@ -24,6 +22,7 @@ class StripeUpdate extends Action
 {
     private DonationRepository $donationRepository;
     private EntityManagerInterface $entityManager;
+    private StripeClient $stripeClient;
     private string $webhookSecret;
 
     public function __construct(
@@ -31,12 +30,13 @@ class StripeUpdate extends Action
         DonationRepository $donationRepository,
         EntityManagerInterface $entityManager,
         LoggerInterface $logger,
-        SerializerInterface $serializer
+        StripeClient $stripeClient
     ) {
         $this->donationRepository = $donationRepository;
         $this->entityManager = $entityManager;
-        $this->serializer = $serializer;
+        $this->stripeClient = $stripeClient;
         // As `settings` is just an array for now, I think we have to inject Container to do this.
+        $this->apiKey = $container->get('settings')['stripe']['apiKey'];
         $this->webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
 
         parent::__construct($logger);
@@ -44,8 +44,6 @@ class StripeUpdate extends Action
 
     /**
      * @return Response
-     * @throws DomainRecordNotFoundException
-     * @throws HttpBadRequestException
      */
     protected function action(): Response
     {
@@ -65,6 +63,8 @@ class StripeUpdate extends Action
             switch ($event->type) {
                 case 'charge.succeeded':
                     return $this->handleChargeSucceeded($event);
+                case 'payout.paid':
+                    return $this->handlePayoutPaid($event);
                 default:
                     $this->logger->info('Unsupported Action');
                     return $this->respond(new ActionPayload(204));
@@ -108,5 +108,76 @@ class StripeUpdate extends Action
         $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
         return $this->respondWithData($event->data->object);
+    }
+
+    public function handlePayoutPaid(Event $event): Response
+    {
+        $payoutId = $event->data->object->id;
+
+        $this->logger->info(sprintf('Getting all charges related to Payout ID: %s', $payoutId));
+
+        $hasMore = true;
+        $lastBalanceTransactionId = null;
+        $paidChargeIds = [];
+        $attributes = [
+            'limit' => 100,
+            'payout' => $payoutId,
+            'type' => 'charge',
+        ];
+
+        while ($hasMore) {
+            $balanceTransactions = $this->stripeClient->balanceTransactions->all($attributes);
+
+            foreach ($balanceTransactions->data as $balanceTransaction) {
+                $paidChargeIds[] = $balanceTransaction->source;
+                $lastBalanceTransactionId = $balanceTransaction->id;
+            }
+
+            $hasMore = $balanceTransactions->has_more;
+
+            // We get a Stripe exception if we start this with a null or empty value,
+            // so we only include this once we've iterated the first time and captured
+            // a transaciton Id.
+            if ($lastBalanceTransactionId !== null) {
+                $attributes['start_after'] = $lastBalanceTransactionId;
+            }
+        }
+        $this->logger->info(sprintf('Getting all paid Charge IDs complete, found: %s', count($paidChargeIds)));
+
+        if (count($paidChargeIds) > 0) {
+            $count = 0;
+
+            foreach ($paidChargeIds as $chargeId) {
+                /** @var Donation $donation */
+                $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
+
+                // If a donation was not found, then it's most likely from a different
+                // sandbox and therefore we info log this and respond with 204.
+                if (!$donation) {
+                    $this->logger->info(sprintf('Donation not found with Charge ID %s', $chargeId));
+                    return $this->respond(new ActionPayload(204));
+                }
+
+                if ($donation->getDonationStatus() === 'Collected') {
+                    // We're confident to set donation status to paid because this
+                    // method is called only when Stripe event `payout.paid` is received.
+                    $donation->setDonationStatus('Paid');
+
+                    $this->entityManager->persist($donation);
+                    $this->donationRepository->push($donation, false);
+
+                    $count++;
+                } elseif (
+                    $donation->getDonationStatus() !== 'Collected'
+                    || $donation->getDonationStatus() !== 'Paid'
+                ) {
+                    $this->logger->error(sprintf('Unexpected donation status found for Charge ID %s', $chargeId));
+                    return $this->respond(new ActionPayload(400));
+                }
+            }
+
+            $this->logger->info(sprintf('Acknowledging paid donations complete, persisted: %s', $count));
+            return $this->respondWithData($event->data->object);
+        }
     }
 }
