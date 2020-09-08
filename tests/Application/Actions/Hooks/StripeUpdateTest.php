@@ -12,6 +12,8 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Stripe\Service\BalanceTransactionService;
+use Stripe\StripeClient;
 
 class StripeUpdateTest extends TestCase
 {
@@ -23,37 +25,20 @@ class StripeUpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
+        // Payment Intent events, including cancellations, return a 204 No Content no-op for now.
         $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_canceled.json');
-        $donation = $this->getTestDonation();
         $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->findOneBy(['transactionId' => 'pi_externalId_123'])
-            ->willReturn($donation)
-            ->shouldBeCalledOnce();
-
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-
-        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
-        
+
         $response = $app->handle($request);
 
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(400, ['error' => [
-            'type' => 'BAD_REQUEST',
-            'description' => 'Unsupported Action',
-        ]]);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
+        $this->assertEquals(204, $response->getStatusCode());
     }
 
     public function testUnrecognisedTransactionId(): void
@@ -62,7 +47,7 @@ class StripeUpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_invalid_id.json');
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_invalid_id.json');
         $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
 
@@ -73,13 +58,13 @@ class StripeUpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        
+
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
-        
+
         $response = $app->handle($request);
 
         $this->assertEquals(204, $response->getStatusCode());
@@ -91,7 +76,7 @@ class StripeUpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_succeeded.json');
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_succeeded.json');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -101,7 +86,7 @@ class StripeUpdateTest extends TestCase
 
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', '');
-        
+
         $response = $app->handle($request);
 
         $expectedPayload = new ActionPayload(400, ['error' => [
@@ -116,13 +101,13 @@ class StripeUpdateTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
-    public function testSuccess(): void
+    public function testSuccessfulPayment(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_succeeded.json');
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_succeeded.json');
         $donation = $this->getTestDonation();
         $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
         $time = (string) time();
@@ -145,10 +130,159 @@ class StripeUpdateTest extends TestCase
 
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
-        
+
         $response = $app->handle($request);
 
+        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
         $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+
+    public function testUnrecognisedChargeIdPayout(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/po_paid.json');
+        $balanceTxnResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_invalid.json'
+        );
+        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
+        $time = (string) time();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
+        $stripeBalanceTransactionProphecy->all([
+            'limit' => 100,
+            'payout' => 'po_externalId_123',
+            'type' => 'charge'
+        ])
+            ->shouldBeCalledOnce()
+            ->willReturn(json_decode($balanceTxnResponse));
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['chargeId' => 'ch_invalidId_123'])
+            ->willReturn(null)
+            ->shouldBeCalledOnce();
+
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+
+        $response = $app->handle($request);
+
+        $this->assertEquals(204, $response->getStatusCode());
+    }
+
+    public function testInvalidStatusPayout(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/po_paid.json');
+        $balanceTxnResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_success.json'
+        );
+        $donation = $this->getTestDonation();
+        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
+        $time = (string) time();
+
+        $donation->setDonationStatus('Failed');
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
+        $stripeBalanceTransactionProphecy->all([
+            'limit' => 100,
+            'payout' => 'po_externalId_123',
+            'type' => 'charge'
+        ])
+            ->shouldBeCalledOnce()
+            ->willReturn(json_decode($balanceTxnResponse));
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+
+        $response = $app->handle($request);
+
+        // Despite handling Stripe payout logic, we expect donations
+        // that are not in 'Collected' status to remain the same.
+        $this->assertEquals('Failed', $donation->getDonationStatus());
+        $this->assertEquals(400, $response->getStatusCode());
+    }
+
+    public function testSuccessfulPayout(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/po_paid.json');
+        $balanceTxnResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_success.json'
+        );
+        $donation = $this->getTestDonation();
+        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
+        $time = (string) time();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
+        $stripeBalanceTransactionProphecy->all([
+            'limit' => 100,
+            'payout' => 'po_externalId_123',
+            'type' => 'charge'
+        ])
+            ->shouldBeCalledOnce()
+            ->willReturn(json_decode($balanceTxnResponse));
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
+
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+
+        $response = $app->handle($request);
+
+        $this->assertEquals('Paid', $donation->getDonationStatus());
         $this->assertEquals(200, $response->getStatusCode());
     }
 

@@ -65,7 +65,7 @@ workflows:
             - aws-ecr/build-and-push-image
           aws-region: '${AWS_REGION}'
           family: 'tbg-regression-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_WEB}'
-          cluster-name: 'tbg-regression-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_WEB}'
+          cluster-name: 'tbg-regression-${AWS_REGION}'
           container-image-name-updates: 'container=matchbot_web,tag=regression-${CIRCLE_SHA1}'
           post-steps:
             - slack/notify-on-failure: ~
@@ -94,7 +94,7 @@ workflows:
             - aws-ecr/build-and-push-image
           aws-region: '${AWS_REGION}'
           family: 'tbg-staging-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_WEB}'
-          cluster-name: 'tbg-staging-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_WEB}'
+          cluster-name: 'tbg-staging-${AWS_REGION}'
           container-image-name-updates: 'container=matchbot_web,tag=staging-${CIRCLE_SHA1}'
           post-steps:
             - slack/notify-on-failure: ~
@@ -124,7 +124,7 @@ workflows:
             - aws-ecr/build-and-push-image
           aws-region: '${AWS_REGION}'
           family: 'tbg-production-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_WEB}'
-          cluster-name: 'tbg-production-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_WEB}'
+          cluster-name: 'tbg-production-${AWS_REGION}'
           container-image-name-updates: 'container=matchbot_web,tag=production-${CIRCLE_SHA1}'
           post-steps:
             - slack/notify-on-failure: ~
