@@ -26,6 +26,7 @@ trait DonationTestDataTrait
         $donation->setAmount('123.45');
         $donation->setCampaign($campaign);
         $donation->setCharityComms(true);
+        $donation->setChampionComms(false);
         $donation->setDonationStatus('Collected');
         $donation->setDonorCountryCode('GB');
         $donation->setDonorEmailAddress('john.doe@example.com');
