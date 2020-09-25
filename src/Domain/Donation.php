@@ -127,6 +127,13 @@ class Donation extends SalesforceWriteProxy
     protected ?bool $tbgComms = null;
 
     /**
+     * @ORM\Column(type="boolean", nullable=true)
+     * @var bool    Whether the donor opted to receive email from the champion funding the campaign
+     */
+    protected ?bool $championComms = null;
+
+
+    /**
      * @ORM\Column(type="string", length=2, nullable=true)
      * @var string|null  Set on PSP callback
      */
@@ -342,6 +349,16 @@ class Donation extends SalesforceWriteProxy
     public function setCharityComms(?bool $charityComms): void
     {
         $this->charityComms = $charityComms;
+    }
+
+    public function getChampionComms(): ?bool
+    {
+        return $this->championComms;
+    }
+
+    public function setChampionComms(?bool $championComms): void
+    {
+        $this->championsComms = $championComms;
     }
 
     public function getDonorFirstName(): ?string
