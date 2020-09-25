@@ -312,6 +312,7 @@ class CreateTest extends TestCase
         $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
+        $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
@@ -372,6 +373,7 @@ class CreateTest extends TestCase
         $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
+        $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
@@ -473,6 +475,7 @@ class CreateTest extends TestCase
         $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
+        $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
@@ -525,6 +528,7 @@ class CreateTest extends TestCase
         $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('0', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
+        $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
@@ -573,6 +577,7 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['donation']['createdTime']);
         $this->assertNull($payloadArray['donation']['giftAid']);
         $this->assertNull($payloadArray['donation']['optInCharityEmail']);
+        $this->assertNull($payloadArray['donation']['optInChampionEmail']);
         $this->assertNull($payloadArray['donation']['optInTbgEmail']);
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
@@ -616,6 +621,7 @@ class CreateTest extends TestCase
 
         if (!$minimalSetupData) {
             $donation->setCharityComms(true);
+            $donation->setChampionComms(false);
             $donation->setGiftAid(false);
             $donation->setTbgComms(false);
         }

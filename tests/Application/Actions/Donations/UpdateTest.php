@@ -530,6 +530,7 @@ class UpdateTest extends TestCase
         $donation->setGiftAid(true);
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
+        $donation->setChampionComms(false);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -590,6 +591,7 @@ class UpdateTest extends TestCase
         $donation->setDonorEmailAddress('saul@example.com');
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
+        $donation->setChampionComms(false);
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
