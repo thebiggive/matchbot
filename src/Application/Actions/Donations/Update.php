@@ -131,6 +131,7 @@ class Update extends Action
         $donation->setDonorEmailAddress($donationData->emailAddress);
         $donation->setTbgComms($donationData->optInTbgEmail);
         $donation->setCharityComms($donationData->optInCharityEmail);
+        $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setDonorBillingAddress($donationData->billingPostalAddress);
 
         if ($donation->getPsp() === 'stripe') {

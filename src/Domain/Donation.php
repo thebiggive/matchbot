@@ -261,6 +261,7 @@ class Donation extends SalesforceWriteProxy
             'matchedAmount' => $this->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0,
             'matchReservedAmount' => 0,
             'optInCharityEmail' => $this->getCharityComms(),
+            'optInChampionEmail' => $this->getChampionComms(),
             'optInTbgEmail' => $this->getTbgComms(),
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
@@ -358,7 +359,7 @@ class Donation extends SalesforceWriteProxy
 
     public function setChampionComms(?bool $championComms): void
     {
-        $this->championsComms = $championComms;
+        $this->championComms = $championComms;
     }
 
     public function getDonorFirstName(): ?string
