@@ -61,6 +61,8 @@ class StripeUpdate extends Action
 
         if ($event instanceof Event) {
             switch ($event->type) {
+                case 'charge.refunded':
+                    return $this->handleChargeRefunded($event);
                 case 'charge.succeeded':
                     return $this->handleChargeSucceeded($event);
                 case 'payout.paid':
@@ -179,5 +181,34 @@ class StripeUpdate extends Action
             $this->logger->info(sprintf('Acknowledging paid donations complete, persisted: %s', $count));
             return $this->respondWithData($event->data->object);
         }
+    }
+
+    public function handleChargeRefunded(Event $event): Response
+    {
+        $chargeId = $event->data->object->id;
+
+        /** @var Donation $donation */
+        $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
+
+        if (!$donation) {
+            $this->logger->info(sprintf('Donation not found with Charge ID %s', $chargeId));
+            return $this->respond(new ActionPayload(204));
+        }
+
+        // For now we support the happy success path,
+        // as this is the only event type we're handling right now,
+        // convert status to the one SF uses.
+        if ($event->data->object->status === 'succeeded') {
+            $donation->setChargeId($event->data->object->id);
+            $donation->setDonationStatus('Refunded');
+        } else {
+            return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
+        }
+
+        $this->entityManager->persist($donation);
+
+        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
+
+        return $this->respondWithData($event->data->object);
     }
 }
