@@ -175,9 +175,9 @@ class StripeUpdate extends Action
                     return $this->respond(new ActionPayload(400));
                 }
             }
-
-            $this->logger->info(sprintf('Acknowledging paid donations complete, persisted: %s', $count));
-            return $this->respondWithData($event->data->object);
         }
+        
+        $this->logger->info(sprintf('Acknowledging paid donations complete, persisted: %s', $count));
+        return $this->respondWithData($event->data->object);
     }
 }
