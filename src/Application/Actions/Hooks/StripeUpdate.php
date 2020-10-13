@@ -111,7 +111,7 @@ class StripeUpdate extends Action
     }
 
     public function handlePayoutPaid(Event $event): Response
-    {   
+    {
         $count = 0;
         $payoutId = $event->data->object->id;
 
