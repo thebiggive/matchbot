@@ -195,14 +195,19 @@ class StripeUpdate extends Action
             return $this->respond(new ActionPayload(204));
         }
 
+        // Available status' (pending, succeeded, failed, canceled),
+        // see: https://stripe.com/docs/api/refunds/object.
         // For now we support the happy success path,
-        // as this is the only event type we're handling right now,
         // convert status to the one SF uses.
         if ($event->data->object->status === 'succeeded') {
             $donation->setChargeId($event->data->object->id);
             $donation->setDonationStatus('Refunded');
         } else {
             return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
+        }
+
+        if ($donation->isReversed() && $event->data->object->metadata->matchedAmount > 0) {
+            $this->donationRepository->releaseMatchFunds($donation);
         }
 
         $this->entityManager->persist($donation);
