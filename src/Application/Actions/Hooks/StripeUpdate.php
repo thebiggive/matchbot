@@ -111,7 +111,8 @@ class StripeUpdate extends Action
     }
 
     public function handlePayoutPaid(Event $event): Response
-    {
+    {   
+        $count = 0;
         $payoutId = $event->data->object->id;
 
         $this->logger->info(sprintf('Getting all charges related to Payout ID: %s', $payoutId));
@@ -145,8 +146,6 @@ class StripeUpdate extends Action
         $this->logger->info(sprintf('Getting all paid Charge IDs complete, found: %s', count($paidChargeIds)));
 
         if (count($paidChargeIds) > 0) {
-            $count = 0;
-
             foreach ($paidChargeIds as $chargeId) {
                 /** @var Donation $donation */
                 $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
