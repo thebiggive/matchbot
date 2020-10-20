@@ -11,6 +11,9 @@ jobs:
   test: # Also lints first
     docker:
       - image: circleci/php:7.4
+        auth:
+          username: $DOCKER_HUB_USERNAME
+          password: $DOCKER_HUB_ACCESS_TOKEN
 
     steps:
       - checkout
@@ -41,6 +44,8 @@ workflows:
   build:
     jobs:
       - test:
+          context:
+            - docker-hub-creds
           post-steps:
             - jira/notify:
                 job_type: build
@@ -54,6 +59,8 @@ workflows:
             branches:
               only:
                 - develop
+          context:
+            - docker-hub-creds
       - aws-ecr/build-and-push-image:
           requires:
             - test
@@ -83,6 +90,8 @@ workflows:
             branches:
               only:
                 - develop
+          context:
+            - docker-hub-creds
       - aws-ecr/build-and-push-image:
           requires:
             - test
@@ -113,6 +122,8 @@ workflows:
             branches:
               only:
                 - master
+          context:
+            - docker-hub-creds
       - aws-ecr/build-and-push-image:
           requires:
             - test
