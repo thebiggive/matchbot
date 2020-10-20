@@ -24,6 +24,7 @@ class Donation
     public ?string $homePostcode = null;
     public ?bool $optInTbgEmail;
     public ?bool $optInCharityEmail = null;
+    public ?bool $optInChampionEmail = null;
     public string $projectId;
     public ?float $tipAmount = null;
     public ?bool $tipGiftAid = null;

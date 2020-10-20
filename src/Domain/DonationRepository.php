@@ -101,6 +101,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $donation->setAmount((string) $donationData->donationAmount);
         $donation->setGiftAid($donationData->giftAid);
         $donation->setCharityComms($donationData->optInCharityEmail);
+        $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setTbgComms($donationData->optInTbgEmail);
 
         if (!empty($donationData->countryCode)) {

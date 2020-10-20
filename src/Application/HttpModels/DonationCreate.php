@@ -14,6 +14,7 @@ class DonationCreate
     public string $donationAmount;
     public ?bool $giftAid = null;
     public ?bool $optInCharityEmail = null;
+    public ?bool $optInChampionEmail = null;
     public ?bool $optInTbgEmail = null;
     public string $projectId;
     public string $psp;
