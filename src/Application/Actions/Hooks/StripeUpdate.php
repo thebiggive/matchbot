@@ -177,7 +177,7 @@ class StripeUpdate extends Action
                 }
             }
         }
-        
+
         $this->logger->info(sprintf('Acknowledging paid donations complete, persisted: %s', $count));
         return $this->respondWithData($event->data->object);
     }
@@ -206,9 +206,12 @@ class StripeUpdate extends Action
             return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
         }
 
-        // Release match funds only if the donation was matched and the refunded amount is equal to the local txn amount.
+        // Release match funds only if the donation was matched and
+        // the refunded amount is equal to the local txn amount.
         // We multiply local donation amount by 100 to match Stripes calculations.
-        if ($donation->isReversed() && $donation->getCampaign()->isMatched() && $donation->getAmount() * 100 === $amountRefunded) {
+        if ($donation->isReversed() &&
+            $donation->getCampaign()->isMatched() &&
+            $donation->getAmount() * 100 === $amountRefunded) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
 
