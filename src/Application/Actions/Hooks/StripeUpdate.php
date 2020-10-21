@@ -186,6 +186,7 @@ class StripeUpdate extends Action
     public function handleChargeRefunded(Event $event): Response
     {
         $chargeId = $event->data->object->id;
+        $amountRefunded = (float) $event->data->object->amount_refunded;
 
         /** @var Donation $donation */
         $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
@@ -206,7 +207,9 @@ class StripeUpdate extends Action
             return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
         }
 
-        if ($donation->isReversed() && $event->data->object->metadata->matchedAmount > 0) {
+        // Release match funds only if the donation was matched and the refunded amount is equal to the local txn amount.
+        // We multiply local donation amount by 100 to match Stripes calculations.
+        if ($donation->isReversed() && $donation->getCampaign()->isMatched() && $donation->getAmount() * 100 === $amountRefunded) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
 

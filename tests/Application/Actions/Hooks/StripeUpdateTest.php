@@ -302,6 +302,10 @@ class StripeUpdateTest extends TestCase
             ->findOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
+            
+        $donationRepoProphecy
+            ->releaseMatchFunds($donation)
+            ->shouldBeCalledOnce();
 
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
