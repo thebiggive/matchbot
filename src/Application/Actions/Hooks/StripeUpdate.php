@@ -185,7 +185,7 @@ class StripeUpdate extends Action
     public function handleChargeRefunded(Event $event): Response
     {
         $chargeId = $event->data->object->id;
-        $amountRefunded = (float) $event->data->object->amount_refunded;
+        $amountRefunded = $event->data->object->amount_refunded;
 
         /** @var Donation $donation */
         $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
@@ -212,7 +212,7 @@ class StripeUpdate extends Action
         if (
             $donation->isReversed()
             && $donation->getCampaign()->isMatched()
-            && $donation->getAmount() * 100 === $amountRefunded
+            && (int) ($donation->getAmount() * 100) === $amountRefunded
         ) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
