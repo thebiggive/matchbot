@@ -286,6 +286,47 @@ class StripeUpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
+    public function testSuccessfulRefund(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_refunded.json');
+        $donation = $this->getTestDonation();
+        $webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
+        $time = (string) time();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+            
+        $donationRepoProphecy
+            ->releaseMatchFunds($donation)
+            ->shouldBeCalledOnce();
+
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+
+        $response = $app->handle($request);
+
+        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
+        $this->assertEquals('Refunded', $donation->getDonationStatus());
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+
     private function generateSignature(string $time, string $body, string $webhookSecret): string
     {
         return 't=' . $time . ',' . 'v1=' . $this->getValidAuth($this->getSignedPayload($time, $body), $webhookSecret);
