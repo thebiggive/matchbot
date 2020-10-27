@@ -11,9 +11,9 @@
     "object": {
       "id": "ch_externalId_123",
       "object": "charge",
-      "amount": 12345,
-      "amount_captured": 12345,
-      "amount_refunded": 12345,
+      "amount": 12445,
+      "amount_captured": 12445,
+      "amount_refunded": 12445,
       "application": null,
       "application_fee": null,
       "application_fee_amount": null,
