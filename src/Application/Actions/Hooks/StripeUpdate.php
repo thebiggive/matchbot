@@ -211,8 +211,8 @@ class StripeUpdate extends Action
         // We multiply local donation amount by 100 to match Stripes calculations.
         if (
             $donation->isReversed()
+            && $donation->getAmountInPenceIncTip() === $amountRefunded
             && $donation->getCampaign()->isMatched()
-            && (int) ($donation->getAmount() * 100) === $amountRefunded
         ) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
