@@ -167,6 +167,6 @@ class GetTest extends TestCase
         $this->assertTrue($payloadArray['optInCharityEmail']);
         $this->assertFalse($payloadArray['optInTbgEmail']);
         $this->assertEquals(0, $payloadArray['matchedAmount']);
-        $this->assertEquals(0, $payloadArray['tipAmount']);
+        $this->assertEquals(1.00, $payloadArray['tipAmount']);
     }
 }

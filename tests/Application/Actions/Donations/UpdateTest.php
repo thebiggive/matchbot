@@ -355,7 +355,7 @@ class UpdateTest extends TestCase
         $this->assertFalse($payloadArray['optInTbgEmail']);
         $this->assertEquals(123.45, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertEquals(0, $payloadArray['matchedAmount']);
-        $this->assertEquals(0, $payloadArray['tipAmount']);
+        $this->assertEquals(1.00, $payloadArray['tipAmount']);
     }
 
     public function testCancelSuccessWithChange(): void
@@ -420,7 +420,7 @@ class UpdateTest extends TestCase
         $this->assertFalse($payloadArray['optInTbgEmail']);
         $this->assertEquals(123.45, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertEquals(0, $payloadArray['matchedAmount']);
-        $this->assertEquals(0, $payloadArray['tipAmount']);
+        $this->assertEquals(1.00, $payloadArray['tipAmount']);
     }
 
     public function testAddDataAttemptWithDifferentAmount(): void
