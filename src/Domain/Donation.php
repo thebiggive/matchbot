@@ -709,6 +709,6 @@ class Donation extends SalesforceWriteProxy
      */
     public function getAmountInPenceIncTip(): int
     {
-        return (100 * $this->getAmount()) + (100 * $this->getTipAmount() ?? 0);
+        return (int) (100 * $this->getAmount() + (100 * $this->getTipAmount() ?? 0));
     }
 }
