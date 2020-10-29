@@ -174,7 +174,7 @@ class Create extends Action
     }
 
     // Remove special characters except spaces
-    private function removeSpecialChars(String $descriptor): string
+    private function removeSpecialChars(string $descriptor): string
     {
         return preg_replace('/[^A-Za-z0-9 ]/', '', $descriptor);
     }
