@@ -703,4 +703,17 @@ class Donation extends SalesforceWriteProxy
 
         return bcdiv(bcadd(bcmul($amount, $e, 0), '5'), $e, 2);
     }
+
+    /**
+     * @return int  Full amount, including any tip, in pence.
+     */
+    public function getAmountInPenceIncTip(): int
+    {
+        return (int) (100 * $this->getAmount() + (100 * $this->getTipAmount() ?? 0));
+    }
+
+    public function hasEnoughDataForSalesforce(): bool
+    {
+        return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
+    }
 }

@@ -119,7 +119,7 @@ class Create extends Action
                 $intent = $this->stripeClient->paymentIntents->create([
                     // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
                     // See https://stripe.com/docs/api/payment_intents/object
-                    'amount' => (100 * $donation->getAmount()) + (100 * $donation->getTipAmount() ?? 0),
+                    'amount' => $donation->getAmountInPenceIncTip(),
                     'currency' => 'gbp',
                     'description' => $donation->__toString(),
                     'metadata' => [
@@ -170,6 +170,12 @@ class Create extends Action
         $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
         $prefix = 'The Big Give ';
 
-        return $prefix . substr($charity->getName(), 0, $maximumLength - strlen($prefix));
+        return $prefix . substr($this->removeSpecialChars($charity->getName()), 0, $maximumLength - strlen($prefix));
+    }
+
+    // Remove special characters except spaces
+    private function removeSpecialChars(string $descriptor): string
+    {
+        return preg_replace('/[^A-Za-z0-9 ]/', '', $descriptor);
     }
 }
