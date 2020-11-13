@@ -44,4 +44,28 @@ trait DonationTestDataTrait
 
         return $donation;
     }
+
+    private function getAnonymousPendingTestDonation(): Donation
+    {
+        $charity = new Charity();
+        $charity->setDonateLinkId('123CharityId');
+        $charity->setName('Test charity');
+
+        $campaign = new Campaign();
+        $campaign->setCharity($charity);
+        $campaign->setIsMatched(true);
+        $campaign->setName('Test campaign');
+        $campaign->setSalesforceId('456ProjectId');
+
+        $donation = new Donation();
+        $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
+        $donation->setAmount('124.56');
+        $donation->setCampaign($campaign);
+        $donation->setDonationStatus('Pending');
+        $donation->setPsp('enthuse');
+        $donation->setTipAmount('2.00');
+        $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ac'));
+
+        return $donation;
+    }
 }

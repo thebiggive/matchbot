@@ -387,7 +387,8 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->willReturn(true)
-            ->shouldBeCalledOnce(); // Cancel was a new change -> expect a push to SF
+            // Cancel was a new change and names set -> expect a push to SF.
+            ->shouldBeCalledOnce();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->cancel('pi_externalId_123')
@@ -421,6 +422,55 @@ class UpdateTest extends TestCase
         $this->assertEquals(123.45, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertEquals(0, $payloadArray['matchedAmount']);
         $this->assertEquals(1.00, $payloadArray['tipAmount']);
+    }
+
+    public function testCancelSuccessWithChangeFromPendingAnonymousDonation(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getAnonymousPendingTestDonation();
+        $donation->setDonationStatus('Cancelled');
+
+        $responseDonation = $this->getAnonymousPendingTestDonation();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ac'])
+            ->willReturn($responseDonation)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            // Cancel was a new change BUT donation never had enough
+            // data -> DO NOT expect a push to SF.
+            ->shouldNotBeCalled();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ac',
+            json_encode($donation->toApiModel()),
+        )
+            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ac'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ac');
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+        $this->assertEquals('Cancelled', $payloadArray['status']);
+        $this->assertNull($payloadArray['giftAid']);
+        $this->assertEquals(124.56, $payloadArray['donationAmount']); // Attempt to patch this is ignored
+        $this->assertEquals(0, $payloadArray['matchedAmount']);
+        $this->assertEquals(2.00, $payloadArray['tipAmount']);
     }
 
     public function testAddDataAttemptWithDifferentAmount(): void
