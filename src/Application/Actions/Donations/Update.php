@@ -196,7 +196,9 @@ class Update extends Action
             }
         }
 
-        $this->pushToSalesforce($donation);
+        if ($donation->hasEnoughDataForSalesforce()) {
+            $this->pushToSalesforce($donation);
+        }
 
         return $this->respondWithData($donation->toApiModel());
     }
