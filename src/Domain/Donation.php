@@ -711,4 +711,9 @@ class Donation extends SalesforceWriteProxy
     {
         return (int) (100 * $this->getAmount() + (100 * $this->getTipAmount() ?? 0));
     }
+
+    public function hasEnoughDataForSalesforce(): bool
+    {
+        return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
+    }
 }

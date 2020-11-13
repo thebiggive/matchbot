@@ -59,12 +59,6 @@ class Donation extends Common
             return false;
         }
 
-        if (empty($donation->getDonorFirstName()) || empty($donation->getDonorLastName())) {
-            $this->logger->info("Donor details missing: Skipping update of donation {$donation->getUuid()}");
-
-            return false;
-        }
-
         try {
             $requestBody = $donation->toHookModel();
             $response = $this->getHttpClient()->put(
