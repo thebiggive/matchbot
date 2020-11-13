@@ -36,16 +36,35 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
     }
 
     /**
+     * Sends proxy objects to Salesforce en masse. We set an overall limit for objects because Salesforce can
+     * be quite slow to do this and we want to be pretty certain that task runs won't overlap.
+     *
+     * For the same reason of bulk pushes not overlapping, we can be reasonably sure Salesforce should not hit
+     * record contention issues as a result of running these pushes back to back, even if they involve writing
+     * updates to the same objects. Locking has generally been a problem because of requests coming in from
+     * different places and Salesforce's multi-threaded but locking nature. So when we send a lot of requests
+     * sequentially from *one* place in a batch process we shouldn't usually have the same problem except when
+     * these pushes clash with synchronous, on-demand update attempts.
+     *
+     * @param int $limit    Maximum of each type of pending object to process
      * @return int  Number of objects pushed
      */
-    public function pushAllPending(): int
+    public function pushAllPending(int $limit = 200): int
     {
-        $proxiesToCreate = $this->findBy(['salesforcePushStatus' => 'pending-create']);
+        $proxiesToCreate = $this->findBy(
+            ['salesforcePushStatus' => 'pending-create'],
+            ['id' => 'ASC'],
+            $limit,
+        );
         foreach ($proxiesToCreate as $proxy) {
             $this->push($proxy, true);
         }
 
-        $proxiesToUpdate = $this->findBy(['salesforcePushStatus' => 'pending-update']);
+        $proxiesToUpdate = $this->findBy(
+            ['salesforcePushStatus' => 'pending-update'],
+            ['id' => 'ASC'],
+            $limit,
+        );
         foreach ($proxiesToUpdate as $proxy) {
             $this->push($proxy, false);
         }
