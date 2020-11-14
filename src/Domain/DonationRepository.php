@@ -57,7 +57,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $result = $this->getClient()->put($donation);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push the removed donation.
-            $this->logInfo("Marking old Salesforce donation {$donation->getId()} as removed; will not try to push again.");
+            $this->logInfo(
+                "Marking old Salesforce donation {$donation->getId()} as removed; will not try to push again."
+            );
             $donation->setSalesforcePushStatus('removed');
             $this->getEntityManager()->persist($donation);
 
