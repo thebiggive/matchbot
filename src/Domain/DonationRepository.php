@@ -11,6 +11,7 @@ use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Client\BadRequestException;
+use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
 
@@ -52,7 +53,18 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function doUpdate(SalesforceWriteProxy $donation): bool
     {
-        return $this->getClient()->put($donation);
+        try {
+            $result = $this->getClient()->put($donation);
+        } catch (NotFoundException $ex) {
+            // Thrown only for *sandbox* 404s -> quietly stop trying to push the removed donation.
+            $this->logInfo("Marking old Salesforce donation {$donation->getId()} as removed; will not try to push again.");
+            $donation->setSalesforcePushStatus('removed');
+            $this->getEntityManager()->persist($donation);
+
+            return true; // Report 'success' for simpler summaries and spotting of real errors.
+        }
+
+        return $result;
     }
 
     /**
