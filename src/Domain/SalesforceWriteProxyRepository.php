@@ -83,16 +83,18 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 
     protected function postPush(bool $success, SalesforceWriteProxy $proxy): void
     {
+        $shouldRePush = false;
         if ($success) {
             $proxy->setSalesforceLastPush(new DateTime('now'));
             if ($proxy->getSalesforcePushStatus() === 'pending-create' && $proxy->hasPostCreateUpdates()) {
                 $proxy->setSalesforcePushStatus('pending-update');
+                $shouldRePush = true;
             } else {
                 $proxy->setSalesforcePushStatus('complete');
             }
             $this->logInfo('...pushed ' . get_class($proxy) . " {$proxy->getId()}: SF ID {$proxy->getSalesforceId()}");
 
-            if ($proxy->hasPostCreateUpdates()) {
+            if ($shouldRePush) {
                 if ($this->doUpdate($proxy)) { // Make sure *not* to call push() again to avoid doing this recursively!
                     $proxy->setSalesforcePushStatus('complete');
                     $this->logInfo('...plus interim updates for ' . get_class($proxy) . " {$proxy->getId()}");
