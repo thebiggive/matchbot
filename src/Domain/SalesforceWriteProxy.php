@@ -26,7 +26,7 @@ abstract class SalesforceWriteProxy extends SalesforceProxy
 
     /**
      * @ORM\Column(type="string")
-     * @var string  One of 'not-sent', 'pending-create', 'pending-update' or 'complete'
+     * @var string  One of 'not-sent', 'pending-create', 'pending-update', 'complete' or 'removed'.
      */
     protected string $salesforcePushStatus = 'not-sent';
 
