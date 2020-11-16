@@ -71,8 +71,6 @@ class Donation extends Common
                 ]
             );
         } catch (RequestException $ex) {
-            $this->logger->error('Donation update exception ' . get_class($ex) . ": {$ex->getMessage()}");
-
             // Sandboxes that 404 on PUT have probably just been refreshed. In this case we want to
             // update the local state of play to stop them getting pushed, instead of treating this
             // as an error. So throw this for appropriate handling in the caller without an error level
@@ -81,6 +79,10 @@ class Donation extends Common
             if ($ex->getCode() === 404 && getenv('APP_ENV') !== 'production') {
                 throw new NotFoundException();
             }
+
+            // All other errors should be logged so we get a notification and the app left to retry the
+            // push at a later date.
+            $this->logger->error('Donation update exception ' . get_class($ex) . ": {$ex->getMessage()}");
 
             return false;
         }
