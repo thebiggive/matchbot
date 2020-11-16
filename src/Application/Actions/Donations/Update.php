@@ -155,9 +155,7 @@ class Update extends Action
             }
         }
 
-        if ($donation->hasEnoughDataForSalesforce()) {
-            $this->pushToSalesforce($donation);
-        }
+        $this->pushToSalesforce($donation);
 
         return $this->respondWithData($donation->toApiModel());
     }
@@ -198,15 +196,22 @@ class Update extends Action
             }
         }
 
-        if ($donation->hasEnoughDataForSalesforce()) {
-            $this->pushToSalesforce($donation);
-        }
+        $this->pushToSalesforce($donation);
 
         return $this->respondWithData($donation->toApiModel());
     }
 
+    /**
+     * Send updated donation data to Salesforce, *if* we know enough to do so successfully.
+     *
+     * @param Donation $donation
+     */
     private function pushToSalesforce(Donation $donation): void
     {
+        if (!$donation->hasEnoughDataForSalesforce()) {
+            return;
+        }
+
         // We log if this fails but don't worry the client about it. We'll just re-try
         // sending the updated status to Salesforce in a future batch sync.
         $this->donationRepository->push($donation, false);
