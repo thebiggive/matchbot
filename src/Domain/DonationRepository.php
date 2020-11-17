@@ -40,6 +40,15 @@ class DonationRepository extends SalesforceWriteProxyRepository
         try {
             $salesforceDonationId = $this->getClient()->create($donation);
             $donation->setSalesforceId($salesforceDonationId);
+        } catch (NotFoundException $ex) {
+            // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
+            $this->logInfo(
+                "Marking Salesforce donation {$donation->getId()} as campaign removed; will not try to push again."
+            );
+            $donation->setSalesforcePushStatus('removed');
+            $this->getEntityManager()->persist($donation);
+
+            return true; // Report 'success' for simpler summaries and spotting of real errors.
         } catch (BadRequestException $exception) {
             return false;
         }
