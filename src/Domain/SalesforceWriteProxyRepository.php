@@ -72,7 +72,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
                 $createdAt = $proxy->getCreatedAt();
                 $this->logger->info(
                     'Donation Id to update: ' . $proxy->getSalesforceId() .
-                    ' created at: '. $createdAt->format('Y-m-d H:i:s') .
+                    ' created at: ' . $createdAt->format('Y-m-d H:i:s') .
                     ' with donation status ' . $proxy->getDonationStatus()
                 );
             }
