@@ -68,11 +68,11 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 
         foreach ($proxiesToUpdate as $proxy) {
             $this->push($proxy, false);
-            if (getenv('APP_ENV') === 'local') {
+            if (getenv('APP_ENV') === 'regression') {
                 $createdAt = $proxy->getCreatedAt();
                 $this->logger->info(
                     'Donation Id to update: ' . $proxy->getSalesforceId() .
-                    ' Created at: '. $createdAt->format('Y-m-d H:i:s') .
+                    ' created at: '. $createdAt->format('Y-m-d H:i:s') .
                     ' with donation status ' . $proxy->getDonationStatus()
                 );
             }
