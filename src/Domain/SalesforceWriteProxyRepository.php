@@ -65,6 +65,14 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             ['id' => 'ASC'],
             $limit,
         );
+        
+        if (getenv('APP_ENV') === 'regression') {
+            $this->logger->info(sprintf(
+                'Donations to update: ',
+                $proxiesToUpdate,
+            ));
+        }
+
         foreach ($proxiesToUpdate as $proxy) {
             $this->push($proxy, false);
         }
