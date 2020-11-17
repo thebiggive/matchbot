@@ -39,22 +39,6 @@ abstract class SalesforceWriteProxy extends SalesforceProxy
     }
 
     /**
-     * @return DateTime
-     */
-    public function getCreatedAt(): ?DateTime
-    {
-        return $this->createdAt;
-    }
-
-    /**
-     * @return string
-     */
-    public function getDonationStatus(): ?string
-    {
-        return $this->donationStatus;
-    }
-
-    /**
      * @param DateTime $salesforceLastPush
      */
     public function setSalesforceLastPush(DateTime $salesforceLastPush): void

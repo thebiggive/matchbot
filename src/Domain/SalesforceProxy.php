@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use DateTime;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -32,5 +33,21 @@ abstract class SalesforceProxy extends Model
     public function setSalesforceId(string $salesforceId): void
     {
         $this->salesforceId = $salesforceId;
+    }
+
+    /**
+     * @return DateTime
+     */
+    public function getCreatedAt(): ?DateTime
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDonationStatus(): ?string
+    {
+        return $this->donationStatus;
     }
 }
