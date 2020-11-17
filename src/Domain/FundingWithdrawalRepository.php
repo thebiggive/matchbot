@@ -20,6 +20,12 @@ class FundingWithdrawalRepository extends EntityRepository
             ->where('fw.campaignFunding = :campaignFunding')
             ->setParameter('campaignFunding', $campaignFunding->getId());
 
-        return (string) $qb->getQuery()->getSingleScalarResult();
+        $amount = (string) $qb->getQuery()->getSingleScalarResult();
+
+        if ($amount === '') {
+            return '0.00';
+        }
+
+        return $amount;
     }
 }
