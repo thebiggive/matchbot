@@ -54,7 +54,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 
         if (getenv('APP_ENV') === 'regression') {
             $proxiesToCheck = $this->findBy(
-                ['salesforcePushStatus' => 'pending-update'],
+                ['salesforcePushStatus' => 'pending-update', 'donorLastName' => NULL],
                 ['id' => 'ASC'],
             );
 
