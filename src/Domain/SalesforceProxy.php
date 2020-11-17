@@ -34,20 +34,4 @@ abstract class SalesforceProxy extends Model
     {
         $this->salesforceId = $salesforceId;
     }
-
-    /**
-     * @return DateTime
-     */
-    public function getCreatedAt(): ?DateTime
-    {
-        return $this->createdAt;
-    }
-
-    /**
-     * @return string
-     */
-    public function getDonationStatus(): ?string
-    {
-        return $this->donationStatus;
-    }
 }
