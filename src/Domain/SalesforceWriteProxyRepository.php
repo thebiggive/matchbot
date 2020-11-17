@@ -52,9 +52,9 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
     public function pushAllPending(int $limit = 200): int
     {
 
-        if (getenv('APP_ENV') === 'regression') {
+        if (getenv('APP_ENV') === 'local') {
             $proxiesToCheck = $this->findBy(
-                ['salesforcePushStatus' => 'pending-update', 'donorLastName' => NULL],
+                ['salesforcePushStatus' => 'pending-update', 'donorLastName' => null],
                 ['id' => 'ASC'],
             );
 
