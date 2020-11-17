@@ -47,9 +47,14 @@ class OptimisticRedisAdapter extends Adapter
 
     public function getAmountAvailable(CampaignFunding $funding): string
     {
-        $fundBalanceInPence = $this->redis->get($this->buildKey($funding)) ?: 0;
+        $redisFundBalanceInPence = $this->redis->get($this->buildKey($funding));
+        if ($redisFundBalanceInPence === false) {
+            // No value in Redis -> may well have expired after 24 hours. Consult the DB for the
+            // stable value. This will often happen for old or slower moving campaigns.
+            return $funding->getAmountAvailable();
+        }
 
-        return $this->toPounds($fundBalanceInPence);
+        return $this->toPounds($redisFundBalanceInPence);
     }
 
     protected function doSubtractAmount(CampaignFunding $funding, string $amount): string
@@ -60,7 +65,7 @@ class OptimisticRedisAdapter extends Adapter
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),
-                $this->getPenceAvailable($funding),
+                $this->toPence($funding->getAmountAvailable()),
                 ['nx', 'ex' => static::$storageDurationSeconds],
             )
             ->decrBy($this->buildKey($funding), $decrementInPence)
@@ -120,7 +125,7 @@ class OptimisticRedisAdapter extends Adapter
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),
-                $this->getPenceAvailable($funding),
+                $this->toPence($funding->getAmountAvailable()),
                 ['nx', 'ex' => static::$storageDurationSeconds],
             )
             ->incrBy($this->buildKey($funding), $incrementInPence)
@@ -145,11 +150,6 @@ class OptimisticRedisAdapter extends Adapter
     private function buildKey(CampaignFunding $funding)
     {
         return "fund-{$funding->getId()}-available-opt";
-    }
-
-    private function getPenceAvailable(CampaignFunding $funding): int
-    {
-        return $this->toPence($funding->getAmountAvailable());
     }
 
     /**
