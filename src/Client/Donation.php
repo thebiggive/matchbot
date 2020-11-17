@@ -37,7 +37,13 @@ class Donation extends Common
                 throw new NotFoundException();
             }
 
-            $this->logger->error('Donation create exception ' . get_class($ex) . ": {$ex->getMessage()}");
+            $this->logger->error(sprintf(
+                'Donation create exception %s: %s. Body: %s',
+                get_class($ex),
+                $ex->getMessage(),
+                $ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A',
+            ));
+
             throw new BadRequestException('Donation not created');
         }
 
@@ -92,7 +98,12 @@ class Donation extends Common
 
             // All other errors should be logged so we get a notification and the app left to retry the
             // push at a later date.
-            $this->logger->error('Donation update exception ' . get_class($ex) . ": {$ex->getMessage()}");
+            $this->logger->error(sprintf(
+                'Donation update exception %s: %s. Body: %s',
+                get_class($ex),
+                $ex->getMessage(),
+                $ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A',
+            ));
 
             return false;
         }
