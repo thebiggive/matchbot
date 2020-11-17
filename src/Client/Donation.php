@@ -27,6 +27,16 @@ class Donation extends Common
                 ['json' => $donation->toApiModel()]
             );
         } catch (RequestException $ex) {
+            // Sandboxes that 404 on POST may be trying to sync up donations for non-existent campaigns and
+            // so have probably just been refreshed. In this case we want to update the local state of play
+            // to stop them getting pushed, instead of treating this as an error. So throw this for appropriate
+            // handling in the caller without an error level log. In production, 404s should not happen and
+            // so we continue to throw a `BadRequestException` which means `DonationRepostitory::doCreate()`
+            // will return false and the caller will log an error.
+            if ($ex->getCode() === 404 && getenv('APP_ENV') !== 'production') {
+                throw new NotFoundException();
+            }
+
             $this->logger->error('Donation create exception ' . get_class($ex) . ": {$ex->getMessage()}");
             throw new BadRequestException('Donation not created');
         }
