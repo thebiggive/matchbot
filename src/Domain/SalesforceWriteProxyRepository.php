@@ -56,6 +56,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             ['id' => 'ASC'],
             $limit,
         );
+
         foreach ($proxiesToCreate as $proxy) {
             $this->push($proxy, true);
         }
@@ -65,6 +66,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             ['id' => 'ASC'],
             $limit,
         );
+
         foreach ($proxiesToUpdate as $proxy) {
             $this->push($proxy, false);
         }
