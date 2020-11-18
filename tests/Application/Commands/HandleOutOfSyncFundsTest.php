@@ -34,7 +34,8 @@ class HandleOutOfSyncFundsTest extends TestCase
             'matchbot:handle-out-of-sync-funds starting!',
             'Funding 2 is over-matched by 10.00. Donation withdrawals 51.00, funding allocations 41.00',
             'Funding 3 is under-matched by 30.00. Donation withdrawals 500.00, funding allocations 530.00',
-            'Checked 3 fundings. Found 1 with correct allocations, 1 over-matched and 1 under-matched',
+            'Funding 4 is under-matched by 0.01. Donation withdrawals 0.00, funding allocations 0.01',
+            'Checked 4 fundings. Found 1 with correct allocations, 1 over-matched and 2 under-matched',
             'matchbot:handle-out-of-sync-funds complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -59,7 +60,10 @@ class HandleOutOfSyncFundsTest extends TestCase
             'Funding 3 is under-matched by 30.00. Donation withdrawals 500.00, funding allocations 530.00',
             'Released 30.00 to funding ID 3',
             'New fund total for funding ID 3: 487.65',
-            'Checked 3 fundings. Found 1 with correct allocations, 1 over-matched and 1 under-matched',
+            'Funding 4 is under-matched by 0.01. Donation withdrawals 0.00, funding allocations 0.01',
+            'Released 0.01 to funding ID 4',
+            'New fund total for funding ID 4: 1000.00',
+            'Checked 4 fundings. Found 1 with correct allocations, 1 over-matched and 2 under-matched',
             'matchbot:handle-out-of-sync-funds complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -116,6 +120,7 @@ class HandleOutOfSyncFundsTest extends TestCase
                 $this->getFundingInSync(),
                 $this->getFundingOverMatched(),
                 $this->getFundingUnderMatched(),
+                $this->getFundingUnderMatchedWithNothingAllocated(),
             ])
             ->shouldBeCalledOnce();
 
@@ -155,6 +160,13 @@ class HandleOutOfSyncFundsTest extends TestCase
                 2
             ))
             ->shouldBeCalledOnce();
+        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->getFundingUnderMatchedWithNothingAllocated())
+            ->willReturn(bcsub(
+                $this->getFundingUnderMatchedWithNothingAllocated()->getAmount(),
+                $this->getFundingUnderMatchedWithNothingAllocated()->getAmountAvailable(),
+                2
+            ))
+            ->shouldBeCalledOnce();
 
         return $fundingWithdrawalRepoProphecy;
     }
@@ -174,11 +186,15 @@ class HandleOutOfSyncFundsTest extends TestCase
             ->getAmountAvailable($this->getFundingUnderMatched())
             ->willReturn('457.65') // DB amount available === £487.65
             ->shouldBeCalledOnce();
+        $matchingAdapterProphecy
+            ->getAmountAvailable($this->getFundingUnderMatchedWithNothingAllocated())
+            ->willReturn('999.99') // DB amount available === £1000.00
+            ->shouldBeCalledOnce();
 
         if ($expectFixes) {
             $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
-                ->willReturn('487.65') // Amount available after adjustment
-                ->shouldBeCalledOnce();
+                ->willReturn('487.65', '1000.00') // Amount available after adjustment, in call order.
+                ->shouldBeCalledTimes(2);
         } else {
             $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))->shouldNotBeCalled();
         }
@@ -214,5 +230,15 @@ class HandleOutOfSyncFundsTest extends TestCase
         $fundingUnderMatched->setAmountAvailable('487.65');
 
         return $fundingUnderMatched;
+    }
+
+    private function getFundingUnderMatchedWithNothingAllocated(): CampaignFunding
+    {
+        $fundingUnderMatchedWithZero = new CampaignFunding();
+        $fundingUnderMatchedWithZero->setId(4);
+        $fundingUnderMatchedWithZero->setAmount('1000.00');
+        $fundingUnderMatchedWithZero->setAmountAvailable('1000.00');
+
+        return $fundingUnderMatchedWithZero;
     }
 }

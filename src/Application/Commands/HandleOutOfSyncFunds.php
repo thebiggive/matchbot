@@ -69,14 +69,22 @@ class HandleOutOfSyncFunds extends LockingCommand
             return 1;
         }
 
+        $excludedFundingIds = [];
+        if ($excludeJson = getenv('KNOWN_OVERMATCHED_FUNDING_IDS')) {
+            $excludedFundingIds = json_decode($excludeJson, true, 512, JSON_THROW_ON_ERROR);
+        }
+
         $numFundingsCorrect = 0;
         $numFundingsOvermatched = 0;
         $numFundingsUndermatched = 0;
+        /** @var CampaignFunding[] $fundings */
         $fundings = $this->campaignFundingRepository->findAll();
         $numFundings = count($fundings);
 
         foreach ($fundings as $funding) {
-            /** @var CampaignFunding $funding */
+            if (in_array($funding->getId(), $excludedFundingIds, true)) {
+                continue;
+            }
 
             // Amount allocated from the CampaignFunding
             $fundingAvailable = $this->matchingAdapter->getAmountAvailable($funding);

@@ -10,7 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Expire match funding allocations, by hard-deleting `FundingWithdrawals` for donations that have been
- * Pending for more than the reservation time.
+ * Pending for more than the reservation time and releasing funds with the real-time adapter.
  *
  * Donations may still be completed after the expiry time but will not receive match funds.
  */
