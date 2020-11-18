@@ -51,11 +51,29 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
      */
     public function pushAllPending(int $limit = 200): int
     {
+
+        if (getenv('APP_ENV') === 'regression') {
+            $proxiesToCheck = $this->findBy(
+                ['salesforcePushStatus' => 'pending-update', 'donorLastName' => null],
+                ['id' => 'ASC'],
+            );
+
+            foreach ($proxiesToCheck as $proxy) {
+                $createdAt = $proxy->getCreatedAt();
+                $this->logger->info(
+                    'Donation Id to update: ' . $proxy->getSalesforceId() .
+                    ' created at: ' . $createdAt->format('Y-m-d H:i:s') .
+                    ' with donation status ' . $proxy->getDonationStatus()
+                );
+            }
+        }
+
         $proxiesToCreate = $this->findBy(
             ['salesforcePushStatus' => 'pending-create'],
             ['id' => 'ASC'],
             $limit,
         );
+
         foreach ($proxiesToCreate as $proxy) {
             $this->push($proxy, true);
         }
@@ -65,6 +83,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             ['id' => 'ASC'],
             $limit,
         );
+
         foreach ($proxiesToUpdate as $proxy) {
             $this->push($proxy, false);
         }
