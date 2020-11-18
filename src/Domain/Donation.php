@@ -362,11 +362,6 @@ class Donation extends SalesforceWriteProxy
         $this->championComms = $championComms;
     }
 
-    public function getCreatedAt(): ?DateTime
-    {
-        return $this->createdAt;
-    }
-
     public function getDonorFirstName(): ?string
     {
         return $this->donorFirstName;
