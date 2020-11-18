@@ -148,7 +148,7 @@ class OptimisticRedisAdapter extends Adapter
 
     private function toPounds(int $pence): string
     {
-        return bcdiv($pence, '100', 2);
+        return bcdiv((string) $pence, '100', 2);
     }
 
     private function buildKey(CampaignFunding $funding)
