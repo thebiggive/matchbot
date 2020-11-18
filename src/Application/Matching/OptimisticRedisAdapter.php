@@ -54,7 +54,10 @@ class OptimisticRedisAdapter extends Adapter
             return $funding->getAmountAvailable();
         }
 
-        return $this->toPounds($redisFundBalanceInPence);
+        // Redis INCRBY / DECRBY and friends work on values which are validated to be integer-like
+        // but are actually stored as strings internally, and seem to come back to PHP as strings
+        // when get() is used => cast to int before converting to pounds.
+        return $this->toPounds((int) $redisFundBalanceInPence);
     }
 
     protected function doSubtractAmount(CampaignFunding $funding, string $amount): string
@@ -71,6 +74,7 @@ class OptimisticRedisAdapter extends Adapter
             ->decrBy($this->buildKey($funding), $decrementInPence)
             ->exec();
 
+        $fundBalanceInPence = (int) $fundBalanceInPence;
         if ($fundBalanceInPence < 0) {
             // We have hit the edge case where not having strict, slow locks falls down. We atomically
             // allocated some match funds based on the amount available when we queried the database, but since our
@@ -89,14 +93,14 @@ class OptimisticRedisAdapter extends Adapter
             while ($retries++ < $this->maxPartialAllocateTries && $fundBalanceInPence < 0) {
                 // Try deallocating just the difference until the fund has exactly zero
                 $overspendInPence = 0 - $fundBalanceInPence;
-                $fundBalanceInPence = $this->redis->incrBy($this->buildKey($funding), $overspendInPence);
+                $fundBalanceInPence = (int) $this->redis->incrBy($this->buildKey($funding), $overspendInPence);
                 $amountAllocatedInPence -= $overspendInPence;
             }
 
             if ($fundBalanceInPence < 0) {
                 // We couldn't get the values to work within the maximum number of iterations, so release whatever
                 // we tried to hold back to the match pot and bail out.
-                $fundBalanceInPence = $this->redis->incrBy($this->buildKey($funding), $amountAllocatedInPence);
+                $fundBalanceInPence = (int) $this->redis->incrBy($this->buildKey($funding), $amountAllocatedInPence);
                 $this->setFundingValue($funding, $this->toPounds($fundBalanceInPence));
                 throw new TerminalLockException(
                     "Fund {$funding->getId()} balance sub-zero after $retries attempts. " .
@@ -131,7 +135,7 @@ class OptimisticRedisAdapter extends Adapter
             ->incrBy($this->buildKey($funding), $incrementInPence)
             ->exec();
 
-        $fundBalance = $this->toPounds($fundBalanceInPence);
+        $fundBalance = $this->toPounds((int) $fundBalanceInPence);
         $this->setFundingValue($funding, $fundBalance);
 
         return $fundBalance;
