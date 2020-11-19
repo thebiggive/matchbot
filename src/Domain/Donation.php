@@ -254,6 +254,8 @@ class Donation extends SalesforceWriteProxy
             $data['donationId'],
             $data['matchReservedAmount'],
             $data['matchedAmount'],
+            $data['cardBrand'],
+            $data['cardCountry'],
         );
 
         return $data;
@@ -269,6 +271,7 @@ class Donation extends SalesforceWriteProxy
             'countryCode' => $this->getDonorCountryCode(),
             'createdTime' => $this->getCreatedDate()->format(DateTime::ATOM),
             'donationAmount' => (float) $this->getAmount(),
+            'charityFee' => (float) $this->getCharityFee(),
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
             'emailAddress' => $this->getDonorEmailAddress(),
