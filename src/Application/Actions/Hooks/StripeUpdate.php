@@ -68,7 +68,7 @@ class StripeUpdate extends Action
                 case 'payout.paid':
                     return $this->handlePayoutPaid($event);
                 default:
-                    $this->logger->info('Unsupported Action');
+                    $this->logger->info(sprintf('Unsupported event type "%s"', $event->type));
                     return $this->respond(new ActionPayload(204));
             }
         }
