@@ -74,6 +74,7 @@ class DonationTest extends TestCase
         // is not included in the core donation amount set by `setAmount()`.
         $donation = new Donation();
         $donation->setAmount('987.65');
+        $donation->setCharityFee('enthuse');
         $donation->setTipAmount('10.00');
 
         // £987.65 * 1.2%   = £ 11.85 (to 2 d.p.)
@@ -88,6 +89,7 @@ class DonationTest extends TestCase
     {
         $donation = new Donation();
         $donation->setAmount('987.65');
+        $donation->setCharityFee('enthuse');
 
         // £987.65 * 1.2%   = £ 11.85 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -100,7 +102,9 @@ class DonationTest extends TestCase
     public function testAmountForCharityWithoutTipRoundingOnPointFive()
     {
         $donation = new Donation();
+        $donation->setPsp('enthuse');
         $donation->setAmount('6.25');
+        $donation->setCharityFee('enthuse');
 
         // £1.25 * 1.2% = £ 0.08 (to 2 d.p. – following normal mathematical rounding from £0.075)
         // Fixed fee    = £ 0.20

@@ -618,6 +618,7 @@ class CreateTest extends TestCase
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
         $donation->setDonorCountryCode('GB');
         $donation->setTipAmount('1.11');
+        $donation->setCharityFee('enthuse');
 
         if (!$minimalSetupData) {
             $donation->setCharityComms(true);
