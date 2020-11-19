@@ -60,6 +60,8 @@ class StripeUpdate extends Action
         }
 
         if ($event instanceof Event) {
+            $this->logger->info(sprintf('Received Stripe event type "%s"', $event->type));
+
             switch ($event->type) {
                 case 'charge.refunded':
                     return $this->handleChargeRefunded($event);
@@ -68,7 +70,7 @@ class StripeUpdate extends Action
                 case 'payout.paid':
                     return $this->handlePayoutPaid($event);
                 default:
-                    $this->logger->info('Unsupported Action');
+                    $this->logger->warning(sprintf('Unsupported event type "%s"', $event->type));
                     return $this->respond(new ActionPayload(204));
             }
         }
@@ -117,7 +119,7 @@ class StripeUpdate extends Action
         $count = 0;
         $payoutId = $event->data->object->id;
 
-        $this->logger->info(sprintf('Getting all charges related to Payout ID: %s', $payoutId));
+        $this->logger->info(sprintf('Payout: Getting all charges related to Payout ID: %s', $payoutId));
 
         $hasMore = true;
         $lastBalanceTransactionId = null;
@@ -145,7 +147,7 @@ class StripeUpdate extends Action
                 $attributes['start_after'] = $lastBalanceTransactionId;
             }
         }
-        $this->logger->info(sprintf('Getting all paid Charge IDs complete, found: %s', count($paidChargeIds)));
+        $this->logger->info(sprintf('Payout: Getting all paid Charge IDs complete, found: %s', count($paidChargeIds)));
 
         if (count($paidChargeIds) > 0) {
             foreach ($paidChargeIds as $chargeId) {
@@ -155,7 +157,7 @@ class StripeUpdate extends Action
                 // If a donation was not found, then it's most likely from a different
                 // sandbox and therefore we info log this and respond with 204.
                 if (!$donation) {
-                    $this->logger->info(sprintf('Donation not found with Charge ID %s', $chargeId));
+                    $this->logger->info(sprintf('Payout: Donation not found with Charge ID %s', $chargeId));
                     return $this->respond(new ActionPayload(204));
                 }
 
@@ -169,13 +171,15 @@ class StripeUpdate extends Action
 
                     $count++;
                 } elseif ($donation->getDonationStatus() !== 'Paid') {
-                    $this->logger->error(sprintf('Unexpected donation status found for Charge ID %s', $chargeId));
+                    $this->logger->error(
+                        sprintf('Payout: Unexpected donation status found for Charge ID %s', $chargeId)
+                    );
                     return $this->respond(new ActionPayload(400));
                 }
             }
         }
 
-        $this->logger->info(sprintf('Acknowledging paid donations complete, persisted: %s', $count));
+        $this->logger->info(sprintf('Payout: Acknowledging paid donations complete, persisted: %s', $count));
         return $this->respondWithData($event->data->object);
     }
 
