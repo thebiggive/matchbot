@@ -51,7 +51,7 @@ class DonationTest extends TestCase
         $donation->setAmount('25000.01');
     }
 
-    public function testInvalidPspRejected()
+    public function testInvalidPspRejected(): void
     {
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage("Unexpected PSP 'paypal'");
@@ -60,7 +60,7 @@ class DonationTest extends TestCase
         $donation->setPsp('paypal');
     }
 
-    public function testValidPspAccepted()
+    public function testValidPspAccepted(): void
     {
         $donation = new Donation();
         $donation->setPsp('enthuse');
@@ -68,7 +68,24 @@ class DonationTest extends TestCase
         $this->addToAssertionCount(1); // Just check setPsp() doesn't hit an exception
     }
 
-    public function testAmountForCharityWithTip()
+    public function testEnthuseAmountForCharityWithTip(): void
+    {
+        // N.B. tip to TBG should not change the amount the charity receives, and the tip
+        // is not included in the core donation amount set by `setAmount()`.
+        $donation = new Donation();
+        $donation->setAmount('987.65');
+        $donation->setCharityFee('enthuse');
+        $donation->setTipAmount('10.00');
+
+        // £987.65 * 1.9%   = £ 18.77 (to 2 d.p.)
+        // Fixed fee        = £  0.20
+        // Total fee        = £ 18.97
+        // Amount after fee = £968.68
+
+        $this->assertEquals('968.68', $donation->getAmountForCharity());
+    }
+
+    public function testStripeAmountForCharityWithTip(): void
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
@@ -77,7 +94,7 @@ class DonationTest extends TestCase
         $donation->setCharityFee('stripe');
         $donation->setTipAmount('10.00');
 
-        // £987.65 * 1.2%   = £ 14.01 (to 2 d.p.)
+        // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
         // Total fee        = £ 15.01
         // Amount after fee = £972.64
@@ -85,13 +102,13 @@ class DonationTest extends TestCase
         $this->assertEquals('972.64', $donation->getAmountForCharity());
     }
 
-    public function testAmountForCharityWithoutTip()
+    public function testStripeAmountForCharityWithoutTip(): void
     {
         $donation = new Donation();
         $donation->setAmount('987.65');
         $donation->setCharityFee('stripe');
 
-        // £987.65 * 1.2%   = £ 14.01 (to 2 d.p.)
+        // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
         // Total fee        = £ 15.01
         // Amount after fee = £972.64
@@ -99,14 +116,14 @@ class DonationTest extends TestCase
         $this->assertEquals('972.64', $donation->getAmountForCharity());
     }
 
-    public function testAmountForCharityWithoutTipRoundingOnPointFive()
+    public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
     {
         $donation = new Donation();
         $donation->setPsp('stripe');
         $donation->setAmount('6.25');
         $donation->setCharityFee('stripe');
 
-        // £1.25 * 1.2% = £ 0.09 (to 2 d.p. – following normal mathematical rounding from £0.075)
+        // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)
         // Fixed fee    = £ 0.20
         // Total fee    = £ 0.29
         // After fee    = £ 5.96
