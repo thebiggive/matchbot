@@ -60,6 +60,8 @@ class StripeUpdate extends Action
         }
 
         if ($event instanceof Event) {
+            $this->logger->info(sprintf('Received Stripe event type "%s"', $event->type));
+
             switch ($event->type) {
                 case 'charge.refunded':
                     return $this->handleChargeRefunded($event);
@@ -68,7 +70,7 @@ class StripeUpdate extends Action
                 case 'payout.paid':
                     return $this->handlePayoutPaid($event);
                 default:
-                    $this->logger->info(sprintf('Unsupported event type "%s"', $event->type));
+                    $this->logger->warning(sprintf('Unsupported event type "%s"', $event->type));
                     return $this->respond(new ActionPayload(204));
             }
         }
