@@ -133,6 +133,11 @@ class Update extends Action
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setDonorBillingAddress($donationData->billingPostalAddress);
+        $donation->setCharityFee(
+            $donation->getPsp(),
+            $donationData->cardBrand,
+            $donationData->cardCountry
+        );
 
         if ($donation->getPsp() === 'stripe') {
             try {
@@ -144,6 +149,11 @@ class Update extends Action
                         'salesforceId' => $donation->getSalesforceId(),
                         'tbgTipGiftAid' => $donation->hasTipGiftAid(),
                     ],
+                    'transfer_data' => [
+                        // Update the transfer amount incase the final charge was from
+                        // a Non EU / Amex card where fees are varied.
+                        'amount' => 100 * $donation->getAmountForCharity()
+                    ]
                 ]);
             } catch (ApiErrorException $exception) {
                 $this->logger->error(
