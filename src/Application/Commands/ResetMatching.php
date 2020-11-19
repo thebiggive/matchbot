@@ -23,8 +23,7 @@ class ResetMatching extends LockingCommand
     public function __construct(
         CampaignFundingRepository $campaignFundingRepository,
         Matching\Adapter $matchingAdapter
-    )
-    {
+    ) {
         $this->campaignFundingRepository = $campaignFundingRepository;
         $this->matchingAdapter = $matchingAdapter;
 
