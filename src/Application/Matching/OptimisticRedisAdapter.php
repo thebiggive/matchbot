@@ -144,6 +144,11 @@ class OptimisticRedisAdapter extends Adapter
         return $fundBalance;
     }
 
+    public function delete(CampaignFunding $funding): void
+    {
+        $this->redis->del($this->buildKey($funding));
+    }
+
     private function toPence(string $pounds): int
     {
         return (int) bcmul($pounds, '100', 0);
