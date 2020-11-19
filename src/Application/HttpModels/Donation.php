@@ -28,4 +28,6 @@ class Donation
     public string $projectId;
     public ?float $tipAmount = null;
     public ?bool $tipGiftAid = null;
+    public ?string $cardBrand = null;
+    public ?string $cardCountry = null;
 }
