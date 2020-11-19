@@ -665,6 +665,9 @@ class UpdateTest extends TestCase
                 'salesforceId' => 'sfDonation369',
                 'tbgTipGiftAid' => false,
             ],
+            'transfer_data' => [
+                'amount' => '12140'
+            ]
         ])
             ->shouldBeCalledOnce();
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
