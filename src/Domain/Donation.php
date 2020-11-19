@@ -481,7 +481,7 @@ class Donation extends SalesforceWriteProxy
      * @param string $charityFee
      */
     public function setCharityFee(string $psp, string $cardBrand = '', string $cardCountry = 'GB'): void
-    {   
+    {
         $feeAmountFixed = '0.20';   // 20p fixed per-donation
 
         if ($psp === 'enthuse') {
