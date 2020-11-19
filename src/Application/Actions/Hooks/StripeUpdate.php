@@ -171,7 +171,9 @@ class StripeUpdate extends Action
 
                     $count++;
                 } elseif ($donation->getDonationStatus() !== 'Paid') {
-                    $this->logger->error(sprintf('Payout: Unexpected donation status found for Charge ID %s', $chargeId));
+                    $this->logger->error(
+                        sprintf('Payout: Unexpected donation status found for Charge ID %s', $chargeId)
+                    );
                     return $this->respond(new ActionPayload(400));
                 }
             }
