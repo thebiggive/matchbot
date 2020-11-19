@@ -74,42 +74,42 @@ class DonationTest extends TestCase
         // is not included in the core donation amount set by `setAmount()`.
         $donation = new Donation();
         $donation->setAmount('987.65');
-        $donation->setCharityFee('enthuse');
+        $donation->setCharityFee('stripe');
         $donation->setTipAmount('10.00');
 
-        // £987.65 * 1.2%   = £ 11.85 (to 2 d.p.)
+        // £987.65 * 1.2%   = £ 14.01 (to 2 d.p.)
         // Fixed fee        = £  0.20
-        // Total fee        = £ 12.05
-        // Amount after fee = £975.60
+        // Total fee        = £ 15.01
+        // Amount after fee = £972.64
 
-        $this->assertEquals('975.60', $donation->getAmountForCharity());
+        $this->assertEquals('972.64', $donation->getAmountForCharity());
     }
 
     public function testAmountForCharityWithoutTip()
     {
         $donation = new Donation();
         $donation->setAmount('987.65');
-        $donation->setCharityFee('enthuse');
+        $donation->setCharityFee('stripe');
 
-        // £987.65 * 1.2%   = £ 11.85 (to 2 d.p.)
+        // £987.65 * 1.2%   = £ 14.01 (to 2 d.p.)
         // Fixed fee        = £  0.20
-        // Total fee        = £ 12.05
-        // Amount after fee = £975.60
+        // Total fee        = £ 15.01
+        // Amount after fee = £972.64
 
-        $this->assertEquals('975.60', $donation->getAmountForCharity());
+        $this->assertEquals('972.64', $donation->getAmountForCharity());
     }
 
     public function testAmountForCharityWithoutTipRoundingOnPointFive()
     {
         $donation = new Donation();
-        $donation->setPsp('enthuse');
+        $donation->setPsp('stripe');
         $donation->setAmount('6.25');
-        $donation->setCharityFee('enthuse');
+        $donation->setCharityFee('stripe');
 
-        // £1.25 * 1.2% = £ 0.08 (to 2 d.p. – following normal mathematical rounding from £0.075)
+        // £1.25 * 1.2% = £ 0.09 (to 2 d.p. – following normal mathematical rounding from £0.075)
         // Fixed fee    = £ 0.20
-        // Total fee    = £ 0.28
-        // After fee    = £ 5.97
-        $this->assertEquals('5.97', $donation->getAmountForCharity());
+        // Total fee    = £ 0.29
+        // After fee    = £ 5.96
+        $this->assertEquals('5.96', $donation->getAmountForCharity());
     }
 }

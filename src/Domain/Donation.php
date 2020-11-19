@@ -108,7 +108,7 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * Fee the charity takes on,
-     * For Enthuse: 1.2% of $amount + 0.20p
+     * For Enthuse: 1.9% of $amount + 0.20p
      * For Stripe (EU / UK): 1.5% of $amount + 0.20p
      * For Stripe (Non EU / Amex): 3.2% of $amount + 0.20p
      *
@@ -291,8 +291,6 @@ class Donation extends SalesforceWriteProxy
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
             'transactionId' => $this->getTransactionId(),
-            'cardBrand' => '',
-            'cardCountry' => 'GB',
         ];
 
         if (in_array($this->getDonationStatus(), ['Pending', 'Reserved'], true)) {
@@ -477,15 +475,15 @@ class Donation extends SalesforceWriteProxy
     /**
      * @param string $psp
      * @param string $cardBrand
-     * @param string $cardCountry - default to 'GB' on create, an update command will override this where necessary
+     * @param string $cardCountry
      * @param string $charityFee
      */
-    public function setCharityFee(string $psp, string $cardBrand = '', string $cardCountry = 'GB'): void
+    public function setCharityFee(string $psp, ?string $cardBrand = null, ?string $cardCountry = null): void
     {
         $feeAmountFixed = '0.20';   // 20p fixed per-donation
 
         if ($psp === 'enthuse') {
-            $feeRatio = '0.012';
+            $feeRatio = '0.019';
         } else {
             $feeRatio = ($cardBrand === 'amex' || !$this->isEU($cardCountry)) ? '0.032' : '0.015';
         }
@@ -768,8 +766,12 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return bool Whether the charge was made using an EU card
      */
-    public function isEU(string $cardCountry): bool
+    public function isEU(?string $cardCountry): bool
     {
-        return in_array($cardCountry, $this->euISOs, true);
+        if ($cardCountry === null) {
+            return true; // Default to 1.5% calculation if card country is not known yet.
+        } else {
+            return in_array($cardCountry, $this->euISOs, true);
+        }
     }
 }

@@ -206,6 +206,7 @@ class CreateTest extends TestCase
     {
         $donation = $this->getTestDonation(true, true);
         $donation->setPsp('stripe');
+        $donation->setCharityFee('stripe');
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
         $fundingWithdrawalForMatch = new FundingWithdrawal();
@@ -264,7 +265,7 @@ class CreateTest extends TestCase
             ],
             'statement_descriptor' => 'The Big Give Create te',
             'transfer_data' => [
-                'amount' => 1166,
+                'amount' => 1162,
                 'destination' => 'unitTest_newStripeAccount_456',
             ],
         ];
@@ -387,6 +388,7 @@ class CreateTest extends TestCase
     {
         $donation = $this->getTestDonation(true, true);
         $donation->setPsp('stripe');
+        $donation->setCharityFee('stripe');
 
         $fundingWithdrawalForMatch = new FundingWithdrawal();
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
@@ -427,7 +429,7 @@ class CreateTest extends TestCase
             ],
             'statement_descriptor' => 'The Big Give Create te',
             'transfer_data' => [
-                'amount' => 1166,
+                'amount' => 1162,
                 'destination' => 'unitTest_stripeAccount_123',
             ],
         ];
