@@ -4,81 +4,41 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Hooks;
 
-use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Domain\Donation;
-use MatchBot\Domain\DonationRepository;
-use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Log\LoggerInterface;
 use Stripe\Event;
-use Stripe\StripeClient;
 
 /**
  * Handle charge.succeeded and charge.refunded events from a Stripe account webhook.
  *
  * @return Response
  */
-class StripeChargeUpdate extends Action
+class StripeChargeUpdate extends Stripe
 {
-    private DonationRepository $donationRepository;
-    private EntityManagerInterface $entityManager;
-    private StripeClient $stripeClient;
-    private string $accountWebhookSecret;
-
-    public function __construct(
-        ContainerInterface $container,
-        DonationRepository $donationRepository,
-        EntityManagerInterface $entityManager,
-        LoggerInterface $logger,
-        StripeClient $stripeClient
-    ) {
-        $this->donationRepository = $donationRepository;
-        $this->entityManager = $entityManager;
-        $this->stripeClient = $stripeClient;
-        // As `settings` is just an array for now, I think we have to inject Container to do this.
-        $this->apiKey = $container->get('settings')['stripe']['apiKey'];
-        $this->accountWebhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
-
-        parent::__construct($logger);
-    }
-
     /**
      * @return Response
      */
     protected function action(): Response
     {
-        try {
-            $event = \Stripe\Webhook::constructEvent(
-                $this->request->getBody(),
-                $this->request->getHeaderLine('stripe-signature'),
-                $this->accountWebhookSecret
-            );
-        } catch (\UnexpectedValueException $e) {
-            return $this->validationError("Invalid Payload: {$e->getMessage()}", 'Invalid Payload');
-        } catch (\Stripe\Exception\SignatureVerificationException $e) {
-            return $this->validationError('Invalid Signature');
+        $validationErrorResponse = $this->prepareEvent(
+            $this->request,
+            $this->stripeSettings['accountWebhookSecret']
+        );
+
+        if ($validationErrorResponse !== null) {
+            return $validationErrorResponse;
         }
 
-        if (!($event instanceof Event)) {
-            return $this->validationError('Invalid event');
-        }
+        $this->logger->info(sprintf('Received Stripe account event type "%s"', $this->event->type));
 
-        $this->logger->info(sprintf('Received Stripe account event type "%s"', $event->type));
-
-        if (!$event->livemode && getenv('APP_ENV') === 'production') {
-            $this->logger->warning(sprintf('Skipping non-live %s webhook in Production', $event->type));
-            return $this->respond(new ActionPayload(204));
-        }
-
-        switch ($event->type) {
+        switch ($this->event->type) {
             case 'charge.refunded':
-                return $this->handleChargeRefunded($event);
+                return $this->handleChargeRefunded($this->event);
             case 'charge.succeeded':
-                return $this->handleChargeSucceeded($event);
+                return $this->handleChargeSucceeded($this->event);
             default:
-                $this->logger->warning(sprintf('Unsupported event type "%s"', $event->type));
+                $this->logger->warning(sprintf('Unsupported event type "%s"', $this->event->type));
                 return $this->respond(new ActionPayload(204));
         }
     }
