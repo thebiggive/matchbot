@@ -16,14 +16,16 @@ use Stripe\Event;
 use Stripe\StripeClient;
 
 /**
+ * Handle payout.paid and payout.failed events from a Stripe Connect app webhook.
+ *
  * @return Response
  */
-class StripeUpdate extends Action
+class StripePayoutUpdate extends Action
 {
     private DonationRepository $donationRepository;
     private EntityManagerInterface $entityManager;
     private StripeClient $stripeClient;
-    private string $webhookSecret;
+    private string $connectAppWebhookSecret;
 
     public function __construct(
         ContainerInterface $container,
@@ -37,7 +39,7 @@ class StripeUpdate extends Action
         $this->stripeClient = $stripeClient;
         // As `settings` is just an array for now, I think we have to inject Container to do this.
         $this->apiKey = $container->get('settings')['stripe']['apiKey'];
-        $this->webhookSecret = $container->get('settings')['stripe']['webhookSecret'];
+        $this->connectAppWebhookSecret = $container->get('settings')['stripe']['connectAppWebhookSecret'];
 
         parent::__construct($logger);
     }
@@ -51,7 +53,7 @@ class StripeUpdate extends Action
             $event = \Stripe\Webhook::constructEvent(
                 $this->request->getBody(),
                 $this->request->getHeaderLine('stripe-signature'),
-                $this->webhookSecret
+                $this->connectAppWebhookSecret
             );
         } catch (\UnexpectedValueException $e) {
             return $this->validationError("Invalid Payload: {$e->getMessage()}", 'Invalid Payload');
@@ -63,7 +65,7 @@ class StripeUpdate extends Action
             return $this->validationError('Invalid event');
         }
 
-        $this->logger->info(sprintf('Received Stripe event type "%s"', $event->type));
+        $this->logger->info(sprintf('Received Stripe Connect app event type "%s"', $event->type));
 
         if (!$event->livemode && getenv('APP_ENV') === 'production') {
             $this->logger->warning(sprintf('Skipping non-live %s webhook in Production', $event->type));
@@ -71,13 +73,9 @@ class StripeUpdate extends Action
         }
 
         switch ($event->type) {
-            case 'charge.refunded':     // subscribe on the account hook
-                return $this->handleChargeRefunded($event);
-            case 'charge.succeeded':    // subscribe on the account hook
-                return $this->handleChargeSucceeded($event);
-            case 'payout.paid':         // subscribe on the Connect application hook
+            case 'payout.paid':
                 return $this->handlePayoutPaid($event);
-            case 'payout.failed':       // subscribe on the Connect application hook
+            case 'payout.failed':
                 $this->logger->error(sprintf('payout.failed for ID %s', $event->data->object->id));
                 return $this->respond(new ActionPayload(200));
             default:
@@ -86,43 +84,7 @@ class StripeUpdate extends Action
         }
     }
 
-    private function handleChargeSucceeded(Event $event): Response
-    {
-        $intentId = $event->data->object->payment_intent;
-
-        /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['transactionId' => $intentId]);
-
-        if (!$donation) {
-            $this->logger->info(sprintf('Donation not found with Payment Intent ID %s', $intentId));
-            return $this->respond(new ActionPayload(204));
-        }
-
-        // For now we support the happy success path,
-        // as this is the only event type we're handling right now,
-        // convert status to the one SF uses.
-        if ($event->data->object->status === 'succeeded') {
-            $donation->setChargeId($event->data->object->id);
-            $donation->setDonationStatus('Collected');
-        } else {
-            return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
-        }
-
-        if ($donation->isReversed() && $event->data->object->metadata->matchedAmount > 0) {
-            $this->donationRepository->releaseMatchFunds($donation);
-        }
-
-        $this->entityManager->persist($donation);
-
-        // We log if this fails but don't worry the webhook-sending payment client
-        // about it. We'll re-try sending the updated status to Salesforce in a future
-        // batch sync.
-        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
-
-        return $this->respondWithData($event->data->object);
-    }
-
-    public function handlePayoutPaid(Event $event): Response
+    private function handlePayoutPaid(Event $event): Response
     {
         $count = 0;
         $payoutId = $event->data->object->id;
@@ -188,48 +150,6 @@ class StripeUpdate extends Action
         }
 
         $this->logger->info(sprintf('Payout: Acknowledging paid donations complete, persisted: %s', $count));
-        return $this->respondWithData($event->data->object);
-    }
-
-    public function handleChargeRefunded(Event $event): Response
-    {
-        $chargeId = $event->data->object->id;
-        $amountRefunded = $event->data->object->amount_refunded;
-
-        /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
-
-        if (!$donation) {
-            $this->logger->info(sprintf('Donation not found with Charge ID %s', $chargeId));
-            return $this->respond(new ActionPayload(204));
-        }
-
-        // Available status' (pending, succeeded, failed, canceled),
-        // see: https://stripe.com/docs/api/refunds/object.
-        // For now we support the happy success path,
-        // convert status to the one SF uses.
-        if ($event->data->object->status === 'succeeded') {
-            $donation->setChargeId($event->data->object->id);
-            $donation->setDonationStatus('Refunded');
-        } else {
-            return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
-        }
-
-        // Release match funds only if the donation was matched and
-        // the refunded amount is equal to the local txn amount.
-        // We multiply local donation amount by 100 to match Stripes calculations.
-        if (
-            $donation->isReversed()
-            && $donation->getAmountInPenceIncTip() === $amountRefunded
-            && $donation->getCampaign()->isMatched()
-        ) {
-            $this->donationRepository->releaseMatchFunds($donation);
-        }
-
-        $this->entityManager->persist($donation);
-
-        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
-
         return $this->respondWithData($event->data->object);
     }
 }
