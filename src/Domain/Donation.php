@@ -110,7 +110,7 @@ class Donation extends SalesforceWriteProxy
      * Fee the charity takes on,
      * For Enthuse: 1.2% of $amount + 0.20p
      * For Stripe (EU / UK): 1.5% of $amount + 0.20p
-     * For Stripe (Non EU / Amex): 3.2% of $amount + 0.20
+     * For Stripe (Non EU / Amex): 3.2% of $amount + 0.20p
      *
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
