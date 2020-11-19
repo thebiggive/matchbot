@@ -59,23 +59,31 @@ class StripeUpdate extends Action
             return $this->validationError('Invalid Signature');
         }
 
-        if ($event instanceof Event) {
-            $this->logger->info(sprintf('Received Stripe event type "%s"', $event->type));
-
-            switch ($event->type) {
-                case 'charge.refunded':
-                    return $this->handleChargeRefunded($event);
-                case 'charge.succeeded':
-                    return $this->handleChargeSucceeded($event);
-                case 'payout.paid':
-                    return $this->handlePayoutPaid($event);
-                default:
-                    $this->logger->warning(sprintf('Unsupported event type "%s"', $event->type));
-                    return $this->respond(new ActionPayload(204));
-            }
+        if (!($event instanceof Event)) {
+            return $this->validationError('Invalid event');
         }
 
-        return $this->validationError('Invalid event');
+        $this->logger->info(sprintf('Received Stripe event type "%s"', $event->type));
+
+        if (!$event->livemode && getenv('APP_ENV') === 'production') {
+            $this->logger->warning(sprintf('Skipping non-live %s webhook in Production', $event->type));
+            return $this->respond(new ActionPayload(204));
+        }
+
+        switch ($event->type) {
+            case 'charge.refunded':     // subscribe on the account hook
+                return $this->handleChargeRefunded($event);
+            case 'charge.succeeded':    // subscribe on the account hook
+                return $this->handleChargeSucceeded($event);
+            case 'payout.paid':         // subscribe on the Connect application hook
+                return $this->handlePayoutPaid($event);
+            case 'payout.failed':       // subscribe on the Connect application hook
+                $this->logger->error(sprintf('payout.failed for ID %s', $event->data->object->id));
+                return $this->respond(new ActionPayload(200));
+            default:
+                $this->logger->warning(sprintf('Unsupported event type "%s"', $event->type));
+                return $this->respond(new ActionPayload(204));
+        }
     }
 
     private function handleChargeSucceeded(Event $event): Response
