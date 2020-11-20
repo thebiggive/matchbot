@@ -9,10 +9,13 @@ use MatchBot\Domain\CampaignFunding;
 use Redis;
 
 /**
- * Keep in mind that because this adapter is not actually locking, it must *NOT* throw the RetryableLockException!
- * It won't roll back existing allocations so further allocation cannot proceed safely if this were to happen. This
- * is the rationale for having an internal retry / adjust mechanism in this adapter to handle the case where a fund's
- * just running out and the database copy of the amount available was out of date.
+ * This adapter does not lock but uses atomic Redis `MULTI` operations to detect parallel changes in allocations.
+ * It has an internal retry / adjust mechanism to handle the case where a fund's just running out and the database
+ * copy of the amount available was out of date.
+ *
+ * As this is adapter has now been well tested and is the only one we're using, the alternative
+ * transactional `DoctrineAdapter` is now removed. It can be viewed in its final state from 2020 at
+ * https://github.com/thebiggive/matchbot/blob/b3a861c97190ac91d073aa86530401958c816e74/src/Application/Matching/DoctrineAdapter.php
  */
 class OptimisticRedisAdapter extends Adapter
 {
@@ -139,6 +142,11 @@ class OptimisticRedisAdapter extends Adapter
         $this->setFundingValue($funding, $fundBalance);
 
         return $fundBalance;
+    }
+
+    public function delete(CampaignFunding $funding): void
+    {
+        $this->redis->del($this->buildKey($funding));
     }
 
     private function toPence(string $pounds): int
