@@ -149,7 +149,7 @@ class DonationUpdateTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
-    public function testSuccess(): void
+    public function testSuccessWithGA(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -158,6 +158,8 @@ class DonationUpdateTest extends TestCase
         $donation = $this->getTestDonation();
         // Check tip updates come through in hook responses, while remaining null by default.
         $donation->setTipAmount('4.32');
+        $donation->setPsp('enthuse');
+        $donation->setCharityFee('enthuse');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -198,6 +200,62 @@ class DonationUpdateTest extends TestCase
         $this->assertFalse($payloadArray['optInTbgEmail']);
         $this->assertEquals(0, $payloadArray['matchedAmount']);
         $this->assertEquals(4.32, $payloadArray['tipAmount']);
+        $this->assertEquals(3.78, $payloadArray['charityFee']);
+    }
+
+    public function testSuccessWithoutGA(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+        // Check tip updates come through in hook responses, while remaining null by default.
+        $donation->setTipAmount('4.32');
+        $donation->setPsp('enthuse');
+        $donation->setCharityFee('enthuse');
+        $donation->setGiftAid(false);
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+
+        $body = json_encode($donation->toHookModel());
+
+        $request = $this->createRequest(
+            'PUT',
+            '/hooks/donation/12345678-1234-1234-1234-1234567890ab',
+            $body
+        )
+            ->withHeader('X-Webhook-Verify-Hash', $this->getValidAuth($body));
+
+        $response = $app->handle($request);
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+        $this->assertEquals('1 Main St, London N1 1AA', $payloadArray['billingPostalAddress']);
+        $this->assertFalse($payloadArray['giftAid']);
+        $this->assertTrue($payloadArray['tipGiftAid']);
+        $this->assertTrue($payloadArray['optInCharityEmail']);
+        $this->assertFalse($payloadArray['optInTbgEmail']);
+        $this->assertEquals(0, $payloadArray['matchedAmount']);
+        $this->assertEquals(4.32, $payloadArray['tipAmount']);
+        $this->assertEquals(2.55, $payloadArray['charityFee']);
     }
 
     private function getHttpDonation(bool $valid): array
