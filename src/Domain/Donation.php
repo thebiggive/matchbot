@@ -480,10 +480,12 @@ class Donation extends SalesforceWriteProxy
      */
     public function setCharityFee(string $psp, ?string $cardBrand = null, ?string $cardCountry = null): void
     {
+        $giftAidFee = '0.00';
         $feeAmountFixed = '0.20';   // 20p fixed per-donation
 
         if ($psp === 'enthuse') {
             $feeRatio = '0.019';
+            $giftAidFee = $this->hasGiftAid() ? bcmul('0.01', $this->getAmount(), 3) : '0.00';
         } else {
             $feeRatio = ($cardBrand === 'amex' || !$this->isEU($cardCountry)) ? '0.032' : '0.015';
         }
@@ -495,8 +497,10 @@ class Donation extends SalesforceWriteProxy
             bcmul($this->getAmount(), $feeRatio, 3)
         );
 
+        // Charity fee calculated as:
+        // Fixed fee amount + proportion of base donation amount + gift aid fee (for Stripe this is always £0.00)
         $charityFee = $this->roundAmount(
-            bcadd($feeAmountFixed, $feeAmountFromPercentageComponent, 3)
+            bcadd(bcadd($feeAmountFixed, $feeAmountFromPercentageComponent, 3), $giftAidFee, 3)
         );
 
         $this->charityFee = $charityFee;
