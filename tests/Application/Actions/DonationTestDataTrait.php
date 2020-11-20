@@ -9,7 +9,7 @@ use Ramsey\Uuid\Uuid;
 
 trait DonationTestDataTrait
 {
-    private function getTestDonation(): Donation
+    protected function getTestDonation(): Donation
     {
         $charity = new Charity();
         $charity->setDonateLinkId('123CharityId');
@@ -46,7 +46,7 @@ trait DonationTestDataTrait
         return $donation;
     }
 
-    private function getAnonymousPendingTestDonation(): Donation
+    protected function getAnonymousPendingTestDonation(): Donation
     {
         $charity = new Charity();
         $charity->setDonateLinkId('123CharityId');
