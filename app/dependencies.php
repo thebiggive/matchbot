@@ -79,7 +79,6 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
-//            return new Matching\DoctrineAdapter($c->get(EntityManagerInterface::class));
             return new Matching\OptimisticRedisAdapter($c->get(Redis::class), $c->get(RetrySafeEntityManager::class));
         },
 

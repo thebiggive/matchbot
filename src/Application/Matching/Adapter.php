@@ -22,6 +22,8 @@ abstract class Adapter
      */
     abstract public function getAmountAvailable(CampaignFunding $funding): string;
 
+    abstract public function delete(CampaignFunding $funding): void;
+
     /**
      * @param callable $function
      * @return mixed The given `$function`'s return value
