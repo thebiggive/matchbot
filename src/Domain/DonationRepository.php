@@ -122,6 +122,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $donation->setUuid((new UuidGenerator())->generate($this->getEntityManager(), $donation));
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
         $donation->setAmount((string) $donationData->donationAmount);
+        $donation->setCharityFee($donationData->psp);
         $donation->setGiftAid($donationData->giftAid);
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
@@ -196,14 +197,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 } catch (DBALException $exception) {
                     $this->logError('Doctrine could not update donation/withdrawals after maximum tries');
                 }
-            } catch (Matching\RetryableLockException $exception) {
-                $allocationTries++;
-                $waitTime = round(microtime(true) - $lockStartTime, 6);
-                $this->logError(
-                    "Match allocate RECOVERABLE error: ID {$donation->getUuid()} got " . get_class($exception) .
-                    " after {$waitTime}s on try #$allocationTries: {$exception->getMessage()}"
-                );
-                usleep(random_int(0, 1_000_000)); // Wait between 0 and 1 seconds before retrying
             } catch (Matching\TerminalLockException $exception) { // Includes non-retryable `DBALException`s
                 $waitTime = round(microtime(true) - $lockStartTime, 6);
                 $this->logError(
@@ -264,14 +257,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 } catch (DBALException $exception) {
                     $this->logError('Doctrine could not remove withdrawals after maximum tries');
                 }
-            } catch (Matching\RetryableLockException $exception) {
-                $releaseTries++;
-                $waitTime = round(microtime(true) - $lockStartTime, 6);
-                $this->logError(
-                    "Match release RECOVERABLE error: ID {$donation->getUuid()} got " . get_class($exception) .
-                    " after {$waitTime}s on try #$releaseTries: {$exception->getMessage()}"
-                );
-                usleep(random_int(0, 1_000_000)); // Wait between 0 and 1 seconds before retrying
             } catch (Matching\TerminalLockException $exception) {
                 $waitTime = round(microtime(true) - $lockStartTime, 6);
                 $this->logError(

@@ -86,6 +86,11 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:push-donations"
         ],
+        "matchbot:reset": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:reset-matching",
+            "@doctrine:delete-and-recreate"
+        ],
         "matchbot:retrospectively-match": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:retrospectively-match"
