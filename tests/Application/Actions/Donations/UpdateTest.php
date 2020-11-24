@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\Token;
 use MatchBot\Domain\Donation;
@@ -390,6 +391,10 @@ class UpdateTest extends TestCase
             // Cancel was a new change and names set -> expect a push to SF.
             ->shouldBeCalledOnce();
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->cancel('pi_externalId_123')
             ->shouldBeCalledOnce();
@@ -397,6 +402,7 @@ class UpdateTest extends TestCase
         $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         $request = $this->createRequest(
@@ -449,7 +455,12 @@ class UpdateTest extends TestCase
             // data -> DO NOT expect a push to SF.
             ->shouldNotBeCalled();
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -594,7 +605,12 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce(); // Updates pushed to Salesforce
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -656,6 +672,10 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce(); // Updates pushed to Salesforce
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->update('pi_externalId_123', [
             'metadata' => [
@@ -674,6 +694,7 @@ class UpdateTest extends TestCase
         $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         $request = $this->createRequest(
