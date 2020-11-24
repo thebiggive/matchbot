@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Donations;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
@@ -25,16 +26,19 @@ use Symfony\Component\Serializer\SerializerInterface;
 class Update extends Action
 {
     private DonationRepository $donationRepository;
+    private EntityManagerInterface $entityManager;
     private SerializerInterface $serializer;
     private StripeClient $stripeClient;
 
     public function __construct(
         DonationRepository $donationRepository,
+        EntityManagerInterface $entityManager,
         LoggerInterface $logger,
         SerializerInterface $serializer,
         StripeClient $stripeClient
     ) {
         $this->donationRepository = $donationRepository;
+        $this->entityManager = $entityManager;
         $this->serializer = $serializer;
         $this->stripeClient = $stripeClient;
 
@@ -165,7 +169,7 @@ class Update extends Action
             }
         }
 
-        $this->pushToSalesforce($donation);
+        $this->save($donation);
 
         return $this->respondWithData($donation->toApiModel());
     }
@@ -206,18 +210,25 @@ class Update extends Action
             }
         }
 
-        $this->pushToSalesforce($donation);
+        $this->save($donation);
 
         return $this->respondWithData($donation->toApiModel());
     }
 
     /**
-     * Send updated donation data to Salesforce, *if* we know enough to do so successfully.
+     * Save donation in all cases. Also send updated donation data to Salesforce, *if* we know
+     * enough to do so successfully.
      *
      * @param Donation $donation
      */
-    private function pushToSalesforce(Donation $donation): void
+    private function save(Donation $donation): void
     {
+        // SF push and the corresponding DB persist only happens when names are already set.
+        // In cases like an Enthuse donation setup there is other data we need to save before
+        // that point, e.g. comms preferences. So we must persist here first.
+        $this->entityManager->persist($donation);
+        $this->entityManager->flush();
+
         if (!$donation->hasEnoughDataForSalesforce()) {
             return;
         }
