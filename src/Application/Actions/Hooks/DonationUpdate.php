@@ -83,6 +83,8 @@ class DonationUpdate extends Action
         $donation->setDonorLastName($donationData->lastName);
         $donation->setGiftAid($donationData->giftAid);
         $donation->setTbgComms($donationData->optInTbgEmail);
+        $donation->setCharityComms($donationData->optInCharityEmail);
+        $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setTransactionId($donationData->transactionId);
         $donation->setCharityFee('enthuse'); // Charity fee can vary if gift aid is claimed.
 
