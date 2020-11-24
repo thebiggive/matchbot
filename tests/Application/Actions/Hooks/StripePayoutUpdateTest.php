@@ -85,10 +85,12 @@ class StripePayoutUpdateTest extends StripeTest
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->all([
-            'limit' => 100,
-            'payout' => 'po_externalId_123',
-            'type' => 'charge'
-        ])
+                'limit' => 100,
+                'payout' => 'po_externalId_123',
+                'type' => 'charge'
+            ],
+            ['stripe_account' => 'acct_unitTest123'],
+        )
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($balanceTxnResponse));
 
@@ -132,11 +134,14 @@ class StripePayoutUpdateTest extends StripeTest
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
-        $stripeBalanceTransactionProphecy->all([
-            'limit' => 100,
-            'payout' => 'po_externalId_123',
-            'type' => 'charge'
-        ])
+        $stripeBalanceTransactionProphecy->all(
+            [
+                'limit' => 100,
+                'payout' => 'po_externalId_123',
+                'type' => 'charge'
+            ],
+            ['stripe_account' => 'acct_unitTest123'],
+        )
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($balanceTxnResponse));
 
@@ -181,11 +186,14 @@ class StripePayoutUpdateTest extends StripeTest
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
-        $stripeBalanceTransactionProphecy->all([
-            'limit' => 100,
-            'payout' => 'po_externalId_123',
-            'type' => 'charge'
-        ])
+        $stripeBalanceTransactionProphecy->all(
+            [
+                'limit' => 100,
+                'payout' => 'po_externalId_123',
+                'type' => 'charge'
+            ],
+            ['stripe_account' => 'acct_unitTest123'],
+        )
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($balanceTxnResponse));
 

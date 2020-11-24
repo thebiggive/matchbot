@@ -48,8 +48,13 @@ class StripePayoutUpdate extends Stripe
     {
         $count = 0;
         $payoutId = $event->data->object->id;
+        $connectAccountId = $event->account;
 
-        $this->logger->info(sprintf('Payout: Getting all charges related to Payout ID: %s', $payoutId));
+        $this->logger->info(sprintf(
+            'Payout: Getting all charges related to Payout ID %s for Connect account ID %s',
+            $payoutId,
+            $connectAccountId,
+        ));
 
         $hasMore = true;
         $lastBalanceTransactionId = null;
@@ -61,7 +66,10 @@ class StripePayoutUpdate extends Stripe
         ];
 
         while ($hasMore) {
-            $balanceTransactions = $this->stripeClient->balanceTransactions->all($attributes);
+            $balanceTransactions = $this->stripeClient->balanceTransactions->all(
+                $attributes,
+                ['stripe_account' => $connectAccountId],
+            );
 
             foreach ($balanceTransactions->data as $balanceTransaction) {
                 $paidChargeIds[] = $balanceTransaction->source;
