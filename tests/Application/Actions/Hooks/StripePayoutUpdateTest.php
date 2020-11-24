@@ -84,7 +84,8 @@ class StripePayoutUpdateTest extends StripeTest
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
-        $stripeBalanceTransactionProphecy->all([
+        $stripeBalanceTransactionProphecy->all(
+            [
                 'limit' => 100,
                 'payout' => 'po_externalId_123',
                 'type' => 'charge'
