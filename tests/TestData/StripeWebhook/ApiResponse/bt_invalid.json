@@ -22,9 +22,9 @@
         ],
         "net": 670,
         "reporting_category": "charge",
-        "source": "ch_invalidId_123",
+        "source": "py_invalidId_123",
         "status": "available",
-        "type": "charge"
+        "type": "payment"
       }
     ],
     "has_more": false,
