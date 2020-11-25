@@ -85,7 +85,9 @@ class StripePayoutUpdate extends Stripe
                 $attributes['start_after'] = $lastBalanceTransactionId;
             }
         }
-        $this->logger->info(sprintf('Payout: Getting all Connect account paid Charge IDs complete, found: %s', count($paidChargeIds)));
+        $this->logger->info(
+            sprintf('Payout: Getting all Connect account paid Charge IDs complete, found: %s', count($paidChargeIds))
+        );
 
         if (count($paidChargeIds) > 0) {
             foreach ($this->getTransferIds($paidChargeIds, $connectAccountId) as $transferId) {
@@ -123,8 +125,11 @@ class StripePayoutUpdate extends Stripe
         return $this->respondWithData($event->data->object);
     }
 
-    private function getTransferIds(array $paidChargeIds, string $connectAccountId): array {
-        $this->logger->info(sprintf('Payout: Getting all related Transfer IDs for Connect Account: %s', $connectAccountId));
+    private function getTransferIds(array $paidChargeIds, string $connectAccountId): array
+    {
+        $this->logger->info(
+            sprintf('Payout: Getting all related Transfer IDs for Connect Account: %s', $connectAccountId)
+        );
         $transferIds = [];
 
         foreach ($paidChargeIds as $chargeId) {
@@ -135,11 +140,14 @@ class StripePayoutUpdate extends Stripe
             $transferIds[] = $transfer->source_transfer;
         }
 
-        $this->logger->info(sprintf('Payout: Finished getting all related Transfer IDs, found: %s', count($transferIds)));
+        $this->logger->info(
+            sprintf('Payout: Finished getting all related Transfer IDs, found: %s', count($transferIds))
+        );
         return $transferIds;
     }
 
-    private function getChargeId($transferId): string {
+    private function getChargeId($transferId): string
+    {
         $this->logger->info(sprintf('Payout: Getting Charge Id from Transfer ID: %s', $transferId));
         $charge = $this->stripeClient->transfers->retrieve(
             $transferId
