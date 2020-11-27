@@ -56,6 +56,14 @@ class StripePayoutUpdate extends Stripe
             $connectAccountId,
         ));
 
+        if (!$event->data->object->automatic) {
+            // If we try to use the `payout` filter attribute in the `balanceTransactions` call
+            // below in the manual payout case, Stripe errors out with "Balance transaction history
+            // can only be filtered on automatic transfers, not manual".
+            $this->logger->warning(sprintf('Skipping processing of manual Payout ID %s', $payoutId));
+            return $this->respond(new ActionPayload(204));
+        }
+
         $hasMore = true;
         $lastBalanceTransactionId = null;
         $paidChargeIds = [];
