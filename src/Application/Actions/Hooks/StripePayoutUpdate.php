@@ -66,7 +66,7 @@ class StripePayoutUpdate extends Stripe
         ];
 
         while ($hasMore) {
-            // Get all balance transactions related to the charities Connect account
+            // Get all balance transactions related to the charity's Connect account
             $balanceTransactions = $this->stripeClient->balanceTransactions->all(
                 $attributes,
                 ['stripe_account' => $connectAccountId],
@@ -134,13 +134,13 @@ class StripePayoutUpdate extends Stripe
         $transferIds = [];
 
         foreach ($paidChargeIds as $chargeId) {
-            // Get charges related to the charities Connect account
-            $transfer = $this->stripeClient->charges->retrieve(
+            // Get charges related to the charity's Connect account
+            $charge = $this->stripeClient->charges->retrieve(
                 $chargeId,
                 null,
                 ['stripe_account' => $connectAccountId],
             );
-            $transferIds[] = $transfer->source_transfer;
+            $transferIds[] = $charge->source_transfer;
         }
 
         $this->logger->info(
@@ -153,11 +153,11 @@ class StripePayoutUpdate extends Stripe
     {
         $this->logger->info(sprintf('Payout: Getting Charge Id from Transfer ID: %s', $transferId));
 
-        // Not specifying `stripe-account` param will default the search to TBGs Connect account
-        $charge = $this->stripeClient->transfers->retrieve(
+        // Not specifying `stripe-account` param will default the search to TBG's main account
+        $transfer = $this->stripeClient->transfers->retrieve(
             $transferId
         );
 
-        return $charge->source_transaction;
+        return $transfer->source_transaction;
     }
 }
