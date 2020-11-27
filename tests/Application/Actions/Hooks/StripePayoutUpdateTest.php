@@ -106,6 +106,7 @@ class StripePayoutUpdateTest extends StripeTest
         $stripeChargeProphecy = $this->prophesize(ChargeService::class);
         $stripeChargeProphecy->retrieve(
             'py_invalidId_123',
+            null,
             ['stripe_account' => 'acct_unitTest123'],
         )
             ->shouldBeCalledOnce()
@@ -179,6 +180,7 @@ class StripePayoutUpdateTest extends StripeTest
         $stripeChargeProphecy = $this->prophesize(ChargeService::class);
         $stripeChargeProphecy->retrieve(
             'py_externalId_123',
+            null,
             ['stripe_account' => 'acct_unitTest123'],
         )
             ->shouldBeCalledOnce()
@@ -253,6 +255,7 @@ class StripePayoutUpdateTest extends StripeTest
         $stripeChargeProphecy = $this->prophesize(ChargeService::class);
         $stripeChargeProphecy->retrieve(
             'py_externalId_123',
+            null,
             ['stripe_account' => 'acct_unitTest123'],
         )
             ->shouldBeCalledOnce()
