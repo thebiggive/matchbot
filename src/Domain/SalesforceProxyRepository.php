@@ -13,25 +13,36 @@ abstract class SalesforceProxyRepository extends EntityRepository
     protected Client\Common $client;
     protected LoggerInterface $logger;
 
-    public function logError(string $message): void
+    protected function logError(string $message): void
     {
         if ($log = $this->getLogger()) {
             $log->error($message);
             return;
         }
 
-        // Fallback if logged not configured
+        // Fallback if logger not configured
         echo "ERROR: $message";
     }
 
-    public function logInfo(string $message): void
+    protected function logWarning(string $message): void
+    {
+        if ($log = $this->getLogger()) {
+            $log->warning($message);
+            return;
+        }
+
+        // Fallback if logged not configured
+        echo "WARNING: $message";
+    }
+
+    protected function logInfo(string $message): void
     {
         if ($log = $this->getLogger()) {
             $log->info($message);
             return;
         }
 
-        // Fallback if logged not configured
+        // Fallback if logger not configured
         echo "INFO: $message";
     }
 
