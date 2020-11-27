@@ -135,6 +135,7 @@ class StripePayoutUpdate extends Stripe
         foreach ($paidChargeIds as $chargeId) {
             $transfer = $this->stripeClient->charges->retrieve(
                 $chargeId,
+                [],
                 ['stripe_account' => $connectAccountId],
             );
             $transferIds[] = $transfer->source_transfer;
