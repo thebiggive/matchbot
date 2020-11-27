@@ -66,6 +66,7 @@ class StripePayoutUpdate extends Stripe
         ];
 
         while ($hasMore) {
+            // Get all balance transactions related to the charities Connect account
             $balanceTransactions = $this->stripeClient->balanceTransactions->all(
                 $attributes,
                 ['stripe_account' => $connectAccountId],
@@ -133,6 +134,7 @@ class StripePayoutUpdate extends Stripe
         $transferIds = [];
 
         foreach ($paidChargeIds as $chargeId) {
+            // Get charges related to the charities Connect account
             $transfer = $this->stripeClient->charges->retrieve(
                 $chargeId,
                 null,
