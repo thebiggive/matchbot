@@ -150,6 +150,8 @@ class StripePayoutUpdate extends Stripe
     private function getChargeId($transferId): string
     {
         $this->logger->info(sprintf('Payout: Getting Charge Id from Transfer ID: %s', $transferId));
+
+        // Not specifying `stripe-account` param will default the search to TBGs Connect account
         $charge = $this->stripeClient->transfers->retrieve(
             $transferId
         );
