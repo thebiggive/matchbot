@@ -114,7 +114,8 @@ class StripeChargeUpdate extends Stripe
             $donation->setDonationStatus('Refunded');
         } else {
             $this->logger->error(sprintf(
-                'Skipping unexpected partial non-tip refund for donation %s based on charge ID %s',
+                'Skipping unexpected partial non-tip refund amount %s pence for donation %s based on charge ID %s',
+                $amountRefunded,
                 $donation->getUuid(),
                 $event->data->object->id,
             ));
