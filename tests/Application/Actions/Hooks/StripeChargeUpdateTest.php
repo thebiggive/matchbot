@@ -132,7 +132,7 @@ class StripeChargeUpdateTest extends StripeTest
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function testSuccessfulRefund(): void
+    public function testSuccessfulFullRefund(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -170,6 +170,93 @@ class StripeChargeUpdateTest extends StripeTest
 
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
         $this->assertEquals('Refunded', $donation->getDonationStatus());
+        $this->assertEquals('1.00', $donation->getTipAmount());
         $this->assertEquals(200, $response->getStatusCode());
+    }
+
+    public function testSuccessfulTipRefund(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_tip_refunded.json');
+        $donation = $this->getTestDonation();
+        $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
+        $time = (string) time();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+
+        $donationRepoProphecy
+            ->releaseMatchFunds($donation)
+            ->shouldNotBeCalled();
+
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+
+        $response = $app->handle($request);
+
+        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
+        $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals('0.00', $donation->getTipAmount());
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+
+    public function testUnsupportRefundAmount(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_unsupported_partial_refund.json');
+        $donation = $this->getTestDonation();
+        $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
+        $time = (string) time();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+
+        $donationRepoProphecy
+            ->releaseMatchFunds($donation)
+            ->shouldNotBeCalled();
+
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldNotBeCalled();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+
+        $response = $app->handle($request);
+
+        // No change to any donation data. Return 204 for no change. Will also log
+        // an error so we can investigate.
+        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
+        $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals('1.00', $donation->getTipAmount());
+        $this->assertEquals(204, $response->getStatusCode());
     }
 }
