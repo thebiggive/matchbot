@@ -82,10 +82,12 @@ class StripeChargeUpdate extends Stripe
     private function handleChargeRefunded(Event $event): Response
     {
         $chargeId = $event->data->object->id;
-        $amountRefunded = $event->data->object->amount_refunded;
+        $amountRefunded = $event->data->object->amount_refunded; // int: pence.
 
         /** @var Donation $donation */
         $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
+        $isTipRefund = $donation->getTipAmountInPence() === $amountRefunded;
+        $isFullRefund = $donation->getAmountInPenceIncTip() === $amountRefunded;
 
         if (!$donation) {
             $this->logger->info(sprintf('Donation not found with Charge ID %s', $chargeId));
@@ -94,23 +96,36 @@ class StripeChargeUpdate extends Stripe
 
         // Available status' (pending, succeeded, failed, canceled),
         // see: https://stripe.com/docs/api/refunds/object.
-        // For now we support the happy success path,
-        // convert status to the one SF uses.
-        if ($event->data->object->status === 'succeeded') {
-            $donation->setChargeId($event->data->object->id);
+        // For now we support the successful refund (inc. partial) path,
+        // converting status to the one MatchBot + SF use.
+        if ($event->data->object->status !== 'succeeded') {
+            return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
+        }
+
+        if ($isTipRefund) {
+            $this->logger->info(sprintf('Setting tip amount to £0 based on charge ID %s', $event->data->object->id));
+            $donation->setTipAmount('0.00');
+        } elseif ($isFullRefund) {
+            $this->logger->info(sprintf(
+                'Marking donation %s refunded based on charge ID %s',
+                $donation->getUuid(),
+                $event->data->object->id,
+            ));
             $donation->setDonationStatus('Refunded');
         } else {
-            return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
+            $this->logger->error(sprintf(
+                'Skipping unexpected partial non-tip refund amount %s pence for donation %s based on charge ID %s',
+                $amountRefunded,
+                $donation->getUuid(),
+                $event->data->object->id,
+            ));
+            return $this->respond(new ActionPayload(204));
         }
 
         // Release match funds only if the donation was matched and
         // the refunded amount is equal to the local txn amount.
         // We multiply local donation amount by 100 to match Stripes calculations.
-        if (
-            $donation->isReversed()
-            && $donation->getAmountInPenceIncTip() === $amountRefunded
-            && $donation->getCampaign()->isMatched()
-        ) {
+        if ($isFullRefund && $donation->isReversed() && $donation->getCampaign()->isMatched()) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
 
