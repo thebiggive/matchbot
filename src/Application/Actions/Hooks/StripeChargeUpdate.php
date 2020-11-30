@@ -86,6 +86,12 @@ class StripeChargeUpdate extends Stripe
 
         /** @var Donation $donation */
         $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
+
+        if (!$donation) {
+            $this->logger->info(sprintf('Donation not found with Charge ID %s', $chargeId));
+            return $this->respond(new ActionPayload(204));
+        }
+
         $isTipRefund = $donation->getTipAmountInPence() === $amountRefunded;
         $isFullRefund = $donation->getAmountInPenceIncTip() === $amountRefunded;
 
