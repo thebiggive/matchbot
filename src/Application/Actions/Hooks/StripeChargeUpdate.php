@@ -94,12 +94,7 @@ class StripeChargeUpdate extends Stripe
 
         $isTipRefund = $donation->getTipAmountInPence() === $amountRefunded;
         $isFullRefund = $donation->getAmountInPenceIncTip() === $amountRefunded;
-
-        if (!$donation) {
-            $this->logger->info(sprintf('Donation not found with Charge ID %s', $chargeId));
-            return $this->respond(new ActionPayload(204));
-        }
-
+        
         // Available status' (pending, succeeded, failed, canceled),
         // see: https://stripe.com/docs/api/refunds/object.
         // For now we support the successful refund (inc. partial) path,
