@@ -48,8 +48,21 @@ class StripePayoutUpdate extends Stripe
     {
         $count = 0;
         $payoutId = $event->data->object->id;
+        $connectAccountId = $event->account;
 
-        $this->logger->info(sprintf('Payout: Getting all charges related to Payout ID: %s', $payoutId));
+        $this->logger->info(sprintf(
+            'Payout: Getting all charges related to Payout ID %s for Connect account ID %s',
+            $payoutId,
+            $connectAccountId,
+        ));
+
+        if (!$event->data->object->automatic) {
+            // If we try to use the `payout` filter attribute in the `balanceTransactions` call
+            // below in the manual payout case, Stripe errors out with "Balance transaction history
+            // can only be filtered on automatic transfers, not manual".
+            $this->logger->warning(sprintf('Skipping processing of manual Payout ID %s', $payoutId));
+            return $this->respond(new ActionPayload(204));
+        }
 
         $hasMore = true;
         $lastBalanceTransactionId = null;
@@ -57,11 +70,15 @@ class StripePayoutUpdate extends Stripe
         $attributes = [
             'limit' => 100,
             'payout' => $payoutId,
-            'type' => 'charge',
+            'type' => 'payment',
         ];
 
         while ($hasMore) {
-            $balanceTransactions = $this->stripeClient->balanceTransactions->all($attributes);
+            // Get all balance transactions (`py_...`) related to the charity's Connect account
+            $balanceTransactions = $this->stripeClient->balanceTransactions->all(
+                $attributes,
+                ['stripe_account' => $connectAccountId],
+            );
 
             foreach ($balanceTransactions->data as $balanceTransaction) {
                 $paidChargeIds[] = $balanceTransaction->source;
@@ -72,15 +89,19 @@ class StripePayoutUpdate extends Stripe
 
             // We get a Stripe exception if we start this with a null or empty value,
             // so we only include this once we've iterated the first time and captured
-            // a transaciton Id.
+            // a transaction Id.
             if ($lastBalanceTransactionId !== null) {
                 $attributes['start_after'] = $lastBalanceTransactionId;
             }
         }
-        $this->logger->info(sprintf('Payout: Getting all paid Charge IDs complete, found: %s', count($paidChargeIds)));
+        $this->logger->info(
+            sprintf('Payout: Getting all Connect account paid Charge IDs complete, found: %s', count($paidChargeIds))
+        );
 
         if (count($paidChargeIds) > 0) {
-            foreach ($paidChargeIds as $chargeId) {
+            foreach ($this->getTransferIds($paidChargeIds, $connectAccountId) as $transferId) {
+                $chargeId = $this->getChargeId($transferId);
+
                 /** @var Donation $donation */
                 $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
 
@@ -111,5 +132,46 @@ class StripePayoutUpdate extends Stripe
 
         $this->logger->info(sprintf('Payout: Acknowledging paid donations complete, persisted: %s', $count));
         return $this->respondWithData($event->data->object);
+    }
+
+    /**
+     * @param array $paidChargeIds  Transaction line (`py_...`) which is also a charge ID in this case.
+     * @param string $connectAccountId
+     * @return string[] Transfer IDs (`tr_...`)
+     */
+    private function getTransferIds(array $paidChargeIds, string $connectAccountId): array
+    {
+        $this->logger->info(
+            sprintf('Payout: Getting all related Transfer IDs for Connect Account: %s', $connectAccountId)
+        );
+        $transferIds = [];
+
+        foreach ($paidChargeIds as $chargeId) {
+            // Get charges (`ch_...`) related to the charity's Connect account and then get
+            // their corresponding transfers (`tr_...`).
+            $charge = $this->stripeClient->charges->retrieve(
+                $chargeId,
+                null,
+                ['stripe_account' => $connectAccountId],
+            );
+            $transferIds[] = $charge->source_transfer;
+        }
+
+        $this->logger->info(
+            sprintf('Payout: Finished getting all related Transfer IDs, found: %s', count($transferIds))
+        );
+        return $transferIds;
+    }
+
+    private function getChargeId($transferId): string
+    {
+        $this->logger->info(sprintf('Payout: Getting Charge Id from Transfer ID: %s', $transferId));
+
+        // Not specifying `stripe-account` param will default the search to TBG's main account
+        $transfer = $this->stripeClient->transfers->retrieve(
+            $transferId
+        );
+
+        return $transfer->source_transaction;
     }
 }

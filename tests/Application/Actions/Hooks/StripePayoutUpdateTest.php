@@ -11,6 +11,8 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Prophecy\Argument;
 use Stripe\Service\BalanceTransactionService;
+use Stripe\Service\ChargeService;
+use Stripe\Service\TransferService;
 use Stripe\StripeClient;
 
 class StripePayoutUpdateTest extends StripeTest
@@ -78,19 +80,43 @@ class StripePayoutUpdateTest extends StripeTest
         $balanceTxnResponse = file_get_contents(
             dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_invalid.json'
         );
+        $chargeResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/py_invalid.json'
+        );
+        $transferResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/tr_invalid.json'
+        );
         $webhookSecret = $container->get('settings')['stripe']['connectAppWebhookSecret'];
         $time = (string) time();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
-        $stripeBalanceTransactionProphecy->all([
-            'limit' => 100,
-            'payout' => 'po_externalId_123',
-            'type' => 'charge'
-        ])
+        $stripeBalanceTransactionProphecy->all(
+            [
+                'limit' => 100,
+                'payout' => 'po_externalId_123',
+                'type' => 'payment'
+            ],
+            ['stripe_account' => 'acct_unitTest123'],
+        )
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($balanceTxnResponse));
+
+        $stripeChargeProphecy = $this->prophesize(ChargeService::class);
+        $stripeChargeProphecy->retrieve(
+            'py_invalidId_123',
+            null,
+            ['stripe_account' => 'acct_unitTest123'],
+        )
+            ->shouldBeCalledOnce()
+            ->willReturn(json_decode($chargeResponse));
+
+        $stripeTransferProphecy = $this->prophesize(TransferService::class);
+        $stripeTransferProphecy
+            ->retrieve('tr_invalidId_123')
+            ->shouldBeCalledOnce()
+            ->willReturn(json_decode($transferResponse));
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -100,6 +126,8 @@ class StripePayoutUpdateTest extends StripeTest
 
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+        $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
+        $stripeClientProphecy->transfers = $stripeTransferProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -123,6 +151,12 @@ class StripePayoutUpdateTest extends StripeTest
         $balanceTxnResponse = file_get_contents(
             dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_success.json'
         );
+        $chargeResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/py_success.json'
+        );
+        $transferResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/tr_success.json'
+        );
         $donation = $this->getTestDonation();
         $webhookSecret = $container->get('settings')['stripe']['connectAppWebhookSecret'];
         $time = (string) time();
@@ -132,13 +166,31 @@ class StripePayoutUpdateTest extends StripeTest
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
-        $stripeBalanceTransactionProphecy->all([
-            'limit' => 100,
-            'payout' => 'po_externalId_123',
-            'type' => 'charge'
-        ])
+        $stripeBalanceTransactionProphecy->all(
+            [
+                'limit' => 100,
+                'payout' => 'po_externalId_123',
+                'type' => 'payment'
+            ],
+            ['stripe_account' => 'acct_unitTest123'],
+        )
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($balanceTxnResponse));
+
+        $stripeChargeProphecy = $this->prophesize(ChargeService::class);
+        $stripeChargeProphecy->retrieve(
+            'py_externalId_123',
+            null,
+            ['stripe_account' => 'acct_unitTest123'],
+        )
+            ->shouldBeCalledOnce()
+            ->willReturn(json_decode($chargeResponse));
+
+        $stripeTransferProphecy = $this->prophesize(TransferService::class);
+        $stripeTransferProphecy
+            ->retrieve('tr_externalId_123')
+            ->shouldBeCalledOnce()
+            ->willReturn(json_decode($transferResponse));
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -148,6 +200,8 @@ class StripePayoutUpdateTest extends StripeTest
 
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+        $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
+        $stripeClientProphecy->transfers = $stripeTransferProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -174,6 +228,12 @@ class StripePayoutUpdateTest extends StripeTest
         $balanceTxnResponse = file_get_contents(
             dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_success.json'
         );
+        $chargeResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/py_success.json'
+        );
+        $transferResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/tr_success.json'
+        );
         $donation = $this->getTestDonation();
         $webhookSecret = $container->get('settings')['stripe']['connectAppWebhookSecret'];
         $time = (string) time();
@@ -181,13 +241,31 @@ class StripePayoutUpdateTest extends StripeTest
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
-        $stripeBalanceTransactionProphecy->all([
-            'limit' => 100,
-            'payout' => 'po_externalId_123',
-            'type' => 'charge'
-        ])
+        $stripeBalanceTransactionProphecy->all(
+            [
+                'limit' => 100,
+                'payout' => 'po_externalId_123',
+                'type' => 'payment'
+            ],
+            ['stripe_account' => 'acct_unitTest123'],
+        )
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($balanceTxnResponse));
+
+        $stripeChargeProphecy = $this->prophesize(ChargeService::class);
+        $stripeChargeProphecy->retrieve(
+            'py_externalId_123',
+            null,
+            ['stripe_account' => 'acct_unitTest123'],
+        )
+            ->shouldBeCalledOnce()
+            ->willReturn(json_decode($chargeResponse));
+
+        $stripeTransferProphecy = $this->prophesize(TransferService::class);
+        $stripeTransferProphecy
+            ->retrieve('tr_externalId_123')
+            ->shouldBeCalledOnce()
+            ->willReturn(json_decode($transferResponse));
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -202,6 +280,8 @@ class StripePayoutUpdateTest extends StripeTest
 
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+        $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
+        $stripeClientProphecy->transfers = $stripeTransferProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());

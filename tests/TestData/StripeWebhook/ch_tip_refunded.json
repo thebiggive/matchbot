@@ -13,7 +13,7 @@
       "object": "charge",
       "amount": 12445,
       "amount_captured": 12445,
-      "amount_refunded": 12445,
+      "amount_refunded": 100,
       "application": null,
       "application_fee": null,
       "application_fee_amount": null,
@@ -81,14 +81,14 @@
       "receipt_email": null,
       "receipt_number": "1772-4377",
       "receipt_url": "https://pay.stripe.com/receipts/acct_1GxbdTKkGuKkxwBN/ch_1H4RYNKkGuKkxwBNnN1khhoF/rcpt_Hdj08tPMJjxYYcTMieYHZlBQDDYk3A6",
-      "refunded": true,
+      "refunded": false,
       "refunds": {
         "object": "list",
         "data": [
           {
             "id": "re_00000000000000",
             "object": "refund",
-            "amount": 12445,
+            "amount": 100,
             "balance_transaction": "txn_00000000000000",
             "charge": "ch_00000000000000",
             "created": 1602497309,

@@ -98,7 +98,7 @@ class Donation extends Common
 
             // All other errors should be logged so we get a notification and the app left to retry the
             // push at a later date.
-            $this->logger->error(sprintf(
+            $this->logger->warning(sprintf(
                 'Donation update exception %s: %s. Body: %s',
                 get_class($ex),
                 $ex->getMessage(),

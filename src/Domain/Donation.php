@@ -759,7 +759,12 @@ class Donation extends SalesforceWriteProxy
      */
     public function getAmountInPenceIncTip(): int
     {
-        return (int) (100 * $this->getAmount() + (100 * $this->getTipAmount() ?? 0));
+        return (int) (100 * $this->getAmount() + $this->getTipAmountInPence());
+    }
+
+    public function getTipAmountInPence(): int
+    {
+        return (int) (100 * $this->getTipAmount() ?? 0);
     }
 
     public function hasEnoughDataForSalesforce(): bool
