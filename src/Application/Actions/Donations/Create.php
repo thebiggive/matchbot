@@ -50,7 +50,7 @@ class Create extends Action
      */
     protected function action(): Response
     {
-        $body = $this->request->getBody();
+        $body = $this->request->getBody()->getContents();
 
         try {
             /** @var DonationCreate $donationData */
@@ -61,7 +61,11 @@ class Create extends Action
             $message = 'Donation Create data deserialise error';
             $exceptionType = get_class($exception);
 
-            return $this->validationError("$message: $exceptionType - {$exception->getMessage()}", $message);
+            return $this->validationError(
+                "$message: $exceptionType - {$exception->getMessage()}",
+                $message,
+                empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
+            );
         }
 
         try {
@@ -72,11 +76,7 @@ class Create extends Action
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $exception->getMessage());
 
-            return $this->validationError(
-                $message . ': ' . $exception->getMessage(),
-                $exception->getMessage(),
-                $body === '[]', // Suspected bot / junk traffic sometimes sends this payload.
-            );
+            return $this->validationError($message . ': ' . $exception->getMessage(), $exception->getMessage());
         }
 
         if (!$donation->getCampaign()->isOpen()) {
