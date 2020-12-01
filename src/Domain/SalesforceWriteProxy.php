@@ -14,6 +14,36 @@ use Doctrine\ORM\Mapping as ORM;
  */
 abstract class SalesforceWriteProxy extends SalesforceProxy
 {
+    /** @var string Object has not yet been sent to Salesforce or queued to be so. */
+    public const PUSH_STATUS_NOT_SENT = 'not-sent';
+    /** @var string Object should be created in Salesforce. This might be imminent or queued. */
+    public const PUSH_STATUS_PENDING_CREATE = 'pending-create';
+    /** @var string Object is in the process of being created in Salesforce. */
+    public const PUSH_STATUS_CREATING = 'creating';
+    /** @var string Object should be updated in Salesforce. This might be imminent or queued. */
+    public const PUSH_STATUS_PENDING_UPDATE = 'pending-update';
+    /**
+     * @var string  Object was being updated in Salesforce at the time we received potentially new
+     *              data, so we returned the second request early without re-pushing immediately.
+     *              This status should be maintained temporarily until the original push finishes,
+     *              at which point it will know from this to set the status back to
+     *              'pending-update' rather than 'complete'.
+     */
+    public const PUSH_STATUS_PENDING_ADDITIONAL_UPDATE = 'pending-additional-update';
+    /**
+     * @var string  Object is in the process of being updated in Salesforce. Any further updates
+     *              should be queued as they're liable to lead to record contention issues if
+     *              attempted in parallel.
+     */
+    public const PUSH_STATUS_UPDATING = 'updating';
+    /** @var string Object has been created and/or updated in Salesforce and no push is pending. */
+    public const PUSH_STATUS_COMPLETE = 'complete';
+    /**
+     * @var string  Object has been marked as non-existent on the Salesforce side. This should only
+     *              happen outside Production and is typically due to sandbox refreshes clearing data.
+     */
+    public const PUSH_STATUS_REMOVED = 'removed';
+
     /**
      * @return bool Whether the entity has been modified in MatchBot subsequently after its creation.
      */
@@ -26,9 +56,12 @@ abstract class SalesforceWriteProxy extends SalesforceProxy
 
     /**
      * @ORM\Column(type="string")
-     * @var string  One of 'not-sent', 'pending-create', 'pending-update', 'complete' or 'removed'.
+     * @var string  One of 'not-sent', 'pending-create', 'creating', 'pending-update',
+     *              'pending-additional-update', 'updating', 'complete' or 'removed'.
+     *              Use class constants above to guard against typos and improve inline
+     *              documentation where we use these.
      */
-    protected string $salesforcePushStatus = 'not-sent';
+    protected string $salesforcePushStatus = self::PUSH_STATUS_NOT_SENT;
 
     /**
      * @return DateTime
