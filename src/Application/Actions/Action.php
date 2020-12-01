@@ -79,8 +79,7 @@ abstract class Action
         string $logMessage,
         ?string $publicMessage = null,
         bool $reduceSeverity = false
-    ): Response
-    {
+    ): Response {
         if ($reduceSeverity) {
             $this->logger->info($logMessage);
         } else {
