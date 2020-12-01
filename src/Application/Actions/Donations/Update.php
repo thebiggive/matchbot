@@ -115,7 +115,7 @@ class Update extends Action
                 return $this->validationError(sprintf(
                     "Required boolean field '%s' not set",
                     $requiredBoolean,
-                ));
+                ), null, true);
             }
         }
 
