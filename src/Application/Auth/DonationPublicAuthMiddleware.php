@@ -27,8 +27,14 @@ class DonationPublicAuthMiddleware implements MiddlewareInterface
         $routeContext = RouteContext::fromRequest($request);
         $route = $routeContext->getRoute();
         $donationId = $route->getArgument('donationId');
+        $jws = $request->getHeaderLine('x-tbg-auth');
 
-        if (!Token::check($donationId, $request->getHeaderLine('x-tbg-auth'), $this->logger)) {
+        if (empty($jws)) {
+            $this->logger->info('No JWT provided');
+            return $this->unauthorised($this->logger);
+        }
+
+        if (!Token::check($donationId, $jws, $this->logger)) {
             return $this->unauthorised($this->logger);
         }
 

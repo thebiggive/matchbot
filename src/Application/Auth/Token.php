@@ -50,7 +50,11 @@ class Token
             $decodedJwtBody = JWT::decode($jws, static::getSecret(), [static::$algorithm]);
         } catch (\Exception $exception) {
             $type = get_class($exception);
-            $logger->error("JWT error: decoding for donation ID $donationId: $type - {$exception->getMessage()}");
+            // This is only a warning for now. We've seen likely crawlers + bots send invalid
+            // requests. In the event that we find they are sending partial JWTs (rather than
+            // none) and so getting here we might consider further reducing this log to `info()`
+            // level so we can spot more serious issues.
+            $logger->warning("JWT error: decoding for donation ID $donationId: $type - {$exception->getMessage()}");
 
             return false;
         }
