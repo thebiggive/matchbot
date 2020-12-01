@@ -14,9 +14,15 @@ use Slim\Psr7\Response;
  */
 trait ErrorTrait
 {
-    protected function unauthorised(LoggerInterface $logger): ResponseInterface
+    protected function unauthorised(LoggerInterface $logger, bool $likelyBot): ResponseInterface
     {
-        $logger->warning('Unauthorised');
+        if ($likelyBot) {
+            // We've seen traffic with no JWTs from crawlers etc. before so don't
+            // want to log this as a warning.
+            $logger->info('Unauthorised – following bot-like patterns');
+        } else {
+            $logger->warning('Unauthorised');
+        }
 
         /** @var ResponseInterface $response */
         $response = new Response(StatusCodeInterface::STATUS_UNAUTHORIZED);
