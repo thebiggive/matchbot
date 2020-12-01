@@ -71,11 +71,21 @@ abstract class Action
     /**
      * @param string        $logMessage
      * @param string|null   $publicMessage  Falls back to $logMessage if null.
+     * @param bool          $reduceSeverity Whether to log this error only at INFO level. Used to
+     *                                      avoid noise from known issues.
      * @return Response with 400 HTTP response code.
      */
-    protected function validationError(string $logMessage, ?string $publicMessage = null): Response
+    protected function validationError(
+        string $logMessage,
+        ?string $publicMessage = null,
+        bool $reduceSeverity = false
+    ): Response
     {
-        $this->logger->warning($logMessage);
+        if ($reduceSeverity) {
+            $this->logger->info($logMessage);
+        } else {
+            $this->logger->warning($logMessage);
+        }
         $error = new ActionError(ActionError::BAD_REQUEST, $publicMessage ?? $logMessage);
 
         return $this->respond(new ActionPayload(400, null, $error));
