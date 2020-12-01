@@ -567,7 +567,7 @@ class UpdateTest extends TestCase
 
         $expectedPayload = new ActionPayload(400, ['error' => [
             'type' => 'BAD_REQUEST',
-            'description' => 'Required boolean fields not set',
+            'description' => "Required boolean field 'giftAid' not set",
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
