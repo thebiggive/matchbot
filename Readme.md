@@ -65,7 +65,7 @@ Linting is run with
 
     docker-compose exec app composer run lint:check
 
-To understand how these commands are run in CI, see [the CirleCI config file](./.circleci/config.yml).
+To understand how these commands are run in CI, see [the CircleCI config file](./.circleci/config.yml).
 
 ## Service dependencies
 
