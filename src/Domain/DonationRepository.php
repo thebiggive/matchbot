@@ -45,7 +45,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $this->logInfo(
                 "Marking Salesforce donation {$donation->getId()} as campaign removed; will not try to push again."
             );
-            $donation->setSalesforcePushStatus('removed');
+            $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_REMOVED);
             $this->getEntityManager()->persist($donation);
 
             return true; // Report 'success' for simpler summaries and spotting of real errors.
@@ -69,7 +69,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $this->logInfo(
                 "Marking old Salesforce donation {$donation->getId()} as removed; will not try to push again."
             );
-            $donation->setSalesforcePushStatus('removed');
+            $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_REMOVED);
             $this->getEntityManager()->persist($donation);
 
             return true; // Report 'success' for simpler summaries and spotting of real errors.
