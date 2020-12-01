@@ -50,15 +50,13 @@ class Create extends Action
      */
     protected function action(): Response
     {
+        $body = $this->request->getBody();
+
         try {
             /** @var DonationCreate $donationData */
-            $donationData = $this->serializer->deserialize(
-                $this->request->getBody(),
-                DonationCreate::class,
-                'json'
-            );
+            $donationData = $this->serializer->deserialize($body, DonationCreate::class, 'json');
         } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
-            $this->logger->info("Donation Create non-serialisable payload was: {$this->request->getBody()}");
+            $this->logger->info("Donation Create non-serialisable payload was: $body");
 
             $message = 'Donation Create data deserialise error';
             $exceptionType = get_class($exception);
@@ -69,12 +67,16 @@ class Create extends Action
         try {
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
         } catch (\UnexpectedValueException $exception) {
-            $this->logger->info("Donation Create model load failure payload was: {$this->request->getBody()}");
+            $this->logger->info("Donation Create model load failure payload was: $body");
 
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $exception->getMessage());
 
-            return $this->validationError($message . ': ' . $exception->getMessage(), $exception->getMessage());
+            return $this->validationError(
+                $message . ': ' . $exception->getMessage(),
+                $exception->getMessage(),
+                $body === '[]', // Suspected bot / junk traffic sometimes sends this payload.
+            );
         }
 
         if (!$donation->getCampaign()->isOpen()) {
