@@ -223,6 +223,18 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return $amountNewlyMatched;
     }
 
+    /**
+     * If calling this just after changing a specific donation instead of as a batch process,
+     * be careful to update donation status, persist and flush before invoking this.
+     * In particular, for the case where a donation has just entered a reversed status,
+     * if a second process decides to call this method based on funding allocations in place
+     * when it started, in rare edge cases you can double-release the same match funds
+     * when the funding withdrawals were already deleted in the first request.
+     *
+     * @param Donation $donation
+     * @throws DomainLockContentionException
+     * @throws Matching\TerminalLockException
+     */
     public function releaseMatchFunds(Donation $donation): void
     {
         $releaseTries = 0;

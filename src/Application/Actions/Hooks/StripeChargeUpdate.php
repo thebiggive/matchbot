@@ -94,7 +94,7 @@ class StripeChargeUpdate extends Stripe
 
         $isTipRefund = $donation->getTipAmountInPence() === $amountRefunded;
         $isFullRefund = $donation->getAmountInPenceIncTip() === $amountRefunded;
-        
+
         // Available status' (pending, succeeded, failed, canceled),
         // see: https://stripe.com/docs/api/refunds/object.
         // For now we support the successful refund (inc. partial) path,
@@ -123,14 +123,15 @@ class StripeChargeUpdate extends Stripe
             return $this->respond(new ActionPayload(204));
         }
 
+        $this->entityManager->persist($donation);
+        $this->entityManager->flush();
+
         // Release match funds only if the donation was matched and
         // the refunded amount is equal to the local txn amount.
         // We multiply local donation amount by 100 to match Stripes calculations.
         if ($isFullRefund && $donation->isReversed() && $donation->getCampaign()->isMatched()) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
-
-        $this->entityManager->persist($donation);
 
         $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
