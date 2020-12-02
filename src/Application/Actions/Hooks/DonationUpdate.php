@@ -90,13 +90,14 @@ class DonationUpdate extends Action
             $donation->setTipAmount((string) $donationData->tipAmount);
         }
 
+        $this->entityManager->persist($donation);
+        $this->entityManager->flush();
+
         // Enthuse are now sending hooks with a few statuses that represent something 'refund-like'. All known
         // statuses that should act like this appear in `Donation::$reversedStatuses`.
         if ($donation->isReversed() && $donation->getCampaign()->isMatched()) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
-
-        $this->entityManager->persist($donation);
 
         // We log if this fails but don't worry the webhook-sending payment client
         // about it. We'll re-try sending the updated status to Salesforce in a future

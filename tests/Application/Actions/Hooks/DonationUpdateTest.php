@@ -173,6 +173,7 @@ class DonationUpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -228,6 +229,7 @@ class DonationUpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());

@@ -198,6 +198,14 @@ class Update extends Action
         $this->logger->info("Donor cancelled ID {$this->args['donationId']}");
 
         $donation->setDonationStatus('Cancelled');
+
+        // We need donation status to be persisted *immediately* and before the match
+        // funds release, to eliminate the possibility of a race condition leading a duplicate
+        // valid cancellation HTTP request causing the same match funds to be released twice.
+        // We saw this happen twice on 1 December 2020 (CC20 launch day) from double-cancellations
+        // within 0.005 seconds of each other (MAT-143).
+        $this->save($donation);
+
         if ($donation->getCampaign()->isMatched()) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
@@ -214,8 +222,6 @@ class Update extends Action
                 return $this->respond(new ActionPayload(500, null, $error));
             }
         }
-
-        $this->save($donation);
 
         return $this->respondWithData($donation->toApiModel());
     }
