@@ -65,10 +65,6 @@ class StripeChargeUpdate extends Stripe
             return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
         }
 
-        if ($donation->isReversed() && $event->data->object->metadata->matchedAmount > 0) {
-            $this->donationRepository->releaseMatchFunds($donation);
-        }
-
         $this->entityManager->persist($donation);
 
         // We log if this fails but don't worry the webhook-sending payment client
