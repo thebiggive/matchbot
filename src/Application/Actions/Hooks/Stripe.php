@@ -50,8 +50,11 @@ abstract class Stripe extends Action
      * @param bool                      $connect        Whether event is a Connect one.
      * @return Response|null    Validation error, or null if $this->event was set up OK.
      */
-    protected function prepareEvent(ServerRequestInterface $request, string $webhookSecret, bool $connect): ?ResponseInterface
-    {
+    protected function prepareEvent(
+        ServerRequestInterface $request,
+        string $webhookSecret,
+        bool $connect
+    ): ?ResponseInterface {
         try {
             $this->event = \Stripe\Webhook::constructEvent(
                 $request->getBody(),
