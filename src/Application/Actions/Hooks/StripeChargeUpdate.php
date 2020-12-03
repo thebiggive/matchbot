@@ -23,7 +23,8 @@ class StripeChargeUpdate extends Stripe
     {
         $validationErrorResponse = $this->prepareEvent(
             $this->request,
-            $this->stripeSettings['accountWebhookSecret']
+            $this->stripeSettings['accountWebhookSecret'],
+            false,
         );
 
         if ($validationErrorResponse !== null) {
