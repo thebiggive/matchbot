@@ -48,7 +48,8 @@ abstract class Stripe extends Action
      * @param ServerRequestInterface    $request
      * @param string                    $webhookSecret
      * @param bool                      $connect        Whether event is a Connect one.
-     * @return Response|null    Validation error, or null if $this->event was set up OK.
+     * @return Response|null            Validation error or no-op 204 response if event should
+     *                                  not be processed, or null if $this->event was set up.
      */
     protected function prepareEvent(
         ServerRequestInterface $request,
