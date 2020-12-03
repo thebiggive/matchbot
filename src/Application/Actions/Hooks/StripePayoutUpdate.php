@@ -23,7 +23,8 @@ class StripePayoutUpdate extends Stripe
     {
         $validationErrorResponse = $this->prepareEvent(
             $this->request,
-            $this->stripeSettings['connectAppWebhookSecret']
+            $this->stripeSettings['connectAppWebhookSecret'],
+            true,
         );
 
         if ($validationErrorResponse !== null) {
