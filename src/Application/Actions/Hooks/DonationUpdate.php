@@ -70,6 +70,8 @@ class DonationUpdate extends Action
         if ($missingRequiredField) {
             $message = 'Hook missing required values';
             $this->logger->warning("Donation ID {$this->args['donationId']}: {$message}");
+            // TODO stop logging full hook data once we understand the cases where this is happening.
+            $this->logger->info('Payload: ' . json_encode($donationData));
             $error = new ActionError(ActionError::BAD_REQUEST, $message);
 
             return $this->respond(new ActionPayload(400, null, $error));
