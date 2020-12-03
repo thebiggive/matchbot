@@ -62,20 +62,26 @@ class Update extends Action
             throw new DomainRecordNotFoundException('Donation not found');
         }
 
+        $body = $this->request->getBody()->getContents();
+
         try {
             /** @var HttpModels\Donation $donationData */
             $donationData = $this->serializer->deserialize(
-                $this->request->getBody(),
+                $body,
                 HttpModels\Donation::class,
                 'json'
             );
         } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
-            $this->logger->info("Donation Update non-serialisable payload was: {$this->request->getBody()}");
+            $this->logger->info("Donation Update non-serialisable payload was: $body");
 
             $message = 'Donation Update data deserialise error';
             $exceptionType = get_class($exception);
 
-            return $this->validationError("$message: $exceptionType - {$exception->getMessage()}", $message);
+            return $this->validationError(
+                "$message: $exceptionType - {$exception->getMessage()}",
+                $message,
+                empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
+            );
         }
 
         if (!isset($donationData->status)) {
