@@ -32,6 +32,7 @@ class DonationTest extends TestCase
         $this->assertEquals('100.00', $donation->getAmount());
         $this->assertEquals('1.13', $donation->getTipAmount());
         $this->assertEquals(113, $donation->getTipAmountInPence());
+        $this->assertEquals(10_113, $donation->getAmountInPenceIncTip());
     }
 
     public function testAmountTooLowNotPersisted(): void
