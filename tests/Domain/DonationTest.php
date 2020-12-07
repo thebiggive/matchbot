@@ -27,10 +27,11 @@ class DonationTest extends TestCase
     {
         $donation = new Donation();
         $donation->setAmount('100.00');
-        $donation->setTipAmount('11.11');
+        $donation->setTipAmount('1.13');
 
         $this->assertEquals('100.00', $donation->getAmount());
-        $this->assertEquals('11.11', $donation->getTipAmount());
+        $this->assertEquals('1.13', $donation->getTipAmount());
+        $this->assertEquals(113, $donation->getTipAmountInPence());
     }
 
     public function testAmountTooLowNotPersisted(): void
@@ -82,7 +83,7 @@ class DonationTest extends TestCase
         // Total fee        = £ 18.97
         // Amount after fee = £968.68
 
-        $this->assertEquals('968.68', $donation->getAmountForCharity());
+        $this->assertEquals(96_868, $donation->getAmountForCharityInPence());
     }
 
     public function testStripeAmountForCharityWithTip(): void
@@ -99,7 +100,7 @@ class DonationTest extends TestCase
         // Total fee        = £ 15.01
         // Amount after fee = £972.64
 
-        $this->assertEquals('972.64', $donation->getAmountForCharity());
+        $this->assertEquals(97_264, $donation->getAmountForCharityInPence());
     }
 
     public function testStripeAmountForCharityWithoutTip(): void
@@ -113,7 +114,7 @@ class DonationTest extends TestCase
         // Total fee        = £ 15.01
         // Amount after fee = £972.64
 
-        $this->assertEquals('972.64', $donation->getAmountForCharity());
+        $this->assertEquals(97_264, $donation->getAmountForCharityInPence());
     }
 
     public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
@@ -127,6 +128,6 @@ class DonationTest extends TestCase
         // Fixed fee    = £ 0.20
         // Total fee    = £ 0.29
         // After fee    = £ 5.96
-        $this->assertEquals('5.96', $donation->getAmountForCharity());
+        $this->assertEquals(596, $donation->getAmountForCharityInPence());
     }
 }
