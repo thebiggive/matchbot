@@ -719,16 +719,18 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string   The amount of the core donation, in £, which is to be paid out
+     * @return int      The amount of the core donation, in pence, which is to be paid out
      *                  to the charity. This is the amount paid by the donor minus
      *                  (a) any part of that amount which was a tip to the Big Give; and
      *                  (b) fees on the remaining donation amount.
      *                  It does not include separately sourced funds like matching or
      *                  Gift Aid.
      */
-    public function getAmountForCharity(): string
+    public function getAmountForCharityInPence(): int
     {
-        return bcsub($this->getAmount(), $this->getCharityFee(), 2);
+        $amountForCharity = bcsub($this->getAmount(), $this->getCharityFee(), 2);
+
+        return (int) bcmul('100', $amountForCharity, 2);
     }
 
     /**
@@ -759,12 +761,14 @@ class Donation extends SalesforceWriteProxy
      */
     public function getAmountInPenceIncTip(): int
     {
-        return (int) (100 * $this->getAmount() + $this->getTipAmountInPence());
+        $coreAmountInPence = (int) bcmul('100', $this->getAmount(), 2);
+
+        return $coreAmountInPence + $this->getTipAmountInPence();
     }
 
     public function getTipAmountInPence(): int
     {
-        return (int) (100 * $this->getTipAmount() ?? 0);
+        return (int) bcmul('100', $this->getTipAmount(), 2);
     }
 
     public function hasEnoughDataForSalesforce(): bool
