@@ -205,11 +205,7 @@ class Update extends Action
 
         $donation->setDonationStatus('Cancelled');
 
-        // We need donation status to be persisted *immediately* and before the match
-        // funds release, to eliminate the possibility of a race condition leading a duplicate
-        // valid cancellation HTTP request causing the same match funds to be released twice.
-        // We saw this happen twice on 1 December 2020 (CC20 launch day) from double-cancellations
-        // within 0.005 seconds of each other (MAT-143).
+        // Save & flush early to reduce the chance of another thread getting the old status.
         $this->save($donation);
 
         if ($donation->getCampaign()->isMatched()) {
