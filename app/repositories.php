@@ -18,6 +18,7 @@ use MatchBot\Domain\FundingWithdrawalRepository;
 use MatchBot\Domain\FundRepository;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Lock\LockFactory;
 
 return static function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -39,6 +40,7 @@ return static function (ContainerBuilder $containerBuilder) {
             $repo->setCampaignRepository($c->get(CampaignRepository::class));
             $repo->setClient($c->get(Client\Donation::class));
             $repo->setFundRepository($c->get(FundRepository::class));
+            $repo->setLockFactory($c->get(LockFactory::class));
             $repo->setLogger($c->get(LoggerInterface::class));
             $repo->setMatchingAdapter($c->get(Matching\Adapter::class));
 
