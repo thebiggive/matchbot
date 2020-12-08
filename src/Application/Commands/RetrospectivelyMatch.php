@@ -29,7 +29,7 @@ class RetrospectivelyMatch extends LockingCommand
     protected function configure(): void
     {
         $this->setDescription(
-            "Allocates matching from the last N days' donations if they missed it due to pending reservations"
+            "Allocates matching from the last N days' donations if missed due to pending reservations, refunds etc."
         );
         $this->addArgument(
             'days-back',
