@@ -93,7 +93,11 @@ class Create extends Action
         }
 
         if (!$donation->getCampaign()->isOpen()) {
-            return $this->validationError("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
+            return $this->validationError(
+                "Campaign {$donation->getCampaign()->getSalesforceId()} is not open",
+                null,
+                true, // Reduce to info log as some instances expected on campaign close
+            );
         }
 
         // Must persist before Stripe work to have ID available.
