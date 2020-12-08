@@ -332,6 +332,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->andWhere('d.createdAt >= :checkAfter')
             ->groupBy('d')
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
+            ->orderBy('d.createdAt', 'ASC')
             ->setParameter('completeStatuses', Donation::getSuccessStatuses())
             ->setParameter('campaignMatched', true)
             ->setParameter('checkAfter', $sinceDate);
