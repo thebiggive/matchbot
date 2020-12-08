@@ -275,7 +275,9 @@ class Donation extends SalesforceWriteProxy
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
             'emailAddress' => $this->getDonorEmailAddress(),
-            'firstName' => substr($this->getDonorFirstName(), 0, 40), // fit within SF limit
+            'firstName' => $this->getDonorFirstName() === null
+                ? null
+                : substr($this->getDonorFirstName(), 0, 40), // fit within SF limit
             'giftAid' => $this->hasGiftAid(),
             'homeAddress' => $this->getDonorHomeAddressLine1(),
             'homePostcode' => $this->getDonorHomePostcode(),
