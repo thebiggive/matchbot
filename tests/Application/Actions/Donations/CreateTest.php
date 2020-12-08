@@ -488,6 +488,114 @@ class CreateTest extends TestCase
         $this->assertEquals('pi_dummySecret_123', $payloadArray['donation']['clientSecret']);
     }
 
+    public function testSuccessWithMatchedCampaignUsingStripeAndInitialCampaignDuplicateError(): void
+    {
+        $donation = $this->getTestDonation(true, true);
+        $donation->setPsp('stripe');
+        $donation->setCharityFee('stripe');
+
+        $fundingWithdrawalForMatch = new FundingWithdrawal();
+        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
+        $fundingWithdrawalForMatch->setDonation($donation);
+
+        $donationToReturn = $donation;
+        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+
+        // Use a custom Prophecy Promise to vary the simulated behaviour.
+        $donationRepoProphecy
+            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->will(new CreateDupeCampaignThrowThenSucceedPromise($donationToReturn))
+            ->shouldBeCalledTimes(2); // One exception, one success
+
+        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
+        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        // These are called once after initial ID setup and once after Stripe fields added.
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
+        $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
+
+        $expectedPaymentIntentArgs = [
+            'amount' => 1311, // Pence including tip
+            'currency' => 'gbp',
+            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'metadata' => [
+                'campaignId' => '123CampaignId',
+                'campaignName' => '123CampaignName',
+                'charityId' => '567CharitySFID',
+                'charityName' => 'Create test charity',
+                'donationId' => '12345678-1234-1234-1234-1234567890ab',
+                'environment' => getenv('APP_ENV'),
+                'matchedAmount' => '8.00',
+                'tipAmount' => '1.11',
+            ],
+            'statement_descriptor' => 'The Big Give Create te',
+            'transfer_data' => [
+                'amount' => 1162,
+                'destination' => 'unitTest_stripeAccount_123',
+            ],
+        ];
+        // Most properites we don't use omitted.
+        // See https://stripe.com/docs/api/payment_intents/object
+        $paymentIntentMockResult = (object) [
+            'id' => 'pi_dummyIntent_id',
+            'object' => 'payment_intent',
+            'amount' => 1311,
+            'client_secret' => 'pi_dummySecret_123',
+            'confirmation_method' => 'automatic',
+            'currency' => 'gbp',
+        ];
+
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+        $stripePaymentIntentsProphecy->create($expectedPaymentIntentArgs)
+            ->willReturn($paymentIntentMockResult)
+            ->shouldBeCalledOnce();
+
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $data = json_encode($donation->toApiModel());
+        $request = $this->createRequest('POST', '/v1/donations', $data);
+        $response = $app->handle($request);
+
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+
+        $this->assertIsString($payloadArray['jwt']);
+        $this->assertNotEmpty($payloadArray['jwt']);
+        $this->assertIsArray($payloadArray['donation']);
+        $this->assertFalse($payloadArray['donation']['giftAid']);
+        $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
+        $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
+        $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
+        $this->assertFalse($payloadArray['donation']['giftAid']);
+        $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
+        $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
+        $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
+        $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
+        $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
+        $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
+        $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
+        $this->assertEquals('Pending', $payloadArray['donation']['status']);
+        $this->assertEquals('stripe', $payloadArray['donation']['psp']);
+        $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
+        $this->assertEquals('pi_dummySecret_123', $payloadArray['donation']['clientSecret']);
+    }
+
     public function testSuccessWithUnmatchedCampaign(): void
     {
         $donation = $this->getTestDonation(true, false);

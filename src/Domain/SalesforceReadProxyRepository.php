@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 
 abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
 {
@@ -14,6 +15,8 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
      *
      * @param SalesforceReadProxy $proxy
      * @return SalesforceReadProxy
+     * @throws UniqueConstraintViolationException occasionally if 2 requests try to create the same
+     *                                            Salesforce object in parallel.
      */
     abstract protected function doPull(SalesforceReadProxy $proxy): SalesforceReadProxy;
 

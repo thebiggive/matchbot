@@ -167,7 +167,7 @@ class Update extends Action
                     'transfer_data' => [
                         // Update the transfer amount incase the final charge was from
                         // a Non EU / Amex card where fees are varied.
-                        'amount' => 100 * $donation->getAmountForCharity()
+                        'amount' => $donation->getAmountForCharityInPence(),
                     ]
                 ]);
             } catch (ApiErrorException $exception) {

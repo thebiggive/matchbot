@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Donations;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
@@ -77,6 +78,18 @@ class Create extends Action
             $this->logger->warning($message . ': ' . $exception->getMessage());
 
             return $this->validationError($message . ': ' . $exception->getMessage(), $exception->getMessage());
+        } catch (UniqueConstraintViolationException $exception) {
+            // If we get this, the most likely explanation is that another donation request
+            // created the same campaign a very short time before this request tried to. We
+            // saw this 3 times in the opening minutes of CC20 on 1 Dec 2020.
+            // If this happens, the latest campaign data should already have been pulled and
+            // persisted in the last second. So give the same call one more try, as
+            // buildFromApiRequest() should perform a fresh call to `CampaignRepository::findOneBy()`.
+            $this->logger->info(sprintf(
+                'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
+                $donationData->projectId,
+            ));
+            $donation = $this->donationRepository->buildFromApiRequest($donationData);
         }
 
         if (!$donation->getCampaign()->isOpen()) {
@@ -137,7 +150,7 @@ class Create extends Action
                     'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
                     // See https://stripe.com/docs/connect/destination-charges
                     'transfer_data' => [
-                        'amount' => (100 * $donation->getAmountForCharity()),
+                        'amount' => $donation->getAmountForCharityInPence(),
                         'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
                     ],
                 ]);
