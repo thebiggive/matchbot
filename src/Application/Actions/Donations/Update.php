@@ -157,6 +157,7 @@ class Update extends Action
         if ($donation->getPsp() === 'stripe') {
             try {
                 $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
+                    'amount' => $donation->getAmountInPenceIncTip(),
                     'metadata' => [
                         'coreDonationGiftAid' => $donation->hasGiftAid(),
                         'optInCharityEmail' => $donation->getCharityComms(),
