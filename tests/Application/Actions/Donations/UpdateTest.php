@@ -678,6 +678,7 @@ class UpdateTest extends TestCase
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+            'amount' => 12_666,
             'metadata' => [
                 'coreDonationGiftAid' => true,
                 'optInCharityEmail' => false,
@@ -686,7 +687,7 @@ class UpdateTest extends TestCase
                 'tbgTipGiftAid' => false,
             ],
             'transfer_data' => [
-                'amount' => '12140'
+                'amount' => 12_140,
             ]
         ])
             ->shouldBeCalledOnce();
