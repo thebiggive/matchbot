@@ -18,7 +18,7 @@ use Symfony\Component\Lock\LockFactory;
 class UpdateCampaignsTest extends TestCase
 {
     use ProphecyTrait;
-    
+
     public function testSingleUpdateSuccess(): void
     {
         $campaign = new Campaign();

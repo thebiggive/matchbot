@@ -21,7 +21,7 @@ use Symfony\Component\Lock\LockFactory;
 class RetrospectivelyMatchTest extends TestCase
 {
     use ProphecyTrait;
-    
+
     private RetrospectivelyMatch $command;
 
     public function setUp(): void
