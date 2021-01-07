@@ -10,11 +10,13 @@ use MatchBot\Application\Auth\Token;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Slim\Exception\HttpNotFoundException;
 
 class GetTest extends TestCase
 {
     use DonationTestDataTrait;
+    use ProphecyTrait;
     use PublicJWTAuthTrait;
 
     public function testMissingId(): void

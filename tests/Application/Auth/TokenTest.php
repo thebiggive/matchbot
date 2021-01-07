@@ -14,7 +14,7 @@ class TokenTest extends TestCase
     {
         $token = Token::create('someDonationId');
 
-        $this->assertRegExp('/^[^.]+\.[^.]+\.[^.]+$/', $token);
+        $this->assertMatchesRegularExpression('/^[^.]+\.[^.]+\.[^.]+$/', $token);
     }
 
     public function testCheckPassesWhenAllValid(): void

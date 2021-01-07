@@ -7,11 +7,14 @@ namespace MatchBot\Tests\Application\Commands;
 use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 
 class PushDonationsTest extends TestCase
 {
+    use ProphecyTrait;
+
     public function testSinglePush(): void
     {
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);

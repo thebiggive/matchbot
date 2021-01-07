@@ -17,6 +17,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Ramsey\Uuid\Uuid;
 use Stripe\Service\PaymentIntentService;
 use Stripe\StripeClient;
@@ -24,6 +25,8 @@ use UnexpectedValueException;
 
 class CreateTest extends TestCase
 {
+    use ProphecyTrait;
+
     public function testDeserialiseError(): void
     {
         $app = $this->getAppInstance();
