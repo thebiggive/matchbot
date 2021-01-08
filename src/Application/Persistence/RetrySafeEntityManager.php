@@ -7,6 +7,7 @@ use Doctrine\ORM;
 use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use JetBrains\PhpStorm\Pure;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -15,27 +16,19 @@ use Psr\Log\LoggerInterface;
  */
 class RetrySafeEntityManager extends EntityManagerDecorator
 {
-    private array $connectionSettings;
     private EntityManagerInterface $entityManager;
-    /**
-     * @var int For non-matching updates that always use Doctrine, maximum number of times to try again when
-     *          Doctrine reports that the error is recoverable and that retrying makes sense
-     */
-    private int $maxLockRetries = 3;
-    private ORM\Configuration $ormConfig;
-    private LoggerInterface $logger;
 
-    public function __construct(ORM\Configuration $ormConfig, array $connectionSettings, LoggerInterface $logger)
-    {
-        $this->connectionSettings = $connectionSettings;
-        $this->logger = $logger;
-        $this->ormConfig = $ormConfig;
-
+    public function __construct(
+        private ORM\Configuration $ormConfig,
+        private array $connectionSettings,
+        private LoggerInterface $logger,
+        private int $maxLockRetries = 3
+    ) {
         $this->entityManager = $this->buildEntityManager();
-
         parent::__construct($this->entityManager);
     }
 
+    #[Pure]
     public function transactional($callback)
     {
         $retries = 0;

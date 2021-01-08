@@ -17,16 +17,10 @@ class ResetMatching extends LockingCommand
 {
     protected static $defaultName = 'matchbot:reset-matching';
 
-    private CampaignFundingRepository $campaignFundingRepository;
-    private Matching\Adapter $matchingAdapter;
-
     public function __construct(
-        CampaignFundingRepository $campaignFundingRepository,
-        Matching\Adapter $matchingAdapter
+        private CampaignFundingRepository $campaignFundingRepository,
+        private Matching\Adapter $matchingAdapter
     ) {
-        $this->campaignFundingRepository = $campaignFundingRepository;
-        $this->matchingAdapter = $matchingAdapter;
-
         parent::__construct();
     }
 

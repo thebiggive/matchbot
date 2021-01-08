@@ -18,19 +18,12 @@ class UpdateCampaigns extends LockingCommand
 {
     protected static $defaultName = 'matchbot:update-campaigns';
 
-    private CampaignRepository $campaignRepository;
-    /** @var EntityManager|EntityManagerInterface $entityManager */
-    private EntityManagerInterface $entityManager;
-    private FundRepository $fundRepository;
-
     public function __construct(
-        CampaignRepository $campaignRepository,
-        EntityManagerInterface $entityManager,
-        FundRepository $fundRepository
+        private  CampaignRepository $campaignRepository,
+        /** @var EntityManager|EntityManagerInterface $entityManager */
+        private EntityManagerInterface $entityManager,
+        private FundRepository $fundRepository
     ) {
-        $this->campaignRepository = $campaignRepository;
-        $this->entityManager = $entityManager;
-        $this->fundRepository = $fundRepository;
         parent::__construct();
     }
 

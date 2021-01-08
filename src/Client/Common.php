@@ -5,18 +5,20 @@ declare(strict_types=1);
 namespace MatchBot\Client;
 
 use GuzzleHttp\Client;
+use JetBrains\PhpStorm\Pure;
 use Psr\Log\LoggerInterface;
 
 abstract class Common
 {
     private array $clientSettings;
-    private Client $httpClient;
-    protected LoggerInterface $logger;
 
-    public function __construct(array $settings, LoggerInterface $logger)
-    {
+    #[Pure]
+    public function __construct(
+        private array $settings,
+        protected LoggerInterface $logger,
+        private Client $httpClient
+    ) {
         $this->clientSettings = $settings['apiClient'];
-        $this->logger = $logger;
     }
 
     protected function getSetting(string $service, string $property): string

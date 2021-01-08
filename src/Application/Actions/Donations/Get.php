@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Donations;
 
+use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
@@ -13,14 +14,11 @@ use Psr\Log\LoggerInterface;
 
 class Get extends Action
 {
-    private DonationRepository $donationRepository;
-
+    #[Pure]
     public function __construct(
-        DonationRepository $donationRepository,
-        LoggerInterface $logger
+        private DonationRepository $donationRepository,
+        protected LoggerInterface $logger
     ) {
-        $this->donationRepository = $donationRepository;
-
         parent::__construct($logger);
     }
 
