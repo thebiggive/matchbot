@@ -4,37 +4,23 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions;
 
+use JetBrains\PhpStorm\Pure;
 use JsonSerializable;
 
 class ActionPayload implements JsonSerializable
 {
-    private int $statusCode;
-
-    /**
-     * @var array|object|null
-     */
-    private $data;
-
-    private ?ActionError $error = null;
-
-    /**
-     * @param int                   $statusCode
-     * @param array|object|null     $data
-     * @param ActionError|null      $error
-     */
+    #[Pure]
     public function __construct(
-        int $statusCode = 200,
-        $data = null,
-        ?ActionError $error = null
+        private int $statusCode = 200,
+        private array | object | null $data = null,
+        private ?ActionError $error = null
     ) {
-        $this->statusCode = $statusCode;
-        $this->data = $data;
-        $this->error = $error;
     }
 
     /**
      * @return int
      */
+    #[Pure]
     public function getStatusCode(): int
     {
         return $this->statusCode;
@@ -43,7 +29,8 @@ class ActionPayload implements JsonSerializable
     /**
      * @return array|null|object
      */
-    public function getData()
+    #[Pure]
+    public function getData(): object | array | null
     {
         return $this->data;
     }
@@ -51,15 +38,16 @@ class ActionPayload implements JsonSerializable
     /**
      * @return ActionError|null
      */
+    #[Pure]
     public function getError(): ?ActionError
     {
         return $this->error;
     }
 
     /**
-     * @return array
+     * @return object | array | null
      */
-    public function jsonSerialize()
+    public function jsonSerialize(): object | array | null
     {
         $payload = null;
 

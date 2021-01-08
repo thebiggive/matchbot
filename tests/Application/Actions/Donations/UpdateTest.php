@@ -13,6 +13,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Slim\Exception\HttpNotFoundException;
 use Stripe\Service\PaymentIntentService;
 use Stripe\StripeClient;
@@ -20,6 +21,7 @@ use Stripe\StripeClient;
 class UpdateTest extends TestCase
 {
     use DonationTestDataTrait;
+    use ProphecyTrait;
     use PublicJWTAuthTrait;
 
     public function testMissingId(): void

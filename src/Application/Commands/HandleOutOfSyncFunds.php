@@ -35,19 +35,11 @@ class HandleOutOfSyncFunds extends LockingCommand
 {
     protected static $defaultName = 'matchbot:handle-out-of-sync-funds';
 
-    private CampaignFundingRepository $campaignFundingRepository;
-    private FundingWithdrawalRepository $fundingWithdrawalRepository;
-    private Matching\Adapter $matchingAdapter;
-
     public function __construct(
-        CampaignFundingRepository $campaignFundingRepository,
-        FundingWithdrawalRepository $fundingWithdrawalRepository,
-        Matching\Adapter $matchingAdapter
+        private CampaignFundingRepository $campaignFundingRepository,
+        private FundingWithdrawalRepository $fundingWithdrawalRepository,
+        private Matching\Adapter $matchingAdapter
     ) {
-        $this->campaignFundingRepository = $campaignFundingRepository;
-        $this->fundingWithdrawalRepository = $fundingWithdrawalRepository;
-        $this->matchingAdapter = $matchingAdapter;
-
         parent::__construct();
     }
 

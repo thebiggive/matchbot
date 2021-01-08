@@ -12,12 +12,15 @@ use MatchBot\Domain\FundingWithdrawalRepository;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 
 class HandleOutOfSyncFundsTest extends TestCase
 {
+    use ProphecyTrait;
+
     public function testCheck(): void
     {
         $command = new HandleOutOfSyncFunds(

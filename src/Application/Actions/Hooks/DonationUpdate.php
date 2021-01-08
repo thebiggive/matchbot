@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions\Hooks;
 
 use Doctrine\ORM\EntityManagerInterface;
+use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
@@ -19,20 +20,13 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class DonationUpdate extends Action
 {
-    private DonationRepository $donationRepository;
-    private EntityManagerInterface $entityManager;
-    private SerializerInterface $serializer;
-
+    #[Pure]
     public function __construct(
-        DonationRepository $donationRepository,
-        EntityManagerInterface $entityManager,
-        LoggerInterface $logger,
-        SerializerInterface $serializer
+        private DonationRepository $donationRepository,
+        private EntityManagerInterface $entityManager,
+        private SerializerInterface $serializer,
+        LoggerInterface $logger
     ) {
-        $this->donationRepository = $donationRepository;
-        $this->entityManager = $entityManager;
-        $this->serializer = $serializer;
-
         parent::__construct($logger);
     }
 

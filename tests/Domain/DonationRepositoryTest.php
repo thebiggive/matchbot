@@ -13,11 +13,13 @@ use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Log\NullLogger;
 
 class DonationRepositoryTest extends TestCase
 {
     use DonationTestDataTrait;
+    use ProphecyTrait;
 
     public function testExistingPushOK(): void
     {

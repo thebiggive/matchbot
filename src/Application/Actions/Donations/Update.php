@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions\Donations;
 
 use Doctrine\ORM\EntityManagerInterface;
+use JetBrains\PhpStorm\NoReturn;
+use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
@@ -25,23 +27,14 @@ use Symfony\Component\Serializer\SerializerInterface;
  */
 class Update extends Action
 {
-    private DonationRepository $donationRepository;
-    private EntityManagerInterface $entityManager;
-    private SerializerInterface $serializer;
-    private StripeClient $stripeClient;
-
+    #[Pure]
     public function __construct(
-        DonationRepository $donationRepository,
-        EntityManagerInterface $entityManager,
-        LoggerInterface $logger,
-        SerializerInterface $serializer,
-        StripeClient $stripeClient
+        private DonationRepository $donationRepository,
+        private EntityManagerInterface $entityManager,
+        private SerializerInterface $serializer,
+        private StripeClient $stripeClient,
+        LoggerInterface $logger
     ) {
-        $this->donationRepository = $donationRepository;
-        $this->entityManager = $entityManager;
-        $this->serializer = $serializer;
-        $this->stripeClient = $stripeClient;
-
         parent::__construct($logger);
     }
 
