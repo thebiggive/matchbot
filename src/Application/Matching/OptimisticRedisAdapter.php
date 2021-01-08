@@ -20,26 +20,21 @@ use Redis;
  */
 class OptimisticRedisAdapter extends Adapter
 {
+    /** @var CampaignFunding[] */
+    private array $fundingsToPersist = [];
+    /** @var int Number of times to immediately try to allocate a smaller amount if the fund's running low */
+    private int $maxPartialAllocateTries = 5;
     /**
-     * @param Redis $redis
-     * @param EntityManagerInterface $entityManager
-     * @param array $fundingsToPersist
-     * @param int $maxPartialAllocateTries -
-     *            How many seconds the authoritative source for real-time match funds should keep data, as a minimum.
-     *            Because Redis sets an updated value on each change to the balance, the case where using the database
-     *            value could be problematic (race conditions with high volume access) should not overlap with the case
-     *            where Redis copies of available fund balances are expired and have to be re-fetched.
-     *
-     * @param int $storageDurationSeconds
-     *            Number of times to immediately try to allocate a smaller amount if the fund's running low
+     * @var int How many seconds the authoritative source for real-time match funds should keep data, as a minimum.
+     *          Because Redis sets an updated value on each change to the balance, the case where using the database
+     *          value could be problematic (race conditions with high volume access) should not overlap with the case
+     *          where Redis copies of available fund balances are expired and have to be re-fetched.
      */
-    #[Pure]
+    private static int $storageDurationSeconds = 86_400; // 1 day
+
     public function __construct(
         private Redis $redis,
         private EntityManagerInterface $entityManager,
-        private array $fundingsToPersist = [],
-        private int $maxPartialAllocateTries = 5,
-        private int $storageDurationSeconds = 86_400 // 1 day
     ) {
     }
 

@@ -17,7 +17,7 @@ class Get extends Action
     #[Pure]
     public function __construct(
         private DonationRepository $donationRepository,
-        protected LoggerInterface $logger
+        LoggerInterface $logger
     ) {
         parent::__construct($logger);
     }

@@ -16,8 +16,8 @@ class Status extends Action
     #[Pure]
     public function __construct(
         private EntityManagerInterface $entityManager,
-        protected LoggerInterface $logger,
-        private ?Redis $redis
+        private ?Redis $redis,
+        LoggerInterface $logger,
     ) {
         parent::__construct($logger);
     }

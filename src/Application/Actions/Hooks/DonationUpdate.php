@@ -24,8 +24,8 @@ class DonationUpdate extends Action
     public function __construct(
         private DonationRepository $donationRepository,
         private EntityManagerInterface $entityManager,
-        protected LoggerInterface $logger,
-        private SerializerInterface $serializer
+        private SerializerInterface $serializer,
+        LoggerInterface $logger
     ) {
         parent::__construct($logger);
     }

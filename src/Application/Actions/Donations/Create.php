@@ -30,9 +30,9 @@ class Create extends Action
     public function __construct(
         private DonationRepository $donationRepository,
         private EntityManagerInterface $entityManager,
-        protected LoggerInterface $logger,
         private SerializerInterface $serializer,
-        private StripeClient $stripeClient
+        private StripeClient $stripeClient,
+        LoggerInterface $logger
     ) {
         parent::__construct($logger);
     }

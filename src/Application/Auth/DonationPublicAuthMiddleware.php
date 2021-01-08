@@ -18,7 +18,7 @@ class DonationPublicAuthMiddleware implements MiddlewareInterface
 
     #[Pure]
     public function __construct(
-        protected LoggerInterface $logger
+        private LoggerInterface $logger
     ) {
     }
 
