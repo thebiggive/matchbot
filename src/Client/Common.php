@@ -15,8 +15,7 @@ abstract class Common
     public function __construct(
         array $settings,
         protected LoggerInterface $logger
-    )
-    {
+    ) {
         $this->clientSettings = $settings['apiClient'];
     }
 
