@@ -43,7 +43,7 @@ class RetrospectivelyMatch extends LockingCommand
             return 1;
         }
 
-        $daysBack = round($input->getArgument('days-back'));
+        $daysBack = round((float) $input->getArgument('days-back'));
         $output->writeln("Looking at past $daysBack days' donations");
 
         $sinceDate = (new DateTime('now'))->sub(new \DateInterval("P{$daysBack}D"));

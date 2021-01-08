@@ -61,7 +61,7 @@ class RetrospectivelyMatchTest extends TestCase
     public function testNonWholeDaysBackIsRounded(): void
     {
         $commandTester = new CommandTester($this->command);
-        $commandTester->execute(['days-back' => 7.5]);
+        $commandTester->execute(['days-back' => '7.5']);
 
         $expectedOutputLines = [
             'matchbot:retrospectively-match starting!',
@@ -76,7 +76,7 @@ class RetrospectivelyMatchTest extends TestCase
     public function testWholeDaysBackProceeds(): void
     {
         $commandTester = new CommandTester($this->command);
-        $commandTester->execute(['days-back' => 8]);
+        $commandTester->execute(['days-back' => '8']);
 
         $expectedOutputLines = [
             'matchbot:retrospectively-match starting!',
