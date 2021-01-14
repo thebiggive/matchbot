@@ -18,6 +18,9 @@ use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 use Symfony\Component\Serializer\SerializerInterface;
 
+/**
+ * Enthuse donation information update hook.
+ */
 class DonationUpdate extends Action
 {
     #[Pure]
