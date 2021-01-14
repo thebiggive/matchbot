@@ -474,12 +474,6 @@ class Donation extends SalesforceWriteProxy
         $this->amount = $amount;
     }
 
-    /**
-     * @param string $psp
-     * @param string $cardBrand
-     * @param string $cardCountry
-     * @param string $charityFee
-     */
     public function setCharityFee(string $psp, ?string $cardBrand = null, ?string $cardCountry = null): void
     {
         $giftAidFee = '0.00';
@@ -508,17 +502,11 @@ class Donation extends SalesforceWriteProxy
         $this->charityFee = $charityFee;
     }
 
-    /**
-     * @param string $transactionId
-     */
     public function setTransactionId(string $transactionId): void
     {
         $this->transactionId = $transactionId;
     }
 
-    /**
-     * @param string $chargeId
-     */
     public function setChargeId(string $chargeId): void
     {
         $this->chargeId = $chargeId;
