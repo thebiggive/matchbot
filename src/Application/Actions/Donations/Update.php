@@ -141,8 +141,9 @@ class Update extends Action
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setDonorBillingAddress($donationData->billingPostalAddress);
-        $donation->setCharityFee(
-            $donation->getPsp(),
+
+        $donation = $this->donationRepository->deriveFees(
+            $donation,
             $donationData->cardBrand,
             $donationData->cardCountry
         );

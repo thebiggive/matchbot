@@ -83,11 +83,13 @@ class DonationUpdate extends Action
         $donation->setGiftAid($donationData->giftAid);
         $donation->setTbgComms($donationData->optInTbgEmail);
         $donation->setTransactionId($donationData->transactionId);
-        $donation->setCharityFee('enthuse'); // Charity fee can vary if gift aid is claimed.
 
         if (isset($donationData->tipAmount)) {
             $donation->setTipAmount((string) $donationData->tipAmount);
         }
+
+        // Charity fee can change if Gift Aid is claimed.
+        $donation = $this->donationRepository->deriveFees($donation);
 
         $this->entityManager->persist($donation);
         $this->entityManager->flush();

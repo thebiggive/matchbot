@@ -7,7 +7,10 @@ namespace MatchBot\Domain;
 use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\DBALException;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use GuzzleHttp\Exception\ClientException;
+use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Client\BadRequestException;
@@ -29,6 +32,11 @@ class DonationRepository extends SalesforceWriteProxyRepository
     private Matching\Adapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
     private array $queuedForPersist;
+
+    public function __construct(EntityManagerInterface $em, ClassMetadata $class, private array $settings)
+    {
+        parent::__construct($em, $class);
+    }
 
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
@@ -126,7 +134,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $donation->setUuid((new UuidGenerator())->generate($this->getEntityManager(), $donation));
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
         $donation->setAmount((string) $donationData->donationAmount);
-        $donation->setCharityFee($donationData->psp);
         $donation->setGiftAid($donationData->giftAid);
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
@@ -139,6 +146,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
         if (isset($donationData->tipAmount)) {
             $donation->setTipAmount((string) $donationData->tipAmount);
         }
+
+        $donation = $this->deriveFees($donation);
 
         return $donation;
     }
@@ -374,6 +383,22 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return $qb->getQuery()
             ->disableResultCache()
             ->getResult();
+    }
+
+    public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): Donation
+    {
+        $structure = new Calculator(
+            $this->settings,
+            $donation->getPsp(),
+            $cardBrand,
+            $cardCountry,
+            $donation->getAmount(),
+            $donation->hasGiftAid() ?? false,
+        );
+        $donation->setCharityFee($structure->getCoreFee());
+        $donation->setCharityFeeVat($structure->getFeeVat());
+
+        return $donation;
     }
 
     /**
