@@ -87,6 +87,40 @@ class DonationTest extends TestCase
         $this->assertEquals(96_868, $donation->getAmountForCharityInPence());
     }
 
+    public function testStripeAmountForCharityWithTipUsingAmex(): void
+    {
+        // N.B. tip to TBG should not change the amount the charity receives, and the tip
+        // is not included in the core donation amount set by `setAmount()`.
+        $donation = new Donation();
+        $donation->setAmount('987.65');
+        $donation->setCharityFee('stripe', 'amex');
+        $donation->setTipAmount('10.00');
+
+        // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
+        // Fixed fee        = £  0.20
+        // Total fee        = £ 31.80
+        // Amount after fee = £955.85
+
+        $this->assertEquals(95_585, $donation->getAmountForCharityInPence());
+    }
+
+    public function testStripeAmountForCharityWithTipUsingUSCard(): void
+    {
+        // N.B. tip to TBG should not change the amount the charity receives, and the tip
+        // is not included in the core donation amount set by `setAmount()`.
+        $donation = new Donation();
+        $donation->setAmount('987.65');
+        $donation->setCharityFee('stripe', 'visa', 'us');
+        $donation->setTipAmount('10.00');
+
+        // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
+        // Fixed fee        = £  0.20
+        // Total fee        = £ 31.80
+        // Amount after fee = £955.85
+
+        $this->assertEquals(95_585, $donation->getAmountForCharityInPence());
+    }
+
     public function testStripeAmountForCharityWithTip(): void
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
