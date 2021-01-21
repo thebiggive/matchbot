@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Actions\Hooks;
 
-use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
+use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 
 abstract class StripeTest extends TestCase

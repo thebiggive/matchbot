@@ -10,7 +10,7 @@ use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\Donation as HttpDonation;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
-use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
+use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;

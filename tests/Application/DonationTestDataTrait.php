@@ -1,6 +1,6 @@
 <?php
 
-namespace MatchBot\Tests\Application\Actions;
+namespace MatchBot\Tests\Application;
 
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;

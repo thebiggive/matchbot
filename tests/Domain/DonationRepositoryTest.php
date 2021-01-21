@@ -9,7 +9,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use MatchBot\Client;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
-use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
+use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
