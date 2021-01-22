@@ -7,8 +7,6 @@ namespace MatchBot\Domain;
 use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\DBALException;
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\ClassMetadata;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -32,11 +30,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     private Matching\Adapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
     private array $queuedForPersist;
-
-    public function __construct(EntityManagerInterface $em, ClassMetadata $class, private array $settings)
-    {
-        parent::__construct($em, $class);
-    }
+    private array $settings;
 
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
@@ -423,6 +417,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function setLockFactory(LockFactory $lockFactory): void
     {
         $this->lockFactory = $lockFactory;
+    }
+
+    /**
+     * @param array $settings
+     */
+    public function setSettings(array $settings): void
+    {
+        $this->settings = $settings;
     }
 
     /**

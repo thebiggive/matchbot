@@ -229,10 +229,10 @@ class DonationRepositoryTest extends TestCase
         $repo = new DonationRepository(
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
-            $settings,
         );
         $repo->setClient($donationClientProphecy->reveal());
         $repo->setLogger(new NullLogger());
+        $repo->setSettings($settings);
 
         return $repo;
     }
