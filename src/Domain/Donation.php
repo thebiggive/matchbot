@@ -22,14 +22,6 @@ class Donation extends SalesforceWriteProxy
 {
     use TimestampsTrait;
 
-    private array $euISOs = [
-        'AT', 'BE', 'BG', 'CY', 'CZ', 'DK', 'EE',
-        'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT',
-        'LV', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL',
-        'PT', 'RO', 'RU', 'SI', 'SK', 'ES', 'SE',
-        'CH', 'GB',
-    ];
-
     /** @var int */
     private int $minimumAmount = 1;
     /** @var int */
@@ -107,7 +99,8 @@ class Donation extends SalesforceWriteProxy
     protected string $amount;
 
     /**
-     * Fee the charity takes on,
+     * Fee the charity takes on, in £.
+     *
      * For Enthuse: 1.9% of $amount + 0.20p
      * For Stripe (EU / UK): 1.5% of $amount + 0.20p
      * For Stripe (Non EU / Amex): 3.2% of $amount + 0.20p
@@ -115,7 +108,15 @@ class Donation extends SalesforceWriteProxy
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
-    protected string $charityFee;
+    protected string $charityFee = '0.00';
+
+    /**
+     * Value Added Tax amount on `$charityFee`, in £.
+     *
+     * @ORM\Column(type="decimal", precision=18, scale=2)
+     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     */
+    protected string $charityFeeVat = '0.00';
 
     /**
      * @ORM\Column(type="string")
@@ -266,12 +267,13 @@ class Donation extends SalesforceWriteProxy
         $data = [
             'billingPostalAddress' => $this->getDonorBillingAddress(),
             'clientSecret' => $this->getClientSecret(),
+            'charityFee' => (float) $this->getCharityFee(),
+            'charityFeeVat' => (float) $this->getCharityFeeVat(),
             'charityId' => $this->getCampaign()->getCharity()->getDonateLinkId(),
             'charityName' => $this->getCampaign()->getCharity()->getName(),
             'countryCode' => $this->getDonorCountryCode(),
             'createdTime' => $this->getCreatedDate()->format(DateTime::ATOM),
             'donationAmount' => (float) $this->getAmount(),
-            'charityFee' => (float) $this->getCharityFee(),
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
             'emailAddress' => $this->getDonorEmailAddress(),
@@ -444,6 +446,8 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
+     * Get core donation amount excluding any tip.
+     *
      * @return string   In full pounds GBP.
      */
     public function getAmount(): string
@@ -452,7 +456,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string   In full pounds GBP.
+     * @return string   In full pounds GBP. Net fee if VAT is added.
      */
     public function getCharityFee(): string
     {
@@ -474,51 +478,16 @@ class Donation extends SalesforceWriteProxy
         $this->amount = $amount;
     }
 
-    /**
-     * @param string $psp
-     * @param string $cardBrand
-     * @param string $cardCountry
-     * @param string $charityFee
-     */
-    public function setCharityFee(string $psp, ?string $cardBrand = null, ?string $cardCountry = null): void
+    public function setCharityFee(string $charityFee): void
     {
-        $giftAidFee = '0.00';
-        $feeAmountFixed = '0.20';   // 20p fixed per-donation
-
-        if ($psp === 'enthuse') {
-            $feeRatio = '0.019';
-            $giftAidFee = $this->hasGiftAid() ? bcmul('0.01', $this->getAmount(), 3) : '0.00';
-        } else {
-            $feeRatio = ($cardBrand === 'amex' || !$this->isEU($cardCountry)) ? '0.032' : '0.015';
-        }
-
-        // bcmath truncates values beyond the scale it's working at, so to get x.x% and round
-        // in the normal mathematical way we need to start with 3 d.p. scale and round with a
-        // workaround.
-        $feeAmountFromPercentageComponent = $this->roundAmount(
-            bcmul($this->getAmount(), $feeRatio, 3)
-        );
-
-        // Charity fee calculated as:
-        // Fixed fee amount + proportion of base donation amount + gift aid fee (for Stripe this is always £0.00)
-        $charityFee = $this->roundAmount(
-            bcadd(bcadd($feeAmountFixed, $feeAmountFromPercentageComponent, 3), $giftAidFee, 3)
-        );
-
         $this->charityFee = $charityFee;
     }
 
-    /**
-     * @param string $transactionId
-     */
     public function setTransactionId(string $transactionId): void
     {
         $this->transactionId = $transactionId;
     }
 
-    /**
-     * @param string $chargeId
-     */
     public function setChargeId(string $chargeId): void
     {
         $this->chargeId = $chargeId;
@@ -712,6 +681,22 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
+     * @return string
+     */
+    public function getCharityFeeVat(): string
+    {
+        return $this->charityFeeVat;
+    }
+
+    /**
+     * @param string $charityFeeVat
+     */
+    public function setCharityFeeVat(string $charityFeeVat): void
+    {
+        $this->charityFeeVat = $charityFeeVat;
+    }
+
+    /**
      * @return bool Whether the donation has a hook-updated status and should therefore be updated in Salesforce after
      *              creation, if successful SF create doesn't happen before MatchBot processes the hook.
      */
@@ -723,14 +708,16 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return int      The amount of the core donation, in pence, which is to be paid out
      *                  to the charity. This is the amount paid by the donor minus
-     *                  (a) any part of that amount which was a tip to the Big Give; and
-     *                  (b) fees on the remaining donation amount.
+     *                  (a) any part of that amount which was a tip to the Big Give;
+     *                  (b) fees on the remaining donation amount; and
+     *                  (c) VAT on fees where applicable.
      *                  It does not include separately sourced funds like matching or
      *                  Gift Aid.
      */
     public function getAmountForCharityInPence(): int
     {
-        $amountForCharity = bcsub($this->getAmount(), $this->getCharityFee(), 2);
+        $amountForCharityBeforeVat = bcsub($this->getAmount(), $this->getCharityFee(), 2);
+        $amountForCharity = bcsub($amountForCharityBeforeVat, $this->getCharityFeeVat(), 2);
 
         return (int) bcmul('100', $amountForCharity, 2);
     }
@@ -741,21 +728,6 @@ class Donation extends SalesforceWriteProxy
     public static function getSuccessStatuses(): array
     {
         return self::$successStatuses;
-    }
-
-    /**
-     * Takes a bcmath string amount with 3 or more decimal places and rounds to
-     * 2 places, with 0.005 rounding up and below rounding down.
-     *
-     * @param string $amount    Simplified from https://stackoverflow.com/a/51390451/2803757 for
-     *                          fixed scale and only positive inputs.
-     * @return string
-     */
-    private function roundAmount(string $amount): string
-    {
-        $e = '1000'; // Base 10 ^ 3
-
-        return bcdiv(bcadd(bcmul($amount, $e, 0), '5'), $e, 2);
     }
 
     /**
@@ -776,17 +748,5 @@ class Donation extends SalesforceWriteProxy
     public function hasEnoughDataForSalesforce(): bool
     {
         return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
-    }
-
-    /**
-     * @return bool Whether the charge was made using an EU card
-     */
-    public function isEU(?string $cardCountry): bool
-    {
-        if ($cardCountry === null) {
-            return true; // Default to 1.5% calculation if card country is not known yet.
-        } else {
-            return in_array($cardCountry, $this->euISOs, true);
-        }
     }
 }

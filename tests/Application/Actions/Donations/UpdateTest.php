@@ -606,6 +606,10 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce(); // Updates pushed to Salesforce
+        $donationRepoProphecy
+            ->deriveFees(Argument::type(Donation::class), null, null)
+            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
@@ -673,6 +677,10 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce(); // Updates pushed to Salesforce
+        $donationRepoProphecy
+            ->deriveFees(Argument::type(Donation::class), null, null)
+            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();

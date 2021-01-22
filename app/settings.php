@@ -58,6 +58,15 @@ return function (ContainerBuilder $containerBuilder) {
                 ],
             ],
 
+            'enthuse' => [
+                'fee' => [
+                    'fixed' => '0.2',               // Baseline fee in pounds.
+                    'gift_aid_percentage' => '1',   // As a propotion of the *total* donation
+                                                    // if Gift Aid claimed, i.e. 1/4 of Gift Aid fee %.
+                    'main_percentage_standard' => '1.9',
+                ],
+            ],
+
             'logger' => [
                 'name' => 'matchbot',
                 'path' => 'php://stdout',
@@ -73,6 +82,18 @@ return function (ContainerBuilder $containerBuilder) {
                 'apiVersion' => '2020-03-02',
                 'accountWebhookSecret' => getenv('STRIPE_WEBHOOK_SIGNING_SECRET'),
                 'connectAppWebhookSecret' => getenv('STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET'),
+                'fee' => [
+                    'fixed' => '0.2', // Baseline fee in pounds
+                    'gift_aid_percentage' => '0',
+                    'main_percentage_standard' => '1.5',
+                    'main_percentage_amex_or_non_uk_eu' => '3.2',
+                    // The rate at which VAT is either being or is about to be charged.
+                    'vat_percentage_live' => getenv('VAT_PERCENTAGE_LIVE'),
+                    // The rate at which VAT is being charged if before the switch date.
+                    'vat_percentage_old' => getenv('VAT_PERCENTAGE_OLD'),
+                    // DateTime constructor-ready string: when the live VAT rate replaces the old one.
+                    'vat_live_date' => getenv('VAT_LIVE_DATE'),
+                ],
             ],
         ],
     ]);
