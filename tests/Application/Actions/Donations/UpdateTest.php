@@ -691,10 +691,12 @@ class UpdateTest extends TestCase
             'amount' => 12_666,
             'metadata' => [
                 'coreDonationGiftAid' => true,
+                'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation369',
                 'tbgTipGiftAid' => false,
+                'tipAmount' => '3.21',
             ],
             'transfer_data' => [
                 'amount' => 12_140,
