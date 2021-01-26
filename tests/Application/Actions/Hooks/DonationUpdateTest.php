@@ -161,7 +161,10 @@ class DonationUpdateTest extends TestCase
         // Check tip updates come through in hook responses, while remaining null by default.
         $donation->setTipAmount('4.32');
         $donation->setPsp('enthuse');
-        $donation->setCharityFee('enthuse');
+
+        $donationToReturn = clone $donation;
+        // Fee calc tested elsewhere – we just want to test here that the mocked/returned object is used.
+        $donationToReturn->setCharityFee('3.78');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -171,6 +174,10 @@ class DonationUpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->willReturn(true)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->deriveFees(Argument::type(Donation::class), null, null)
+            ->willReturn($donationToReturn) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -216,8 +223,11 @@ class DonationUpdateTest extends TestCase
         // Check tip updates come through in hook responses, while remaining null by default.
         $donation->setTipAmount('4.32');
         $donation->setPsp('enthuse');
-        $donation->setCharityFee('enthuse');
         $donation->setGiftAid(false);
+
+        $donationToReturn = clone $donation;
+        // Fee calc tested elsewhere – we just want to test here that the mocked/returned object is used.
+        $donationToReturn->setCharityFee('2.55');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -227,6 +237,10 @@ class DonationUpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->willReturn(true)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->deriveFees(Argument::type(Donation::class), null, null)
+            ->willReturn($donationToReturn) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);

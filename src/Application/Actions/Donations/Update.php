@@ -141,8 +141,9 @@ class Update extends Action
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setDonorBillingAddress($donationData->billingPostalAddress);
-        $donation->setCharityFee(
-            $donation->getPsp(),
+
+        $donation = $this->donationRepository->deriveFees(
+            $donation,
             $donationData->cardBrand,
             $donationData->cardCountry
         );
@@ -153,10 +154,12 @@ class Update extends Action
                     'amount' => $donation->getAmountInPenceIncTip(),
                     'metadata' => [
                         'coreDonationGiftAid' => $donation->hasGiftAid(),
+                        'matchedAmount' => $donation->getFundingWithdrawalTotal(),
                         'optInCharityEmail' => $donation->getCharityComms(),
                         'optInTbgEmail' => $donation->getTbgComms(),
                         'salesforceId' => $donation->getSalesforceId(),
                         'tbgTipGiftAid' => $donation->hasTipGiftAid(),
+                        'tipAmount' => $donation->getTipAmount(),
                     ],
                     'transfer_data' => [
                         // Update the transfer amount incase the final charge was from

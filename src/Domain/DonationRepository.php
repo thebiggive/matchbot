@@ -8,6 +8,7 @@ use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\DBALException;
 use GuzzleHttp\Exception\ClientException;
+use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Client\BadRequestException;
@@ -29,6 +30,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     private Matching\Adapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
     private array $queuedForPersist;
+    private array $settings;
 
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
@@ -126,7 +128,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $donation->setUuid((new UuidGenerator())->generate($this->getEntityManager(), $donation));
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
         $donation->setAmount((string) $donationData->donationAmount);
-        $donation->setCharityFee($donationData->psp);
         $donation->setGiftAid($donationData->giftAid);
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
@@ -139,6 +140,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
         if (isset($donationData->tipAmount)) {
             $donation->setTipAmount((string) $donationData->tipAmount);
         }
+
+        $donation = $this->deriveFees($donation);
 
         return $donation;
     }
@@ -376,6 +379,22 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->getResult();
     }
 
+    public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): Donation
+    {
+        $structure = new Calculator(
+            $this->settings,
+            $donation->getPsp(),
+            $cardBrand,
+            $cardCountry,
+            $donation->getAmount(),
+            $donation->hasGiftAid() ?? false,
+        );
+        $donation->setCharityFee($structure->getCoreFee());
+        $donation->setCharityFeeVat($structure->getFeeVat());
+
+        return $donation;
+    }
+
     /**
      * @param mixed $campaignRepository
      */
@@ -398,6 +417,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function setLockFactory(LockFactory $lockFactory): void
     {
         $this->lockFactory = $lockFactory;
+    }
+
+    /**
+     * @param array $settings
+     */
+    public function setSettings(array $settings): void
+    {
+        $this->settings = $settings;
     }
 
     /**
