@@ -8,7 +8,7 @@ use DI\Container;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\Token;
 use MatchBot\Domain\DonationRepository;
-use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
+use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Slim\Exception\HttpNotFoundException;

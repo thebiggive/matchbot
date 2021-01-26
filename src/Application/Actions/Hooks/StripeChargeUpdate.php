@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Hooks;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationRepository;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Log\LoggerInterface;
 use Stripe\Event;
+use Stripe\StripeClient;
 
 /**
  * Handle charge.succeeded and charge.refunded events from a Stripe account webhook.
@@ -16,6 +21,16 @@ use Stripe\Event;
  */
 class StripeChargeUpdate extends Stripe
 {
+    public function __construct(
+        protected DonationRepository $donationRepository,
+        protected EntityManagerInterface $entityManager,
+        protected StripeClient $stripeClient,
+        ContainerInterface $container,
+        LoggerInterface $logger,
+    ) {
+        parent::__construct($container, $logger);
+    }
+
     /**
      * @return Response
      */
