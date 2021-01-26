@@ -154,10 +154,12 @@ class Update extends Action
                     'amount' => $donation->getAmountInPenceIncTip(),
                     'metadata' => [
                         'coreDonationGiftAid' => $donation->hasGiftAid(),
+                        'matchedAmount' => $donation->getFundingWithdrawalTotal(),
                         'optInCharityEmail' => $donation->getCharityComms(),
                         'optInTbgEmail' => $donation->getTbgComms(),
                         'salesforceId' => $donation->getSalesforceId(),
                         'tbgTipGiftAid' => $donation->hasTipGiftAid(),
+                        'tipAmount' => $donation->getTipAmount(),
                     ],
                     'transfer_data' => [
                         // Update the transfer amount incase the final charge was from
