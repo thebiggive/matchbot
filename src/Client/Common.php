@@ -11,12 +11,12 @@ abstract class Common
 {
     private array $clientSettings;
     private Client $httpClient;
-    protected LoggerInterface $logger;
 
-    public function __construct(array $settings, LoggerInterface $logger)
-    {
+    public function __construct(
+        array $settings,
+        protected LoggerInterface $logger
+    ) {
         $this->clientSettings = $settings['apiClient'];
-        $this->logger = $logger;
     }
 
     protected function getSetting(string $service, string $property): string

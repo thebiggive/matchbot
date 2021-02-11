@@ -6,23 +6,19 @@ namespace MatchBot\Application\Actions;
 
 use Doctrine\DBAL\DBALException;
 use Doctrine\ORM\EntityManagerInterface;
+use JetBrains\PhpStorm\Pure;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
 use Redis;
 
 class Status extends Action
 {
-    private EntityManagerInterface $entityManager;
-    private ?Redis $redis;
-
+    #[Pure]
     public function __construct(
-        EntityManagerInterface $entityManager,
+        private EntityManagerInterface $entityManager,
+        private ?Redis $redis,
         LoggerInterface $logger,
-        ?Redis $redis
     ) {
-        $this->entityManager = $entityManager;
-        $this->redis = $redis;
-
         parent::__construct($logger);
     }
 

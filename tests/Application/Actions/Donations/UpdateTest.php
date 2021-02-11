@@ -10,9 +10,10 @@ use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\Token;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
-use MatchBot\Tests\Application\Actions\DonationTestDataTrait;
+use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Slim\Exception\HttpNotFoundException;
 use Stripe\Service\PaymentIntentService;
 use Stripe\StripeClient;
@@ -20,6 +21,7 @@ use Stripe\StripeClient;
 class UpdateTest extends TestCase
 {
     use DonationTestDataTrait;
+    use ProphecyTrait;
     use PublicJWTAuthTrait;
 
     public function testMissingId(): void
@@ -604,6 +606,10 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce(); // Updates pushed to Salesforce
+        $donationRepoProphecy
+            ->deriveFees(Argument::type(Donation::class), null, null)
+            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
@@ -671,6 +677,10 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce(); // Updates pushed to Salesforce
+        $donationRepoProphecy
+            ->deriveFees(Argument::type(Donation::class), null, null)
+            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
@@ -678,15 +688,18 @@ class UpdateTest extends TestCase
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+            'amount' => 12_666,
             'metadata' => [
                 'coreDonationGiftAid' => true,
+                'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation369',
                 'tbgTipGiftAid' => false,
+                'tipAmount' => '3.21',
             ],
             'transfer_data' => [
-                'amount' => '12140'
+                'amount' => 12_140,
             ]
         ])
             ->shouldBeCalledOnce();

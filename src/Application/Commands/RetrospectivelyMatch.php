@@ -18,18 +18,16 @@ class RetrospectivelyMatch extends LockingCommand
 {
     protected static $defaultName = 'matchbot:retrospectively-match';
 
-    private DonationRepository $donationRepository;
-
-    public function __construct(DonationRepository $donationRepository)
-    {
-        $this->donationRepository = $donationRepository;
+    public function __construct(
+        private DonationRepository $donationRepository
+    ) {
         parent::__construct();
     }
 
     protected function configure(): void
     {
         $this->setDescription(
-            "Allocates matching from the last N days' donations if they missed it due to pending reservations"
+            "Allocates matching from the last N days' donations if missed due to pending reservations, refunds etc."
         );
         $this->addArgument(
             'days-back',
@@ -45,7 +43,7 @@ class RetrospectivelyMatch extends LockingCommand
             return 1;
         }
 
-        $daysBack = round($input->getArgument('days-back'));
+        $daysBack = round((float) $input->getArgument('days-back'));
         $output->writeln("Looking at past $daysBack days' donations");
 
         $sinceDate = (new DateTime('now'))->sub(new \DateInterval("P{$daysBack}D"));

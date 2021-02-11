@@ -6,6 +6,7 @@ namespace MatchBot\Application\Actions\Donations;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
+use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
@@ -25,23 +26,14 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class Create extends Action
 {
-    private DonationRepository $donationRepository;
-    private EntityManagerInterface $entityManager;
-    private SerializerInterface $serializer;
-    private StripeClient $stripeClient;
-
+    #[Pure]
     public function __construct(
-        DonationRepository $donationRepository,
-        EntityManagerInterface $entityManager,
-        LoggerInterface $logger,
-        SerializerInterface $serializer,
-        StripeClient $stripeClient
+        private DonationRepository $donationRepository,
+        private EntityManagerInterface $entityManager,
+        private SerializerInterface $serializer,
+        private StripeClient $stripeClient,
+        LoggerInterface $logger
     ) {
-        $this->donationRepository = $donationRepository;
-        $this->entityManager = $entityManager;
-        $this->serializer = $serializer;
-        $this->stripeClient = $stripeClient;
-
         parent::__construct($logger);
     }
 
@@ -93,7 +85,11 @@ class Create extends Action
         }
 
         if (!$donation->getCampaign()->isOpen()) {
-            return $this->validationError("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
+            return $this->validationError(
+                "Campaign {$donation->getCampaign()->getSalesforceId()} is not open",
+                null,
+                true, // Reduce to info log as some instances expected on campaign close
+            );
         }
 
         // Must persist before Stripe work to have ID available.

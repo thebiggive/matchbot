@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions\Donations;
 
 use Doctrine\ORM\EntityManagerInterface;
+use JetBrains\PhpStorm\NoReturn;
+use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
@@ -25,23 +27,14 @@ use Symfony\Component\Serializer\SerializerInterface;
  */
 class Update extends Action
 {
-    private DonationRepository $donationRepository;
-    private EntityManagerInterface $entityManager;
-    private SerializerInterface $serializer;
-    private StripeClient $stripeClient;
-
+    #[Pure]
     public function __construct(
-        DonationRepository $donationRepository,
-        EntityManagerInterface $entityManager,
-        LoggerInterface $logger,
-        SerializerInterface $serializer,
-        StripeClient $stripeClient
+        private DonationRepository $donationRepository,
+        private EntityManagerInterface $entityManager,
+        private SerializerInterface $serializer,
+        private StripeClient $stripeClient,
+        LoggerInterface $logger
     ) {
-        $this->donationRepository = $donationRepository;
-        $this->entityManager = $entityManager;
-        $this->serializer = $serializer;
-        $this->stripeClient = $stripeClient;
-
         parent::__construct($logger);
     }
 
@@ -148,8 +141,9 @@ class Update extends Action
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setDonorBillingAddress($donationData->billingPostalAddress);
-        $donation->setCharityFee(
-            $donation->getPsp(),
+
+        $donation = $this->donationRepository->deriveFees(
+            $donation,
             $donationData->cardBrand,
             $donationData->cardCountry
         );
@@ -157,12 +151,15 @@ class Update extends Action
         if ($donation->getPsp() === 'stripe') {
             try {
                 $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
+                    'amount' => $donation->getAmountInPenceIncTip(),
                     'metadata' => [
                         'coreDonationGiftAid' => $donation->hasGiftAid(),
+                        'matchedAmount' => $donation->getFundingWithdrawalTotal(),
                         'optInCharityEmail' => $donation->getCharityComms(),
                         'optInTbgEmail' => $donation->getTbgComms(),
                         'salesforceId' => $donation->getSalesforceId(),
                         'tbgTipGiftAid' => $donation->hasTipGiftAid(),
+                        'tipAmount' => $donation->getTipAmount(),
                     ],
                     'transfer_data' => [
                         // Update the transfer amount incase the final charge was from
@@ -205,11 +202,7 @@ class Update extends Action
 
         $donation->setDonationStatus('Cancelled');
 
-        // We need donation status to be persisted *immediately* and before the match
-        // funds release, to eliminate the possibility of a race condition leading a duplicate
-        // valid cancellation HTTP request causing the same match funds to be released twice.
-        // We saw this happen twice on 1 December 2020 (CC20 launch day) from double-cancellations
-        // within 0.005 seconds of each other (MAT-143).
+        // Save & flush early to reduce the chance of another thread getting the old status.
         $this->save($donation);
 
         if ($donation->getCampaign()->isMatched()) {

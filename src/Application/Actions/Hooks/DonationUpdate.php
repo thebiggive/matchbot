@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions\Hooks;
 
 use Doctrine\ORM\EntityManagerInterface;
+use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
@@ -17,22 +18,18 @@ use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 use Symfony\Component\Serializer\SerializerInterface;
 
+/**
+ * Enthuse donation information update hook.
+ */
 class DonationUpdate extends Action
 {
-    private DonationRepository $donationRepository;
-    private EntityManagerInterface $entityManager;
-    private SerializerInterface $serializer;
-
+    #[Pure]
     public function __construct(
-        DonationRepository $donationRepository,
-        EntityManagerInterface $entityManager,
-        LoggerInterface $logger,
-        SerializerInterface $serializer
+        private DonationRepository $donationRepository,
+        private EntityManagerInterface $entityManager,
+        private SerializerInterface $serializer,
+        LoggerInterface $logger
     ) {
-        $this->donationRepository = $donationRepository;
-        $this->entityManager = $entityManager;
-        $this->serializer = $serializer;
-
         parent::__construct($logger);
     }
 
@@ -86,11 +83,13 @@ class DonationUpdate extends Action
         $donation->setGiftAid($donationData->giftAid);
         $donation->setTbgComms($donationData->optInTbgEmail);
         $donation->setTransactionId($donationData->transactionId);
-        $donation->setCharityFee('enthuse'); // Charity fee can vary if gift aid is claimed.
 
         if (isset($donationData->tipAmount)) {
             $donation->setTipAmount((string) $donationData->tipAmount);
         }
+
+        // Charity fee can change if Gift Aid is claimed.
+        $donation = $this->donationRepository->deriveFees($donation);
 
         $this->entityManager->persist($donation);
         $this->entityManager->flush();

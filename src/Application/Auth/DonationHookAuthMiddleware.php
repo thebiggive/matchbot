@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Auth;
 
+use JetBrains\PhpStorm\Pure;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -14,11 +15,10 @@ class DonationHookAuthMiddleware implements MiddlewareInterface
 {
     use ErrorTrait;
 
-    private LoggerInterface $logger;
-
-    public function __construct(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
+    #[Pure]
+    public function __construct(
+        private LoggerInterface $logger
+    ) {
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface

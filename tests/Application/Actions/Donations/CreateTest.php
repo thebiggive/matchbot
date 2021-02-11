@@ -17,6 +17,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Ramsey\Uuid\Uuid;
 use Stripe\Service\PaymentIntentService;
 use Stripe\StripeClient;
@@ -24,6 +25,8 @@ use UnexpectedValueException;
 
 class CreateTest extends TestCase
 {
+    use ProphecyTrait;
+
     public function testDeserialiseError(): void
     {
         $app = $this->getAppInstance();
@@ -206,7 +209,7 @@ class CreateTest extends TestCase
     {
         $donation = $this->getTestDonation(true, true);
         $donation->setPsp('stripe');
-        $donation->setCharityFee('stripe');
+        $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
         $fundingWithdrawalForMatch = new FundingWithdrawal();
@@ -388,7 +391,7 @@ class CreateTest extends TestCase
     {
         $donation = $this->getTestDonation(true, true);
         $donation->setPsp('stripe');
-        $donation->setCharityFee('stripe');
+        $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
         $fundingWithdrawalForMatch = new FundingWithdrawal();
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
@@ -492,7 +495,7 @@ class CreateTest extends TestCase
     {
         $donation = $this->getTestDonation(true, true);
         $donation->setPsp('stripe');
-        $donation->setCharityFee('stripe');
+        $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
         $fundingWithdrawalForMatch = new FundingWithdrawal();
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
@@ -728,7 +731,7 @@ class CreateTest extends TestCase
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
         $donation->setDonorCountryCode('GB');
         $donation->setTipAmount('1.11');
-        $donation->setCharityFee('enthuse');
+        $donation->setCharityFee('0.43');
 
         if (!$minimalSetupData) {
             $donation->setCharityComms(true);

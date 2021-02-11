@@ -1,6 +1,6 @@
 <?php
 
-namespace MatchBot\Tests\Application\Actions;
+namespace MatchBot\Tests\Application;
 
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
@@ -24,7 +24,7 @@ trait DonationTestDataTrait
         $donation = new Donation();
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setAmount('123.45');
-        $donation->setCharityFee('stripe');
+        $donation->setCharityFee('2.05');
         $donation->setCampaign($campaign);
         $donation->setCharityComms(true);
         $donation->setChampionComms(false);
@@ -61,7 +61,7 @@ trait DonationTestDataTrait
         $donation = new Donation();
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setAmount('124.56');
-        $donation->setCharityFee('enthuse');
+        $donation->setCharityFee('2.57');
         $donation->setCampaign($campaign);
         $donation->setDonationStatus('Pending');
         $donation->setPsp('enthuse');

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use DI\Container;
 use DI\ContainerBuilder;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Cache\ArrayCache;
@@ -12,6 +13,8 @@ use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Tools\Setup;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
+use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client;
 use Monolog\Handler\StreamHandler;
@@ -22,6 +25,18 @@ use Psr\Log\LoggerInterface;
 use Stripe\StripeClient;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\PdoStore;
+use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsTransportFactory;
+use Symfony\Component\Messenger\Bridge\Redis\Transport\RedisTransportFactory;
+use Symfony\Component\Messenger\Handler\HandlersLocator;
+use Symfony\Component\Messenger\MessageBus;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
+use Symfony\Component\Messenger\Middleware\SendMessageMiddleware;
+use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\Transport\Sender\SendersLocator;
+use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
+use Symfony\Component\Messenger\Transport\TransportFactory;
+use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -80,6 +95,18 @@ return function (ContainerBuilder $containerBuilder) {
 
         Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
             return new Matching\OptimisticRedisAdapter($c->get(Redis::class), $c->get(RetrySafeEntityManager::class));
+        },
+
+        MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {
+            return new MessageBus([
+                new SendMessageMiddleware(new SendersLocator(
+                    [StripePayout::class => [TransportInterface::class]],
+                    $c,
+                )),
+                new HandleMessageMiddleware(new HandlersLocator(
+                    [StripePayout::class => [$c->get(StripePayoutHandler::class)]],
+                )),
+            ]);
         },
 
         ORM\Configuration::class => static function (ContainerInterface $c): ORM\Configuration {
@@ -151,6 +178,13 @@ return function (ContainerBuilder $containerBuilder) {
             );
         },
 
+        RoutableMessageBus::class => static function (ContainerInterface $c): RoutableMessageBus {
+            $busContainer = new Container();
+            $busContainer->set('stripe.payout.paid', $c->get(MessageBusInterface::class));
+
+            return new RoutableMessageBus($busContainer);
+        },
+
         SerializerInterface::class => static function (ContainerInterface $c): SerializerInterface {
             $encoders = [new JsonEncoder()];
             $normalizers = [new ObjectNormalizer()];
@@ -163,6 +197,18 @@ return function (ContainerBuilder $containerBuilder) {
                 'api_key' => $c->get('settings')['stripe']['apiKey'],
                 'stripe_version' => $c->get('settings')['stripe']['apiVersion'],
             ]);
+        },
+
+        TransportInterface::class => static function (ContainerInterface $c): TransportInterface {
+            $transportFactory = new TransportFactory([
+                new AmazonSqsTransportFactory(),
+                new RedisTransportFactory(),
+            ]);
+            return $transportFactory->createTransport(
+                getenv('MESSENGER_TRANSPORT_DSN'),
+                [],
+                new PhpSerializer(),
+            );
         },
     ]);
 };

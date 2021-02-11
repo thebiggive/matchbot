@@ -8,23 +8,29 @@ use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\DBALException;
 use GuzzleHttp\Exception\ClientException;
+use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
+use Symfony\Component\Lock\Exception\LockAcquiringException;
+use Symfony\Component\Lock\Exception\LockConflictedException;
+use Symfony\Component\Lock\LockFactory;
 
 class DonationRepository extends SalesforceWriteProxyRepository
 {
     private CampaignRepository $campaignRepository;
     private FundRepository $fundRepository;
+    private LockFactory $lockFactory;
     private int $expirySeconds = 17 * 60; // 17 minutes: 15 min official timed window plus 2 mins grace.
     /** @var int When using a locking matching adapter, maximum number of tries for real-time operations */
     private int $maxLockTries = 5;
     private Matching\Adapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
     private array $queuedForPersist;
+    private array $settings;
 
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
@@ -122,7 +128,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $donation->setUuid((new UuidGenerator())->generate($this->getEntityManager(), $donation));
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
         $donation->setAmount((string) $donationData->donationAmount);
-        $donation->setCharityFee($donationData->psp);
         $donation->setGiftAid($donationData->giftAid);
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
@@ -135,6 +140,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
         if (isset($donationData->tipAmount)) {
             $donation->setTipAmount((string) $donationData->tipAmount);
         }
+
+        $donation = $this->deriveFees($donation);
 
         return $donation;
     }
@@ -224,12 +231,11 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
-     * If calling this just after changing a specific donation instead of as a batch process,
-     * be careful to update donation status, persist and flush before invoking this.
-     * In particular, for the case where a donation has just entered a reversed status,
-     * if a second process decides to call this method based on funding allocations in place
-     * when it started, in rare edge cases you can double-release the same match funds
-     * when the funding withdrawals were already deleted in the first request.
+     * Internally this method uses Doctrine transactionally to ensure the database updates are
+     * self-consistent. But it also first acquires an exclusive lock on the fund release process
+     * for the specific donation using the Symfony Lock library. If another thread is already
+     * releasing funds for the same donation, we log this fact but consider it safe to return
+     * without releasing any funds.
      *
      * @param Donation $donation
      * @throws DomainLockContentionException
@@ -237,6 +243,32 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function releaseMatchFunds(Donation $donation): void
     {
+        // Release match funds only having acquired a lock to ensure another thread
+        // isn't doing so. We saw rare issues (MAT-143) during CC20 where the same
+        // valid Cancel request was sent twice in rapid succession and funds were
+        // double-released.
+        $releaseLock = $this->lockFactory->createLock("release-funds-{$donation->getUuid()}");
+        if ($releaseLock->isAcquired()) {
+            $this->logger->info(sprintf(
+                'Skipped releasing match funds for donation ID %s due to lock already being acquired',
+                $donation->getUuid(),
+            ));
+
+            return;
+        }
+
+        try {
+            $releaseLock->acquire();
+        } catch (LockAcquiringException | LockConflictedException $exception) {
+            $this->logger->warning(sprintf(
+                'Skipped releasing match funds for donation ID %s due to %s acquiring lock',
+                $donation->getUuid(),
+                get_class($exception),
+            ));
+
+            return;
+        }
+
         $releaseTries = 0;
         $releaseDone = false;
 
@@ -289,6 +321,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $this->logInfo("Taking from ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
         $this->logInfo('Deallocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
+
+        $releaseLock->release();
     }
 
     /**
@@ -332,6 +366,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->andWhere('d.createdAt >= :checkAfter')
             ->groupBy('d')
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
+            ->orderBy('d.createdAt', 'ASC')
             ->setParameter('completeStatuses', Donation::getSuccessStatuses())
             ->setParameter('campaignMatched', true)
             ->setParameter('checkAfter', $sinceDate);
@@ -342,6 +377,22 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return $qb->getQuery()
             ->disableResultCache()
             ->getResult();
+    }
+
+    public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): Donation
+    {
+        $structure = new Calculator(
+            $this->settings,
+            $donation->getPsp(),
+            $cardBrand,
+            $cardCountry,
+            $donation->getAmount(),
+            $donation->hasGiftAid() ?? false,
+        );
+        $donation->setCharityFee($structure->getCoreFee());
+        $donation->setCharityFeeVat($structure->getFeeVat());
+
+        return $donation;
     }
 
     /**
@@ -358,6 +409,22 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function setFundRepository(FundRepository $fundRepository): void
     {
         $this->fundRepository = $fundRepository;
+    }
+
+    /**
+     * @param LockFactory $lockFactory
+     */
+    public function setLockFactory(LockFactory $lockFactory): void
+    {
+        $this->lockFactory = $lockFactory;
+    }
+
+    /**
+     * @param array $settings
+     */
+    public function setSettings(array $settings): void
+    {
+        $this->settings = $settings;
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Matching;
 
 use Doctrine\ORM\EntityManagerInterface;
+use JetBrains\PhpStorm\Pure;
 use MatchBot\Domain\CampaignFunding;
 use Redis;
 
@@ -19,12 +20,10 @@ use Redis;
  */
 class OptimisticRedisAdapter extends Adapter
 {
-    private EntityManagerInterface $entityManager;
     /** @var CampaignFunding[] */
     private array $fundingsToPersist = [];
     /** @var int Number of times to immediately try to allocate a smaller amount if the fund's running low */
     private int $maxPartialAllocateTries = 5;
-    private Redis $redis;
     /**
      * @var int How many seconds the authoritative source for real-time match funds should keep data, as a minimum.
      *          Because Redis sets an updated value on each change to the balance, the case where using the database
@@ -33,12 +32,13 @@ class OptimisticRedisAdapter extends Adapter
      */
     private static int $storageDurationSeconds = 86_400; // 1 day
 
-    public function __construct(Redis $redis, EntityManagerInterface $entityManager)
-    {
-        $this->redis = $redis;
-        $this->entityManager = $entityManager;
+    public function __construct(
+        private Redis $redis,
+        private EntityManagerInterface $entityManager,
+    ) {
     }
 
+    #[Pure]
     public function doRunTransactionally(callable $function)
     {
         $result = $function();
@@ -63,6 +63,7 @@ class OptimisticRedisAdapter extends Adapter
         return $this->toPounds((int) $redisFundBalanceInPence);
     }
 
+    #[Pure]
     protected function doSubtractAmount(CampaignFunding $funding, string $amount): string
     {
         $decrementInPence = $this->toPence($amount);
@@ -124,6 +125,7 @@ class OptimisticRedisAdapter extends Adapter
         return $fundBalance;
     }
 
+    #[Pure]
     public function doAddAmount(CampaignFunding $funding, string $amount): string
     {
         $incrementInPence = $this->toPence($amount);
