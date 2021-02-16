@@ -6,7 +6,7 @@
   "object": "event",
   "request": null,
   "pending_webhooks": 1,
-  "api_version": "2020-03-02",
+  "api_version": "2020-08-27",
   "data": {
     "object": {
       "id": "ch_externalId_123",
