@@ -99,7 +99,7 @@ class Donation extends SalesforceWriteProxy
     protected string $amount;
 
     /**
-     * Fee the charity takes on, in £.
+     * Fee the charity takes on, in £. Excludes any tax if applicable.
      *
      * For Enthuse: 1.9% of $amount + 0.20p
      * For Stripe (EU / UK): 1.5% of $amount + 0.20p
@@ -111,7 +111,8 @@ class Donation extends SalesforceWriteProxy
     protected string $charityFee = '0.00';
 
     /**
-     * Value Added Tax amount on `$charityFee`, in £.
+     * Value Added Tax amount on `$charityFee`, in £. In addition to base amount
+     * in $charityFee.
      *
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
