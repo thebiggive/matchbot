@@ -75,6 +75,8 @@ class DonationRepositoryTest extends TestCase
         // Total fee        = £ 18.97
         // Amount after fee = £968.68
 
+        // Deduct tip + fee.
+        $this->assertEquals(2_897, $donation->getAmountToDeductInPence());
         $this->assertEquals(96_868, $donation->getAmountForCharityInPence());
     }
 
@@ -91,10 +93,12 @@ class DonationRepositoryTest extends TestCase
 
         // £987.65 * 1.9%   = £ 18.77 (to 2 d.p.)
         // Fixed fee        = £  0.20
-        // Total fee        = £ 18.97
+        // Txn amount fee   = £ 18.97
         // Fee on Gift Aid  = £  9.88
         // Amount after fee = £958.80
 
+        // Deduct both fee types, and tip.
+        $this->assertEquals(3_885, $donation->getAmountToDeductInPence());
         $this->assertEquals(95_880, $donation->getAmountForCharityInPence());
     }
 
@@ -113,6 +117,8 @@ class DonationRepositoryTest extends TestCase
         // Total fee        = £ 31.80
         // Amount after fee = £955.85
 
+        // Deduct tip + fee.
+        $this->assertEquals(4_180, $donation->getAmountToDeductInPence());
         $this->assertEquals(95_585, $donation->getAmountForCharityInPence());
     }
 
@@ -131,6 +137,8 @@ class DonationRepositoryTest extends TestCase
         // Total fee        = £ 31.80
         // Amount after fee = £955.85
 
+        // Deduct tip + fee.
+        $this->assertEquals(4_180, $donation->getAmountToDeductInPence());
         $this->assertEquals(95_585, $donation->getAmountForCharityInPence());
     }
 
@@ -149,6 +157,8 @@ class DonationRepositoryTest extends TestCase
         // Total fee        = £ 15.01
         // Amount after fee = £972.64
 
+        // Deduct tip + fee.
+        $this->assertEquals(2_501, $donation->getAmountToDeductInPence());
         $this->assertEquals(97_264, $donation->getAmountForCharityInPence());
     }
 
@@ -172,6 +182,8 @@ class DonationRepositoryTest extends TestCase
 
         $this->assertEquals('15.01', $donation->getCharityFee());
         $this->assertEquals('3.00', $donation->getCharityFeeVat());
+        // Deduct tip + fee inc. VAT.
+        $this->assertEquals(2_801, $donation->getAmountToDeductInPence());
         $this->assertEquals(96_964, $donation->getAmountForCharityInPence());
     }
 
@@ -187,6 +199,7 @@ class DonationRepositoryTest extends TestCase
         // Total fee        = £ 15.01
         // Amount after fee = £972.64
 
+        $this->assertEquals(1_501, $donation->getAmountToDeductInPence());
         $this->assertEquals(97_264, $donation->getAmountForCharityInPence());
     }
 
@@ -201,6 +214,7 @@ class DonationRepositoryTest extends TestCase
         // Fixed fee    = £ 0.20
         // Total fee    = £ 0.29
         // After fee    = £ 5.96
+        $this->assertEquals(29, $donation->getAmountToDeductInPence());
         $this->assertEquals(596, $donation->getAmountForCharityInPence());
     }
 

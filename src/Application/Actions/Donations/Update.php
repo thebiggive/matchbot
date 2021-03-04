@@ -158,14 +158,16 @@ class Update extends Action
                         'optInCharityEmail' => $donation->getCharityComms(),
                         'optInTbgEmail' => $donation->getTbgComms(),
                         'salesforceId' => $donation->getSalesforceId(),
+                        'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                        'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                        'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
                         'tbgTipGiftAid' => $donation->hasTipGiftAid(),
                         'tipAmount' => $donation->getTipAmount(),
                     ],
-                    'transfer_data' => [
-                        // Update the transfer amount incase the final charge was from
-                        // a Non EU / Amex card where fees are varied.
-                        'amount' => $donation->getAmountForCharityInPence(),
-                    ]
+                    // See https://stripe.com/docs/connect/destination-charges#application-fee
+                    // Update the fee amount incase the final charge was from
+                    // a Non EU / Amex card where fees are varied.
+                    'application_fee_amount' => $donation->getAmountToDeductInPence(),
                 ]);
             } catch (ApiErrorException $exception) {
                 $this->logger->error(

@@ -141,12 +141,15 @@ class Create extends Action
                         'donationId' => $donation->getUuid(),
                         'environment' => getenv('APP_ENV'),
                         'matchedAmount' => $donation->getFundingWithdrawalTotal(),
+                        'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                        'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                        'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
                         'tipAmount' => $donation->getTipAmount(),
                     ],
                     'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
-                    // See https://stripe.com/docs/connect/destination-charges
+                    // See https://stripe.com/docs/connect/destination-charges#application-fee
+                    'application_fee_amount' => $donation->getAmountToDeductInPence(),
                     'transfer_data' => [
-                        'amount' => $donation->getAmountForCharityInPence(),
                         'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
                     ],
                 ]);
