@@ -211,6 +211,7 @@ class DonationUpdateTest extends TestCase
         $this->assertEquals(0, $payloadArray['matchedAmount']);
         $this->assertEquals(4.32, $payloadArray['tipAmount']);
         $this->assertEquals(3.78, $payloadArray['charityFee']);
+        $this->assertEquals(0, $payloadArray['charityFeeVat']);
     }
 
     public function testSuccessWithoutGA(): void
@@ -274,6 +275,7 @@ class DonationUpdateTest extends TestCase
         $this->assertEquals(0, $payloadArray['matchedAmount']);
         $this->assertEquals(4.32, $payloadArray['tipAmount']);
         $this->assertEquals(2.55, $payloadArray['charityFee']);
+        $this->assertEquals(0, $payloadArray['charityFeeVat']);
     }
 
     private function getHttpDonation(bool $valid): array

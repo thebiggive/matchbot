@@ -359,6 +359,8 @@ class UpdateTest extends TestCase
         $this->assertEquals(123.45, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertEquals(0, $payloadArray['matchedAmount']);
         $this->assertEquals(1.00, $payloadArray['tipAmount']);
+        $this->assertEquals(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
+        $this->assertEquals(0, $payloadArray['charityFeeVat']);
     }
 
     public function testCancelSuccessWithChange(): void
@@ -430,6 +432,8 @@ class UpdateTest extends TestCase
         $this->assertEquals(123.45, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertEquals(0, $payloadArray['matchedAmount']);
         $this->assertEquals(1.00, $payloadArray['tipAmount']);
+        $this->assertEquals(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
+        $this->assertEquals(0, $payloadArray['charityFeeVat']);
     }
 
     public function testCancelSuccessWithChangeFromPendingAnonymousDonation(): void
@@ -484,6 +488,8 @@ class UpdateTest extends TestCase
         $this->assertEquals(124.56, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertEquals(0, $payloadArray['matchedAmount']);
         $this->assertEquals(2.00, $payloadArray['tipAmount']);
+        $this->assertEquals(2.57, $payloadArray['charityFee']); // 1.9% + 20p.
+        $this->assertEquals(0, $payloadArray['charityFeeVat']);
     }
 
     public function testAddDataAttemptWithDifferentAmount(): void
@@ -695,6 +701,9 @@ class UpdateTest extends TestCase
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation369',
+                'stripeFeeRechargeGross' => '2.05',
+                'stripeFeeRechargeNet' => '2.05',
+                'stripeFeeRechargeVat' => '0.00',
                 'tbgTipGiftAid' => false,
                 'tipAmount' => '3.21',
             ],
@@ -730,6 +739,9 @@ class UpdateTest extends TestCase
 
         // Remaining properties should be updated.
         $this->assertEquals('US', $payloadArray['countryCode']);
+        // 1.9% + 20p. cardCountry from Stripe payment method ≠ donor country.
+        $this->assertEquals(2.05, $payloadArray['charityFee']);
+        $this->assertEquals(0, $payloadArray['charityFeeVat']);
         $this->assertEquals('3.21', $payloadArray['tipAmount']);
         $this->assertTrue($payloadArray['giftAid']);
         $this->assertFalse($payloadArray['tipGiftAid']);

@@ -467,7 +467,7 @@ class Donation extends SalesforceWriteProxy
 
     #[Pure] public function getCharityFeeGross(): string
     {
-        return bcadd($this->getCharityFee(), $this->getCharityFeeVat());
+        return bcadd($this->getCharityFee(), $this->getCharityFeeVat(), 2);
     }
 
     /**
@@ -736,11 +736,16 @@ class Donation extends SalesforceWriteProxy
      *                  (c) VAT on fees where applicable.
      *                  It does not include separately sourced funds like matching or
      *                  Gift Aid.
+     *
+     *                  This is just used in unit tests to validate we haven't broken anything now.
+     *                  Note that because `getAmountToDeductInPence()` takes off the tip amount and
+     *                  `getAmount()` relates to core amount, we must re-add the tip here to get a
+     *                  correct answer.
      */
     public function getAmountForCharityInPence(): int
     {
         $amountInPence = (int) bcmul('100', $this->getAmount(), 2);
-        return $amountInPence - $this->getAmountToDeductInPence();
+        return $amountInPence - $this->getAmountToDeductInPence() + $this->getTipAmountInPence();
     }
 
     /**
