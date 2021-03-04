@@ -8,6 +8,7 @@ use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
+use JetBrains\PhpStorm\Pure;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -464,6 +465,11 @@ class Donation extends SalesforceWriteProxy
         return $this->charityFee;
     }
 
+    #[Pure] public function getCharityFeeGross(): string
+    {
+        return bcadd($this->getCharityFee(), $this->getCharityFeeVat());
+    }
+
     /**
      * @param string $amount    Core donation amount, excluding any tip, in full pounds GBP.
      */
@@ -707,6 +713,22 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
+     * @return int      The amount of the total donation, in pence, which is to be excluded
+     *                  from payout to the charity. This is the sum of
+     *                  (a) any part of that amount which was a tip to the Big Give;
+     *                  (b) fees on the remaining donation amount; and
+     *                  (c) VAT on fees where applicable.
+     *                  It does not include separately sourced funds like matching or
+     *                  Gift Aid.
+     */
+    public function getAmountToDeductInPence(): int
+    {
+        $amountToDeduct = bcadd($this->getTipAmount(), $this->getCharityFeeGross(), 2);
+
+        return (int) bcmul('100', $amountToDeduct, 2);
+    }
+
+    /**
      * @return int      The amount of the core donation, in pence, which is to be paid out
      *                  to the charity. This is the amount paid by the donor minus
      *                  (a) any part of that amount which was a tip to the Big Give;
@@ -717,10 +739,8 @@ class Donation extends SalesforceWriteProxy
      */
     public function getAmountForCharityInPence(): int
     {
-        $amountForCharityBeforeVat = bcsub($this->getAmount(), $this->getCharityFee(), 2);
-        $amountForCharity = bcsub($amountForCharityBeforeVat, $this->getCharityFeeVat(), 2);
-
-        return (int) bcmul('100', $amountForCharity, 2);
+        $amountInPence = (int) bcmul('100', $this->getAmount(), 2);
+        return $amountInPence - $this->getAmountToDeductInPence();
     }
 
     /**

@@ -698,9 +698,7 @@ class UpdateTest extends TestCase
                 'tbgTipGiftAid' => false,
                 'tipAmount' => '3.21',
             ],
-            'transfer_data' => [
-                'amount' => 12_140,
-            ]
+            'application_fee_amount' => 526,
         ])
             ->shouldBeCalledOnce();
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
