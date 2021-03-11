@@ -1,32 +1,25 @@
 {
-  "object": "list",
-  "data": [
+  "id": "txn_00000000000000",
+  "object": "balance_transaction",
+  "amount": 600,
+  "available_on": 1595203200,
+  "created": 1594646323,
+  "currency": "gbp",
+  "description": null,
+  "exchange_rate": null,
+  "fee": 37,
+  "fee_details": [
     {
-      "id": "txn_1H4Rt9KkGuKkxwBNtVRZeh4v",
-      "object": "balance_transaction",
-      "amount": 700,
-      "available_on": 1595203200,
-      "created": 1594647611,
+      "amount": 37,
+      "application": null,
       "currency": "gbp",
-      "description": null,
-      "exchange_rate": null,
-      "fee": 30,
-      "fee_details": [
-        {
-          "amount": 30,
-          "application": null,
-          "currency": "gbp",
-          "description": "Stripe processing fees",
-          "type": "stripe_fee"
-        }
-      ],
-      "net": 670,
-      "reporting_category": "charge",
-      "source": "py_externalId_123",
-      "status": "available",
-      "type": "payment"
+      "description": "Stripe processing fees",
+      "type": "stripe_fee"
     }
   ],
-  "has_more": false,
-  "url": "/v1/balance_transactions"
+  "net": 563,
+  "reporting_category": "charge",
+  "source": "ch_externalId_123",
+  "status": "available",
+  "type": "charge"
 }
