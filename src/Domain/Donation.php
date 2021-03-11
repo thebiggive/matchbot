@@ -112,6 +112,16 @@ class Donation extends SalesforceWriteProxy
     protected string $charityFee = '0.00';
 
     /**
+     * Fee charged to TBG by the PSP, in £. Added just for Stripe transactions from March '21.
+     * Original fee varies by card brand and country and is based on the full amount paid by the
+     * donor: `$amount + $tipAmount`.
+     *
+     * @ORM\Column(type="decimal", precision=18, scale=2)
+     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     */
+    protected string $originalPspFee = '0.00';
+
+    /**
      * Value Added Tax amount on `$charityFee`, in £. In addition to base amount
      * in $charityFee.
      *
@@ -774,5 +784,18 @@ class Donation extends SalesforceWriteProxy
     public function hasEnoughDataForSalesforce(): bool
     {
         return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
+    }
+
+    /**
+     * @return string
+     */
+    public function getOriginalPspFee(): string
+    {
+        return $this->originalPspFee;
+    }
+
+    public function setOriginalPspFeeInPence(int $originalPspFeeInPence): void
+    {
+        $this->originalPspFee = bcdiv((string) $originalPspFeeInPence, '100', 2);
     }
 }
