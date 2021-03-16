@@ -7,6 +7,7 @@ use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Stripe\StripeClient;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
@@ -101,9 +102,19 @@ class StripePayoutHandler implements MessageHandlerInterface
 
                 $count++;
             } elseif ($donation->getDonationStatus() !== 'Paid') {
-                // Skip updating donations in bad statuses but continue to check the remainder.
-                $this->logger->error(
-                    sprintf('Payout: Unexpected donation status found for Charge ID %s', $chargeId)
+                // Skip updating donations in non-Paid statuses but continue to check the remainder.
+                // 'Refunded' is an expected status when looking through the balance txn list for a
+                // Connect account's payout, e.g.:
+                // Payment refund (£112.50)  £0.00  (£112.50) Refund for py_1IUDF94FoHYWqtVFeuW0E4Yb ...
+                // Payment         £112.50 (£14.54)   £97.96  py_1IUDF94FoHYWqtVFeuW0E4Yb ...
+                // So we log that case with INFO level (no alert / action generally) and others with ERROR.
+                $this->logger->log(
+                    $donation->getDonationStatus() === 'Refunded' ? LogLevel::INFO : LogLevel::ERROR,
+                    sprintf(
+                        'Payout: Skipping donation status %s found for Charge ID %s',
+                        $donation->getDonationStatus(),
+                        $chargeId,
+                    )
                 );
             }
         }
