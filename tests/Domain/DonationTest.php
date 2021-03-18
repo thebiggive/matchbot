@@ -69,4 +69,12 @@ class DonationTest extends TestCase
 
         $this->addToAssertionCount(1); // Just check setPsp() doesn't hit an exception
     }
+
+    public function testSetAndGetOriginalFee(): void
+    {
+        $donation = new Donation();
+        $donation->setOriginalPspFeeInPence(123);
+
+        $this->assertEquals('1.23', $donation->getOriginalPspFee());
+    }
 }

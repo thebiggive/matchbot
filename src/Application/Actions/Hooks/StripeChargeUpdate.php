@@ -77,6 +77,9 @@ class StripeChargeUpdate extends Stripe
         if ($event->data->object->status === 'succeeded') {
             $donation->setChargeId($event->data->object->id);
             $donation->setDonationStatus('Collected');
+            $donation->setOriginalPspFeeInPence(
+                $this->getOriginalFeeInPence($event->data->object->balance_transaction)
+            );
         } else {
             return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
         }
@@ -148,5 +151,35 @@ class StripeChargeUpdate extends Stripe
         $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
         return $this->respondWithData($event->data->object);
+    }
+
+    private function getOriginalFeeInPence(string $balanceTransactionId): int
+    {
+        $txn = $this->stripeClient->balanceTransactions->retrieve($balanceTransactionId);
+
+        if (count($txn->fee_details) !== 1) {
+            $this->logger->warning(sprintf(
+                'StripeChargeUpdate::getFee: Unexpected composite fee with %d parts: %s',
+                count($txn->fee_details),
+                json_encode($txn->fee_details),
+            ));
+        }
+
+        if ($txn->fee_details[0]->currency !== 'gbp') {
+            // `fee` should presumably still be in parent account's currency, so don't bail out.
+            $this->logger->warning(sprintf(
+                'StripeChargeUpdate::getFee: Unexpected fee currency %s',
+                $txn->fee_details[0]->currency,
+            ));
+        }
+
+        if ($txn->fee_details[0]->type !== 'stripe_fee') {
+            $this->logger->warning(sprintf(
+                'StripeChargeUpdate::getFee: Unexpected type %s',
+                $txn->fee_details[0]->type,
+            ));
+        }
+
+        return $txn->fee;
     }
 }

@@ -264,11 +264,14 @@ class CreateTest extends TestCase
                 'donationId' => '12345678-1234-1234-1234-1234567890ab',
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '8.00',
+                'stripeFeeRechargeGross' => '0.38',
+                'stripeFeeRechargeNet' => '0.38',
+                'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
             'statement_descriptor' => 'The Big Give Create te',
+            'application_fee_amount' => 149,
             'transfer_data' => [
-                'amount' => 1162,
                 'destination' => 'unitTest_newStripeAccount_456',
             ],
         ];
@@ -310,6 +313,8 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
+        $this->assertEquals(0.38, $payloadArray['donation']['charityFee']);
+        $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
@@ -371,6 +376,8 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
+        $this->assertEquals(0.43, $payloadArray['donation']['charityFee']); // 1.9% + 20p.
+        $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
@@ -428,11 +435,14 @@ class CreateTest extends TestCase
                 'donationId' => '12345678-1234-1234-1234-1234567890ab',
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '8.00',
+                'stripeFeeRechargeGross' => '0.38',
+                'stripeFeeRechargeNet' => '0.38',
+                'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
             'statement_descriptor' => 'The Big Give Create te',
+            'application_fee_amount' => 149,
             'transfer_data' => [
-                'amount' => 1162,
                 'destination' => 'unitTest_stripeAccount_123',
             ],
         ];
@@ -474,6 +484,8 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
+        $this->assertEquals(0.38, $payloadArray['donation']['charityFee']); // 1.5% + 20p.
+        $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
@@ -536,11 +548,14 @@ class CreateTest extends TestCase
                 'donationId' => '12345678-1234-1234-1234-1234567890ab',
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '8.00',
+                'stripeFeeRechargeGross' => '0.38',
+                'stripeFeeRechargeNet' => '0.38',
+                'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
             'statement_descriptor' => 'The Big Give Create te',
+            'application_fee_amount' => 149,
             'transfer_data' => [
-                'amount' => 1162,
                 'destination' => 'unitTest_stripeAccount_123',
             ],
         ];
@@ -582,6 +597,8 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
+        $this->assertEquals(0.38, $payloadArray['donation']['charityFee']);
+        $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
@@ -635,6 +652,8 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertFalse($payloadArray['donation']['giftAid']);
+        $this->assertEquals(0.43, $payloadArray['donation']['charityFee']); // 1.9% + 20p.
+        $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
@@ -692,6 +711,8 @@ class CreateTest extends TestCase
         $this->assertNull($payloadArray['donation']['optInCharityEmail']);
         $this->assertNull($payloadArray['donation']['optInChampionEmail']);
         $this->assertNull($payloadArray['donation']['optInTbgEmail']);
+        $this->assertEquals(0.43, $payloadArray['donation']['charityFee']); // 1.9% + 20p.
+        $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);

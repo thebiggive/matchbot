@@ -79,7 +79,7 @@ return function (ContainerBuilder $containerBuilder) {
 
             'stripe' => [
                 'apiKey' => getenv('STRIPE_SECRET_KEY'),
-                'apiVersion' => '2020-08-27',
+                'apiVersion' => getenv('STRIPE_API_VERSION'),
                 'accountWebhookSecret' => getenv('STRIPE_WEBHOOK_SIGNING_SECRET'),
                 'connectAppWebhookSecret' => getenv('STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET'),
                 'fee' => [

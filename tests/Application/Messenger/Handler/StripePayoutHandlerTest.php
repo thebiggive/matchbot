@@ -133,8 +133,8 @@ class StripePayoutHandlerTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $balanceTxnResponse = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_success.json'
+        $balanceTxnsResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_list_success.json'
         );
         $chargeResponse = file_get_contents(
             dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/py_success.json'
@@ -160,7 +160,7 @@ class StripePayoutHandlerTest extends TestCase
             ['stripe_account' => 'acct_unitTest123'],
         )
             ->shouldBeCalledOnce()
-            ->willReturn(json_decode($balanceTxnResponse));
+            ->willReturn(json_decode($balanceTxnsResponse));
 
         $stripeChargeProphecy = $this->prophesize(ChargeService::class);
         $stripeChargeProphecy->retrieve(
@@ -217,8 +217,8 @@ class StripePayoutHandlerTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $balanceTxnResponse = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_success.json'
+        $balanceTxnsResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_list_success.json'
         );
         $chargeResponse = file_get_contents(
             dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/py_success.json'
@@ -237,7 +237,7 @@ class StripePayoutHandlerTest extends TestCase
             ['stripe_account' => 'acct_unitTest123'],
         )
             ->shouldBeCalledOnce()
-            ->willReturn(json_decode($balanceTxnResponse));
+            ->willReturn(json_decode($balanceTxnsResponse));
 
         $stripeChargeProphecy = $this->prophesize(ChargeService::class);
         $stripeChargeProphecy->retrieve(

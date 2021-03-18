@@ -8,6 +8,7 @@ use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
+use JetBrains\PhpStorm\Pure;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -118,6 +119,16 @@ class Donation extends SalesforceWriteProxy
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
     protected string $charityFeeVat = '0.00';
+
+    /**
+     * Fee charged to TBG by the PSP, in £. Added just for Stripe transactions from March '21.
+     * Original fee varies by card brand and country and is based on the full amount paid by the
+     * donor: `$amount + $tipAmount`.
+     *
+     * @ORM\Column(type="decimal", precision=18, scale=2)
+     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     */
+    protected string $originalPspFee = '0.00';
 
     /**
      * @ORM\Column(type="string")
@@ -249,6 +260,7 @@ class Donation extends SalesforceWriteProxy
         $data['updatedTime'] = $this->getUpdatedDate()->format(DateTime::ATOM);
         $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
+        $data['originalPspFee'] = (float) $this->getOriginalPspFee();
 
         unset(
             $data['clientSecret'],
@@ -462,6 +474,11 @@ class Donation extends SalesforceWriteProxy
     public function getCharityFee(): string
     {
         return $this->charityFee;
+    }
+
+    #[Pure] public function getCharityFeeGross(): string
+    {
+        return bcadd($this->getCharityFee(), $this->getCharityFeeVat(), 2);
     }
 
     /**
@@ -707,6 +724,22 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
+     * @return int      The amount of the total donation, in pence, which is to be excluded
+     *                  from payout to the charity. This is the sum of
+     *                  (a) any part of that amount which was a tip to the Big Give;
+     *                  (b) fees on the remaining donation amount; and
+     *                  (c) VAT on fees where applicable.
+     *                  It does not include separately sourced funds like matching or
+     *                  Gift Aid.
+     */
+    public function getAmountToDeductInPence(): int
+    {
+        $amountToDeduct = bcadd($this->getTipAmount(), $this->getCharityFeeGross(), 2);
+
+        return (int) bcmul('100', $amountToDeduct, 2);
+    }
+
+    /**
      * @return int      The amount of the core donation, in pence, which is to be paid out
      *                  to the charity. This is the amount paid by the donor minus
      *                  (a) any part of that amount which was a tip to the Big Give;
@@ -714,13 +747,16 @@ class Donation extends SalesforceWriteProxy
      *                  (c) VAT on fees where applicable.
      *                  It does not include separately sourced funds like matching or
      *                  Gift Aid.
+     *
+     *                  This is just used in unit tests to validate we haven't broken anything now.
+     *                  Note that because `getAmountToDeductInPence()` takes off the tip amount and
+     *                  `getAmount()` relates to core amount, we must re-add the tip here to get a
+     *                  correct answer.
      */
     public function getAmountForCharityInPence(): int
     {
-        $amountForCharityBeforeVat = bcsub($this->getAmount(), $this->getCharityFee(), 2);
-        $amountForCharity = bcsub($amountForCharityBeforeVat, $this->getCharityFeeVat(), 2);
-
-        return (int) bcmul('100', $amountForCharity, 2);
+        $amountInPence = (int) bcmul('100', $this->getAmount(), 2);
+        return $amountInPence - $this->getAmountToDeductInPence() + $this->getTipAmountInPence();
     }
 
     /**
@@ -749,5 +785,18 @@ class Donation extends SalesforceWriteProxy
     public function hasEnoughDataForSalesforce(): bool
     {
         return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
+    }
+
+    /**
+     * @return string
+     */
+    public function getOriginalPspFee(): string
+    {
+        return $this->originalPspFee;
+    }
+
+    public function setOriginalPspFeeInPence(int $originalPspFeeInPence): void
+    {
+        $this->originalPspFee = bcdiv((string) $originalPspFeeInPence, '100', 2);
     }
 }

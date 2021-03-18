@@ -11,6 +11,8 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Stripe\Service\BalanceTransactionService;
+use Stripe\StripeClient;
 
 class StripeChargeUpdateTest extends StripeTest
 {
@@ -122,8 +124,19 @@ class StripeChargeUpdateTest extends StripeTest
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
+        $balanceTxnResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_success.json'
+        );
+        $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
+        $stripeBalanceTransactionProphecy->retrieve('txn_00000000000000')
+            ->shouldBeCalledOnce()
+            ->willReturn(json_decode($balanceTxnResponse));
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
@@ -132,6 +145,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
         $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals('0.37', $donation->getOriginalPspFee());
         $this->assertEquals(200, $response->getStatusCode());
     }
 
