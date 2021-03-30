@@ -708,7 +708,6 @@ class UpdateTest extends TestCase
                 'tipAmount' => '3.21',
             ],
             'application_fee_amount' => 526,
-            'on_behalf_of' => 'unitTest_stripeAccount_123',
         ])
             ->shouldBeCalledOnce();
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
