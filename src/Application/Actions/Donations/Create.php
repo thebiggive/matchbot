@@ -149,6 +149,9 @@ class Create extends Action
                     'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
                     // See https://stripe.com/docs/connect/destination-charges#application-fee
                     'application_fee_amount' => $donation->getAmountToDeductInPence(),
+                    // See https://stripe.com/docs/payments/connected-accounts and
+                    // https://stripe.com/docs/connect/destination-charges#settlement-merchant
+                    'on_behalf_of' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
                     'transfer_data' => [
                         'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
                     ],
