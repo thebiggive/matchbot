@@ -14,6 +14,7 @@ trait DonationTestDataTrait
         $charity = new Charity();
         $charity->setDonateLinkId('123CharityId');
         $charity->setName('Test charity');
+        $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
         $campaign = new Campaign();
         $campaign->setCharity($charity);
