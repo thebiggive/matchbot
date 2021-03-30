@@ -271,6 +271,7 @@ class CreateTest extends TestCase
             ],
             'statement_descriptor' => 'The Big Give Create te',
             'application_fee_amount' => 149,
+            'on_behalf_of' => 'unitTest_newStripeAccount_456',
             'transfer_data' => [
                 'destination' => 'unitTest_newStripeAccount_456',
             ],
@@ -442,6 +443,7 @@ class CreateTest extends TestCase
             ],
             'statement_descriptor' => 'The Big Give Create te',
             'application_fee_amount' => 149,
+            'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
                 'destination' => 'unitTest_stripeAccount_123',
             ],
@@ -555,6 +557,7 @@ class CreateTest extends TestCase
             ],
             'statement_descriptor' => 'The Big Give Create te',
             'application_fee_amount' => 149,
+            'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
                 'destination' => 'unitTest_stripeAccount_123',
             ],
