@@ -168,6 +168,7 @@ class Update extends Action
                     // Update the fee amount incase the final charge was from
                     // a Non EU / Amex card where fees are varied.
                     'application_fee_amount' => $donation->getAmountToDeductInPence(),
+                    // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
                 ]);
             } catch (ApiErrorException $exception) {
                 $this->logger->error(
