@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions\Donations;
 
 use Doctrine\ORM\EntityManagerInterface;
-use JetBrains\PhpStorm\NoReturn;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
@@ -171,10 +170,13 @@ class Update extends Action
                     // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
                 ]);
             } catch (ApiErrorException $exception) {
-                $this->logger->error(
-                    'Stripe Payment Intent update error: ' .
-                    get_class($exception) . ': ' . $exception->getMessage()
-                );
+                $this->logger->error(sprintf(
+                    'Stripe Payment Intent update error on %s, %s [%s]: %s',
+                    $donation->getUuid(),
+                    get_class($exception),
+                    $exception->getStripeCode(),
+                    $exception->getMessage(),
+                ));
                 $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent');
                 return $this->respond(new ActionPayload(500, null, $error));
             }
