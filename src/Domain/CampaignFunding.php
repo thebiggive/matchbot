@@ -43,7 +43,7 @@ class CampaignFunding extends Model
      * @ORM\Column(type="string", length=3)
      * @var string  ISO 4217 code for the currency in which all monetary values are denominated.
      */
-    protected string $currencyCode = 'GBP';
+    protected string $currencyCode;
 
     /**
      * @ORM\Column(type="decimal", precision=18, scale=2)
