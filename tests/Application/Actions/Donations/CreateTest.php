@@ -786,6 +786,7 @@ class CreateTest extends TestCase
 
         $donation = new Donation();
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
+        $donation->setCurrencyCode('GBP');
         $donation->setAmount('12.00');
         $donation->setCampaign($campaign);
         $donation->setPsp('enthuse');
