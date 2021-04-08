@@ -12,6 +12,7 @@ class Donation
     public ?string $transactionId = null;
     public string $status;
     public string $charityId;
+    public ?string $currencyCode = 'GBP';
     public float $donationAmount;
     public ?bool $giftAid;
     public bool $donationMatched;

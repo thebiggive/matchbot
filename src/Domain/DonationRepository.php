@@ -6,7 +6,7 @@ namespace MatchBot\Domain;
 
 use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception as DBALException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -122,12 +122,20 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $cacheDriver->deleteAll();
         }
 
+        if ($donationData->currencyCode !== $campaign->getCurrencyCode()) {
+            throw new \UnexpectedValueException(sprintf(
+                'Currency %s is invalid for campaign',
+                $donationData->currencyCode,
+            ));
+        }
+
         $donation = new Donation();
         $donation->setPsp($donationData->psp);
         $donation->setDonationStatus('Pending');
         $donation->setUuid((new UuidGenerator())->generate($this->getEntityManager(), $donation));
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
         $donation->setAmount((string) $donationData->donationAmount);
+        $donation->setCurrencyCode($donationData->currencyCode);
         $donation->setGiftAid($donationData->giftAid);
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
@@ -172,6 +180,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $likelyAvailableFunds = $this->getEntityManager()
                     ->getRepository(CampaignFunding::class)
                     ->getAvailableFundings($donation->getCampaign());
+
+                foreach ($likelyAvailableFunds as $funding) {
+                    if ($funding->getCurrencyCode() !== $donation->getCurrencyCode()) {
+                        throw new \UnexpectedValueException('Currency mismatch');
+                    }
+                }
 
                 $lockStartTime = microtime(true);
                 $newWithdrawals = $this->matchingAdapter->runTransactionally(

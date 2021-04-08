@@ -150,7 +150,8 @@ class Update extends Action
         if ($donation->getPsp() === 'stripe') {
             try {
                 $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
-                    'amount' => $donation->getAmountInPenceIncTip(),
+                    'amount' => $donation->getAmountFractionalIncTip(),
+                    'currency' => strtolower($donation->getCurrencyCode()),
                     'metadata' => [
                         'coreDonationGiftAid' => $donation->hasGiftAid(),
                         'matchedAmount' => $donation->getFundingWithdrawalTotal(),
@@ -166,7 +167,7 @@ class Update extends Action
                     // See https://stripe.com/docs/connect/destination-charges#application-fee
                     // Update the fee amount incase the final charge was from
                     // a Non EU / Amex card where fees are varied.
-                    'application_fee_amount' => $donation->getAmountToDeductInPence(),
+                    'application_fee_amount' => $donation->getAmountToDeductFractional(),
                     // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
                 ]);
             } catch (ApiErrorException $exception) {

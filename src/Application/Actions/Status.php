@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions;
 
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use Psr\Http\Message\ResponseInterface as Response;

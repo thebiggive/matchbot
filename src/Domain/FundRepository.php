@@ -99,6 +99,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 // Not a previously existing campaign -> create one and set balances without checking for existing ones.
                 $campaignFunding = new CampaignFunding();
                 $campaignFunding->setFund($fund);
+                $campaignFunding->setCurrencyCode($fund->getCurrencyCode());
                 $campaignFunding->setAmountAvailable($amountForCampaign);
                 $campaignFunding->setAmount($amountForCampaign);
             }
@@ -129,6 +130,7 @@ class FundRepository extends SalesforceReadProxyRepository
     protected function setAnyFundData(Fund $fund, array $fundData): Fund
     {
         $fund->setAmount($fundData['totalAmount'] === null ? '0.00' : (string) $fundData['totalAmount']);
+        $fund->setCurrencyCode($fundData['currencyCode'] ?? 'GBP');
         $fund->setName($fundData['name'] ?? '');
         $fund->setSalesforceLastPull(new DateTime('now'));
 

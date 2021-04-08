@@ -10,6 +10,7 @@ namespace MatchBot\Application\HttpModels;
 class DonationCreate
 {
     public ?string $countryCode = null;
+    public ?string $currencyCode = 'GBP';
     /** @var string In full pounds GBP */
     public string $donationAmount;
     public ?bool $giftAid = null;

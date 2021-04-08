@@ -40,8 +40,15 @@ class CampaignFunding extends Model
     protected Fund $fund;
 
     /**
+     * @ORM\Column(type="string", length=3)
+     * @var string  ISO 4217 code for the currency in which all monetary values are denominated.
+     */
+    protected string $currencyCode = 'GBP';
+
+    /**
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @see CampaignFunding::$currencyCode
      */
     protected string $amount;
 
@@ -51,6 +58,7 @@ class CampaignFunding extends Model
      *
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @see CampaignFunding::$currencyCode
      */
     protected string $amountAvailable;
 
@@ -138,5 +146,15 @@ class CampaignFunding extends Model
     public function getFund(): Fund
     {
         return $this->fund;
+    }
+
+    public function getCurrencyCode(): string
+    {
+        return $this->currencyCode;
+    }
+
+    public function setCurrencyCode(string $currencyCode): void
+    {
+        $this->currencyCode = $currencyCode;
     }
 }

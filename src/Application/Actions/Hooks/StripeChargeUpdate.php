@@ -77,8 +77,8 @@ class StripeChargeUpdate extends Stripe
         if ($event->data->object->status === 'succeeded') {
             $donation->setChargeId($event->data->object->id);
             $donation->setDonationStatus('Collected');
-            $donation->setOriginalPspFeeInPence(
-                $this->getOriginalFeeInPence($event->data->object->balance_transaction)
+            $donation->setOriginalPspFeeFractional(
+                $this->getOriginalFeeFractional($event->data->object->balance_transaction, $donation->getCurrencyCode())
             );
         } else {
             return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
@@ -107,8 +107,8 @@ class StripeChargeUpdate extends Stripe
             return $this->respond(new ActionPayload(204));
         }
 
-        $isTipRefund = $donation->getTipAmountInPence() === $amountRefunded;
-        $isFullRefund = $donation->getAmountInPenceIncTip() === $amountRefunded;
+        $isTipRefund = $donation->getTipAmountFractional() === $amountRefunded;
+        $isFullRefund = $donation->getAmountFractionalIncTip() === $amountRefunded;
 
         // Available status' (pending, succeeded, failed, canceled),
         // see: https://stripe.com/docs/api/refunds/object.
@@ -153,7 +153,7 @@ class StripeChargeUpdate extends Stripe
         return $this->respondWithData($event->data->object);
     }
 
-    private function getOriginalFeeInPence(string $balanceTransactionId): int
+    private function getOriginalFeeFractional(string $balanceTransactionId, string $expectedCurrencyCode): int
     {
         $txn = $this->stripeClient->balanceTransactions->retrieve($balanceTransactionId);
 
@@ -165,7 +165,7 @@ class StripeChargeUpdate extends Stripe
             ));
         }
 
-        if ($txn->fee_details[0]->currency !== 'gbp') {
+        if ($txn->fee_details[0]->currency !== strtolower($expectedCurrencyCode)) {
             // `fee` should presumably still be in parent account's currency, so don't bail out.
             $this->logger->warning(sprintf(
                 'StripeChargeUpdate::getFee: Unexpected fee currency %s',
