@@ -35,6 +35,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
 
         $campaign->setCharity($charity);
+        $campaign->setCurrencyCode($campaignData['currencyCode'] ?? 'GBP');
         $campaign->setEndDate(new DateTime($campaignData['endDate']));
         $campaign->setIsMatched($campaignData['isMatched']);
         $campaign->setName($campaignData['title']);
