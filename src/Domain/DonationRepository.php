@@ -122,6 +122,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $cacheDriver->deleteAll();
         }
 
+        if (empty($donationData->currencyCode)) {
+            $donationData->currencyCode = 'GBP';
+        }
+
         if ($donationData->currencyCode !== $campaign->getCurrencyCode()) {
             throw new \UnexpectedValueException(sprintf(
                 'Currency %s is invalid for campaign',
