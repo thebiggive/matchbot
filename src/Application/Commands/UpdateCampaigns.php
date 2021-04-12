@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 use MatchBot\Domain\FundRepository;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -48,6 +49,8 @@ class UpdateCampaigns extends LockingCommand
 
                 // Chances are a sandbox refresh has led to this campaign being deleted in the Salesforce sandbox.
                 $output->writeln('Skipping unknown sandbox campaign ' . $campaign->getSalesforceId());
+            } catch (DomainCurrencyMustNotChangeException $exception) {
+                $output->writeln('Skipping invalid currency change campaign ' . $campaign->getSalesforceId());
             }
         }
 

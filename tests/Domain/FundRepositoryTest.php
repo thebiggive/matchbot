@@ -213,12 +213,65 @@ class FundRepositoryTest extends TestCase
         $repo->pullForCampaign($campaign);
     }
 
+    /**
+     * In the case of a not allowed currency code change, the data update should
+     * be skipped.
+     */
+    public function testPullForCampaignAllExistingWithBalancesUpdatedToNewCurrency(): void
+    {
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $entityManagerProphecy
+            ->persist(Argument::type(ChampionFund::class))
+            ->shouldNotBeCalled();
+        $entityManagerProphecy
+            ->persist(Argument::type(CampaignFunding::class))
+            ->shouldNotBeCalled();
+
+        $entityManagerProphecy->flush()->shouldNotBeCalled();
+
+        $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
+
+        $campaignFundingRepoProphecy
+            ->getFundingForCampaign(
+                Argument::which('getSalesforceId', 'sfFakeId987'),
+                Argument::which('getSalesforceId', 'sfFundId123')
+            )
+            ->shouldNotBeCalled();
+
+        $campaignFundingRepoProphecy
+            ->getFunding(Argument::which('getSalesforceId', 'sfFundId456'))
+            ->willReturn($this->getExistingCampaignFunding(true))
+            ->shouldNotBeCalled();
+
+        $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
+        $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
+            ->shouldNotBeCalled();
+
+        $repo = $this->getFundRepoPartialMock(
+            $entityManagerProphecy->reveal(),
+            $campaignFundingRepoProphecy->reveal(),
+            $this->getFundClientForPerCampaignLookup('USD'), // Currency code change
+            $matchingAdapterProphecy->reveal(),
+            $this->getExistingFund(false),
+            $this->getExistingFund(true),
+            false, // No persists in this scenario
+        );
+
+        $campaign = new Campaign();
+        $campaign->setSalesforceId('sfFakeId987');
+
+        $repo->pullForCampaign($campaign);
+    }
+
     private function getExistingFund(bool $shared): Fund
     {
         $existingFund = new ChampionFund();
+        $existingFund->setId($shared ? 456456 : 123123);
         $existingFund->setSalesforceId($shared ? 'sfFundId456' : 'sfFundId123');
         $existingFund->setSalesforceLastPull(new \DateTime());
         $existingFund->setAmount($shared ? '1500' : '400');
+        $existingFund->setCurrencyCode('GBP');
         $existingFund->setName($shared ? 'Test Shared Champion Fund 456' : 'Test Champion Fund 123');
 
         return $existingFund;
@@ -230,6 +283,7 @@ class FundRepositoryTest extends TestCase
         $campaignFunding->setFund($this->getExistingFund($shared));
         $campaignFunding->setAmount('400');
         $campaignFunding->setAllocationOrder(200);
+        $campaignFunding->setCurrencyCode('GBP');
 
         return $campaignFunding;
     }
@@ -242,7 +296,7 @@ class FundRepositoryTest extends TestCase
      *
      * @return Client\Fund|ObjectProphecy
      */
-    private function getFundClientForPerCampaignLookup(): Client\Fund
+    private function getFundClientForPerCampaignLookup(string $currencyCode = 'GBP'): Client\Fund
     {
         $fundClientProphecy = $this->prophesize(Client\Fund::class);
         $fundClientProphecy->getForCampaign('sfFakeId987')->willReturn([
@@ -250,7 +304,7 @@ class FundRepositoryTest extends TestCase
                 'id' => 'sfFundId123',
                 'type' => 'championFund',
                 'name' => 'Test Champion Fund 123',
-                'currencyCode' => 'GBP',
+                'currencyCode' => $currencyCode,
                 'amountRaised' => '0.00',
                 'totalAmount' => 500,
                 'amountForCampaign' => 500,
@@ -261,7 +315,7 @@ class FundRepositoryTest extends TestCase
                 'id' => 'sfFundId456',
                 'type' => 'championFund',
                 'name' => 'Test Shared Champion Fund 456',
-                'currencyCode' => 'GBP',
+                'currencyCode' => $currencyCode,
                 'amountRaised' => '0.00',
                 'totalAmount' => 1500,
                 'amountForCampaign' => 1500,
@@ -293,7 +347,8 @@ class FundRepositoryTest extends TestCase
         $fundClient,
         $matchingAdapter,
         ?Fund $existingFundNonShared,
-        ?Fund $existingFundShared
+        ?Fund $existingFundShared,
+        bool $successfulPersistCase = true,
     ): FundRepository {
         $mockBuilder = $this->getMockBuilder(FundRepository::class);
         $mockBuilder->setConstructorArgs([$entityManager, new ClassMetadata(CampaignFunding::class)]);
@@ -301,7 +356,7 @@ class FundRepositoryTest extends TestCase
 
         $repo = $mockBuilder->getMock();
 
-        $repo->expects($this->exactly(2))
+        $repo->expects($this->exactly($successfulPersistCase ? 2 : 1))
             ->method('findOneBy')
             ->withConsecutive([['salesforceId' => 'sfFundId123']], [['salesforceId' => 'sfFundId456']])
             ->willReturnOnConsecutiveCalls($existingFundNonShared, $existingFundShared);
