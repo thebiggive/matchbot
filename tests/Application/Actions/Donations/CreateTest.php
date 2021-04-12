@@ -205,6 +205,43 @@ class CreateTest extends TestCase
         $this->assertEquals('Could not make Stripe Payment Intent (A)', $payloadArray['error']['description']);
     }
 
+    public function testCurrencyMismatch(): void
+    {
+        $donation = $this->getTestDonation(true, false, true);
+        $donation->setCurrencyCode('CAD');
+
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->willThrow(new UnexpectedValueException('Currency CAD is invalid for campaign'));
+        $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy->flush()->shouldNotBeCalled();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+
+        $data = json_encode($donation->toApiModel());
+        $request = $this->createRequest('POST', '/v1/donations', $data);
+        $response = $app->handle($request);
+
+        $payload = (string) $response->getBody();
+
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'Currency CAD is invalid for campaign',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertEquals(400, $response->getStatusCode());
+    }
+
     public function testSuccessWithStripeAccountIDMissingInitiallyButFoundOnRefetch(): void
     {
         $donation = $this->getTestDonation(true, true);
@@ -749,6 +786,7 @@ class CreateTest extends TestCase
 
         $donation = new Donation();
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
+        $donation->setCurrencyCode('GBP');
         $donation->setAmount('12.00');
         $donation->setCampaign($campaign);
         $donation->setPsp('enthuse');

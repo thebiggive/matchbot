@@ -659,6 +659,7 @@ class UpdateTest extends TestCase
 
         $donation = $this->getTestDonation();
         $donation->setDonorCountryCode('US');
+        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -695,6 +696,7 @@ class UpdateTest extends TestCase
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->update('pi_externalId_123', [
             'amount' => 12_666,
+            'currency' => 'usd',
             'metadata' => [
                 'coreDonationGiftAid' => true,
                 'matchedAmount' => '0.0',
@@ -739,6 +741,7 @@ class UpdateTest extends TestCase
 
         // Remaining properties should be updated.
         $this->assertEquals('US', $payloadArray['countryCode']);
+        $this->assertEquals('USD', $payloadArray['currencyCode']);
         // 1.9% + 20p. cardCountry from Stripe payment method ≠ donor country.
         $this->assertEquals(2.05, $payloadArray['charityFee']);
         $this->assertEquals(0, $payloadArray['charityFeeVat']);

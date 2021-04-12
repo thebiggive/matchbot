@@ -31,8 +31,8 @@ class DonationTest extends TestCase
 
         $this->assertEquals('100.00', $donation->getAmount());
         $this->assertEquals('1.13', $donation->getTipAmount());
-        $this->assertEquals(113, $donation->getTipAmountInPence());
-        $this->assertEquals(10_113, $donation->getAmountInPenceIncTip());
+        $this->assertEquals(113, $donation->getTipAmountFractional());
+        $this->assertEquals(10_113, $donation->getAmountFractionalIncTip());
     }
 
     public function testAmountTooLowNotPersisted(): void
@@ -73,7 +73,7 @@ class DonationTest extends TestCase
     public function testSetAndGetOriginalFee(): void
     {
         $donation = new Donation();
-        $donation->setOriginalPspFeeInPence(123);
+        $donation->setOriginalPspFeeFractional(123);
 
         $this->assertEquals('1.23', $donation->getOriginalPspFee());
     }

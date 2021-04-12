@@ -29,6 +29,7 @@ trait DonationTestDataTrait
         $donation->setCampaign($campaign);
         $donation->setCharityComms(true);
         $donation->setChampionComms(false);
+        $donation->setCurrencyCode('GBP');
         $donation->setDonationStatus('Collected');
         $donation->setDonorCountryCode('GB');
         $donation->setDonorEmailAddress('john.doe@example.com');
@@ -64,6 +65,7 @@ trait DonationTestDataTrait
         $donation->setAmount('124.56');
         $donation->setCharityFee('2.57');
         $donation->setCampaign($campaign);
+        $donation->setCurrencyCode('GBP');
         $donation->setDonationStatus('Pending');
         $donation->setPsp('enthuse');
         $donation->setTipAmount('2.00');

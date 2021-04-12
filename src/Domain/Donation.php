@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use DateTime;
+use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
@@ -23,9 +23,15 @@ class Donation extends SalesforceWriteProxy
 {
     use TimestampsTrait;
 
-    /** @var int */
+    /**
+     * @var int
+     * @see Donation::$currencyCode
+     */
     private int $minimumAmount = 1;
-    /** @var int */
+    /**
+     * @var int
+     * @see Donation::$currencyCode
+     */
     private int $maximumAmount = 25000;
 
     /** @var string[] */
@@ -92,10 +98,17 @@ class Donation extends SalesforceWriteProxy
     protected ?string $chargeId = null;
 
     /**
+     * @ORM\Column(type="string", length=3)
+     * @var string  ISO 4217 code for the currency in which all monetary values are denominated, e.g. 'GBP'.
+     */
+    protected string $currencyCode;
+
+    /**
      * Core donation amount excluding any tip.
      *
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @see Donation::$currencyCode
      */
     protected string $amount;
 
@@ -108,6 +121,7 @@ class Donation extends SalesforceWriteProxy
      *
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @see Donation::$currencyCode
      */
     protected string $charityFee = '0.00';
 
@@ -117,6 +131,7 @@ class Donation extends SalesforceWriteProxy
      *
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @see Donation::$currencyCode
      */
     protected string $charityFeeVat = '0.00';
 
@@ -127,6 +142,7 @@ class Donation extends SalesforceWriteProxy
      *
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @see Donation::$currencyCode
      */
     protected string $originalPspFee = '0.00';
 
@@ -163,7 +179,6 @@ class Donation extends SalesforceWriteProxy
      * @var bool    Whether the donor opted to receive email from the champion funding the campaign
      */
     protected ?bool $championComms = null;
-
 
     /**
      * @ORM\Column(type="string", length=2, nullable=true)
@@ -211,6 +226,7 @@ class Donation extends SalesforceWriteProxy
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string  Amount donor chose to tip. Precision numeric string.
      *              Set during setup when using Stripe, and on Enthuse callback otherwise.
+     * @see Donation::$currencyCode
      */
     protected string $tipAmount = '0.00';
 
@@ -256,8 +272,8 @@ class Donation extends SalesforceWriteProxy
     {
         $data = $this->toApiModel();
 
-        $data['createdTime'] = $this->getCreatedDate()->format(DateTime::ATOM);
-        $data['updatedTime'] = $this->getUpdatedDate()->format(DateTime::ATOM);
+        $data['createdTime'] = $this->getCreatedDate()->format(DateTimeInterface::ATOM);
+        $data['updatedTime'] = $this->getUpdatedDate()->format(DateTimeInterface::ATOM);
         $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
         $data['originalPspFee'] = (float) $this->getOriginalPspFee();
@@ -285,7 +301,8 @@ class Donation extends SalesforceWriteProxy
             'charityId' => $this->getCampaign()->getCharity()->getDonateLinkId(),
             'charityName' => $this->getCampaign()->getCharity()->getName(),
             'countryCode' => $this->getDonorCountryCode(),
-            'createdTime' => $this->getCreatedDate()->format(DateTime::ATOM),
+            'createdTime' => $this->getCreatedDate()->format(DateTimeInterface::ATOM),
+            'currencyCode' => $this->getCurrencyCode(),
             'donationAmount' => (float) $this->getAmount(),
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
@@ -724,7 +741,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return int      The amount of the total donation, in pence, which is to be excluded
+     * @return int      The amount of the total donation, in cents/pence/..., which is to be excluded
      *                  from payout to the charity. This is the sum of
      *                  (a) any part of that amount which was a tip to the Big Give;
      *                  (b) fees on the remaining donation amount; and
@@ -732,7 +749,7 @@ class Donation extends SalesforceWriteProxy
      *                  It does not include separately sourced funds like matching or
      *                  Gift Aid.
      */
-    public function getAmountToDeductInPence(): int
+    public function getAmountToDeductFractional(): int
     {
         $amountToDeduct = bcadd($this->getTipAmount(), $this->getCharityFeeGross(), 2);
 
@@ -740,7 +757,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return int      The amount of the core donation, in pence, which is to be paid out
+     * @return int      The amount of the core donation, in pence/cents/..., which is to be paid out
      *                  to the charity. This is the amount paid by the donor minus
      *                  (a) any part of that amount which was a tip to the Big Give;
      *                  (b) fees on the remaining donation amount; and
@@ -749,14 +766,14 @@ class Donation extends SalesforceWriteProxy
      *                  Gift Aid.
      *
      *                  This is just used in unit tests to validate we haven't broken anything now.
-     *                  Note that because `getAmountToDeductInPence()` takes off the tip amount and
+     *                  Note that because `getAmountToDeductFractional()` takes off the tip amount and
      *                  `getAmount()` relates to core amount, we must re-add the tip here to get a
      *                  correct answer.
      */
-    public function getAmountForCharityInPence(): int
+    public function getAmountForCharityFractional(): int
     {
-        $amountInPence = (int) bcmul('100', $this->getAmount(), 2);
-        return $amountInPence - $this->getAmountToDeductInPence() + $this->getTipAmountInPence();
+        $amountFractional = (int) bcmul('100', $this->getAmount(), 2);
+        return $amountFractional - $this->getAmountToDeductFractional() + $this->getTipAmountFractional();
     }
 
     /**
@@ -768,16 +785,19 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return int  Full amount, including any tip, in pence.
+     * @return int  Full amount, including any tip, in pence/cents/...
      */
-    public function getAmountInPenceIncTip(): int
+    public function getAmountFractionalIncTip(): int
     {
-        $coreAmountInPence = (int) bcmul('100', $this->getAmount(), 2);
+        $coreAmountFractional = (int) bcmul('100', $this->getAmount(), 2);
 
-        return $coreAmountInPence + $this->getTipAmountInPence();
+        return $coreAmountFractional + $this->getTipAmountFractional();
     }
 
-    public function getTipAmountInPence(): int
+    /**
+     * @return int  In e.g. pence/cents/...
+     */
+    public function getTipAmountFractional(): int
     {
         return (int) bcmul('100', $this->getTipAmount(), 2);
     }
@@ -795,8 +815,18 @@ class Donation extends SalesforceWriteProxy
         return $this->originalPspFee;
     }
 
-    public function setOriginalPspFeeInPence(int $originalPspFeeInPence): void
+    public function setOriginalPspFeeFractional(int $originalPspFeeFractional): void
     {
-        $this->originalPspFee = bcdiv((string) $originalPspFeeInPence, '100', 2);
+        $this->originalPspFee = bcdiv((string) $originalPspFeeFractional, '100', 2);
+    }
+
+    public function getCurrencyCode(): string
+    {
+        return $this->currencyCode;
+    }
+
+    public function setCurrencyCode(string $currencyCode): void
+    {
+        $this->currencyCode = $currencyCode;
     }
 }
