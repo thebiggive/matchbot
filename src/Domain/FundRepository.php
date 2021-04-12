@@ -136,7 +136,7 @@ class FundRepository extends SalesforceReadProxyRepository
     {
         if ($fund->hasBeenPersisted() && $fund->getCurrencyCode() !== $fundData['currencyCode']) {
             $this->logError(sprintf(
-                'Refusing up update fund currency to %s for SF ID %s',
+                'Refusing to update fund currency to %s for SF ID %s',
                 $fundData['currencyCode'],
                 $fundData['id'],
             ));
