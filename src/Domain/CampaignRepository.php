@@ -29,7 +29,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaignData = $client->getById($campaign->getSalesforceId());
 
         if ($campaign->hasBeenPersisted() && $campaign->getCurrencyCode() !== $campaignData['currencyCode']) {
-            $this->logError(sprintf(
+            $this->logWarning(sprintf(
                 'Refusing to update campaign currency to %s for SF ID %s',
                 $campaignData['currencyCode'],
                 $campaignData['id'],

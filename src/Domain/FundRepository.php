@@ -135,7 +135,7 @@ class FundRepository extends SalesforceReadProxyRepository
     protected function setAnyFundData(Fund $fund, array $fundData): Fund
     {
         if ($fund->hasBeenPersisted() && $fund->getCurrencyCode() !== $fundData['currencyCode']) {
-            $this->logError(sprintf(
+            $this->logWarning(sprintf(
                 'Refusing to update fund currency to %s for SF ID %s',
                 $fundData['currencyCode'],
                 $fundData['id'],
