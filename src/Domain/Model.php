@@ -31,4 +31,9 @@ abstract class Model
     {
         $this->id = $id;
     }
+
+    public function hasBeenPersisted(): bool
+    {
+        return $this->id !== null;
+    }
 }

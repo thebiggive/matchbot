@@ -28,6 +28,7 @@ class ResetMatchingTest extends TestCase
 
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setFund($fund);
+        $campaignFunding->setCurrencyCode('GBP');
         $campaignFunding->setAmount('400');
         $campaignFunding->setAllocationOrder(200);
 

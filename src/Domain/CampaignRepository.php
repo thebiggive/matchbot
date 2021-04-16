@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use DateTime;
 use MatchBot\Client;
+use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
 class CampaignRepository extends SalesforceReadProxyRepository
 {
@@ -27,6 +28,16 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $client = $this->getClient();
         $campaignData = $client->getById($campaign->getSalesforceId());
 
+        if ($campaign->hasBeenPersisted() && $campaign->getCurrencyCode() !== $campaignData['currencyCode']) {
+            $this->logWarning(sprintf(
+                'Refusing to update campaign currency to %s for SF ID %s',
+                $campaignData['currencyCode'],
+                $campaignData['id'],
+            ));
+
+            throw new DomainCurrencyMustNotChangeException();
+        }
+
         $charity = $this->pullCharity(
             $campaignData['charity']['id'],
             $campaignData['charity']['name'],
@@ -35,6 +46,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
 
         $campaign->setCharity($charity);
+        $campaign->setCurrencyCode($campaignData['currencyCode'] ?? 'GBP');
         $campaign->setEndDate(new DateTime($campaignData['endDate']));
         $campaign->setIsMatched($campaignData['isMatched']);
         $campaign->setName($campaignData['title']);

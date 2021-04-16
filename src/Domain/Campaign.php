@@ -26,6 +26,12 @@ class Campaign extends SalesforceReadProxy
     protected Charity $charity;
 
     /**
+     * @ORM\Column(type="string", length=3)
+     * @var string  ISO 4217 code for the currency in which donations can be accepted and matching's organised.
+     */
+    protected string $currencyCode;
+
+    /**
      * @ORM\Column(type="string")
      * @var string
      */
@@ -116,5 +122,15 @@ class Campaign extends SalesforceReadProxy
     public function isOpen(): bool
     {
         return ($this->startDate <= new DateTime('now') && $this->endDate > new DateTime('now'));
+    }
+
+    public function getCurrencyCode(): string
+    {
+        return $this->currencyCode;
+    }
+
+    public function setCurrencyCode(string $currencyCode): void
+    {
+        $this->currencyCode = $currencyCode;
     }
 }

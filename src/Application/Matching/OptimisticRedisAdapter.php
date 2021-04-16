@@ -50,8 +50,8 @@ class OptimisticRedisAdapter extends Adapter
 
     public function getAmountAvailable(CampaignFunding $funding): string
     {
-        $redisFundBalanceInPence = $this->redis->get($this->buildKey($funding));
-        if ($redisFundBalanceInPence === false) {
+        $redisFundBalanceFractional = $this->redis->get($this->buildKey($funding));
+        if ($redisFundBalanceFractional === false) {
             // No value in Redis -> may well have expired after 24 hours. Consult the DB for the
             // stable value. This will often happen for old or slower moving campaigns.
             return $funding->getAmountAvailable();
@@ -60,26 +60,26 @@ class OptimisticRedisAdapter extends Adapter
         // Redis INCRBY / DECRBY and friends work on values which are validated to be integer-like
         // but are actually stored as strings internally, and seem to come back to PHP as strings
         // when get() is used => cast to int before converting to pounds.
-        return $this->toPounds((int) $redisFundBalanceInPence);
+        return $this->toCurrencyWholeUnit((int) $redisFundBalanceFractional);
     }
 
     #[Pure]
     protected function doSubtractAmount(CampaignFunding $funding, string $amount): string
     {
-        $decrementInPence = $this->toPence($amount);
+        $decrementFractional = $this->toCurrencyFractionalUnit($amount);
 
-        [$initResponse, $fundBalanceInPence] = $this->redis->multi()
+        [$initResponse, $fundBalanceFractional] = $this->redis->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),
-                $this->toPence($funding->getAmountAvailable()),
+                $this->toCurrencyFractionalUnit($funding->getAmountAvailable()),
                 ['nx', 'ex' => static::$storageDurationSeconds],
             )
-            ->decrBy($this->buildKey($funding), $decrementInPence)
+            ->decrBy($this->buildKey($funding), $decrementFractional)
             ->exec();
 
-        $fundBalanceInPence = (int) $fundBalanceInPence;
-        if ($fundBalanceInPence < 0) {
+        $fundBalanceFractional = (int) $fundBalanceFractional;
+        if ($fundBalanceFractional < 0) {
             // We have hit the edge case where not having strict, slow locks falls down. We atomically
             // allocated some match funds based on the amount available when we queried the database, but since our
             // query somebody else got some match funds and now taking the amount we wanted would take the fund's
@@ -93,33 +93,36 @@ class OptimisticRedisAdapter extends Adapter
             // total first. This is essentially a DIY optimistic lock exception.
 
             $retries = 0;
-            $amountAllocatedInPence = $decrementInPence;
-            while ($retries++ < $this->maxPartialAllocateTries && $fundBalanceInPence < 0) {
+            $amountAllocatedFractional = $decrementFractional;
+            while ($retries++ < $this->maxPartialAllocateTries && $fundBalanceFractional < 0) {
                 // Try deallocating just the difference until the fund has exactly zero
-                $overspendInPence = 0 - $fundBalanceInPence;
-                $fundBalanceInPence = (int) $this->redis->incrBy($this->buildKey($funding), $overspendInPence);
-                $amountAllocatedInPence -= $overspendInPence;
+                $overspendFractional = 0 - $fundBalanceFractional;
+                $fundBalanceFractional = (int) $this->redis->incrBy($this->buildKey($funding), $overspendFractional);
+                $amountAllocatedFractional -= $overspendFractional;
             }
 
-            if ($fundBalanceInPence < 0) {
+            if ($fundBalanceFractional < 0) {
                 // We couldn't get the values to work within the maximum number of iterations, so release whatever
                 // we tried to hold back to the match pot and bail out.
-                $fundBalanceInPence = (int) $this->redis->incrBy($this->buildKey($funding), $amountAllocatedInPence);
-                $this->setFundingValue($funding, $this->toPounds($fundBalanceInPence));
+                $fundBalanceFractional = (int) $this->redis->incrBy(
+                    $this->buildKey($funding),
+                    $amountAllocatedFractional,
+                );
+                $this->setFundingValue($funding, $this->toCurrencyWholeUnit($fundBalanceFractional));
                 throw new TerminalLockException(
                     "Fund {$funding->getId()} balance sub-zero after $retries attempts. " .
-                    "Releasing final $amountAllocatedInPence pence"
+                    "Releasing final $amountAllocatedFractional 'cents'"
                 );
             }
 
-            $this->setFundingValue($funding, $this->toPounds($fundBalanceInPence));
+            $this->setFundingValue($funding, $this->toCurrencyWholeUnit($fundBalanceFractional));
             throw new LessThanRequestedAllocatedException(
-                $this->toPounds($amountAllocatedInPence),
-                $this->toPounds($fundBalanceInPence)
+                $this->toCurrencyWholeUnit($amountAllocatedFractional),
+                $this->toCurrencyWholeUnit($fundBalanceFractional)
             );
         }
 
-        $fundBalance = $this->toPounds($fundBalanceInPence);
+        $fundBalance = $this->toCurrencyWholeUnit($fundBalanceFractional);
         $this->setFundingValue($funding, $fundBalance);
 
         return $fundBalance;
@@ -128,19 +131,19 @@ class OptimisticRedisAdapter extends Adapter
     #[Pure]
     public function doAddAmount(CampaignFunding $funding, string $amount): string
     {
-        $incrementInPence = $this->toPence($amount);
+        $incrementFractional = $this->toCurrencyFractionalUnit($amount);
 
-        [$initResponse, $fundBalanceInPence] = $this->redis->multi()
+        [$initResponse, $fundBalanceFractional] = $this->redis->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),
-                $this->toPence($funding->getAmountAvailable()),
+                $this->toCurrencyFractionalUnit($funding->getAmountAvailable()),
                 ['nx', 'ex' => static::$storageDurationSeconds],
             )
-            ->incrBy($this->buildKey($funding), $incrementInPence)
+            ->incrBy($this->buildKey($funding), $incrementFractional)
             ->exec();
 
-        $fundBalance = $this->toPounds((int) $fundBalanceInPence);
+        $fundBalance = $this->toCurrencyWholeUnit((int) $fundBalanceFractional);
         $this->setFundingValue($funding, $fundBalance);
 
         return $fundBalance;
@@ -151,17 +154,31 @@ class OptimisticRedisAdapter extends Adapter
         $this->redis->del($this->buildKey($funding));
     }
 
-    private function toPence(string $pounds): int
+    /**
+     * Converts e.g. pounds to pence – but is currency-agnostic except for currently assuming
+     * a 100-fold multiplication is reasonable.
+     *
+     * @param string $wholeUnit e.g. pounds, dollars.
+     * @return int  e.g. pence, cents.
+     */
+    private function toCurrencyFractionalUnit(string $wholeUnit): int
     {
-        return (int) bcmul($pounds, '100', 0);
+        return (int) bcmul($wholeUnit, '100', 0);
     }
 
-    private function toPounds(int $pence): string
+    /**
+     * Converts e.g. pence to pounds – but is currency-agnostic except for currently assuming
+     * a 100-fold division is reasonable.
+     *
+     * @param int $fractionalUnit   e.g. pence, cents.
+     * @return string   e.g. pounds, dollars.
+     */
+    private function toCurrencyWholeUnit(int $fractionalUnit): string
     {
-        return bcdiv((string) $pence, '100', 2);
+        return bcdiv((string) $fractionalUnit, '100', 2);
     }
 
-    private function buildKey(CampaignFunding $funding)
+    private function buildKey(CampaignFunding $funding): string
     {
         return "fund-{$funding->getId()}-available-opt";
     }

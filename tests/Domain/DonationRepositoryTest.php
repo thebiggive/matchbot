@@ -6,7 +6,10 @@ namespace MatchBot\Tests\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Client;
+use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
@@ -47,6 +50,28 @@ class DonationRepositoryTest extends TestCase
         $this->assertTrue($success);
     }
 
+    public function testBuildFromApiRequestWithCurrencyMismatch(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Currency CAD is invalid for campaign');
+
+        $dummyCampaign = new Campaign();
+        $dummyCampaign->setCurrencyCode('USD');
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        // No change – campaign still has a charity without a Stripe Account ID.
+        $campaignRepoProphecy->findOneBy(Argument::type('array'))
+            ->willReturn($dummyCampaign)
+            ->shouldBeCalledOnce();
+
+        $createPayload = new DonationCreate();
+        $createPayload->currencyCode = 'CAD';
+        $createPayload->projectId = 'testProject123';
+        $createPayload->psp = 'stripe';
+
+        $this->getRepo(null, false, $campaignRepoProphecy)
+            ->buildFromApiRequest($createPayload);
+    }
+
     public function testPushResponseError(): void
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
@@ -76,8 +101,8 @@ class DonationRepositoryTest extends TestCase
         // Amount after fee = £968.68
 
         // Deduct tip + fee.
-        $this->assertEquals(2_897, $donation->getAmountToDeductInPence());
-        $this->assertEquals(96_868, $donation->getAmountForCharityInPence());
+        $this->assertEquals(2_897, $donation->getAmountToDeductFractional());
+        $this->assertEquals(96_868, $donation->getAmountForCharityFractional());
     }
 
     public function testEnthuseAmountForCharityWithTipAndGiftAid(): void
@@ -98,8 +123,8 @@ class DonationRepositoryTest extends TestCase
         // Amount after fee = £958.80
 
         // Deduct both fee types, and tip.
-        $this->assertEquals(3_885, $donation->getAmountToDeductInPence());
-        $this->assertEquals(95_880, $donation->getAmountForCharityInPence());
+        $this->assertEquals(3_885, $donation->getAmountToDeductFractional());
+        $this->assertEquals(95_880, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithTipUsingAmex(): void
@@ -118,8 +143,8 @@ class DonationRepositoryTest extends TestCase
         // Amount after fee = £955.85
 
         // Deduct tip + fee.
-        $this->assertEquals(4_180, $donation->getAmountToDeductInPence());
-        $this->assertEquals(95_585, $donation->getAmountForCharityInPence());
+        $this->assertEquals(4_180, $donation->getAmountToDeductFractional());
+        $this->assertEquals(95_585, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithTipUsingUSCard(): void
@@ -138,8 +163,8 @@ class DonationRepositoryTest extends TestCase
         // Amount after fee = £955.85
 
         // Deduct tip + fee.
-        $this->assertEquals(4_180, $donation->getAmountToDeductInPence());
-        $this->assertEquals(95_585, $donation->getAmountForCharityInPence());
+        $this->assertEquals(4_180, $donation->getAmountToDeductFractional());
+        $this->assertEquals(95_585, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithTip(): void
@@ -158,8 +183,8 @@ class DonationRepositoryTest extends TestCase
         // Amount after fee = £972.64
 
         // Deduct tip + fee.
-        $this->assertEquals(2_501, $donation->getAmountToDeductInPence());
-        $this->assertEquals(97_264, $donation->getAmountForCharityInPence());
+        $this->assertEquals(2_501, $donation->getAmountToDeductFractional());
+        $this->assertEquals(97_264, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityAndFeeVatWithTipAndVat(): void
@@ -183,8 +208,8 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals('15.01', $donation->getCharityFee());
         $this->assertEquals('3.00', $donation->getCharityFeeVat());
         // Deduct tip + fee inc. VAT.
-        $this->assertEquals(2_801, $donation->getAmountToDeductInPence());
-        $this->assertEquals(96_964, $donation->getAmountForCharityInPence());
+        $this->assertEquals(2_801, $donation->getAmountToDeductFractional());
+        $this->assertEquals(96_964, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTip(): void
@@ -199,8 +224,8 @@ class DonationRepositoryTest extends TestCase
         // Total fee        = £ 15.01
         // Amount after fee = £972.64
 
-        $this->assertEquals(1_501, $donation->getAmountToDeductInPence());
-        $this->assertEquals(97_264, $donation->getAmountForCharityInPence());
+        $this->assertEquals(1_501, $donation->getAmountToDeductFractional());
+        $this->assertEquals(97_264, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
@@ -214,8 +239,8 @@ class DonationRepositoryTest extends TestCase
         // Fixed fee    = £ 0.20
         // Total fee    = £ 0.29
         // After fee    = £ 5.96
-        $this->assertEquals(29, $donation->getAmountToDeductInPence());
-        $this->assertEquals(596, $donation->getAmountForCharityInPence());
+        $this->assertEquals(29, $donation->getAmountToDeductFractional());
+        $this->assertEquals(596, $donation->getAmountForCharityFractional());
     }
 
     /**
@@ -227,6 +252,7 @@ class DonationRepositoryTest extends TestCase
     private function getRepo(
         ?ObjectProphecy $donationClientProphecy = null,
         bool $vatLive = false,
+        ?ObjectProphecy $campaignRepoProphecy = null,
     ): DonationRepository {
         if (!$donationClientProphecy) {
             $donationClientProphecy = $this->prophesize(Client\Donation::class);
@@ -247,6 +273,10 @@ class DonationRepositoryTest extends TestCase
         $repo->setClient($donationClientProphecy->reveal());
         $repo->setLogger(new NullLogger());
         $repo->setSettings($settings);
+
+        if ($campaignRepoProphecy) {
+            $repo->setCampaignRepository($campaignRepoProphecy->reveal());
+        }
 
         return $repo;
     }

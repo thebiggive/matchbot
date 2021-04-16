@@ -130,8 +130,8 @@ class Create extends Action
                 $intent = $this->stripeClient->paymentIntents->create([
                     // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
                     // See https://stripe.com/docs/api/payment_intents/object
-                    'amount' => $donation->getAmountInPenceIncTip(),
-                    'currency' => 'gbp',
+                    'amount' => $donation->getAmountFractionalIncTip(),
+                    'currency' => strtolower($donation->getCurrencyCode()),
                     'description' => $donation->__toString(),
                     'metadata' => [
                         'campaignId' => $donation->getCampaign()->getSalesforceId(),
@@ -148,7 +148,7 @@ class Create extends Action
                     ],
                     'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
                     // See https://stripe.com/docs/connect/destination-charges#application-fee
-                    'application_fee_amount' => $donation->getAmountToDeductInPence(),
+                    'application_fee_amount' => $donation->getAmountToDeductFractional(),
                     // See https://stripe.com/docs/payments/connected-accounts and
                     // https://stripe.com/docs/connect/destination-charges#settlement-merchant
                     'on_behalf_of' => $donation->getCampaign()->getCharity()->getStripeAccountId(),

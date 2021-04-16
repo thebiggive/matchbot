@@ -8,6 +8,7 @@ use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\Matching;
 use MatchBot\Client;
+use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
 class FundRepository extends SalesforceReadProxyRepository
 {
@@ -44,7 +45,11 @@ class FundRepository extends SalesforceReadProxyRepository
             }
 
             // Then whether new or existing, set its key info
-            $this->setAnyFundData($fund, $fundData);
+            try {
+                $this->setAnyFundData($fund, $fundData);
+            } catch (DomainCurrencyMustNotChangeException $exception) {
+                return; // No-op w.r.t matching if fund currency changed unexpectedly.
+            }
 
             try {
                 $this->getEntityManager()->persist($fund);
@@ -99,6 +104,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 // Not a previously existing campaign -> create one and set balances without checking for existing ones.
                 $campaignFunding = new CampaignFunding();
                 $campaignFunding->setFund($fund);
+                $campaignFunding->setCurrencyCode($fund->getCurrencyCode());
                 $campaignFunding->setAmountAvailable($amountForCampaign);
                 $campaignFunding->setAmount($amountForCampaign);
             }
@@ -128,7 +134,18 @@ class FundRepository extends SalesforceReadProxyRepository
 
     protected function setAnyFundData(Fund $fund, array $fundData): Fund
     {
+        if ($fund->hasBeenPersisted() && $fund->getCurrencyCode() !== $fundData['currencyCode']) {
+            $this->logWarning(sprintf(
+                'Refusing to update fund currency to %s for SF ID %s',
+                $fundData['currencyCode'],
+                $fundData['id'],
+            ));
+
+            throw new DomainCurrencyMustNotChangeException();
+        }
+
         $fund->setAmount($fundData['totalAmount'] === null ? '0.00' : (string) $fundData['totalAmount']);
+        $fund->setCurrencyCode($fundData['currencyCode'] ?? 'GBP');
         $fund->setName($fundData['name'] ?? '');
         $fund->setSalesforceLastPull(new DateTime('now'));
 
