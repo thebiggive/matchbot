@@ -13,6 +13,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 use MatchBot\Domain\FundRepository;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class UpdateCampaigns extends LockingCommand
@@ -30,13 +31,24 @@ class UpdateCampaigns extends LockingCommand
 
     protected function configure(): void
     {
-        $this->setDescription('Pulls down and saves the latest details of already-known Campaigns from Salesforce');
+        $this->setDescription(<<<EOT
+Pulls down and saves the latest details of existing, already-known Campaigns from Salesforce
+which were not expected to have ended over a week ago (unless --all option set, in which
+case that constraint is loosened)
+EOT
+        );
+        $this->addOption('all', null, InputOption::VALUE_NONE, 'Expands the update to ALL historic known campaigns');
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         /** @var Campaign[] $campaigns */
-        $campaigns = $this->campaignRepository->findAll();
+        if ($input->getOption('all')) {
+            $campaigns = $this->campaignRepository->findAll();
+        } else {
+            $campaigns = $this->campaignRepository->findRecentAndLive();
+        }
+
         foreach ($campaigns as $campaign) {
             try {
                 $this->campaignRepository->pull($campaign);

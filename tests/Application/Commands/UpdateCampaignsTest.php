@@ -24,7 +24,7 @@ class UpdateCampaignsTest extends TestCase
         $campaign = new Campaign();
         $campaign->setSalesforceId('someCampaignId');
         $campaignRepoPropehcy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoPropehcy->findAll()
+        $campaignRepoPropehcy->findRecentAndLive()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
         $campaignRepoPropehcy->pull($campaign)->willReturn($campaign)->shouldBeCalledOnce();
@@ -51,14 +51,14 @@ class UpdateCampaignsTest extends TestCase
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    public function testSingleUpdateNotFoundOnSalesforceOutsideProduction()
+    public function testSingleUpdateNotFoundOnSalesforceOutsideProduction(): void
     {
         // This case should be skipped over without crashing, in non-production envs.
 
         $campaign = new Campaign();
         $campaign->setSalesforceId('missingOnSfCampaignId');
         $campaignRepoPropehcy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoPropehcy->findAll()
+        $campaignRepoPropehcy->findRecentAndLive()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
         $campaignRepoPropehcy->pull($campaign)->willThrow(NotFoundException::class)->shouldBeCalledOnce();
@@ -79,6 +79,38 @@ class UpdateCampaignsTest extends TestCase
         $expectedOutputLines = [
             'matchbot:update-campaigns starting!',
             'Skipping unknown sandbox campaign missingOnSfCampaignId',
+            'matchbot:update-campaigns complete!',
+        ];
+        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
+    }
+
+    public function testSingleUpdateSuccessWithAllOption(): void
+    {
+        $campaign = new Campaign();
+        $campaign->setSalesforceId('someCampaignId');
+        $campaignRepoPropehcy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoPropehcy->findAll()
+            ->willReturn([$campaign])
+            ->shouldBeCalledOnce();
+        $campaignRepoPropehcy->pull($campaign)->willReturn($campaign)->shouldBeCalledOnce();
+
+        $fundRepoProphecy = $this->prophesize(FundRepository::class);
+        $fundRepoProphecy->pullForCampaign($campaign)->shouldbeCalledOnce();
+
+        $command = new UpdateCampaigns(
+            $campaignRepoPropehcy->reveal(),
+            $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
+            $fundRepoProphecy->reveal(),
+        );
+        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+
+        $commandTester = new CommandTester($command);
+        $commandTester->execute(['--all' => null]);
+
+        $expectedOutputLines = [
+            'matchbot:update-campaigns starting!',
+            'Updated campaign someCampaignId',
             'matchbot:update-campaigns complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());

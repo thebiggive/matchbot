@@ -104,6 +104,10 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:update-campaigns"
         ],
+        "matchbot:update-campaigns-inc-historic": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:update-campaigns --all"
+        ],
         "messenger:consume": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php messenger:consume -vv --time-limit=300"
