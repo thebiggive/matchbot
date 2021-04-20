@@ -23,17 +23,17 @@ class UpdateCampaignsTest extends TestCase
     {
         $campaign = new Campaign();
         $campaign->setSalesforceId('someCampaignId');
-        $campaignRepoPropehcy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoPropehcy->findRecentAndLive()
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->findRecentAndLive()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
-        $campaignRepoPropehcy->pull($campaign)->willReturn($campaign)->shouldBeCalledOnce();
+        $campaignRepoProphecy->pull($campaign)->willReturn($campaign)->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
         $fundRepoProphecy->pullForCampaign($campaign)->shouldbeCalledOnce();
 
         $command = new UpdateCampaigns(
-            $campaignRepoPropehcy->reveal(),
+            $campaignRepoProphecy->reveal(),
             $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
         );
@@ -57,17 +57,17 @@ class UpdateCampaignsTest extends TestCase
 
         $campaign = new Campaign();
         $campaign->setSalesforceId('missingOnSfCampaignId');
-        $campaignRepoPropehcy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoPropehcy->findRecentAndLive()
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->findRecentAndLive()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
-        $campaignRepoPropehcy->pull($campaign)->willThrow(NotFoundException::class)->shouldBeCalledOnce();
+        $campaignRepoProphecy->pull($campaign)->willThrow(NotFoundException::class)->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
         $fundRepoProphecy->pullForCampaign($campaign)->shouldNotBeCalled(); // Exception reached before this call
 
         $command = new UpdateCampaigns(
-            $campaignRepoPropehcy->reveal(),
+            $campaignRepoProphecy->reveal(),
             $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
         );
@@ -89,17 +89,17 @@ class UpdateCampaignsTest extends TestCase
     {
         $campaign = new Campaign();
         $campaign->setSalesforceId('someCampaignId');
-        $campaignRepoPropehcy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoPropehcy->findAll()
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->findAll()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
-        $campaignRepoPropehcy->pull($campaign)->willReturn($campaign)->shouldBeCalledOnce();
+        $campaignRepoProphecy->pull($campaign)->willReturn($campaign)->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
         $fundRepoProphecy->pullForCampaign($campaign)->shouldbeCalledOnce();
 
         $command = new UpdateCampaigns(
-            $campaignRepoPropehcy->reveal(),
+            $campaignRepoProphecy->reveal(),
             $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
         );
