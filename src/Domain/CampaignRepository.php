@@ -10,11 +10,28 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
 class CampaignRepository extends SalesforceReadProxyRepository
 {
-    private FundRepository $fundRepository;
-
-    public function setFundRepository(FundRepository $repository): void
+    /**
+     * Gets those campaigns which are live now or recently closed (in the last week),
+     * based on their last known end time. This allows for campaigns to receive updates
+     * shortly after closure if a decision is made to reopen them soon after the end date,
+     * while keeping the number of API calls for regular update runs under control long-term.
+     * Technically future campaigns are also included if they are already known to MatchBot,
+     * though this would typically only happen after manual API call antics or if a start
+     * date was pushed back belatedly after a campaign already started.
+     *
+     * @return Campaign[]
+     */
+    public function findRecentAndLive(): array
     {
-        $this->fundRepository = $repository;
+        $oneWeekAgo = (new DateTime('now'))->sub(new \DateInterval('P7D'));
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('c')
+            ->from(Campaign::class, 'c')
+            ->where('c.endDate >= :oneWeekAgo')
+            ->orderBy('c.createdAt', 'ASC')
+            ->setParameter('oneWeekAgo', $oneWeekAgo);
+
+        return $qb->getQuery()->getResult();
     }
 
     /**
