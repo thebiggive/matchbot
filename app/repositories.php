@@ -29,7 +29,6 @@ return static function (ContainerBuilder $containerBuilder) {
         CampaignRepository::class => static function (ContainerInterface $c): CampaignRepository {
             $repo = $c->get(EntityManagerInterface::class)->getRepository(Campaign::class);
             $repo->setClient($c->get(Client\Campaign::class));
-            $repo->setFundRepository($c->get(FundRepository::class));
             $repo->setLogger($c->get(LoggerInterface::class));
 
             return $repo;
