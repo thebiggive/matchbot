@@ -89,8 +89,9 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
+        $donation->setGiftAid(false);
         $donation->setPsp('enthuse');
         $donation->setTipAmount('10.00');
         $donation = $this->getRepo()->deriveFees($donation);
@@ -109,7 +110,7 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
         $donation->setPsp('enthuse');
         $donation->setTipAmount('10.00');
@@ -131,7 +132,7 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
@@ -151,7 +152,7 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
@@ -171,7 +172,7 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
@@ -191,7 +192,7 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
@@ -214,9 +215,10 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTip(): void
     {
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
         $donation->setPsp('stripe');
+        $donation->setTipAmount('0.00');
         $donation = $this->getRepo()->deriveFees($donation);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
@@ -230,9 +232,10 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
     {
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setPsp('stripe');
         $donation->setAmount('6.25');
+        $donation->setTipAmount('0.00');
         $donation = $this->getRepo()->deriveFees($donation);
 
         // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)
