@@ -168,6 +168,27 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals(95_585, $donation->getAmountForCharityFractional());
     }
 
+    public function testStripeAmountForCharityWithTipAndAltFeeModel(): void
+    {
+        // N.B. tip to TBG should not change the amount the charity receives, and the tip
+        // is not included in the core donation amount set by `setAmount()`.
+        $donation = $this->getTestDonation();
+        $donation->setAmount('987.65');
+        $donation->setPsp('stripe');
+        $donation->setTipAmount('10.00');
+        $donation->getCampaign()->setFeePercentage(4.5);
+        $donation = $this->getRepo()->deriveFees($donation);
+
+        // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
+        // Fixed fee        = £  0.00
+        // Total fee        = £ 44.44
+        // Amount after fee = £943.21
+
+        // Deduct tip + fee.
+        $this->assertEquals(5_444, $donation->getAmountToDeductFractional());
+        $this->assertEquals(94_321, $donation->getAmountForCharityFractional());
+    }
+
     public function testStripeAmountForCharityWithTip(): void
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
