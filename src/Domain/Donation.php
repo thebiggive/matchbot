@@ -274,7 +274,7 @@ class Donation extends SalesforceWriteProxy
 
         // MAT-168 - truncate dubious, long postcodes for now so records can save in SF.
         if ($data['homePostcode'] !== null) {
-            $data['homePostcode'] = substr($data['homePostcode'], 0, 30);
+            $data['homePostcode'] = substr($data['homePostcode'], 0, 8);
         }
 
         $data['createdTime'] = $this->getCreatedDate()->format(DateTimeInterface::ATOM);
