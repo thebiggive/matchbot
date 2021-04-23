@@ -272,6 +272,11 @@ class Donation extends SalesforceWriteProxy
     {
         $data = $this->toApiModel();
 
+        // MAT-168 - truncate dubious, long postcodes for now so records can save in SF.
+        if ($data['homePostcode'] !== null) {
+            $data['homePostcode'] = substr($data['homePostcode'], 0, 30);
+        }
+
         $data['createdTime'] = $this->getCreatedDate()->format(DateTimeInterface::ATOM);
         $data['updatedTime'] = $this->getUpdatedDate()->format(DateTimeInterface::ATOM);
         $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
