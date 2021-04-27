@@ -249,7 +249,6 @@ class DonationRepositoryTest extends TestCase
     public function testReleaseMatchFundsSuccess(): void
     {
         $lockProphecy = $this->prophesize(LockInterface::class);
-        $lockProphecy->isAcquired()->willReturn(false)->shouldBeCalledOnce();
         $lockProphecy->acquire(false)->willReturn(true)->shouldBeCalledOnce();
         $lockProphecy->release()->shouldBeCalledOnce();
 
@@ -278,7 +277,6 @@ class DonationRepositoryTest extends TestCase
     public function testReleaseMatchFundsLockNotAcquired(): void
     {
         $lockProphecy = $this->prophesize(LockInterface::class);
-        $lockProphecy->isAcquired()->willReturn(false)->shouldBeCalledOnce();
         $lockProphecy->acquire(false)->willReturn(false)->shouldBeCalledOnce();
         $lockProphecy->release()->shouldNotBeCalled();
 

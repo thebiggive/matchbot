@@ -16,7 +16,6 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
-use Symfony\Component\Lock\Exception\LockConflictedException;
 use Symfony\Component\Lock\LockFactory;
 
 class DonationRepository extends SalesforceWriteProxyRepository
@@ -262,18 +261,18 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function releaseMatchFunds(Donation $donation): void
     {
         // Release match funds only having acquired a lock to ensure another thread
-        // isn't doing so. We saw rare issues (MAT-143) during CC20 where the same
-        // valid Cancel request was sent twice in rapid succession and funds were
-        // double-released.
-        $fundsReleaseLock = $this->lockFactory->createLock("release-funds-{$donation->getUuid()}");
-        if ($fundsReleaseLock->isAcquired()) {
-            $this->logger->info(sprintf(
-                'Skipped releasing match funds for donation ID %s due to lock already being acquired',
-                $donation->getUuid(),
-            ));
+        // isn't doing so. We've seen rare issues (MAT-143, MAT-169) during CC20 and
+        // into 2021 where the same valid Cancel request was sent twice in rapid succession
+        // and funds were double-released.
+        //
+        // It seems like the relative speed of the Redis operations compared to the rest of
+        // the request/response cycle (external network etc.) makes calling `isAcquired()`
+        // fairly pointless. In practice it was looking like we'd more often have that return
+        // false but subsequent lock acquisition fail in the rapid double-request cases we
+        // were able to observe. This is why we now go straight to trying to `acquire()`. If
+        // this returns false, we are in the contested lock case and know to drop this attempt.
 
-            return;
-        }
+        $fundsReleaseLock = $this->lockFactory->createLock("release-funds-{$donation->getUuid()}");
 
         try {
             $gotLock = $fundsReleaseLock->acquire(false);
