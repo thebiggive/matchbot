@@ -19,6 +19,7 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Log\NullLogger;
+use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
 
@@ -278,6 +279,35 @@ class DonationRepositoryTest extends TestCase
     {
         $lockProphecy = $this->prophesize(LockInterface::class);
         $lockProphecy->acquire(false)->willReturn(false)->shouldBeCalledOnce();
+        $lockProphecy->release()->shouldNotBeCalled();
+
+        $lockFactoryProphecy = $this->prophesize(LockFactory::class);
+        $lockFactoryProphecy->createLock(Argument::type('string'))
+            ->willReturn($lockProphecy->reveal())
+            ->shouldBeCalledOnce();
+
+        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
+        $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
+            ->shouldNotBeCalled();
+
+        $repo = $this->getRepo(
+            null,
+            false,
+            null,
+            $matchingAdapterProphecy,
+            $lockFactoryProphecy,
+        );
+
+        $donation = $this->getTestDonation();
+        $repo->releaseMatchFunds($donation);
+    }
+
+    public function testReleaseMatchFundsLockHitsAcquiringException(): void
+    {
+        $lockProphecy = $this->prophesize(LockInterface::class);
+        $lockProphecy->acquire(false)
+            ->willThrow(LockAcquiringException::class)
+            ->shouldBeCalledOnce();
         $lockProphecy->release()->shouldNotBeCalled();
 
         $lockFactoryProphecy = $this->prophesize(LockFactory::class);
