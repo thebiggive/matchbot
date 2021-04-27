@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Domain;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Matching\Adapter;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -18,6 +19,8 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Log\NullLogger;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\LockInterface;
 
 class DonationRepositoryTest extends TestCase
 {
@@ -243,6 +246,63 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals(596, $donation->getAmountForCharityFractional());
     }
 
+    public function testReleaseMatchFundsSuccess(): void
+    {
+        $lockProphecy = $this->prophesize(LockInterface::class);
+        $lockProphecy->isAcquired()->willReturn(false)->shouldBeCalledOnce();
+        $lockProphecy->acquire(false)->willReturn(true)->shouldBeCalledOnce();
+        $lockProphecy->release()->shouldBeCalledOnce();
+
+        $lockFactoryProphecy = $this->prophesize(LockFactory::class);
+        $lockFactoryProphecy->createLock(Argument::type('string'))
+            ->willReturn($lockProphecy->reveal())
+            ->shouldBeCalledOnce();
+
+        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
+        $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
+            ->willReturn('0.00')
+            ->shouldBeCalledOnce();
+
+        $repo = $this->getRepo(
+            null,
+            false,
+            null,
+            $matchingAdapterProphecy,
+            $lockFactoryProphecy,
+        );
+
+        $donation = $this->getTestDonation();
+        $repo->releaseMatchFunds($donation);
+    }
+
+    public function testReleaseMatchFundsLockNotAcquired(): void
+    {
+        $lockProphecy = $this->prophesize(LockInterface::class);
+        $lockProphecy->isAcquired()->willReturn(false)->shouldBeCalledOnce();
+        $lockProphecy->acquire(false)->willReturn(false)->shouldBeCalledOnce();
+        $lockProphecy->release()->shouldNotBeCalled();
+
+        $lockFactoryProphecy = $this->prophesize(LockFactory::class);
+        $lockFactoryProphecy->createLock(Argument::type('string'))
+            ->willReturn($lockProphecy->reveal())
+            ->shouldBeCalledOnce();
+
+        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
+        $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
+            ->shouldNotBeCalled();
+
+        $repo = $this->getRepo(
+            null,
+            false,
+            null,
+            $matchingAdapterProphecy,
+            $lockFactoryProphecy,
+        );
+
+        $donation = $this->getTestDonation();
+        $repo->releaseMatchFunds($donation);
+    }
+
     /**
      * @param ObjectProphecy|null   $donationClientProphecy
      * @param bool                  $vatLive    Whether to override config with 20% VAT live from now.
@@ -253,6 +313,8 @@ class DonationRepositoryTest extends TestCase
         ?ObjectProphecy $donationClientProphecy = null,
         bool $vatLive = false,
         ?ObjectProphecy $campaignRepoProphecy = null,
+        ?ObjectProphecy $matchingAdapterProphecy = null,
+        ?ObjectProphecy $lockFactoryProphecy = null,
     ): DonationRepository {
         if (!$donationClientProphecy) {
             $donationClientProphecy = $this->prophesize(Client\Donation::class);
@@ -276,6 +338,14 @@ class DonationRepositoryTest extends TestCase
 
         if ($campaignRepoProphecy) {
             $repo->setCampaignRepository($campaignRepoProphecy->reveal());
+        }
+
+        if ($matchingAdapterProphecy) {
+            $repo->setMatchingAdapter($matchingAdapterProphecy->reveal());
+        }
+
+        if ($lockFactoryProphecy) {
+            $repo->setLockFactory($lockFactoryProphecy->reveal());
         }
 
         return $repo;
