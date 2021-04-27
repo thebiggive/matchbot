@@ -265,8 +265,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // isn't doing so. We saw rare issues (MAT-143) during CC20 where the same
         // valid Cancel request was sent twice in rapid succession and funds were
         // double-released.
-        $releaseLock = $this->lockFactory->createLock("release-funds-{$donation->getUuid()}");
-        if ($releaseLock->isAcquired()) {
+        $fundsReleaseLock = $this->lockFactory->createLock("release-funds-{$donation->getUuid()}");
+        if ($fundsReleaseLock->isAcquired()) {
             $this->logger->info(sprintf(
                 'Skipped releasing match funds for donation ID %s due to lock already being acquired',
                 $donation->getUuid(),
@@ -276,12 +276,24 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         try {
-            $releaseLock->acquire();
-        } catch (LockAcquiringException | LockConflictedException $exception) {
+            $gotLock = $fundsReleaseLock->acquire(false);
+        } catch (LockAcquiringException $exception) {
+            // According to the method (but not the exception) docs, `LockConflictedException` is thrown only
+            // "If the lock is acquired by someone else in blocking mode", and so should not be expected for
+            // our use case or caught here.
             $this->logger->warning(sprintf(
                 'Skipped releasing match funds for donation ID %s due to %s acquiring lock',
                 $donation->getUuid(),
                 get_class($exception),
+            ));
+
+            return;
+        }
+
+        if (!$gotLock) {
+            $this->logger->warning(sprintf(
+                'Skipped releasing match funds for donation ID %s as lock was not acquired',
+                $donation->getUuid(),
             ));
 
             return;
@@ -340,7 +352,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->logInfo("Taking from ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
         $this->logInfo('Deallocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
 
-        $releaseLock->release();
+        $fundsReleaseLock->release();
     }
 
     /**
