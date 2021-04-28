@@ -37,33 +37,13 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             return true;
         }
 
-        /**
-         * If we got an update (`!$isNew`) but the object's status was 'pending-create', it
-         * is likely because a Salesforce create pushed and we never got a proxy ID back.
-         * This happened once in April 2021. That event itself creates an error log, so we
-         * should already be aware. Given this, it makes sense to 'un-stick' the situation
-         * for subsequent webhooks and push task mop-ups, by simply treating the object as
-         * new at this point and pushing everything we know about it as a new Salesforce
-         * object. Flipping it to `$isNew` (and logging what we're doing) should have this
-         * effect, as the next step will set it to 'creating'.
-         */
-        if (!$isNew && $proxy->getSalesforcePushStatus() === SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE) {
-            $this->logInfo(sprintf(
-                'As last push failed, switched to "new" mode for %s %s',
-                get_class($proxy),
-                $proxy->getId(),
-            ));
-            $isNew = true;
-        }
-
         $this->logInfo(($isNew ? 'Pushing ' : 'Updating ') . get_class($proxy) . ' ' . $proxy->getId() . '...');
         $this->prePush($proxy, $isNew);
 
         $proxy->setSalesforcePushStatus(
             $isNew ? SalesforceWriteProxy::PUSH_STATUS_CREATING : SalesforceWriteProxy::PUSH_STATUS_UPDATING
         );
-        $this->getEntityManager()->persist($proxy);
-        $this->getEntityManager()->flush();
+        $this->save($proxy);
 
         if ($isNew) {
             $success = $this->doCreate($proxy);
@@ -74,6 +54,8 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             // 'pending-create' state locally for a scheduled task to try again at pushing its full current
             // local state.
             $this->logError("Can't update " . get_class($proxy) . " {$proxy->getId()} without a Salesforce ID");
+            $this->save($proxy);
+
             $success = false;
         } else {
             $success = $this->doUpdate($proxy);
@@ -169,13 +151,22 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
                 }
             }
         } else {
-            $newStatus = $proxy->getSalesforcePushStatus() === SalesforceWriteProxy::PUSH_STATUS_CREATING
+            // If we were trying to create *or* need to because a previous failure now demands
+            // a re-push to Salesforce, the next attempt should be a create. If both of those
+            // things are false (it's not new, and a previous SF push succeeded so we have an
+            // SF ID), it should be an update.
+            $newStatus = ($proxy->getSalesforcePushStatus() === SalesforceWriteProxy::PUSH_STATUS_CREATING || empty($proxy->getSalesforceId()))
                 ? SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE
                 : SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE;
             $proxy->setSalesforcePushStatus($newStatus);
             $this->logWarning('...error pushing ' . get_class($proxy) . ' ' . $proxy->getId());
         }
 
+        $this->save($proxy);
+    }
+
+    private function save(SalesforceWriteProxy $proxy): void
+    {
         $this->getEntityManager()->persist($proxy);
         $this->getEntityManager()->flush();
     }

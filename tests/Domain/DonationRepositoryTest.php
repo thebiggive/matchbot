@@ -13,6 +13,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -39,6 +40,37 @@ class DonationRepositoryTest extends TestCase
         $success = $this->getRepo($donationClientProphecy)->push($this->getTestDonation(), false);
 
         $this->assertTrue($success);
+    }
+
+    /**
+     * This is expected e.g. after a Salesforce network failure leading to a missing ID for
+     * a donation, but the create completed and the donor can proceed. This may lead to
+     * webhooks trying to update the record, setting its push status to 'pending-update',
+     * before it has a proxy ID set.
+     *
+     * If this happens we should treat it like a new record to un-stick things.
+     *
+     * @link https://thebiggive.atlassian.net/browse/MAT-170
+     */
+    public function testExistingPushWithMissingProxyIdButPendingUpdateStatus(): void
+    {
+        $donationClientProphecy = $this->prophesize(Client\Donation::class);
+        $donationClientProphecy
+            ->put(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationClientProphecy
+            ->create(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+
+        $donation = $this->getTestDonation();
+        $donation->setSalesforceId(null);
+        $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
+        $success = $this->getRepo($donationClientProphecy)->push($donation, false);
+
+        // This push should fail, but should set things up for a create so the next scheduled
+        // attempt can succeed.
+        $this->assertFalse($success);
+        $this->assertEquals(SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE, $donation->getSalesforcePushStatus());
     }
 
     public function testExistingPush404InSandbox(): void
