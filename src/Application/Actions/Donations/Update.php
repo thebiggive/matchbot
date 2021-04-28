@@ -108,13 +108,19 @@ class Update extends Action
             );
         }
 
-        foreach (['giftAid', 'optInCharityEmail', 'optInTbgEmail'] as $requiredBoolean) {
+        foreach (['optInCharityEmail', 'optInTbgEmail'] as $requiredBoolean) {
             if (!isset($donationData->$requiredBoolean)) {
                 return $this->validationError(sprintf(
                     "Required boolean field '%s' not set",
                     $requiredBoolean,
                 ), null, true);
             }
+        }
+
+        if ($donationData->currencyCode === 'GBP' && !isset($donationData->giftAid)) {
+            return $this->validationError(sprintf(
+                "Required boolean field 'giftAid' not set",
+            ), null, true);
         }
 
         // These two fields are currently set up early in the journey, but are harmless and more flexible
