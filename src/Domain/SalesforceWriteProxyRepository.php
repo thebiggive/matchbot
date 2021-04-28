@@ -48,9 +48,11 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
          * effect, as the next step will set it to 'creating'.
          */
         if (!$isNew && $proxy->getSalesforcePushStatus() === SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE) {
-            $this->logInfo(
-                'As last push failed, switched to "new" mode for ' . get_class($proxy) . ' ' . $proxy->getId()
-            );
+            $this->logInfo(sprintf(
+                'As last push failed, switched to "new" mode for %s %s',
+                get_class($proxy),
+                $proxy->getId(),
+            ));
             $isNew = true;
         }
 
