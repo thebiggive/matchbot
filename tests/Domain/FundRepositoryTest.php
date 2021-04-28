@@ -47,8 +47,6 @@ class FundRepositoryTest extends TestCase
 
         // Quickest way to ensure this behaves like a newly-found Fund without having to partially mock / prophesise
         // `FundRepository` such that `doPull()` is a real call but `pull()` doesn't try a real DB engine lookup.
-        $fund->setId(987);
-
         $fund->setSalesforceId('sfFakeId987');
 
         $fund = $repo->pull($fund, false); // Don't auto-save as non-DB-backed tests can't persist
