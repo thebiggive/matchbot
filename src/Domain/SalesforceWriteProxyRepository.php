@@ -37,6 +37,21 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             return true;
         }
 
+        /**
+         * If we got an update (`!$isNew`) but the object's status was 'pending-create', it
+         * is likely because a Salesforce create pushed and we never got a proxy ID back.
+         * This happened once in April 2021. That event itself creates an error log, so we
+         * should already be aware. Given this, it makes sense to 'un-stick' the situation
+         * for subsequent webhooks and push task mop-ups, by simply treating the object as
+         * new at this point and pushing everything we know about it as a new Salesforce
+         * object. Flipping it to `$isNew` (and logging what we're doing) should have this
+         * effect, as the next step will set it to 'creating'.
+         */
+        if (!$isNew && $proxy->getSalesforcePushStatus() === SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE) {
+            $this->logInfo('As last push failed, switched to "new" mode for ' . get_class($proxy) . ' ' . $proxy->getId());
+            $isNew = true;
+        }
+
         $this->logInfo(($isNew ? 'Pushing ' : 'Updating ') . get_class($proxy) . ' ' . $proxy->getId() . '...');
         $this->prePush($proxy, $isNew);
 
