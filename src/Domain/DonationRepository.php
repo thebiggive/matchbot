@@ -16,7 +16,6 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
-use Symfony\Component\Lock\Exception\LockConflictedException;
 use Symfony\Component\Lock\LockFactory;
 
 class DonationRepository extends SalesforceWriteProxyRepository
@@ -262,26 +261,38 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function releaseMatchFunds(Donation $donation): void
     {
         // Release match funds only having acquired a lock to ensure another thread
-        // isn't doing so. We saw rare issues (MAT-143) during CC20 where the same
-        // valid Cancel request was sent twice in rapid succession and funds were
-        // double-released.
-        $releaseLock = $this->lockFactory->createLock("release-funds-{$donation->getUuid()}");
-        if ($releaseLock->isAcquired()) {
-            $this->logger->info(sprintf(
-                'Skipped releasing match funds for donation ID %s due to lock already being acquired',
+        // isn't doing so. We've seen rare issues (MAT-143, MAT-169) during CC20 and
+        // into 2021 where the same valid Cancel request was sent twice in rapid succession
+        // and funds were double-released.
+        //
+        // It seems like the relative speed of the Redis operations compared to the rest of
+        // the request/response cycle (external network etc.) makes calling `isAcquired()`
+        // fairly pointless. In practice it was looking like we'd more often have that return
+        // false but subsequent lock acquisition fail in the rapid double-request cases we
+        // were able to observe. This is why we now go straight to trying to `acquire()`. If
+        // this returns false, we are in the contested lock case and know to drop this attempt.
+
+        $fundsReleaseLock = $this->lockFactory->createLock("release-funds-{$donation->getUuid()}");
+
+        try {
+            $gotLock = $fundsReleaseLock->acquire(false);
+        } catch (LockAcquiringException $exception) {
+            // According to the method (but not the exception) docs, `LockConflictedException` is thrown only
+            // "If the lock is acquired by someone else in blocking mode", and so should not be expected for
+            // our use case or caught here.
+            $this->logger->warning(sprintf(
+                'Skipped releasing match funds for donation ID %s due to %s acquiring lock',
                 $donation->getUuid(),
+                get_class($exception),
             ));
 
             return;
         }
 
-        try {
-            $releaseLock->acquire();
-        } catch (LockAcquiringException | LockConflictedException $exception) {
+        if (!$gotLock) {
             $this->logger->warning(sprintf(
-                'Skipped releasing match funds for donation ID %s due to %s acquiring lock',
+                'Skipped releasing match funds for donation ID %s as lock was not acquired',
                 $donation->getUuid(),
-                get_class($exception),
             ));
 
             return;
@@ -340,7 +351,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->logInfo("Taking from ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
         $this->logInfo('Deallocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
 
-        $releaseLock->release();
+        $fundsReleaseLock->release();
     }
 
     /**
