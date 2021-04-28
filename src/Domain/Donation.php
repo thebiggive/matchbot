@@ -21,8 +21,6 @@ use Ramsey\Uuid\UuidInterface;
  */
 class Donation extends SalesforceWriteProxy
 {
-    use TimestampsTrait;
-
     /**
      * @var int
      * @see Donation::$currencyCode

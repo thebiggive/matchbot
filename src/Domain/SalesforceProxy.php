@@ -29,7 +29,7 @@ abstract class SalesforceProxy extends Model
     /**
      * @param string $salesforceId
      */
-    public function setSalesforceId(?string $salesforceId): void
+    public function setSalesforceId(string $salesforceId): void
     {
         $this->salesforceId = $salesforceId;
     }
