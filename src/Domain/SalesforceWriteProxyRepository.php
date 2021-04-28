@@ -155,7 +155,10 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             // a re-push to Salesforce, the next attempt should be a create. If both of those
             // things are false (it's not new, and a previous SF push succeeded so we have an
             // SF ID), it should be an update.
-            $newStatus = ($proxy->getSalesforcePushStatus() === SalesforceWriteProxy::PUSH_STATUS_CREATING || empty($proxy->getSalesforceId()))
+            $newStatus = (
+                $proxy->getSalesforcePushStatus() === SalesforceWriteProxy::PUSH_STATUS_CREATING ||
+                empty($proxy->getSalesforceId())
+            )
                 ? SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE
                 : SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE;
             $proxy->setSalesforcePushStatus($newStatus);
