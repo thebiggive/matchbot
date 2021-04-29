@@ -50,6 +50,12 @@ class Campaign extends SalesforceReadProxy
     protected DateTime $endDate;
 
     /**
+     * @ORM\Column(type="decimal", nullable=true, precision=3, scale=1)
+     * @var float|null
+     */
+    protected ?float $feePercentage = null;
+
+    /**
      * @ORM\Column(type="boolean")
      * @var bool    Whether the Campaign has any match funds
      */
@@ -132,5 +138,15 @@ class Campaign extends SalesforceReadProxy
     public function setCurrencyCode(string $currencyCode): void
     {
         $this->currencyCode = $currencyCode;
+    }
+
+    public function getFeePercentage(): ?float
+    {
+        return $this->feePercentage;
+    }
+
+    public function setFeePercentage(?float $feePercentage): void
+    {
+        $this->feePercentage = $feePercentage;
     }
 }

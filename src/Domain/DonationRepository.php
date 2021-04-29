@@ -418,6 +418,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $donation->getAmount(),
             $donation->getCurrencyCode(),
             $donation->hasGiftAid() ?? false,
+            $donation->getCampaign()->getFeePercentage(),
         );
         $donation->setCharityFee($structure->getCoreFee());
         $donation->setCharityFeeVat($structure->getFeeVat());
