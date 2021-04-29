@@ -25,6 +25,7 @@ class Calculator
         private ?string $cardBrand,
         private ?string $cardCountry,
         private string $amount,
+        private string $currencyCode,
         private bool $hasGiftAid,
         private ?float $feePercentageOverride = null,
     ) {
@@ -39,7 +40,14 @@ class Calculator
         if ($this->feePercentageOverride === null) {
             // Standard, dynamic fee model. Typically includes fixed amount. Historically may include
             // a fee on Gift Aid. May vary by card type & country.
-            $feeAmountFixed = $this->pspFeeSettings['fixed'];
+
+            $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
+            if (array_key_exists($currencyCode, $this->pspFeeSettings['fixed'])) {
+                $feeAmountFixed = $this->pspFeeSettings['fixed'][$currencyCode];
+            } else {
+                $feeAmountFixed = $this->pspFeeSettings['fixed']['default'];
+            }
+
             $feeRatio = bcdiv($this->pspFeeSettings['main_percentage_standard'], '100', 3);
             if (
                 isset($this->pspFeeSettings['main_percentage_amex_or_non_uk_eu']) &&

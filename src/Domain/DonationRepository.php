@@ -416,6 +416,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $cardBrand,
             $cardCountry,
             $donation->getAmount(),
+            $donation->getCurrencyCode(),
             $donation->hasGiftAid() ?? false,
             $donation->getCampaign()->getFeePercentage(),
         );
