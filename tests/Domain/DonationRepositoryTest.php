@@ -127,6 +127,7 @@ class DonationRepositoryTest extends TestCase
         // is not included in the core donation amount set by `setAmount()`.
         $donation = new Donation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
         $donation->setPsp('enthuse');
         $donation->setTipAmount('10.00');
         $donation = $this->getRepo()->deriveFees($donation);
@@ -147,6 +148,7 @@ class DonationRepositoryTest extends TestCase
         // is not included in the core donation amount set by `setAmount()`.
         $donation = new Donation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
         $donation->setPsp('enthuse');
         $donation->setTipAmount('10.00');
         $donation->setGiftAid(true);
@@ -169,6 +171,7 @@ class DonationRepositoryTest extends TestCase
         // is not included in the core donation amount set by `setAmount()`.
         $donation = new Donation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
         $donation = $this->getRepo()->deriveFees($donation, 'amex');
@@ -189,6 +192,7 @@ class DonationRepositoryTest extends TestCase
         // is not included in the core donation amount set by `setAmount()`.
         $donation = new Donation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
         $donation = $this->getRepo()->deriveFees($donation, 'visa', 'US');
@@ -209,6 +213,7 @@ class DonationRepositoryTest extends TestCase
         // is not included in the core donation amount set by `setAmount()`.
         $donation = new Donation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
         $donation = $this->getRepo()->deriveFees($donation);
@@ -229,6 +234,7 @@ class DonationRepositoryTest extends TestCase
         // is not included in the core donation amount set by `setAmount()`.
         $donation = new Donation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
 
@@ -252,6 +258,7 @@ class DonationRepositoryTest extends TestCase
     {
         $donation = new Donation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation = $this->getRepo()->deriveFees($donation);
 
@@ -269,6 +276,7 @@ class DonationRepositoryTest extends TestCase
         $donation = new Donation();
         $donation->setPsp('stripe');
         $donation->setAmount('6.25');
+        $donation->setCurrencyCode('GBP');
         $donation = $this->getRepo()->deriveFees($donation);
 
         // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)

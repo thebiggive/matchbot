@@ -25,6 +25,7 @@ class Calculator
         private ?string $cardBrand,
         private ?string $cardCountry,
         private string $amount,
+        private string $currencyCode,
         private bool $hasGiftAid,
     ) {
         $this->pspFeeSettings = $settings[$psp]['fee'];
@@ -33,7 +34,14 @@ class Calculator
     public function getCoreFee(): string
     {
         $giftAidFee = '0.00';
-        $feeAmountFixed = $this->pspFeeSettings['fixed'];
+
+        $code = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
+        if (array_key_exists($code, $this->pspFeeSettings['fixed'])) {
+            $feeAmountFixed = $this->pspFeeSettings['fixed'][$code];
+        } else {
+            $feeAmountFixed = $this->pspFeeSettings['fixed']['default'];
+        }
+
         $feeRatio = bcdiv($this->pspFeeSettings['main_percentage_standard'], '100', 3);
 
         if (

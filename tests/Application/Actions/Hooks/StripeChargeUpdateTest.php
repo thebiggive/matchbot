@@ -149,6 +149,59 @@ class StripeChargeUpdateTest extends StripeTest
         $this->assertEquals(200, $response->getStatusCode());
     }
 
+    public function testOriginalStripeFeeInSEK(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_succeeded_sek.json');
+
+        $donation = $this->getTestDonation();
+        $donation->setAmount('6000.00');
+        $donation->setCurrencyCode('SEK');
+
+        $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
+        $time = (string) time();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['transactionId' => 'pi_externalId_123'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $balanceTxnResponse = file_get_contents(
+            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_success_sek.json'
+        );
+        $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
+        $stripeBalanceTransactionProphecy->retrieve('txn_00000000000000')
+            ->shouldBeCalledOnce()
+            ->willReturn(json_decode($balanceTxnResponse));
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+
+        $response = $app->handle($request);
+
+        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
+        $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals('18.72', $donation->getOriginalPspFee());
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+
     public function testSuccessfulFullRefund(): void
     {
         $app = $this->getAppInstance();
