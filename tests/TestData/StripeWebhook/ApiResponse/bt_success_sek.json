@@ -1,0 +1,25 @@
+{
+  "id": "txn_00000000000000",
+  "object": "balance_transaction",
+  "amount": 6000,
+  "available_on": 1595203200,
+  "created": 1594646323,
+  "currency": "sek",
+  "description": null,
+  "exchange_rate": null,
+  "fee": 1872,
+  "fee_details": [
+    {
+      "amount": 1872,
+      "application": null,
+      "currency": "sek",
+      "description": "Stripe processing fees",
+      "type": "stripe_fee"
+    }
+  ],
+  "net": 4128,
+  "reporting_category": "charge",
+  "source": "ch_externalId_123",
+  "status": "available",
+  "type": "charge"
+}

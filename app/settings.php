@@ -60,7 +60,9 @@ return function (ContainerBuilder $containerBuilder) {
 
             'enthuse' => [
                 'fee' => [
-                    'fixed' => '0.2',               // Baseline fee in pounds.
+                    'fixed' => [
+                        'default' => '0.2',               // Baseline fee in pounds.
+                    ],
                     'gift_aid_percentage' => '1',   // As a propotion of the *total* donation
                                                     // if Gift Aid claimed, i.e. 1/4 of Gift Aid fee %.
                     'main_percentage_standard' => '1.9',
@@ -83,7 +85,17 @@ return function (ContainerBuilder $containerBuilder) {
                 'accountWebhookSecret' => getenv('STRIPE_WEBHOOK_SIGNING_SECRET'),
                 'connectAppWebhookSecret' => getenv('STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET'),
                 'fee' => [
-                    'fixed' => '0.2', // Baseline fee in pounds
+                    // Based on Stripe support email 9/4/21.
+                    'fixed' => [
+                        'CHF' => '0.3',
+                        'DKK' => '1.8',
+                        'EUR' => '0.25',
+                        'GBP' => '0.2', // Baseline fee in pounds
+                        'NOK' => '1.8',
+                        'SEK' => '1.8',
+                        'USD' => '0.3',
+                        'default' => '0.2',
+                    ],
                     'gift_aid_percentage' => '0',
                     'main_percentage_standard' => '1.5',
                     'main_percentage_amex_or_non_uk_eu' => '3.2',
