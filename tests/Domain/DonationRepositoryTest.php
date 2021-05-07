@@ -20,6 +20,7 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Log\NullLogger;
+use ReflectionClass;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
@@ -52,25 +53,61 @@ class DonationRepositoryTest extends TestCase
      *
      * @link https://thebiggive.atlassian.net/browse/MAT-170
      */
-    public function testExistingPushWithMissingProxyIdButPendingUpdateStatus(): void
+    public function testExistingPushWithMissingProxyIdButPendingUpdateStatusStable(): void
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->put(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-        $donationClientProphecy
             ->create(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
+            ->shouldBeCalledOnce()
+            ->willReturn(true);
+        $donationClientProphecy
+            ->put(Argument::type(Donation::class))
+            ->shouldBeCalledOnce()
+            ->willReturn(true);
 
         $donation = $this->getTestDonation();
-        $donation->setSalesforceId(null);
+        $donationReflected = new ReflectionClass($donation);
+
+        $createdAtProperty = $donationReflected->getProperty('createdAt');
+        $createdAtProperty->setAccessible(true);
+        $createdAtProperty->setValue($donation, new \DateTime('-31 seconds'));
+
+        $sfIdProperty = $donationReflected->getProperty('salesforceId');
+        $sfIdProperty->setAccessible(true);
+        $sfIdProperty->setValue($donation, null); // Allowed property type but not allowed in public setter.
+
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
         $success = $this->getRepo($donationClientProphecy)->push($donation, false);
 
-        // This push should fail, but should set things up for a create so the next scheduled
-        // attempt can succeed.
+        // We let push() handle both steps for older-than-30s donations, without waiting for a new process.
+        $this->assertTrue($success);
+        $this->assertEquals('complete', $donation->getSalesforcePushStatus());
+    }
+
+    public function testExistingPushWithMissingProxyIdButPendingUpdateStatusNew(): void
+    {
+        $donationClientProphecy = $this->prophesize(Client\Donation::class);
+        $donationClientProphecy
+            ->create(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationClientProphecy
+            ->put(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+
+        $donation = $this->getTestDonation();
+        $donationReflected = new ReflectionClass($donation);
+
+        $sfIdProperty = $donationReflected->getProperty('salesforceId');
+        $sfIdProperty->setAccessible(true);
+        $sfIdProperty->setValue($donation, null); // Allowed property type but not allowed in public setter.
+
+        $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
+        $success = $this->getRepo($donationClientProphecy)->push($donation, false);
+
+        // For brand new donations, push() should do nothing here and leave the donation to be picked up
+        // by a later scheduled run, remaining in 'pending-update' push status.
         $this->assertFalse($success);
-        $this->assertEquals(SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE, $donation->getSalesforcePushStatus());
+        $this->assertEquals('pending-update', $donation->getSalesforcePushStatus());
     }
 
     public function testExistingPush404InSandbox(): void
@@ -125,8 +162,10 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
+        $donation->setGiftAid(false);
         $donation->setPsp('enthuse');
         $donation->setTipAmount('10.00');
         $donation = $this->getRepo()->deriveFees($donation);
@@ -145,8 +184,9 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
         $donation->setPsp('enthuse');
         $donation->setTipAmount('10.00');
         $donation->setGiftAid(true);
@@ -167,8 +207,9 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
         $donation = $this->getRepo()->deriveFees($donation, 'amex');
@@ -187,8 +228,9 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
         $donation = $this->getRepo()->deriveFees($donation, 'visa', 'US');
@@ -203,12 +245,34 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals(95_585, $donation->getAmountForCharityFractional());
     }
 
+    public function testStripeAmountForCharityWithTipAndAltFeeModel(): void
+    {
+        // N.B. tip to TBG should not change the amount the charity receives, and the tip
+        // is not included in the core donation amount set by `setAmount()`.
+        $donation = $this->getTestDonation();
+        $donation->setAmount('987.65');
+        $donation->setPsp('stripe');
+        $donation->setTipAmount('10.00');
+        $donation->getCampaign()->setFeePercentage(4.5);
+        $donation = $this->getRepo()->deriveFees($donation);
+
+        // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
+        // Fixed fee        = £  0.00
+        // Total fee        = £ 44.44
+        // Amount after fee = £943.21
+
+        // Deduct tip + fee.
+        $this->assertEquals(5_444, $donation->getAmountToDeductFractional());
+        $this->assertEquals(94_321, $donation->getAmountForCharityFractional());
+    }
+
     public function testStripeAmountForCharityWithTip(): void
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
         $donation = $this->getRepo()->deriveFees($donation);
@@ -227,8 +291,9 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
 
@@ -250,9 +315,11 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTip(): void
     {
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
+        $donation->setTipAmount('0.00');
         $donation = $this->getRepo()->deriveFees($donation);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
@@ -266,9 +333,11 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
     {
-        $donation = new Donation();
+        $donation = $this->getTestDonation();
         $donation->setPsp('stripe');
         $donation->setAmount('6.25');
+        $donation->setTipAmount('0.00');
+        $donation->setCurrencyCode('GBP');
         $donation = $this->getRepo()->deriveFees($donation);
 
         // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)

@@ -14,6 +14,8 @@ use Doctrine\ORM\Mapping as ORM;
  */
 abstract class SalesforceWriteProxy extends SalesforceProxy
 {
+    use TimestampsTrait;
+
     /** @var string Object has not yet been sent to Salesforce or queued to be so. */
     public const PUSH_STATUS_NOT_SENT = 'not-sent';
     /** @var string Object should be created in Salesforce. This might be imminent or queued. */
@@ -93,5 +95,17 @@ abstract class SalesforceWriteProxy extends SalesforceProxy
     public function setSalesforcePushStatus(string $salesforcePushStatus): void
     {
         $this->salesforcePushStatus = $salesforcePushStatus;
+    }
+
+    /**
+     * Indicates whether the proxy's local object was created & persisted at least 30 seconds
+     * ago, and so is deemed old enough to be likely stable enough for us to e.g. assume that
+     * another thread is not still trying to do a first push up to Salesforce.
+     *
+     * @return bool Whether object is stable/old enough.
+     */
+    public function isStable(): bool
+    {
+        return $this->createdAt !== null && $this->createdAt < (new DateTime('-30 seconds'));
     }
 }

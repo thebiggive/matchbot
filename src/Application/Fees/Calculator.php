@@ -25,30 +25,47 @@ class Calculator
         private ?string $cardBrand,
         private ?string $cardCountry,
         private string $amount,
+        private string $currencyCode,
         private bool $hasGiftAid,
+        private ?float $feePercentageOverride = null,
     ) {
         $this->pspFeeSettings = $settings[$psp]['fee'];
     }
 
-    public function getCoreFee(): string
+    #[Pure] public function getCoreFee(): string
     {
         $giftAidFee = '0.00';
-        $feeAmountFixed = $this->pspFeeSettings['fixed'];
-        $feeRatio = bcdiv($this->pspFeeSettings['main_percentage_standard'], '100', 3);
+        $feeAmountFixed = '0.00';
 
-        if (
-            isset($this->pspFeeSettings['main_percentage_amex_or_non_uk_eu']) &&
-            ($this->cardBrand === 'amex' || !$this->isEU($this->cardCountry))
-        ) {
-            $feeRatio = bcdiv($this->pspFeeSettings['main_percentage_amex_or_non_uk_eu'], '100', 3);
-        }
+        if ($this->feePercentageOverride === null) {
+            // Standard, dynamic fee model. Typically includes fixed amount. Historically may include
+            // a fee on Gift Aid. May vary by card type & country.
 
-        if ($this->hasGiftAid) {
-            $giftAidFee = bcmul(
-                bcdiv($this->pspFeeSettings['gift_aid_percentage'], '100', 3),
-                $this->amount,
-                3,
-            );
+            $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
+            if (array_key_exists($currencyCode, $this->pspFeeSettings['fixed'])) {
+                $feeAmountFixed = $this->pspFeeSettings['fixed'][$currencyCode];
+            } else {
+                $feeAmountFixed = $this->pspFeeSettings['fixed']['default'];
+            }
+
+            $feeRatio = bcdiv($this->pspFeeSettings['main_percentage_standard'], '100', 3);
+            if (
+                isset($this->pspFeeSettings['main_percentage_amex_or_non_uk_eu']) &&
+                ($this->cardBrand === 'amex' || !$this->isEU($this->cardCountry))
+            ) {
+                $feeRatio = bcdiv($this->pspFeeSettings['main_percentage_amex_or_non_uk_eu'], '100', 3);
+            }
+
+            if ($this->hasGiftAid) {
+                $giftAidFee = bcmul(
+                    bcdiv($this->pspFeeSettings['gift_aid_percentage'], '100', 3),
+                    $this->amount,
+                    3,
+                );
+            }
+        } else {
+            // Alternative fixed % model. `$giftAidFee` and `$feeAmountFixed` remain zero.
+            $feeRatio = bcdiv((string)$this->feePercentageOverride, '100', 3);
         }
 
         // bcmath truncates values beyond the scale it's working at, so to get x.x% and round

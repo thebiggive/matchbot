@@ -49,15 +49,37 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             $success = $this->doCreate($proxy);
         } elseif (empty($proxy->getSalesforceId())) {
             // We've been asked to update an object before we have confirmation back from Salesforce that
-            // it was created in the first place. There's no way this can work - we need the Salesforce
-            // ID to identify what we're updating - so log an error and ensure the object is left in
-            // 'pending-create' state locally for a scheduled task to try again at pushing its full current
-            // local state.
-            $this->logError("Can't update " . get_class($proxy) . " {$proxy->getId()} without a Salesforce ID");
-            $this->save($proxy);
+            // it was created in the first place. This is a bit different from the 'pending-additional-update'
+            // double-update scenario above, since we need a Salesforce ID before any update can succeed and
+            // so must 'go back' a step. This has happened rarely when Salesforce failed to save the object
+            // on initial creation.
+            // To avoid unnecessary risk we only create-then-update in one hop if the object is not brand
+            // new, to reduce the chance of double creation in Salesforce if another thread is already
+            // working on a push.
+            if ($proxy->isStable()) {
+                $this->logWarning(sprintf(
+                    'Create-updating %s %s due to a likely past error',
+                    get_class($proxy),
+                    $proxy->getId(),
+                ));
 
-            $success = false;
+                if ($this->doCreate($proxy)) { // Sets SF ID ready for update.
+                    $success = $this->doUpdate($proxy);
+                } else {
+                    $success = false; // Create failed again -> still no SF ID -> don't try to update for now.
+                }
+            } else {
+                // Leave state unchanged -> proxy should be deemed old/stable enough on the next
+                // scheduled re-try to trigger a create-then-update as per above logic branch.
+                $this->logError(sprintf(
+                    'Not create-updating new %s %s (missing Salesforce ID, probably errored earlier)',
+                    get_class($proxy),
+                    $proxy->getId(),
+                ));
+                $success = false;
+            }
         } else {
+            // SF ID already set as expected -> normal update scenario
             $success = $this->doUpdate($proxy);
         }
 
@@ -151,14 +173,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
                 }
             }
         } else {
-            // If we were trying to create *or* need to because a previous failure now demands
-            // a re-push to Salesforce, the next attempt should be a create. If both of those
-            // things are false (it's not new, and a previous SF push succeeded so we have an
-            // SF ID), it should be an update.
-            $newStatus = (
-                $proxy->getSalesforcePushStatus() === SalesforceWriteProxy::PUSH_STATUS_CREATING ||
-                empty($proxy->getSalesforceId())
-            )
+            $newStatus = $proxy->getSalesforcePushStatus() === SalesforceWriteProxy::PUSH_STATUS_CREATING
                 ? SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE
                 : SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE;
             $proxy->setSalesforcePushStatus($newStatus);
