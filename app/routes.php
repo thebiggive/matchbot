@@ -51,7 +51,9 @@ return function (App $app) {
             'https://donate-regression.thebiggivetest.org.uk', // ECS + S3 regression via CloudFront
             'https://donate-ecs-production.thebiggive.org.uk', // ECS production direct
             'https://donate-production.thebiggive.org.uk', // ECS + S3 production via CloudFront
-            'https://donate.thebiggive.org.uk' // ECS + S3 production via CloudFront, short alias
+            'https://donate.thebiggive.org.uk', // ECS + S3 production via CloudFront, short alias
+            'https://thebiggive.global', // ECS + S3 production via CloudFront, temporary global alias
+            'https://thebiggive.com', // ECS + S3 production via CloudFront, future global alias
         ];
         if (!empty($givenOrigin) && in_array($givenOrigin, $corsAllowedOrigins, true)) {
             $corsAllowedOrigin = $givenOrigin;
