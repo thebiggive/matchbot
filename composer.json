@@ -63,6 +63,7 @@
         ],
         "doctrine:delete-and-recreate": [
             "doctrine orm:schema-tool:drop --force",
+            "doctrine orm:schema-tool:create",
             "@doctrine:migrate"
         ],
         "doctrine:ensure-prod": "doctrine orm:ensure-production-settings",
