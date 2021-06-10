@@ -69,8 +69,12 @@ class ResetMatchingTest extends TestCase
                 'An exception occurred.. (unit test sample message)',
                 // Doctrine PDOException (a DriverException subclass) wraps native \PDOException.
                 new PDOException(
-                    new \PDOException("SQLSTATE[42S02]: Base table or view not found: 1146 Table 'matchbot.CampaignFunding' doesn't exist")
-                )))
+                    new \PDOException(
+                        'SQLSTATE[42S02]: Base table or view not found: 1146 ' .
+                        "Table 'matchbot.CampaignFunding' doesn't exist"
+                    )
+                )
+            ))
             ->shouldBeCalledOnce();
 
         $command = new ResetMatching($campaignFundingRepoProphecy->reveal(), $matchingAdapterProphecy->reveal());
