@@ -62,8 +62,7 @@
             "doctrine orm:clear-cache:result"
         ],
         "doctrine:delete-and-recreate": [
-            "doctrine-migrations migrate first -n",
-            "doctrine orm:schema-tool:drop --force",
+            "doctrine orm:schema-tool:drop --full-database --force",
             "@doctrine:migrate"
         ],
         "doctrine:ensure-prod": "doctrine orm:ensure-production-settings",
