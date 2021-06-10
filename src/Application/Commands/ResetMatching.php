@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use Doctrine\DBAL\Exception\TableNotFoundException;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFundingRepository;
 use Symfony\Component\Console\Input\InputInterface;
@@ -38,9 +39,18 @@ class ResetMatching extends LockingCommand
             throw new \RuntimeException('Reset not supported on Production');
         }
 
-        foreach ($this->campaignFundingRepository->findAll() as $funding) {
+        try {
+            $fundings = $this->campaignFundingRepository->findAll();
+        } catch (TableNotFoundException $exception) {
+            $output->writeln('Skipping matching reset as database is empty.');
+
+            return 0;
+        }
+
+        foreach ($fundings as $funding) {
             $this->matchingAdapter->delete($funding);
         }
+        $output->writeln(sprintf('Completed matching reset for %d fundings.', count($fundings)));
 
         return 0;
     }
