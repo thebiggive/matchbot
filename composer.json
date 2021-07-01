@@ -7,7 +7,10 @@
     "authors": [
         {
             "name": "Noel Light-Hilary",
-            "email": "noel@webful.uk"
+            "email": "noel@thebiggive.org.uk"
+        },
+        {
+            "name": "Jason Fung"
         }
     ],
     "require": {
@@ -17,6 +20,7 @@
         "ext-pdo": "*",
         "ext-pdo_mysql": "*",
         "ext-redis": "*",
+        "doctrine/cache": "^1.11.3",
         "doctrine/migrations": "^2.3",
         "doctrine/orm": "^2.8",
         "firebase/php-jwt": "^5.2",
@@ -62,7 +66,7 @@
             "doctrine orm:clear-cache:result"
         ],
         "doctrine:delete-and-recreate": [
-            "doctrine orm:schema-tool:drop --force",
+            "doctrine orm:schema-tool:drop --full-database --force",
             "@doctrine:migrate"
         ],
         "doctrine:ensure-prod": "doctrine orm:ensure-production-settings",
