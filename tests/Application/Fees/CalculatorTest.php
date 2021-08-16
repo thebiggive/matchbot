@@ -72,4 +72,20 @@ class CalculatorTest extends TestCase
         // 3.2% + 1.80 SEK
         $this->assertEquals('5.74', $calculator->getCoreFee());
     }
+
+    public function testZeroVatChargedForUsaCharity() {
+        $calculator = new Calculator(
+            $this->getAppInstance()->getContainer()->get('settings'),
+            'stripe',
+            'visa',
+            'US',
+            '100',
+            'USD',
+            false,
+            5,
+        );
+
+        $this->assertEquals('5.00', $calculator->getCoreFee());
+        $this->assertEquals('0', $calculator->getFeeVat());
+    }
 }
