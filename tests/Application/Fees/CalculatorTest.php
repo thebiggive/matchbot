@@ -73,7 +73,8 @@ class CalculatorTest extends TestCase
         $this->assertEquals('5.74', $calculator->getCoreFee());
     }
 
-    public function testZeroVatChargedForUsaCharity() {
+    public function testZeroVatChargedForUsaCharity()
+    {
         $calculator = new Calculator(
             $this->getAppInstance()->getContainer()->get('settings'),
             'stripe',
