@@ -88,6 +88,11 @@ class Calculator
             return '0'; // VAT does not apply to the current PSP's fees.
         }
 
+        $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
+        if ($currencyCode == "USD") {
+            return '0';
+        }
+
         $switchDate = new \DateTime($this->pspFeeSettings['vat_live_date']);
         if (new \DateTime('now') >= $switchDate) {
             $vatPercentage = $this->pspFeeSettings['vat_percentage_live'];
