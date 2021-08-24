@@ -12,6 +12,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\FundRepository;
 use Prophecy\PhpUnit\ProphecyTrait;
 use MatchBot\Tests\TestCase;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 
@@ -36,6 +37,7 @@ class UpdateCampaignsTest extends TestCase
             $campaignRepoProphecy->reveal(),
             $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
+            new NullLogger(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
 
@@ -70,6 +72,7 @@ class UpdateCampaignsTest extends TestCase
             $campaignRepoProphecy->reveal(),
             $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
+            new NullLogger(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
 
@@ -102,6 +105,7 @@ class UpdateCampaignsTest extends TestCase
             $campaignRepoProphecy->reveal(),
             $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
+            new NullLogger(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
 
