@@ -54,6 +54,7 @@ $commands = [
         $psr11App->get(CampaignRepository::class),
         $psr11App->get(EntityManagerInterface::class),
         $psr11App->get(FundRepository::class),
+        $psr11App->get(LoggerInterface::class),
     ),
 ];
 
