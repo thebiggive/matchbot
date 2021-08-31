@@ -89,11 +89,19 @@ class StripePayoutHandler implements MessageHandlerInterface
             }
         }
         $this->logger->info(
-            sprintf('Payout: Getting all Connect account paid Charge IDs complete, found %s', count($paidChargeIds))
+            sprintf(
+                'Payout: Getting all Connect account paid Charge IDs for Payout ID %s complete, found %s',
+                $payoutId,
+                count($paidChargeIds),
+            )
         );
 
         if (count($paidChargeIds) === 0) {
-            $this->logger->info('Payout: Exited with no paid Charge IDs');
+            $this->logger->info(sprintf(
+                'Payout: Exited with no paid Charge IDs for Payout ID %s',
+                $payoutId,
+            ));
+
             return;
         }
 
