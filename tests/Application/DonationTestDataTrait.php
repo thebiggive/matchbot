@@ -48,6 +48,15 @@ trait DonationTestDataTrait
         return $donation;
     }
 
+    protected function getAltTestDonation(): Donation
+    {
+        $donation = clone $this->getTestDonation();
+        $donation->setTransactionId('pi_externalId_124');
+        $donation->setChargeId('ch_externalId_124');
+
+        return $donation;
+    }
+
     protected function getAnonymousPendingTestDonation(): Donation
     {
         $charity = new Charity();
