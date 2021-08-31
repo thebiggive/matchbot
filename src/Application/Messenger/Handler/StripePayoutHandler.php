@@ -64,8 +64,16 @@ class StripePayoutHandler implements MessageHandlerInterface
             // We get a Stripe exception if we start this with a null or empty value,
             // so we only include this once we've iterated the first time and captured
             // a transaction Id.
-            if ($lastBalanceTransactionId !== null) {
-                $attributes['start_after'] = $lastBalanceTransactionId;
+            if ($hasMore && $lastBalanceTransactionId !== null) {
+                $attributes['starting_after'] = $lastBalanceTransactionId;
+
+                // We can probably reduce this to `debug()` level once we are 100% confident
+                // in the fix for MAT-181.
+                $this->logger->info(sprintf(
+                    'Stripe Balance Transaction for Payout ID %s will next use starting_after: %s',
+                    $payoutId,
+                    $lastBalanceTransactionId,
+                ));
             }
         }
         $this->logger->info(
