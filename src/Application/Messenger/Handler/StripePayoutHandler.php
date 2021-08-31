@@ -8,6 +8,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
@@ -49,10 +50,21 @@ class StripePayoutHandler implements MessageHandlerInterface
         while ($hasMore) {
             // Get all balance transactions (`py_...`) related to the specific payout defined in
             // `$attributes`, scoping the lookup to the correct Connect account.
-            $balanceTransactions = $this->stripeClient->balanceTransactions->all(
-                $attributes,
-                ['stripe_account' => $connectAccountId],
-            );
+            try {
+                $balanceTransactions = $this->stripeClient->balanceTransactions->all(
+                    $attributes,
+                    ['stripe_account' => $connectAccountId],
+                );
+            } catch (ApiErrorException $exception) {
+                $this->logger->error(sprintf(
+                    'Stripe Balance Transaction lookup error for Payout ID %s, %s [%s]: %s',
+                    $payoutId,
+                    get_class($exception),
+                    $exception->getStripeCode(),
+                    $exception->getMessage(),
+                ));
+                break;
+            }
 
             foreach ($balanceTransactions->data as $balanceTransaction) {
                 $paidChargeIds[] = $balanceTransaction->source;
