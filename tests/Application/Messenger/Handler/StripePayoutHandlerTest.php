@@ -86,7 +86,9 @@ class StripePayoutHandlerTest extends TestCase
             'Payout: Getting all charges related to Payout ID po_externalId_123 for Connect account ID acct_unitTest123'
         )
             ->shouldBeCalledOnce();
-        $loggerProphecy->info('Payout: Getting all Connect account paid Charge IDs for Payout ID po_externalId_123 complete, found 1')
+        $loggerProphecy->info(
+            'Payout: Getting all Connect account paid Charge IDs for Payout ID po_externalId_123 complete, found 1'
+        )
             ->shouldBeCalledOnce();
         $loggerProphecy->info("Payout: Getting Transfer IDs related to payout's Charge IDs")
             ->shouldBeCalledOnce();
