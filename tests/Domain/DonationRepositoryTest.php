@@ -15,6 +15,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
+use MatchBot\Tests\Application\VatTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -29,6 +30,7 @@ class DonationRepositoryTest extends TestCase
 {
     use DonationTestDataTrait;
     use ProphecyTrait;
+    use VatTrait;
 
     public function testExistingPushOK(): void
     {
@@ -252,18 +254,20 @@ class DonationRepositoryTest extends TestCase
         $donation = $this->getTestDonation();
         $donation->setAmount('987.65');
         $donation->setPsp('stripe');
-        $donation->setTipAmount('10.00');
+        $donation->setTipAmount('44.44');
         $donation->getCampaign()->setFeePercentage(4.5);
         $donation = $this->getRepo()->deriveFees($donation);
 
         // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
         // Fixed fee        = £  0.00
-        // Total fee        = £ 44.44
-        // Amount after fee = £943.21
+        // Total fee        = £ 44.44 – ADDED in this case, not taken from charity
+        // Amount after fee = £987.65
 
-        // Deduct tip + fee.
-        $this->assertEquals(5_444, $donation->getAmountToDeductFractional());
-        $this->assertEquals(94_321, $donation->getAmountForCharityFractional());
+        // Deduct *only* the TBG tip / fee cover.
+        $this->assertEquals(4_444, $donation->getAmountToDeductFractional());
+        $this->assertEquals(98_765, $donation->getAmountForCharityFractional());
+        // £987.65 + £44.44 fee cover = £1,032.09.
+        $this->assertEquals(103_209, $donation->getAmountFractionalIncTip());
     }
 
     public function testStripeAmountForCharityWithTip(): void
@@ -451,9 +455,7 @@ class DonationRepositoryTest extends TestCase
 
         $settings = $this->getAppInstance()->getContainer()->get('settings');
         if ($vatLive) {
-            $settings['stripe']['fee']['vat_percentage_live'] = '20';
-            $settings['stripe']['fee']['vat_percentage_old'] = '0';
-            $settings['stripe']['fee']['vat_live_date'] = (new \DateTime())->format('c');
+            $settings = $this->getUKLikeVATSettings($settings);
         }
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);

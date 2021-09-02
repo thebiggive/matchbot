@@ -498,6 +498,12 @@ class Donation extends SalesforceWriteProxy
 
     #[Pure] public function getCharityFeeGross(): string
     {
+        if ($this->getCampaign()->getFeePercentage() > 0 && $this->getTipAmount() > 0) {
+            // When donor covers fees in a fixed fee campaign, the fee to the charity is nothing
+            // and only the fee amount for TBG should be deducted.
+            return '0.00';
+        }
+
         return bcadd($this->getCharityFee(), $this->getCharityFeeVat(), 2);
     }
 
