@@ -5,14 +5,21 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Fees;
 
 use MatchBot\Application\Fees\Calculator;
+use MatchBot\Tests\Application\VatTrait;
 use MatchBot\Tests\TestCase;
 
 class CalculatorTest extends TestCase
 {
+    use VatTrait;
+
     public function testStripeUKCardGBPDonation(): void
     {
+        $settingsWithVAT = $this->getUKLikeVATSettings(
+            $this->getAppInstance()->getContainer()->get('settings')
+        );
+
         $calculator = new Calculator(
-            $this->getAppInstance()->getContainer()->get('settings'),
+            $settingsWithVAT,
             'stripe',
             'visa',
             'GB',
@@ -23,6 +30,7 @@ class CalculatorTest extends TestCase
 
         // 1.5% + 20p
         $this->assertEquals('2.05', $calculator->getCoreFee());
+        $this->assertEquals('0.41', $calculator->getFeeVat());
     }
 
     public function testStripeUSCardGBPDonation(): void
@@ -73,10 +81,17 @@ class CalculatorTest extends TestCase
         $this->assertEquals('5.74', $calculator->getCoreFee());
     }
 
-    public function testZeroVatChargedForUsaCharity()
+    /**
+     * As per SEK but ensuring no fee VAT.
+     */
+    public function testStripeUSCardUSDDonation(): void
     {
+        $settingsWithVAT = $this->getUKLikeVATSettings(
+            $this->getAppInstance()->getContainer()->get('settings')
+        );
+
         $calculator = new Calculator(
-            $this->getAppInstance()->getContainer()->get('settings'),
+            $settingsWithVAT,
             'stripe',
             'visa',
             'US',
@@ -87,6 +102,29 @@ class CalculatorTest extends TestCase
         );
 
         $this->assertEquals('5.00', $calculator->getCoreFee());
-        $this->assertEquals('0', $calculator->getFeeVat());
+        $this->assertEquals('0.00', $calculator->getFeeVat());
+    }
+
+    public function testStripeUSCardUSDDonationWithFeeCover(): void
+    {
+        $settingsWithVAT = $this->getUKLikeVATSettings(
+            $this->getAppInstance()->getContainer()->get('settings')
+        );
+
+        $calculator = new Calculator(
+            $settingsWithVAT,
+            'stripe',
+            'visa',
+            'US',
+            '100',
+            'USD',
+            false,
+            5,
+            true,
+        );
+
+        // No fee to charity as the donor has paid it to TBG instead.
+        $this->assertEquals('0.00', $calculator->getCoreFee());
+        $this->assertEquals('0.00', $calculator->getFeeVat());
     }
 }
