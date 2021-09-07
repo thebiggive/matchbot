@@ -120,11 +120,13 @@ class CalculatorTest extends TestCase
             'USD',
             false,
             5,
-            true,
         );
 
-        // No fee to charity as the donor has paid it to TBG instead.
-        $this->assertEquals('0.00', $calculator->getCoreFee());
+        // We now record this as a fee to the charity which will be invoiced, without VAT,
+        // and the donor will be charged a higher amount. E.g. here the core donation is
+        // $100 and so that amount is passed to `Calculator`, but the donor card charge
+        // would be $105.
+        $this->assertEquals('5.00', $calculator->getCoreFee());
         $this->assertEquals('0.00', $calculator->getFeeVat());
     }
 }
