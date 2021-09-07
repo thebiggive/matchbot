@@ -8,6 +8,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
@@ -49,10 +50,21 @@ class StripePayoutHandler implements MessageHandlerInterface
         while ($hasMore) {
             // Get all balance transactions (`py_...`) related to the specific payout defined in
             // `$attributes`, scoping the lookup to the correct Connect account.
-            $balanceTransactions = $this->stripeClient->balanceTransactions->all(
-                $attributes,
-                ['stripe_account' => $connectAccountId],
-            );
+            try {
+                $balanceTransactions = $this->stripeClient->balanceTransactions->all(
+                    $attributes,
+                    ['stripe_account' => $connectAccountId],
+                );
+            } catch (ApiErrorException $exception) {
+                $this->logger->error(sprintf(
+                    'Stripe Balance Transaction lookup error for Payout ID %s, %s [%s]: %s',
+                    $payoutId,
+                    get_class($exception),
+                    $exception->getStripeCode(),
+                    $exception->getMessage(),
+                ));
+                break;
+            }
 
             foreach ($balanceTransactions->data as $balanceTransaction) {
                 $paidChargeIds[] = $balanceTransaction->source;
@@ -64,16 +76,32 @@ class StripePayoutHandler implements MessageHandlerInterface
             // We get a Stripe exception if we start this with a null or empty value,
             // so we only include this once we've iterated the first time and captured
             // a transaction Id.
-            if ($lastBalanceTransactionId !== null) {
-                $attributes['start_after'] = $lastBalanceTransactionId;
+            if ($hasMore && $lastBalanceTransactionId !== null) {
+                $attributes['starting_after'] = $lastBalanceTransactionId;
+
+                // We can probably reduce this to `debug()` level once we are 100% confident
+                // in the fix for MAT-181.
+                $this->logger->info(sprintf(
+                    'Stripe Balance Transaction for Payout ID %s will next use starting_after: %s',
+                    $payoutId,
+                    $lastBalanceTransactionId,
+                ));
             }
         }
         $this->logger->info(
-            sprintf('Payout: Getting all Connect account paid Charge IDs complete, found %s', count($paidChargeIds))
+            sprintf(
+                'Payout: Getting all Connect account paid Charge IDs for Payout ID %s complete, found %s',
+                $payoutId,
+                count($paidChargeIds),
+            )
         );
 
         if (count($paidChargeIds) === 0) {
-            $this->logger->info('Payout: Exited with no paid Charge IDs');
+            $this->logger->info(sprintf(
+                'Payout: Exited with no paid Charge IDs for Payout ID %s',
+                $payoutId,
+            ));
+
             return;
         }
 

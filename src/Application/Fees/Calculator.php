@@ -28,6 +28,7 @@ class Calculator
         private string $currencyCode,
         private bool $hasGiftAid,
         private ?float $feePercentageOverride = null,
+        private ?bool $donationHasTipOrFeeCover = false,
     ) {
         $this->pspFeeSettings = $settings[$psp]['fee'];
     }
@@ -64,8 +65,15 @@ class Calculator
                 );
             }
         } else {
-            // Alternative fixed % model. `$giftAidFee` and `$feeAmountFixed` remain zero.
-            $feeRatio = bcdiv((string)$this->feePercentageOverride, '100', 3);
+            if ($this->donationHasTipOrFeeCover) {
+                // Donor covers the fee and these funds go to TBG; so no further fee in the fixed %
+                // model – the charity gets 100% of what's left.
+                $feeRatio = '0';
+            } else {
+                // Alternative fixed % model without fee cover chosen.
+                // `$giftAidFee` and `$feeAmountFixed` remain zero.
+                $feeRatio = bcdiv((string)$this->feePercentageOverride, '100', 3);
+            }
         }
 
         // bcmath truncates values beyond the scale it's working at, so to get x.x% and round
@@ -85,12 +93,12 @@ class Calculator
     public function getFeeVat(): string
     {
         if (empty($this->pspFeeSettings['vat_live_date'])) {
-            return '0'; // VAT does not apply to the current PSP's fees.
+            return '0.00'; // VAT does not apply to the current PSP's fees.
         }
 
         $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
-        if ($currencyCode == "USD") {
-            return '0';
+        if ($currencyCode === 'USD') { // TODO consider rest of the world, see MAT-180.
+            return '0.00';
         }
 
         $switchDate = new \DateTime($this->pspFeeSettings['vat_live_date']);
