@@ -487,7 +487,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * Get core donation amount excluding any tip.
+     * Get core donation amount excluding any tip or fee cover.
      *
      * @return string   In full pounds GBP.
      */
@@ -506,12 +506,6 @@ class Donation extends SalesforceWriteProxy
 
     #[Pure] public function getCharityFeeGross(): string
     {
-        if ($this->getCampaign()->getFeePercentage() > 0 && $this->getTipAmount() > 0) {
-            // When donor covers fees in a fixed fee campaign, the fee to the charity is nothing
-            // and only the fee amount for TBG should be deducted.
-            return '0.00';
-        }
-
         return bcadd($this->getCharityFee(), $this->getCharityFeeVat(), 2);
     }
 
@@ -806,7 +800,10 @@ class Donation extends SalesforceWriteProxy
     public function getAmountForCharityFractional(): int
     {
         $amountFractional = (int) bcmul('100', $this->getAmount(), 2);
-        return $amountFractional - $this->getAmountToDeductFractional() + $this->getTipAmountFractional();
+        return $amountFractional +
+            $this->getFeeCoverAmountFractional() +
+            $this->getTipAmountFractional() -
+            $this->getAmountToDeductFractional();
     }
 
     /**
@@ -818,13 +815,24 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return int  Full amount, including any tip, in pence/cents/...
+     * @return int  Full amount, including any tip or fee cover, in pence/cents/...
      */
     public function getAmountFractionalIncTip(): int
     {
         $coreAmountFractional = (int) bcmul('100', $this->getAmount(), 2);
 
-        return $coreAmountFractional + $this->getTipAmountFractional();
+        return
+            $coreAmountFractional +
+            $this->getFeeCoverAmountFractional() +
+            $this->getTipAmountFractional();
+    }
+
+    /**
+     * @return int  In e.g. pence/cents/...
+     */
+    #[Pure] public function getFeeCoverAmountFractional(): int
+    {
+        return (int) bcmul('100', $this->getFeeCoverAmount(), 2);
     }
 
     /**

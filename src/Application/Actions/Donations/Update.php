@@ -123,11 +123,14 @@ class Update extends Action
             ), null, true);
         }
 
-        // These two fields are currently set up early in the journey, but are harmless and more flexible
+        // These 3 fields are currently set up early in the journey, but are harmless and more flexible
         // to support setting later. The frontend will probably leave these set and do a no-op update
         // when it makes the PUT call.
         if (isset($donationData->countryCode)) {
             $donation->setDonorCountryCode($donationData->countryCode);
+        }
+        if (isset($donationData->feeCoverAmount)) {
+            $donation->setFeeCoverAmount((string) $donationData->feeCoverAmount);
         }
         if (isset($donationData->tipAmount)) {
             $donation->setTipAmount((string) $donationData->tipAmount);
@@ -160,6 +163,7 @@ class Update extends Action
                     'currency' => strtolower($donation->getCurrencyCode()),
                     'metadata' => [
                         'coreDonationGiftAid' => $donation->hasGiftAid(),
+                        'feeCoverAmount' => $donation->getFeeCoverAmount(),
                         'matchedAmount' => $donation->getFundingWithdrawalTotal(),
                         'optInCharityEmail' => $donation->getCharityComms(),
                         'optInTbgEmail' => $donation->getTbgComms(),

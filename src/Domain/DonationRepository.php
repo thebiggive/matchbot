@@ -148,6 +148,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $donation->setDonorCountryCode($donationData->countryCode);
         }
 
+        if (isset($donationData->feeCoverAmount)) {
+            $donation->setFeeCoverAmount((string) $donationData->feeCoverAmount);
+        }
+
         if (isset($donationData->tipAmount)) {
             $donation->setTipAmount((string) $donationData->tipAmount);
         }
@@ -419,7 +423,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $donation->getCurrencyCode(),
             $donation->hasGiftAid() ?? false,
             $donation->getCampaign()->getFeePercentage(),
-            bccomp($donation->getTipAmount(), '0.00', 2) === 1,
         );
         $donation->setCharityFee($structure->getCoreFee());
         $donation->setCharityFeeVat($structure->getFeeVat());

@@ -28,7 +28,6 @@ class Calculator
         private string $currencyCode,
         private bool $hasGiftAid,
         private ?float $feePercentageOverride = null,
-        private ?bool $donationHasTipOrFeeCover = false,
     ) {
         $this->pspFeeSettings = $settings[$psp]['fee'];
     }
@@ -65,15 +64,8 @@ class Calculator
                 );
             }
         } else {
-            if ($this->donationHasTipOrFeeCover) {
-                // Donor covers the fee and these funds go to TBG; so no further fee in the fixed %
-                // model – the charity gets 100% of what's left.
-                $feeRatio = '0';
-            } else {
-                // Alternative fixed % model without fee cover chosen.
-                // `$giftAidFee` and `$feeAmountFixed` remain zero.
-                $feeRatio = bcdiv((string)$this->feePercentageOverride, '100', 3);
-            }
+            // Alternative fixed % model. `$giftAidFee` and `$feeAmountFixed` remain zero.
+            $feeRatio = bcdiv((string)$this->feePercentageOverride, '100', 3);
         }
 
         // bcmath truncates values beyond the scale it's working at, so to get x.x% and round

@@ -140,6 +140,7 @@ class Create extends Action
                         'charityName' => $donation->getCampaign()->getCharity()->getName(),
                         'donationId' => $donation->getUuid(),
                         'environment' => getenv('APP_ENV'),
+                        'feeCoverAmount' => $donation->getFeeCoverAmount(),
                         'matchedAmount' => $donation->getFundingWithdrawalTotal(),
                         'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
                         'stripeFeeRechargeNet' => $donation->getCharityFee(),
