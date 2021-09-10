@@ -318,6 +318,7 @@ class Donation extends SalesforceWriteProxy
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
             'emailAddress' => $this->getDonorEmailAddress(),
+            'feeCoverAmount' => (float) $this->getFeeCoverAmount(),
             'firstName' => $this->getDonorFirstName() === null
                 ? null
                 : substr($this->getDonorFirstName(), 0, 40), // fit within SF limit

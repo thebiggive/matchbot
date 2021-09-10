@@ -33,6 +33,28 @@ class CalculatorTest extends TestCase
         $this->assertEquals('0.41', $calculator->getFeeVat());
     }
 
+    public function testStripeUKCardGBPDonationWithFeeCover(): void
+    {
+        $settingsWithVAT = $this->getUKLikeVATSettings(
+            $this->getAppInstance()->getContainer()->get('settings')
+        );
+
+        $calculator = new Calculator(
+            $settingsWithVAT,
+            'stripe',
+            'visa',
+            'GB',
+            '123',
+            'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
+            false,
+            5, // 5% fee inc. 20% VAT.
+        );
+
+        // £6.15 fee covered, inc. VAT
+        $this->assertEquals('5.13', $calculator->getCoreFee());
+        $this->assertEquals('1.02', $calculator->getFeeVat());
+    }
+
     public function testStripeUSCardGBPDonation(): void
     {
         $calculator = new Calculator(
