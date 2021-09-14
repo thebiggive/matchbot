@@ -26,7 +26,8 @@ class Mat183Fix extends LockingCommand
     private static string $payoutId = 'po_1JPd8q4Fsxv9gTb66bdBPxOU';
     private static string $stripeAccountId = 'acct_1J3Iev4Fsxv9gTb6';
 
-    public function __construct(private RoutableMessageBus $bus) {
+    public function __construct(private RoutableMessageBus $bus)
+    {
         parent::__construct();
     }
 
