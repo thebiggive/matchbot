@@ -33,6 +33,28 @@ class CalculatorTest extends TestCase
         $this->assertEquals('0.41', $calculator->getFeeVat());
     }
 
+    public function testStripeUKCardGBPDonationWithFeeCover(): void
+    {
+        $settingsWithVAT = $this->getUKLikeVATSettings(
+            $this->getAppInstance()->getContainer()->get('settings')
+        );
+
+        $calculator = new Calculator(
+            $settingsWithVAT,
+            'stripe',
+            'visa',
+            'GB',
+            '123',
+            'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
+            false,
+            5, // 5% fee inc. 20% VAT.
+        );
+
+        // £6.15 fee covered, inc. VAT
+        $this->assertEquals('5.13', $calculator->getCoreFee());
+        $this->assertEquals('1.02', $calculator->getFeeVat());
+    }
+
     public function testStripeUSCardGBPDonation(): void
     {
         $calculator = new Calculator(
@@ -120,11 +142,13 @@ class CalculatorTest extends TestCase
             'USD',
             false,
             5,
-            true,
         );
 
-        // No fee to charity as the donor has paid it to TBG instead.
-        $this->assertEquals('0.00', $calculator->getCoreFee());
+        // We now record this as a fee to the charity which will be invoiced, without VAT,
+        // and the donor will be charged a higher amount. E.g. here the core donation is
+        // $100 and so that amount is passed to `Calculator`, but the donor card charge
+        // would be $105.
+        $this->assertEquals('5.00', $calculator->getCoreFee());
         $this->assertEquals('0.00', $calculator->getFeeVat());
     }
 }

@@ -28,7 +28,6 @@ class Calculator
         private string $currencyCode,
         private bool $hasGiftAid,
         private ?float $feePercentageOverride = null,
-        private ?bool $donationHasTipOrFeeCover = false,
     ) {
         $this->pspFeeSettings = $settings[$psp]['fee'];
     }
@@ -65,15 +64,17 @@ class Calculator
                 );
             }
         } else {
-            if ($this->donationHasTipOrFeeCover) {
-                // Donor covers the fee and these funds go to TBG; so no further fee in the fixed %
-                // model – the charity gets 100% of what's left.
-                $feeRatio = '0';
-            } else {
-                // Alternative fixed % model without fee cover chosen.
-                // `$giftAidFee` and `$feeAmountFixed` remain zero.
-                $feeRatio = bcdiv((string)$this->feePercentageOverride, '100', 3);
-            }
+            // Alternative fixed % model. `$giftAidFee` and `$feeAmountFixed` remain zero.
+            // Amount given is inclusive of any tax, so subtract it to get a net value.
+            $vatRatio = bcdiv($this->getFeeVatPercentage(), '100', 3);
+            $vatRatioPlusOne = bcadd('1', $vatRatio, 2);
+            $grossFeeRatio = bcdiv((string)$this->feePercentageOverride, '100', 3);
+
+            $feeRatioBeforeOffest = bcdiv($grossFeeRatio, $vatRatioPlusOne, 10);
+            // To get rounding correct (by standard accounting calculations), we need to 'round up'
+            // slightly so that e.g a ratio of 0.0416666666 (as resulting from UK 20% rate) becomes
+            // 0.0416666667.
+            $feeRatio = bcadd($feeRatioBeforeOffest, '0.0000000001', 10);
         }
 
         // bcmath truncates values beyond the scale it's working at, so to get x.x% and round
@@ -90,27 +91,42 @@ class Calculator
         );
     }
 
-    public function getFeeVat(): string
+    #[Pure] public function getFeeVat(): string
+    {
+        // We need to handle flat, inc-VAT fee logic differently to avoid rounding issues.
+        // In this case we work back from the core fee we've derived and subtract it to get
+        // the VAT amount. This is not necessarily the same result as adding the VAT % to
+        // the *rounded* net fee.
+        if ($this->feePercentageOverride) {
+            $grossFeeRatio = bcdiv((string)$this->feePercentageOverride, '100', 3);
+            $grossFeeAmount = $this->roundAmount(bcmul($this->amount, $grossFeeRatio, 3));
+
+            return bcsub($grossFeeAmount, $this->getCoreFee(), 2);
+        }
+
+        // Standard, non-flat-fee logic.
+        $vatRatio = bcdiv($this->getFeeVatPercentage(), '100', 3);
+
+        return $this->roundAmount(bcmul($vatRatio, $this->getCoreFee(), 3));
+    }
+
+    private function getFeeVatPercentage(): string
     {
         if (empty($this->pspFeeSettings['vat_live_date'])) {
-            return '0.00'; // VAT does not apply to the current PSP's fees.
+            return '0'; // VAT does not apply to the current PSP's fees.
         }
 
         $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
         if ($currencyCode === 'USD') { // TODO consider rest of the world, see MAT-180.
-            return '0.00';
+            return '0';
         }
 
         $switchDate = new \DateTime($this->pspFeeSettings['vat_live_date']);
         if (new \DateTime('now') >= $switchDate) {
-            $vatPercentage = $this->pspFeeSettings['vat_percentage_live'];
-        } else {
-            $vatPercentage = $this->pspFeeSettings['vat_percentage_old'];
+            return $this->pspFeeSettings['vat_percentage_live'];
         }
 
-        $vatRatio = bcdiv($vatPercentage, '100', 3);
-
-        return $this->roundAmount(bcmul($vatRatio, $this->getCoreFee(), 3));
+        return $this->pspFeeSettings['vat_percentage_old'];
     }
 
     /**

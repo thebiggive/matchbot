@@ -90,6 +90,10 @@
             "php matchbot-cli.php matchbot:handle-out-of-sync-funds fix"
         ],
         "matchbot:list-commands": "php matchbot-cli.php list",
+        "matchbot:mat-183-fix": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:mat-183-fix"
+        ],
         "matchbot:push-donations": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:push-donations"
@@ -113,7 +117,7 @@
         ],
         "messenger:consume": [
             "Composer\\Config::disableProcessTimeout",
-            "php matchbot-cli.php messenger:consume -vv --time-limit=300"
+            "php matchbot-cli.php messenger:consume -vv --time-limit=600"
         ],
         "start": "php -S localhost:8080 -t public",
         "test": "phpunit",

@@ -84,6 +84,10 @@ class DonationUpdate extends Action
         $donation->setTbgComms($donationData->optInTbgEmail);
         $donation->setTransactionId($donationData->transactionId);
 
+        if (isset($donationData->feeCoverAmount)) {
+            $donation->setTipAmount((string) $donationData->feeCoverAmount);
+        }
+
         if (isset($donationData->tipAmount)) {
             $donation->setTipAmount((string) $donationData->tipAmount);
         }
