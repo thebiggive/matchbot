@@ -61,10 +61,17 @@ EOT
                     // This is currently possible if a charity had a campaign already launchable
                     // before, but no longer meets the requirements to run it. Our Saleforce APIs
                     // will then 404 and no longer return current data for the campaign.
-                    $this->logger->error(sprintf(
-                        'Skipping unknown PRODUCTION campaign %s – charity inactive?',
-                        $campaign->getSalesforceId()
-                    ));
+                    if ($campaign->getEndDate() < new \DateTime()) {
+                        $this->logger->info(sprintf(
+                            'Skipping unknown PRODUCTION campaign %s whose end date had passed – charity inactive?',
+                            $campaign->getSalesforceId()
+                        ));
+                    } else {
+                        $this->logger->error(sprintf(
+                            'Skipping unknown PRODUCTION campaign %s – charity inactive?',
+                            $campaign->getSalesforceId()
+                        ));
+                    }
                 } else {
                     // Chances are a sandbox refresh has led to this campaign being deleted in the Salesforce sandbox.
                     $output->writeln('Skipping unknown sandbox campaign ' . $campaign->getSalesforceId());

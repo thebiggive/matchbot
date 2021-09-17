@@ -90,10 +90,6 @@
             "php matchbot-cli.php matchbot:handle-out-of-sync-funds fix"
         ],
         "matchbot:list-commands": "php matchbot-cli.php list",
-        "matchbot:mat-183-fix": [
-            "Composer\\Config::disableProcessTimeout",
-            "php matchbot-cli.php matchbot:mat-183-fix"
-        ],
         "matchbot:push-donations": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:push-donations"

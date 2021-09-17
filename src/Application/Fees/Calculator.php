@@ -32,7 +32,7 @@ class Calculator
         $this->pspFeeSettings = $settings[$psp]['fee'];
     }
 
-    #[Pure] public function getCoreFee(): string
+    public function getCoreFee(): string
     {
         $giftAidFee = '0.00';
         $feeAmountFixed = '0.00';
@@ -91,7 +91,7 @@ class Calculator
         );
     }
 
-    #[Pure] public function getFeeVat(): string
+    public function getFeeVat(): string
     {
         // We need to handle flat, inc-VAT fee logic differently to avoid rounding issues.
         // In this case we work back from the core fee we've derived and subtract it to get
@@ -117,7 +117,8 @@ class Calculator
         }
 
         $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
-        if ($currencyCode === 'USD') { // TODO consider rest of the world, see MAT-180.
+        $currenciesIncurringFeeVat = ['EUR', 'GBP'];
+        if (!in_array($currencyCode, $currenciesIncurringFeeVat, true)) {
             return '0';
         }
 

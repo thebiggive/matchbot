@@ -9,7 +9,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\LockingCommand;
-use MatchBot\Application\Commands\Mat183Fix;
 use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
@@ -48,7 +47,6 @@ $commands = [
         $psr11App->get(FundingWithdrawalRepository::class),
         $psr11App->get(Matching\Adapter::class)
     ),
-    new Mat183Fix($psr11App->get(RoutableMessageBus::class)),
     new PushDonations($psr11App->get(DonationRepository::class)),
     new ResetMatching($psr11App->get(CampaignFundingRepository::class), $psr11App->get(Matching\Adapter::class)),
     new RetrospectivelyMatch($psr11App->get(DonationRepository::class)),
