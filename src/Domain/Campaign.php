@@ -149,4 +149,12 @@ class Campaign extends SalesforceReadProxy
     {
         $this->feePercentage = $feePercentage;
     }
+
+    /**
+     * @return DateTime
+     */
+    public function getEndDate(): DateTime
+    {
+        return $this->endDate;
+    }
 }
