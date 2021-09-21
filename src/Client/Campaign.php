@@ -17,6 +17,11 @@ class Campaign extends Common
     {
         try {
             $response = $this->getHttpClient()->get("{$this->getSetting('campaign', 'baseUri')}/$id");
+
+            if (!json_decode($response->getBody()->getContents(), true)['ready']) {
+                // uncaught exception
+                throw new CampaignNotReadyException('Campaign not ready');
+            }
         } catch (RequestException $exception) {
             if ($exception->getResponse() && $exception->getResponse()->getStatusCode() === 404) {
                 throw new NotFoundException('Campaign not found'); // may be safely caught in sandboxes
