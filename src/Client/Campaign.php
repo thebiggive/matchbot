@@ -36,7 +36,7 @@ class Campaign extends Common
             if (!$campaignResponse['ready']) {
                 throw new NotFoundException('Campaign not ready');
             }
-        }   
+        }
 
         return $campaignResponse;
     }
