@@ -14,14 +14,14 @@ use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\Service\ChargeService;
+use Stripe\Service\PayoutService;
 use Stripe\Service\TransferService;
 use Stripe\StripeClient;
-use Symfony\Component\Messenger\Stamp\BusNameStamp;
-use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 
 class StripePayoutHandlerTest extends TestCase
 {
@@ -34,15 +34,9 @@ class StripePayoutHandlerTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $balanceTxnResponse = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_invalid.json'
-        );
-        $chargeResponse = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/py_invalid.json'
-        );
-        $transferResponse = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/tr_invalid.json'
-        );
+        $balanceTxnResponse = $this->getStripeHookMock('ApiResponse/bt_invalid');
+        $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_with_invalid');
+        $transferResponse = $this->getStripeHookMock('ApiResponse/tr_list_with_invalid');
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -61,9 +55,8 @@ class StripePayoutHandlerTest extends TestCase
             ->willReturn(json_decode($balanceTxnResponse));
 
         $stripeChargeProphecy = $this->prophesize(ChargeService::class);
-        $stripeChargeProphecy->retrieve(
-            'py_invalidId_123',
-            null,
+        $stripeChargeProphecy->all(
+            $this->getCommonCalloutArgs(),
             ['stripe_account' => 'acct_unitTest123'],
         )
             ->shouldBeCalledOnce()
@@ -71,7 +64,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $stripeTransferProphecy = $this->prophesize(TransferService::class);
         $stripeTransferProphecy
-            ->retrieve('tr_invalidId_123')
+            ->all($this->getCommonCalloutArgs())
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse));
 
@@ -90,18 +83,16 @@ class StripePayoutHandlerTest extends TestCase
             'Payout: Getting all Connect account paid Charge IDs for Payout ID po_externalId_123 complete, found 1'
         )
             ->shouldBeCalledOnce();
-        $loggerProphecy->info("Payout: Getting Transfer IDs related to payout's Charge IDs")
-            ->shouldBeCalledOnce();
-        $loggerProphecy->info('Payout: Finished getting Charge-related Transfer IDs, found 1')
-            ->shouldBeCalledOnce();
-        $loggerProphecy->info('Payout: Getting Charge Id from Transfer ID tr_invalidId_123')
+        $loggerProphecy->info("Payout: Getting original TBG charge IDs related to payout's Charge IDs")
             ->shouldBeCalledOnce();
         $loggerProphecy->info('Payout: Donation not found with Charge ID ch_invalidId_123')
+            ->shouldBeCalledOnce();
+        $loggerProphecy->info('Payout: Finished getting original Charge IDs, found 1')
             ->shouldBeCalledOnce();
         $loggerProphecy->info('Payout: Updating paid donations complete, persisted 0')
             ->shouldBeCalledOnce();
 
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy = $this->getStripeClient();
         $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
         $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
         $stripeClientProphecy->transfers = $stripeTransferProphecy->reveal();
@@ -135,15 +126,9 @@ class StripePayoutHandlerTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $balanceTxnsResponse = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_list_success.json'
-        );
-        $chargeResponse = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/py_success.json'
-        );
-        $transferResponse = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/tr_success.json'
-        );
+        $balanceTxnsResponse = $this->getStripeHookMock('ApiResponse/bt_list_success');
+        $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
+        $transferResponse = $this->getStripeHookMock('ApiResponse/tr_list_success');
         $donation = $this->getTestDonation();
 
         $donation->setDonationStatus('Failed');
@@ -165,9 +150,8 @@ class StripePayoutHandlerTest extends TestCase
             ->willReturn(json_decode($balanceTxnsResponse));
 
         $stripeChargeProphecy = $this->prophesize(ChargeService::class);
-        $stripeChargeProphecy->retrieve(
-            'py_externalId_123',
-            null,
+        $stripeChargeProphecy->all(
+            $this->getCommonCalloutArgs(),
             ['stripe_account' => 'acct_unitTest123'],
         )
             ->shouldBeCalledOnce()
@@ -175,7 +159,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $stripeTransferProphecy = $this->prophesize(TransferService::class);
         $stripeTransferProphecy
-            ->retrieve('tr_externalId_123')
+            ->all($this->getCommonCalloutArgs())
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse));
 
@@ -185,7 +169,7 @@ class StripePayoutHandlerTest extends TestCase
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy = $this->getStripeClient();
         $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
         $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
         $stripeClientProphecy->transfers = $stripeTransferProphecy->reveal();
@@ -219,15 +203,9 @@ class StripePayoutHandlerTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $balanceTxnsResponse = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_list_success.json'
-        );
-        $chargeResponse = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/py_success.json'
-        );
-        $transferResponse = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/tr_success.json'
-        );
+        $balanceTxnsResponse = $this->getStripeHookMock('ApiResponse/bt_list_success');
+        $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
+        $transferResponse = $this->getStripeHookMock('ApiResponse/tr_list_success');
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->all(
@@ -242,9 +220,8 @@ class StripePayoutHandlerTest extends TestCase
             ->willReturn(json_decode($balanceTxnsResponse));
 
         $stripeChargeProphecy = $this->prophesize(ChargeService::class);
-        $stripeChargeProphecy->retrieve(
-            'py_externalId_123',
-            null,
+        $stripeChargeProphecy->all(
+            $this->getCommonCalloutArgs(),
             ['stripe_account' => 'acct_unitTest123'],
         )
             ->shouldBeCalledOnce()
@@ -252,7 +229,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $stripeTransferProphecy = $this->prophesize(TransferService::class);
         $stripeTransferProphecy
-            ->retrieve('tr_externalId_123')
+            ->all($this->getCommonCalloutArgs())
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse));
 
@@ -271,7 +248,7 @@ class StripePayoutHandlerTest extends TestCase
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy = $this->getStripeClient();
         $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
         $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
         $stripeClientProphecy->transfers = $stripeTransferProphecy->reveal();
@@ -308,24 +285,12 @@ class StripePayoutHandlerTest extends TestCase
 
         // To keep test data manageable, this response contains just 1 txn even though
         // we request 100 per page and it `has_more`.
-        $balanceTxnsResponse1 = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_list_success_with_more.json'
-        );
-        $balanceTxnsResponse2 = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_list_success.json'
-        );
-        $chargeResponse1 = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/py_success_alt.json'
-        );
-        $chargeResponse2 = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/py_success.json'
-        );
-        $transferResponse1 = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/tr_success_alt.json'
-        );
-        $transferResponse2 = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/tr_success.json'
-        );
+        $balanceTxnsResponse1 = $this->getStripeHookMock('ApiResponse/bt_list_success_with_more');
+        $balanceTxnsResponse2 = $this->getStripeHookMock('ApiResponse/bt_list_success');
+        $chargeResponse1 = $this->getStripeHookMock('ApiResponse/ch_list_success_with_more');
+        $chargeResponse2 = $this->getStripeHookMock('ApiResponse/ch_list_success');
+        $transferResponse1 = $this->getStripeHookMock('ApiResponse/tr_list_success_with_more');
+        $transferResponse2 = $this->getStripeHookMock('ApiResponse/tr_list_success');
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->all(
@@ -351,16 +316,15 @@ class StripePayoutHandlerTest extends TestCase
             ->willReturn(json_decode($balanceTxnsResponse2));
 
         $stripeChargeProphecy = $this->prophesize(ChargeService::class);
-        $stripeChargeProphecy->retrieve(
-            'py_externalId_124',
-            null,
+        $stripeChargeProphecy->all(
+            $this->getCommonCalloutArgs(),
             ['stripe_account' => 'acct_unitTest123'],
         )
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($chargeResponse1));
-        $stripeChargeProphecy->retrieve(
-            'py_externalId_123',
-            null,
+
+        $stripeChargeProphecy->all(
+            array_merge($this->getCommonCalloutArgs(), ['starting_after' => 'ch_externalId_124']),
             ['stripe_account' => 'acct_unitTest123'],
         )
             ->shouldBeCalledOnce()
@@ -368,11 +332,11 @@ class StripePayoutHandlerTest extends TestCase
 
         $stripeTransferProphecy = $this->prophesize(TransferService::class);
         $stripeTransferProphecy
-            ->retrieve('tr_externalId_124')
+            ->all($this->getCommonCalloutArgs())
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse1));
         $stripeTransferProphecy
-            ->retrieve('tr_externalId_123')
+            ->all(array_merge($this->getCommonCalloutArgs(), ['starting_after' => 'tr_externalId_124']))
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse2));
 
@@ -395,7 +359,7 @@ class StripePayoutHandlerTest extends TestCase
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy = $this->getStripeClient();
         $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
         $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
         $stripeClientProphecy->transfers = $stripeTransferProphecy->reveal();
@@ -421,5 +385,38 @@ class StripePayoutHandlerTest extends TestCase
         // Ensure both donations looked up are now Paid.
         $this->assertEquals('Paid', $altDonation->getDonationStatus());
         $this->assertEquals('Paid', $donation->getDonationStatus());
+    }
+
+    /**
+     * Helper to return Prophecy of a Stripe client with its revealed prophesised properties that
+     * *don't* vary between scenarios already set up.
+     */
+    protected function getStripeClient(): StripeClient|ObjectProphecy
+    {
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+
+        $stripePayoutProphecy = $this->prophesize(PayoutService::class);
+        $stripePayoutProphecy->retrieve(
+            'po_externalId_123',
+            null,
+            ['stripe_account' => 'acct_unitTest123'],
+        )
+            ->shouldBeCalledOnce()
+            ->willReturn(json_decode($this->getStripeHookMock('ApiResponse/po')));
+
+        $stripeClientProphecy->payouts = $stripePayoutProphecy->reveal();
+
+        return $stripeClientProphecy;
+    }
+
+    protected function getCommonCalloutArgs(): array
+    {
+        return [
+            'created' => [ // Based on the date range from our standard test data payout (-22D, +1D).
+                'gt' => 1596634856,
+                'lt' => 1598622056
+            ],
+            'limit' => 100
+        ];
     }
 }

@@ -2,14 +2,18 @@
 
 namespace MatchBot\Application\Messenger\Handler;
 
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Stripe\Charge;
+use Stripe\Collection;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
+use Stripe\Transfer;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
 /**
@@ -31,6 +35,14 @@ class StripePayoutHandler implements MessageHandlerInterface
         $count = 0;
         $connectAccountId = $payout->getConnectAccountId();
         $payoutId = $payout->getPayoutId();
+
+        /** @var \Stripe\Payout $stripePayout */
+        $stripePayout = $this->stripeClient->payouts->retrieve(
+            $payoutId,
+            null,
+            ['stripe_account' => $connectAccountId],
+        );
+        $payoutCreated = (new DateTime())->setTimestamp($stripePayout->created);
 
         $this->logger->info(sprintf(
             'Payout: Getting all charges related to Payout ID %s for Connect account ID %s',
@@ -102,9 +114,7 @@ class StripePayoutHandler implements MessageHandlerInterface
             return;
         }
 
-        foreach ($this->getTransferIds($paidChargeIds, $connectAccountId) as $transferId) {
-            $chargeId = $this->getChargeId($transferId);
-
+        foreach ($this->getOriginalDonationChargeIds($paidChargeIds, $connectAccountId, $payoutCreated) as $chargeId) {
             /** @var Donation $donation */
             $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
 
@@ -152,41 +162,105 @@ class StripePayoutHandler implements MessageHandlerInterface
     }
 
     /**
-     * @param array $paidChargeIds  Transaction line (`py_...`) which is also a charge ID in this case.
-     * @param string $connectAccountId
-     * @return string[] Transfer IDs (`tr_...`)
+     * @param string[]  $paidChargeIds  Original charge IDs from balance txn lines.
+     * @param string    $connectAccountId
+     * @param DateTime  $payoutCreated
+     * @return string[] Origianl TBG Charge IDs (`ch_...`).
      */
-    private function getTransferIds(array $paidChargeIds, string $connectAccountId): array
-    {
-        $this->logger->info("Payout: Getting Transfer IDs related to payout's Charge IDs");
-        $transferIds = [];
+    private function getOriginalDonationChargeIds(
+        array $paidChargeIds,
+        string $connectAccountId,
+        DateTime $payoutCreated
+    ): array {
+        $this->logger->info("Payout: Getting original TBG charge IDs related to payout's Charge IDs");
 
-        foreach ($paidChargeIds as $chargeId) {
-            // Get charges (`ch_...`) related to the charity's Connect account and then get
-            // their corresponding transfers (`tr_...`).
-            $charge = $this->stripeClient->charges->retrieve(
-                $chargeId,
-                null,
+        $fromDate = clone $payoutCreated;
+        $toDate = clone $payoutCreated;
+
+        $fromDate->sub(new \DateInterval('P22D'));
+        $toDate->add(new \DateInterval('P1D'));
+
+        $createdConstraint = [
+            'gt' => $fromDate->getTimestamp(),
+            'lt' => $toDate->getTimestamp(),
+        ];
+
+        // Get charges (`ch_...`) related to the charity's Connect account and then get
+        // their corresponding transfers (`tr_...`).
+        $moreCharges = true;
+        $lastChargeId = null;
+        $sourceTransferIds = [];
+
+        $chargeListParams = [
+            'created' => $createdConstraint,
+            'limit' => 100,
+        ];
+
+        while ($moreCharges) {
+            /** @var Charge[]|Collection $charges */
+            $charges = $this->stripeClient->charges->all(
+                $chargeListParams,
                 ['stripe_account' => $connectAccountId],
             );
-            $transferIds[] = $charge->source_transfer;
+
+            foreach ($charges->data as $charge) {
+                $lastChargeId = $charge->id;
+
+                if (!in_array($charge->id, $paidChargeIds, true)) {
+                    continue;
+                }
+
+                $sourceTransferIds[] = $charge->source_transfer;
+            }
+
+            $moreCharges = $charges->has_more;
+
+            // We get a Stripe exception if we start this with a null or empty value,
+            // so we only include this once we've iterated the first time and captured
+            // a transaction Id.
+            if ($moreCharges && $lastChargeId !== null) {
+                $chargeListParams['starting_after'] = $lastChargeId;
+            }
+        }
+
+        $moreTransfers = true;
+        $lastTransferId = null;
+        $originalChargeIds = [];
+
+        $transferListParams = [
+            'created' => $createdConstraint,
+            'limit' => 100,
+        ];
+
+        while ($moreTransfers) {
+            // Not specifying `stripe-account` param will default the search to TBG's main account
+            /** @var Transfer[]|Collection $transfers */
+            $transfers = $this->stripeClient->transfers->all($transferListParams);
+
+            foreach ($transfers->data as $transfer) {
+                $lastTransferId = $transfer->id;
+
+                if (!in_array($transfer->id, $sourceTransferIds, true)) {
+                    continue;
+                }
+
+                $originalChargeIds[] = $transfer->source_transaction;
+            }
+
+            $moreTransfers = $transfers->has_more;
+
+            // We get a Stripe exception if we start this with a null or empty value,
+            // so we only include this once we've iterated the first time and captured
+            // a transaction Id.
+            if ($moreTransfers && $lastTransferId !== null) {
+                $transferListParams['starting_after'] = $lastTransferId;
+            }
         }
 
         $this->logger->info(
-            sprintf('Payout: Finished getting Charge-related Transfer IDs, found %s', count($transferIds))
-        );
-        return $transferIds;
-    }
-
-    private function getChargeId($transferId): string
-    {
-        $this->logger->info(sprintf('Payout: Getting Charge Id from Transfer ID %s', $transferId));
-
-        // Not specifying `stripe-account` param will default the search to TBG's main account
-        $transfer = $this->stripeClient->transfers->retrieve(
-            $transferId
+            sprintf('Payout: Finished getting original Charge IDs, found %s', count($originalChargeIds))
         );
 
-        return $transfer->source_transaction;
+        return $originalChargeIds;
     }
 }
