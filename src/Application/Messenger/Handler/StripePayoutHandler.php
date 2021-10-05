@@ -177,6 +177,8 @@ class StripePayoutHandler implements MessageHandlerInterface
         $fromDate = clone $payoutCreated;
         $toDate = clone $payoutCreated;
 
+        // We assume payouts close to the 2021 schedule of 2 week minimum offset – with a fixed day
+        // of the week for payouts making the maximum normal lag 21 days.
         $fromDate->sub(new \DateInterval('P22D'));
         $toDate->add(new \DateInterval('P1D'));
 
