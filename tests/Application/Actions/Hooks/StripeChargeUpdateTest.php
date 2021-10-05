@@ -25,7 +25,7 @@ class StripeChargeUpdateTest extends StripeTest
         $container = $app->getContainer();
 
         // Payment Intent events, including cancellations, return a 204 No Content no-op for now.
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_canceled.json');
+        $body = $this->getStripeHookMock('pi_canceled');
         $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
         $time = (string) time();
 
@@ -46,7 +46,7 @@ class StripeChargeUpdateTest extends StripeTest
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_invalid_id.json');
+        $body = $this->getStripeHookMock('ch_invalid_id');
         $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
         $time = (string) time();
 
@@ -75,8 +75,7 @@ class StripeChargeUpdateTest extends StripeTest
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_succeeded.json');
-
+        $body = $this->getStripeHookMock('ch_succeeded');
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -106,7 +105,7 @@ class StripeChargeUpdateTest extends StripeTest
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_succeeded.json');
+        $body = $this->getStripeHookMock('ch_succeeded');
         $donation = $this->getTestDonation();
         $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
         $time = (string) time();
@@ -124,9 +123,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
-        $balanceTxnResponse = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_success.json'
-        );
+        $balanceTxnResponse = $this->getStripeHookMock('ApiResponse/bt_success');
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->retrieve('txn_00000000000000')
             ->shouldBeCalledOnce()
@@ -155,8 +152,7 @@ class StripeChargeUpdateTest extends StripeTest
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_succeeded_sek.json');
-
+        $body = $this->getStripeHookMock('ch_succeeded_sek');
         $donation = $this->getTestDonation();
         $donation->setAmount('6000.00');
         $donation->setCurrencyCode('SEK');
@@ -177,9 +173,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
-        $balanceTxnResponse = file_get_contents(
-            dirname(__DIR__, 3) . '/TestData/StripeWebhook/ApiResponse/bt_success_sek.json'
-        );
+        $balanceTxnResponse = $this->getStripeHookMock('ApiResponse/bt_success_sek');
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->retrieve('txn_00000000000000')
             ->shouldBeCalledOnce()
@@ -208,7 +202,7 @@ class StripeChargeUpdateTest extends StripeTest
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_refunded.json');
+        $body = $this->getStripeHookMock('ch_refunded');
         $donation = $this->getTestDonation();
         $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
         $time = (string) time();
@@ -250,7 +244,7 @@ class StripeChargeUpdateTest extends StripeTest
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_tip_refunded.json');
+        $body = $this->getStripeHookMock('ch_tip_refunded');
         $donation = $this->getTestDonation();
         $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
         $time = (string) time();
@@ -292,7 +286,7 @@ class StripeChargeUpdateTest extends StripeTest
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_unsupported_partial_refund.json');
+        $body = $this->getStripeHookMock('ch_unsupported_partial_refund');
         $donation = $this->getTestDonation();
         $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
         $time = (string) time();

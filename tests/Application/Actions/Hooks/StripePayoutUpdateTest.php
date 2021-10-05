@@ -26,7 +26,7 @@ class StripePayoutUpdateTest extends StripeTest
         $container = $app->getContainer();
 
         // Payment Intent events, including cancellations, return a 204 No Content no-op for now.
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/pi_canceled.json');
+        $body = $this->getStripeHookMock('pi_canceled');
         $webhookSecret = $container->get('settings')['stripe']['connectAppWebhookSecret'];
         $time = (string) time();
 
@@ -47,7 +47,7 @@ class StripePayoutUpdateTest extends StripeTest
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/ch_succeeded.json');
+        $body = $this->getStripeHookMock('ch_succeeded');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -83,7 +83,7 @@ class StripePayoutUpdateTest extends StripeTest
             ->willThrow(TransportException::class);
         $container->set(TransportInterface::class, $transport->reveal());
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/po_paid.json');
+        $body = $this->getStripeHookMock('po_paid');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -107,7 +107,7 @@ class StripePayoutUpdateTest extends StripeTest
         $transport = new InMemoryTransport();
         $container->set(TransportInterface::class, $transport);
 
-        $body = file_get_contents(dirname(__DIR__, 3) . '/TestData/StripeWebhook/po_paid.json');
+        $body = $this->getStripeHookMock('po_paid');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
