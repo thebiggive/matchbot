@@ -22,7 +22,7 @@
       ],
       "net": 670,
       "reporting_category": "charge",
-      "source": "py_externalId_123",
+      "source": "ch_externalId_123",
       "status": "available",
       "type": "payment"
     }

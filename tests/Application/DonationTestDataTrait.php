@@ -9,6 +9,17 @@ use Ramsey\Uuid\Uuid;
 
 trait DonationTestDataTrait
 {
+    protected function getStripeHookMock(string $path): string
+    {
+        $fullPath = sprintf(
+            '%s/TestData/StripeWebhook/%s.json',
+            dirname(__DIR__),
+            $path,
+        );
+
+        return file_get_contents($fullPath);
+    }
+
     protected function getTestDonation(): Donation
     {
         $charity = new Charity();

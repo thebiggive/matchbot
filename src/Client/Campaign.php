@@ -26,6 +26,18 @@ class Campaign extends Common
             throw $exception;
         }
 
-        return json_decode($response->getBody()->getContents(), true);
+        $campaignResponse = json_decode($response->getBody()->getContents(), true);
+
+        // Check the 'ready' field is set before we check if it's false.
+        // Reason for this is if it's not set, we might still be interacting with an older
+        // version of our SF API, and in that case we do not want to exclude campaigns, as
+        // none of them will have the 'ready' field.
+        if (isset($campaignResponse['ready'])) {
+            if (!$campaignResponse['ready']) {
+                throw new NotFoundException('Campaign not ready');
+            }
+        }
+
+        return $campaignResponse;
     }
 }
