@@ -26,7 +26,7 @@ class Calculator
         private ?string $cardCountry,
         private string $amount,
         private string $currencyCode,
-        private bool $hasGiftAid,
+        private bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
         private ?float $feePercentageOverride = null,
     ) {
         $this->pspFeeSettings = $settings[$psp]['fee'];

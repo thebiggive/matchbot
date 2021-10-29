@@ -140,6 +140,7 @@ class Update extends Action
         // method every time they `addData()`.
         $donation->setGiftAid($donationData->giftAid);
         $donation->setTipGiftAid($donationData->tipGiftAid ?? $donationData->giftAid);
+        $donation->setTbgShouldProcessGiftAid($donation->getCampaign()->getCharity()->isTbgClaimingGiftAid());
         $donation->setDonorHomeAddressLine1($donationData->homeAddress);
         $donation->setDonorHomePostcode($donationData->homePostcode);
         $donation->setDonorFirstName($donationData->firstName);

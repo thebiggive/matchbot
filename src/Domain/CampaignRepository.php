@@ -10,6 +10,11 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
 class CampaignRepository extends SalesforceReadProxyRepository
 {
+    private static array $giftAidOnboardedStatuses = [
+        'Onboarded',
+        'Onboarded &amp; Data Sent to HMRC',
+    ];
+
     /**
      * Gets those campaigns which are live now or recently closed (in the last week),
      * based on their last known end time. This allows for campaigns to receive updates
@@ -60,6 +65,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $campaignData['charity']['name'],
             $campaignData['charity']['donateLinkId'],
             $campaignData['charity']['stripeAccountId'],
+            $campaignData['charity']['giftAidOnboardingStatus'],
+            $campaignData['charity']['hmrcReferenceNumber'],
         );
 
         $campaign->setCharity($charity);
@@ -86,7 +93,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
         string $salesforceCharityId,
         string $charityName,
         string $donateLinkId,
-        ?string $stripeAccountId
+        ?string $stripeAccountId,
+        ?string $giftAidOnboardingStatus,
+        ?string $hmrcReferenceNumber,
     ): Charity {
         $charity = $this->getEntityManager()
             ->getRepository(Charity::class)
@@ -98,6 +107,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charity->setDonateLinkId($donateLinkId);
         $charity->setName($charityName);
         $charity->setStripeAccountId($stripeAccountId);
+        $charity->setTbgClaimingGiftAid(in_array($giftAidOnboardingStatus, static::$giftAidOnboardedStatuses, true));
+        $charity->setHmrcReferenceNumber($hmrcReferenceNumber);
         $charity->setSalesforceLastPull(new DateTime('now'));
         $this->getEntityManager()->persist($charity);
 
