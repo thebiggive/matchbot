@@ -108,7 +108,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charity->setName($charityName);
         $charity->setStripeAccountId($stripeAccountId);
 
-        if (!empty($hmrcReferenceNumber) && in_array($giftAidOnboardingStatus, static::$giftAidOnboardedStatuses, true)) {
+        $tbgCanClaimGiftAid = (
+            !empty($hmrcReferenceNumber) &&
+            in_array($giftAidOnboardingStatus, static::$giftAidOnboardedStatuses, true)
+        );
+        if ($tbgCanClaimGiftAid) {
             $charity->setTbgClaimingGiftAid(true);
             $charity->setHmrcReferenceNumber($hmrcReferenceNumber);
         } else {
