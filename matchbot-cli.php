@@ -6,6 +6,7 @@ $psr11App = require __DIR__ . '/bootstrap.php';
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Commands\ClaimGiftAid;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\LockingCommand;
@@ -34,6 +35,10 @@ $messengerReceiverLocator = new Container();
 $messengerReceiverLocator->set($messengerReceiverKey, $psr11App->get(TransportInterface::class));
 
 $commands = [
+    new ClaimGiftAid(
+        $psr11App->get(DonationRepository::class),
+        $psr11App->get(RoutableMessageBus::class),
+    ),
     new ConsumeMessagesCommand(
         $psr11App->get(RoutableMessageBus::class),
         $messengerReceiverLocator,

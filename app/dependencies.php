@@ -13,8 +13,11 @@ use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Tools\Setup;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Messenger;
+use MatchBot\Application\Messenger\Handler\GiftAidErrorHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
+use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client;
 use Monolog\Handler\StreamHandler;
@@ -52,6 +55,18 @@ return function (ContainerBuilder $containerBuilder) {
             function (ContainerInterface $c): Auth\DonationPublicAuthMiddleware {
                 return new Auth\DonationPublicAuthMiddleware($c->get(LoggerInterface::class));
             },
+
+        ClaimBotTransport::class => static function (ContainerInterface $c): TransportInterface {
+            $transportFactory = new TransportFactory([
+                new AmazonSqsTransportFactory(),
+                new RedisTransportFactory(),
+            ]);
+            return $transportFactory->createTransport(
+                getenv('CLAIMBOT_MESSENGER_TRANSPORT_DSN'),
+                [],
+                new PhpSerializer(),
+            );
+        },
 
         Client\Campaign::class => function (ContainerInterface $c): Client\Campaign {
             return new Client\Campaign($c->get('settings'), $c->get(LoggerInterface::class));
@@ -100,11 +115,17 @@ return function (ContainerBuilder $containerBuilder) {
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {
             return new MessageBus([
                 new SendMessageMiddleware(new SendersLocator(
-                    [StripePayout::class => [TransportInterface::class]],
+                    [
+                        Messenger\Donation::class => [ClaimBotTransport::class],
+                        StripePayout::class => [TransportInterface::class],
+                    ],
                     $c,
                 )),
                 new HandleMessageMiddleware(new HandlersLocator(
-                    [StripePayout::class => [$c->get(StripePayoutHandler::class)]],
+                    [
+                        Messenger\Donation::class => [$c->get(GiftAidErrorHandler::class)],
+                        StripePayout::class => [$c->get(StripePayoutHandler::class)],
+                    ],
                 )),
             ]);
         },
@@ -180,6 +201,7 @@ return function (ContainerBuilder $containerBuilder) {
 
         RoutableMessageBus::class => static function (ContainerInterface $c): RoutableMessageBus {
             $busContainer = new Container();
+            $busContainer->set('claimbot.donation.claim', $c->get(MessageBusInterface::class));
             $busContainer->set('stripe.payout.paid', $c->get(MessageBusInterface::class));
 
             return new RoutableMessageBus($busContainer);

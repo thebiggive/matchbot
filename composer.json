@@ -77,6 +77,10 @@
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
         "lint:check": "phpcs --standard=phpcs.xml -s .",
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",
+        "matchbot:claim-gift-aid": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:claim-gift-aid"
+        ],
         "matchbot:expire-match-funds": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:expire-match-funds"
