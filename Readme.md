@@ -30,7 +30,7 @@ In advance of the first app run:
 
 To start the app and its dependencies (`db` and `redis`) locally:
 
-    docker-compose up -d
+    docker-compose up -d app
 
 ### First run
 
@@ -89,6 +89,19 @@ for locks. In the rare edge case where two processes do this near-simultaneously
 values, and a fund's balance drops below zero, the thread which last changed the value immediately 'knows' this happened
 from the return value and will reverse and re-try the operation based on the new state of play, just as quickly as the
 first attempt.
+
+### SQS
+
+In deployed environments, AWS Simple Queue Service is used to pick up
+messages for delayed processing – MatchBot needs to handle messages for Stripe
+payout paid webhooks, which take some time to process, and for failed Gift Aid
+claim attempts from ClaimBot.
+
+Additionally, it *publishes* messages to ClaimBot's separate queue for newly-claimable donations.
+
+Locally, Redis is used for queues instead. The `MESSENGER_TRANSPORT_DSN` and
+`CLAIMBOT_MESSENGER_TRANSPORT_DSN` env vars determine the queue configuration
+for Symfony Messenger.
 
 ## Scripts and Docker
 
