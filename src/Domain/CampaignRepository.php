@@ -107,8 +107,19 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charity->setDonateLinkId($donateLinkId);
         $charity->setName($charityName);
         $charity->setStripeAccountId($stripeAccountId);
-        $charity->setTbgClaimingGiftAid(in_array($giftAidOnboardingStatus, static::$giftAidOnboardedStatuses, true));
-        $charity->setHmrcReferenceNumber($hmrcReferenceNumber);
+
+        $tbgCanClaimGiftAid = (
+            !empty($hmrcReferenceNumber) &&
+            in_array($giftAidOnboardingStatus, static::$giftAidOnboardedStatuses, true)
+        );
+        if ($tbgCanClaimGiftAid) {
+            $charity->setTbgClaimingGiftAid(true);
+            $charity->setHmrcReferenceNumber($hmrcReferenceNumber);
+        } else {
+            $charity->setTbgClaimingGiftAid(false);
+            $charity->setHmrcReferenceNumber(null);
+        }
+
         $charity->setSalesforceLastPull(new DateTime('now'));
         $this->getEntityManager()->persist($charity);
 

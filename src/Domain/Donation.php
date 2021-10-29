@@ -80,10 +80,10 @@ class Donation extends SalesforceWriteProxy
     protected string $psp;
 
     /**
-     * @ORM\Column(type="datetime")
-     * @var DateTime    When the donation first moved to status Collected, i.e. the donor finished paying.
+     * @ORM\Column(type="datetime", nullable=true)
+     * @var ?DateTime    When the donation first moved to status Collected, i.e. the donor finished paying.
      */
-    protected DateTime $collectedAt;
+    protected ?DateTime $collectedAt;
 
     /**
      * @ORM\Column(type="string", nullable=true)
