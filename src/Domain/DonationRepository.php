@@ -387,6 +387,27 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * @return Donation[]
      */
+    public function findReadyToClaimGiftAid(): array
+    {
+        $cutoff = (new DateTime('now'))->sub(new \DateInterval('P14D'));
+
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('d')
+            ->from(Donation::class, 'd')
+            ->innerJoin(Charity::class, 'c')
+            ->where('d.donationStatus = :payGiftAidWithStatus')
+            ->andWhere('d.tbgShouldProcessGiftAid = TRUE')
+            ->andWhere('d.tbgGiftAidRequestQueuedAt IS NULL')
+            ->andWhere('d.createdAt < :payGiftAidForDonationsAfter')
+            ->setParameter('expireWithStatus', 'Paid')
+            ->setParameter('payGiftAidForDonationsAfter', $cutoff);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @return Donation[]
+     */
     public function findRecentNotFullyMatchedToMatchCampaigns(DateTime $sinceDate): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder()
@@ -414,6 +435,11 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): Donation
     {
+        $incursGiftAidFee = (
+            $donation->hasGiftAid() &&
+            ($donation->getPsp() === 'enthuse' || $donation->hasTbgShouldProcessGiftAid())
+        );
+
         $structure = new Calculator(
             $this->settings,
             $donation->getPsp(),
@@ -421,7 +447,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $cardCountry,
             $donation->getAmount(),
             $donation->getCurrencyCode(),
-            $donation->hasGiftAid() ?? false,
+            $incursGiftAidFee,
             $donation->getCampaign()->getFeePercentage(),
         );
         $donation->setCharityFee($structure->getCoreFee());

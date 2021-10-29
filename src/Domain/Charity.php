@@ -36,6 +36,18 @@ class Charity extends SalesforceReadProxy
     protected ?string $stripeAccountId = null;
 
     /**
+     * @ORM\Column(type="string", length=7, unique=true, nullable=true)
+     * @var ?string
+     */
+    protected ?string $hmrcReferenceNumber = null;
+
+    /**
+     * @ORM\Column(type="boolean")
+     * @var bool    Whether the charity's Gift Aid is currently to be claimed by the Big Give.
+     */
+    protected bool $tbgClaimingGiftAid = false;
+
+    /**
      * @param string $name
      */
     public function setName(string $name): void
@@ -75,5 +87,37 @@ class Charity extends SalesforceReadProxy
     public function setStripeAccountId(?string $stripeAccountId): void
     {
         $this->stripeAccountId = $stripeAccountId;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isTbgClaimingGiftAid(): bool
+    {
+        return $this->tbgClaimingGiftAid;
+    }
+
+    /**
+     * @param bool $tbgClaimingGiftAid
+     */
+    public function setTbgClaimingGiftAid(bool $tbgClaimingGiftAid): void
+    {
+        $this->tbgClaimingGiftAid = $tbgClaimingGiftAid;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getHmrcReferenceNumber(): ?string
+    {
+        return $this->hmrcReferenceNumber;
+    }
+
+    /**
+     * @param string|null $hmrcReferenceNumber
+     */
+    public function setHmrcReferenceNumber(?string $hmrcReferenceNumber): void
+    {
+        $this->hmrcReferenceNumber = $hmrcReferenceNumber;
     }
 }
