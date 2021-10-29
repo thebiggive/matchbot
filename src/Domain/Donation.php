@@ -960,7 +960,9 @@ class Donation extends SalesforceWriteProxy
         $donationMessage->title = '';
         $donationMessage->first_name = $this->donorFirstName;
         $donationMessage->last_name = $this->donorLastName;
-        $donationMessage->house_no = $this->donorHomeAddressLine1; // todo simplify
+        // MAT-192 will cover passing and storing this separately. For now, a pattern match should
+        // give reasonable 'house number' values.
+        $donationMessage->house_no = preg_replace('/^([0-9a-z-]+).*$/i', '$1', $this->donorHomeAddressLine1);
         $donationMessage->postcode = $this->donorHomePostcode;
         $donationMessage->amount = (float) $this->amount;
 
