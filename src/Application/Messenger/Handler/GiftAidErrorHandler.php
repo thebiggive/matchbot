@@ -12,7 +12,8 @@ class GiftAidErrorHandler
     public function __construct(
         private DonationRepository $donationRepository,
         private EntityManagerInterface $entityManager,
-    ) {}
+    ) {
+    }
 
     public function __invoke(Messenger\Donation $donationMessage): void
     {
