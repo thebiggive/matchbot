@@ -71,6 +71,22 @@ class CalculatorTest extends TestCase
         $this->assertEquals('4.14', $calculator->getCoreFee());
     }
 
+    public function testStripeUSCardGBPDonationWithTbgClaimingGiftAid(): void
+    {
+        $calculator = new Calculator(
+            $this->getAppInstance()->getContainer()->get('settings'),
+            'stripe',
+            'visa',
+            'US',
+            '100',
+            'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
+            true,
+        );
+
+        // 3.2% + 20p + 0.75% (net)
+        $this->assertEquals('4.15', $calculator->getCoreFee());
+    }
+
     public function testStripeUKCardSEKDonation(): void
     {
         $calculator = new Calculator(

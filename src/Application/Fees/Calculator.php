@@ -57,8 +57,9 @@ class Calculator
             }
 
             if ($this->hasGiftAid) {
+                // 4 points needed to handle overall percentages of GA fee like 0.75% == 0.0075 ratio.
                 $giftAidFee = bcmul(
-                    bcdiv($this->pspFeeSettings['gift_aid_percentage'], '100', 3),
+                    bcdiv($this->pspFeeSettings['gift_aid_percentage'], '100', 4),
                     $this->amount,
                     3,
                 );
