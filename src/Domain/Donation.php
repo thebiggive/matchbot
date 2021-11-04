@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use DateTime;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Messenger;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -76,6 +78,12 @@ class Donation extends SalesforceWriteProxy
      * @var string  Which Payment Service Provider (PSP) is expected to (or did) process the donation.
      */
     protected string $psp;
+
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     * @var ?DateTime    When the donation first moved to status Collected, i.e. the donor finished paying.
+     */
+    protected ?DateTime $collectedAt;
 
     /**
      * @ORM\Column(type="string", nullable=true)
@@ -243,6 +251,24 @@ class Donation extends SalesforceWriteProxy
     protected ?bool $tipGiftAid = null;
 
     /**
+     * @ORM\Column(type="boolean", nullable=true)
+     * @var bool    Whether any Gift Aid claim should be made by the Big Give as an agent.
+     */
+    protected ?bool $tbgShouldProcessGiftAid = null;
+
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     * @var ?DateTime   When a queued message that should lead to a Gift Aid claim was sent.
+     */
+    protected ?DateTime $tbgGiftAidRequestQueuedAt = null;
+
+    /**
+     * @ORM\Column(type="boolean", nullable=true)
+     * @var ?DateTime   When a claim submission attempt was detected to have an error returned.
+     */
+    protected ?DateTime $tbgGiftAidRequestFailedAt = null;
+
+    /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
      * @var ArrayCollection|FundingWithdrawal[]
      */
@@ -374,6 +400,8 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @param string $donationStatus
+     *
+     * Also sets $collectedAt as a side effect when appropriate.
      */
     public function setDonationStatus(string $donationStatus): void
     {
@@ -382,6 +410,10 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->donationStatus = $donationStatus;
+
+        if ($donationStatus === 'Collected') {
+            $this->collectedAt = new \DateTime('now');
+        }
     }
 
     /**
@@ -844,11 +876,6 @@ class Donation extends SalesforceWriteProxy
         return (int) bcmul('100', $this->getTipAmount(), 2);
     }
 
-    public function hasEnoughDataForSalesforce(): bool
-    {
-        return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
-    }
-
     /**
      * @return string
      */
@@ -870,5 +897,77 @@ class Donation extends SalesforceWriteProxy
     public function setCurrencyCode(string $currencyCode): void
     {
         $this->currencyCode = $currencyCode;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasTbgShouldProcessGiftAid(): ?bool
+    {
+        return $this->tbgShouldProcessGiftAid;
+    }
+
+    /**
+     * @param bool $tbgShouldProcessGiftAid
+     */
+    public function setTbgShouldProcessGiftAid(?bool $tbgShouldProcessGiftAid): void
+    {
+        $this->tbgShouldProcessGiftAid = $tbgShouldProcessGiftAid;
+    }
+
+    /**
+     * @return DateTime|null
+     */
+    public function getTbgGiftAidRequestQueuedAt(): ?DateTime
+    {
+        return $this->tbgGiftAidRequestQueuedAt;
+    }
+
+    /**
+     * @param DateTime|null $tbgGiftAidRequestQueuedAt
+     */
+    public function setTbgGiftAidRequestQueuedAt(?DateTime $tbgGiftAidRequestQueuedAt): void
+    {
+        $this->tbgGiftAidRequestQueuedAt = $tbgGiftAidRequestQueuedAt;
+    }
+
+    /**
+     * @return DateTime|null
+     */
+    public function getTbgGiftAidRequestFailedAt(): ?DateTime
+    {
+        return $this->tbgGiftAidRequestFailedAt;
+    }
+
+    /**
+     * @param DateTime|null $tbgGiftAidRequestFailedAt
+     */
+    public function setTbgGiftAidRequestFailedAt(?DateTime $tbgGiftAidRequestFailedAt): void
+    {
+        $this->tbgGiftAidRequestFailedAt = $tbgGiftAidRequestFailedAt;
+    }
+
+    public function hasEnoughDataForSalesforce(): bool
+    {
+        return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
+    }
+
+    public function toClaimBotModel(): Messenger\Donation
+    {
+        $donationMessage = new Messenger\Donation();
+        $donationMessage->id = $this->uuid->toString();
+        $donationMessage->donation_date = $this->collectedAt->format('Y-m-d');
+        $donationMessage->title = '';
+        $donationMessage->first_name = $this->donorFirstName;
+        $donationMessage->last_name = $this->donorLastName;
+        // MAT-192 will cover passing and storing this separately. For now, a pattern match should
+        // give reasonable 'house number' values.
+        $donationMessage->house_no = preg_replace('/^([0-9a-z-]+).*$/i', '$1', $this->donorHomeAddressLine1);
+        $donationMessage->postcode = $this->donorHomePostcode;
+        $donationMessage->amount = (float) $this->amount;
+
+        $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber();
+
+        return $donationMessage;
     }
 }
