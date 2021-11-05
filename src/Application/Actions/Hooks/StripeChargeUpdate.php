@@ -77,9 +77,16 @@ class StripeChargeUpdate extends Stripe
         if ($event->data->object->status === 'succeeded') {
             $donation->setChargeId($event->data->object->id);
             $donation->setDonationStatus('Collected');
-            $donation->setOriginalPspFeeFractional(
-                $this->getOriginalFeeFractional($event->data->object->balance_transaction, $donation->getCurrencyCode())
-            );
+
+            // To give *simulated* webhooks, for Donation API-only load tests, an easy way to complete
+            // without crashing, we support skipping the original fee derivation by omitting
+            // `balance_transaction`. Real stripe charge.succeeded webhooks should always have
+            // an associated Balance Transaction.
+            if (!empty($event->data->object->balance_transaction)) {
+                $donation->setOriginalPspFeeFractional(
+                    $this->getOriginalFeeFractional($event->data->object->balance_transaction, $donation->getCurrencyCode())
+                );
+            }
         } else {
             return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
         }
