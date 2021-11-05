@@ -83,9 +83,11 @@ class StripeChargeUpdate extends Stripe
             // `balance_transaction`. Real stripe charge.succeeded webhooks should always have
             // an associated Balance Transaction.
             if (!empty($event->data->object->balance_transaction)) {
-                $donation->setOriginalPspFeeFractional(
-                    $this->getOriginalFeeFractional($event->data->object->balance_transaction, $donation->getCurrencyCode())
+                $originalFeeFractional = $this->getOriginalFeeFractional(
+                    $event->data->object->balance_transaction,
+                    $donation->getCurrencyCode(),
                 );
+                $donation->setOriginalPspFeeFractional($originalFeeFractional);
             }
         } else {
             return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
