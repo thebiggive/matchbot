@@ -6,6 +6,7 @@ namespace MatchBot\Client;
 
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Domain\Donation as DonationModel;
+use MatchBot\Domain\DonationRepository;
 
 class Donation extends Common
 {
@@ -93,6 +94,29 @@ class Donation extends Common
             // log. In production, 404s should not happen and so we continue to `return false` which
             // will lead the caller to log an error.
             if ($ex->getCode() === 404 && getenv('APP_ENV') !== 'production') {
+                throw new NotFoundException();
+            }
+
+            $sandboxMissingLinkedResource = (
+                $ex->getCode() === 400 &&
+                getenv('APP_ENV') !== 'production' &&
+                str_contains($ex->getMessage(), '"entity is deleted"')
+            );
+            if ($sandboxMissingLinkedResource) {
+                /**
+                 * The exception we throw here still takes the donation out of the push queue permenantly
+                 * – {@see DonationRepository::doUpdate()} – but as this case is not as well
+                 * understood, we also log a one time high severity error so we are better able to
+                 * monitor these cases and try to understand what is happening in sandboxes that hit
+                 * this edge case.
+                 */
+                $this->logger->error(sprintf(
+                    'Donation update skipped due to missing sandbox resource. Exception %s: %s. Body: %s',
+                    get_class($ex),
+                    $ex->getMessage(),
+                    $ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A',
+                ));
+
                 throw new NotFoundException();
             }
 
