@@ -93,7 +93,8 @@ class DonationTest extends TestCase
 
         $nowInYmd = date('Y-m-d');
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $claimBotMessage->id); // UUID
-        $this->assertEquals($nowInYmd, $claimBotMessage->donation_date); // collectedAt is set by `setDonationStatus('Collected')`
+        // collectedAt is set by `setDonationStatus('Collected')`
+        $this->assertEquals($nowInYmd, $claimBotMessage->donation_date);
         $this->assertEquals('', $claimBotMessage->title);
         $this->assertEquals('John', $claimBotMessage->first_name);
         $this->assertEquals('Doe', $claimBotMessage->last_name);
