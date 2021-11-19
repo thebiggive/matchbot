@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Donation;
+use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 
 class DonationTest extends TestCase
 {
+    use DonationTestDataTrait;
+
     public function testBasicsAsExpectedOnInstantion(): void
     {
         $donation = new Donation();
@@ -76,5 +79,28 @@ class DonationTest extends TestCase
         $donation->setOriginalPspFeeFractional(123);
 
         $this->assertEquals('1.23', $donation->getOriginalPspFee());
+    }
+
+    public function testToClaimBotModel(): void
+    {
+        $donation = $this->getTestDonation();
+
+        $donation->getCampaign()->getCharity()->setTbgClaimingGiftAid(true);
+        $donation->getCampaign()->getCharity()->setHmrcReferenceNumber('AB12345');
+        $donation->setTbgShouldProcessGiftAid(true);
+
+        $claimBotMessage = $donation->toClaimBotModel();
+
+        $nowInYmd = date('Y-m-d');
+        $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $claimBotMessage->id); // UUID
+        // collectedAt is set by `setDonationStatus('Collected')`
+        $this->assertEquals($nowInYmd, $claimBotMessage->donation_date);
+        $this->assertEquals('', $claimBotMessage->title);
+        $this->assertEquals('John', $claimBotMessage->first_name);
+        $this->assertEquals('Doe', $claimBotMessage->last_name);
+        $this->assertEquals('1', $claimBotMessage->house_no);
+        $this->assertEquals('N1 1AA', $claimBotMessage->postcode);
+        $this->assertEquals(123.45, $claimBotMessage->amount);
+        $this->assertEquals('AB12345', $claimBotMessage->org_hmrc_ref);
     }
 }
