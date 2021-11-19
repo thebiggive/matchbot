@@ -339,6 +339,26 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals(97_264, $donation->getAmountForCharityFractional());
     }
 
+    public function testStripeAmountForCharityWithoutTipWhenTbgClaimingGiftAid(): void
+    {
+        $donation = $this->getTestDonation();
+        $donation->setTbgShouldProcessGiftAid(true);
+        $donation->setAmount('987.65');
+        $donation->setCurrencyCode('GBP');
+        $donation->setPsp('stripe');
+        $donation->setTipAmount('0.00');
+        $donation = $this->getRepo()->deriveFees($donation);
+
+        // £987.65 *  1.5%  = £ 14.81 (to 2 d.p.)
+        // Fixed fee        = £  0.20
+        // £987.65 * 0.75%  = £  7.41 (3% of Gift Aid amount)
+        // Total fee        = £ 22.42
+        // Amount after fee = £965.23
+
+        $this->assertEquals(2_242, $donation->getAmountToDeductFractional());
+        $this->assertEquals(96_523, $donation->getAmountForCharityFractional());
+    }
+
     public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
     {
         $donation = $this->getTestDonation();
