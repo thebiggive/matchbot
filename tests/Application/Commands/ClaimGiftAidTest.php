@@ -6,7 +6,6 @@ namespace MatchBot\Tests\Application\Commands;
 
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Commands\ClaimGiftAid;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
