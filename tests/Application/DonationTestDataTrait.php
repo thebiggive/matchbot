@@ -47,6 +47,8 @@ trait DonationTestDataTrait
         $donation->setDonorFirstName('John');
         $donation->setDonorLastName('Doe');
         $donation->setDonorBillingAddress('1 Main St, London N1 1AA');
+        $donation->setDonorHomeAddressLine1('1 Main St, London'); // Frontend typically includes town for now
+        $donation->setDonorHomePostcode('N1 1AA');
         $donation->setGiftAid(true);
         $donation->setPsp('stripe');
         $donation->setSalesforceId('sfDonation369');

@@ -35,12 +35,14 @@ class ClaimGiftAid extends LockingCommand
     {
         $toClaim = $this->donationRepository->findReadyToClaimGiftAid();
 
-        foreach ($toClaim as $donation) {
-            $stamps = [
-                new BusNameStamp('claimbot.donation.claim'),
-                new TransportMessageIdStamp("claimbot.donation.claim.{$donation->getUuid()}"),
-            ];
-            $this->bus->dispatch(new Envelope($donation->toClaimBotModel(), $stamps));
+        if (count($toClaim) > 0) {
+            foreach ($toClaim as $donation) {
+                $stamps = [
+                    new BusNameStamp('claimbot.donation.claim'),
+                    new TransportMessageIdStamp("claimbot.donation.claim.{$donation->getUuid()}"),
+                ];
+                $this->bus->dispatch(new Envelope($donation->toClaimBotModel(), $stamps));
+            }
         }
 
         $numberSent = count($toClaim);
