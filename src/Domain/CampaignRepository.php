@@ -12,7 +12,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 {
     private static array $giftAidOnboardedStatuses = [
         'Onboarded',
-        'Onboarded &amp; Data Sent to HMRC',
+        'Onboarded & Data Sent to HMRC',
     ];
 
     /**
