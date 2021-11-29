@@ -7,6 +7,7 @@ namespace MatchBot\Application\Commands;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use GuzzleHttp\Exception\TransferException;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -78,6 +79,14 @@ EOT
                 }
             } catch (DomainCurrencyMustNotChangeException $exception) {
                 $output->writeln('Skipping invalid currency change campaign ' . $campaign->getSalesforceId());
+            } catch (TransferException $exception) {
+                $transferError = sprintf(
+                    'Skipping campaign %s due to transfer error "%s"',
+                    $campaign->getSalesforceId(),
+                    $exception->getMessage(),
+                );
+                $output->writeln($transferError);
+                $this->logger->error($transferError);
             }
         }
 
