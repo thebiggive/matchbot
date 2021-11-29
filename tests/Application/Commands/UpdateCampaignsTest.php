@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Psr7\Request;
 use MatchBot\Application\Commands\UpdateCampaigns;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
@@ -82,6 +84,47 @@ class UpdateCampaignsTest extends TestCase
         $expectedOutputLines = [
             'matchbot:update-campaigns starting!',
             'Skipping unknown sandbox campaign missingOnSfCampaignId',
+            'matchbot:update-campaigns complete!',
+        ];
+        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
+    }
+
+    public function testSingleUpdateHitsTransferException(): void
+    {
+        // Subclass of Guzzle TransferException
+        $exception = new RequestException(
+            'dummy exc message',
+            new Request('get', 'https://example.com'),
+        );
+
+        $campaign = new Campaign();
+        $campaign->setSalesforceId('someCampaignId');
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->findRecentAndLive()
+            ->willReturn([$campaign])
+            ->shouldBeCalledOnce();
+        $campaignRepoProphecy->pull($campaign)
+            ->willThrow($exception)
+            ->shouldBeCalledOnce();
+
+        $fundRepoProphecy = $this->prophesize(FundRepository::class);
+        $fundRepoProphecy->pullForCampaign($campaign)->shouldNotBeCalled(); // Exception reached before this call
+
+        $command = new UpdateCampaigns(
+            $campaignRepoProphecy->reveal(),
+            $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
+            $fundRepoProphecy->reveal(),
+            new NullLogger(),
+        );
+        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+
+        $commandTester = new CommandTester($command);
+        $commandTester->execute([]);
+
+        $expectedOutputLines = [
+            'matchbot:update-campaigns starting!',
+            'Skipping campaign someCampaignId due to transfer error "dummy exc message"',
             'matchbot:update-campaigns complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());

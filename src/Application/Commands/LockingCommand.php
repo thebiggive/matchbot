@@ -9,6 +9,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
 
+/**
+ * Base class for Commands which should be protected against overlapping runs of the same Command
+ * name, for 30 minutes.
+ */
 abstract class LockingCommand extends Command
 {
     private LockFactory $lockFactory;
