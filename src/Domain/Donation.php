@@ -345,13 +345,11 @@ class Donation extends SalesforceWriteProxy
             'donationMatched' => $this->getCampaign()->isMatched(),
             'emailAddress' => $this->getDonorEmailAddress(),
             'feeCoverAmount' => (float) $this->getFeeCoverAmount(),
-            'firstName' => $this->getDonorFirstName() === null
-                ? null
-                : substr($this->getDonorFirstName(), 0, 40), // fit within SF limit
+            'firstName' => $this->getDonorFirstName(true),
             'giftAid' => $this->hasGiftAid(),
             'homeAddress' => $this->getDonorHomeAddressLine1(),
             'homePostcode' => $this->getDonorHomePostcode(),
-            'lastName' => $this->getDonorLastName(),
+            'lastName' => $this->getDonorLastName(true),
             'matchedAmount' => $this->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0,
             'matchReservedAmount' => 0,
             'optInCharityEmail' => $this->getCharityComms(),
@@ -462,9 +460,15 @@ class Donation extends SalesforceWriteProxy
         $this->championComms = $championComms;
     }
 
-    public function getDonorFirstName(): ?string
+    public function getDonorFirstName(bool $salesforceSafe = false): ?string
     {
-        return $this->donorFirstName;
+        $firstName = $this->donorFirstName;
+
+        if ($salesforceSafe) {
+            $firstName = $this->makeSalesforceSafe($firstName, false);
+        }
+
+        return $firstName;
     }
 
     public function setDonorFirstName(?string $donorFirstName): void
@@ -472,9 +476,15 @@ class Donation extends SalesforceWriteProxy
         $this->donorFirstName = $donorFirstName;
     }
 
-    public function getDonorLastName(): ?string
+    public function getDonorLastName(bool $salesforceSafe = false): ?string
     {
-        return $this->donorLastName;
+        $lastName = $this->donorLastName;
+
+        if ($salesforceSafe) {
+            $lastName = $this->makeSalesforceSafe($lastName, true);
+        }
+
+        return $lastName;
     }
 
     public function setDonorLastName(?string $donorLastName): void
@@ -969,5 +979,25 @@ class Donation extends SalesforceWriteProxy
         $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber();
 
         return $donationMessage;
+    }
+
+    /**
+     * Make text fit in limited and possibly-required SF fields
+     *
+     * @param string|null $text
+     * @param bool $required
+     * @return string|null
+     */
+    private function makeSalesforceSafe(?string $text, bool $required): ?string
+    {
+        if ($text === null) {
+            if ($required) {
+                return 'N/A';
+            }
+
+            return null;
+        }
+
+        return mb_substr($text, 0, 40);
     }
 }
