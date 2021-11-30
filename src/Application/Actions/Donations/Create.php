@@ -193,7 +193,11 @@ class Create extends Action
         $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
         $prefix = 'The Big Give ';
 
-        return $prefix . substr($this->removeSpecialChars($charity->getName()), 0, $maximumLength - strlen($prefix));
+        return $prefix . mb_substr(
+            $this->removeSpecialChars($charity->getName()),
+            0,
+            $maximumLength - mb_strlen($prefix),
+        );
     }
 
     // Remove special characters except spaces
