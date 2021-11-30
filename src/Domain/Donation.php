@@ -990,7 +990,7 @@ class Donation extends SalesforceWriteProxy
      */
     private function makeSalesforceSafe(?string $text, bool $required): ?string
     {
-        if ($text === null) {
+        if ($text === null || trim($text) === '') {
             if ($required) {
                 return 'N/A';
             }
