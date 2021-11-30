@@ -54,9 +54,14 @@ class DonationUpdate extends Action
             'json'
         );
 
+        // We observed Enthuse sending complete donations with blank `billingPostalAddress`
+        // Nov '21, so are replacing this with N/A for now rather than rejecting the hooks.
+        if (empty($donationData->billingPostalAddress)) {
+            $donationData->billingPostalAddress = 'N/A';
+        }
+
         $missingRequiredField = (
             empty($donationData->status) ||
-            empty($donationData->billingPostalAddress) ||
             empty($donationData->countryCode) ||
             empty($donationData->emailAddress) ||
             empty($donationData->firstName) ||
