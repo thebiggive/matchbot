@@ -28,6 +28,7 @@ class Donation extends SalesforceWriteProxy
      * @see Donation::$currencyCode
      */
     private int $minimumAmount = 1;
+
     /**
      * @var int
      * @see Donation::$currencyCode
@@ -960,6 +961,11 @@ class Donation extends SalesforceWriteProxy
     public function hasEnoughDataForSalesforce(): bool
     {
         return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
+    }
+
+    public function isNew(): bool
+    {
+        return in_array($this->donationStatus, $this->newStatuses, true);
     }
 
     public function toClaimBotModel(): Messenger\Donation
