@@ -15,6 +15,8 @@ use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Slim\Exception\HttpNotFoundException;
+use Stripe\Exception\InvalidRequestException;
+use Stripe\PaymentIntent;
 use Stripe\Service\PaymentIntentService;
 use Stripe\StripeClient;
 
@@ -401,7 +403,8 @@ class UpdateTest extends TestCase
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->cancel('pi_externalId_123')
-            ->shouldBeCalledOnce();
+            ->shouldBeCalledOnce()
+            ->willReturn($this->prophesize(PaymentIntent::class));
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
@@ -434,6 +437,143 @@ class UpdateTest extends TestCase
         $this->assertEquals(1.00, $payloadArray['tipAmount']);
         $this->assertEquals(2.05, $payloadArray['charityFee']); // 1.5% + 20p.
         $this->assertEquals(0, $payloadArray['charityFeeVat']);
+    }
+
+    /**
+     * We *don't* expect this to be possible in normal frontend journeys. It should lead to a 500
+     * (as tested here) and a high sev error log so we can investigate.
+     */
+    public function testCancelSuccessButStripeSaysAlreadySucceeded(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+        $donation->setDonationStatus('Cancelled');
+
+        $responseDonation = $this->getTestDonation();
+        // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
+        // mock donation.
+        $responseDonation->setDonationStatus('Pending');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($responseDonation)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            // Cancel was a new change and names set -> expect a push to SF.
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+
+        $stripeErrorMessage = 'You cannot cancel this PaymentIntent because it has a status of ' .
+            'succeeded. Only a PaymentIntent with one of the following statuses may be canceled: ' .
+            'requires_payment_method, requires_capture, requires_confirmation, requires_action, ' .
+            'processing.';
+        $stripeApiException = new InvalidRequestException($stripeErrorMessage);
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+        $stripePaymentIntentsProphecy->cancel('pi_externalId_123')
+            ->shouldBeCalledOnce()
+            ->willThrow($stripeApiException);
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($donation->toApiModel()),
+        )
+            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(500, $response->getStatusCode());
+    }
+
+    /**
+     * Cover the double-cancel-HTTP-request scenario where we detect that Stripe's already
+     * handled a previous cancellation from us.
+     */
+    public function testCancelSuccessButStripeSaysAlreadyCancelled(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+        $donation->setDonationStatus('Cancelled');
+
+        $responseDonation = $this->getTestDonation();
+        // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
+        // mock donation.
+        $responseDonation->setDonationStatus('Pending');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($responseDonation)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            // Cancel was a new change and names set -> expect a push to SF.
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+
+        $stripeErrorMessage = 'You cannot cancel this PaymentIntent because it has a status of ' .
+            'canceled. Only a PaymentIntent with one of the following statuses may be canceled: ' .
+            'requires_payment_method, requires_capture, requires_confirmation, requires_action, ' .
+            'processing.';
+        $stripeApiException = new InvalidRequestException($stripeErrorMessage);
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+        $stripePaymentIntentsProphecy->cancel('pi_externalId_123')
+            ->shouldBeCalledOnce()
+            ->willThrow($stripeApiException);
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($donation->toApiModel()),
+        )
+            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+        $this->assertEquals('Cancelled', $payloadArray['status']);
     }
 
     public function testCancelSuccessWithChangeFromPendingAnonymousDonation(): void
