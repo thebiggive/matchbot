@@ -753,6 +753,10 @@ class Donation extends SalesforceWriteProxy
      */
     public function setTipAmount(string $tipAmount): void
     {
+        if (bccomp($tipAmount, (string) $this->maximumAmount, 2) === 1) {
+            throw new \UnexpectedValueException("Tip amount must not exceed £{$this->maximumAmount}");
+        }
+
         $this->tipAmount = $tipAmount;
     }
 
