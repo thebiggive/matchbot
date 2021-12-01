@@ -134,7 +134,15 @@ class Update extends Action
             $donation->setFeeCoverAmount((string) $donationData->feeCoverAmount);
         }
         if (isset($donationData->tipAmount)) {
-            $donation->setTipAmount((string) $donationData->tipAmount);
+            try {
+                $donation->setTipAmount((string) $donationData->tipAmount);
+            } catch (\UnexpectedValueException $exception) {
+                return $this->validationError(
+                    sprintf("Invalid tipAmount '%s'", $donationData->tipAmount),
+                    $exception->getMessage(),
+                    false,
+                );
+            }
         }
 
         // All calls using the new two-step approach should set all the remaining values in this

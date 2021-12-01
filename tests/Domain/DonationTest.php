@@ -29,6 +29,7 @@ class DonationTest extends TestCase
     public function testValidDataPersisted(): void
     {
         $donation = new Donation();
+        $donation->setCurrencyCode('GBP');
         $donation->setAmount('100.00');
         $donation->setTipAmount('1.13');
 
@@ -41,27 +42,30 @@ class DonationTest extends TestCase
     public function testAmountTooLowNotPersisted(): void
     {
         $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Amount must be £1-25000');
+        $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
         $donation = new Donation();
+        $donation->setCurrencyCode('GBP');
         $donation->setAmount('0.99');
     }
 
     public function testAmountTooHighNotPersisted(): void
     {
         $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Amount must be £1-25000');
+        $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
         $donation = new Donation();
+        $donation->setCurrencyCode('GBP');
         $donation->setAmount('25000.01');
     }
 
     public function testTipAmountTooHighNotPersisted(): void
     {
         $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Tip amount must not exceed £25000');
+        $this->expectExceptionMessage('Tip amount must not exceed 25000 GBP');
 
         $donation = new Donation();
+        $donation->setCurrencyCode('GBP');
         $donation->setTipAmount('25000.01');
     }
 
