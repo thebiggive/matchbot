@@ -15,6 +15,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
@@ -230,12 +231,32 @@ class Update extends Action
             try {
                 $this->stripeClient->paymentIntents->cancel($donation->getTransactionId());
             } catch (ApiErrorException $exception) {
-                $this->logger->error(
+                /**
+                 * As per the notes in {@see DonationRepository::releaseMatchFunds()}, we
+                 * occasionally see double-cancels from the frontend. If Stripe tell us the
+                 * Cancelled Donation's PI is canceled [note US spelling doesn't match our internal
+                 * status], in all CC21 checks this seemed to be the situation.
+                 *
+                 * Instead of panicking in this scenario, our best available option is to log only a
+                 * notice – we can still easily find these in the logs on-demand if we need to
+                 * investigate proactively – and return 200 OK to the frontend.
+                 */
+                $doubleCancelMessage = 'You cannot cancel this PaymentIntent because it has a status of canceled.';
+                $returnError = !str_starts_with($exception->getMessage(), $doubleCancelMessage);
+                $stripeErrorLogLevel = $returnError ? LogLevel::ERROR : LogLevel::NOTICE;
+
+                // We use the same log message, but reduce the severity in the case where we have detected
+                // that it's unlikely to be a serious issue.
+                $this->logger->log(
+                    $stripeErrorLogLevel,
                     'Stripe Payment Intent cancel error: ' .
                     get_class($exception) . ': ' . $exception->getMessage()
                 );
-                $error = new ActionError(ActionError::SERVER_ERROR, 'Could not cancel Stripe Payment Intent');
-                return $this->respond(new ActionPayload(500, null, $error));
+
+                if ($returnError) {
+                    $error = new ActionError(ActionError::SERVER_ERROR, 'Could not cancel Stripe Payment Intent');
+                    return $this->respond(new ActionPayload(500, null, $error));
+                } // Else likely double-send -> fall through to normal 200 OK response and return the donation as-is.
             }
         }
 
