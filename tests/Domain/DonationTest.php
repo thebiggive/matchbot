@@ -56,6 +56,15 @@ class DonationTest extends TestCase
         $donation->setAmount('25000.01');
     }
 
+    public function testTipAmountTooHighNotPersisted(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Tip amount must not exceed £25000');
+
+        $donation = new Donation();
+        $donation->setTipAmount('25000.01');
+    }
+
     public function testInvalidPspRejected(): void
     {
         $this->expectException(\UnexpectedValueException::class);
