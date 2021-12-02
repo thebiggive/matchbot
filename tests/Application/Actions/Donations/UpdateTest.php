@@ -770,6 +770,52 @@ class UpdateTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
+    public function testAddDataAttemptWithTipAboveMaximumAllowed(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        // We'll patch the simulated PUT JSON manually because `setTipAmount()` disallows
+        // values over the max donation amount.
+        $donation = $this->getTestDonation();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($this->getTestDonation()) // Get a new mock object so it's £123.45.
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $putArray = $donation->toApiModel();
+        $putArray['tipAmount'] = '25000.01';
+        $putJSON = json_encode($putArray);
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            $putJSON,
+        )
+            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'Tip amount must not exceed 25000 GBP',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertEquals(400, $response->getStatusCode());
+    }
+
     public function testAddDataSuccessWithOnlyEnthuseValues(): void
     {
         $app = $this->getAppInstance();
