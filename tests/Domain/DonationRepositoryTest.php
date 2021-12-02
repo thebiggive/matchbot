@@ -45,6 +45,20 @@ class DonationRepositoryTest extends TestCase
         $this->assertTrue($success);
     }
 
+    public function testExistingButPendingNotRePushed(): void
+    {
+        $donationClientProphecy = $this->prophesize(Client\Donation::class);
+        $donationClientProphecy
+            ->put(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+
+        $pendingDonation = $this->getTestDonation();
+        $pendingDonation->setDonationStatus('Pending');
+        $success = $this->getRepo($donationClientProphecy)->push($pendingDonation, false);
+
+        $this->assertTrue($success);
+    }
+
     /**
      * This is expected e.g. after a Salesforce network failure leading to a missing ID for
      * a donation, but the create completed and the donor can proceed. This may lead to

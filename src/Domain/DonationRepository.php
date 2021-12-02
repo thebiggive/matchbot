@@ -68,6 +68,23 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function doUpdate(SalesforceWriteProxy $donation): bool
     {
         try {
+            if ($donation->isNew()) {
+                // A new status but an existing Salesforce ID suggests pushes might have ended up out
+                // of order due to race conditions pushing to Salesforce, variable and quite slow
+                // Salesforce performance characteristics, and both client (this) & server (SF) apps being
+                // multi-threaded. The safest thing is not to push a Pending donation to Salesforce a 2nd
+                // time, and just leave updates later in the process to get additional data there. As
+                // far as calling processes and retry logic goes, this should act like a[nother] successful
+                // push.
+                $this->logInfo(sprintf(
+                    'Skipping possible re-push of new-status donation %d, UUID %s, Salesforce ID %s',
+                    $donation->getId(),
+                    $donation->getUuid(),
+                    $donation->getSalesforceId(),
+                ));
+                return true;
+            }
+
             $result = $this->getClient()->put($donation);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push the removed donation.

@@ -28,6 +28,7 @@ class Donation extends SalesforceWriteProxy
      * @see Donation::$currencyCode
      */
     private int $minimumAmount = 1;
+
     /**
      * @var int
      * @see Donation::$currencyCode
@@ -561,7 +562,12 @@ class Donation extends SalesforceWriteProxy
             bccomp($amount, (string) $this->minimumAmount, 2) === -1 ||
             bccomp($amount, (string) $this->maximumAmount, 2) === 1
         ) {
-            throw new \UnexpectedValueException("Amount must be £{$this->minimumAmount}-{$this->maximumAmount}");
+            throw new \UnexpectedValueException(sprintf(
+                'Amount must be %d-%d %s',
+                $this->minimumAmount,
+                $this->maximumAmount,
+                $this->currencyCode,
+            ));
         }
 
         $this->amount = $amount;
@@ -752,6 +758,14 @@ class Donation extends SalesforceWriteProxy
      */
     public function setTipAmount(string $tipAmount): void
     {
+        if (bccomp($tipAmount, (string) $this->maximumAmount, 2) === 1) {
+            throw new \UnexpectedValueException(sprintf(
+                'Tip amount must not exceed %d %s',
+                $this->maximumAmount,
+                $this->currencyCode,
+            ));
+        }
+
         $this->tipAmount = $tipAmount;
     }
 
@@ -960,6 +974,11 @@ class Donation extends SalesforceWriteProxy
     public function hasEnoughDataForSalesforce(): bool
     {
         return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
+    }
+
+    public function isNew(): bool
+    {
+        return in_array($this->donationStatus, $this->newStatuses, true);
     }
 
     public function toClaimBotModel(): Messenger\Donation
