@@ -17,6 +17,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\StripeClient;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -172,6 +173,10 @@ class Update extends Action
                     'amount' => $donation->getAmountFractionalIncTip(),
                     'currency' => strtolower($donation->getCurrencyCode()),
                     'metadata' => [
+                        /**
+                         * Note that we don't re-set keys that can't change, like `charityId`.
+                         * See the counterpart in {@see Create::action()} too.
+                         */
                         'coreDonationGiftAid' => $donation->hasGiftAid(),
                         'feeCoverAmount' => $donation->getFeeCoverAmount(),
                         'matchedAmount' => $donation->getFundingWithdrawalTotal(),
@@ -191,15 +196,53 @@ class Update extends Action
                     // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
                 ]);
             } catch (ApiErrorException $exception) {
-                $this->logger->error(sprintf(
-                    'Stripe Payment Intent update error on %s, %s [%s]: %s',
-                    $donation->getUuid(),
-                    get_class($exception),
-                    $exception->getStripeCode(),
-                    $exception->getMessage(),
-                ));
-                $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent');
-                return $this->respond(new ActionPayload(500, null, $error));
+                $alreadyCapturedMsg = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
+                    'after a capture has already been made.';
+                if (
+                    $exception instanceof InvalidRequestException &&
+                    str_starts_with($exception->getMessage(), $alreadyCapturedMsg)
+                ) {
+                    $latestPI = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
+                    if ($latestPI->application_fee_amount === $donation->getAmountToDeductFractional()) {
+                        $noFeeChangeMessage = 'Stripe Payment Intent update ignored after capture; no fee ' .
+                            'change on %s, %s [%s]: %s';
+                        $this->logger->info(sprintf(
+                            $noFeeChangeMessage,
+                            $donation->getUuid(),
+                            get_class($exception),
+                            $exception->getStripeCode(),
+                            $exception->getMessage(),
+                        ));
+                        // Fall through to normal save and success response.
+                    } else {
+                        $this->logger->error(sprintf(
+                            'Stripe Payment Intent update after capture; fee change from %d to %d ' .
+                                'not possible on %s, %s [%s]: %s',
+                            $latestPI->application_fee_amount,
+                            $donation->getAmountToDeductFractional(),
+                            $donation->getUuid(),
+                            get_class($exception),
+                            $exception->getStripeCode(),
+                            $exception->getMessage(),
+                        ));
+                        // Quickly distinuish fee change case with response message suffix.
+                        $error = new ActionError(
+                            ActionError::SERVER_ERROR,
+                            'Could not update Stripe Payment Intent [A]',
+                        );
+                        return $this->respond(new ActionPayload(500, null, $error));
+                    }
+                } else {
+                    $this->logger->error(sprintf(
+                        'Stripe Payment Intent update error on %s, %s [%s]: %s',
+                        $donation->getUuid(),
+                        get_class($exception),
+                        $exception->getStripeCode(),
+                        $exception->getMessage(),
+                    ));
+                    $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent [B]');
+                    return $this->respond(new ActionPayload(500, null, $error));
+                }
             }
         }
 

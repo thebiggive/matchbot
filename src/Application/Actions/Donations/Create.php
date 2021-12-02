@@ -146,6 +146,10 @@ class Create extends Action
                     'currency' => strtolower($donation->getCurrencyCode()),
                     'description' => $donation->__toString(),
                     'metadata' => [
+                        /**
+                         * Keys like comms opt ins are set only later. See the counterpart
+                         * in {@see Update::addData()} too.
+                         */
                         'campaignId' => $donation->getCampaign()->getSalesforceId(),
                         'campaignName' => $donation->getCampaign()->getCampaignName(),
                         'charityId' => $donation->getCampaign()->getCharity()->getDonateLinkId(),
