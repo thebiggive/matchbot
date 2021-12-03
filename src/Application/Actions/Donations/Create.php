@@ -63,18 +63,6 @@ class Create extends Action
 
         try {
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
-
-            $floodRequest = (
-                $donation->getDonorCountryCode() === 'FR' &&
-                bccomp($donation->getAmount(), '1.00', 2) === 0
-            );
-            if ($floodRequest) {
-                return $this->validationError(
-                    'Blocking suspected accidental request flood temporarily',
-                    'Please email hello@thebiggive.org.uk for support',
-                    true,
-                );
-            }
         } catch (\UnexpectedValueException $exception) {
             $this->logger->info("Donation Create model load failure payload was: $body");
 
@@ -146,6 +134,10 @@ class Create extends Action
                     'currency' => strtolower($donation->getCurrencyCode()),
                     'description' => $donation->__toString(),
                     'metadata' => [
+                        /**
+                         * Keys like comms opt ins are set only later. See the counterpart
+                         * in {@see Update::addData()} too.
+                         */
                         'campaignId' => $donation->getCampaign()->getSalesforceId(),
                         'campaignName' => $donation->getCampaign()->getCampaignName(),
                         'charityId' => $donation->getCampaign()->getCharity()->getDonateLinkId(),

@@ -189,7 +189,7 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\Column(type="string", length=2, nullable=true)
-     * @var string|null  Set on PSP callback
+     * @var string|null  Set on PSP callback. *Billing* country code.
      */
     protected ?string $donorCountryCode = null;
 
