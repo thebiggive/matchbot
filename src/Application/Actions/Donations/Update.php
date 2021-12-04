@@ -66,7 +66,7 @@ class Update extends Action
                 HttpModels\Donation::class,
                 'json'
             );
-        } catch (UnexpectedValueException|TypeError $exception) {
+        } catch (UnexpectedValueException | TypeError $exception) {
             // UnexpectedValueException is the Serializer one, not the global one
             $this->logger->info("Donation Update non-serialisable payload was: $body");
 
