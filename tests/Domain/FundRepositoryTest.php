@@ -18,14 +18,11 @@ use MatchBot\Tests\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
-use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 class FundRepositoryTest extends TestCase
 {
-    use ProphecyTrait;
-
     public function testPull(): void
     {
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);

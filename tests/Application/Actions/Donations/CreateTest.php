@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
+use LosMiddleware\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
@@ -17,7 +18,6 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
 use Ramsey\Uuid\Uuid;
 use Stripe\Service\PaymentIntentService;
 use Stripe\StripeClient;
@@ -25,8 +25,6 @@ use UnexpectedValueException;
 
 class CreateTest extends TestCase
 {
-    use ProphecyTrait;
-
     public function testDeserialiseError(): void
     {
         $app = $this->getAppInstance();
@@ -240,6 +238,43 @@ class CreateTest extends TestCase
 
         $this->assertEquals($expectedSerialised, $payload);
         $this->assertEquals(400, $response->getStatusCode());
+    }
+
+    /**
+     * 'test' env should expect and trust
+     */
+    public function testNoXForwardedForHeader(): void
+    {
+        $this->expectException(MissingRequirement::class);
+        $this->expectExceptionMessage('Could not detect the client IP');
+
+        $donation = $this->getTestDonation(true, false, true);
+
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
+        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy->flush()->shouldNotBeCalled();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+
+        $data = json_encode($donation->toApiModel());
+        $request = $this->createRequest(
+            'POST',
+            '/v1/donations',
+            $data,
+            ['HTTP_ACCEPT' => 'application/json'], // Un-set forwarded IP header.
+        );
+        $app->handle($request); // Rate limit middleware should bail out.
     }
 
     public function testSuccessWithStripeAccountIDMissingInitiallyButFoundOnRefetch(): void

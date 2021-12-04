@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use LosMiddleware\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Actions\Donations;
 use MatchBot\Application\Actions\Hooks;
 use MatchBot\Application\Actions\Status;
@@ -17,7 +18,8 @@ return function (App $app) {
 
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
         // Current unauthenticated endpoint in the `/v1` group.
-        $versionGroup->post('/donations', Donations\Create::class);
+        $versionGroup->post('/donations', Donations\Create::class)
+            ->add(RateLimitMiddleware::class);
 
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {
             $group->get('', Donations\Get::class);

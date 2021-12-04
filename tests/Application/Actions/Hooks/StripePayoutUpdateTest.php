@@ -9,7 +9,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Domain\DonationRepository;
 use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Messenger\Transport\InMemoryTransport;
@@ -17,8 +16,6 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
 
 class StripePayoutUpdateTest extends StripeTest
 {
-    use ProphecyTrait;
-
     public function testUnsupportedAction(): void
     {
         $app = $this->getAppInstance();

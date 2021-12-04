@@ -11,6 +11,8 @@ use Doctrine\ORM;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Tools\Setup;
+use LosMiddleware\RateLimit\RateLimitMiddleware;
+use LosMiddleware\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger;
@@ -20,12 +22,17 @@ use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client;
+use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Processor\UidProcessor;
 use Psr\Container\ContainerInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Log\LoggerInterface;
+use Psr\SimpleCache\CacheInterface;
+use Slim\Psr7\Factory\ResponseFactory;
 use Stripe\StripeClient;
+use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\PdoStore;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsTransportFactory;
@@ -55,6 +62,18 @@ return function (ContainerBuilder $containerBuilder) {
             function (ContainerInterface $c): Auth\DonationPublicAuthMiddleware {
                 return new Auth\DonationPublicAuthMiddleware($c->get(LoggerInterface::class));
             },
+
+        CacheInterface::class => function (ContainerInterface $c): CacheInterface {
+            return new Psr16Cache(
+                new Symfony\Component\Cache\Adapter\RedisAdapter(
+                    $c->get(Redis::class),
+                    // Distinguish e.g. rate limit data from matching if we ever need to debug
+                    // or clear Redis contents.
+                    'matchbot-cache',
+                    3600, // Allow Auto-clearing cache/rate limit data after an hour.
+                ),
+            );
+        },
 
         ClaimBotTransport::class => static function (ContainerInterface $c): TransportInterface {
             $transportFactory = new TransportFactory([
@@ -172,6 +191,18 @@ return function (ContainerBuilder $containerBuilder) {
             return $config;
         },
 
+        ProblemDetailsResponseFactory::class => static function (ContainerInterface $c): ProblemDetailsResponseFactory {
+            return new ProblemDetailsResponseFactory(new ResponseFactory());
+        },
+
+        RateLimitMiddleware::class => static function (ContainerInterface $c): RateLimitMiddleware {
+            return new RateLimitMiddleware(
+                $c->get(CacheInterface::class),
+                $c->get(ProblemDetailsResponseFactory::class),
+                new RateLimitOptions($c->get('settings')['los_rate_limit']),
+            );
+        },
+
         /**
          * Do NOT pass this instance to Doctrine, which will set it to PHP serialisation, breaking incr/decr maths
          * which is *CRITICAL FOR MATCHING*!
@@ -185,6 +216,12 @@ return function (ContainerBuilder $containerBuilder) {
                     $redis->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_NONE);
                 }
             } catch (RedisException $exception) {
+                $c->get(LoggerInterface::class)->warning(sprintf(
+                    'Redis connect() got RedisException: "%s". Host %s',
+                    $exception->getMessage(),
+                    $c->get('settings')['redis']['host'],
+                ));
+
                 return null;
             }
 

@@ -12,12 +12,10 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
 
 class GiftAidErrorHandlerTest extends TestCase
 {
     use DonationTestDataTrait;
-    use ProphecyTrait;
 
     public function testErrorProcessing(): void
     {

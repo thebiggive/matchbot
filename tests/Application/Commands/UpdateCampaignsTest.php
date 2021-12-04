@@ -12,7 +12,6 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\FundRepository;
-use Prophecy\PhpUnit\ProphecyTrait;
 use MatchBot\Tests\TestCase;
 use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -20,8 +19,6 @@ use Symfony\Component\Lock\LockFactory;
 
 class UpdateCampaignsTest extends TestCase
 {
-    use ProphecyTrait;
-
     public function testSingleUpdateSuccess(): void
     {
         $campaign = new Campaign();

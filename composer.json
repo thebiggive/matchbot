@@ -26,6 +26,7 @@
         "doctrine/orm": "^2.8",
         "firebase/php-jwt": "^5.2",
         "guzzlehttp/guzzle": "^6.5",
+        "los/los-rate-limit": "dev-php8#54c27e456ba533ccb6e600e999a09e8f6ec6fe2d",
         "monolog/monolog": "^2.2",
         "php-di/php-di": "^6.3",
         "ramsey/uuid-doctrine": "^1.6",
@@ -33,6 +34,7 @@
         "slim/slim": "^4.7",
         "stripe/stripe-php": "^7.68",
         "symfony/amazon-sqs-messenger": "^5.2",
+        "symfony/cache": "^5.4",
         "symfony/console": "^5.2",
         "symfony/event-dispatcher": "^5.2",
         "symfony/lock": "^5.2",
@@ -46,6 +48,12 @@
         "roave/security-advisories": "dev-master",
         "squizlabs/php_codesniffer": "^3.6"
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/thebiggive/LosRateLimit"
+        }
+    ],
     "config": {
         "optimize-autoloader": true,
         "sort-packages": true

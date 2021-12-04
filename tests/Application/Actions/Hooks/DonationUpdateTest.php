@@ -13,13 +13,11 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
 use Slim\Exception\HttpNotFoundException;
 
 class DonationUpdateTest extends TestCase
 {
     use DonationTestDataTrait;
-    use ProphecyTrait;
 
     public function testMissingDonationId(): void
     {

@@ -13,14 +13,11 @@ use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 
 class ResetMatchingTest extends TestCase
 {
-    use ProphecyTrait;
-
     public function testSinglePush(): void
     {
         $fund = new ChampionFund();
