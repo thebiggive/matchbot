@@ -11,7 +11,7 @@ class StatusTest extends TestCase
 {
     public function testRedisErrorWithDummyHostname(): void
     {
-        $app = $this->getAppInstance();
+        $app = $this->getAppInstance(true); // Use real Redis for this test
 
         $request = $this->createRequest('GET', '/ping');
         $response = $app->handle($request);
