@@ -19,7 +19,6 @@ use MatchBot\Tests\Application\VatTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
-use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Log\NullLogger;
 use ReflectionClass;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
@@ -29,7 +28,6 @@ use Symfony\Component\Lock\LockInterface;
 class DonationRepositoryTest extends TestCase
 {
     use DonationTestDataTrait;
-    use ProphecyTrait;
     use VatTrait;
 
     public function testExistingPushOK(): void

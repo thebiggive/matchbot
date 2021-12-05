@@ -10,7 +10,6 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Prophecy\ObjectProphecy;
-use Prophecy\PhpUnit\ProphecyTrait;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
@@ -21,7 +20,6 @@ use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 class ClaimGiftAidTest extends TestCase
 {
     use DonationTestDataTrait;
-    use ProphecyTrait;
 
     public function testNothingToSend(): void
     {

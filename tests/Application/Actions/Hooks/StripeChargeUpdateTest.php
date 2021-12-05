@@ -10,14 +10,11 @@ use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\StripeClient;
 
 class StripeChargeUpdateTest extends StripeTest
 {
-    use ProphecyTrait;
-
     public function testUnsupportedAction(): void
     {
         $app = $this->getAppInstance();
