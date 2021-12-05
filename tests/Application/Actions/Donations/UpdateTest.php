@@ -722,6 +722,57 @@ class UpdateTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
+    /**
+     * Send a JSON array as "homeAddress".
+     */
+    public function testAddDataAttemptWithInvalidPropertyType(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $bodyArray = $donation->toHookModel();
+        $bodyArray['homeAddress'] = ['123', 'Main St']; // Invalid array type.
+
+        $body = json_encode($bodyArray);
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            $body,
+        )
+            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'Donation Update data deserialise error',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertEquals(400, $response->getStatusCode());
+    }
+
     public function testAddDataAttemptWithGiftAidMissingDonatingInGBP(): void
     {
         $app = $this->getAppInstance();
