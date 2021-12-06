@@ -54,9 +54,7 @@ EOT
 
         foreach ($campaigns as $campaign) {
             try {
-                $this->campaignRepository->pull($campaign);
-                $this->fundRepository->pullForCampaign($campaign);
-                $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
+                $this->pull($campaign, $output);
             } catch (NotFoundException $exception) {
                 if (getenv('APP_ENV') === 'production') {
                     // This is currently possible if a charity had a campaign already launchable
@@ -80,13 +78,23 @@ EOT
             } catch (DomainCurrencyMustNotChangeException $exception) {
                 $output->writeln('Skipping invalid currency change campaign ' . $campaign->getSalesforceId());
             } catch (TransferException $exception) {
-                $transferError = sprintf(
-                    'Skipping campaign %s due to transfer error "%s"',
+                $this->logger->info(sprintf(
+                    'Retrying campaign %s due to transfer error "%s"',
                     $campaign->getSalesforceId(),
                     $exception->getMessage(),
-                );
-                $output->writeln($transferError);
-                $this->logger->error($transferError);
+                ));
+
+                try {
+                    $this->pull($campaign, $output);
+                } catch (TransferException $retryException) {
+                    $transferError = sprintf(
+                        'Skipping campaign %s due to 2nd transfer error "%s"',
+                        $campaign->getSalesforceId(),
+                        $exception->getMessage(),
+                    );
+                    $output->writeln($transferError);
+                    $this->logger->warning($transferError);
+                }
             }
         }
 
@@ -98,5 +106,12 @@ EOT
         $cacheDriver->deleteAll();
 
         return 0;
+    }
+
+    protected function pull(Campaign $campaign, OutputInterface $output): void
+    {
+        $this->campaignRepository->pull($campaign);
+        $this->fundRepository->pullForCampaign($campaign);
+        $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
     }
 }
