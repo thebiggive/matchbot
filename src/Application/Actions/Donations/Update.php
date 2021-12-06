@@ -21,6 +21,7 @@ use Stripe\Exception\InvalidRequestException;
 use Stripe\StripeClient;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
+use TypeError;
 
 /**
  * Apply a donor-authorised PUT action to update an existing donation. The purpose
@@ -65,7 +66,8 @@ class Update extends Action
                 HttpModels\Donation::class,
                 'json'
             );
-        } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
+        } catch (UnexpectedValueException | TypeError $exception) {
+            // UnexpectedValueException is the Serializer one, not the global one
             $this->logger->info("Donation Update non-serialisable payload was: $body");
 
             $message = 'Donation Update data deserialise error';

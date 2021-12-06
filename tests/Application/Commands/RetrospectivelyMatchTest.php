@@ -9,7 +9,6 @@ use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
 use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
@@ -20,8 +19,6 @@ use Symfony\Component\Lock\LockFactory;
  */
 class RetrospectivelyMatchTest extends TestCase
 {
-    use ProphecyTrait;
-
     private RetrospectivelyMatch $command;
 
     public function setUp(): void

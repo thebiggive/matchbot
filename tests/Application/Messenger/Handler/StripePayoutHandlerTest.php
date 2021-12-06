@@ -13,7 +13,6 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -26,7 +25,6 @@ use Stripe\StripeClient;
 class StripePayoutHandlerTest extends TestCase
 {
     use DonationTestDataTrait;
-    use ProphecyTrait;
 
     public function testUnrecognisedChargeId(): void
     {
