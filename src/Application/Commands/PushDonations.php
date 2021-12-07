@@ -25,6 +25,10 @@ class PushDonations extends LockingCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
+        if (($numberAbandoned = $this->donationRepository->abandonOldCancelled()) > 0) {
+            $output->writeln("Abandoned $numberAbandoned old Cancelled donations from Salesforce push");
+        }
+
         $numberPushed = $this->donationRepository->pushAllPending();
         $output->writeln("Pushed $numberPushed donations to Salesforce");
 

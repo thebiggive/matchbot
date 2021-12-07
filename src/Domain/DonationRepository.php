@@ -450,6 +450,48 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->getResult();
     }
 
+    /**
+     * Give up on pushing Cancelled donations to Salesforce after a few minutes. For example,
+     * this was needed after CC21 for a last minute donation that could not be persisted in
+     * Salesforce because the campaign close date had passed before it reached SF.
+     *
+     * @return int  Number of donations updated to 'not-sent'.
+     */
+    public function abandonOldCancelled(): int
+    {
+        $twentyMinsAgo = (new DateTime('now'))
+            ->sub(new \DateInterval('PT20M'));
+        $pendingSFPushStatuses = [
+            SalesforceWriteProxy::PUSH_STATUS_PENDING_ADDITIONAL_UPDATE,
+            SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE,
+            SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE,
+        ];
+
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('d')
+            ->from(Donation::class, 'd')
+            ->where('d.donationStatus = :cancelledStatus')
+            ->andWhere('d.salesforcePushStatus IN (:pendingSFPushStatuses)')
+            ->andWhere('d.createdAt < :twentyMinsAgo')
+            ->orderBy('d.createdAt', 'ASC')
+            ->setParameter('cancelledStatus', 'Cancelled')
+            ->setParameter('pendingSFPushStatuses', $pendingSFPushStatuses)
+            ->setParameter('twentyMinsAgo', $twentyMinsAgo);
+
+        /** @var Donation[] $donations */
+        $donations = $qb->getQuery()->getResult();
+        if (count($donations) > 0) {
+            foreach ($donations as $donation) {
+                $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_NOT_SENT);
+                $this->getEntityManager()->persist($donation);
+            }
+
+            $this->getEntityManager()->flush();
+        }
+
+        return count($donations);
+    }
+
     public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): Donation
     {
         $incursGiftAidFee = (

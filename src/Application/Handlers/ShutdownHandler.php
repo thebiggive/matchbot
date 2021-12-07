@@ -56,7 +56,7 @@ class ShutdownHandler
             // alongside `/ping`'s more helpful output, its response body is left malformatted.
             $isServiceResolutionWarning = (
                 $errorType === E_WARNING &&
-                strpos($message, 'getaddrinfo failed: Name or service not known') !== false
+                str_contains($message, 'getaddrinfo failed: Name or service not known')
             );
             if ($isServiceResolutionWarning) {
                 return;
