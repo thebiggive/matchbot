@@ -15,6 +15,9 @@ class PushDonationsTest extends TestCase
     public function testSinglePush(): void
     {
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy->abandonOldCancelled()
+            ->willReturn(0)
+            ->shouldBeCalledOnce();
         $donationRepoProphecy->pushAllPending()
             ->willReturn(1)
             ->shouldBeCalledOnce();
@@ -27,6 +30,32 @@ class PushDonationsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:push-donations starting!',
+            'Pushed 1 donations to Salesforce',
+            'matchbot:push-donations complete!',
+        ];
+        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
+    }
+
+    public function testPushWithOneCancelledAbandonedDonation(): void
+    {
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy->abandonOldCancelled()
+            ->willReturn(1)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy->pushAllPending()
+            ->willReturn(1)
+            ->shouldBeCalledOnce();
+
+        $command = new PushDonations($donationRepoProphecy->reveal());
+        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+
+        $commandTester = new CommandTester($command);
+        $commandTester->execute([]);
+
+        $expectedOutputLines = [
+            'matchbot:push-donations starting!',
+            'Abandoned 1 old Cancelled donations from Salesforce push',
             'Pushed 1 donations to Salesforce',
             'matchbot:push-donations complete!',
         ];
