@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MatchBot\Application\Persistence;
 
 use Doctrine\DBAL\Exception\RetryableException;

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Domain;
 
+use DI\Container;
+use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\QueryBuilder;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Client;
@@ -470,6 +473,49 @@ class DonationRepositoryTest extends TestCase
 
         $donation = $this->getTestDonation();
         $repo->releaseMatchFunds($donation);
+    }
+
+    public function testAbandonOldCancelled(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $query = $this->prophesize(AbstractQuery::class);
+        // Our test donation doesn't actually meet the conditions but as we're
+        // mocking out the Doctrine bits anyway that doesn't matter; we just want
+        // to check an update call is made when the result set is non-empty.
+        $query->getResult()->willReturn([$this->getTestDonation()])
+            ->shouldBeCalledOnce();
+
+        $queryBuilderProphecy = $this->prophesize(QueryBuilder::class);
+        $queryBuilderProphecy->select('d')
+            ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->from(Donation::class, 'd')
+            ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->where('d.donationStatus = :cancelledStatus')
+            ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->andWhere(Argument::type('string'))
+            ->shouldBeCalledTimes(2)->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->orderBy('d.createdAt', 'ASC')
+            ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->setParameter(Argument::type('string'), Argument::any())
+            ->shouldBeCalledTimes(3)->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->getQuery()->willReturn($query->reveal());
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->createQueryBuilder()->shouldBeCalledOnce()
+            ->willReturn($queryBuilderProphecy->reveal());
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $repo = new DonationRepository(
+            $entityManagerProphecy->reveal(),
+            new ClassMetadata(Donation::class),
+        );
+
+        $this->assertEquals(1, $repo->abandonOldCancelled());
     }
 
     /**
