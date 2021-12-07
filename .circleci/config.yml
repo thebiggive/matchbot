@@ -80,7 +80,7 @@ workflows:
                 job_type: deployment
             - slack/notify:
                 color: '#009900'
-                message: 'Visitors to regression will see the updated app version in ~20 minutes. It will likely have a short outage.'
+                message: 'Visitors to regression will see the updated app version in ~20 minutes.'
                 title: 'Regression: MatchBot deployed!'
 
   deploy-staging:
