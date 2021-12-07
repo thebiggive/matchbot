@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "11efd126588535831b432120f0d9a203",
+    "content-hash": "bab23856503dc91ac1bda7c2c2ecc5e3",
     "packages": [
         {
             "name": "async-aws/core",
@@ -1926,12 +1926,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/thebiggive/LosRateLimit.git",
-                "reference": "54c27e456ba533ccb6e600e999a09e8f6ec6fe2d"
+                "reference": "d8785d2348f4c927e56dae9098fafc0ceee154aa"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thebiggive/LosRateLimit/zipball/54c27e456ba533ccb6e600e999a09e8f6ec6fe2d",
-                "reference": "54c27e456ba533ccb6e600e999a09e8f6ec6fe2d",
+                "url": "https://api.github.com/repos/thebiggive/LosRateLimit/zipball/d8785d2348f4c927e56dae9098fafc0ceee154aa",
+                "reference": "d8785d2348f4c927e56dae9098fafc0ceee154aa",
                 "shasum": ""
             },
             "require": {
@@ -2008,7 +2008,7 @@
                 "source": "https://github.com/LansoWeb/LosRateLimit",
                 "issues": "https://github.com/LansoWeb/LosRateLimit/issues"
             },
-            "time": "2021-12-04T11:47:50+00:00"
+            "time": "2021-12-06T18:28:17+00:00"
         },
         {
             "name": "mezzio/mezzio-problem-details",
@@ -8551,5 +8551,5 @@
         "ext-redis": "*"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.1.0"
+    "plugin-api-version": "2.0.0"
 }
