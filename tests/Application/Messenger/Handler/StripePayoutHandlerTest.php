@@ -62,7 +62,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $stripeTransferProphecy = $this->prophesize(TransferService::class);
         $stripeTransferProphecy
-            ->all($this->getCommonCalloutArgs())
+            ->all($this->getTransferCalloutArgs())
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse));
 
@@ -157,7 +157,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $stripeTransferProphecy = $this->prophesize(TransferService::class);
         $stripeTransferProphecy
-            ->all($this->getCommonCalloutArgs())
+            ->all($this->getTransferCalloutArgs())
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse));
 
@@ -227,7 +227,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $stripeTransferProphecy = $this->prophesize(TransferService::class);
         $stripeTransferProphecy
-            ->all($this->getCommonCalloutArgs())
+            ->all($this->getTransferCalloutArgs())
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse));
 
@@ -330,11 +330,11 @@ class StripePayoutHandlerTest extends TestCase
 
         $stripeTransferProphecy = $this->prophesize(TransferService::class);
         $stripeTransferProphecy
-            ->all($this->getCommonCalloutArgs())
+            ->all($this->getTransferCalloutArgs())
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse1));
         $stripeTransferProphecy
-            ->all(array_merge($this->getCommonCalloutArgs(), ['starting_after' => 'tr_externalId_124']))
+            ->all(array_merge($this->getTransferCalloutArgs(), ['starting_after' => 'tr_externalId_124']))
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse2));
 
@@ -413,6 +413,17 @@ class StripePayoutHandlerTest extends TestCase
             'created' => [ // Based on the date range from our standard test data payout (-22D, +1D).
                 'gt' => 1596634856,
                 'lt' => 1598622056
+            ],
+            'limit' => 100
+        ];
+    }
+
+    private function getTransferCalloutArgs(): array
+    {
+        return [
+            'created' => [ // Based on the Connected Account charges min + max times +/- 10s.
+                'gt' => 1594646313,
+                'lt' => 1594646333
             ],
             'limit' => 100
         ];

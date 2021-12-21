@@ -192,6 +192,8 @@ class StripePayoutHandler implements MessageHandlerInterface
         $moreCharges = true;
         $lastChargeId = null;
         $sourceTransferIds = [];
+        $earliestChargeTime = null;
+        $latestChargeTime = null;
 
         $chargeListParams = [
             'created' => $createdConstraint,
@@ -207,6 +209,14 @@ class StripePayoutHandler implements MessageHandlerInterface
 
             foreach ($charges->data as $charge) {
                 $lastChargeId = $charge->id;
+
+                if ($earliestChargeTime === null || $charge->created < $earliestChargeTime) {
+                    $earliestChargeTime = $charge->created;
+                }
+
+                if ($latestChargeTime === null || $charge->created > $latestChargeTime) {
+                    $latestChargeTime = $charge->created;
+                }
 
                 if (!in_array($charge->id, $paidChargeIds, true)) {
                     continue;
@@ -229,8 +239,16 @@ class StripePayoutHandler implements MessageHandlerInterface
         $lastTransferId = null;
         $originalChargeIds = [];
 
+        // In a CC21 spot check, the TBG Account transfer created time was the same second as the
+        // Connected Account's charge created time. We check 10s either side here just in case there's
+        // sometimes a small lag.
+        $transfersCreatedConstraint = [
+            'gt' => $earliestChargeTime - 10,
+            'lt' => $latestChargeTime + 10,
+        ];
+
         $transferListParams = [
-            'created' => $createdConstraint,
+            'created' => $transfersCreatedConstraint,
             'limit' => 100,
         ];
 
