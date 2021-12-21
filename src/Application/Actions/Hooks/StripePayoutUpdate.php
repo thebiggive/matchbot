@@ -46,13 +46,21 @@ class StripePayoutUpdate extends Stripe
             return $validationErrorResponse;
         }
 
-        $this->logger->info(sprintf('Received Stripe Connect app event type "%s"', $this->event->type));
+        $this->logger->info(sprintf(
+            'Received Stripe Connect app event type "%s" on account %s',
+            $this->event->type,
+            $this->event->account,
+        ));
 
         switch ($this->event->type) {
             case 'payout.paid':
                 return $this->handlePayoutPaid($this->event);
             case 'payout.failed':
-                $this->logger->error(sprintf('payout.failed for ID %s', $this->event->data->object->id));
+                $this->logger->error(sprintf(
+                    'payout.failed for ID %s, account %s',
+                    $this->event->data->object->id,
+                    $this->event->account,
+                ));
                 return $this->respond(new ActionPayload(200));
             default:
                 $this->logger->warning(sprintf('Unsupported event type "%s"', $this->event->type));
