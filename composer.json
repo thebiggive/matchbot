@@ -126,7 +126,7 @@
         ],
         "messenger:consume": [
             "Composer\\Config::disableProcessTimeout",
-            "php matchbot-cli.php messenger:consume -vv --time-limit=1800"
+            "php matchbot-cli.php messenger:consume -vv --time-limit=7200"
         ],
         "start": "php -S localhost:8080 -t public",
         "test": "phpunit",
