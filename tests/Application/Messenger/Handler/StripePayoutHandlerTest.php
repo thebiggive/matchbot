@@ -404,8 +404,10 @@ class StripePayoutHandlerTest extends TestCase
      *                                  still work from a Stripe perspective).
      * @return Redis|ObjectProphecy
      */
-    protected function getRedisWithNoPreviousData(bool $populateTwoPages, bool $invalidIds = false): Redis|ObjectProphecy
-    {
+    protected function getRedisWithNoPreviousData(
+        bool $populateTwoPages,
+        bool $invalidIds = false,
+    ): Redis|ObjectProphecy {
         $redisKey = 'stripe-payout-transfers-1596582000';
         $chargeId = $invalidIds ? 'ch_invalidId_123' : 'ch_externalId_123';
         $transferId = $invalidIds ? 'tr_invalidId_123' : 'tr_externalId_123';
