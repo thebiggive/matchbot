@@ -16,6 +16,7 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Redis;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\Service\ChargeService;
 use Stripe\Service\PayoutService;
@@ -62,7 +63,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $stripeTransferProphecy = $this->prophesize(TransferService::class);
         $stripeTransferProphecy
-            ->all($this->getTransferCalloutArgs())
+            ->all($this->getCommonCalloutArgs())
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse));
 
@@ -83,6 +84,10 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce();
         $loggerProphecy->info("Payout: Getting original TBG charge IDs related to payout's Charge IDs")
             ->shouldBeCalledOnce();
+        $loggerProphecy->info('Payout: Starting transfer ID to source charge ID map build, may take a while...')
+            ->shouldBeCalledOnce();
+        $loggerProphecy->info('Payout: ...completed transfer ID to source charge ID map build!')
+            ->shouldBeCalledOnce();
         $loggerProphecy->info('Payout: Donation not found with Charge ID ch_invalidId_123')
             ->shouldBeCalledOnce();
         $loggerProphecy->info('Payout: Finished getting original Charge IDs, found 1')
@@ -98,6 +103,7 @@ class StripePayoutHandlerTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(LoggerInterface::class, $loggerProphecy->reveal());
+        $container->set(Redis::class, $this->getRedisWithNoPreviousData(false, true)->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
@@ -106,6 +112,7 @@ class StripePayoutHandlerTest extends TestCase
             $container->get(DonationRepository::class),
             $container->get(EntityManagerInterface::class),
             $loggerProphecy->reveal(),
+            $container->get(Redis::class),
             $container->get(StripeClient::class)
         );
 
@@ -157,7 +164,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $stripeTransferProphecy = $this->prophesize(TransferService::class);
         $stripeTransferProphecy
-            ->all($this->getTransferCalloutArgs())
+            ->all($this->getCommonCalloutArgs())
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse));
 
@@ -174,6 +181,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(Redis::class, $this->getRedisWithNoPreviousData(false)->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
@@ -182,6 +190,7 @@ class StripePayoutHandlerTest extends TestCase
             $container->get(DonationRepository::class),
             $container->get(EntityManagerInterface::class),
             new NullLogger(),
+            $container->get(Redis::class),
             $container->get(StripeClient::class)
         );
 
@@ -227,7 +236,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $stripeTransferProphecy = $this->prophesize(TransferService::class);
         $stripeTransferProphecy
-            ->all($this->getTransferCalloutArgs())
+            ->all($this->getCommonCalloutArgs())
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse));
 
@@ -253,6 +262,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(Redis::class, $this->getRedisWithNoPreviousData(false)->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
@@ -261,6 +271,7 @@ class StripePayoutHandlerTest extends TestCase
             $container->get(DonationRepository::class),
             $container->get(EntityManagerInterface::class),
             new NullLogger(),
+            $container->get(Redis::class),
             $container->get(StripeClient::class)
         );
 
@@ -330,11 +341,11 @@ class StripePayoutHandlerTest extends TestCase
 
         $stripeTransferProphecy = $this->prophesize(TransferService::class);
         $stripeTransferProphecy
-            ->all($this->getTransferCalloutArgs())
+            ->all($this->getCommonCalloutArgs())
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse1));
         $stripeTransferProphecy
-            ->all(array_merge($this->getTransferCalloutArgs(), ['starting_after' => 'tr_externalId_124']))
+            ->all(array_merge($this->getCommonCalloutArgs(), ['starting_after' => 'tr_externalId_124']))
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($transferResponse2));
 
@@ -364,6 +375,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(Redis::class, $this->getRedisWithNoPreviousData(true)->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
@@ -372,6 +384,7 @@ class StripePayoutHandlerTest extends TestCase
             $container->get(DonationRepository::class),
             $container->get(EntityManagerInterface::class),
             new NullLogger(),
+            $container->get(Redis::class),
             $container->get(StripeClient::class)
         );
 
@@ -383,6 +396,49 @@ class StripePayoutHandlerTest extends TestCase
         // Ensure both donations looked up are now Paid.
         $this->assertEquals('Paid', $altDonation->getDonationStatus());
         $this->assertEquals('Paid', $donation->getDonationStatus());
+    }
+
+    /**
+     * @param bool $populateTwoPages    For tests simulating a second API 'page' of transfers
+     * @param bool $invalidIds          For tests where the txfr + charge ID should be invalids versions (but
+     *                                  still work from a Stripe perspective).
+     * @return Redis|ObjectProphecy
+     */
+    protected function getRedisWithNoPreviousData(bool $populateTwoPages, bool $invalidIds = false): Redis|ObjectProphecy
+    {
+        $redisKey = 'stripe-payout-transfers-1596582000';
+        $chargeId = $invalidIds ? 'ch_invalidId_123' : 'ch_externalId_123';
+        $transferId = $invalidIds ? 'tr_invalidId_123' : 'tr_externalId_123';
+
+        $redisProphecy = $this->prophesize(Redis::class);
+
+        $redisProphecy->exists($redisKey)
+            ->shouldBeCalledOnce()
+            ->willReturn(0);
+
+        $redisProphecy->hSet($redisKey, $transferId, $chargeId)
+            ->shouldBeCalledOnce()
+            ->willReturn(1);
+        if ($populateTwoPages) {
+            $redisProphecy->hSet($redisKey, 'tr_externalId_124', 'ch_externalId_124')
+                ->shouldBeCalledOnce()
+                ->willReturn(1);
+        }
+
+        $redisProphecy->expireAt($redisKey, Argument::type('int'))
+            ->shouldBeCalledOnce()
+            ->willReturn(true);
+
+        $redisProphecy->hGet($redisKey, $transferId)
+            ->shouldBeCalledOnce()
+            ->willReturn($chargeId);
+        if ($populateTwoPages) {
+            $redisProphecy->hGet($redisKey, 'tr_externalId_124')
+                ->shouldBeCalledOnce()
+                ->willReturn('ch_externalId_124');
+        }
+
+        return $redisProphecy;
     }
 
     /**
@@ -410,20 +466,10 @@ class StripePayoutHandlerTest extends TestCase
     protected function getCommonCalloutArgs(): array
     {
         return [
-            'created' => [ // Based on the date range from our standard test data payout (-22D, +1D).
-                'gt' => 1596634856,
-                'lt' => 1598622056
-            ],
-            'limit' => 100
-        ];
-    }
-
-    private function getTransferCalloutArgs(): array
-    {
-        return [
-            'created' => [ // Based on the Connected Account charges min + max times +/- 10s.
-                'gt' => 1594646313,
-                'lt' => 1594646333
+            // Based on the date range from our standard test data payout (00:00 on the -22D, +1D days).
+            'created' => [
+                'gt' => 1596582000,
+                'lt' => 1598569200,
             ],
             'limit' => 100
         ];
