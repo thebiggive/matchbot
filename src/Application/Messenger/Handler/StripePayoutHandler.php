@@ -9,6 +9,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Redis;
 use Stripe\Charge;
 use Stripe\Collection;
 use Stripe\Exception\ApiErrorException;
@@ -26,6 +27,7 @@ class StripePayoutHandler implements MessageHandlerInterface
         private DonationRepository $donationRepository,
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
+        private Redis $redis,
         private StripeClient $stripeClient,
     ) {
     }
@@ -177,10 +179,14 @@ class StripePayoutHandler implements MessageHandlerInterface
         $fromDate = clone $payoutCreated;
         $toDate = clone $payoutCreated;
 
-        // We assume payouts close to the 2021 schedule of 2 week minimum offset – with a fixed day
-        // of the week for payouts making the maximum normal lag 21 days.
-        $fromDate->sub(new \DateInterval('P22D'));
-        $toDate->add(new \DateInterval('P1D'));
+        // We assume payouts are similar to the 2021 schedule of 2 week minimum offset with a fixed day
+        // of the week for payouts, making the maximum normal lag 21 days. We want to 'fuzz' the dates
+        // by using 00:00 just before/after the window so that we can use the timestamp as a Redis cache
+        // key and expect each charity's payout to be able to use the same saved Transfer to Charge ID
+        // map info, regardless of whether their payouts happened a few seconds or minutes apart.
+        $tz = new \DateTimeZone('Europe/London');
+        $fromDate->sub(new \DateInterval('P22D'))->setTimezone($tz)->setTime(0, 0);
+        $toDate->add(new \DateInterval('P1D'))->setTimezone($tz)->setTime(0, 0);
 
         $createdConstraint = [
             'gt' => $fromDate->getTimestamp(),
@@ -192,8 +198,6 @@ class StripePayoutHandler implements MessageHandlerInterface
         $moreCharges = true;
         $lastChargeId = null;
         $sourceTransferIds = [];
-        $earliestChargeTime = null;
-        $latestChargeTime = null;
 
         $chargeListParams = [
             'created' => $createdConstraint,
@@ -209,14 +213,6 @@ class StripePayoutHandler implements MessageHandlerInterface
 
             foreach ($charges->data as $charge) {
                 $lastChargeId = $charge->id;
-
-                if ($earliestChargeTime === null || $charge->created < $earliestChargeTime) {
-                    $earliestChargeTime = $charge->created;
-                }
-
-                if ($latestChargeTime === null || $charge->created > $latestChargeTime) {
-                    $latestChargeTime = $charge->created;
-                }
 
                 if (!in_array($charge->id, $paidChargeIds, true)) {
                     continue;
@@ -235,16 +231,61 @@ class StripePayoutHandler implements MessageHandlerInterface
             }
         }
 
+        if ($this->redis->exists($this->buildRedisTransferToChargeHashKey($fromDate->getTimestamp())) === 0) {
+            $this->buildTranferIdToSourceChargeMap($fromDate->getTimestamp(), $toDate->getTimestamp());
+        }
+
+        $originalChargeIds = [];
+        foreach ($sourceTransferIds as $sourceTransferId) {
+            $originalChargeIds[] = $this->getOriginalChargeId($sourceTransferId, $fromDate->getTimestamp());
+        }
+
+        $this->logger->info(
+            sprintf('Payout: Finished getting original Charge IDs, found %s', count($originalChargeIds))
+        );
+
+        return $originalChargeIds;
+    }
+
+    private function getOriginalChargeId(string $transferId, int $startTimestamp): ?string
+    {
+        $chargeId = $this->redis->hGet(
+            $this->buildRedisTransferToChargeHashKey($startTimestamp),
+            $transferId,
+        );
+
+        if ($chargeId === false) {
+            $this->logger->error(sprintf(
+                "Could not find original charge for Transfer %s in the IDs map from %d",
+                $chargeId,
+                $startTimestamp,
+            ));
+
+            return null;
+        }
+
+        return $chargeId;
+    }
+
+    private function buildTranferIdToSourceChargeMap(int $fromTime, int $toTime): void
+    {
+        // We saw this taking around 12 minutes when covering the biggest CC21 week – it has to page
+        // through *all* TBG transfers 100 per call! This is primarily why it is cached in Redis, as
+        // prior to this being built this whole process had to be done for *each* charity payout, i.e.
+        // potentially ~1,000 times from the same day.
+        $this->logger->info('Payout: Starting transfer ID to source charge ID map build, may take a while...');
+
+        $redisHashKey = $this->buildRedisTransferToChargeHashKey($fromTime);
+
         $moreTransfers = true;
         $lastTransferId = null;
-        $originalChargeIds = [];
 
         // In a CC21 spot check, the TBG Account transfer created time was the same second as the
         // Connected Account's charge created time. We check 10s either side here just in case there's
         // sometimes a small lag.
         $transfersCreatedConstraint = [
-            'gt' => $earliestChargeTime - 10,
-            'lt' => $latestChargeTime + 10,
+            'gt' => $fromTime,
+            'lt' => $toTime,
         ];
 
         $transferListParams = [
@@ -259,12 +300,7 @@ class StripePayoutHandler implements MessageHandlerInterface
 
             foreach ($transfers->data as $transfer) {
                 $lastTransferId = $transfer->id;
-
-                if (!in_array($transfer->id, $sourceTransferIds, true)) {
-                    continue;
-                }
-
-                $originalChargeIds[] = $transfer->source_transaction;
+                $this->redis->hSet($redisHashKey, $transfer->id, $transfer->source_transaction);
             }
 
             $moreTransfers = $transfers->has_more;
@@ -277,10 +313,13 @@ class StripePayoutHandler implements MessageHandlerInterface
             }
         }
 
-        $this->logger->info(
-            sprintf('Payout: Finished getting original Charge IDs, found %s', count($originalChargeIds))
-        );
+        $this->redis->expireAt($redisHashKey, time() + 14 * 60 * 60); // Cache results for 14h.
 
-        return $originalChargeIds;
+        $this->logger->info('Payout: ...completed transfer ID to source charge ID map build!');
+    }
+
+    private function buildRedisTransferToChargeHashKey(int $startTimestamp): string
+    {
+        return "stripe-payout-transfers-$startTimestamp";
     }
 }
