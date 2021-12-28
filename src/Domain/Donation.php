@@ -996,6 +996,7 @@ class Donation extends SalesforceWriteProxy
         $donationMessage->amount = (float) $this->amount;
 
         $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber();
+        $donationMessage->org_name = $this->getCampaign()->getCharity()->getName();
 
         return $donationMessage;
     }

@@ -115,5 +115,6 @@ class DonationTest extends TestCase
         $this->assertEquals('N1 1AA', $claimBotMessage->postcode);
         $this->assertEquals(123.45, $claimBotMessage->amount);
         $this->assertEquals('AB12345', $claimBotMessage->org_hmrc_ref);
+        $this->assertEquals('Test charity', $claimBotMessage->org_name);
     }
 }

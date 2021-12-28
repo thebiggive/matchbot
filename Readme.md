@@ -97,7 +97,8 @@ messages for delayed processing – MatchBot needs to handle messages for Stripe
 payout paid webhooks, which take some time to process, and for failed Gift Aid
 claim attempts from ClaimBot.
 
-Additionally, it *publishes* messages to ClaimBot's separate queue for newly-claimable donations.
+Additionally, it *publishes* messages to ClaimBot's separate queue for newly-claimable donations and its own when a
+new payout hook is just received and requires prompt acknowledgement.
 
 Locally, Redis is used for queues instead. The `MESSENGER_TRANSPORT_DSN` and
 `CLAIMBOT_MESSENGER_TRANSPORT_DSN` env vars determine the queue configuration
