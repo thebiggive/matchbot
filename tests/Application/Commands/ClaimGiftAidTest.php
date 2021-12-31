@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Commands;
 
+use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Commands\ClaimGiftAid;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
@@ -28,6 +30,10 @@ class ClaimGiftAidTest extends TestCase
             ->willReturn([])
             ->shouldBeCalledOnce();
 
+        $em = $this->prophesize(EntityManagerInterface::class);
+        $em->persist(Argument::any())->shouldNotBeCalled();
+        $em->flush()->shouldNotBeCalled();
+
         $bus = $this->prophesize(RoutableMessageBus::class);
 
         $testDonation = $this->getTestDonation();
@@ -38,7 +44,7 @@ class ClaimGiftAidTest extends TestCase
         );
         $bus->dispatch($envelope)->shouldNotBeCalled();
 
-        $commandTester = new CommandTester($this->getCommand($donationRepoProphecy, $bus));
+        $commandTester = new CommandTester($this->getCommand($donationRepoProphecy, $em, $bus));
         $commandTester->execute([]);
 
         $expectedOutputLines = [
@@ -60,6 +66,10 @@ class ClaimGiftAidTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn([$testDonation]);
 
+        $em = $this->prophesize(EntityManagerInterface::class);
+        $em->persist($testDonation)->shouldBeCalledOnce();
+        $em->flush()->shouldBeCalledOnce();
+
         $bus = $this->prophesize(RoutableMessageBus::class);
 
         $envelope = new Envelope(
@@ -70,7 +80,7 @@ class ClaimGiftAidTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn($envelope);
 
-        $commandTester = new CommandTester($this->getCommand($donationRepoProphecy, $bus));
+        $commandTester = new CommandTester($this->getCommand($donationRepoProphecy, $em, $bus));
         $commandTester->execute([]);
 
         $expectedOutputLines = [
@@ -82,9 +92,16 @@ class ClaimGiftAidTest extends TestCase
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    private function getCommand(ObjectProphecy $donationRepoProphecy, ObjectProphecy $routableBusProphecy): ClaimGiftAid
-    {
-        $command = new ClaimGiftAid($donationRepoProphecy->reveal(), $routableBusProphecy->reveal());
+    private function getCommand(
+        ObjectProphecy $donationRepoProphecy,
+        ObjectProphecy $entityManagerProphecy,
+        ObjectProphecy $routableBusProphecy,
+    ): ClaimGiftAid {
+        $command = new ClaimGiftAid(
+            $donationRepoProphecy->reveal(),
+            $entityManagerProphecy->reveal(),
+            $routableBusProphecy->reveal(),
+        );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
 
         return $command;

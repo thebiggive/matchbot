@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -21,6 +22,7 @@ class ClaimGiftAid extends LockingCommand
 
     public function __construct(
         private DonationRepository $donationRepository,
+        private EntityManagerInterface $entityManager,
         private RoutableMessageBus $bus,
     ) {
         parent::__construct();
@@ -42,7 +44,12 @@ class ClaimGiftAid extends LockingCommand
                     new TransportMessageIdStamp("claimbot.donation.claim.{$donation->getUuid()}"),
                 ];
                 $this->bus->dispatch(new Envelope($donation->toClaimBotModel(), $stamps));
+
+                $donation->setTbgGiftAidRequestQueuedAt(new \DateTime());
+                $this->entityManager->persist($donation);
             }
+
+            $this->entityManager->flush();
         }
 
         $numberSent = count($toClaim);

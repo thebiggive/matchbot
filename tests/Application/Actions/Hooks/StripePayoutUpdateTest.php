@@ -22,8 +22,8 @@ class StripePayoutUpdateTest extends StripeTest
         /** @var Container $container */
         $container = $app->getContainer();
 
-        // Payment Intent events, including cancellations, return a 204 No Content no-op for now.
-        $body = $this->getStripeHookMock('pi_canceled');
+        // Should 204 no-op if hook mistakenly configured to send this event.
+        $body = $this->getStripeHookMock('po_created');
         $webhookSecret = $container->get('settings')['stripe']['connectAppWebhookSecret'];
         $time = (string) time();
 

@@ -37,6 +37,7 @@ $messengerReceiverLocator->set($messengerReceiverKey, $psr11App->get(TransportIn
 $commands = [
     new ClaimGiftAid(
         $psr11App->get(DonationRepository::class),
+        $psr11App->get(EntityManagerInterface::class),
         $psr11App->get(RoutableMessageBus::class),
     ),
     new ConsumeMessagesCommand(
