@@ -11,6 +11,7 @@ use MatchBot\Domain\DonationRepository;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
+use Stripe\Charge;
 use Stripe\Event;
 use Stripe\StripeClient;
 
@@ -61,7 +62,10 @@ class StripeChargeUpdate extends Stripe
 
     private function handleChargeSucceeded(Event $event): Response
     {
-        $intentId = $event->data->object->payment_intent;
+        /** @var Charge $charge */
+        $charge = $event->data->object;
+
+        $intentId = $charge->payment_intent;
 
         /** @var Donation $donation */
         $donation = $this->donationRepository->findOneBy(['transactionId' => $intentId]);
@@ -74,23 +78,24 @@ class StripeChargeUpdate extends Stripe
         // For now we support the happy success path,
         // as this is the only event type we're handling right now,
         // convert status to the one SF uses.
-        if ($event->data->object->status === 'succeeded') {
-            $donation->setChargeId($event->data->object->id);
+        if ($charge->status === 'succeeded') {
+            $donation->setChargeId($charge->id);
+            $donation->setTransferId($charge->transfer);
             $donation->setDonationStatus('Collected');
 
             // To give *simulated* webhooks, for Donation API-only load tests, an easy way to complete
             // without crashing, we support skipping the original fee derivation by omitting
             // `balance_transaction`. Real stripe charge.succeeded webhooks should always have
             // an associated Balance Transaction.
-            if (!empty($event->data->object->balance_transaction)) {
+            if (!empty($charge->balance_transaction)) {
                 $originalFeeFractional = $this->getOriginalFeeFractional(
-                    $event->data->object->balance_transaction,
+                    $charge->balance_transaction,
                     $donation->getCurrencyCode(),
                 );
                 $donation->setOriginalPspFeeFractional($originalFeeFractional);
             }
         } else {
-            return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
+            return $this->validationError(sprintf('Unsupported Status "%s"', $charge->status));
         }
 
         $this->entityManager->persist($donation);
@@ -100,7 +105,7 @@ class StripeChargeUpdate extends Stripe
         // batch sync.
         $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
-        return $this->respondWithData($event->data->object);
+        return $this->respondWithData($charge);
     }
 
     private function handleChargeRefunded(Event $event): Response
@@ -121,7 +126,7 @@ class StripeChargeUpdate extends Stripe
 
         // Available status' (pending, succeeded, failed, canceled),
         // see: https://stripe.com/docs/api/refunds/object.
-        // For now we support the successful refund (inc. partial) path,
+        // For now we support the successful refund path (inc. partial refund IF it's for the tip amount),
         // converting status to the one MatchBot + SF use.
         if ($event->data->object->status !== 'succeeded') {
             return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
