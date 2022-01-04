@@ -105,6 +105,15 @@ class Donation extends SalesforceWriteProxy
     protected ?string $chargeId = null;
 
     /**
+     * @ORM\Column(type="string", unique=true, nullable=true)
+     * @var string|null PSP's transfer ID assigned on a successful charge. For Stripe this
+     *                  ID relates to the Platform Account (i.e. the Big Give's) rather than
+     *                  the Connected Account for the charity receiving the transferred
+     *                  donation balance.
+     */
+    protected ?string $transferId = null;
+
+    /**
      * @ORM\Column(type="string", length=3)
      * @var string  ISO 4217 code for the currency in which all monetary values are denominated, e.g. 'GBP'.
      */
@@ -586,6 +595,22 @@ class Donation extends SalesforceWriteProxy
     public function setChargeId(string $chargeId): void
     {
         $this->chargeId = $chargeId;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getTransferId(): ?string
+    {
+        return $this->transferId;
+    }
+
+    /**
+     * @param string|null $transferId
+     */
+    public function setTransferId(?string $transferId): void
+    {
+        $this->transferId = $transferId;
     }
 
     public function getDonorCountryCode(): ?string
