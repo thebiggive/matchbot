@@ -22,4 +22,5 @@ class Donation
     public float $amount;
     public bool $sponsored = false;
     public ?string $org_hmrc_ref = null;
+    public ?string $org_name = null;
 }
