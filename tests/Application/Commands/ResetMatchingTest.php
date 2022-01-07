@@ -71,8 +71,8 @@ class ResetMatchingTest extends TestCase
                         "Table 'matchbot.CampaignFunding' doesn't exist"
                     )
                 ),
-                new Query('SELECT test...', [], [])),
-            )
+                new Query('SELECT test...', [], []),
+            ))
             ->shouldBeCalledOnce();
 
         $command = new ResetMatching($campaignFundingRepoProphecy->reveal(), $matchingAdapterProphecy->reveal());
