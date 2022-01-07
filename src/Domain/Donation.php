@@ -267,13 +267,13 @@ class Donation extends SalesforceWriteProxy
     protected ?bool $tbgShouldProcessGiftAid = null;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
+     * @ORM\Column(type="datetime", nullable=true)
      * @var ?DateTime   When a queued message that should lead to a Gift Aid claim was sent.
      */
     protected ?DateTime $tbgGiftAidRequestQueuedAt = null;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
+     * @ORM\Column(type="datetime", nullable=true)
      * @var ?DateTime   When a claim submission attempt was detected to have an error returned.
      */
     protected ?DateTime $tbgGiftAidRequestFailedAt = null;

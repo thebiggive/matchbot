@@ -12,6 +12,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Psr\Log\LoggerInterface;
 
 class GiftAidErrorHandlerTest extends TestCase
 {
@@ -44,6 +45,7 @@ class GiftAidErrorHandlerTest extends TestCase
         $giftAidErrorHandler = new GiftAidErrorHandler(
             $container->get(DonationRepository::class),
             $container->get(EntityManagerInterface::class),
+            $container->get(LoggerInterface::class),
         );
 
         $donationMessage = $this->getTestDonation()->toClaimBotModel();

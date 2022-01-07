@@ -237,6 +237,7 @@ return function (ContainerBuilder $containerBuilder) {
         RoutableMessageBus::class => static function (ContainerInterface $c): RoutableMessageBus {
             $busContainer = new Container();
             $busContainer->set('claimbot.donation.claim', $c->get(MessageBusInterface::class));
+            $busContainer->set('claimbot.donation.error', $c->get(MessageBusInterface::class));
             $busContainer->set('stripe.payout.paid', $c->get(MessageBusInterface::class));
 
             return new RoutableMessageBus($busContainer);
