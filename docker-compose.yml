@@ -16,6 +16,8 @@ services:
     depends_on:
       - db
       - redis
+    networks:
+      - matchbot
 
   db:
     image: mysql:8.0
@@ -25,6 +27,14 @@ services:
     environment:
       MYSQL_DATABASE: matchbot
       MYSQL_ROOT_PASSWORD: tbgLocal123
+    networks:
+      - matchbot
 
   redis:
     image: redis:5.0
+    networks:
+      - matchbot
+
+networks:
+  matchbot:
+    driver: bridge
