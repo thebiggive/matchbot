@@ -112,13 +112,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
             !empty($hmrcReferenceNumber) &&
             in_array($giftAidOnboardingStatus, static::$giftAidOnboardedStatuses, true)
         );
-        if ($tbgCanClaimGiftAid) {
-            $charity->setTbgClaimingGiftAid(true);
-            $charity->setHmrcReferenceNumber($hmrcReferenceNumber);
-        } else {
-            $charity->setTbgClaimingGiftAid(false);
-            $charity->setHmrcReferenceNumber(null);
-        }
+
+        $charity->setTbgClaimingGiftAid($tbgCanClaimGiftAid);
+        // May be null. Should be set to its string value if provided even if the charity is now opted out for new
+        // claims, because there could still be historic donations that should be claimed by TBG.
+        $charity->setHmrcReferenceNumber($hmrcReferenceNumber);
 
         $charity->setSalesforceLastPull(new DateTime('now'));
         $this->getEntityManager()->persist($charity);
