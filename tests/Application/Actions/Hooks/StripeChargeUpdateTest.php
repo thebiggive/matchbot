@@ -138,6 +138,7 @@ class StripeChargeUpdateTest extends StripeTest
         $response = $app->handle($request);
 
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
+        $this->assertEquals('tr_id_t987', $donation->getTransferId());
         $this->assertEquals('Collected', $donation->getDonationStatus());
         $this->assertEquals('0.37', $donation->getOriginalPspFee());
         $this->assertEquals(200, $response->getStatusCode());
@@ -188,6 +189,7 @@ class StripeChargeUpdateTest extends StripeTest
         $response = $app->handle($request);
 
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
+        $this->assertEquals('tr_id_t988', $donation->getTransferId());
         $this->assertEquals('Collected', $donation->getDonationStatus());
         $this->assertEquals('18.72', $donation->getOriginalPspFee());
         $this->assertEquals(200, $response->getStatusCode());
