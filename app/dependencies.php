@@ -33,7 +33,7 @@ use Slim\Psr7\Factory\ResponseFactory;
 use Stripe\StripeClient;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Lock\LockFactory;
-use Symfony\Component\Lock\Store\PdoStore;
+use Symfony\Component\Lock\Store\DoctrineDbalStore;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsTransportFactory;
 use Symfony\Component\Messenger\Bridge\Redis\Transport\RedisTransportFactory;
 use Symfony\Component\Messenger\Handler\HandlersLocator;
@@ -104,7 +104,7 @@ return function (ContainerBuilder $containerBuilder) {
 
         LockFactory::class => function (ContainerInterface $c): LockFactory {
             $em = $c->get(EntityManagerInterface::class);
-            $lockStore = new PdoStore($em->getConnection(), ['db_table' => 'CommandLockKeys']);
+            $lockStore = new DoctrineDbalStore($em->getConnection(), ['db_table' => 'CommandLockKeys']);
             $factory = new LockFactory($lockStore);
             $factory->setLogger($c->get(LoggerInterface::class));
 
