@@ -86,6 +86,7 @@ return function (ContainerBuilder $containerBuilder) {
                 'forwarded_headers_allowed' => [
                     'X-Forwarded-For',
                 ],
+                'hash_ips' => true, // Required for Redis storage of IPv6 addresses.
             ],
 
             'redis' => [
