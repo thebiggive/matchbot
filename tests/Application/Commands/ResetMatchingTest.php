@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Commands;
 
-use Doctrine\DBAL\Driver\PDOException;
+use Doctrine\DBAL\Driver\PDO\Exception as PDOException;
 use Doctrine\DBAL\Exception\TableNotFoundException;
+use Doctrine\DBAL\Query;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFunding;
@@ -63,15 +64,15 @@ class ResetMatchingTest extends TestCase
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
         $campaignFundingRepoProphecy->findAll()
             ->willThrow(new TableNotFoundException(
-                'An exception occurred.. (unit test sample message)',
-                // Doctrine PDOException (a DriverException subclass) wraps native \PDOException.
-                new PDOException(
+                // Doctrine PDO\Exception (a DriverException subclass) wraps native \PDOException.
+                PDOException::new(
                     new \PDOException(
                         'SQLSTATE[42S02]: Base table or view not found: 1146 ' .
                         "Table 'matchbot.CampaignFunding' doesn't exist"
                     )
-                )
-            ))
+                ),
+                new Query('SELECT test...', [], [])),
+            )
             ->shouldBeCalledOnce();
 
         $command = new ResetMatching($campaignFundingRepoProphecy->reveal(), $matchingAdapterProphecy->reveal());

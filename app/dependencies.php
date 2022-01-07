@@ -15,7 +15,6 @@ use LosMiddleware\RateLimit\RateLimitMiddleware;
 use LosMiddleware\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Matching;
-use MatchBot\Application\Messenger;
 use MatchBot\Application\Messenger\Handler\GiftAidErrorHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
@@ -134,14 +133,14 @@ return function (ContainerBuilder $containerBuilder) {
             return new MessageBus([
                 new SendMessageMiddleware(new SendersLocator(
                     [
-                        Messenger\Donation::class => [ClaimBotTransport::class],
+                        Messages\Donation::class => [ClaimBotTransport::class],
                         StripePayout::class => [TransportInterface::class],
                     ],
                     $c,
                 )),
                 new HandleMessageMiddleware(new HandlersLocator(
                     [
-                        Messenger\Donation::class => [$c->get(GiftAidErrorHandler::class)],
+                        Messages\Donation::class => [$c->get(GiftAidErrorHandler::class)],
                         StripePayout::class => [$c->get(StripePayoutHandler::class)],
                     ],
                 )),

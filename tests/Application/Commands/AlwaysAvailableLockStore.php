@@ -32,7 +32,7 @@ class AlwaysAvailableLockStore implements BlockingStoreInterface
         // Do nothing
     }
 
-    public function exists(Key $key)
+    public function exists(Key $key): bool
     {
         return false;
     }
