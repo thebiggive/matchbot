@@ -15,7 +15,6 @@ use LosMiddleware\RateLimit\RateLimitMiddleware;
 use LosMiddleware\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Matching;
-use MatchBot\Application\Messenger;
 use MatchBot\Application\Messenger\Handler\GiftAidErrorHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
@@ -134,14 +133,14 @@ return function (ContainerBuilder $containerBuilder) {
             return new MessageBus([
                 new SendMessageMiddleware(new SendersLocator(
                     [
-                        Messenger\Donation::class => [ClaimBotTransport::class],
+                        Messages\Donation::class => [ClaimBotTransport::class],
                         StripePayout::class => [TransportInterface::class],
                     ],
                     $c,
                 )),
                 new HandleMessageMiddleware(new HandlersLocator(
                     [
-                        Messenger\Donation::class => [$c->get(GiftAidErrorHandler::class)],
+                        Messages\Donation::class => [$c->get(GiftAidErrorHandler::class)],
                         StripePayout::class => [$c->get(StripePayoutHandler::class)],
                     ],
                 )),
@@ -238,6 +237,7 @@ return function (ContainerBuilder $containerBuilder) {
         RoutableMessageBus::class => static function (ContainerInterface $c): RoutableMessageBus {
             $busContainer = new Container();
             $busContainer->set('claimbot.donation.claim', $c->get(MessageBusInterface::class));
+            $busContainer->set('claimbot.donation.error', $c->get(MessageBusInterface::class));
             $busContainer->set('stripe.payout.paid', $c->get(MessageBusInterface::class));
 
             return new RoutableMessageBus($busContainer);
