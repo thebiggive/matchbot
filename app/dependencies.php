@@ -28,6 +28,7 @@ use Monolog\Processor\UidProcessor;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\SimpleCache\CacheInterface;
+use ReCaptcha\ReCaptcha;
 use Slim\Psr7\Factory\ResponseFactory;
 use Stripe\StripeClient;
 use Symfony\Component\Cache\Psr16Cache;
@@ -199,6 +200,10 @@ return function (ContainerBuilder $containerBuilder) {
                 $c->get(ProblemDetailsResponseFactory::class),
                 new RateLimitOptions($c->get('settings')['los_rate_limit']),
             );
+        },
+
+        ReCaptcha::class => static function (ContainerInterface $c): ReCaptcha {
+            return new ReCaptcha($c->get('settings')['recaptcha']['secret_key']);
         },
 
         /**

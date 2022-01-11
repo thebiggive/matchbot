@@ -43,7 +43,7 @@ class Create extends Action
      */
     protected function action(): Response
     {
-        $body = $this->request->getBody()->getContents();
+        $body = (string) $this->request->getBody();
 
         try {
             /** @var DonationCreate $donationData */
