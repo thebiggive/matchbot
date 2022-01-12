@@ -12,6 +12,8 @@ class Donation
     public ?string $transactionId = null;
     public string $status;
     public string $charityId;
+    /** @var string|null Used only on creates; not persisted. */
+    public ?string $creationRecaptchaCode = null;
     public ?string $currencyCode = 'GBP';
     public float $donationAmount;
     public ?float $feeCoverAmount = null;

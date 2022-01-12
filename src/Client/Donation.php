@@ -53,7 +53,7 @@ class Donation extends Common
             throw new BadRequestException('Donation not created');
         }
 
-        $donationCreatedResponse = json_decode($response->getBody()->getContents(), true);
+        $donationCreatedResponse = json_decode((string) $response->getBody(), true);
 
         return $donationCreatedResponse['donation']['donationId'];
     }

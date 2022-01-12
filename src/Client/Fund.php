@@ -19,7 +19,7 @@ class Fund extends Common
             throw new NotFoundException('Fund not found');
         }
 
-        return json_decode($response->getBody()->getContents(), true);
+        return json_decode((string) $response->getBody(), true);
     }
 
     /**
@@ -35,6 +35,6 @@ class Fund extends Common
             throw new NotFoundException('Campaign not found');
         }
 
-        return json_decode($response->getBody()->getContents(), true);
+        return json_decode((string) $response->getBody(), true);
     }
 }

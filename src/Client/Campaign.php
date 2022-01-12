@@ -26,7 +26,7 @@ class Campaign extends Common
             throw $exception;
         }
 
-        $campaignResponse = json_decode($response->getBody()->getContents(), true);
+        $campaignResponse = json_decode((string) $response->getBody(), true);
 
         // Check the 'ready' field is set before we check if it's false.
         // Reason for this is if it's not set, we might still be interacting with an older

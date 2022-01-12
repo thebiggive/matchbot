@@ -92,7 +92,7 @@ class CreateTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel());
+        $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -130,7 +130,7 @@ class CreateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel());
+        $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -188,7 +188,7 @@ class CreateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel());
+        $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -224,7 +224,7 @@ class CreateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel());
+        $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -267,7 +267,7 @@ class CreateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel());
+        $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest(
             'POST',
             '/v1/donations',
@@ -372,7 +372,7 @@ class CreateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel());
+        $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -435,7 +435,7 @@ class CreateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel());
+        $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -545,7 +545,7 @@ class CreateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel());
+        $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -660,7 +660,7 @@ class CreateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel());
+        $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -715,7 +715,7 @@ class CreateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel());
+        $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -745,6 +745,14 @@ class CreateTest extends TestCase
         $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
     }
 
+    public function encodeWithDummyCaptcha(Donation $donation): string
+    {
+        $donationArray = $donation->toApiModel();
+        $donationArray['creationRecaptchaCode'] = 'good response';
+
+        return json_encode($donationArray);
+    }
+
     /**
      * Use unmatched campaign in previous test but also omit all donor-supplied
      * detail except donation and tip amount, to test new 2-step Create setup.
@@ -770,7 +778,7 @@ class CreateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel());
+        $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 

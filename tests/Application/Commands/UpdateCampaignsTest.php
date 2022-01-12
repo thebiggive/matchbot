@@ -94,7 +94,7 @@ class UpdateCampaignsTest extends TestCase
         // Subclass of Guzzle TransferException
         $exception = new RequestException(
             'dummy exc message',
-            new Request('get', 'https://example.com'),
+            new Request('GET', 'https://example.com'),
         );
 
         $campaign = new Campaign();
@@ -139,7 +139,7 @@ class UpdateCampaignsTest extends TestCase
         // Subclass of Guzzle TransferException
         $exception = new RequestException(
             'dummy exc message',
-            new Request('get', 'https://example.com'),
+            new Request('GET', 'https://example.com'),
         );
 
         $campaign = new Campaign();
