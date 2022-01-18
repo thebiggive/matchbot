@@ -1019,7 +1019,12 @@ class Donation extends SalesforceWriteProxy
         if ($this->donorHomeAddressLine1 !== null) {
             $donationMessage->house_no = preg_replace('/^([0-9a-z-]+).*$/i', '$1', $this->donorHomeAddressLine1);
         }
-        $donationMessage->postcode = $this->donorHomePostcode;
+
+        $donationMessage->postcode = ($this->donorHomePostcode === 'OVERSEAS')
+            ? ''
+            : ($this->donorHomePostcode ?? '');
+        $donationMessage->overseas = $this->donorHomePostcode === 'OVERSEAS';
+
         $donationMessage->amount = (float) $this->amount;
 
         $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber() ?? '';
