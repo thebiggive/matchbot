@@ -94,7 +94,7 @@ class DonationTest extends TestCase
         $this->assertEquals('1.23', $donation->getOriginalPspFee());
     }
 
-    public function testToClaimBotModel(): void
+    public function testToClaimBotModelUK(): void
     {
         $donation = $this->getTestDonation();
 
@@ -116,5 +116,22 @@ class DonationTest extends TestCase
         $this->assertEquals(123.45, $claimBotMessage->amount);
         $this->assertEquals('AB12345', $claimBotMessage->org_hmrc_ref);
         $this->assertEquals('Test charity', $claimBotMessage->org_name);
+        $this->assertEquals(false, $claimBotMessage->overseas);
+    }
+
+    public function testToClaimBotModelOverseas(): void
+    {
+        $donation = $this->getTestDonation();
+
+        $donation->setDonorHomePostcode('OVERSEAS');
+        $donation->getCampaign()->getCharity()->setTbgClaimingGiftAid(true);
+        $donation->getCampaign()->getCharity()->setHmrcReferenceNumber('AB12345');
+        $donation->setTbgShouldProcessGiftAid(true);
+
+        $claimBotMessage = $donation->toClaimBotModel();
+
+        $this->assertEquals('1', $claimBotMessage->house_no);
+        $this->assertEquals('', $claimBotMessage->postcode);
+        $this->assertEquals(true, $claimBotMessage->overseas);
     }
 }
