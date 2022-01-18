@@ -417,7 +417,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->andWhere('d.tbgShouldProcessGiftAid = TRUE')
             ->andWhere('d.tbgGiftAidRequestQueuedAt IS NULL')
             ->andWhere('c.hmrcReferenceNumber IS NOT NULL')
-            ->andWhere('d.createdAt < :claimGiftAidForDonationsAfter')
+            ->andWhere('d.collectedAt < :claimGiftAidForDonationsAfter')
             ->orderBy('c.id', 'ASC') // group donations for the same charity together in batches
             ->addOrderBy('d.collectedAt', 'ASC')
             ->setParameter('claimGiftAidWithStatus', 'Paid')
