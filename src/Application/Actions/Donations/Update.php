@@ -57,7 +57,7 @@ class Update extends Action
             throw new DomainRecordNotFoundException('Donation not found');
         }
 
-        $body = $this->request->getBody()->getContents();
+        $body = (string) $this->request->getBody();
 
         try {
             /** @var HttpModels\Donation $donationData */

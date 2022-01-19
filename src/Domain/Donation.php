@@ -10,7 +10,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
-use MatchBot\Application\Messenger;
+use Messages;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -267,13 +267,13 @@ class Donation extends SalesforceWriteProxy
     protected ?bool $tbgShouldProcessGiftAid = null;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
+     * @ORM\Column(type="datetime", nullable=true)
      * @var ?DateTime   When a queued message that should lead to a Gift Aid claim was sent.
      */
     protected ?DateTime $tbgGiftAidRequestQueuedAt = null;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
+     * @ORM\Column(type="datetime", nullable=true)
      * @var ?DateTime   When a claim submission attempt was detected to have an error returned.
      */
     protected ?DateTime $tbgGiftAidRequestFailedAt = null;
@@ -1006,9 +1006,9 @@ class Donation extends SalesforceWriteProxy
         return in_array($this->donationStatus, $this->newStatuses, true);
     }
 
-    public function toClaimBotModel(): Messenger\Donation
+    public function toClaimBotModel(): Messages\Donation
     {
-        $donationMessage = new Messenger\Donation();
+        $donationMessage = new Messages\Donation();
         $donationMessage->id = $this->uuid->toString();
         $donationMessage->donation_date = $this->collectedAt->format('Y-m-d');
         $donationMessage->title = '';
@@ -1016,12 +1016,19 @@ class Donation extends SalesforceWriteProxy
         $donationMessage->last_name = $this->donorLastName;
         // MAT-192 will cover passing and storing this separately. For now, a pattern match should
         // give reasonable 'house number' values.
-        $donationMessage->house_no = preg_replace('/^([0-9a-z-]+).*$/i', '$1', $this->donorHomeAddressLine1);
-        $donationMessage->postcode = $this->donorHomePostcode;
+        if ($this->donorHomeAddressLine1 !== null) {
+            $donationMessage->house_no = preg_replace('/^([0-9a-z-]+).*$/i', '$1', $this->donorHomeAddressLine1);
+        }
+
+        $donationMessage->postcode = ($this->donorHomePostcode === 'OVERSEAS')
+            ? ''
+            : ($this->donorHomePostcode ?? '');
+        $donationMessage->overseas = $this->donorHomePostcode === 'OVERSEAS';
+
         $donationMessage->amount = (float) $this->amount;
 
-        $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber();
-        $donationMessage->org_name = $this->getCampaign()->getCharity()->getName();
+        $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber() ?? '';
+        $donationMessage->org_name = $this->getCampaign()->getCharity()->getName() ?? '';
 
         return $donationMessage;
     }

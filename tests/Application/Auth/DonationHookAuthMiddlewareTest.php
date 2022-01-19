@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Auth;
 
-use GuzzleHttp\Psr7;
+use GuzzleHttp\Psr7\Utils;
 use MatchBot\Application\Auth\DonationHookAuthMiddleware;
 use MatchBot\Tests\TestCase;
 use Psr\Log\NullLogger;
@@ -65,14 +65,14 @@ class DonationHookAuthMiddlewareTest extends TestCase
     {
         $headers = $hash ? new Headers(['x-webhook-verify-hash' => $hash]) : new Headers();
 
-        return (new Request(
-            'get',
+        return new Request(
+            'GET',
             new Uri('https', 'example.com'),
             $headers,
             [],
             [],
-            Psr7\stream_for($body)
-        ));
+            Utils::streamFor($body)
+        );
     }
 
     /**
@@ -82,7 +82,7 @@ class DonationHookAuthMiddlewareTest extends TestCase
     private function getSuccessHandler(): Route
     {
         return new Route(
-            ['get'],
+            ['GET'],
             '',
             static function () {
                 return new Response(200);

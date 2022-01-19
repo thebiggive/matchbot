@@ -179,13 +179,16 @@ class StripePayoutHandler implements MessageHandlerInterface
         $fromDate = clone $payoutCreated;
         $toDate = clone $payoutCreated;
 
-        // We assume payouts are similar to the 2021 schedule of 2 week minimum offset with a fixed day
-        // of the week for payouts, making the maximum normal lag 21 days. We want to 'fuzz' the dates
-        // by using 00:00 just before/after the window so that we can use the timestamp as a Redis cache
-        // key and expect each charity's payout to be able to use the same saved Transfer to Charge ID
-        // map info, regardless of whether their payouts happened a few seconds or minutes apart.
+        // Payouts' usual scheduled as of 2022 is a 2 week minimum offset (give or take a calendar day)
+        // with a fixed day of the week for payouts, making the maximum normal lag 21 days. However we
+        // have had edge cases with bank details problems taking a couple of weeks to resolve, so we now
+        // look back up to 60 days in order to still catch charges for status updates if this happens.
+        // We 'fuzz' the dates by using 00:00 just before/after the window so that we can use the
+        // timestamp as a Redis cache key, and expect each charity's payout to be able to use the same
+        // saved Transfer to Charge ID map, regardless of whether their payouts happened a few seconds
+        // or minutes apart.
         $tz = new \DateTimeZone('Europe/London');
-        $fromDate->sub(new \DateInterval('P22D'))->setTimezone($tz)->setTime(0, 0);
+        $fromDate->sub(new \DateInterval('P60D'))->setTimezone($tz)->setTime(0, 0);
         $toDate->add(new \DateInterval('P1D'))->setTimezone($tz)->setTime(0, 0);
 
         $createdConstraint = [
@@ -320,6 +323,6 @@ class StripePayoutHandler implements MessageHandlerInterface
 
     private function buildRedisTransferToChargeHashKey(int $startTimestamp): string
     {
-        return "stripe-payout-transfers-$startTimestamp";
+        return "stripe-payout-transfers-v2-$startTimestamp";
     }
 }

@@ -412,12 +412,16 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->select('d')
             ->from(Donation::class, 'd')
             ->innerJoin(Charity::class, 'c')
-            ->where('d.donationStatus = :payGiftAidWithStatus')
+            ->where('d.donationStatus = :claimGiftAidWithStatus')
+            ->andWhere('d.giftAid = TRUE')
             ->andWhere('d.tbgShouldProcessGiftAid = TRUE')
             ->andWhere('d.tbgGiftAidRequestQueuedAt IS NULL')
-            ->andWhere('d.createdAt < :payGiftAidForDonationsAfter')
-            ->setParameter('expireWithStatus', 'Paid')
-            ->setParameter('payGiftAidForDonationsAfter', $cutoff);
+            ->andWhere('c.hmrcReferenceNumber IS NOT NULL')
+            ->andWhere('d.collectedAt < :claimGiftAidForDonationsAfter')
+            ->orderBy('c.id', 'ASC') // group donations for the same charity together in batches
+            ->addOrderBy('d.collectedAt', 'ASC')
+            ->setParameter('claimGiftAidWithStatus', 'Paid')
+            ->setParameter('claimGiftAidForDonationsAfter', $cutoff);
 
         return $qb->getQuery()->getResult();
     }
