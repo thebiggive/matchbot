@@ -130,7 +130,7 @@ class DonationTest extends TestCase
 
         $claimBotMessage = $donation->toClaimBotModel();
 
-        $this->assertEquals('1', $claimBotMessage->house_no);
+        $this->assertEquals('1 Main St, London', $claimBotMessage->house_no);
         $this->assertEquals('', $claimBotMessage->postcode);
         $this->assertEquals(true, $claimBotMessage->overseas);
     }

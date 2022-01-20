@@ -1014,16 +1014,24 @@ class Donation extends SalesforceWriteProxy
         $donationMessage->title = '';
         $donationMessage->first_name = $this->donorFirstName;
         $donationMessage->last_name = $this->donorLastName;
+
+        $donationMessage->overseas = $this->donorHomePostcode === 'OVERSEAS';
+        $donationMessage->postcode = $donationMessage->overseas ? '' : ($this->donorHomePostcode ?? '');
+
+        $donationMessage->house_no = '';
+
         // MAT-192 will cover passing and storing this separately. For now, a pattern match should
         // give reasonable 'house number' values.
         if ($this->donorHomeAddressLine1 !== null) {
             $donationMessage->house_no = preg_replace('/^([0-9a-z-]+).*$/i', '$1', $this->donorHomeAddressLine1);
-        }
 
-        $donationMessage->postcode = ($this->donorHomePostcode === 'OVERSEAS')
-            ? ''
-            : ($this->donorHomePostcode ?? '');
-        $donationMessage->overseas = $this->donorHomePostcode === 'OVERSEAS';
+            // In any case where this doesn't produce a result, just send the full first 40 characters
+            // of the home address. This is also HMRC's requested value in this property for overseas
+            // donations.
+            if (empty($donationMessage->house_no) || $donationMessage->overseas) {
+                $donationMessage->house_no = mb_substr($this->donorHomeAddressLine1, 0, 40);
+            }
+        }
 
         $donationMessage->amount = (float) $this->amount;
 
