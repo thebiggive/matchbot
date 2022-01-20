@@ -67,6 +67,7 @@ $commands = [
 foreach ($commands as $command) {
     if ($command instanceof LockingCommand) { // i.e. not Symfony Messenger's built-in consumer.
         $command->setLockFactory($psr11App->get(LockFactory::class));
+        $command->setLogger($psr11App->get(LoggerInterface::class));
     }
 
     $cliApp->add($command);

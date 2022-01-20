@@ -12,6 +12,7 @@ use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
@@ -103,6 +104,7 @@ class ClaimGiftAidTest extends TestCase
             $routableBusProphecy->reveal(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         return $command;
     }
