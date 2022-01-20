@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Commands;
 use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 
@@ -24,6 +25,7 @@ class PushDonationsTest extends TestCase
 
         $command = new PushDonations($donationRepoProphecy->reveal());
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         $commandTester = new CommandTester($command);
         $commandTester->execute([]);
@@ -49,6 +51,7 @@ class PushDonationsTest extends TestCase
 
         $command = new PushDonations($donationRepoProphecy->reveal());
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         $commandTester = new CommandTester($command);
         $commandTester->execute([]);

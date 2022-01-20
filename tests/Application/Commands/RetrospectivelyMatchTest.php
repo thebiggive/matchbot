@@ -9,6 +9,7 @@ use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
@@ -29,6 +30,7 @@ class RetrospectivelyMatchTest extends TestCase
 
         $this->command = new RetrospectivelyMatch($donationRepo->reveal());
         $this->command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $this->command->setLogger(new NullLogger());
     }
 
     public function testMissingDaysBackRefusesToRun(): void

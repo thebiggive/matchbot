@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Lock\LockFactory;
@@ -17,10 +18,16 @@ abstract class LockingCommand extends Command
 {
     private LockFactory $lockFactory;
     private LockInterface $lock;
+    private LoggerInterface $logger;
 
     public function setLockFactory(LockFactory $lockFactory): void
     {
         $this->lockFactory = $lockFactory;
+    }
+
+    public function setLogger(LoggerInterface $logger): void
+    {
+        $this->logger = $logger;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -30,8 +37,10 @@ abstract class LockingCommand extends Command
             $return = $this->doExecute($input, $output);
             $this->releaseLock();
         } else {
-            $output->writeln($this->getName() . ' did nothing as another instance had the lock.');
-            return 10;
+            $message = $this->getName() . ' did nothing as another instance had the lock.';
+            $output->writeln($message);
+            $this->logger->warning($message);
+            return 0; // Log at warning level to help monitoring volume but don't fire error alarms.
         }
         $this->finish($output);
 

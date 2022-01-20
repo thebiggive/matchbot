@@ -14,6 +14,7 @@ use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 
@@ -43,6 +44,7 @@ class ResetMatchingTest extends TestCase
 
         $command = new ResetMatching($campaignFundingRepoProphecy->reveal(), $matchingAdapterProphecy->reveal());
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         $commandTester = new CommandTester($command);
         $commandTester->execute([]);
@@ -77,6 +79,7 @@ class ResetMatchingTest extends TestCase
 
         $command = new ResetMatching($campaignFundingRepoProphecy->reveal(), $matchingAdapterProphecy->reveal());
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         $commandTester = new CommandTester($command);
         $commandTester->execute([]);

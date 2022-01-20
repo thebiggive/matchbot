@@ -12,6 +12,7 @@ use MatchBot\Domain\FundingWithdrawalRepository;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
@@ -26,6 +27,7 @@ class HandleOutOfSyncFundsTest extends TestCase
             $this->getMatchingAdapterProphecy(false)->reveal(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         $commandTester = new CommandTester($command);
         $commandTester->execute(['mode' => 'check']);
@@ -50,6 +52,7 @@ class HandleOutOfSyncFundsTest extends TestCase
             $this->getMatchingAdapterProphecy(true)->reveal(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         $commandTester = new CommandTester($command);
         $commandTester->execute(['mode' => 'fix']);
@@ -81,6 +84,7 @@ class HandleOutOfSyncFundsTest extends TestCase
             $this->prophesize(Adapter::class)->reveal(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         $commandTester = new CommandTester($command);
         $commandTester->execute([]);
@@ -94,6 +98,7 @@ class HandleOutOfSyncFundsTest extends TestCase
             $this->prophesize(Adapter::class)->reveal(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         $commandTester = new CommandTester($command);
         $commandTester->execute(['mode' => 'fixx']);
