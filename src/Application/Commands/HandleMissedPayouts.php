@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use MatchBot\Application\Messenger\StripePayout;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
+use Stripe\Payout;
 use Stripe\StripeClient;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -43,21 +43,20 @@ class HandleMissedPayouts extends LockingCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var Donation[] $donations */
-        $donations = $this->donationRepository->findSuspiciousCollected();
+        $accountResults = $this->donationRepository->findSuspiciousCollectedStripeAccounts();
 
-        $numChecked = count($donations);
+        $stripeAccountIdsToCheck = array_map(
+            static fn($row) => $row['stripeAccountId'],
+            $accountResults,
+        );
+
+        $numAccounts = count($stripeAccountIdsToCheck);
         $payoutsAdded = 0;
 
-        $stripeAccountIdsToCheck = [];
-
-        foreach ($donations as $donation) {
-            $accountId = $donation->getCampaign()->getCharity()->getStripeAccountId();
-
-            if (!in_array($accountId, $stripeAccountIdsToCheck, true)) {
-                $stripeAccountIdsToCheck[] = $accountId;
-            }
-        }
+        $this->logger->info(sprintf(
+            'Found %d Stripe Connected Account IDs to check',
+            $numAccounts,
+        ));
 
         $toDate = new \DateTime('now');
         $fromDate = clone $toDate;
@@ -75,7 +74,14 @@ class HandleMissedPayouts extends LockingCommand
                 ['stripe_account' => $connectAccountId],
             );
 
-            foreach ($payouts as $payout) {
+            $this->logger->info(sprintf(
+                'Checking %d payouts for %s',
+                count($payouts->data),
+                $connectAccountId,
+            ));
+
+            foreach ($payouts->data as $payout) {
+                /** @var Payout $payout */
                 if ($payout->status === 'paid') {
                     $message = (new StripePayout())
                         ->setConnectAccountId($connectAccountId)
@@ -101,7 +107,7 @@ class HandleMissedPayouts extends LockingCommand
         }
 
         $output->writeln(
-            "Checked $numChecked donations. Added $payoutsAdded payouts for processing."
+            "Checked $numAccounts accounts. Added $payoutsAdded payouts for processing."
         );
 
         return 0;
