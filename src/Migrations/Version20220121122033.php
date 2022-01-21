@@ -22,7 +22,7 @@ final class Version20220121122033 extends AbstractMigration
     {
         $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
 
-        $this->abortIf(
+        $this->skipIf(
             getenv('APP_ENV') !== 'staging',
             'Gift Aid testing data patch migration is for Staging only',
         );
