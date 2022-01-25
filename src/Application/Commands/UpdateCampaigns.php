@@ -29,7 +29,7 @@ class UpdateCampaigns extends LockingCommand
         private FundRepository $fundRepository,
         private LoggerInterface $logger
     ) {
-        parent::__construct();
+        parent::__construct(static::$defaultName);
     }
 
     protected function configure(): void

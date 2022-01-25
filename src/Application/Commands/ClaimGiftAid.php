@@ -7,6 +7,7 @@ namespace MatchBot\Application\Commands;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
@@ -31,11 +32,19 @@ class ClaimGiftAid extends LockingCommand
     protected function configure(): void
     {
         $this->setDescription('Sends applicable donations to ClaimBot for HMRC Gift Aid claims');
+        $this->addOption(
+            'with-resends',
+            null,
+            InputOption::VALUE_NONE,
+            'Tells the command to send donations again, even if they were queued before. Non-Production only',
+        );
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $toClaim = $this->donationRepository->findReadyToClaimGiftAid();
+        $toClaim = $this->donationRepository->findReadyToClaimGiftAid(
+            !empty($input->getOption('with-resends'))
+        );
 
         if (count($toClaim) > 0) {
             foreach ($toClaim as $donation) {

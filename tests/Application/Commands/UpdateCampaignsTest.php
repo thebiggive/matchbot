@@ -41,6 +41,7 @@ class UpdateCampaignsTest extends TestCase
             new NullLogger(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         $commandTester = new CommandTester($command);
         $commandTester->execute([]);
@@ -76,6 +77,7 @@ class UpdateCampaignsTest extends TestCase
             new NullLogger(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         $commandTester = new CommandTester($command);
         $commandTester->execute([]);
@@ -117,6 +119,7 @@ class UpdateCampaignsTest extends TestCase
             new NullLogger(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         $commandTester = new CommandTester($command);
         $commandTester->execute([]);
@@ -173,6 +176,7 @@ class UpdateCampaignsTest extends TestCase
             new NullLogger(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         $commandTester = new CommandTester($command);
         $commandTester->execute([]);
@@ -206,6 +210,7 @@ class UpdateCampaignsTest extends TestCase
             new NullLogger(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         $commandTester = new CommandTester($command);
         $commandTester->execute(['--all' => null]);

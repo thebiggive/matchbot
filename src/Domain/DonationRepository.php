@@ -404,8 +404,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * @return Donation[]
      */
-    public function findReadyToClaimGiftAid(): array
+    public function findReadyToClaimGiftAid(bool $withResends): array
     {
+        if ($withResends && getenv('APP_ENV') === 'production') {
+            throw new \LogicException('Cannot re-send live donations');
+        }
+
         $cutoff = (new DateTime('now'))->sub(new \DateInterval('P14D'));
 
         $qb = $this->getEntityManager()->createQueryBuilder()
@@ -415,13 +419,37 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->where('d.donationStatus = :claimGiftAidWithStatus')
             ->andWhere('d.giftAid = TRUE')
             ->andWhere('d.tbgShouldProcessGiftAid = TRUE')
-            ->andWhere('d.tbgGiftAidRequestQueuedAt IS NULL')
             ->andWhere('c.hmrcReferenceNumber IS NOT NULL')
             ->andWhere('d.collectedAt < :claimGiftAidForDonationsAfter')
             ->orderBy('c.id', 'ASC') // group donations for the same charity together in batches
             ->addOrderBy('d.collectedAt', 'ASC')
             ->setParameter('claimGiftAidWithStatus', 'Paid')
             ->setParameter('claimGiftAidForDonationsAfter', $cutoff);
+
+        if (!$withResends) {
+            $qb = $qb->andWhere('d.tbgGiftAidRequestQueuedAt IS NULL');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function findSuspiciousCollectedStripeAccounts(): array
+    {
+        $cutoff = (new DateTime('2021-12-09T00:00:00z'));
+
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('c.stripeAccountId')
+            ->distinct()
+            ->from(Donation::class, 'd')
+            ->innerJoin(Charity::class, 'c')
+            ->where('d.donationStatus = :collected')
+            ->andWhere('d.collectedAt < :cutoff')
+            ->andWhere('d.psp = :stripe')
+            ->andWhere('c.stripeAccountId IS NOT NULL')
+            ->orderBy('c.stripeAccountId', 'ASC')
+            ->setParameter('stripe', 'stripe')
+            ->setParameter('collected', 'Collected')
+            ->setParameter('cutoff', $cutoff);
 
         return $qb->getQuery()->getResult();
     }

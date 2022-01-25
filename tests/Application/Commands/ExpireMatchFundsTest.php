@@ -10,6 +10,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 
@@ -61,6 +62,7 @@ class ExpireMatchFundsTest extends TestCase
     {
         $command = new ExpireMatchFunds($donationRepoProphecy->reveal());
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
 
         return $command;
     }

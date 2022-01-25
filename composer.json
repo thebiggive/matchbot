@@ -92,6 +92,10 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:claim-gift-aid"
         ],
+        "matchbot:claim-gift-aid-with-resends": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:claim-gift-aid --with-resends"
+        ],
         "matchbot:expire-match-funds": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:expire-match-funds"
@@ -103,6 +107,10 @@
         "matchbot:fix-out-of-sync-funds": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:handle-out-of-sync-funds fix"
+        ],
+        "matchbot:handle-missed-payouts": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:handle-missed-payouts"
         ],
         "matchbot:list-commands": "php matchbot-cli.php list",
         "matchbot:push-donations": [
