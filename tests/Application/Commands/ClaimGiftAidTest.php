@@ -27,7 +27,7 @@ class ClaimGiftAidTest extends TestCase
     public function testNothingToSend(): void
     {
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->findReadyToClaimGiftAid()
+        $donationRepoProphecy->findReadyToClaimGiftAid(false)
             ->willReturn([])
             ->shouldBeCalledOnce();
 
@@ -63,7 +63,7 @@ class ClaimGiftAidTest extends TestCase
         $testDonation->setTbgShouldProcessGiftAid(true);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->findReadyToClaimGiftAid()
+        $donationRepoProphecy->findReadyToClaimGiftAid(false)
             ->shouldBeCalledOnce()
             ->willReturn([$testDonation]);
 
@@ -83,6 +83,44 @@ class ClaimGiftAidTest extends TestCase
 
         $commandTester = new CommandTester($this->getCommand($donationRepoProphecy, $em, $bus));
         $commandTester->execute([]);
+
+        $expectedOutputLines = [
+            'matchbot:claim-gift-aid starting!',
+            'Submitted 1 donations to the ClaimBot queue',
+            'matchbot:claim-gift-aid complete!',
+        ];
+        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
+    }
+
+    public function testSendWithResends(): void
+    {
+        $testDonation = $this->getTestDonation();
+        $testDonation->setTbgShouldProcessGiftAid(true);
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy->findReadyToClaimGiftAid(true)
+            ->shouldBeCalledOnce()
+            ->willReturn([$testDonation]);
+
+        $em = $this->prophesize(EntityManagerInterface::class);
+        $em->persist($testDonation)->shouldBeCalledOnce();
+        $em->flush()->shouldBeCalledOnce();
+
+        $bus = $this->prophesize(RoutableMessageBus::class);
+
+        $envelope = new Envelope(
+            $testDonation->toClaimBotModel(),
+            $this->getExpectedStamps($testDonation->getUuid()),
+        );
+        $bus->dispatch($envelope)
+            ->shouldBeCalledOnce()
+            ->willReturn($envelope);
+
+        $commandTester = new CommandTester($this->getCommand($donationRepoProphecy, $em, $bus));
+        $commandTester->execute([
+            '--with-resends' => null,
+        ]);
 
         $expectedOutputLines = [
             'matchbot:claim-gift-aid starting!',
