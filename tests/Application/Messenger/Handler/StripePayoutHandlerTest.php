@@ -408,7 +408,7 @@ class StripePayoutHandlerTest extends TestCase
         bool $populateTwoPages,
         bool $invalidIds = false,
     ): Redis|ObjectProphecy {
-        $redisKey = 'stripe-payout-transfers-v2-tmp-1566946800';
+        $redisKey = 'stripe-payout-transfers-v2-1593298800';
         $chargeId = $invalidIds ? 'ch_invalidId_123' : 'ch_externalId_123';
         $transferId = $invalidIds ? 'tr_invalidId_123' : 'tr_externalId_123';
 
@@ -470,7 +470,7 @@ class StripePayoutHandlerTest extends TestCase
         return [
             // Based on the date range from our standard test data payout (00:00 on the -60D, +1D days).
             'created' => [
-                'gt' => 1566946800, // temporarily 365 days back
+                'gt' => 1593298800,
                 'lt' => 1598569200,
             ],
             'limit' => 100

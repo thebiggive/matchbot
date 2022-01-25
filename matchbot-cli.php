@@ -8,7 +8,6 @@ use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\ClaimGiftAid;
 use MatchBot\Application\Commands\ExpireMatchFunds;
-use MatchBot\Application\Commands\HandleMissedPayouts;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\LockingCommand;
 use MatchBot\Application\Commands\PushDonations;
@@ -22,7 +21,6 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
 use MatchBot\Domain\FundRepository;
 use Psr\Log\LoggerInterface;
-use Stripe\StripeClient;
 use Symfony\Component\Console\Application;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Lock\LockFactory;
@@ -50,12 +48,6 @@ $commands = [
         [$messengerReceiverKey],
     ),
     new ExpireMatchFunds($psr11App->get(DonationRepository::class)),
-    new HandleMissedPayouts(
-        $psr11App->get(DonationRepository::class),
-        $psr11App->get(LoggerInterface::class),
-        $psr11App->get(RoutableMessageBus::class),
-        $psr11App->get(StripeClient::class),
-    ),
     new HandleOutOfSyncFunds(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(FundingWithdrawalRepository::class),

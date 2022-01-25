@@ -433,24 +433,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function findSuspiciousCollected(): array
-    {
-        $cutoff = (new DateTime('2021-12-09T00:00:00z'));
-
-        $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('d')
-            ->from(Donation::class, 'd')
-            ->innerJoin(Charity::class, 'c')
-            ->where('d.donationStatus = :collected')
-            ->andWhere('d.collectedAt < :cutoff')
-            ->orderBy('c.id', 'ASC')
-            ->addOrderBy('d.collectedAt', 'ASC')
-            ->setParameter('collected', 'Collected')
-            ->setParameter('cutoff', $cutoff);
-
-        return $qb->getQuery()->getResult();
-    }
-
     /**
      * @return Donation[]
      */
