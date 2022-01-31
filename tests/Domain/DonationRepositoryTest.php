@@ -541,7 +541,8 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->from(Donation::class, 'd')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
-        $queryBuilderProphecy->innerJoin(Charity::class, 'c')->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->innerJoin(Charity::class, 'c')->shouldBeCalledOnce()
+            ->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->where('d.donationStatus = :claimGiftAidWithStatus')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
 
@@ -551,7 +552,8 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledTimes(6)->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->orderBy('c.id', 'ASC')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
-        $queryBuilderProphecy->addOrderBy('d.collectedAt', 'ASC') ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->addOrderBy('d.collectedAt', 'ASC') ->shouldBeCalledOnce()
+            ->willReturn($queryBuilderProphecy->reveal());
 
         // 3 param sets, including the one for `$pilotCharitiesOnly`.
         $queryBuilderProphecy->setParameter(Argument::type('string'), Argument::any())
