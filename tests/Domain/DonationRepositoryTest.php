@@ -556,8 +556,13 @@ class DonationRepositoryTest extends TestCase
             ->willReturn($queryBuilderProphecy->reveal());
 
         // 3 param sets, including the one for `$pilotCharitiesOnly`.
-        $queryBuilderProphecy->setParameter(Argument::type('string'), Argument::any())
-            ->shouldBeCalledTimes(3)->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->setParameter('claimGiftAidWithStatus', 'Paid')
+            ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->setParameter('claimGiftAidForDonationsAfter', Argument::type(\DateTime::class))
+            ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->setParameter('pilotSalesforceIds', ['sfAccountId123']) // From phpunit.xml env var
+            ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
+
         $queryBuilderProphecy->getQuery()->willReturn($query->reveal());
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
