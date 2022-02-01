@@ -541,7 +541,9 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->from(Donation::class, 'd')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
-        $queryBuilderProphecy->innerJoin(Charity::class, 'c')->shouldBeCalledOnce()
+        $queryBuilderProphecy->innerJoin('d.campaign', 'campaign')->shouldBeCalledOnce()
+            ->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->innerJoin('campaign.charity', 'charity')->shouldBeCalledOnce()
             ->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->where('d.donationStatus = :claimGiftAidWithStatus')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
@@ -550,7 +552,7 @@ class DonationRepositoryTest extends TestCase
         // for `$pilotCharitiesOnly` and the one NOT for `$withResends` calls.
         $queryBuilderProphecy->andWhere(Argument::type('string'))
             ->shouldBeCalledTimes(6)->willReturn($queryBuilderProphecy->reveal());
-        $queryBuilderProphecy->orderBy('c.id', 'ASC')
+        $queryBuilderProphecy->orderBy('charity.id', 'ASC')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->addOrderBy('d.collectedAt', 'ASC') ->shouldBeCalledOnce()
             ->willReturn($queryBuilderProphecy->reveal());
@@ -558,7 +560,7 @@ class DonationRepositoryTest extends TestCase
         // 3 param sets, including the one for `$pilotCharitiesOnly`.
         $queryBuilderProphecy->setParameter('claimGiftAidWithStatus', 'Paid')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
-        $queryBuilderProphecy->setParameter('claimGiftAidForDonationsAfter', Argument::type(\DateTime::class))
+        $queryBuilderProphecy->setParameter('claimGiftAidForDonationsBefore', Argument::type(\DateTime::class))
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->setParameter('pilotSalesforceIds', ['sfAccountId123']) // From phpunit.xml env var
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
