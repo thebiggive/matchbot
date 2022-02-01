@@ -69,6 +69,17 @@ return function (ContainerBuilder $containerBuilder) {
                 ],
             ],
 
+            'gift_aid' => [
+                'pilot_salesforce_ids' => empty(getenv('GIFT_AID_PILOT_CHARITIES_SALESFORCE_IDS'))
+                    ? null
+                    : json_decode(
+                        getenv('GIFT_AID_PILOT_CHARITIES_SALESFORCE_IDS'),
+                        true,
+                        512,
+                        JSON_THROW_ON_ERROR,
+                    ),
+            ],
+
             'logger' => [
                 'name' => 'matchbot',
                 'path' => 'php://stdout',
