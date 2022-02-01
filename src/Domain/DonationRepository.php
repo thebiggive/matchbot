@@ -425,20 +425,21 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
-            ->innerJoin(Charity::class, 'c')
+            ->innerJoin('d.campaign', 'campaign')
+            ->innerJoin('campaign.charity', 'charity')
             ->where('d.donationStatus = :claimGiftAidWithStatus')
             ->andWhere('d.giftAid = TRUE')
             ->andWhere('d.tbgShouldProcessGiftAid = TRUE')
-            ->andWhere('c.hmrcReferenceNumber IS NOT NULL')
-            ->andWhere('d.collectedAt < :claimGiftAidForDonationsAfter')
-            ->orderBy('c.id', 'ASC') // group donations for the same charity together in batches
+            ->andWhere('charity.hmrcReferenceNumber IS NOT NULL')
+            ->andWhere('d.collectedAt < :claimGiftAidForDonationsBefore')
+            ->orderBy('charity.id', 'ASC') // group donations for the same charity together in batches
             ->addOrderBy('d.collectedAt', 'ASC')
             ->setParameter('claimGiftAidWithStatus', 'Paid')
-            ->setParameter('claimGiftAidForDonationsAfter', $cutoff);
+            ->setParameter('claimGiftAidForDonationsBefore', $cutoff);
 
         if ($pilotCharitiesOnly) {
             /** @var string[] $salesforceIds */
-            $qb = $qb->andWhere('c.salesforceId IN (:pilotSalesforceIds)')
+            $qb = $qb->andWhere('charity.salesforceId IN (:pilotSalesforceIds)')
                 ->setParameter('pilotSalesforceIds', $giftAidSettings['pilot_salesforce_ids']);
         }
 
