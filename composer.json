@@ -92,6 +92,10 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:claim-gift-aid"
         ],
+        "matchbot:claim-gift-aid-for-pilot-charities": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:claim-gift-aid --pilot"
+        ],
         "matchbot:claim-gift-aid-with-resends": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:claim-gift-aid --with-resends"

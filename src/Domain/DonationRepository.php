@@ -404,8 +404,18 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * @return Donation[]
      */
-    public function findReadyToClaimGiftAid(bool $withResends): array
+    public function findReadyToClaimGiftAid(bool $pilotCharitiesOnly, bool $withResends): array
     {
+        $giftAidSettings = $this->settings['gift_aid'];
+
+        if ($pilotCharitiesOnly && empty($giftAidSettings['pilot_salesforce_ids'])) {
+            throw new \LogicException('Cannot use pilot charity claim mode without env var');
+        }
+
+        if (!$pilotCharitiesOnly && !empty($giftAidSettings['pilot_salesforce_ids'])) {
+            throw new \LogicException('Cannot use global charity claim mode with pilot env var set');
+        }
+
         if ($withResends && getenv('APP_ENV') === 'production') {
             throw new \LogicException('Cannot re-send live donations');
         }
@@ -425,6 +435,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->addOrderBy('d.collectedAt', 'ASC')
             ->setParameter('claimGiftAidWithStatus', 'Paid')
             ->setParameter('claimGiftAidForDonationsAfter', $cutoff);
+
+        if ($pilotCharitiesOnly) {
+            /** @var string[] $salesforceIds */
+            $qb = $qb->andWhere('c.salesforceId IN (:pilotSalesforceIds)')
+                ->setParameter('pilotSalesforceIds', $giftAidSettings['pilot_salesforce_ids']);
+        }
 
         if (!$withResends) {
             $qb = $qb->andWhere('d.tbgGiftAidRequestQueuedAt IS NULL');
