@@ -449,27 +449,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function findSuspiciousCollectedStripeAccounts(): array
-    {
-        $cutoff = (new DateTime('2021-12-09T00:00:00z'));
-
-        $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('c.stripeAccountId')
-            ->distinct()
-            ->from(Donation::class, 'd')
-            ->innerJoin(Charity::class, 'c')
-            ->where('d.donationStatus = :collected')
-            ->andWhere('d.collectedAt < :cutoff')
-            ->andWhere('d.psp = :stripe')
-            ->andWhere('c.stripeAccountId IS NOT NULL')
-            ->orderBy('c.stripeAccountId', 'ASC')
-            ->setParameter('stripe', 'stripe')
-            ->setParameter('collected', 'Collected')
-            ->setParameter('cutoff', $cutoff);
-
-        return $qb->getQuery()->getResult();
-    }
-
     /**
      * @return Donation[]
      */
