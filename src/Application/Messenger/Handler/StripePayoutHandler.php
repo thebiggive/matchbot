@@ -188,8 +188,7 @@ class StripePayoutHandler implements MessageHandlerInterface
         // saved Transfer to Charge ID map, regardless of whether their payouts happened a few seconds
         // or minutes apart.
         $tz = new \DateTimeZone('Europe/London');
-        // TODO revert to P60D when MAT-226 has been run live.
-        $fromDate->sub(new \DateInterval('P365D'))->setTimezone($tz)->setTime(0, 0);
+        $fromDate->sub(new \DateInterval('P60D'))->setTimezone($tz)->setTime(0, 0);
         $toDate->add(new \DateInterval('P1D'))->setTimezone($tz)->setTime(0, 0);
 
         $createdConstraint = [
@@ -324,6 +323,6 @@ class StripePayoutHandler implements MessageHandlerInterface
 
     private function buildRedisTransferToChargeHashKey(int $startTimestamp): string
     {
-        return "stripe-payout-transfers-v2-tmp-$startTimestamp";
+        return "stripe-payout-transfers-v2-$startTimestamp";
     }
 }
