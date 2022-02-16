@@ -133,7 +133,8 @@ class StripeChargeUpdate extends Stripe
         }
 
         if ($isTipRefund) {
-            $this->logger->info(sprintf('Setting status to "Refunded Tip" based on charge ID %s. SF subsequently makes tip £0.', $event->data->object->id));
+            $this->logger->info(sprintf('Setting status to "Refunded Tip" based on charge ID %s.
+                SF subsequently makes tip £0.', $event->data->object->id));
             // See BG2-1946 for 'Refunded Tip' status explanation
             $donation->setDonationStatus('Refunded Tip');
         } elseif ($isFullRefund) {
