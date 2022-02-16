@@ -245,6 +245,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $body = $this->getStripeHookMock('ch_tip_refunded');
         $donation = $this->getTestDonation();
+        $originalTipAmount = $donation->getTipAmount();
         $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
         $time = (string) time();
 
@@ -276,6 +277,8 @@ class StripeChargeUpdateTest extends StripeTest
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
         $this->assertEquals('Collected', $donation->getDonationStatus());
         $this->assertEquals('0.00', $donation->getTipAmount());
+        // Assert refunded tip amount is equal to the original tip amount
+        $this->assertEquals('1.00', $originalTipAmount);
         $this->assertEquals(200, $response->getStatusCode());
     }
 

@@ -31,6 +31,7 @@ class Donation
     public ?bool $optInChampionEmail = null;
     public string $projectId;
     public ?float $tipAmount = null;
+    public ?float $refundedTipAmount = null;
     public ?bool $tipGiftAid = null;
     public ?string $cardBrand = null;
     public ?string $cardCountry = null;
