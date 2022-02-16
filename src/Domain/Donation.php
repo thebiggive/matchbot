@@ -255,18 +255,6 @@ class Donation extends SalesforceWriteProxy
     protected string $tipAmount = '0.00';
 
     /**
-     * @ORM\Column(type="decimal", precision=18, scale=2)
-     * @var string  Stores the original tip which is now refunded. Precision numeric string.
-     *              Set when issuing tip refunds so this field can subsequently be used in
-     *              the refund email template. Email template can't use the existing field
-     *              'Tip_Amount__c' because it would've been zero'd, so the email donors get
-     *              would say they have a £0 tip refund. This field perists the original tip
-     *              value.
-     * @see Donation::$currencyCode
-     */
-    protected string $refundedTipAmount = '0.00';
-
-    /**
      * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether Gift Aid was claimed on the 'tip' donation to the Big Give.
      */
@@ -381,7 +369,6 @@ class Donation extends SalesforceWriteProxy
             'psp' => $this->getPsp(),
             'status' => $this->getDonationStatus(),
             'tipAmount' => (float) $this->getTipAmount(),
-            'refundedTipAmount' => (float) $this->getRefundedTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
             'transactionId' => $this->getTransactionId(),
         ];
@@ -805,30 +792,6 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->tipAmount = $tipAmount;
-    }
-
-    /**
-     * @return string
-     */
-    public function getRefundedTipAmount(): string
-    {
-        return $this->refundedTipAmount;
-    }
-
-    /**
-     * @param string $refundedTipAmount
-     */
-    public function setRefundedTipAmount(string $refundedTipAmount): void
-    {
-        if (bccomp($refundedTipAmount, (string) $this->maximumAmount, 2) === 1) {
-            throw new \UnexpectedValueException(sprintf(
-                'Refunded tip amount must not exceed %d %s',
-                $this->maximumAmount,
-                $this->currencyCode,
-            ));
-        }
-
-        $this->refundedTipAmount = $refundedTipAmount;
     }
 
     public function hasTipGiftAid(): ?bool
