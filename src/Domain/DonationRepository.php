@@ -479,6 +479,21 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
+     * @param string[]  $transferIds
+     * @return Donation[]
+     */
+    public function findWithTransferIdInArray(array $transferIds): array
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('d')
+            ->from(Donation::class, 'd')
+            ->where('d.transferId IN (:transferIds)')
+            ->setParameter('transferIds', $transferIds);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
      * Give up on pushing Cancelled donations to Salesforce after a few minutes. For example,
      * this was needed after CC21 for a last minute donation that could not be persisted in
      * Salesforce because the campaign close date had passed before it reached SF.
