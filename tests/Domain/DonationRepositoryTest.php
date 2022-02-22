@@ -602,13 +602,10 @@ class DonationRepositoryTest extends TestCase
         $repo->findReadyToClaimGiftAid(true, false);
     }
 
-    /**
-     * Pilot env var default value is set in `phpunit.xml`.
-     */
     public function testFindWithTransferIdInArray(): void
     {
         // This needs a local var so it can be used both to set up the `Query::getResult()` prophecy
-        // and for verifying the `findReadyToClaimGiftAid()` return value, without e.g. creation
+        // and for verifying the `findWithTransferIdInArray()` return value, without e.g. creation
         // timestamp varying.
         $testDonation = $this->getTestDonation();
 
