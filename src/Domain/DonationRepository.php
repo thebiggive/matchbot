@@ -537,10 +537,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): Donation
     {
-        $incursGiftAidFee = (
-            $donation->hasGiftAid() &&
-            ($donation->getPsp() === 'enthuse' || $donation->hasTbgShouldProcessGiftAid())
-        );
+        $incursGiftAidFee = $donation->hasGiftAid() && $donation->hasTbgShouldProcessGiftAid();
 
         $structure = new Calculator(
             $this->settings,

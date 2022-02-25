@@ -604,8 +604,16 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+        $stripePaymentIntentsProphecy->cancel('pi_stripe_pending_123')
+            ->shouldBeCalledOnce()
+            ->willReturn($this->prophesize(PaymentIntent::class));
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1156,74 +1164,6 @@ class UpdateTest extends TestCase
                 'description' => 'Could not update Stripe Payment Intent [A]',
             ],
         ], $payloadArray);
-    }
-
-    public function testAddDataSuccessWithOnlyEnthuseValues(): void
-    {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
-
-        $donation = $this->getTestDonation();
-        $donation->setPsp('enthuse');
-
-        $donationExistingState = $this->getTestDonation();
-        $donationExistingState->setPsp('enthuse');
-
-        $donation->setTipAmount('3.21');
-        $donation->setGiftAid(true);
-        $donation->setTbgComms(true);
-        $donation->setCharityComms(false);
-        $donation->setChampionComms(false);
-
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationExistingState)
-            ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->releaseMatchFunds(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldBeCalledOnce(); // Updates pushed to Salesforce
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
-            ->shouldBeCalledOnce();
-
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-
-        $request = $this->createRequest(
-            'PUT',
-            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
-        )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
-        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
-
-        $response = $app->handle($request->withAttribute('route', $route));
-        $payload = (string) $response->getBody();
-
-        $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
-
-        $payloadArray = json_decode($payload, true);
-
-        // These two values are unchanged but still returned.
-        $this->assertEquals(123.45, $payloadArray['donationAmount']);
-        $this->assertEquals('Collected', $payloadArray['status']);
-
-        // Remaining properties should be updated.
-        $this->assertTrue($payloadArray['giftAid']);
-        $this->assertTrue($payloadArray['tipGiftAid']);
-        $this->assertTrue($payloadArray['optInTbgEmail']);
-        $this->assertFalse($payloadArray['optInCharityEmail']);
     }
 
     public function testAddDataSuccessWithAllValues(): void

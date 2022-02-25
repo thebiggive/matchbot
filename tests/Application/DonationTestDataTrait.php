@@ -90,7 +90,8 @@ trait DonationTestDataTrait
         $donation->setCampaign($campaign);
         $donation->setCurrencyCode('GBP');
         $donation->setDonationStatus('Pending');
-        $donation->setPsp('enthuse');
+        $donation->setPsp('stripe');
+        $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setTipAmount('2.00');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ac'));
 

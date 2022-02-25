@@ -58,17 +58,6 @@ return function (ContainerBuilder $containerBuilder) {
                 ],
             ],
 
-            'enthuse' => [
-                'fee' => [
-                    'fixed' => [
-                        'default' => '0.2',               // Baseline fee in pounds.
-                    ],
-                    'gift_aid_percentage' => '1',   // As a propotion of the *total* donation
-                                                    // if Gift Aid claimed, i.e. 1/4 of Gift Aid fee %.
-                    'main_percentage_standard' => '1.9',
-                ],
-            ],
-
             'gift_aid' => [
                 'pilot_salesforce_ids' => empty(getenv('GIFT_AID_PILOT_CHARITIES_SALESFORCE_IDS'))
                     ? null
