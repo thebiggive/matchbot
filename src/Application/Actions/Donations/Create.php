@@ -81,6 +81,16 @@ class Create extends Action
                 'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
                 $donationData->projectId,
             ));
+
+            // https://thebiggive.atlassian.net/browse/MAT-200
+            if (!$this->entityManager->isOpen()) {
+                $this->logger->info('Trying to resuscitate Doctrine EntityManager connection');
+                $connection = $this->entityManager->getConnection();
+                $connection->close();
+                $connection->connect();
+                $this->logger->info('Successfully resuscitated Doctrine EntityManager connection');
+            }
+
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
         }
 
