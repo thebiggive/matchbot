@@ -6,7 +6,6 @@ use LosMiddleware\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Actions\Donations;
 use MatchBot\Application\Actions\Hooks;
 use MatchBot\Application\Actions\Status;
-use MatchBot\Application\Auth\DonationHookAuthMiddleware;
 use MatchBot\Application\Auth\DonationPublicAuthMiddleware;
 use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
 use Middlewares\ClientIp;
@@ -39,10 +38,7 @@ return function (App $app) {
             ->add(DonationPublicAuthMiddleware::class);
     });
 
-    $app->put('/hooks/donation/{donationId:.{36}}', Hooks\DonationUpdate::class)
-        ->add(DonationHookAuthMiddleware::class);
-
-    // Authenticated through Stripes SDK signature verification
+    // Authenticated through Stripe's SDK signature verification
     $app->post('/hooks/stripe', Hooks\StripeChargeUpdate::class);
     $app->post('/hooks/stripe-connect', Hooks\StripePayoutUpdate::class);
 

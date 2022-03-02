@@ -81,7 +81,7 @@ class DonationTest extends TestCase
     public function testValidPspAccepted(): void
     {
         $donation = new Donation();
-        $donation->setPsp('enthuse');
+        $donation->setPsp('stripe');
 
         $this->addToAssertionCount(1); // Just check setPsp() doesn't hit an exception
     }

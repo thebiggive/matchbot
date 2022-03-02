@@ -16,11 +16,9 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Redis;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\Service\ChargeService;
 use Stripe\Service\PayoutService;
-use Stripe\Service\TransferService;
 use Stripe\StripeClient;
 
 class StripePayoutHandlerTest extends TestCase
@@ -35,7 +33,6 @@ class StripePayoutHandlerTest extends TestCase
 
         $balanceTxnResponse = $this->getStripeHookMock('ApiResponse/bt_invalid');
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_with_invalid');
-        $transferResponse = $this->getStripeHookMock('ApiResponse/tr_list_with_invalid');
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -61,13 +58,14 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($chargeResponse));
 
-        $stripeTransferProphecy = $this->prophesize(TransferService::class);
-        $stripeTransferProphecy
-            ->all($this->getCommonCalloutArgs())
-            ->shouldBeCalledOnce()
-            ->willReturn(json_decode($transferResponse));
+        $donationWithInvalidChargeId = clone $this->getTestDonation();
+        $donationWithInvalidChargeId->setChargeId('ch_invalidId_123');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findWithTransferIdInArray(['tr_invalidId_123'])
+            ->willReturn([$donationWithInvalidChargeId])
+            ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->findOneBy(['chargeId' => 'ch_invalidId_123'])
             ->willReturn(null)
@@ -84,10 +82,6 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce();
         $loggerProphecy->info("Payout: Getting original TBG charge IDs related to payout's Charge IDs")
             ->shouldBeCalledOnce();
-        $loggerProphecy->info('Payout: Starting transfer ID to source charge ID map build, may take a while...')
-            ->shouldBeCalledOnce();
-        $loggerProphecy->info('Payout: ...completed transfer ID to source charge ID map build!')
-            ->shouldBeCalledOnce();
         $loggerProphecy->info('Payout: Donation not found with Charge ID ch_invalidId_123')
             ->shouldBeCalledOnce();
         $loggerProphecy->info('Payout: Finished getting original Charge IDs, found 1')
@@ -98,12 +92,10 @@ class StripePayoutHandlerTest extends TestCase
         $stripeClientProphecy = $this->getStripeClient();
         $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
         $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
-        $stripeClientProphecy->transfers = $stripeTransferProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(LoggerInterface::class, $loggerProphecy->reveal());
-        $container->set(Redis::class, $this->getRedisWithNoPreviousData(false, true)->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
@@ -112,7 +104,6 @@ class StripePayoutHandlerTest extends TestCase
             $container->get(DonationRepository::class),
             $container->get(EntityManagerInterface::class),
             $loggerProphecy->reveal(),
-            $container->get(Redis::class),
             $container->get(StripeClient::class)
         );
 
@@ -133,7 +124,6 @@ class StripePayoutHandlerTest extends TestCase
 
         $balanceTxnsResponse = $this->getStripeHookMock('ApiResponse/bt_list_success');
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
-        $transferResponse = $this->getStripeHookMock('ApiResponse/tr_list_success');
         $donation = $this->getTestDonation();
 
         $donation->setDonationStatus('Failed');
@@ -162,13 +152,11 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($chargeResponse));
 
-        $stripeTransferProphecy = $this->prophesize(TransferService::class);
-        $stripeTransferProphecy
-            ->all($this->getCommonCalloutArgs())
-            ->shouldBeCalledOnce()
-            ->willReturn(json_decode($transferResponse));
-
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findWithTransferIdInArray(['tr_externalId_123'])
+            ->willReturn([$donation])
+            ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->findOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
@@ -177,11 +165,9 @@ class StripePayoutHandlerTest extends TestCase
         $stripeClientProphecy = $this->getStripeClient();
         $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
         $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
-        $stripeClientProphecy->transfers = $stripeTransferProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(Redis::class, $this->getRedisWithNoPreviousData(false)->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
@@ -190,7 +176,6 @@ class StripePayoutHandlerTest extends TestCase
             $container->get(DonationRepository::class),
             $container->get(EntityManagerInterface::class),
             new NullLogger(),
-            $container->get(Redis::class),
             $container->get(StripeClient::class)
         );
 
@@ -212,7 +197,6 @@ class StripePayoutHandlerTest extends TestCase
         $donation = $this->getTestDonation();
         $balanceTxnsResponse = $this->getStripeHookMock('ApiResponse/bt_list_success');
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
-        $transferResponse = $this->getStripeHookMock('ApiResponse/tr_list_success');
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->all(
@@ -234,13 +218,11 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($chargeResponse));
 
-        $stripeTransferProphecy = $this->prophesize(TransferService::class);
-        $stripeTransferProphecy
-            ->all($this->getCommonCalloutArgs())
-            ->shouldBeCalledOnce()
-            ->willReturn(json_decode($transferResponse));
-
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findWithTransferIdInArray(['tr_externalId_123'])
+            ->willReturn([$donation])
+            ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->findOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
@@ -258,11 +240,9 @@ class StripePayoutHandlerTest extends TestCase
         $stripeClientProphecy = $this->getStripeClient();
         $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
         $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
-        $stripeClientProphecy->transfers = $stripeTransferProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(Redis::class, $this->getRedisWithNoPreviousData(false)->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
@@ -271,7 +251,6 @@ class StripePayoutHandlerTest extends TestCase
             $container->get(DonationRepository::class),
             $container->get(EntityManagerInterface::class),
             new NullLogger(),
-            $container->get(Redis::class),
             $container->get(StripeClient::class)
         );
 
@@ -298,8 +277,6 @@ class StripePayoutHandlerTest extends TestCase
         $balanceTxnsResponse2 = $this->getStripeHookMock('ApiResponse/bt_list_success');
         $chargeResponse1 = $this->getStripeHookMock('ApiResponse/ch_list_success_with_more');
         $chargeResponse2 = $this->getStripeHookMock('ApiResponse/ch_list_success');
-        $transferResponse1 = $this->getStripeHookMock('ApiResponse/tr_list_success_with_more');
-        $transferResponse2 = $this->getStripeHookMock('ApiResponse/tr_list_success');
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->all(
@@ -339,17 +316,11 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($chargeResponse2));
 
-        $stripeTransferProphecy = $this->prophesize(TransferService::class);
-        $stripeTransferProphecy
-            ->all($this->getCommonCalloutArgs())
-            ->shouldBeCalledOnce()
-            ->willReturn(json_decode($transferResponse1));
-        $stripeTransferProphecy
-            ->all(array_merge($this->getCommonCalloutArgs(), ['starting_after' => 'tr_externalId_124']))
-            ->shouldBeCalledOnce()
-            ->willReturn(json_decode($transferResponse2));
-
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findWithTransferIdInArray(['tr_externalId_124', 'tr_externalId_123'])
+            ->willReturn([$altDonation, $donation])
+            ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->findOneBy(['chargeId' => 'ch_externalId_124'])
             ->willReturn($altDonation)
@@ -371,11 +342,9 @@ class StripePayoutHandlerTest extends TestCase
         $stripeClientProphecy = $this->getStripeClient();
         $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
         $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
-        $stripeClientProphecy->transfers = $stripeTransferProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(Redis::class, $this->getRedisWithNoPreviousData(true)->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
@@ -384,7 +353,6 @@ class StripePayoutHandlerTest extends TestCase
             $container->get(DonationRepository::class),
             $container->get(EntityManagerInterface::class),
             new NullLogger(),
-            $container->get(Redis::class),
             $container->get(StripeClient::class)
         );
 
@@ -396,51 +364,6 @@ class StripePayoutHandlerTest extends TestCase
         // Ensure both donations looked up are now Paid.
         $this->assertEquals('Paid', $altDonation->getDonationStatus());
         $this->assertEquals('Paid', $donation->getDonationStatus());
-    }
-
-    /**
-     * @param bool $populateTwoPages    For tests simulating a second API 'page' of transfers
-     * @param bool $invalidIds          For tests where the txfr + charge ID should be invalids versions (but
-     *                                  still work from a Stripe perspective).
-     * @return Redis|ObjectProphecy
-     */
-    protected function getRedisWithNoPreviousData(
-        bool $populateTwoPages,
-        bool $invalidIds = false,
-    ): Redis|ObjectProphecy {
-        $redisKey = 'stripe-payout-transfers-v2-1593298800';
-        $chargeId = $invalidIds ? 'ch_invalidId_123' : 'ch_externalId_123';
-        $transferId = $invalidIds ? 'tr_invalidId_123' : 'tr_externalId_123';
-
-        $redisProphecy = $this->prophesize(Redis::class);
-
-        $redisProphecy->exists($redisKey)
-            ->shouldBeCalledOnce()
-            ->willReturn(0);
-
-        $redisProphecy->hSet($redisKey, $transferId, $chargeId)
-            ->shouldBeCalledOnce()
-            ->willReturn(1);
-        if ($populateTwoPages) {
-            $redisProphecy->hSet($redisKey, 'tr_externalId_124', 'ch_externalId_124')
-                ->shouldBeCalledOnce()
-                ->willReturn(1);
-        }
-
-        $redisProphecy->expireAt($redisKey, Argument::type('int'))
-            ->shouldBeCalledOnce()
-            ->willReturn(true);
-
-        $redisProphecy->hGet($redisKey, $transferId)
-            ->shouldBeCalledOnce()
-            ->willReturn($chargeId);
-        if ($populateTwoPages) {
-            $redisProphecy->hGet($redisKey, 'tr_externalId_124')
-                ->shouldBeCalledOnce()
-                ->willReturn('ch_externalId_124');
-        }
-
-        return $redisProphecy;
     }
 
     /**
@@ -468,10 +391,10 @@ class StripePayoutHandlerTest extends TestCase
     protected function getCommonCalloutArgs(): array
     {
         return [
-            // Based on the date range from our standard test data payout (00:00 on the -60D, +1D days).
+            // Based on the date range from our standard test data payout (donation time -60D and +1D days).
             'created' => [
-                'gt' => 1593298800,
-                'lt' => 1598569200,
+                'gt' => 1593351656,
+                'lt' => 1598622056,
             ],
             'limit' => 100
         ];
