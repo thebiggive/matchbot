@@ -36,7 +36,7 @@ class DonationRecaptchaMiddleware implements MiddlewareInterface
             $captchaCode = '';
 
             $body = (string) $request->getBody();
-    
+
             /** @var HttpModels\Donation $donationData */
             try {
                 $donationData = $this->serializer->deserialize(
@@ -50,16 +50,16 @@ class DonationRecaptchaMiddleware implements MiddlewareInterface
                 // service, but can be mocked with success in unit tests so we can test handling of other
                 // code that might need to handle deserialise errors.
             }
-    
+
             $result = $this->captcha->verify(
                 $captchaCode,
                 $request->getAttribute('client-ip') // Set to original IP by previous middleware
             );
-    
+
             if ($result->isSuccess()) {
                 $response = $handler->handle($request);
                 break;
-            }
+            } 
 
             else {
                 $this->logger->info('Security: captcha failed, attempt: ' . ($counter + 1));
