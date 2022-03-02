@@ -31,11 +31,11 @@ class DonationPublicAuthMiddleware implements MiddlewareInterface
 
         if (empty($jws)) {
             $this->logger->info('Security: No JWT provided');
-            return $this->unauthorised($this->logger, true);
+            $this->unauthorised($this->logger, true, $request);
         }
 
         if (!Token::check($donationId, $jws, $this->logger)) {
-            return $this->unauthorised($this->logger, false);
+            $this->unauthorised($this->logger, false, $request);
         }
 
         return $handler->handle($request);

@@ -29,34 +29,47 @@ class DonationRecaptchaMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $captchaCode = '';
+        $timesToAttemptCaptchaVerification = 2;
+        $response = null;
 
-        $body = (string) $request->getBody();
+        for ($counter = 0; $counter < $timesToAttemptCaptchaVerification; $counter++) {
+            $captchaCode = '';
 
-        /** @var HttpModels\Donation $donationData */
-        try {
-            $donationData = $this->serializer->deserialize(
-                $body,
-                HttpModels\Donation::class,
-                'json'
+            $body = (string) $request->getBody();
+    
+            /** @var HttpModels\Donation $donationData */
+            try {
+                $donationData = $this->serializer->deserialize(
+                    $body,
+                    HttpModels\Donation::class,
+                    'json'
+                );
+                $captchaCode = $donationData->creationRecaptchaCode ?? '';
+            } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
+                // No-op. Allow verification with blank string to occur. This will fail with the live
+                // service, but can be mocked with success in unit tests so we can test handling of other
+                // code that might need to handle deserialise errors.
+            }
+    
+            $result = $this->captcha->verify(
+                $captchaCode,
+                $request->getAttribute('client-ip') // Set to original IP by previous middleware
             );
-            $captchaCode = $donationData->creationRecaptchaCode ?? '';
-        } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
-            // No-op. Allow verification with blank string to occur. This will fail with the live
-            // service, but can be mocked with success in unit tests so we can test handling of other
-            // code that might need to handle deserialise errors.
+    
+            if ($result->isSuccess()) {
+                $response = $handler->handle($request);
+                break;
+            }
+
+            else {
+                $this->logger->info('Security: captcha failed, attempt: ' . ($counter + 1));
+
+                if ($counter == 1) {
+                    $this->unauthorised($this->logger, true, $request);
+                }
+            }
         }
 
-        $result = $this->captcha->verify(
-            $captchaCode,
-            $request->getAttribute('client-ip') // Set to original IP by previous middleware
-        );
-
-        if (!$result->isSuccess()) {
-            $this->logger->info('Security: captcha failed');
-            return $this->unauthorised($this->logger, true);
-        }
-
-        return $handler->handle($request);
+        return $response;
     }
 }

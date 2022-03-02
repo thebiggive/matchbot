@@ -24,7 +24,7 @@ class DonationHookAuthMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (!$this->verify($request)) {
-            return $this->unauthorised($this->logger, false);
+            $this->unauthorised($this->logger, false, $request);
         }
 
         return $handler->handle($request);
