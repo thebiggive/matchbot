@@ -27,7 +27,7 @@ return function (App $app) {
         // order when chained this way – so we check rate limits first, then get the real
         // IP in an attribute for reCAPTCHA sending, then check the captcha.
         $versionGroup->post('/donations', Donations\Create::class)
-            ->add(DonationRecaptchaMiddleware::class) // Runs last
+//            ->add(DonationRecaptchaMiddleware::class) // Runs last
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 

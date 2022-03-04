@@ -111,12 +111,13 @@ class DonationRepository extends SalesforceWriteProxyRepository
             throw new \UnexpectedValueException('Required field "projectId" not set');
         }
 
-        /** @var Campaign $campaign */
-        $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId]);
 
-        if (!$campaign) {
+//        $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId]);
+
+//        if (!$campaign) {
             // Fetch data for as-yet-unknown campaigns on-demand
             $this->logInfo("Loading unknown campaign ID {$donationData->projectId} on-demand");
+        /** @var Campaign $campaign */
             $campaign = new Campaign();
             $campaign->setSalesforceId($donationData->projectId);
             try {
@@ -136,7 +137,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             /** @var CacheProvider $cacheDriver */
             $cacheDriver = $this->getEntityManager()->getConfiguration()->getResultCacheImpl();
             $cacheDriver->deleteAll();
-        }
+//        }
 
         if (empty($donationData->currencyCode)) {
             $donationData->currencyCode = 'GBP';
