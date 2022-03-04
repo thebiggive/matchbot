@@ -29,6 +29,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\SimpleCache\CacheInterface;
 use ReCaptcha\ReCaptcha;
+use ReCaptcha\RequestMethod\CurlPost;
 use Slim\Psr7\Factory\ResponseFactory;
 use Stripe\StripeClient;
 use Symfony\Component\Cache\Psr16Cache;
@@ -199,7 +200,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         ReCaptcha::class => static function (ContainerInterface $c): ReCaptcha {
-            return new ReCaptcha($c->get('settings')['recaptcha']['secret_key']);
+            return new ReCaptcha($c->get('settings')['recaptcha']['secret_key'], new CurlPost());
         },
 
         /**
