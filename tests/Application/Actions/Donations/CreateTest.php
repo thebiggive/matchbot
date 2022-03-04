@@ -732,14 +732,6 @@ class CreateTest extends TestCase
         $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
     }
 
-    public function encodeWithDummyCaptcha(Donation $donation): string
-    {
-        $donationArray = $donation->toApiModel();
-        $donationArray['creationRecaptchaCode'] = 'good response';
-
-        return json_encode($donationArray);
-    }
-
     /**
      * Use unmatched campaign in previous test but also omit all donor-supplied
      * detail except donation and tip amount, to test new 2-step Create setup.
@@ -842,6 +834,14 @@ class CreateTest extends TestCase
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
         $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
+    }
+
+    private function encodeWithDummyCaptcha(Donation $donation): string
+    {
+        $donationArray = $donation->toApiModel();
+        $donationArray['creationRecaptchaCode'] = 'good response';
+
+        return json_encode($donationArray);
     }
 
     private function getTestDonation(
