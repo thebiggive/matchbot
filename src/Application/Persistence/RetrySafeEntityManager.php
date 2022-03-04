@@ -9,6 +9,7 @@ use Doctrine\ORM;
 use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Exception\EntityManagerClosed;
 use JetBrains\PhpStorm\Pure;
 use Psr\Log\LoggerInterface;
 
@@ -19,6 +20,7 @@ use Psr\Log\LoggerInterface;
 class RetrySafeEntityManager extends EntityManagerDecorator
 {
     private EntityManagerInterface $entityManager;
+
     /**
      * @var int For non-matching updates that always use Doctrine, maximum number of times to try again when
      *          Doctrine reports that the error is recoverable and that retrying makes sense
@@ -72,9 +74,54 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         throw $ex;
     }
 
+    /**
+     * Attempt a persist the normal way, and if the underlying EM is closed, make a new one
+     * and try a second time. We were forced to take this approach because the properties
+     * tracking a closed EM are annotated private.
+     *
+     * {@inheritDoc}
+     */
+    public function persist($object): void
+    {
+        try {
+            $this->entityManager->persist($object);
+        } catch (EntityManagerClosed $closedException) {
+            $this->logger->warning('EM closed. RetrySafeEntityManager::persist() trying with a new instance');
+            $this->resetManager();
+            $this->entityManager->persist($object);
+        }
+    }
+
+    /**
+     * Attempt a flush the normal way, and if the underlying EM is closed, make a new one
+     * and try a second time. We were forced to take this approach because the properties
+     * tracking a closed EM are annotated private.
+     *
+     * {@inheritDoc}
+     */
+    public function flush($entity = null): void
+    {
+        try {
+            $this->entityManager->flush($entity);
+        } catch (EntityManagerClosed $closedException) {
+            $this->logger->warning('EM closed. RetrySafeEntityManager::flush() trying with a new instance');
+            $this->resetManager();
+            $this->entityManager->flush($entity);
+        }
+    }
+
     public function resetManager(): void
     {
         $this->entityManager = $this->buildEntityManager();
+    }
+
+    /**
+     * We need to override the base `EntityManager` call with the equivalent so that repositories
+     * contain the retry-safe EM (i.e. `$this` in our current context) and not the default one.
+     */
+    public function getRepository($className)
+    {
+        return $this->ormConfig->getRepositoryFactory()->getRepository($this, $className);
     }
 
     private function buildEntityManager(): EntityManagerInterface
