@@ -11,6 +11,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Slim\Exception\HttpNotFoundException;
+use Slim\Exception\HttpUnauthorizedException;
 
 class GetTest extends TestCase
 {
@@ -44,14 +45,10 @@ class GetTest extends TestCase
         $request = $this->createRequest('GET', '/v1/donations/12345678-1234-1234-1234-1234567890ab');
         $route = $this->getRouteWithDonationId('get', '12345678-1234-1234-1234-1234567890ab');
 
+        $this->expectException(HttpUnauthorizedException::class);
+        $this->expectExceptionMessage('Unauthorised');
+
         $response = $app->handle($request->withAttribute('route', $route));
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(401, ['error' => 'Unauthorized']);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(401, $response->getStatusCode());
     }
 
     public function testInvalidAuth(): void
@@ -73,14 +70,10 @@ class GetTest extends TestCase
             ->withHeader('x-tbg-auth', $jwtWithBadSignature);
         $route = $this->getRouteWithDonationId('get', '12345678-1234-1234-1234-1234567890ab');
 
+        $this->expectException(HttpUnauthorizedException::class);
+        $this->expectExceptionMessage('Unauthorised');
+
         $response = $app->handle($request->withAttribute('route', $route));
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(401, ['error' => 'Unauthorized']);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(401, $response->getStatusCode());
     }
 
     public function testAuthForWrongDonation(): void
@@ -102,14 +95,10 @@ class GetTest extends TestCase
             ->withHeader('x-tbg-auth', $jwtForAnotherDonation);
         $route = $this->getRouteWithDonationId('get', '12345678-1234-1234-1234-1234567890ab');
 
+        $this->expectException(HttpUnauthorizedException::class);
+        $this->expectExceptionMessage('Unauthorised');
+
         $response = $app->handle($request->withAttribute('route', $route));
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(401, ['error' => 'Unauthorized']);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(401, $response->getStatusCode());
     }
 
     public function testIdNotFound(): void

@@ -14,6 +14,7 @@ use Slim\CallableResolver;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Response;
 use Slim\Routing\Route;
+use Slim\Exception\HttpUnauthorizedException;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class DonationRecaptchaMiddlewareTest extends TestCase
@@ -29,13 +30,14 @@ class DonationRecaptchaMiddlewareTest extends TestCase
 
         $request = $this->createRequest('POST', '/v1/donations', $body);
 
+        $this->expectException(HttpUnauthorizedException::class);
+        $this->expectExceptionMessage('Unauthorised');
+
         // Because the 401 ends the request, we can dispatch this against realistic, full app
         // middleware and test this piece of middleware in the process.
         $response = $this->getAppInstance(false)
             ->getMiddlewareDispatcher()
             ->handle($request);
-
-        $this->assertEquals(401, $response->getStatusCode());
     }
 
     public function testSuccess(): void
