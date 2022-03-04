@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Application\Persistence;
 
 use DI\Container;
 use Doctrine\ORM\Configuration;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Repository\RepositoryFactory;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Domain\Donation;
@@ -13,6 +14,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Psr\Log\NullLogger;
+use ReflectionClass;
 
 class RetrySafeEntityManagerTest extends TestCase
 {
@@ -54,5 +56,45 @@ class RetrySafeEntityManagerTest extends TestCase
         $repo = $this->retrySafeEntityManager->getRepository(Donation::class);
 
         $this->assertInstanceOf(DonationRepository::class, $repo);
+    }
+
+    public function testPersist(): void
+    {
+        $underlyingEmProphecy = $this->prophesize(EntityManager::class);
+        $underlyingEmProphecy->persist(Argument::type(Donation::class))
+            ->shouldBeCalledOnce();
+
+        $retrySafeEntityManagerReflected = new ReflectionClass($this->retrySafeEntityManager);
+
+        $emProperty = $retrySafeEntityManagerReflected->getProperty('entityManager');
+        $emProperty->setAccessible(true);
+        $emProperty->setValue($this->retrySafeEntityManager, $underlyingEmProphecy->reveal());
+
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $container->set(EntityManager::class, $underlyingEmProphecy->reveal());
+
+        $this->retrySafeEntityManager->persist(new Donation());
+    }
+
+    public function testFlush(): void
+    {
+        $underlyingEmProphecy = $this->prophesize(EntityManager::class);
+        $underlyingEmProphecy->flush(null)
+            ->shouldBeCalledOnce();
+
+        $retrySafeEntityManagerReflected = new ReflectionClass($this->retrySafeEntityManager);
+
+        $emProperty = $retrySafeEntityManagerReflected->getProperty('entityManager');
+        $emProperty->setAccessible(true);
+        $emProperty->setValue($this->retrySafeEntityManager, $underlyingEmProphecy->reveal());
+
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $container->set(EntityManager::class, $underlyingEmProphecy->reveal());
+
+        $this->retrySafeEntityManager->flush();
     }
 }
