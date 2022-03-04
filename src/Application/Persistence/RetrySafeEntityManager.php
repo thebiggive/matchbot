@@ -124,6 +124,15 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         return $this->ormConfig->getRepositoryFactory()->getRepository($this, $className);
     }
 
+    /**
+     * Currently just used for easier testing, to avoid needing a very complex mix of both reflection
+     * and partial mocks.
+     */
+    public function setEntityManager(EntityManagerInterface $entityManager): void
+    {
+        $this->entityManager = $entityManager;
+    }
+
     private function buildEntityManager(): EntityManagerInterface
     {
         return EntityManager::create($this->connectionSettings, $this->ormConfig);
