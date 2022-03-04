@@ -14,7 +14,6 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\SalesforceWriteProxy;
@@ -174,51 +173,6 @@ class DonationRepositoryTest extends TestCase
         $success = $this->getRepo($donationClientProphecy)->push($this->getTestDonation(), false);
 
         $this->assertFalse($success);
-    }
-
-    public function testEnthuseAmountForCharityWithTipWithoutGiftAid(): void
-    {
-        // N.B. tip to TBG should not change the amount the charity receives, and the tip
-        // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation();
-        $donation->setAmount('987.65');
-        $donation->setCurrencyCode('GBP');
-        $donation->setGiftAid(false);
-        $donation->setPsp('enthuse');
-        $donation->setTipAmount('10.00');
-        $donation = $this->getRepo()->deriveFees($donation);
-
-        // £987.65 * 1.9%   = £ 18.77 (to 2 d.p.)
-        // Fixed fee        = £  0.20
-        // Total fee        = £ 18.97
-        // Amount after fee = £968.68
-
-        // Deduct tip + fee.
-        $this->assertEquals(2_897, $donation->getAmountToDeductFractional());
-        $this->assertEquals(96_868, $donation->getAmountForCharityFractional());
-    }
-
-    public function testEnthuseAmountForCharityWithTipAndGiftAid(): void
-    {
-        // N.B. tip to TBG should not change the amount the charity receives, and the tip
-        // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation();
-        $donation->setAmount('987.65');
-        $donation->setCurrencyCode('GBP');
-        $donation->setPsp('enthuse');
-        $donation->setTipAmount('10.00');
-        $donation->setGiftAid(true);
-        $donation = $this->getRepo()->deriveFees($donation);
-
-        // £987.65 * 1.9%   = £ 18.77 (to 2 d.p.)
-        // Fixed fee        = £  0.20
-        // Txn amount fee   = £ 18.97
-        // Fee on Gift Aid  = £  9.88
-        // Amount after fee = £958.80
-
-        // Deduct both fee types, and tip.
-        $this->assertEquals(3_885, $donation->getAmountToDeductFractional());
-        $this->assertEquals(95_880, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithTipUsingAmex(): void
@@ -588,8 +542,6 @@ class DonationRepositoryTest extends TestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('Cannot use pilot charity claim mode without env var');
 
-        $app = $this->getAppInstance();
-
         $settings = $this->getAppInstance()->getContainer()->get('settings');
         $settings['gift_aid']['pilot_salesforce_ids'] = null;
 
@@ -602,6 +554,48 @@ class DonationRepositoryTest extends TestCase
         $repo->setSettings($settings);
 
         $repo->findReadyToClaimGiftAid(true, false);
+    }
+
+    public function testFindWithTransferIdInArray(): void
+    {
+        // This needs a local var so it can be used both to set up the `Query::getResult()` prophecy
+        // and for verifying the `findWithTransferIdInArray()` return value, without e.g. creation
+        // timestamp varying.
+        $testDonation = $this->getTestDonation();
+
+        $query = $this->prophesize(AbstractQuery::class);
+        // Our test donation doesn't actually meet the conditions but as we're
+        // mocking out the Doctrine bits anyway that doesn't matter; we just want
+        // to check an update call is made when the result set is non-empty.
+        $query->getResult()->willReturn([$testDonation])
+            ->shouldBeCalledOnce();
+
+        $queryBuilderProphecy = $this->prophesize(QueryBuilder::class);
+        $queryBuilderProphecy->select('d')
+            ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->from(Donation::class, 'd')
+            ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->where('d.transferId IN (:transferIds)')
+            ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
+        $queryBuilderProphecy->setParameter('transferIds', ['tr_externalId_123'])
+            ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
+
+        $queryBuilderProphecy->getQuery()->willReturn($query->reveal());
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->createQueryBuilder()->shouldBeCalledOnce()
+            ->willReturn($queryBuilderProphecy->reveal());
+
+        $repo = new DonationRepository(
+            $entityManagerProphecy->reveal(),
+            new ClassMetadata(Donation::class),
+        );
+        $repo->setSettings($this->getAppInstance()->getContainer()->get('settings'));
+
+        $this->assertEquals(
+            [$testDonation],
+            $repo->findWithTransferIdInArray(['tr_externalId_123']),
+        );
     }
 
     /**

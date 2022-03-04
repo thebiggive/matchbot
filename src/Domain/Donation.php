@@ -48,7 +48,7 @@ class Donation extends SalesforceWriteProxy
         'PendingCancellation',
     ];
 
-    private array $possiblePSPs = ['enthuse', 'stripe'];
+    private array $possiblePSPs = ['stripe'];
 
     private array $newStatuses = ['NotSet', 'Pending'];
 
@@ -131,7 +131,6 @@ class Donation extends SalesforceWriteProxy
     /**
      * Fee the charity takes on, in £. Excludes any tax if applicable.
      *
-     * For Enthuse: 1.9% of $amount + 0.20p
      * For Stripe (EU / UK): 1.5% of $amount + 0.20p
      * For Stripe (Non EU / Amex): 3.2% of $amount + 0.20p
      *
@@ -249,7 +248,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string  Amount donor chose to tip. Precision numeric string.
-     *              Set during setup when using Stripe, and on Enthuse callback otherwise.
+     *              Set during donation setup and can also be modified later if the donor changes only this.
      * @see Donation::$currencyCode
      */
     protected string $tipAmount = '0.00';
@@ -314,9 +313,9 @@ class Donation extends SalesforceWriteProxy
     {
         $data = $this->toApiModel();
 
-        // MAT-168 - truncate dubious, long postcodes for now so records can save in SF.
-        if ($data['homePostcode'] !== null) {
-            $data['homePostcode'] = mb_substr($data['homePostcode'], 0, 8);
+        // MAT-234 - remove dubious patterns from email for now so records can save in SF.
+        if ($data['emailAddress'] !== null && str_contains($data['emailAddress'], ';;')) {
+            $data['emailAddress'] = str_replace(';;', '', $data['emailAddress']);
         }
 
         $data['createdTime'] = $this->getCreatedDate()->format(DateTimeInterface::ATOM);

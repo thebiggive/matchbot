@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 
@@ -81,7 +82,7 @@ class DonationTest extends TestCase
     public function testValidPspAccepted(): void
     {
         $donation = new Donation();
-        $donation->setPsp('enthuse');
+        $donation->setPsp('stripe');
 
         $this->addToAssertionCount(1); // Just check setPsp() doesn't hit an exception
     }
@@ -92,6 +93,48 @@ class DonationTest extends TestCase
         $donation->setOriginalPspFeeFractional(123);
 
         $this->assertEquals('1.23', $donation->getOriginalPspFee());
+    }
+
+    public function testToApiModel(): void
+    {
+        $fundingWithdrawal = new FundingWithdrawal();
+        $fundingWithdrawal->setAmount('1.23');
+        $donation = $this->getTestDonation();
+        $donation->addFundingWithdrawal($fundingWithdrawal);
+
+        $donationData = $donation->toApiModel();
+
+        $this->assertEquals('john.doe@example.com', $donationData['emailAddress']);
+        $this->assertEquals('1.23', $donationData['matchedAmount']);
+    }
+
+    public function testToApiModelTemporaryHackHasNoImpact(): void
+    {
+        $donation = $this->getTestDonation();
+        $donation->setDonorEmailAddress('noel;;@thebiggive.org.uk');
+
+        $donationData = $donation->toApiModel();
+
+        $this->assertEquals('noel;;@thebiggive.org.uk', $donationData['emailAddress']);
+    }
+
+    public function testToHookModel(): void
+    {
+        $donation = $this->getTestDonation();
+
+        $donationData = $donation->toHookModel();
+
+        $this->assertEquals('john.doe@example.com', $donationData['emailAddress']);
+    }
+
+    public function testToHookModelTemporaryHack(): void
+    {
+        $donation = $this->getTestDonation();
+        $donation->setDonorEmailAddress('noel;;@thebiggive.org.uk');
+
+        $donationData = $donation->toHookModel();
+
+        $this->assertEquals('noel@thebiggive.org.uk', $donationData['emailAddress']);
     }
 
     public function testToClaimBotModelUK(): void

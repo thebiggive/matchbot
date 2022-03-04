@@ -54,6 +54,7 @@ trait DonationTestDataTrait
         $donation->setSalesforceId('sfDonation369');
         $donation->setTbgComms(false);
         $donation->setTipAmount('1.00');
+        $donation->setTransferId('tr_externalId_123');
         $donation->setTransactionId('pi_externalId_123');
         $donation->setChargeId('ch_externalId_123');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
@@ -89,7 +90,8 @@ trait DonationTestDataTrait
         $donation->setCampaign($campaign);
         $donation->setCurrencyCode('GBP');
         $donation->setDonationStatus('Pending');
-        $donation->setPsp('enthuse');
+        $donation->setPsp('stripe');
+        $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setTipAmount('2.00');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ac'));
 

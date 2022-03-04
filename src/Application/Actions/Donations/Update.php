@@ -325,8 +325,8 @@ class Update extends Action
     private function save(Donation $donation): void
     {
         // SF push and the corresponding DB persist only happens when names are already set.
-        // In cases like an Enthuse donation setup there is other data we need to save before
-        // that point, e.g. comms preferences. So we must persist here first.
+        // There could be other data we need to save before that point, e.g. comms
+        // preferences, so to be safe we persist here first.
         $this->entityManager->persist($donation);
         $this->entityManager->flush();
 
