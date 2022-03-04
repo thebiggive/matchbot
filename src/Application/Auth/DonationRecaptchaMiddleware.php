@@ -58,16 +58,15 @@ class DonationRecaptchaMiddleware implements MiddlewareInterface
 
             if ($result->isSuccess()) {
                 $response = $handler->handle($request);
-                break;
-            } else {
-                $this->logger->info('Security: captcha failed, attempt: ' . ($counter + 1));
+                return $response;
+            }
 
-                if ($counter == 1) {
-                    $this->unauthorised($this->logger, true, $request);
-                }
+            $this->logger->info('Security: captcha failed, attempt: ' . ($counter + 1));
+
+            if ($counter == ($timesToAttemptCaptchaVerification - 1)) {
+                $this->logger->warn('Warning: captcha verification has now failed after ' . $timesToAttemptCaptchaVerification . ' attempts!');
+                $this->unauthorised($this->logger, true, $request);
             }
         }
-
-        return $response;
     }
 }
