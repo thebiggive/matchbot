@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use LosMiddleware\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
@@ -546,18 +545,10 @@ class CreateTest extends TestCase
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
 
-        $connectionProphecy = $this->prophesize(Connection::class);
-        $connectionProphecy->close()->shouldBeCalledOnce();
-        $connectionProphecy->connect()->willReturn(true)->shouldBeCalledOnce();
-
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         // These are called once after initial ID setup and once after Stripe fields added.
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
-        $entityManagerProphecy->isOpen()->willReturn(false)->shouldBeCalledOnce();
-        $entityManagerProphecy->getConnection()
-            ->willReturn($connectionProphecy->reveal())
-            ->shouldBeCalledOnce();
 
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
