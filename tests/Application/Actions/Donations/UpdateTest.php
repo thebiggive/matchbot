@@ -14,6 +14,7 @@ use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Slim\Exception\HttpNotFoundException;
+use Slim\Exception\HttpUnauthorizedException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
@@ -58,14 +59,10 @@ class UpdateTest extends TestCase
         $request = $this->createRequest('PUT', '/v1/donations/12345678-1234-1234-1234-1234567890ab');
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
+        $this->expectException(HttpUnauthorizedException::class);
+        $this->expectExceptionMessage('Unauthorised');
+
         $response = $app->handle($request->withAttribute('route', $route));
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(401, ['error' => 'Unauthorized']);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(401, $response->getStatusCode());
     }
 
     public function testInvalidAuth(): void
@@ -93,14 +90,10 @@ class UpdateTest extends TestCase
             ->withHeader('x-tbg-auth', $jwtWithBadSignature);
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
+        $this->expectException(HttpUnauthorizedException::class);
+        $this->expectExceptionMessage('Unauthorised');
+
         $response = $app->handle($request->withAttribute('route', $route));
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(401, ['error' => 'Unauthorized']);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(401, $response->getStatusCode());
     }
 
     public function testAuthForWrongDonation(): void
@@ -128,14 +121,10 @@ class UpdateTest extends TestCase
             ->withHeader('x-tbg-auth', $jwtForAnotherDonation);
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
+        $this->expectException(HttpUnauthorizedException::class);
+        $this->expectExceptionMessage('Unauthorised');
+
         $response = $app->handle($request->withAttribute('route', $route));
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(401, ['error' => 'Unauthorized']);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(401, $response->getStatusCode());
     }
 
     public function testIdNotFound(): void

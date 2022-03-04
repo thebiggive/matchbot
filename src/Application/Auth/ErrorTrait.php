@@ -6,15 +6,17 @@ namespace MatchBot\Application\Auth;
 
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use Slim\Psr7\Response;
+use Slim\Exception\HttpUnauthorizedException;
 
 /**
  * Easily return well-formatted 401s
  */
 trait ErrorTrait
 {
-    protected function unauthorised(LoggerInterface $logger, bool $likelyBot): ResponseInterface
+    protected function unauthorised(LoggerInterface $logger, bool $likelyBot, ServerRequestInterface $request): void
     {
         if ($likelyBot) {
             // We've seen traffic with no JWTs from crawlers etc. before so don't
@@ -24,10 +26,6 @@ trait ErrorTrait
             $logger->warning('Unauthorised');
         }
 
-        /** @var ResponseInterface $response */
-        $response = new Response(StatusCodeInterface::STATUS_UNAUTHORIZED);
-        $response->getBody()->write(json_encode(['error' => 'Unauthorized'], JSON_PRETTY_PRINT));
-
-        return $response->withHeader('Content-Type', 'application/json');
+        throw new HttpUnauthorizedException($request, 'Unauthorised');
     }
 }
