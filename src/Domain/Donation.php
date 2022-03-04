@@ -314,7 +314,7 @@ class Donation extends SalesforceWriteProxy
         $data = $this->toApiModel();
 
         // MAT-234 - remove dubious patterns from email for now so records can save in SF.
-        if (str_contains($data['emailAddress'], ';;')) {
+        if ($data['emailAddress'] !== null && str_contains($data['emailAddress'], ';;')) {
             $data['emailAddress'] = str_replace(';;', '', $data['emailAddress']);
         }
 
