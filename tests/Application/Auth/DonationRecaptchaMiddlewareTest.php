@@ -4,22 +4,15 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Auth;
 
-use GuzzleHttp\Psr7\Utils;
 use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
-use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use ReCaptcha\ReCaptcha;
-use ReCaptcha\Response as ReCaptchaResponse;
 use Slim\App;
 use Slim\CallableResolver;
 use Slim\Psr7\Factory\ResponseFactory;
-use Slim\Psr7\Headers;
-use Slim\Psr7\Request;
 use Slim\Psr7\Response;
-use Slim\Psr7\Uri;
 use Slim\Routing\Route;
 use Slim\Exception\HttpUnauthorizedException;
 use Symfony\Component\Serializer\SerializerInterface;
