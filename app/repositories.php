@@ -10,6 +10,8 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\Charity;
+use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
@@ -32,6 +34,10 @@ return static function (ContainerBuilder $containerBuilder) {
             $repo->setLogger($c->get(LoggerInterface::class));
 
             return $repo;
+        },
+
+        CharityRepository::class => static function (ContainerInterface $c): CharityRepository {
+            return $c->get(EntityManagerInterface::class)->getRepository(Charity::class);
         },
 
         DonationRepository::class => static function (ContainerInterface $c): DonationRepository {
