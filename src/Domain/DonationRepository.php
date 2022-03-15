@@ -434,6 +434,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->andWhere('d.collectedAt < :claimGiftAidForDonationsBefore')
             ->orderBy('charity.id', 'ASC') // group donations for the same charity together in batches
             ->addOrderBy('d.collectedAt', 'ASC')
+            ->setMaxResults(5000) // MAT-232: temporarily cap at 5k donations per run.
             ->setParameter('claimGiftAidWithStatus', 'Paid')
             ->setParameter('claimGiftAidForDonationsBefore', $cutoff);
 
