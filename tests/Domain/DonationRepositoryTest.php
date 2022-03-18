@@ -476,7 +476,7 @@ class DonationRepositoryTest extends TestCase
     /**
      * Pilot env var default value is set in `phpunit.xml`.
      */
-    public function testFindReadyToClaimGiftAidInPilotWithEnvVar(): void
+    public function testFindReadyToClaimGiftAid(): void
     {
         // This needs a local var so it can be used both to set up the `Query::getResult()` prophecy
         // and for verifying the `findReadyToClaimGiftAid()` return value, without e.g. creation
@@ -502,23 +502,19 @@ class DonationRepositoryTest extends TestCase
         $queryBuilderProphecy->where('d.donationStatus = :claimGiftAidWithStatus')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
 
-        // 6 `andWhere()`s in all, excluding the first `where()` but including the one
-        // for `$pilotCharitiesOnly` and the one NOT for `$withResends` calls.
+        // 5 `andWhere()`s in all, excluding the first `where()` but including the one
+        // NOT for `$withResends` calls.
         $queryBuilderProphecy->andWhere(Argument::type('string'))
-            ->shouldBeCalledTimes(6)->willReturn($queryBuilderProphecy->reveal());
+            ->shouldBeCalledTimes(5)->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->orderBy('charity.id', 'ASC')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->addOrderBy('d.collectedAt', 'ASC') ->shouldBeCalledOnce()
             ->willReturn($queryBuilderProphecy->reveal());
-        $queryBuilderProphecy->setMaxResults(5000)
-            ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
 
-        // 3 param sets, including the one for `$pilotCharitiesOnly`.
+        // 2 param sets, including the one for `$pilotCharitiesOnly`.
         $queryBuilderProphecy->setParameter('claimGiftAidWithStatus', 'Paid')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->setParameter('claimGiftAidForDonationsBefore', Argument::type(\DateTime::class))
-            ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
-        $queryBuilderProphecy->setParameter('pilotSalesforceIds', ['sfAccountId123']) // From phpunit.xml env var
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
 
         $queryBuilderProphecy->getQuery()->willReturn($query->reveal());
@@ -535,27 +531,8 @@ class DonationRepositoryTest extends TestCase
 
         $this->assertEquals(
             [$testDonation],
-            $repo->findReadyToClaimGiftAid(true, false),
+            $repo->findReadyToClaimGiftAid(false),
         );
-    }
-
-    public function testFindReadyToClaimGiftAidInPilotWithoutEnvVar(): void
-    {
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('Cannot use pilot charity claim mode without env var');
-
-        $settings = $this->getAppInstance()->getContainer()->get('settings');
-        $settings['gift_aid']['pilot_salesforce_ids'] = null;
-
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $repo = new DonationRepository(
-            $entityManagerProphecy->reveal(),
-            new ClassMetadata(Donation::class),
-        );
-        $repo->setLogger(new NullLogger());
-        $repo->setSettings($settings);
-
-        $repo->findReadyToClaimGiftAid(true, false);
     }
 
     public function testFindWithTransferIdInArray(): void

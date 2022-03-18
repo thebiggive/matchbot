@@ -33,13 +33,6 @@ class ClaimGiftAid extends LockingCommand
     {
         $this->setDescription('Sends applicable donations to ClaimBot for HMRC Gift Aid claims');
         $this->addOption(
-            'pilot',
-            null,
-            InputOption::VALUE_NONE,
-            'Tells the command to send only donations to pilot charities as defined in a JSON ' .
-            'environment variable "GIFT_AID_PILOT_CHARITIES_SALESFORCE_IDS"',
-        );
-        $this->addOption(
             'with-resends',
             null,
             InputOption::VALUE_NONE,
@@ -50,7 +43,6 @@ class ClaimGiftAid extends LockingCommand
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $toClaim = $this->donationRepository->findReadyToClaimGiftAid(
-            !empty($input->getOption('pilot')),
             !empty($input->getOption('with-resends')),
         );
 
