@@ -15,8 +15,7 @@ final class Version20220318111320 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Un-mark donations for TBG Gift Aid claiming where orgs have told us they will claim it
- * themselves';
+        return 'Un-mark donations for TBG Gift Aid claiming where orgs have told us they will claim it themselves';
     }
 
     public function up(Schema $schema): void
