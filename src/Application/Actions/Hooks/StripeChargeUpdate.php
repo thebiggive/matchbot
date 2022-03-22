@@ -12,11 +12,12 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
 use Stripe\Charge;
+use Stripe\Dispute;
 use Stripe\Event;
 use Stripe\StripeClient;
 
 /**
- * Handle charge.succeeded and charge.refunded events from a Stripe account webhook.
+ * Handle charge.succeeded, charge.refunded and charge.dispute.closed events from a Stripe Direct webhook.
  *
  * @return Response
  */
@@ -50,6 +51,8 @@ class StripeChargeUpdate extends Stripe
         $this->logger->info(sprintf('Received Stripe account event type "%s"', $this->event->type));
 
         switch ($this->event->type) {
+            case 'charge.dispute.closed':
+                return $this->handleChargeDisputeClosed($this->event);
             case 'charge.refunded':
                 return $this->handleChargeRefunded($this->event);
             case 'charge.succeeded':
@@ -108,6 +111,62 @@ class StripeChargeUpdate extends Stripe
         return $this->respondWithData($charge);
     }
 
+    /**
+     * Treats closed lost disputes like a refund. Ignores closed won disputes (except an info
+     * log) but acks the webhook with an HTTP 204.
+     *
+     * @link https://stripe.com/docs/issuing/purchases/disputes
+     */
+    private function handleChargeDisputeClosed(Event $event): Response
+    {
+        /** @var Dispute $dispute */
+        $dispute = $event->data->object;
+
+        $intentId = $dispute->payment_intent;
+
+        if ($dispute->status !== 'lost') {
+            $this->logger->info(sprintf(
+                'Dispute %s (reason: %s) closure for Payment Intent ID %s ignored as no updates needed for status %s',
+                $dispute->id,
+                $dispute->reason,
+                $intentId,
+                $dispute->status,
+            ));
+            return $this->respond(new ActionPayload(204));
+        }
+
+        /** @var Donation $donation */
+        $donation = $this->donationRepository->findOneBy(['transactionId' => $intentId]);
+
+        if (!$donation) {
+            $this->logger->info(sprintf('Donation not found with Payment Intent ID %s', $intentId));
+            return $this->respond(new ActionPayload(204));
+        }
+
+        if ($donation->getAmountFractionalIncTip() !== $dispute->amount) {
+            $this->logger->error(sprintf(
+                'Skipping unexpected dispute lost amount %s pence for donation %s based on Payment Intent ID %s',
+                $dispute->amount, // int: pence / cents.
+                $donation->getUuid(),
+                $intentId,
+            ));
+            return $this->respond(new ActionPayload(204));
+        }
+
+        $this->logger->info(sprintf(
+            'Marking donation %s refunded based on dispute %s (reason: %s) for Payment Intent ID %s',
+            $donation->getUuid(),
+            $dispute->id,
+            $dispute->reason,
+            $intentId,
+        ));
+
+        $donation->setDonationStatus('Refunded');
+        $this->doPostMarkRefundedUpdates($donation, true);
+
+        return $this->respondWithData($event->data->object);
+    }
+
     private function handleChargeRefunded(Event $event): Response
     {
         $chargeId = $event->data->object->id;
@@ -152,17 +211,7 @@ class StripeChargeUpdate extends Stripe
             return $this->respond(new ActionPayload(204));
         }
 
-        $this->entityManager->persist($donation);
-        $this->entityManager->flush();
-
-        // Release match funds only if the donation was matched and
-        // the refunded amount is equal to the local txn amount.
-        // We multiply local donation amount by 100 to match Stripes calculations.
-        if ($isFullRefund && $donation->isReversed() && $donation->getCampaign()->isMatched()) {
-            $this->donationRepository->releaseMatchFunds($donation);
-        }
-
-        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
+        $this->doPostMarkRefundedUpdates($donation, $isFullRefund);
 
         return $this->respondWithData($event->data->object);
     }
@@ -195,5 +244,27 @@ class StripeChargeUpdate extends Stripe
         }
 
         return $txn->fee;
+    }
+
+    /**
+     * Called after updates set a donation status to Refunded *or* clear its tip amount
+     * after a partial tip refund.
+     */
+    private function doPostMarkRefundedUpdates(Donation $donation, bool $isFullRefundOrLostDispute): void
+    {
+        $this->entityManager->persist($donation);
+        $this->entityManager->flush();
+
+        // Release match funds only if the donation was matched and
+        // the refunded amount is equal to the local txn amount.
+        if (
+            $isFullRefundOrLostDispute &&
+            $donation->isReversed() &&
+            $donation->getCampaign()->isMatched()
+        ) {
+            $this->donationRepository->releaseMatchFunds($donation);
+        }
+
+        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
     }
 }
