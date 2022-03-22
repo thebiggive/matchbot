@@ -13,11 +13,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use Stripe\Event;
 
-/**
- * Handle charge.succeeded and charge.refunded events from a Stripe account webhook.
- *
- * @return Response
- */
 abstract class Stripe extends Action
 {
     protected Event $event;

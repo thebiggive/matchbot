@@ -1,0 +1,118 @@
+{
+  "id": "evt_3Kg5ktKkGuKkxwBN0WrM2Oq8",
+  "object": "event",
+  "api_version": "2020-08-27",
+  "created": 1647948865,
+  "data": {
+    "object": {
+      "id": "dp_1Kg5lvKkGuKkxwBNV6Lhq4b0",
+      "object": "dispute",
+      "amount": 12445,
+      "balance_transaction": "txn_1Kg5lvKkGuKkxwBNzenw0Sg0",
+      "balance_transactions": [
+        {
+          "id": "txn_1Kg5lvKkGuKkxwBNzenw0Sg0",
+          "object": "balance_transaction",
+          "amount": -12445,
+          "available_on": 1649116800,
+          "created": 1647948067,
+          "currency": "gbp",
+          "description": "Chargeback withdrawal for ch_externalId_123",
+          "exchange_rate": null,
+          "fee": 1500,
+          "fee_details": [
+            {
+              "amount": 1500,
+              "application": null,
+              "currency": "gbp",
+              "description": "Dispute fee",
+              "type": "stripe_fee"
+            }
+          ],
+          "net": -2075,
+          "reporting_category": "dispute",
+          "source": "dp_1Kg5lvKkGuKkxwBNV6Lhq4b0",
+          "status": "pending",
+          "type": "adjustment"
+        },
+        {
+          "id": "txn_1Kg5ynKkGuKkxwBNfM7SdwcY",
+          "object": "balance_transaction",
+          "amount": 12445,
+          "available_on": 1649116800,
+          "created": 1647948864,
+          "currency": "gbp",
+          "description": "Chargeback reversal for ch_externalId_123",
+          "exchange_rate": null,
+          "fee": -1500,
+          "fee_details": [
+            {
+              "amount": -1500,
+              "application": null,
+              "currency": "gbp",
+              "description": "Dispute fee refund",
+              "type": "stripe_fee"
+            }
+          ],
+          "net": 2075,
+          "reporting_category": "dispute_reversal",
+          "source": "dp_1Kg5lvKkGuKkxwBNV6Lhq4b0",
+          "status": "pending",
+          "type": "adjustment"
+        }
+      ],
+      "charge": "ch_externalId_123",
+      "created": 1647948067,
+      "currency": "gbp",
+      "evidence": {
+        "access_activity_log": null,
+        "billing_address": "N1 1AA, GB",
+        "cancellation_policy": null,
+        "cancellation_policy_disclosure": null,
+        "cancellation_rebuttal": null,
+        "customer_communication": null,
+        "customer_email_address": "noel+dispute+test+3@thebiggive.org.uk",
+        "customer_name": "Noel Will-Dispute3",
+        "customer_purchase_ip": null,
+        "customer_signature": null,
+        "duplicate_charge_documentation": null,
+        "duplicate_charge_explanation": null,
+        "duplicate_charge_id": null,
+        "product_description": "test",
+        "receipt": null,
+        "refund_policy": null,
+        "refund_policy_disclosure": null,
+        "refund_refusal_explanation": "test",
+        "service_date": null,
+        "service_documentation": null,
+        "shipping_address": null,
+        "shipping_carrier": null,
+        "shipping_date": null,
+        "shipping_documentation": null,
+        "shipping_tracking_number": null,
+        "uncategorized_file": null,
+        "uncategorized_text": "winning_evidence"
+      },
+      "evidence_details": {
+        "due_by": 1648771199,
+        "has_evidence": true,
+        "past_due": false,
+        "submission_count": 1
+      },
+      "is_charge_refundable": true,
+      "livemode": false,
+      "metadata": {
+      },
+      "payment_intent": "pi_externalId_123",
+      "reason": "product_not_received",
+      "status": "won"
+    }
+  },
+  "livemode": false,
+  "pending_webhooks": 2,
+  "request": {
+    "id": "req_KcZHO24h01k3QH",
+    "idempotency_key": "91df674d-a090-4f23-88db-ac4542e37bff"
+  },
+  "type": "charge.dispute.closed"
+}

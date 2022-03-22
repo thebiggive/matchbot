@@ -1,0 +1,96 @@
+{
+  "id": "evt_3Kg5a0KkGuKkxwBN0JkhkqXs",
+  "object": "event",
+  "api_version": "2020-08-27",
+  "created": 1647947434,
+  "data": {
+    "object": {
+      "id": "dp_1Kg5b1KkGuKkxwBNMUyZZI8V",
+      "object": "dispute",
+      "amount": 12445,
+      "balance_transaction": "txn_1Kg5b2KkGuKkxwBNvinO1NNo",
+      "balance_transactions": [
+        {
+          "id": "txn_1Kg5b2KkGuKkxwBNvinO1NNo",
+          "object": "balance_transaction",
+          "amount": -12445,
+          "available_on": 1649116800,
+          "created": 1647947392,
+          "currency": "gbp",
+          "description": "Chargeback withdrawal for ch_externalId_123",
+          "exchange_rate": null,
+          "fee": 1500,
+          "fee_details": [
+            {
+              "amount": 1500,
+              "application": null,
+              "currency": "gbp",
+              "description": "Dispute fee",
+              "type": "stripe_fee"
+            }
+          ],
+          "net": -1615,
+          "reporting_category": "dispute",
+          "source": "dp_1Kg5b1KkGuKkxwBNMUyZZI8V",
+          "status": "pending",
+          "type": "adjustment"
+        }
+      ],
+      "charge": "ch_externalId_123",
+      "created": 1647947391,
+      "currency": "gbp",
+      "evidence": {
+        "access_activity_log": null,
+        "billing_address": "n1 1aa, GB",
+        "cancellation_policy": null,
+        "cancellation_policy_disclosure": null,
+        "cancellation_rebuttal": null,
+        "customer_communication": null,
+        "customer_email_address": "noel+dispute+test@thebiggive.org.uk",
+        "customer_name": "Noel Will-Dispute",
+        "customer_purchase_ip": null,
+        "customer_signature": null,
+        "duplicate_charge_documentation": null,
+        "duplicate_charge_explanation": null,
+        "duplicate_charge_id": null,
+        "product_description": null,
+        "receipt": null,
+        "refund_policy": null,
+        "refund_policy_disclosure": null,
+        "refund_refusal_explanation": null,
+        "service_date": null,
+        "service_documentation": null,
+        "shipping_address": null,
+        "shipping_carrier": null,
+        "shipping_date": null,
+        "shipping_documentation": null,
+        "shipping_tracking_number": null,
+        "uncategorized_file": null,
+        "uncategorized_text": null
+      },
+      "evidence_details": {
+        "due_by": 1648771199,
+        "has_evidence": false,
+        "past_due": false,
+        "submission_count": 0
+      },
+      "is_charge_refundable": false,
+      "livemode": false,
+      "metadata": {
+      },
+      "payment_intent": "pi_externalId_123",
+      "reason": "fraudulent",
+      "status": "lost"
+    },
+    "previous_attributes": {
+      "status": "needs_response"
+    }
+  },
+  "livemode": false,
+  "pending_webhooks": 2,
+  "request": {
+    "id": "req_DjEvmn9nSEoLfx",
+    "idempotency_key": "6d92eb6a-c931-40f8-8b11-bd4cae9d40d5"
+  },
+  "type": "charge.dispute.closed"
+}
