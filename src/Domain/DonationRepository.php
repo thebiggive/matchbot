@@ -404,18 +404,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * @return Donation[]
      */
-    public function findReadyToClaimGiftAid(bool $pilotCharitiesOnly, bool $withResends): array
+    public function findReadyToClaimGiftAid(bool $withResends): array
     {
-        $giftAidSettings = $this->settings['gift_aid'];
-
-        if ($pilotCharitiesOnly && empty($giftAidSettings['pilot_salesforce_ids'])) {
-            throw new \LogicException('Cannot use pilot charity claim mode without env var');
-        }
-
-        if (!$pilotCharitiesOnly && !empty($giftAidSettings['pilot_salesforce_ids'])) {
-            throw new \LogicException('Cannot use global charity claim mode with pilot env var set');
-        }
-
         if ($withResends && getenv('APP_ENV') === 'production') {
             throw new \LogicException('Cannot re-send live donations');
         }
@@ -434,15 +424,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->andWhere('d.collectedAt < :claimGiftAidForDonationsBefore')
             ->orderBy('charity.id', 'ASC') // group donations for the same charity together in batches
             ->addOrderBy('d.collectedAt', 'ASC')
-            ->setMaxResults(5000) // MAT-232: temporarily cap at 5k donations per run.
             ->setParameter('claimGiftAidWithStatus', 'Paid')
             ->setParameter('claimGiftAidForDonationsBefore', $cutoff);
-
-        if ($pilotCharitiesOnly) {
-            /** @var string[] $salesforceIds */
-            $qb = $qb->andWhere('charity.salesforceId IN (:pilotSalesforceIds)')
-                ->setParameter('pilotSalesforceIds', $giftAidSettings['pilot_salesforce_ids']);
-        }
 
         if (!$withResends) {
             $qb = $qb->andWhere('d.tbgGiftAidRequestQueuedAt IS NULL');
