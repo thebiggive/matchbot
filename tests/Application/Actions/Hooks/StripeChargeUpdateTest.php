@@ -37,13 +37,13 @@ class StripeChargeUpdateTest extends StripeTest
         $this->assertEquals(204, $response->getStatusCode());
     }
 
-    public function testUnrecognisedTransactionId(): void
+    public function testSuccessWithUnrecognisedTransactionId(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $body = $this->getStripeHookMock('ch_invalid_id');
+        $body = $this->getStripeHookMock('ch_succeeded_invalid_id');
         $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
         $time = (string) time();
 
@@ -193,6 +193,166 @@ class StripeChargeUpdateTest extends StripeTest
         $this->assertEquals('Collected', $donation->getDonationStatus());
         $this->assertEquals('18.72', $donation->getOriginalPspFee());
         $this->assertEquals(200, $response->getStatusCode());
+    }
+
+    public function testDisputeLostBehavesLikeRefund(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = $this->getStripeHookMock('ch_dispute_closed_lost');
+        $donation = $this->getTestDonation();
+        $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
+        $time = (string) time();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['transactionId' => 'pi_externalId_123'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+
+        $donationRepoProphecy
+            ->releaseMatchFunds($donation)
+            ->shouldBeCalledOnce();
+
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+
+        $response = $app->handle($request);
+
+        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
+        $this->assertEquals('Refunded', $donation->getDonationStatus());
+        $this->assertEquals('1.00', $donation->getTipAmount());
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+
+    public function testDisputeWonMakesNoSubstantiveChanges(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = $this->getStripeHookMock('ch_dispute_closed_won');
+        $donation = $this->getTestDonation();
+        $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
+        $time = (string) time();
+
+        // The donation isn't even looked up in the actual action, because there are
+        // never any data changes to make in the "won" case.
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['transactionId' => 'pi_externalId_123'])
+            ->shouldNotBeCalled();
+
+        $donationRepoProphecy
+            ->releaseMatchFunds($donation)
+            ->shouldNotBeCalled();
+
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldNotBeCalled();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+
+        $response = $app->handle($request);
+
+        // No change to any donation data. Return 204 for no change. Will log
+        // info to help in case of any confusion.
+        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
+        $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals('1.00', $donation->getTipAmount());
+        $this->assertEquals(204, $response->getStatusCode());
+    }
+
+    public function testDisputeLostWithUnrecognisedTransactionId(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = $this->getStripeHookMock('ch_dispute_closed_lost_unknown_pi');
+        $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
+        $time = (string) time();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['transactionId' => 'pi_invalidId_123'])
+            ->willReturn(null)
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+
+        $response = $app->handle($request);
+
+        $this->assertEquals(204, $response->getStatusCode());
+    }
+
+    public function testDisputeLostWithUnexpectedAmount(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = $this->getStripeHookMock('ch_dispute_closed_lost_unexpected_amount');
+        $donation = $this->getTestDonation();
+        $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
+        $time = (string) time();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['transactionId' => 'pi_externalId_123'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+
+        $donationRepoProphecy
+            ->releaseMatchFunds($donation)
+            ->shouldNotBeCalled();
+
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldNotBeCalled();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+
+        $response = $app->handle($request);
+
+        // No change to any donation data. Return 204 for no change. Will also log
+        // an error so we can investigate.
+        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
+        $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals('1.00', $donation->getTipAmount());
+        $this->assertEquals(204, $response->getStatusCode());
     }
 
     public function testSuccessfulFullRefund(): void

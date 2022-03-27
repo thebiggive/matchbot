@@ -17,7 +17,7 @@ use Symfony\Component\Messenger\Stamp\BusNameStamp;
 use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 
 /**
- * Handle payout.paid and payout.failed events from a Stripe Connect app webhook.
+ * Handle payout.paid and payout.failed events from a Stripe Connect webhook.
  *
  * @return Response
  */
