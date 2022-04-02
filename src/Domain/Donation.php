@@ -417,10 +417,6 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->donationStatus = $donationStatus;
-
-        if ($donationStatus === 'Collected') {
-            $this->collectedAt = new \DateTime('now');
-        }
     }
 
     /**
@@ -993,6 +989,14 @@ class Donation extends SalesforceWriteProxy
     public function setTbgGiftAidRequestFailedAt(?DateTime $tbgGiftAidRequestFailedAt): void
     {
         $this->tbgGiftAidRequestFailedAt = $tbgGiftAidRequestFailedAt;
+    }
+
+    /**
+     * @param DateTime|null $collectedAt
+     */
+    public function setCollectedAt(?DateTime $collectedAt): void
+    {
+        $this->collectedAt = $collectedAt;
     }
 
     public function hasEnoughDataForSalesforce(): bool

@@ -149,7 +149,7 @@ class DonationTest extends TestCase
 
         $nowInYmd = date('Y-m-d');
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $claimBotMessage->id); // UUID
-        // collectedAt is set by `setDonationStatus('Collected')`
+        // collectedAt is set by `setDonationStatus('Collected')` TODO review what makes sense for this now.
         $this->assertEquals($nowInYmd, $claimBotMessage->donation_date);
         $this->assertEquals('', $claimBotMessage->title);
         $this->assertEquals('John', $claimBotMessage->first_name);
