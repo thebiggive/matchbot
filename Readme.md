@@ -94,7 +94,7 @@ first attempt.
 
 In deployed environments, AWS Simple Queue Service is used to pick up
 messages for delayed processing – MatchBot needs to handle messages for Stripe
-payout paid webhooks, which take some time to process, and for failed Gift Aid
+payout paid webhooks, which take some time to process, and for completed/failed Gift Aid
 claim attempts from ClaimBot.
 
 Additionally, it *publishes* messages to ClaimBot's separate queue for newly-claimable donations and its own when a
