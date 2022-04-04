@@ -510,7 +510,7 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->addOrderBy('d.collectedAt', 'ASC') ->shouldBeCalledOnce()
             ->willReturn($queryBuilderProphecy->reveal());
-        $queryBuilderProphecy->setMaxResults(1000)
+        $queryBuilderProphecy->setMaxResults(20)
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
 
         // 2 param sets, including the one for `$pilotCharitiesOnly`.
