@@ -278,6 +278,26 @@ class Donation extends SalesforceWriteProxy
     protected ?DateTime $tbgGiftAidRequestFailedAt = null;
 
     /**
+     * @ORM\Column(type="datetime", nullable=true)
+     * @var ?DateTime   When a claim was detected accepted via an async poll.
+     */
+    protected ?DateTime $tbgGiftAidRequestConfirmedCompleteAt = null;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     * @var ?string Provided by HMRC upon initial claim submission acknowledgement.
+     *              Doesn't imply success.
+     */
+    protected ?string $tbgGiftAidRequestCorrelationId = null;
+
+    /**
+     * @ORM\Column(type="text", length=65535, nullable=true)
+     * @var ?string Verbatim final errors or messages from HMRC received immediately or
+     *              (most likely based on real world observation) via an async poll.
+     */
+    protected ?string $tbgGiftAidResponseDetail = null;
+
+    /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
      * @var ArrayCollection|FundingWithdrawal[]
      */
@@ -993,6 +1013,45 @@ class Donation extends SalesforceWriteProxy
     public function setTbgGiftAidRequestFailedAt(?DateTime $tbgGiftAidRequestFailedAt): void
     {
         $this->tbgGiftAidRequestFailedAt = $tbgGiftAidRequestFailedAt;
+    }
+
+    public function getTbgGiftAidRequestConfirmedCompleteAt(): ?DateTime
+    {
+        return $this->tbgGiftAidRequestConfirmedCompleteAt;
+    }
+
+    /**
+     * @param DateTime|null $tbgGiftAidRequestConfirmedCompleteAt
+     */
+    public function setTbgGiftAidRequestConfirmedCompleteAt(?DateTime $tbgGiftAidRequestConfirmedCompleteAt): void
+    {
+        $this->tbgGiftAidRequestConfirmedCompleteAt = $tbgGiftAidRequestConfirmedCompleteAt;
+    }
+
+    public function getTbgGiftAidRequestCorrelationId(): ?string
+    {
+        return $this->tbgGiftAidRequestCorrelationId;
+    }
+
+    /**
+     * @param string|null $tbgGiftAidRequestCorrelationId
+     */
+    public function setTbgGiftAidRequestCorrelationId(?string $tbgGiftAidRequestCorrelationId): void
+    {
+        $this->tbgGiftAidRequestCorrelationId = $tbgGiftAidRequestCorrelationId;
+    }
+
+    public function getTbgGiftAidResponseDetail(): ?string
+    {
+        return $this->tbgGiftAidResponseDetail;
+    }
+
+    /**
+     * @param string|null $tbgGiftAidResponseDetail
+     */
+    public function setTbgGiftAidResponseDetail(?string $tbgGiftAidResponseDetail): void
+    {
+        $this->tbgGiftAidResponseDetail = $tbgGiftAidResponseDetail;
     }
 
     public function hasEnoughDataForSalesforce(): bool

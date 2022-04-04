@@ -45,7 +45,7 @@
         "symfony/property-access": "^6.0",
         "symfony/redis-messenger": "^6.0",
         "symfony/serializer": "^5.2",
-        "thebiggive/messages": "^1.0"
+        "thebiggive/messages": "^2.0"
     },
     "require-dev": {
         "phpspec/prophecy-phpunit": "^2.0",
