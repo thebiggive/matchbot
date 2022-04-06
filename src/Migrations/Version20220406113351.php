@@ -21,7 +21,7 @@ final class Version20220406113351 extends AbstractMigration
     {
         $this->addSql(<<<EOT
 UPDATE Donation
-SET tbgGiftAidRequestQueuedAt = NULL
+SET tbgGiftAidRequestQueuedAt = NULL, tbgGiftAidRequestFailedAt = NULL
 WHERE
       tbgGiftAidRequestQueuedAt IS NOT NULL AND
       tbgGiftAidRequestConfirmedCompleteAt IS NULL
