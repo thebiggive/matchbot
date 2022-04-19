@@ -21,9 +21,11 @@ use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client;
+use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use Monolog\Processor\MemoryPeakUsageProcessor;
 use Monolog\Processor\UidProcessor;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -114,8 +116,14 @@ return function (ContainerBuilder $containerBuilder) {
             $loggerSettings = $settings['logger'];
             $logger = new Logger($loggerSettings['name']);
 
-            $processor = new UidProcessor();
-            $logger->pushProcessor($processor);
+            $awsTraceIdProcessor = new AwsTraceIdProcessor();
+            $logger->pushProcessor($awsTraceIdProcessor);
+
+            $memoryPeakProcessor = new MemoryPeakUsageProcessor();
+            $logger->pushProcessor($memoryPeakProcessor);
+
+            $uidProcessor = new UidProcessor();
+            $logger->pushProcessor($uidProcessor);
 
             $handler = new StreamHandler($loggerSettings['path'], $loggerSettings['level']);
             $logger->pushHandler($handler);
