@@ -10,7 +10,7 @@ orbs:
 jobs:
   test: # Also lints first
     docker:
-      - image: thebiggive/php:8.1
+      - image: thebiggive/php:dev-8.1
         auth:
           username: $DOCKER_HUB_USERNAME
           password: $DOCKER_HUB_ACCESS_TOKEN
@@ -31,7 +31,7 @@ jobs:
 
       - run: composer run lint:check
 
-      - run: composer run test-with-coverage
+      - run: composer run test
 
       - codecov/upload:
           file: 'coverage.xml'

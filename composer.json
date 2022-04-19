@@ -144,7 +144,6 @@
             "php matchbot-cli.php messenger:consume -vv --time-limit=7200"
         ],
         "start": "php -S localhost:8080 -t public",
-        "test": "phpunit",
-        "test-with-coverage": "phpdbg -qrr ./vendor/bin/phpunit --coverage-clover=coverage.xml"
+        "test": "XDEBUG_MODE=coverage phpunit"
     }
 }
