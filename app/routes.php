@@ -54,6 +54,7 @@ return function (App $app) {
         $corsAllowedOrigins = [
             'http://localhost:4000', // Local via Docker SSR
             'http://localhost:4200', // Local via native `ng serve`
+            'https://localhost:4200', // Local via native `ng serve --ssl`
             'https://donate-ecs-staging.thebiggivetest.org.uk', // ECS staging direct
             'https://donate-staging.thebiggivetest.org.uk', // ECS + S3 staging via CloudFront
             'https://donate-ecs-regression.thebiggivetest.org.uk', // ECS regression direct
