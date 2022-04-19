@@ -42,6 +42,24 @@ class Charity extends SalesforceReadProxy
     protected ?string $hmrcReferenceNumber = null;
 
     /**
+     * HMRC-permitted values: CCEW, CCNI, OSCR. Anything else should have this null and
+     * just store an "OtherReg" number in `$regulatorNumber` if applicable.
+     *
+     * @ORM\Column(type="string", length=4, nullable=true)
+     * @var ?string
+     * @see Charity::$permittedRegulators
+     */
+    protected ?string $regulator = null;
+
+    /**
+     * @ORM\Column(type="string", length=10, nullable=true)
+     * @var ?string
+     */
+    protected ?string $regulatorNumber = null;
+
+    private static array $permittedRegulators = ['CCEW', 'CCNI', 'OSCR'];
+
+    /**
      * @ORM\Column(type="boolean")
      * @var bool    Whether the charity's Gift Aid is currently to be claimed by the Big Give.
      */
@@ -119,5 +137,29 @@ class Charity extends SalesforceReadProxy
     public function setHmrcReferenceNumber(?string $hmrcReferenceNumber): void
     {
         $this->hmrcReferenceNumber = $hmrcReferenceNumber;
+    }
+
+    public function getRegulator(): ?string
+    {
+        return $this->regulator;
+    }
+
+    public function setRegulator(?string $regulator): void
+    {
+        if ($regulator !== null && !in_array($regulator, static::$permittedRegulators, true)) {
+            throw new \UnexpectedValueException(sprintf('Regulator %s not known', $regulator));
+        }
+
+        $this->regulator = $regulator;
+    }
+
+    public function getRegulatorNumber(): ?string
+    {
+        return $this->regulatorNumber;
+    }
+
+    public function setRegulatorNumber(?string $regulatorNumber): void
+    {
+        $this->regulatorNumber = $regulatorNumber;
     }
 }

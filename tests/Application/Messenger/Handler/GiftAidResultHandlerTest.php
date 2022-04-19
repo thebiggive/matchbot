@@ -92,9 +92,9 @@ class GiftAidResultHandlerTest extends TestCase
         );
 
         $donationMessage = $this->getTestDonation()->toClaimBotModel();
-        $donationMessage->submissionCorrelationId = 'failingCorrId';
-        $donationMessage->responseSuccess = false;
-        $donationMessage->responseDetail = 'Donation error deets';
+        $donationMessage->submission_correlation_id = 'failingCorrId';
+        $donationMessage->response_success = false;
+        $donationMessage->response_detail = 'Donation error deets';
 
         $giftAidErrorHandler($donationMessage);
 
@@ -135,9 +135,9 @@ class GiftAidResultHandlerTest extends TestCase
         );
 
         $donationMessage = $this->getTestDonation()->toClaimBotModel();
-        $donationMessage->submissionCorrelationId = 'goodCorrId';
-        $donationMessage->responseSuccess = true;
-        $donationMessage->responseDetail = 'Thx for ur submission';
+        $donationMessage->submission_correlation_id = 'goodCorrId';
+        $donationMessage->response_success = true;
+        $donationMessage->response_detail = 'Thx for ur submission';
 
         $giftAidErrorHandler($donationMessage);
 

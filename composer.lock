@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c23cadf8363ff297c5fd5706ec76954b",
+    "content-hash": "cdc259281a8312da89cdc0aea531a17a",
     "packages": [
         {
             "name": "async-aws/core",
@@ -5905,20 +5905,20 @@
         },
         {
             "name": "thebiggive/messages",
-            "version": "v2.0.0",
+            "version": "v3.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thebiggive/messages.git",
-                "reference": "5459200663ee16c305c8e1f5137651b5de0349f5"
+                "reference": "898f06b2d2c0f7c38b727f986738e0922f155b0f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thebiggive/messages/zipball/5459200663ee16c305c8e1f5137651b5de0349f5",
-                "reference": "5459200663ee16c305c8e1f5137651b5de0349f5",
+                "url": "https://api.github.com/repos/thebiggive/messages/zipball/898f06b2d2c0f7c38b727f986738e0922f155b0f",
+                "reference": "898f06b2d2c0f7c38b727f986738e0922f155b0f",
                 "shasum": ""
             },
             "require": {
-                "php": "^8.0.2"
+                "php": "^8.0"
             },
             "type": "project",
             "autoload": {
@@ -5939,9 +5939,9 @@
             "description": "Shared message / model classes for cross-service communication",
             "support": {
                 "issues": "https://github.com/thebiggive/messages/issues",
-                "source": "https://github.com/thebiggive/messages/tree/v2.0.0"
+                "source": "https://github.com/thebiggive/messages/tree/v3.0.0"
             },
-            "time": "2022-04-02T12:27:43+00:00"
+            "time": "2022-04-19T17:53:32+00:00"
         },
         {
             "name": "webmozart/assert",
@@ -8559,5 +8559,5 @@
     "platform-overrides": {
         "php": "8.1.5"
     },
-    "plugin-api-version": "2.1.0"
+    "plugin-api-version": "2.3.0"
 }
