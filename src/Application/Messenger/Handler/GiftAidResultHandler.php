@@ -27,20 +27,20 @@ class GiftAidResultHandler
         /** @var Donation $donation */
         $donation = $this->donationRepository->findOneBy(['uuid' => $donationMessage->id]);
 
-        if ($donationMessage->responseSuccess === false) {
+        if ($donationMessage->response_success === false) {
             $donation->setTbgGiftAidRequestFailedAt(new \DateTime());
         }
 
-        if ($donationMessage->responseSuccess === true) {
+        if ($donationMessage->response_success === true) {
             $donation->setTbgGiftAidRequestConfirmedCompleteAt(new \DateTime());
         }
 
-        if (!empty($donationMessage->submissionCorrelationId)) {
-            $donation->setTbgGiftAidRequestCorrelationId($donationMessage->submissionCorrelationId);
+        if (!empty($donationMessage->submission_correlation_id)) {
+            $donation->setTbgGiftAidRequestCorrelationId($donationMessage->submission_correlation_id);
         }
 
-        if (!empty($donationMessage->responseDetail)) {
-            $donation->setTbgGiftAidResponseDetail($donationMessage->responseDetail);
+        if (!empty($donationMessage->response_detail)) {
+            $donation->setTbgGiftAidResponseDetail($donationMessage->response_detail);
         }
 
         $this->entityManager->persist($donation);
