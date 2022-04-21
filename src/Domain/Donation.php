@@ -1099,6 +1099,8 @@ class Donation extends SalesforceWriteProxy
 
         $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber() ?? '';
         $donationMessage->org_name = $this->getCampaign()->getCharity()->getName() ?? '';
+        $donationMessage->org_regulator = $this->getCampaign()->getCharity()->getRegulator();
+        $donationMessage->org_regulator_number = $this->getCampaign()->getCharity()->getRegulatorNumber();
 
         return $donationMessage;
     }

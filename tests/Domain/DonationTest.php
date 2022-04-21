@@ -143,6 +143,8 @@ class DonationTest extends TestCase
 
         $donation->getCampaign()->getCharity()->setTbgClaimingGiftAid(true);
         $donation->getCampaign()->getCharity()->setHmrcReferenceNumber('AB12345');
+        $donation->getCampaign()->getCharity()->setRegulator('CCEW');
+        $donation->getCampaign()->getCharity()->setRegulatorNumber('12229');
         $donation->setTbgShouldProcessGiftAid(true);
 
         $claimBotMessage = $donation->toClaimBotModel();
@@ -158,6 +160,8 @@ class DonationTest extends TestCase
         $this->assertEquals('N1 1AA', $claimBotMessage->postcode);
         $this->assertEquals(123.45, $claimBotMessage->amount);
         $this->assertEquals('AB12345', $claimBotMessage->org_hmrc_ref);
+        $this->assertEquals('CCEW', $claimBotMessage->org_regulator);
+        $this->assertEquals('12229', $claimBotMessage->org_regulator_number);
         $this->assertEquals('Test charity', $claimBotMessage->org_name);
         $this->assertEquals(false, $claimBotMessage->overseas);
     }
@@ -169,6 +173,8 @@ class DonationTest extends TestCase
         $donation->setDonorHomePostcode('OVERSEAS');
         $donation->getCampaign()->getCharity()->setTbgClaimingGiftAid(true);
         $donation->getCampaign()->getCharity()->setHmrcReferenceNumber('AB12345');
+        $donation->getCampaign()->getCharity()->setRegulator(null); // e.g. Exempt.
+        $donation->getCampaign()->getCharity()->setRegulatorNumber('12222');
         $donation->setTbgShouldProcessGiftAid(true);
 
         $claimBotMessage = $donation->toClaimBotModel();
@@ -176,5 +182,7 @@ class DonationTest extends TestCase
         $this->assertEquals('1 Main St, London', $claimBotMessage->house_no);
         $this->assertEquals('', $claimBotMessage->postcode);
         $this->assertEquals(true, $claimBotMessage->overseas);
+        $this->assertNull($claimBotMessage->org_regulator);
+        $this->assertEquals('12222', $claimBotMessage->org_regulator_number);
     }
 }
