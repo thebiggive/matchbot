@@ -116,8 +116,9 @@ class Donation extends SalesforceWriteProxy
     /**
      * @ORM\Column(type="string", length=3)
      * @var string  ISO 4217 code for the currency in which all monetary values are denominated, e.g. 'GBP'.
+     * Defaulted to 'GBP' as per MAT-243.
      */
-    protected string $currencyCode;
+    protected string $currencyCode = 'GBP';
 
     /**
      * Core donation amount excluding any tip.
