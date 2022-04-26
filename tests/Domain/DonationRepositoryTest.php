@@ -140,6 +140,50 @@ class DonationRepositoryTest extends TestCase
         $this->assertTrue($success);
     }
 
+    public function testBuildFromApiRequestSuccess(): void
+    {
+        $dummyCampaign = new Campaign();
+        $dummyCampaign->setCurrencyCode('USD');
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        // No change – campaign still has a charity without a Stripe Account ID.
+        $campaignRepoProphecy->findOneBy(Argument::type('array'))
+            ->willReturn($dummyCampaign)
+            ->shouldBeCalledOnce();
+
+        $createPayload = new DonationCreate();
+        $createPayload->currencyCode = 'USD';
+        $createPayload->donationAmount = '123.32';
+        $createPayload->projectId = 'testProject123';
+        $createPayload->psp = 'stripe';
+
+        $donation = $this->getRepo(null, false, $campaignRepoProphecy)
+            ->buildFromApiRequest($createPayload);
+
+        $this->assertEquals('USD', $donation->getCurrencyCode());
+        $this->assertEquals('123.32', $donation->getAmount());
+        $this->assertEquals(12_332, $donation->getAmountFractionalIncTip());
+    }
+
+    public function testBuildFromApiRequestWithUndefinedCurrency(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Required field "currencyCode" not set');
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        // We don't even call this if the donation data basics are failing.
+        $campaignRepoProphecy->findOneBy(Argument::type('array'))
+            ->shouldNotBeCalled();
+
+        $createPayload = new DonationCreate();
+        $createPayload->projectId = 'testProject123';
+        $createPayload->psp = 'stripe';
+        // Explicitly make this property undefined, not null, to force a TypeError.
+        unset($createPayload->currencyCode);
+
+        $this->getRepo(null, false, $campaignRepoProphecy)
+            ->buildFromApiRequest($createPayload);
+    }
+
     public function testBuildFromApiRequestWithCurrencyMismatch(): void
     {
         $this->expectException(\UnexpectedValueException::class);
@@ -155,6 +199,7 @@ class DonationRepositoryTest extends TestCase
 
         $createPayload = new DonationCreate();
         $createPayload->currencyCode = 'CAD';
+        $createPayload->donationAmount = '144.44';
         $createPayload->projectId = 'testProject123';
         $createPayload->psp = 'stripe';
 

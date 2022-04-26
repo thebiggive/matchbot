@@ -107,8 +107,16 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function buildFromApiRequest(DonationCreate $donationData): Donation
     {
-        if (empty($donationData->projectId)) {
-            throw new \UnexpectedValueException('Required field "projectId" not set');
+        // Fields where we've historically seen blanks and/or there is zero chance
+        // of success without them.
+        $checkEarlyFields = ['currencyCode', 'donationAmount', 'projectId'];
+        foreach ($checkEarlyFields as $checkEarlyField) {
+            if (empty($donationData->$checkEarlyField)) {
+                throw new \UnexpectedValueException(sprintf(
+                    'Required field "%s" not set',
+                    $checkEarlyField
+                ));
+            }
         }
 
         /** @var Campaign $campaign */
@@ -136,10 +144,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
             /** @var CacheProvider $cacheDriver */
             $cacheDriver = $this->getEntityManager()->getConfiguration()->getResultCacheImpl();
             $cacheDriver->deleteAll();
-        }
-
-        if (empty($donationData->currencyCode)) {
-            $donationData->currencyCode = 'GBP';
         }
 
         if ($donationData->currencyCode !== $campaign->getCurrencyCode()) {
