@@ -379,7 +379,7 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals(201, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
 
@@ -490,7 +490,7 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals(201, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
 
@@ -605,7 +605,7 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals(201, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
 
@@ -709,7 +709,7 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals(201, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
 
@@ -813,7 +813,7 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals(201, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
 

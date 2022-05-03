@@ -74,7 +74,7 @@ class StripeChargeUpdate extends Stripe
         $donation = $this->donationRepository->findOneBy(['transactionId' => $intentId]);
 
         if (!$donation) {
-            $this->logger->info(sprintf('Donation not found with Payment Intent ID %s', $intentId));
+            $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
             return $this->respond(new ActionPayload(204));
         }
 
@@ -97,7 +97,19 @@ class StripeChargeUpdate extends Stripe
                 );
                 $donation->setOriginalPspFeeFractional($originalFeeFractional);
             }
+
+            $this->logger->info(sprintf(
+                'Set donation %s Collected based on hook for charge ID %s',
+                $donation->getUuid(),
+                $charge->id,
+            ));
         } else {
+            $this->logger->error(sprintf(
+                'Ignoring unsupported status %s for donation %s on charge ID %s',
+                $charge->status,
+                $donation->getUuid(),
+                $charge->id,
+            ));
             return $this->validationError(sprintf('Unsupported Status "%s"', $charge->status));
         }
 
@@ -139,7 +151,7 @@ class StripeChargeUpdate extends Stripe
         $donation = $this->donationRepository->findOneBy(['transactionId' => $intentId]);
 
         if (!$donation) {
-            $this->logger->info(sprintf('Donation not found with Payment Intent ID %s', $intentId));
+            $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
             return $this->respond(new ActionPayload(204));
         }
 
@@ -176,7 +188,7 @@ class StripeChargeUpdate extends Stripe
         $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
 
         if (!$donation) {
-            $this->logger->info(sprintf('Donation not found with Charge ID %s', $chargeId));
+            $this->logger->notice(sprintf('Donation not found with Charge ID %s', $chargeId));
             return $this->respond(new ActionPayload(204));
         }
 
@@ -192,13 +204,17 @@ class StripeChargeUpdate extends Stripe
         }
 
         if ($isTipRefund) {
-            $this->logger->info(sprintf('Setting tip amount to £0 based on charge ID %s', $event->data->object->id));
+            $this->logger->info(sprintf(
+                'Setting donation %s tip amount to £0 based on charge ID %s',
+                $donation->getUuid(),
+                $chargeId,
+            ));
             $donation->setTipAmount('0.00');
         } elseif ($isFullRefund) {
             $this->logger->info(sprintf(
                 'Marking donation %s refunded based on charge ID %s',
                 $donation->getUuid(),
-                $event->data->object->id,
+                $chargeId,
             ));
             $donation->setDonationStatus('Refunded');
         } else {
