@@ -189,7 +189,7 @@ class Create extends Action
         // Attempt immediate sync. Buffered for a future batch sync if the SF call fails.
         $this->donationRepository->push($donation, true);
 
-        return $this->respondWithData($response);
+        return $this->respondWithData($response, 201);
     }
 
     private function getStatementDescriptor(Charity $charity): string
