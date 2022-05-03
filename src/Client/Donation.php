@@ -48,7 +48,8 @@ class Donation extends Common
             throw new BadRequestException('Donation not created');
         }
 
-        if ($response->getStatusCode() !== 200) {
+        // For now, support created response codes of 200 (behaviour as of 3/5/22) or 201 (as documented).
+        if ($response->getStatusCode() > 201 || $response->getStatusCode() < 200) {
             $this->logger->error('Donation create got non-success code ' . $response->getStatusCode());
             throw new BadRequestException('Donation not created');
         }
