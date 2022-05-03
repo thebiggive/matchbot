@@ -20,7 +20,6 @@ final class Version20220318111320 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // this up() migration is auto-generated, please modify it to your needs
         $this->addSql(<<<EOT
             UPDATE Donation SET tbgShouldProcessGiftAid = 0
             WHERE campaign_id IN (2078, 2165, 2454) AND tbgShouldProcessGiftAid = 1
