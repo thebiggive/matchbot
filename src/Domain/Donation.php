@@ -261,7 +261,11 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\Column(type="boolean", nullable=true)
-     * @var bool    Whether any Gift Aid claim should be made by the Big Give as an agent.
+     * @var bool    Whether any Gift Aid claim should be made by the Big Give as an agent/nominee
+     *              *if* `$giftAid is true too. This field is set independently to allow for claim
+     *              status amendments so we must not assume a donation can actualy be claimed just
+     *              because it's true.
+     * @see Donation::$giftAid
      */
     protected ?bool $tbgShouldProcessGiftAid = null;
 
