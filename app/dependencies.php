@@ -15,15 +15,17 @@ use LosMiddleware\RateLimit\RateLimitMiddleware;
 use LosMiddleware\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Matching;
-use MatchBot\Application\Messenger\Handler\GiftAidErrorHandler;
+use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client;
+use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use Monolog\Processor\MemoryPeakUsageProcessor;
 use Monolog\Processor\UidProcessor;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -114,8 +116,14 @@ return function (ContainerBuilder $containerBuilder) {
             $loggerSettings = $settings['logger'];
             $logger = new Logger($loggerSettings['name']);
 
-            $processor = new UidProcessor();
-            $logger->pushProcessor($processor);
+            $awsTraceIdProcessor = new AwsTraceIdProcessor();
+            $logger->pushProcessor($awsTraceIdProcessor);
+
+            $memoryPeakProcessor = new MemoryPeakUsageProcessor();
+            $logger->pushProcessor($memoryPeakProcessor);
+
+            $uidProcessor = new UidProcessor();
+            $logger->pushProcessor($uidProcessor);
 
             $handler = new StreamHandler($loggerSettings['path'], $loggerSettings['level']);
             $logger->pushHandler($handler);
@@ -138,7 +146,7 @@ return function (ContainerBuilder $containerBuilder) {
                 )),
                 new HandleMessageMiddleware(new HandlersLocator(
                     [
-                        Messages\Donation::class => [$c->get(GiftAidErrorHandler::class)],
+                        Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
                         StripePayout::class => [$c->get(StripePayoutHandler::class)],
                     ],
                 )),
@@ -239,7 +247,7 @@ return function (ContainerBuilder $containerBuilder) {
         RoutableMessageBus::class => static function (ContainerInterface $c): RoutableMessageBus {
             $busContainer = new Container();
             $busContainer->set('claimbot.donation.claim', $c->get(MessageBusInterface::class));
-            $busContainer->set('claimbot.donation.error', $c->get(MessageBusInterface::class));
+            $busContainer->set('claimbot.donation.result', $c->get(MessageBusInterface::class));
             $busContainer->set('stripe.payout.paid', $c->get(MessageBusInterface::class));
 
             return new RoutableMessageBus($busContainer);

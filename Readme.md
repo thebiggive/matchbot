@@ -55,11 +55,8 @@ Once you have the app running, you can test with:
 
     docker-compose exec app composer run test
 
-or
-
-    docker-compose exec app composer run test-with-coverage
-
-to save coverage data to `./coverage.xml`.
+When run with a coverage driver (e.g. Xdebug enabled by using `thebiggive/php:dev-8.1`),
+this will save coverage data to `./coverage.xml`.
 
 Linting is run with
 
@@ -94,7 +91,7 @@ first attempt.
 
 In deployed environments, AWS Simple Queue Service is used to pick up
 messages for delayed processing – MatchBot needs to handle messages for Stripe
-payout paid webhooks, which take some time to process, and for failed Gift Aid
+payout paid webhooks, which take some time to process, and for completed/failed Gift Aid
 claim attempts from ClaimBot.
 
 Additionally, it *publishes* messages to ClaimBot's separate queue for newly-claimable donations and its own when a

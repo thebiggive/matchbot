@@ -14,7 +14,7 @@
         }
     ],
     "require": {
-        "php": "8.0.*",
+        "php": "^8.1",
         "ext-bcmath": "*",
         "ext-json": "*",
         "ext-mbstring": "^8.0",
@@ -45,7 +45,7 @@
         "symfony/property-access": "^6.0",
         "symfony/redis-messenger": "^6.0",
         "symfony/serializer": "^5.2",
-        "thebiggive/messages": "^1.0"
+        "thebiggive/messages": "^3.0"
     },
     "require-dev": {
         "phpspec/prophecy-phpunit": "^2.0",
@@ -60,11 +60,14 @@
         }
     ],
     "config": {
-        "optimize-autoloader": true,
-        "sort-packages": true,
         "allow-plugins": {
             "composer/package-versions-deprecated": true
-        }
+        },
+        "optimize-autoloader": true,
+        "platform": {
+            "php": "8.1.5"
+        },
+        "sort-packages": true
     },
     "autoload": {
         "psr-4": {
@@ -138,10 +141,9 @@
         ],
         "messenger:consume": [
             "Composer\\Config::disableProcessTimeout",
-            "php matchbot-cli.php messenger:consume -vv --time-limit=7200"
+            "php matchbot-cli.php messenger:consume -vv --time-limit=7080"
         ],
         "start": "php -S localhost:8080 -t public",
-        "test": "phpunit",
-        "test-with-coverage": "phpdbg -qrr ./vendor/bin/phpunit --coverage-clover=coverage.xml"
+        "test": "XDEBUG_MODE=coverage phpunit"
     }
 }

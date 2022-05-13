@@ -107,8 +107,16 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function buildFromApiRequest(DonationCreate $donationData): Donation
     {
-        if (empty($donationData->projectId)) {
-            throw new \UnexpectedValueException('Required field "projectId" not set');
+        // Fields where we've historically seen blanks and/or there is zero chance
+        // of success without them.
+        $checkEarlyFields = ['currencyCode', 'donationAmount', 'projectId'];
+        foreach ($checkEarlyFields as $checkEarlyField) {
+            if (empty($donationData->$checkEarlyField)) {
+                throw new \UnexpectedValueException(sprintf(
+                    'Required field "%s" not set',
+                    $checkEarlyField
+                ));
+            }
         }
 
         /** @var Campaign $campaign */
@@ -138,10 +146,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $cacheDriver->deleteAll();
         }
 
-        if (empty($donationData->currencyCode)) {
-            $donationData->currencyCode = 'GBP';
-        }
-
         if ($donationData->currencyCode !== $campaign->getCurrencyCode()) {
             throw new \UnexpectedValueException(sprintf(
                 'Currency %s is invalid for campaign',
@@ -152,7 +156,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $donation = new Donation();
         $donation->setPsp($donationData->psp);
         $donation->setDonationStatus('Pending');
-        $donation->setUuid((new UuidGenerator())->generate($this->getEntityManager(), $donation));
+        $donation->setUuid((new UuidGenerator())->generateId($this->getEntityManager(), $donation));
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
         $donation->setAmount((string) $donationData->donationAmount);
         $donation->setCurrencyCode($donationData->currencyCode);
@@ -424,8 +428,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->andWhere('d.collectedAt < :claimGiftAidForDonationsBefore')
             ->orderBy('charity.id', 'ASC') // group donations for the same charity together in batches
             ->addOrderBy('d.collectedAt', 'ASC')
-            ->setMaxResults(1000)   // CLA-18: temporarily cap at 1k donations per run while we investigate
-                                    // odd HMRC behaviour.
             ->setParameter('claimGiftAidWithStatus', 'Paid')
             ->setParameter('claimGiftAidForDonationsBefore', $cutoff);
 

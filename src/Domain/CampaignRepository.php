@@ -67,6 +67,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $campaignData['charity']['stripeAccountId'],
             $campaignData['charity']['giftAidOnboardingStatus'],
             $campaignData['charity']['hmrcReferenceNumber'],
+            $campaignData['charity']['regulatorRegion'],
+            $campaignData['charity']['regulatorNumber'],
         );
 
         $campaign->setCharity($charity);
@@ -82,11 +84,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     /**
      * Upsert a Charity based on ID & name, persist and return it.
-     * @param string        $salesforceCharityId
-     * @param string        $charityName
-     * @param string        $donateLinkId
-     * @param string|null   $stripeAccountId
-     * @return Charity
+     *
      * @throws \Doctrine\ORM\ORMException on failed persist()
      */
     private function pullCharity(
@@ -96,6 +94,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $stripeAccountId,
         ?string $giftAidOnboardingStatus,
         ?string $hmrcReferenceNumber,
+        ?string $regulator,
+        ?string $regulatorNumber,
     ): Charity {
         $charity = $this->getEntityManager()
             ->getRepository(Charity::class)
@@ -118,9 +118,22 @@ class CampaignRepository extends SalesforceReadProxyRepository
         // claims, because there could still be historic donations that should be claimed by TBG.
         $charity->setHmrcReferenceNumber($hmrcReferenceNumber);
 
+        $charity->setRegulator($this->getRegulatorHMRCIdentifier($regulator));
+        $charity->setRegulatorNumber($regulatorNumber);
+
         $charity->setSalesforceLastPull(new DateTime('now'));
         $this->getEntityManager()->persist($charity);
 
         return $charity;
+    }
+
+    protected function getRegulatorHMRCIdentifier(string $regulatorName): ?string
+    {
+        return match ($regulatorName) {
+            'England and Wales' => 'CCEW',
+            'Northern Ireland' => 'CCNI',
+            'Scotland' => 'OSCR',
+            default => null,
+        };
     }
 }

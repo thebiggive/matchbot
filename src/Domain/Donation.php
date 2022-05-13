@@ -261,7 +261,11 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\Column(type="boolean", nullable=true)
-     * @var bool    Whether any Gift Aid claim should be made by the Big Give as an agent.
+     * @var bool    Whether any Gift Aid claim should be made by the Big Give as an agent/nominee
+     *              *if* `$giftAid is true too. This field is set independently to allow for claim
+     *              status amendments so we must not assume a donation can actualy be claimed just
+     *              because it's true.
+     * @see Donation::$giftAid
      */
     protected ?bool $tbgShouldProcessGiftAid = null;
 
@@ -276,6 +280,26 @@ class Donation extends SalesforceWriteProxy
      * @var ?DateTime   When a claim submission attempt was detected to have an error returned.
      */
     protected ?DateTime $tbgGiftAidRequestFailedAt = null;
+
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     * @var ?DateTime   When a claim was detected accepted via an async poll.
+     */
+    protected ?DateTime $tbgGiftAidRequestConfirmedCompleteAt = null;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     * @var ?string Provided by HMRC upon initial claim submission acknowledgement.
+     *              Doesn't imply success.
+     */
+    protected ?string $tbgGiftAidRequestCorrelationId = null;
+
+    /**
+     * @ORM\Column(type="text", length=65535, nullable=true)
+     * @var ?string Verbatim final errors or messages from HMRC received immediately or
+     *              (most likely based on real world observation) via an async poll.
+     */
+    protected ?string $tbgGiftAidResponseDetail = null;
 
     /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
@@ -999,6 +1023,45 @@ class Donation extends SalesforceWriteProxy
         $this->collectedAt = $collectedAt;
     }
 
+    public function getTbgGiftAidRequestConfirmedCompleteAt(): ?DateTime
+    {
+        return $this->tbgGiftAidRequestConfirmedCompleteAt;
+    }
+
+    /**
+     * @param DateTime|null $tbgGiftAidRequestConfirmedCompleteAt
+     */
+    public function setTbgGiftAidRequestConfirmedCompleteAt(?DateTime $tbgGiftAidRequestConfirmedCompleteAt): void
+    {
+        $this->tbgGiftAidRequestConfirmedCompleteAt = $tbgGiftAidRequestConfirmedCompleteAt;
+    }
+
+    public function getTbgGiftAidRequestCorrelationId(): ?string
+    {
+        return $this->tbgGiftAidRequestCorrelationId;
+    }
+
+    /**
+     * @param string|null $tbgGiftAidRequestCorrelationId
+     */
+    public function setTbgGiftAidRequestCorrelationId(?string $tbgGiftAidRequestCorrelationId): void
+    {
+        $this->tbgGiftAidRequestCorrelationId = $tbgGiftAidRequestCorrelationId;
+    }
+
+    public function getTbgGiftAidResponseDetail(): ?string
+    {
+        return $this->tbgGiftAidResponseDetail;
+    }
+
+    /**
+     * @param string|null $tbgGiftAidResponseDetail
+     */
+    public function setTbgGiftAidResponseDetail(?string $tbgGiftAidResponseDetail): void
+    {
+        $this->tbgGiftAidResponseDetail = $tbgGiftAidResponseDetail;
+    }
+
     public function hasEnoughDataForSalesforce(): bool
     {
         return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
@@ -1026,20 +1089,26 @@ class Donation extends SalesforceWriteProxy
         // MAT-192 will cover passing and storing this separately. For now, a pattern match should
         // give reasonable 'house number' values.
         if ($this->donorHomeAddressLine1 !== null) {
-            $donationMessage->house_no = preg_replace('/^([0-9a-z-]+).*$/i', '$1', $this->donorHomeAddressLine1);
+            $donationMessage->house_no = preg_replace('/^([0-9a-z-]+).*$/i', '$1', trim($this->donorHomeAddressLine1));
 
             // In any case where this doesn't produce a result, just send the full first 40 characters
             // of the home address. This is also HMRC's requested value in this property for overseas
             // donations.
             if (empty($donationMessage->house_no) || $donationMessage->overseas) {
-                $donationMessage->house_no = mb_substr($this->donorHomeAddressLine1, 0, 40);
+                $donationMessage->house_no = trim($this->donorHomeAddressLine1);
             }
+
+            // Regardless of which source we used and if we are aiming for a number or a full
+            // address, it should be truncated at 40 characters.
+            $donationMessage->house_no = mb_substr($donationMessage->house_no, 0, 40);
         }
 
         $donationMessage->amount = (float) $this->amount;
 
         $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber() ?? '';
         $donationMessage->org_name = $this->getCampaign()->getCharity()->getName() ?? '';
+        $donationMessage->org_regulator = $this->getCampaign()->getCharity()->getRegulator();
+        $donationMessage->org_regulator_number = $this->getCampaign()->getCharity()->getRegulatorNumber();
 
         return $donationMessage;
     }
