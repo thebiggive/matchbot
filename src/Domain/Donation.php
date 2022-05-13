@@ -429,11 +429,6 @@ class Donation extends SalesforceWriteProxy
         return $this->donationStatus;
     }
 
-    /**
-     * @param string $donationStatus
-     *
-     * Also sets $collectedAt as a side effect when appropriate.
-     */
     public function setDonationStatus(string $donationStatus): void
     {
         if (!in_array($donationStatus, $this->possibleStatuses, true)) {
