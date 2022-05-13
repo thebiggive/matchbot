@@ -169,7 +169,13 @@ return function (ContainerBuilder $containerBuilder) {
             } catch (RedisException $exception) {
                 // This essentially means Doctrine is not using a cache. `/ping` should fail separately based on
                 // Redis being down whenever this happens, so we should find out without relying on this warning log.
-                $c->get(LoggerInterface::class)->warning(
+                $logger = $c->get(LoggerInterface::class);
+                $logger->error(sprintf(
+                    'Doctrine bootstrap error %s: %s',
+                    get_class($exception),
+                    $exception->getMessage(),
+                ));
+                $logger->warning(
                     'Doctrine falling back to array cache - Redis host ' . $c->get('settings')['redis']['host']
                 );
                 $cache = new ArrayCache();
