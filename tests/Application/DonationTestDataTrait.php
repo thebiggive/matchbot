@@ -40,7 +40,6 @@ trait DonationTestDataTrait
         $donation->setCampaign($campaign);
         $donation->setCharityComms(true);
         $donation->setChampionComms(false);
-        $donation->setCollectedAt(new \DateTime());
         $donation->setCurrencyCode('GBP');
         $donation->setDonationStatus('Collected');
         $donation->setDonorCountryCode('GB');
