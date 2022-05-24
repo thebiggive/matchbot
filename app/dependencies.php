@@ -162,7 +162,7 @@ return function (ContainerBuilder $containerBuilder) {
             // on construct.
             $redis = new Redis();
             try {
-                $redis->connect($c->get('settings')['redis']['host'], 6379, 15);
+                $redis->connect($c->get('settings')['redis']['host']);
                 $cache = new RedisCache();
                 $cache->setRedis($redis);
                 $cache->setNamespace("matchbot-{$settings['appEnv']}");
