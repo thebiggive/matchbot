@@ -14,7 +14,7 @@ final class Version20220624112013 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'CLA-28 prepare donations for claiming to test claims with more than 10 donations per claim';
     }
 
     public function up(Schema $schema): void
