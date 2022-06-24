@@ -26,7 +26,7 @@ final class Version20220624112013 extends AbstractMigration
                 UPDATE Charity
                 SET hmrcReferenceNumber = 'AB98765'
                 WHERE salesforceId = '0011r00002HoeprAAB'
-                LIMIT 1'
+                LIMIT 1
             EOT);
 
             // Prepare donations for ClaimBot
