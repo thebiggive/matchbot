@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Auth;
 
-use Fig\Http\Message\StatusCodeInterface;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
-use Slim\Psr7\Response;
 use Slim\Exception\HttpUnauthorizedException;
 
 /**
