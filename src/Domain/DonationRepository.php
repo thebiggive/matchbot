@@ -414,7 +414,13 @@ class DonationRepository extends SalesforceWriteProxyRepository
             throw new \LogicException('Cannot re-send live donations');
         }
 
-        $cutoff = (new DateTime('now'))->sub(new \DateInterval('P14D'));
+        // Stripe's weekly payout schedule uses a `weekly_anchor` of Monday and `delay_days` set to 14. However,
+        // as of 5 July 2022, we see essentially undocumented behaviour such that donations on a Monday can have less
+        // than 14 *full* days before they're paid. This led to discrepancies with when we could expect Gift Aid to be
+        // sent for any donation collected between ~9am and midnight Mondays. To reduce future confusion, we now only
+        // require a minimum 13 days from collection. Note that this condition has always been checked in concert with
+        // the hard requirement that Stripe tell us the donation is Paid.
+        $cutoff = (new DateTime('now'))->sub(new \DateInterval('P13D'));
 
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
