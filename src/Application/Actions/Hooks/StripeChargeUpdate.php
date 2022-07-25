@@ -85,6 +85,12 @@ class StripeChargeUpdate extends Stripe
             $donation->setChargeId($charge->id);
             $donation->setTransferId($charge->transfer);
 
+            $this->logger->info(sprintf(
+                'Donation %s Stripe charge raw collected time was %s',
+                $donation->getUuid(),
+                $charge->created,
+            ));
+
             $donation->setDonationStatus('Collected');
             $donation->setCollectedAt(new \DateTime('@' . $charge->created));
 
