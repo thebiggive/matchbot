@@ -79,6 +79,11 @@ class Donation extends Common
 
         try {
             $requestBody = $donation->toHookModel();
+
+            if ($requestBody['status'] === 'Collected' && empty($data['collectedTime'])) {
+                $this->logger->warning("Donation {$donation->getUuid()} has status 'Collected' but no collectedTime");
+            }
+
             $response = $this->getHttpClient()->put(
                 $this->getSetting('webhook', 'baseUri') . "/donation/{$donation->getSalesforceId()}",
                 [

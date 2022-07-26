@@ -84,6 +84,13 @@ class StripeChargeUpdate extends Stripe
         if ($charge->status === 'succeeded') {
             $donation->setChargeId($charge->id);
             $donation->setTransferId($charge->transfer);
+
+            $this->logger->info(sprintf(
+                'Donation %s Stripe charge raw collected time was %s',
+                $donation->getUuid(),
+                $charge->created,
+            ));
+
             $donation->setDonationStatus('Collected');
 
             // To give *simulated* webhooks, for Donation API-only load tests, an easy way to complete
