@@ -106,7 +106,6 @@ class DonationTest extends TestCase
 
         $this->assertEquals('john.doe@example.com', $donationData['emailAddress']);
         $this->assertEquals('1.23', $donationData['matchedAmount']);
-        $this->assertIsString($donationData['collectedTime']);
     }
 
     public function testToApiModelTemporaryHackHasNoImpact(): void
@@ -126,7 +125,6 @@ class DonationTest extends TestCase
         $donationData = $donation->toHookModel();
 
         $this->assertEquals('john.doe@example.com', $donationData['emailAddress']);
-        $this->assertIsString($donationData['collectedTime']);
     }
 
     public function testToHookModelTemporaryHack(): void
@@ -153,6 +151,7 @@ class DonationTest extends TestCase
 
         $nowInYmd = date('Y-m-d');
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $claimBotMessage->id); // UUID
+        // collectedAt is set by `setDonationStatus('Collected')`
         $this->assertEquals($nowInYmd, $claimBotMessage->donation_date);
         $this->assertEquals('', $claimBotMessage->title);
         $this->assertEquals('John', $claimBotMessage->first_name);
