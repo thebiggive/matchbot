@@ -84,7 +84,7 @@ class Donation extends SalesforceWriteProxy
      * @ORM\Column(type="datetime", nullable=true)
      * @var ?DateTime    When the donation first moved to status Collected, i.e. the donor finished paying.
      */
-    protected ?DateTime $collectedAt;
+    protected ?DateTime $collectedAt = null;
 
     /**
      * @ORM\Column(type="string", nullable=true)
@@ -342,7 +342,6 @@ class Donation extends SalesforceWriteProxy
             $data['emailAddress'] = str_replace(';;', '', $data['emailAddress']);
         }
 
-        $data['createdTime'] = $this->getCreatedDate()->format(DateTimeInterface::ATOM);
         $data['updatedTime'] = $this->getUpdatedDate()->format(DateTimeInterface::ATOM);
         $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
@@ -371,6 +370,7 @@ class Donation extends SalesforceWriteProxy
             'charityId' => $this->getCampaign()->getCharity()->getDonateLinkId(),
             'charityName' => $this->getCampaign()->getCharity()->getName(),
             'countryCode' => $this->getDonorCountryCode(),
+            'collectedTime' => $this->getCollectedAt()?->format(DateTimeInterface::ATOM),
             'createdTime' => $this->getCreatedDate()->format(DateTimeInterface::ATOM),
             'currencyCode' => $this->getCurrencyCode(),
             'donationAmount' => (float) $this->getAmount(),
@@ -429,9 +429,6 @@ class Donation extends SalesforceWriteProxy
         return $this->donationStatus;
     }
 
-    /**
-     * @param string $donationStatus
-     */
     public function setDonationStatus(string $donationStatus): void
     {
         if (!in_array($donationStatus, $this->possibleStatuses, true)) {
@@ -441,7 +438,12 @@ class Donation extends SalesforceWriteProxy
         $this->donationStatus = $donationStatus;
     }
 
-    public function setCollectedAt(DateTime $collectedAt): void
+    public function getCollectedAt(): ?DateTime
+    {
+        return $this->collectedAt;
+    }
+
+    public function setCollectedAt(?DateTime $collectedAt): void
     {
         $this->collectedAt = $collectedAt;
     }
@@ -1071,7 +1073,7 @@ class Donation extends SalesforceWriteProxy
     {
         $donationMessage = new Messages\Donation();
         $donationMessage->id = $this->uuid->toString();
-        $donationMessage->donation_date = $this->collectedAt->format('Y-m-d');
+        $donationMessage->donation_date = $this->getCollectedAt()?->format('Y-m-d');
         $donationMessage->title = '';
         $donationMessage->first_name = $this->donorFirstName;
         $donationMessage->last_name = $this->donorLastName;
