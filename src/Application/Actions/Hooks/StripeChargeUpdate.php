@@ -78,9 +78,8 @@ class StripeChargeUpdate extends Stripe
             return $this->respond(new ActionPayload(204));
         }
 
-        // For now we support the happy success path,
-        // as this is the only event type we're handling right now,
-        // convert status to the one SF uses.
+        // For now we support the happy success path –
+        // as this is the only event type we're handling right now besides refunds.
         if ($charge->status === 'succeeded') {
             $donation->setChargeId($charge->id);
             $donation->setTransferId($charge->transfer);
@@ -92,6 +91,7 @@ class StripeChargeUpdate extends Stripe
             ));
 
             $donation->setDonationStatus('Collected');
+            $donation->setCollectedAt(new \DateTime("@{$charge->created}"));
 
             // To give *simulated* webhooks, for Donation API-only load tests, an easy way to complete
             // without crashing, we support skipping the original fee derivation by omitting
