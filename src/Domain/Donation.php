@@ -431,8 +431,6 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @param string $donationStatus
-     *
-     * Also sets $collectedAt as a side effect when appropriate.
      */
     public function setDonationStatus(string $donationStatus): void
     {
@@ -441,10 +439,11 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->donationStatus = $donationStatus;
+    }
 
-        if ($donationStatus === 'Collected') {
-            $this->collectedAt = new \DateTime('now');
-        }
+    public function setCollectedAt(DateTime $collectedAt): void
+    {
+        $this->collectedAt = $collectedAt;
     }
 
     /**
