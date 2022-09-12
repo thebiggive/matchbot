@@ -155,7 +155,7 @@ class Create extends Action
                     $exception->getMessage(),
                     $donation->getCampaign()->getCharity()->getName(),
                     $donation->getCampaign()->getCharity()->getStripeAccountId()
-                ), 'Could not make Stripe Customer (B)', 500);
+                ), 'Could not make Stripe Customer (B)');
             }
 
             try {
@@ -203,7 +203,7 @@ class Create extends Action
                     $exception->getMessage(),
                     $donation->getCampaign()->getCharity()->getName(),
                     $donation->getCampaign()->getCharity()->getStripeAccountId()
-                ), 'Could not make Stripe Payment Intent (B)', 500);
+                ), 'Could not make Stripe Payment Intent (B)');
             }
 
             $donation->setClientSecret($intent->client_secret);
@@ -244,10 +244,9 @@ class Create extends Action
     private function logAndRespondWithError(
         string $logMessage,
         string $errorDescription,
-        int $errorStatusCode): Response
-    {
+    ): Response {
         $this->logger->error($logMessage);
         $error = new ActionError(ActionError::SERVER_ERROR, $errorDescription);
-        return $this->respond(new ActionPayload($errorStatusCode, null, $error));
+        return $this->respond(new ActionPayload(500, null, $error));
     }
 }
