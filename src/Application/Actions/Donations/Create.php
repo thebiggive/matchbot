@@ -137,8 +137,8 @@ class Create extends Action
                     'description' => null,
                     'email' => $donation->getDonorEmailAddress(),
                     'metadata' => [
-                        //'donorUuid' => $donation->getDonorUuid(), Do we need something like this to link the Stripe Customer
-                        //                                          to the related uuid from the Id Service DB?
+                        //'donorUuid' => $donation->getDonorUuid(), Do we need something like this to link the Stripe
+                        //                                          Customer to the related uuid from the Id Service?
                     ],
                     'name' => $donation->getDonorFirstName() . ' ' . $donation->getDonorLastName(),
                     'phone' => null,
@@ -146,7 +146,7 @@ class Create extends Action
                     //    'address' => [...] Should we add a shipping address?
                     // ],
                 ]);
-            } catch(ApiErrorException $exception) {
+            } catch (ApiErrorException $exception) {
                 return $this->logAndRespondWithError(sprintf(
                     'Stripe Customer create error on %s, %s [%s]: %s. Charity: %s [%s].',
                     $donation->getUuid(),
@@ -155,7 +155,7 @@ class Create extends Action
                     $exception->getMessage(),
                     $donation->getCampaign()->getCharity()->getName(),
                     $donation->getCampaign()->getCharity()->getStripeAccountId()
-                ),'Could not make Stripe Customer (B)', 500);
+                ), 'Could not make Stripe Customer (B)', 500);
             }
 
             try {
@@ -203,7 +203,7 @@ class Create extends Action
                     $exception->getMessage(),
                     $donation->getCampaign()->getCharity()->getName(),
                     $donation->getCampaign()->getCharity()->getStripeAccountId()
-                ),'Could not make Stripe Payment Intent (B)', 500);
+                ), 'Could not make Stripe Payment Intent (B)', 500);
             }
 
             $donation->setClientSecret($intent->client_secret);
@@ -241,7 +241,10 @@ class Create extends Action
         return preg_replace('/[^A-Za-z0-9 ]/', '', $descriptor);
     }
 
-    private function logAndRespondWithError(string $logMessage, string $errorDescription, int $errorStatusCode) : Response
+    private function logAndRespondWithError(
+        string $logMessage,
+        string $errorDescription,
+        int $errorStatusCode): Response
     {
         $this->logger->error($logMessage);
         $error = new ActionError(ActionError::SERVER_ERROR, $errorDescription);
