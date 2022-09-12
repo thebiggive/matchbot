@@ -374,7 +374,7 @@ class CreateTest extends TestCase
                 'destination' => 'unitTest_newStripeAccount_456',
             ],
         ];
-        // Most properites we don't use omitted.
+        // Most properties we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
         $paymentIntentMockResult = (object) [
             'id' => 'pi_dummyIntent456_id',
@@ -391,8 +391,8 @@ class CreateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->customers = $stripeCustomersProphecy->reveal();
         $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+        $stripeClientProphecy->customers = $stripeCustomersProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -509,7 +509,7 @@ class CreateTest extends TestCase
                 'destination' => 'unitTest_stripeAccount_123',
             ],
         ];
-        // Most properites we don't use omitted.
+        // Most properties we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
         $paymentIntentMockResult = (object) [
             'id' => 'pi_dummyIntent_id',
@@ -648,7 +648,7 @@ class CreateTest extends TestCase
                 'destination' => 'unitTest_stripeAccount_123',
             ],
         ];
-        // Most properites we don't use omitted.
+        // Most properties we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
         $paymentIntentMockResult = (object) [
             'id' => 'pi_dummyIntent_id',
@@ -776,7 +776,7 @@ class CreateTest extends TestCase
             ],
         ];
 
-        // Most properites we don't use omitted.
+        // Most properties we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
         $paymentIntentMockResult = (object) [
             'id' => 'pi_dummyIntent_id',
