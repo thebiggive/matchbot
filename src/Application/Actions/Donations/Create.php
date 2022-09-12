@@ -194,6 +194,8 @@ class Create extends Action
                         'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
                     ],
                 ]);
+
+                echo '\n\n\n\nMade request successfully. Intent is: ' . $intent . '\n\n\n\n';
             } catch (ApiErrorException $exception) {
                 return $this->logAndRespondWithError(sprintf(
                     'Stripe Payment Intent create error on %s, %s [%s]: %s. Charity: %s [%s].',
@@ -245,6 +247,9 @@ class Create extends Action
         string $logMessage,
         string $errorDescription,
     ): Response {
+        echo '\n\n\n\n\n Encountered the following exception:\n';
+        echo $logMessage;
+        echo '\n\n\n\n';
         $this->logger->error($logMessage);
         $error = new ActionError(ActionError::SERVER_ERROR, $errorDescription);
         return $this->respond(new ActionPayload(500, null, $error));

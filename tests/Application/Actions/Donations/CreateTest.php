@@ -391,8 +391,8 @@ class CreateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
         $stripeClientProphecy->customers = $stripeCustomersProphecy->reveal();
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
