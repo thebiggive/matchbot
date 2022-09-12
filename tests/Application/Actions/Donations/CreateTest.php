@@ -20,6 +20,7 @@ use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Ramsey\Uuid\Uuid;
 use Stripe\Service\PaymentIntentService;
+use Stripe\Service\CustomerService;
 use Stripe\StripeClient;
 use UnexpectedValueException;
 
@@ -324,6 +325,29 @@ class CreateTest extends TestCase
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
+        $expectedCustomerArgs = [
+            'address' => [
+                'line1' => $donation->getDonorHomeAddressLine1(),
+                'postal_code' => $donation->getDonorHomePostcode(),
+                'country' => $donation->getDonorCountryCode(),
+            ],
+            'description' => null,
+            'email' => $donation->getDonorEmailAddress(),
+            'metadata' => [],
+            'name' => $donation->getDonorFirstName() . ' ' . $donation->getDonorLastName(),
+            'phone' => null,
+        ];
+
+        // Most properties we don't use omitted.
+        $customerMockResult = (object) [
+            'id' => 'cus_4QFGmAJFVeA4oD',
+        ];
+
+        $stripeCustomersProphecy = $this->prophesize(CustomerService::class);
+        $stripeCustomersProphecy->create($expectedCustomerArgs)
+            ->willReturn($customerMockResult)
+            ->shouldBeCalledOnce();
+
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
@@ -434,6 +458,29 @@ class CreateTest extends TestCase
         // These are called once after initial ID setup and once after Stripe fields added.
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
+
+        $expectedCustomerArgs = [
+            'address' => [
+                'line1' => $donation->getDonorHomeAddressLine1(),
+                'postal_code' => $donation->getDonorHomePostcode(),
+                'country' => $donation->getDonorCountryCode(),
+            ],
+            'description' => null,
+            'email' => $donation->getDonorEmailAddress(),
+            'metadata' => [],
+            'name' => $donation->getDonorFirstName() . ' ' . $donation->getDonorLastName(),
+            'phone' => null,
+        ];
+
+        // Most properties we don't use omitted.
+        $customerMockResult = (object) [
+            'id' => 'cus_4QFGmAJFVeA4oD',
+        ];
+
+        $stripeCustomersProphecy = $this->prophesize(CustomerService::class);
+        $stripeCustomersProphecy->create($expectedCustomerArgs)
+            ->willReturn($customerMockResult)
+            ->shouldBeCalledOnce();
 
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
@@ -550,6 +597,29 @@ class CreateTest extends TestCase
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
+        $expectedCustomerArgs = [
+            'address' => [
+                'line1' => $donation->getDonorHomeAddressLine1(),
+                'postal_code' => $donation->getDonorHomePostcode(),
+                'country' => $donation->getDonorCountryCode(),
+            ],
+            'description' => null,
+            'email' => $donation->getDonorEmailAddress(),
+            'metadata' => [],
+            'name' => $donation->getDonorFirstName() . ' ' . $donation->getDonorLastName(),
+            'phone' => null,
+        ];
+
+        // Most properties we don't use omitted.
+        $customerMockResult = (object) [
+            'id' => 'cus_4QFGmAJFVeA4oD',
+        ];
+
+        $stripeCustomersProphecy = $this->prophesize(CustomerService::class);
+        $stripeCustomersProphecy->create($expectedCustomerArgs)
+            ->willReturn($customerMockResult)
+            ->shouldBeCalledOnce();
+
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
@@ -652,6 +722,29 @@ class CreateTest extends TestCase
         // before Stripe work to have ID available."
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
+
+        $expectedCustomerArgs = [
+            'address' => [
+                'line1' => $donation->getDonorHomeAddressLine1(),
+                'postal_code' => $donation->getDonorHomePostcode(),
+                'country' => $donation->getDonorCountryCode(),
+            ],
+            'description' => null,
+            'email' => $donation->getDonorEmailAddress(),
+            'metadata' => [],
+            'name' => $donation->getDonorFirstName() . ' ' . $donation->getDonorLastName(),
+            'phone' => null,
+        ];
+
+        // Most properties we don't use omitted.
+        $customerMockResult = (object) [
+            'id' => 'cus_4QFGmAJFVeA4oD',
+        ];
+
+        $stripeCustomersProphecy = $this->prophesize(CustomerService::class);
+        $stripeCustomersProphecy->create($expectedCustomerArgs)
+            ->willReturn($customerMockResult)
+            ->shouldBeCalledOnce();
 
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
@@ -757,6 +850,29 @@ class CreateTest extends TestCase
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
+        $expectedCustomerArgs = [
+            'address' => [
+                'line1' => $donation->getDonorHomeAddressLine1(),
+                'postal_code' => $donation->getDonorHomePostcode(),
+                'country' => $donation->getDonorCountryCode(),
+            ],
+            'description' => null,
+            'email' => $donation->getDonorEmailAddress(),
+            'metadata' => [],
+            'name' => $donation->getDonorFirstName() . ' ' . $donation->getDonorLastName(),
+            'phone' => null,
+        ];
+
+        // Most properties we don't use omitted.
+        $customerMockResult = (object) [
+            'id' => 'cus_4QFGmAJFVeA4oD',
+        ];
+
+        $stripeCustomersProphecy = $this->prophesize(CustomerService::class);
+        $stripeCustomersProphecy->create($expectedCustomerArgs)
+            ->willReturn($customerMockResult)
+            ->shouldBeCalledOnce();
+
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
@@ -783,7 +899,7 @@ class CreateTest extends TestCase
             ],
         ];
 
-        // Most properites we don't use omitted.
+        // Most properties we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
         $paymentIntentMockResult = (object) [
             'id' => 'pi_dummyIntent_id',

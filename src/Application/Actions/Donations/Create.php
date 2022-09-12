@@ -127,11 +127,44 @@ class Create extends Action
             }
 
             try {
+                // Let's create a Stripe Customer, so we can link the PaymentIntent to it later
+                $customer = $this->stripeClient->customers->create([
+                    'address' => [
+                        'line1' => $donation->getDonorHomeAddressLine1(),
+                        'postal_code' => $donation->getDonorHomePostcode(), // or should it be $donorPostalAddress?
+                        'country' => $donation->getDonorCountryCode(),
+                    ],
+                    'description' => null,
+                    'email' => $donation->getDonorEmailAddress(),
+                    'metadata' => [
+                        //'donorUuid' => $donation->getDonorUuid(), Do we need something like this to link the Stripe Customer
+                        //                                          to the related uuid from the Id Service DB?
+                    ],
+                    'name' => $donation->getDonorFirstName() . ' ' . $donation->getDonorLastName(),
+                    'phone' => null,
+                    // 'shipping' => [
+                    //    'address' => [...] Should we add a shipping address?
+                    // ],
+                ]);
+            } catch(ApiErrorException $exception) {
+                return $this->logAndRespondWithError(sprintf(
+                    'Stripe Customer create error on %s, %s [%s]: %s. Charity: %s [%s].',
+                    $donation->getUuid(),
+                    $exception->getStripeCode(),
+                    get_class($exception),
+                    $exception->getMessage(),
+                    $donation->getCampaign()->getCharity()->getName(),
+                    $donation->getCampaign()->getCharity()->getStripeAccountId()
+                ),'Could not make Stripe Customer (B)', 500);
+            }
+
+            try {
                 $intent = $this->stripeClient->paymentIntents->create([
                     // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
                     // See https://stripe.com/docs/api/payment_intents/object
                     'amount' => $donation->getAmountFractionalIncTip(),
                     'currency' => strtolower($donation->getCurrencyCode()),
+                    'customer' => $customer->id,
                     'description' => $donation->__toString(),
                     'metadata' => [
                         /**
@@ -162,7 +195,7 @@ class Create extends Action
                     ],
                 ]);
             } catch (ApiErrorException $exception) {
-                $this->logger->error(sprintf(
+                return $this->logAndRespondWithError(sprintf(
                     'Stripe Payment Intent create error on %s, %s [%s]: %s. Charity: %s [%s].',
                     $donation->getUuid(),
                     $exception->getStripeCode(),
@@ -170,9 +203,7 @@ class Create extends Action
                     $exception->getMessage(),
                     $donation->getCampaign()->getCharity()->getName(),
                     $donation->getCampaign()->getCharity()->getStripeAccountId()
-                ));
-                $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (B)');
-                return $this->respond(new ActionPayload(500, null, $error));
+                ),'Could not make Stripe Payment Intent (B)', 500);
             }
 
             $donation->setClientSecret($intent->client_secret);
@@ -208,5 +239,12 @@ class Create extends Action
     private function removeSpecialChars(string $descriptor): string
     {
         return preg_replace('/[^A-Za-z0-9 ]/', '', $descriptor);
+    }
+
+    private function logAndRespondWithError(string $logMessage, string $errorDescription, int $errorStatusCode) : Response
+    {
+        $this->logger->error($logMessage);
+        $error = new ActionError(ActionError::SERVER_ERROR, $errorDescription);
+        return $this->respond(new ActionPayload($errorStatusCode, null, $error));
     }
 }
