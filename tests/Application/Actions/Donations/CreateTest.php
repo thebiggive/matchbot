@@ -339,7 +339,6 @@ class CreateTest extends TestCase
             'phone' => null,
         ];
 
-        // Most properties we don't use omitted.
         $customerMockResult = (object) [
             'id' => 'cus_4QFGmAJFVeA4oD',
         ];
@@ -474,7 +473,6 @@ class CreateTest extends TestCase
             'phone' => null,
         ];
 
-        // Most properties we don't use omitted.
         $customerMockResult = (object) [
             'id' => 'cus_4QFGmAJFVeA4oD',
         ];
@@ -613,7 +611,6 @@ class CreateTest extends TestCase
             'phone' => null,
         ];
 
-        // Most properties we don't use omitted.
         $customerMockResult = (object) [
             'id' => 'cus_4QFGmAJFVeA4oD',
         ];
@@ -740,7 +737,6 @@ class CreateTest extends TestCase
             'phone' => null,
         ];
 
-        // Most properties we don't use omitted.
         $customerMockResult = (object) [
             'id' => 'cus_4QFGmAJFVeA4oD',
         ];
@@ -868,7 +864,6 @@ class CreateTest extends TestCase
             'phone' => null,
         ];
 
-        // Most properties we don't use omitted.
         $customerMockResult = (object) [
             'id' => 'cus_4QFGmAJFVeA4oD',
         ];
