@@ -11,7 +11,6 @@ use GuzzleHttp\Psr7\Request;
 use MatchBot\Application\Commands\UpdateCampaigns;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
-use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Tests\TestCase;

@@ -132,6 +132,7 @@ class Create extends Action
                     // See https://stripe.com/docs/api/payment_intents/object
                     'amount' => $donation->getAmountFractionalIncTip(),
                     'currency' => strtolower($donation->getCurrencyCode()),
+                    'customer' => $donation->getStripeCustomerId(), // Can be null depending on frontend mode
                     'description' => $donation->__toString(),
                     'metadata' => [
                         /**
