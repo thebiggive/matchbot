@@ -725,7 +725,7 @@ class CreateTest extends TestCase
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
         $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
-        $request = $this->createRequest('POST', '/v1/people/99999999-1234-1234-1234-1234567890zz/donations', $data);
+        $request = $this->createRequest('POST', '/v1/people/12345678-1234-1234-1234-1234567890ab/donations', $data);
         $app->handle($this->addDummyPersonAuth($request)); // Throws HttpUnauthorizedException.
     }
 
