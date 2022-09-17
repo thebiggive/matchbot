@@ -6,7 +6,7 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Application\Auth\Token;
+use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
@@ -64,7 +64,7 @@ class GetTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $jwtWithBadSignature = Token::create('12345678-1234-1234-1234-1234567890ab') . 'x';
+        $jwtWithBadSignature = DonationToken::create('12345678-1234-1234-1234-1234567890ab') . 'x';
 
         $request = $this->createRequest('GET', '/v1/donations/12345678-1234-1234-1234-1234567890ab')
             ->withHeader('x-tbg-auth', $jwtWithBadSignature);
@@ -89,7 +89,7 @@ class GetTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $jwtForAnotherDonation = Token::create('87654321-1234-1234-1234-ba0987654321');
+        $jwtForAnotherDonation = DonationToken::create('87654321-1234-1234-1234-ba0987654321');
 
         $request = $this->createRequest('GET', '/v1/donations/12345678-1234-1234-1234-1234567890ab')
             ->withHeader('x-tbg-auth', $jwtForAnotherDonation);
@@ -116,7 +116,7 @@ class GetTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
         $request = $this->createRequest('GET', '/v1/donations/87654321-1234-1234-1234-ba0987654321')
-            ->withHeader('x-tbg-auth', Token::create('87654321-1234-1234-1234-ba0987654321'));
+            ->withHeader('x-tbg-auth', DonationToken::create('87654321-1234-1234-1234-ba0987654321'));
 
         $this->expectException(HttpNotFoundException::class);
         $this->expectExceptionMessage('Donation not found');
@@ -140,7 +140,7 @@ class GetTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
         $request = $this->createRequest('GET', '/v1/donations/12345678-1234-1234-1234-1234567890ab')
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('get', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));

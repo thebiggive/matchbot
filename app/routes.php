@@ -8,6 +8,7 @@ use MatchBot\Application\Actions\Hooks;
 use MatchBot\Application\Actions\Status;
 use MatchBot\Application\Auth\DonationPublicAuthMiddleware;
 use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
+use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use Middlewares\ClientIp;
 use Psr\Http\Message\RequestInterface;
 use Slim\App;
@@ -30,6 +31,9 @@ return function (App $app) {
             ->add(DonationRecaptchaMiddleware::class) // Runs last
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
+
+        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
+            ->add(PersonManagementAuthMiddleware::class);
 
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {
             $group->get('', Donations\Get::class);

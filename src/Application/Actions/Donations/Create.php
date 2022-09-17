@@ -41,9 +41,16 @@ class Create extends Action
     /**
      * @return Response
      * @throws \MatchBot\Application\Matching\TerminalLockException if the matching adapter can't allocate funds
+     * @see PersonManagementAuthMiddleware
      */
     protected function action(): Response
     {
+        // The route at `/people/{personId}/donations` validates that the donor has permission to act
+        // as the person, and sets this attribute to the Stripe Customer ID based on JWS claims, all
+        // in `PersonManagementAuthMiddleware`. If the legacy route was used or if no such ID was in the
+        // JWS, this is null.
+        $customerId = $this->request->getAttribute('pspId');
+
         $body = (string) $this->request->getBody();
 
         try {
@@ -83,6 +90,10 @@ class Create extends Action
                 $donationData->projectId,
             ));
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
+        }
+
+        if ($customerId !== $donation->getPspCustomerId()) {
+            $this->logger->error('Route customer ID did not match that in donation body');
         }
 
         if (!$donation->getCampaign()->isOpen()) {
@@ -127,42 +138,49 @@ class Create extends Action
                 $donation->setCampaign($campaign);
             }
 
+            $createPayload = [
+                // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
+                // See https://stripe.com/docs/api/payment_intents/object
+                'amount' => $donation->getAmountFractionalIncTip(),
+                'currency' => strtolower($donation->getCurrencyCode()),
+                'description' => $donation->__toString(),
+                'metadata' => [
+                    /**
+                     * Keys like comms opt ins are set only later. See the counterpart
+                     * in {@see Update::addData()} too.
+                     */
+                    'campaignId' => $donation->getCampaign()->getSalesforceId(),
+                    'campaignName' => $donation->getCampaign()->getCampaignName(),
+                    'charityId' => $donation->getCampaign()->getCharity()->getDonateLinkId(),
+                    'charityName' => $donation->getCampaign()->getCharity()->getName(),
+                    'donationId' => $donation->getUuid(),
+                    'environment' => getenv('APP_ENV'),
+                    'feeCoverAmount' => $donation->getFeeCoverAmount(),
+                    'matchedAmount' => $donation->getFundingWithdrawalTotal(),
+                    'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                    'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                    'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
+                    'tipAmount' => $donation->getTipAmount(),
+                ],
+                'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
+                // See https://stripe.com/docs/connect/destination-charges#application-fee
+                'application_fee_amount' => $donation->getAmountToDeductFractional(),
+                // See https://stripe.com/docs/payments/connected-accounts and
+                // https://stripe.com/docs/connect/destination-charges#settlement-merchant
+                'on_behalf_of' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
+                'transfer_data' => [
+                    'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
+                ],
+            ];
+
+            // For now 'customer' can be omitted – and an automatic, guest customer used by Stripe –
+            // depending on the frontend mode.
+            if ($customerId !== null) {
+                $createPayload['customer'] = $customerId;
+            }
+
             try {
-                $intent = $this->stripeClient->paymentIntents->create([
-                    // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
-                    // See https://stripe.com/docs/api/payment_intents/object
-                    'amount' => $donation->getAmountFractionalIncTip(),
-                    'currency' => strtolower($donation->getCurrencyCode()),
-                    'customer' => $donation->getStripeCustomerId(), // Can be null depending on frontend mode
-                    'description' => $donation->__toString(),
-                    'metadata' => [
-                        /**
-                         * Keys like comms opt ins are set only later. See the counterpart
-                         * in {@see Update::addData()} too.
-                         */
-                        'campaignId' => $donation->getCampaign()->getSalesforceId(),
-                        'campaignName' => $donation->getCampaign()->getCampaignName(),
-                        'charityId' => $donation->getCampaign()->getCharity()->getDonateLinkId(),
-                        'charityName' => $donation->getCampaign()->getCharity()->getName(),
-                        'donationId' => $donation->getUuid(),
-                        'environment' => getenv('APP_ENV'),
-                        'feeCoverAmount' => $donation->getFeeCoverAmount(),
-                        'matchedAmount' => $donation->getFundingWithdrawalTotal(),
-                        'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
-                        'stripeFeeRechargeNet' => $donation->getCharityFee(),
-                        'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
-                        'tipAmount' => $donation->getTipAmount(),
-                    ],
-                    'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
-                    // See https://stripe.com/docs/connect/destination-charges#application-fee
-                    'application_fee_amount' => $donation->getAmountToDeductFractional(),
-                    // See https://stripe.com/docs/payments/connected-accounts and
-                    // https://stripe.com/docs/connect/destination-charges#settlement-merchant
-                    'on_behalf_of' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
-                    'transfer_data' => [
-                        'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
-                    ],
-                ]);
+                $intent = $this->stripeClient->paymentIntents->create($createPayload);
             } catch (ApiErrorException $exception) {
                 $this->logger->error(sprintf(
                     'Stripe Payment Intent create error on %s, %s [%s]: %s. Charity: %s [%s].',

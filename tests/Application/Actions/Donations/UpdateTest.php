@@ -7,7 +7,7 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Application\Auth\Token;
+use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
@@ -84,7 +84,7 @@ class UpdateTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $jwtWithBadSignature = Token::create('12345678-1234-1234-1234-1234567890ab') . 'x';
+        $jwtWithBadSignature = DonationToken::create('12345678-1234-1234-1234-1234567890ab') . 'x';
 
         $request = $this->createRequest('PUT', '/v1/donations/12345678-1234-1234-1234-1234567890ab')
             ->withHeader('x-tbg-auth', $jwtWithBadSignature);
@@ -115,7 +115,7 @@ class UpdateTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $jwtForAnotherDonation = Token::create('87654321-1234-1234-1234-ba0987654321');
+        $jwtForAnotherDonation = DonationToken::create('87654321-1234-1234-1234-ba0987654321');
 
         $request = $this->createRequest('PUT', '/v1/donations/12345678-1234-1234-1234-1234567890ab')
             ->withHeader('x-tbg-auth', $jwtForAnotherDonation);
@@ -148,7 +148,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
         $request = $this->createRequest('PUT', '/v1/donations/87654321-1234-1234-1234-ba0987654321')
-            ->withHeader('x-tbg-auth', Token::create('87654321-1234-1234-1234-ba0987654321'));
+            ->withHeader('x-tbg-auth', DonationToken::create('87654321-1234-1234-1234-ba0987654321'));
         $route = $this->getRouteWithDonationId('put', '87654321-1234-1234-1234-ba0987654321');
 
         $this->expectException(HttpNotFoundException::class);
@@ -185,7 +185,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donation->toApiModel()),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -232,7 +232,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donationData),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -279,7 +279,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donation->toApiModel()),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -331,7 +331,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donation->toApiModel()),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -405,7 +405,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donation->toApiModel()),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -484,7 +484,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donation->toApiModel()),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -551,7 +551,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donation->toApiModel()),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -609,7 +609,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ac',
             json_encode($donation->toApiModel()),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ac'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ac'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ac');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -656,7 +656,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donation->toApiModel()),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -703,7 +703,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donationData),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -754,7 +754,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             $body,
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -801,7 +801,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donationData),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -847,7 +847,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             $putJSON,
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -938,7 +938,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donation->toApiModel()),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -1039,7 +1039,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donation->toApiModel()),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -1137,7 +1137,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donation->toApiModel()),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -1229,7 +1229,7 @@ class UpdateTest extends TestCase
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
             json_encode($donation->toApiModel()),
         )
-            ->withHeader('x-tbg-auth', Token::create('12345678-1234-1234-1234-1234567890ab'));
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));

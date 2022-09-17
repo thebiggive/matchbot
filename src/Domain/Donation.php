@@ -395,6 +395,7 @@ class Donation extends SalesforceWriteProxy
             'optInTbgEmail' => $this->getTbgComms(),
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
+            'pspCustomerId' => $this->getPspCustomerId(),
             'status' => $this->getDonationStatus(),
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),

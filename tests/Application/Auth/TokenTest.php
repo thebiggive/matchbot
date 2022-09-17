@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Auth;
 
-use MatchBot\Application\Auth\Token;
+use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Tests\TestCase;
 use Psr\Log\NullLogger;
 
@@ -12,29 +12,29 @@ class TokenTest extends TestCase
 {
     public function testCreateReturnsValidLookingToken(): void
     {
-        $token = Token::create('someDonationId');
+        $token = DonationToken::create('someDonationId');
 
         $this->assertMatchesRegularExpression('/^[^.]+\.[^.]+\.[^.]+$/', $token);
     }
 
     public function testCheckPassesWhenAllValid(): void
     {
-        $token = Token::create('someDonationId');
+        $token = DonationToken::create('someDonationId');
 
-        $this->assertTrue(Token::check('someDonationId', $token, new NullLogger()));
+        $this->assertTrue(DonationToken::check('someDonationId', $token, new NullLogger()));
     }
 
     public function testCheckFailsWhenWrongDonationId(): void
     {
-        $token = Token::create('someDonationId');
+        $token = DonationToken::create('someDonationId');
 
-        $this->assertFalse(Token::check('someOtherDonationId', $token, new NullLogger()));
+        $this->assertFalse(DonationToken::check('someOtherDonationId', $token, new NullLogger()));
     }
 
     public function testCheckFailsWhenSignatureGarbled(): void
     {
-        $token = Token::create('someDonationId');
+        $token = DonationToken::create('someDonationId');
 
-        $this->assertFalse(Token::check('someDonationId', $token . 'X', new NullLogger()));
+        $this->assertFalse(DonationToken::check('someDonationId', $token . 'X', new NullLogger()));
     }
 }
