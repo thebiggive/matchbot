@@ -44,8 +44,6 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
         }
 
         if (!IdentityToken::check($personId, $jws, $this->logger)) {
-            echo 'p id arg to check: ' . $personId;
-
             $this->unauthorised($this->logger, false, $request);
         }
 
