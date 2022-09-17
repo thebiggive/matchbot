@@ -10,7 +10,8 @@ use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Application\Auth\Token;
+use MatchBot\Application\Auth\DonationToken;
+use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Domain\Campaign;
@@ -185,7 +186,7 @@ class Create extends Action
 
         $response = new DonationCreatedResponse();
         $response->donation = $donation->toApiModel();
-        $response->jwt = Token::create($donation->getUuid());
+        $response->jwt = DonationToken::create($donation->getUuid());
 
         // Attempt immediate sync. Buffered for a future batch sync if the SF call fails.
         $this->donationRepository->push($donation, true);

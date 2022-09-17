@@ -34,7 +34,7 @@ class DonationPublicAuthMiddleware implements MiddlewareInterface
             $this->unauthorised($this->logger, true, $request);
         }
 
-        if (!Token::check($donationId, $jws, $this->logger)) {
+        if (!DonationToken::check($donationId, $jws, $this->logger)) {
             $this->unauthorised($this->logger, false, $request);
         }
 
