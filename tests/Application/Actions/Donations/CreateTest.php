@@ -681,6 +681,54 @@ class CreateTest extends TestCase
         $app->handle($this->addDummyPersonAuth($request)); // Throws HttpUnauthorizedException.
     }
 
+    public function testMatchedCampaignAndPspCustomerIdButWrongCustomerIdInBody(): void
+    {
+        $this->expectException(HttpUnauthorizedException::class);
+        $this->expectExceptionMessage('Unauthorised');
+
+        $donation = $this->getTestDonation(true, true);
+        $donation->setPsp('stripe');
+        $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
+        $donation->setPspCustomerId('cus_zzaaaaaaaaaa99');
+
+        $fundingWithdrawalForMatch = new FundingWithdrawal();
+        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
+        $fundingWithdrawalForMatch->setDonation($donation);
+
+        $donationToReturn = $donation;
+        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->willReturn($donationToReturn);
+        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldNotBeCalled();
+        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy->flush()->shouldNotBeCalled();
+
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+        $stripePaymentIntentsProphecy->create(Argument::type('array'))
+            ->shouldNotBeCalled();
+
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
+        $request = $this->createRequest('POST', '/v1/people/99999999-1234-1234-1234-1234567890zz/donations', $data);
+        $app->handle($this->addDummyPersonAuth($request)); // Throws HttpUnauthorizedException.
+    }
+
     public function testSuccessWithMatchedCampaignAndInitialCampaignDuplicateError(): void
     {
         $donation = $this->getTestDonation(true, true);
