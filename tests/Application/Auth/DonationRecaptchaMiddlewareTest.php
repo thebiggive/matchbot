@@ -35,7 +35,7 @@ class DonationRecaptchaMiddlewareTest extends TestCase
 
         // Because the 401 ends the request, we can dispatch this against realistic, full app
         // middleware and test this piece of middleware in the process.
-        $response = $this->getAppInstance(false)
+        $this->getAppInstance(false)
             ->getMiddlewareDispatcher()
             ->handle($request);
     }
