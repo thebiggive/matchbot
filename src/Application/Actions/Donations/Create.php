@@ -93,7 +93,11 @@ class Create extends Action
         }
 
         if ($customerId !== $donation->getPspCustomerId()) {
-            $this->logger->error('Route customer ID did not match that in donation body');
+            return $this->validationError(sprintf(
+                'Route customer ID %s did not match %s in donation body',
+                $customerId,
+                $donation->getPspCustomerId(),
+            ));
         }
 
         if (!$donation->getCampaign()->isOpen()) {

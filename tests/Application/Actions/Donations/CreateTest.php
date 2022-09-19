@@ -18,9 +18,9 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpUnauthorizedException;
-use Slim\Psr7\Request;
 use Stripe\Service\PaymentIntentService;
 use Stripe\StripeClient;
 use UnexpectedValueException;
@@ -683,9 +683,6 @@ class CreateTest extends TestCase
 
     public function testMatchedCampaignAndPspCustomerIdButWrongCustomerIdInBody(): void
     {
-        $this->expectException(HttpUnauthorizedException::class);
-        $this->expectExceptionMessage('Unauthorised');
-
         $donation = $this->getTestDonation(true, true);
         $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
@@ -726,7 +723,19 @@ class CreateTest extends TestCase
 
         $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
         $request = $this->createRequest('POST', '/v1/people/12345678-1234-1234-1234-1234567890ab/donations', $data);
-        $app->handle($this->addDummyPersonAuth($request)); // Throws HttpUnauthorizedException.
+
+        $response = $app->handle($this->addDummyPersonAuth($request));
+
+        $payload = (string) $response->getBody();
+
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'Route customer ID cus_aaaaaaaaaaaa11 did not match cus_zzaaaaaaaaaa99 in donation body',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertEquals(400, $response->getStatusCode());
     }
 
     public function testSuccessWithMatchedCampaignAndInitialCampaignDuplicateError(): void
@@ -1056,7 +1065,7 @@ class CreateTest extends TestCase
         return json_encode($donationArray);
     }
 
-    private function addDummyPersonAuth(Request $request): Request
+    private function addDummyPersonAuth(ServerRequestInterface $request): ServerRequestInterface
     {
         // One-time, artifically long token generated and hard-coded here so that we don't
         // need live code just for MatchBot to issue ID tokens only for unit tests.
