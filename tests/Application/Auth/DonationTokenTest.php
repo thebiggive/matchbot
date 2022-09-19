@@ -8,7 +8,7 @@ use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Tests\TestCase;
 use Psr\Log\NullLogger;
 
-class TokenTest extends TestCase
+class DonationTokenTest extends TestCase
 {
     public function testCreateReturnsValidLookingToken(): void
     {

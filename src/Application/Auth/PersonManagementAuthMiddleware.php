@@ -22,6 +22,7 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
 
     #[Pure]
     public function __construct(
+        private IdentityToken $token,
         private LoggerInterface $logger
     ) {
     }
@@ -43,7 +44,7 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
             $this->unauthorised($this->logger, true, $request);
         }
 
-        if (!IdentityToken::check($personId, $jws, $this->logger)) {
+        if (!$this->token->check($personId, $jws, $this->logger)) {
             $this->unauthorised($this->logger, false, $request);
         }
 

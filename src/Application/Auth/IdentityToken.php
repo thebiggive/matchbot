@@ -11,6 +11,10 @@ use Psr\Log\LoggerInterface;
 
 class IdentityToken
 {
+    public function __construct(private string $baseUri)
+    {
+    }
+
     /**
      * @link https://stackoverflow.com/questions/39239051/rs256-vs-hs256-whats-the-difference has info on hash
      * algorithm choice. Since we use the secret only server-side and will secure it like other secrets,
@@ -27,7 +31,7 @@ class IdentityToken
      * @param LoggerInterface   $logger
      * @return bool Whether the token is valid for the given person.
      */
-    public static function check(string $personId, string $jws, LoggerInterface $logger): bool
+    public function check(string $personId, string $jws, LoggerInterface $logger): bool
     {
         try {
             $decodedJwtBody = JWT::decode($jws, static::getKey());
@@ -42,7 +46,7 @@ class IdentityToken
             return false;
         }
 
-        if ($decodedJwtBody->iss !== getenv('ID_BASE_URI')) {
+        if ($decodedJwtBody->iss !== $this->baseUri) {
             $logger->error("JWT error: issued by wrong site {$decodedJwtBody->iss}");
 
             return false;
@@ -62,7 +66,7 @@ class IdentityToken
         try {
             $decodedJwtBody = JWT::decode($jws, static::getKey());
         } catch (\Exception $exception) {
-            // Should happen in practice because we `check()` first.
+            // Should never happen in practice because we `check()` first.
             return null;
         }
 

@@ -1065,28 +1065,14 @@ class CreateTest extends TestCase
         return json_encode($donationArray);
     }
 
+    /**
+     * One-time, artifically long hard-coded token attached here, so we don't
+     * need live code just for MatchBot to issue ID tokens only for unit tests.
+     * Token is for Stripe Customer cus_aaaaaaaaaaaa11.
+     */
     private function addDummyPersonAuth(ServerRequestInterface $request): ServerRequestInterface
     {
-        // One-time, artifically long token generated and hard-coded here so that we don't
-        // need live code just for MatchBot to issue ID tokens only for unit tests.
-        // Token is for Stripe Customer cus_aaaaaaaaaaaa11.
-        //
-        // Base 64 decoded body part:
-        // {
-        //  "iss":"https://unit-test-fake-id-sub.thebiggivetest.org.uk",
-        //  "iat":1663436154,
-        //  "exp":2524608000,
-        //  "sub": {
-        //      "person_id":"12345678-1234-1234-1234-1234567890ab",
-        //      "complete":false,
-        //      "psp_id":"cus_aaaaaaaaaaaa11"
-        //  }
-        // }
-        $dummyPersonAuthTokenValidUntil2050 = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3VuaXQtdGVz' .
-            'dC1mYWtlLWlkLXN1Yi50aGViaWdnaXZldGVzdC5vcmcudWsiLCJpYXQiOjE2NjM0MzYxNTQsImV4cCI6MjUyNDYwODAwMCwic3ViIjp7' .
-            'InBlcnNvbl9pZCI6IjEyMzQ1Njc4LTEyMzQtMTIzNC0xMjM0LTEyMzQ1Njc4OTBhYiIsImNvbXBsZXRlIjpmYWxzZSwicHNwX2lkIjoi' .
-            'Y3VzX2FhYWFhYWFhYWFhYTExIn19.KdeGTDkkWCjI4-Kayay0LKn9TXziPXCUxxTPIZgGxxE';
-        return $request->withHeader('x-tbg-auth', $dummyPersonAuthTokenValidUntil2050);
+        return $request->withHeader('x-tbg-auth', $this->getTestIdentityToken());
     }
 
     private function getTestDonation(
