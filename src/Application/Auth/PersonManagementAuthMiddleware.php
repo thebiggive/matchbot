@@ -45,6 +45,7 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
         }
 
         if (!$this->token->check($personId, $jws, $this->logger)) {
+            $this->logger->info(sprintf('Security: JWT check failed for person ID %s', $personId));
             $this->unauthorised($this->logger, false, $request);
         }
 
