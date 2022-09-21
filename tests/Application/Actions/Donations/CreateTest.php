@@ -329,6 +329,7 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
+            'payment_method_types' => ['card'],
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
                 'campaignId' => '123CampaignId',
@@ -440,6 +441,7 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
+            'payment_method_types' => ['card'],
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
                 'campaignId' => '123CampaignId',
@@ -552,6 +554,7 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
+            'payment_method_types' => ['card'],
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
@@ -568,6 +571,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
+            'setup_future_usage' => 'on_session',
             'statement_descriptor' => 'The Big Give Create te',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
@@ -774,6 +778,7 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
+            'payment_method_types' => ['card'],
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
                 'campaignId' => '123CampaignId',
@@ -877,6 +882,7 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
+            'payment_method_types' => ['card'],
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
                 'campaignId' => '123CampaignId',
@@ -981,6 +987,7 @@ class CreateTest extends TestCase
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
+            'payment_method_types' => ['card'],
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
                 'campaignId' => '123CampaignId',
