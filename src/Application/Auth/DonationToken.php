@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace MatchBot\Application\Auth;
 
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use JetBrains\PhpStorm\Pure;
 use Psr\Log\LoggerInterface;
 
-class Token
+class DonationToken
 {
     /**
      * @link https://stackoverflow.com/questions/39239051/rs256-vs-hs256-whats-the-difference has info on hash
@@ -47,8 +48,9 @@ class Token
      */
     public static function check(string $donationId, string $jws, LoggerInterface $logger): bool
     {
+        $key = new Key(static::getSecret(), static::$algorithm);
         try {
-            $decodedJwtBody = JWT::decode($jws, static::getSecret(), [static::$algorithm]);
+            $decodedJwtBody = JWT::decode($jws, $key);
         } catch (\Exception $exception) {
             $type = get_class($exception);
             // This is only a warning for now. We've seen likely crawlers + bots send invalid

@@ -12,12 +12,17 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Slim\Routing\RouteContext;
 
-class DonationPublicAuthMiddleware implements MiddlewareInterface
+/**
+ * Checks an Identity service JWT is valid and, if so and one exists, adds the person ID
+ * to the request as an extra attribute 'pspId'.
+ */
+class PersonManagementAuthMiddleware implements MiddlewareInterface
 {
     use ErrorTrait;
 
     #[Pure]
     public function __construct(
+        private IdentityToken $token,
         private LoggerInterface $logger
     ) {
     }
@@ -26,7 +31,12 @@ class DonationPublicAuthMiddleware implements MiddlewareInterface
     {
         $routeContext = RouteContext::fromRequest($request);
         $route = $routeContext->getRoute();
-        $donationId = $route->getArgument('donationId');
+        if (!$route) {
+            $this->logger->info('Security: No route in context');
+            $this->unauthorised($this->logger, false, $request);
+        }
+
+        $personId = $route->getArgument('personId');
         $jws = $request->getHeaderLine('x-tbg-auth');
 
         if (empty($jws)) {
@@ -34,10 +44,11 @@ class DonationPublicAuthMiddleware implements MiddlewareInterface
             $this->unauthorised($this->logger, true, $request);
         }
 
-        if (!DonationToken::check($donationId, $jws, $this->logger)) {
+        if (!$this->token->check($personId, $jws, $this->logger)) {
+            $this->logger->info(sprintf('Security: JWT check failed for person ID %s', $personId));
             $this->unauthorised($this->logger, false, $request);
         }
 
-        return $handler->handle($request);
+        return $handler->handle($request->withAttribute('pspId', IdentityToken::getPspId($jws)));
     }
 }

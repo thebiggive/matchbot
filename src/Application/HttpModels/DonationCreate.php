@@ -20,5 +20,6 @@ class DonationCreate
     public ?bool $optInTbgEmail = null;
     public string $projectId;
     public string $psp;
+    public ?string $pspCustomerId = null;
     public ?string $tipAmount = '0.00';
 }
