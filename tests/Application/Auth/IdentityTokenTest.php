@@ -21,7 +21,7 @@ class IdentityTokenTest extends TestCase
         $this->assertFalse(
             $tokenHelper->check(
                 'someOtherPersonId',
-                $this->getTestIdentityToken(),
+                $this->getTestIdentityTokenIncomplete(),
                 new NullLogger(),
             ),
         );
@@ -34,7 +34,7 @@ class IdentityTokenTest extends TestCase
         $this->assertFalse(
             $tokenHelper->check(
                 '12345678-1234-1234-1234-1234567890ab',
-                $this->getTestIdentityToken(),
+                $this->getTestIdentityTokenIncomplete(),
                 new NullLogger(),
             ),
         );
@@ -43,7 +43,7 @@ class IdentityTokenTest extends TestCase
     public function testCheckFailsAndPersonIdNullWhenSignatureGarbled(): void
     {
         $tokenHelper = new IdentityToken('https://unit-test-fake-id-sub.thebiggivetest.org.uk');
-        $badToken = $this->getTestIdentityToken() . 'x';
+        $badToken = $this->getTestIdentityTokenIncomplete() . 'x';
 
         $this->assertFalse(
             $tokenHelper->check(

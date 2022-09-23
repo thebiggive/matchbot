@@ -1079,7 +1079,7 @@ class CreateTest extends TestCase
      */
     private function addDummyPersonAuth(ServerRequestInterface $request): ServerRequestInterface
     {
-        return $request->withHeader('x-tbg-auth', $this->getTestIdentityToken());
+        return $request->withHeader('x-tbg-auth', $this->getTestIdentityTokenIncomplete());
     }
 
     private function getTestDonation(
