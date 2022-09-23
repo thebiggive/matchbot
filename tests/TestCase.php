@@ -137,7 +137,9 @@ class TestCase extends PHPUnitTestCase
     protected function getTestIdentityTokenComplete(): string
     {
         // As below but `"complete": true`.
-        return 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3VuaXQtdGVzdC1mYWtlLWlkLXN1Yi50aGViaWdnaXZldGVzdC5vcmcudWsiLCJpYXQiOjE2NjM5NDQ4ODksImV' . '4cCI6MjUyNDYwODAwMCwic3ViIjp7InBlcnNvbl9pZCI6IjEyMzQ1Njc4LTEyMzQtMTIzNC0xMjM0LTEyMzQ1Njc4OTBhYiIsImNvbXBsZX' .
+        return 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.' .
+         'eyJpc3MiOiJodHRwczovL3VuaXQtdGVzdC1mYWtlLWlkLXN1Yi50aGViaWdnaXZldGVzdC5vcmcudWsiLCJpYXQiOjE2NjM5NDQ4ODksImV' .
+         '4cCI6MjUyNDYwODAwMCwic3ViIjp7InBlcnNvbl9pZCI6IjEyMzQ1Njc4LTEyMzQtMTIzNC0xMjM0LTEyMzQ1Njc4OTBhYiIsImNvbXBsZX' .
          'RlIjp0cnVlLCJwc3BfaWQiOiJjdXNfYWFhYWFhYWFhYWFhMTEifX0.9zk7DUdvC9BWuRhXo2p7r12ZiTuREV7v9zsY97p_fyA';
     }
 
