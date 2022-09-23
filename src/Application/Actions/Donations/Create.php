@@ -147,6 +147,9 @@ class Create extends Action
                 // See https://stripe.com/docs/api/payment_intents/object
                 'amount' => $donation->getAmountFractionalIncTip(),
                 'currency' => strtolower($donation->getCurrencyCode()),
+                // 'card' includes wallets, so it seems reasonable to keep this fixed + preditable
+                // rather than using `automatic_payment_methods`.
+                'payment_method_types' => ['card'],
                 'description' => $donation->__toString(),
                 'metadata' => [
                     /**
@@ -177,10 +180,12 @@ class Create extends Action
                 ],
             ];
 
-            // For now 'customer' can be omitted – and an automatic, guest customer used by Stripe –
-            // depending on the frontend mode.
+            // For now 'customer' may be omitted – and an automatic, guest customer used by Stripe –
+            // depending on the frontend mode. If there *is* a customer, we want to be able to offer them
+            // card reuse.
             if ($customerId !== null) {
                 $createPayload['customer'] = $customerId;
+                $createPayload['setup_future_usage'] = 'on_session';
             }
 
             try {
