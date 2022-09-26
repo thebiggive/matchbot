@@ -83,4 +83,16 @@ class IdentityToken
     {
         return getenv('JWT_ID_SECRET');
     }
+
+    public function isComplete($jws): bool
+    {
+        try {
+            $decodedJwtBody = JWT::decode($jws, static::getKey());
+        } catch (\Exception $exception) {
+            // Should never happen in practice because we `check()` first.
+            return false;
+        }
+
+        return $decodedJwtBody->sub->complete ?? false;
+    }
 }
