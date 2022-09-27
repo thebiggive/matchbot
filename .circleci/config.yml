@@ -32,11 +32,6 @@ jobs:
             - vendor
           key: composer-v1-{{ checksum "composer.lock" }}
 
-      - run:
-            name: List Domain directory (temporary)
-            command: |
-                ls -la /var/www/html/src/Domain
-
       - run: composer run lint:check
 
       - run: composer run test
