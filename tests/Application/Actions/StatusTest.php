@@ -6,15 +6,29 @@ namespace MatchBot\Tests\Application\Actions;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Cache\ArrayCache;
+use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\MySQL80Platform;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
+use Doctrine\ORM\Proxy\ProxyFactory;
+use Doctrine\ORM\Tools\Console\Command\GenerateProxiesCommand;
+use Doctrine\ORM\Tools\Console\ConsoleRunner;
 use Doctrine\ORM\Tools\Setup;
+use Doctrine\ORM\UnitOfWork;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Tests\TestCase;
+use Symfony\Component\Console\Input\StringInput;
+use Symfony\Component\Console\Output\NullOutput;
 
 class StatusTest extends TestCase
 {
+    public function setUp(): void
+    {
+        $this->generateORMProxiesAtRealPath();
+    }
+
     public function testOK(): void
     {
         $app = $this->getAppInstance();
@@ -74,7 +88,7 @@ class StatusTest extends TestCase
         string $proxyPath = '/var/www/html/var/doctrine/proxies',
     ): EntityManagerInterface {
         $cache = new ArrayCache();
-        $ormConfigWithNonStandardProxyVars = Setup::createAnnotationMetadataConfiguration(
+        $config = Setup::createAnnotationMetadataConfiguration(
             ['/var/www/html/src/Domain'],
             false, // Simulate live mode for these tests.
             $proxyPath,
@@ -82,26 +96,76 @@ class StatusTest extends TestCase
         );
 
         // No auto-generation – like live mode – for these tests.
-        $ormConfigWithNonStandardProxyVars->setAutoGenerateProxyClasses(false);
-        $ormConfigWithNonStandardProxyVars->setMetadataDriverImpl(
+        $config->setAutoGenerateProxyClasses(false);
+        $config->setMetadataDriverImpl(
             new AnnotationDriver(new AnnotationReader(), ['/var/www/html/src/Domain']),
         );
-        $ormConfigWithNonStandardProxyVars->setMetadataCacheImpl($cache);
+        $config->setMetadataCacheImpl($cache);
 
         $connectionProphecy = $this->prophesize(Connection::class);
         $connectionProphecy->isConnected()
-            ->shouldBeCalledOnce()
             ->willReturn(true);
+        // *Can* be called by `GenerateProxiesCommand`.
+        $connectionProphecy->getDatabasePlatform()
+            ->willReturn(new MySQL80Platform());
 
         $emProphecy = $this->prophesize(EntityManagerInterface::class);
         $emProphecy->getConfiguration()
+            ->willReturn($config);
+
+        $classMetadataFactory = new ClassMetadataFactory();
+        // This has to be set on both sides for `ClassMetadataFactory::initialize()` not to crash.
+        $classMetadataFactory->setEntityManager($emProphecy->reveal());
+        // *Can* be called by `GenerateProxiesCommand`.
+        $emProphecy->getMetadataFactory()
+            ->willReturn($classMetadataFactory);
+
+        // *Can* be called by `GenerateProxiesCommand`.
+        $emProphecy->getEventManager()
+            ->willReturn(new EventManager());
+
+        // *Can* be called by `GenerateProxiesCommand`.
+        // Mirrors the instantiation in concrete `EntityManager`'s constructor.
+        $emProphecy->getUnitOfWork()
             ->shouldBeCalledOnce()
-            ->willReturn($ormConfigWithNonStandardProxyVars);
+            ->willReturn(new UnitOfWork($emProphecy->reveal()));
+
+        // Mirrors the instantiation in concrete `EntityManager`'s constructor.
+        $proxyFactory = new ProxyFactory(
+            $emProphecy->reveal(),
+            $config->getProxyDir(),
+            $config->getProxyNamespace(),
+            $config->getAutoGenerateProxyClasses()
+        );
+        // *Can* be called by `GenerateProxiesCommand`.
+        $emProphecy->getProxyFactory()
+            ->willReturn($proxyFactory);
 
         $emProphecy->getConnection()
             ->shouldBeCalledOnce()
             ->willReturn($connectionProphecy->reveal());
 
         return $emProphecy->reveal();
+    }
+
+    /**
+     * Simulate the real app entrypoint's Doctrine proxy generate command, so that proxies are
+     * in-place in the unit test filesystem and we can assume that when realistic paths are provided,
+     * the `Status` Action should be able to complete a successful run through.
+     */
+    private function generateORMProxiesAtRealPath(): void
+    {
+        $app = $this->getAppInstance();
+        $container = $app->getContainer();
+
+        $container->set(EntityManagerInterface::class, $this->getConnectedMockEntityManager());
+
+        $helperSet = ConsoleRunner::createHelperSet($container->get(EntityManagerInterface::class));
+        $generateProxiesCommand = new GenerateProxiesCommand();
+        $generateProxiesCommand->setHelperSet($helperSet);
+        $generateProxiesCommand->run(
+            new StringInput(''),
+            new NullOutput(),
+        );
     }
 }
