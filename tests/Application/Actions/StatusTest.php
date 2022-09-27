@@ -19,7 +19,7 @@ class StatusTest extends TestCase
     {
         $app = $this->getAppInstance();
 
-        $entityManager = $this->getConnectedMockEntityManager('/var/www/html/var/doctrine/proxies');
+        $entityManager = $this->getConnectedMockEntityManager();
         $app->getContainer()->set(EntityManagerInterface::class, $entityManager);
 
         $request = $this->createRequest('GET', '/ping');
@@ -37,11 +37,14 @@ class StatusTest extends TestCase
     {
         $app = $this->getAppInstance(true); // Use real Redis for this test
 
+        $entityManager = $this->getConnectedMockEntityManager();
+        $app->getContainer()->set(EntityManagerInterface::class, $entityManager);
+
         $request = $this->createRequest('GET', '/ping');
         $response = $app->handle($request);
         $payload = (string) $response->getBody();
 
-        $expectedPayload = new ActionPayload(500, ['error' => 'Database connection failed']);
+        $expectedPayload = new ActionPayload(500, ['error' => 'Redis not connected']);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
         $this->assertEquals(500, $response->getStatusCode());
@@ -54,7 +57,6 @@ class StatusTest extends TestCase
 
         // Use a deliberately wrong path so proxies are absent.
         $entityManager = $this->getConnectedMockEntityManager('/tmp/not/this/dir/proxies');
-
         $app->getContainer()->set(EntityManagerInterface::class, $entityManager);
 
         $request = $this->createRequest('GET', '/ping');
@@ -68,7 +70,7 @@ class StatusTest extends TestCase
         $this->assertEquals($expectedSerialised, $payload);
     }
 
-    private function getConnectedMockEntityManager(string $proxyPath): EntityManagerInterface
+    private function getConnectedMockEntityManager(string $proxyPath = '/var/www/html/var/doctrine/proxies'): EntityManagerInterface
     {
         $cache = new ArrayCache();
         $ormConfigWithNonStandardProxyVars = Setup::createAnnotationMetadataConfiguration(
