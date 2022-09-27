@@ -70,8 +70,9 @@ class StatusTest extends TestCase
         $this->assertEquals($expectedSerialised, $payload);
     }
 
-    private function getConnectedMockEntityManager(string $proxyPath = '/var/www/html/var/doctrine/proxies'): EntityManagerInterface
-    {
+    private function getConnectedMockEntityManager(
+        string $proxyPath = '/var/www/html/var/doctrine/proxies',
+    ): EntityManagerInterface {
         $cache = new ArrayCache();
         $ormConfigWithNonStandardProxyVars = Setup::createAnnotationMetadataConfiguration(
             ['/var/www/html/src/Domain'],
