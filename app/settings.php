@@ -58,6 +58,10 @@ return function (ContainerBuilder $containerBuilder) {
                 ],
             ],
 
+            'identity' => [
+                'baseUri' => getenv('ID_BASE_URI'),
+            ],
+
             'logger' => [
                 'name' => 'matchbot',
                 'path' => 'php://stdout',

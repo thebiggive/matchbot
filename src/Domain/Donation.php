@@ -302,6 +302,11 @@ class Donation extends SalesforceWriteProxy
     protected ?string $tbgGiftAidResponseDetail = null;
 
     /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    protected ?string $pspCustomerId = null;
+
+    /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
      * @var ArrayCollection|FundingWithdrawal[]
      */
@@ -390,6 +395,7 @@ class Donation extends SalesforceWriteProxy
             'optInTbgEmail' => $this->getTbgComms(),
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
+            'pspCustomerId' => $this->getPspCustomerId(),
             'status' => $this->getDonationStatus(),
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
@@ -1057,6 +1063,16 @@ class Donation extends SalesforceWriteProxy
     public function setTbgGiftAidResponseDetail(?string $tbgGiftAidResponseDetail): void
     {
         $this->tbgGiftAidResponseDetail = $tbgGiftAidResponseDetail;
+    }
+
+    public function getPspCustomerId(): ?string
+    {
+        return $this->pspCustomerId;
+    }
+
+    public function setPspCustomerId(?string $pspCustomerId): void
+    {
+        $this->pspCustomerId = $pspCustomerId;
     }
 
     public function hasEnoughDataForSalesforce(): bool

@@ -14,6 +14,7 @@ use Doctrine\ORM\Tools\Setup;
 use LosMiddleware\RateLimit\RateLimitMiddleware;
 use LosMiddleware\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
+use MatchBot\Application\Auth\IdentityToken;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
@@ -101,6 +102,10 @@ return function (ContainerBuilder $containerBuilder) {
             return $c->get(RetrySafeEntityManager::class);
         },
 
+        IdentityToken::class => function (ContainerInterface $c): IdentityToken {
+            return new IdentityToken($c->get('settings')['identity']['baseUri']);
+        },
+
         LockFactory::class => function (ContainerInterface $c): LockFactory {
             $em = $c->get(EntityManagerInterface::class);
             $lockStore = new DoctrineDbalStore($em->getConnection(), ['db_table' => 'CommandLockKeys']);
@@ -162,7 +167,7 @@ return function (ContainerBuilder $containerBuilder) {
             // on construct.
             $redis = new Redis();
             try {
-                $redis->connect($c->get('settings')['redis']['host']);
+                $redis->connect($settings['redis']['host']);
                 $cache = new RedisCache();
                 $cache->setRedis($redis);
                 $cache->setNamespace("matchbot-{$settings['appEnv']}");
