@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MatchBot\Application\Handlers;
 
 use JetBrains\PhpStorm\Pure;
-use MatchBot\Application\ResponseEmitter\ResponseEmitter;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Exception\HttpInternalServerErrorException;
+use Slim\ResponseEmitter;
 
 class ShutdownHandler
 {
