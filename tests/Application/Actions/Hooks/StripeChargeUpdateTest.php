@@ -49,7 +49,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findForUpdateByTxnId('pi_invalidId_123')
+            ->findOneBy(['transactionId' => 'pi_invalidId_123'])
             ->willReturn(null)
             ->shouldBeCalledOnce();
 
@@ -109,7 +109,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findForUpdateByTxnId('pi_externalId_123')
+            ->findOneBy(['transactionId' => 'pi_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -160,7 +160,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findForUpdateByTxnId('pi_externalId_123')
+            ->findOneBy(['transactionId' => 'pi_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -208,7 +208,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findForUpdateByTxnId('pi_externalId_123')
+            ->findOneBy(['transactionId' => 'pi_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -252,7 +252,7 @@ class StripeChargeUpdateTest extends StripeTest
         // never any data changes to make in the "won" case.
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findForUpdateByTxnId('pi_externalId_123')
+            ->findOneBy(['transactionId' => 'pi_externalId_123'])
             ->shouldNotBeCalled();
 
         $donationRepoProphecy
@@ -294,7 +294,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findForUpdateByTxnId('pi_invalidId_123')
+            ->findOneBy(['transactionId' => 'pi_invalidId_123'])
             ->willReturn(null)
             ->shouldBeCalledOnce();
 
@@ -324,7 +324,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findForUpdateByTxnId('pi_externalId_123')
+            ->findOneBy(['transactionId' => 'pi_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -368,7 +368,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findForUpdateByTxnId('pi_00000000000000')
+            ->findOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -410,7 +410,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findForUpdateByTxnId('pi_00000000000000')
+            ->findOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -424,6 +424,10 @@ class StripeChargeUpdateTest extends StripeTest
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -452,7 +456,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findForUpdateByTxnId('pi_00000000000000')
+            ->findOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 

@@ -169,7 +169,11 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
                     $this->logInfo('... plus interim updates for ' . get_class($proxy) . " {$proxy->getId()}");
                 } else {
                     $proxy->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
-                    $this->logError('... with error on interim updates for ' . get_class($proxy) . " {$proxy->getId()}");
+                    $this->logError(sprintf(
+                        '... with error on interim updates for %s %d',
+                        get_class($proxy),
+                        $proxy->getId(),
+                    ));
                 }
             }
         } else {

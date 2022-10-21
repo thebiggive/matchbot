@@ -67,13 +67,18 @@ class StripeChargeUpdate extends Stripe
     {
         /** @var Charge $charge */
         $charge = $event->data->object;
+
         $intentId = $charge->payment_intent;
 
+        $this->entityManager->beginTransaction();
+
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findForUpdateByTxnId($intentId);
+        $donation = $this->donationRepository->findOneBy(['transactionId' => $intentId]);
 
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
+            $this->entityManager->rollback();
+
             return $this->respond(new ActionPayload(204));
         }
 
@@ -110,10 +115,13 @@ class StripeChargeUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
+            $this->entityManager->rollback();
+
             return $this->validationError(sprintf('Unsupported Status "%s"', $charge->status));
         }
 
         $this->entityManager->persist($donation);
+        $this->entityManager->commit();
 
         // We log if this fails but don't worry the webhook-sending payment client
         // about it. We'll re-try sending the updated status to Salesforce in a future
@@ -147,11 +155,15 @@ class StripeChargeUpdate extends Stripe
             return $this->respond(new ActionPayload(204));
         }
 
+        $this->entityManager->beginTransaction();
+
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findForUpdateByTxnId($intentId);
+        $donation = $this->donationRepository->findOneBy(['transactionId' => $intentId]);
 
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
+            $this->entityManager->rollback();
+
             return $this->respond(new ActionPayload(204));
         }
 
@@ -162,6 +174,8 @@ class StripeChargeUpdate extends Stripe
                 $donation->getUuid(),
                 $intentId,
             ));
+            $this->entityManager->rollback();
+
             return $this->respond(new ActionPayload(204));
         }
 
@@ -182,14 +196,16 @@ class StripeChargeUpdate extends Stripe
     private function handleChargeRefunded(Event $event): Response
     {
         $charge = $event->data->object;
-        $intentId = $charge->payment_intent;
-        $amountRefunded = $charge->amount_refunded; // int: pence.
+        $amountRefunded = $event->data->object->amount_refunded; // int: pence.
+
+        $this->entityManager->beginTransaction();
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findForUpdateByTxnId($intentId);
+        $donation = $this->donationRepository->findOneBy(['chargeId' => $charge->id]);
 
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Charge ID %s', $charge->id));
+            $this->entityManager->rollback();
             return $this->respond(new ActionPayload(204));
         }
 
@@ -201,6 +217,7 @@ class StripeChargeUpdate extends Stripe
         // For now we support the successful refund path (inc. partial refund IF it's for the tip amount),
         // converting status to the one MatchBot + SF use.
         if ($charge->status !== 'succeeded') {
+            $this->entityManager->rollback();
             return $this->validationError(sprintf('Unsupported Status "%s"', $charge->status));
         }
 
@@ -225,6 +242,7 @@ class StripeChargeUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
+            $this->entityManager->rollback();
             return $this->respond(new ActionPayload(204));
         }
 
@@ -266,11 +284,14 @@ class StripeChargeUpdate extends Stripe
     /**
      * Called after updates set a donation status to Refunded *or* clear its tip amount
      * after a partial tip refund.
+     *
+     * Assumes it will be called only after starting a transaction pre-donation-select.
      */
     private function doPostMarkRefundedUpdates(Donation $donation, bool $isFullRefundOrLostDispute): void
     {
         $this->entityManager->persist($donation);
         $this->entityManager->flush();
+        $this->entityManager->commit();
 
         // Release match funds only if the donation was matched and
         // the refunded amount is equal to the local txn amount.
