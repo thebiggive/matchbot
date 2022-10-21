@@ -51,7 +51,7 @@ class Update extends Action
         }
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['uuid' => $this->args['donationId']]);
+        $donation = $this->donationRepository->findForUpdateByUuid($this->args['donationId']);
 
         if (!$donation) {
             throw new DomainRecordNotFoundException('Donation not found');

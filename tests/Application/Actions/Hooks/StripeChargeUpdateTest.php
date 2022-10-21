@@ -49,7 +49,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['transactionId' => 'pi_invalidId_123'])
+            ->findForUpdateByTxnId('pi_invalidId_123')
             ->willReturn(null)
             ->shouldBeCalledOnce();
 
@@ -109,7 +109,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['transactionId' => 'pi_externalId_123'])
+            ->findForUpdateByTxnId('pi_externalId_123')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -160,7 +160,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['transactionId' => 'pi_externalId_123'])
+            ->findForUpdateByTxnId('pi_externalId_123')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -208,7 +208,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['transactionId' => 'pi_externalId_123'])
+            ->findForUpdateByTxnId('pi_externalId_123')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -252,7 +252,7 @@ class StripeChargeUpdateTest extends StripeTest
         // never any data changes to make in the "won" case.
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['transactionId' => 'pi_externalId_123'])
+            ->findForUpdateByTxnId('pi_externalId_123')
             ->shouldNotBeCalled();
 
         $donationRepoProphecy
@@ -294,7 +294,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['transactionId' => 'pi_invalidId_123'])
+            ->findForUpdateByTxnId('pi_invalidId_123')
             ->willReturn(null)
             ->shouldBeCalledOnce();
 
@@ -324,7 +324,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['transactionId' => 'pi_externalId_123'])
+            ->findForUpdateByTxnId('pi_externalId_123')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -368,7 +368,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->findForUpdateByTxnId('pi_00000000000000')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -410,7 +410,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->findForUpdateByTxnId('pi_00000000000000')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -439,7 +439,7 @@ class StripeChargeUpdateTest extends StripeTest
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function testUnsupportRefundAmount(): void
+    public function testUnsupportedRefundAmount(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -452,7 +452,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->findForUpdateByTxnId('pi_00000000000000')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 

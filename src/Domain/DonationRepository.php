@@ -7,6 +7,8 @@ namespace MatchBot\Domain;
 use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
+use Doctrine\DBAL\LockMode;
+use Doctrine\ORM\PessimisticLockException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -378,6 +380,52 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->logInfo('Deallocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
 
         $fundsReleaseLock->release();
+    }
+
+    /**
+     * @param string $uuid
+     * @return Donation|null
+     * @throw PessimiticLockException If lock acquisition fails.
+     */
+    public function findForUpdateByUuid(string $uuid): ?Donation
+    {
+        $query = $this->getEntityManager()->createQuery('
+            SELECT d FROM MatchBot\Domain\Donation d
+            WHERE d.uuid = :uuid
+        ')
+            ->setParameter('uuid', $uuid)
+            ->setLockMode(LockMode::PESSIMISTIC_WRITE);
+
+        return $query->getOneOrNullResult(); // Leave lock exceptions as unhandled 500s.
+    }
+
+    /**
+     * @param string $transactionId
+     * @return Donation|null
+     * @throw PessimiticLockException If lock acquisition fails twice, 5s apart.
+     */
+    public function findForUpdateByTxnId(string $transactionId): ?Donation
+    {
+        $query = $this->getEntityManager()->createQuery('
+            SELECT d FROM MatchBot\Domain\Donation d
+            WHERE d.transactionId = :transactionId
+        ')
+            ->setParameter('transactionId', $transactionId)
+            ->setLockMode(LockMode::PESSIMISTIC_WRITE);
+
+        try {
+            $result = $query->getOneOrNullResult();
+        } catch (PessimisticLockException $exception) {
+            $this->logWarning(sprintf(
+                'Could not get a lock on donation with transaction ID %s, will try once more in 5s...',
+                $transactionId,
+            ));
+            sleep(5);
+
+            $result = $query->getOneOrNullResult();
+        }
+
+        return $result;
     }
 
     /**

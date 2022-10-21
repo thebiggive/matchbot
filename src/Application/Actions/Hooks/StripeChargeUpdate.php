@@ -67,11 +67,10 @@ class StripeChargeUpdate extends Stripe
     {
         /** @var Charge $charge */
         $charge = $event->data->object;
-
         $intentId = $charge->payment_intent;
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['transactionId' => $intentId]);
+        $donation = $this->donationRepository->findForUpdateByTxnId($intentId);
 
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
@@ -149,7 +148,7 @@ class StripeChargeUpdate extends Stripe
         }
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['transactionId' => $intentId]);
+        $donation = $this->donationRepository->findForUpdateByTxnId($intentId);
 
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
@@ -182,14 +181,15 @@ class StripeChargeUpdate extends Stripe
 
     private function handleChargeRefunded(Event $event): Response
     {
-        $chargeId = $event->data->object->id;
-        $amountRefunded = $event->data->object->amount_refunded; // int: pence.
+        $charge = $event->data->object;
+        $intentId = $charge->payment_intent;
+        $amountRefunded = $charge->amount_refunded; // int: pence.
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['chargeId' => $chargeId]);
+        $donation = $this->donationRepository->findForUpdateByTxnId($intentId);
 
         if (!$donation) {
-            $this->logger->notice(sprintf('Donation not found with Charge ID %s', $chargeId));
+            $this->logger->notice(sprintf('Donation not found with Charge ID %s', $charge->id));
             return $this->respond(new ActionPayload(204));
         }
 
@@ -200,22 +200,22 @@ class StripeChargeUpdate extends Stripe
         // see: https://stripe.com/docs/api/refunds/object.
         // For now we support the successful refund path (inc. partial refund IF it's for the tip amount),
         // converting status to the one MatchBot + SF use.
-        if ($event->data->object->status !== 'succeeded') {
-            return $this->validationError(sprintf('Unsupported Status "%s"', $event->data->object->status));
+        if ($charge->status !== 'succeeded') {
+            return $this->validationError(sprintf('Unsupported Status "%s"', $charge->status));
         }
 
         if ($isTipRefund) {
             $this->logger->info(sprintf(
                 'Setting donation %s tip amount to £0 based on charge ID %s',
                 $donation->getUuid(),
-                $chargeId,
+                $charge->id,
             ));
             $donation->setTipAmount('0.00');
         } elseif ($isFullRefund) {
             $this->logger->info(sprintf(
                 'Marking donation %s refunded based on charge ID %s',
                 $donation->getUuid(),
-                $chargeId,
+                $charge->id,
             ));
             $donation->setDonationStatus('Refunded');
         } else {
@@ -223,14 +223,14 @@ class StripeChargeUpdate extends Stripe
                 'Skipping unexpected partial non-tip refund amount %s pence for donation %s based on charge ID %s',
                 $amountRefunded,
                 $donation->getUuid(),
-                $event->data->object->id,
+                $charge->id,
             ));
             return $this->respond(new ActionPayload(204));
         }
 
         $this->doPostMarkRefundedUpdates($donation, $isFullRefund);
 
-        return $this->respondWithData($event->data->object);
+        return $this->respondWithData($charge);
     }
 
     private function getOriginalFeeFractional(string $balanceTransactionId, string $expectedCurrencyCode): int

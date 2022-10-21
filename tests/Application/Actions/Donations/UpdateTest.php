@@ -45,7 +45,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -73,7 +73,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -104,7 +104,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -135,7 +135,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '87654321-1234-1234-1234-ba0987654321'])
+            ->findForUpdateByUuid('87654321-1234-1234-1234-ba0987654321')
             ->willReturn(null)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -168,7 +168,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($this->getTestDonation()) // Get a new mock object so it's 'Collected'.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -212,7 +212,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -262,7 +262,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donationResponse)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -313,7 +313,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         // Cancel is a no-op -> no fund release or push to SF
@@ -373,7 +373,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -447,7 +447,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -514,7 +514,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -577,7 +577,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ac'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ac')
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -639,7 +639,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($this->getTestDonation()) // Get a new mock object so it's £123.45.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -682,7 +682,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -732,7 +732,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -780,7 +780,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -829,7 +829,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($this->getTestDonation()) // Get a new mock object so it's £123.45.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -887,7 +887,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -980,7 +980,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -1076,7 +1076,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -1179,7 +1179,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findForUpdateByUuid('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
