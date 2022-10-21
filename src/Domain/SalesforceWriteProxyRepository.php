@@ -153,7 +153,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             ) {
                 $proxy->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
                 $this->logInfo(sprintf(
-                    '...marking for additional later push %s %d: SF ID %s',
+                    '... marking for additional later push %s %d: SF ID %s',
                     get_class($proxy),
                     $proxy->getId(),
                     $proxy->getSalesforceId(),
@@ -161,15 +161,15 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             } else {
                 $proxy->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
             }
-            $this->logInfo('...pushed ' . get_class($proxy) . " {$proxy->getId()}: SF ID {$proxy->getSalesforceId()}");
+            $this->logInfo('... pushed ' . get_class($proxy) . " {$proxy->getId()}: SF ID {$proxy->getSalesforceId()}");
 
             if ($shouldRePush) {
                 if ($this->doUpdate($proxy)) { // Make sure *not* to call push() again to avoid doing this recursively!
                     $proxy->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
-                    $this->logInfo('...plus interim updates for ' . get_class($proxy) . " {$proxy->getId()}");
+                    $this->logInfo('... plus interim updates for ' . get_class($proxy) . " {$proxy->getId()}");
                 } else {
                     $proxy->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
-                    $this->logError('...with error on interim updates for ' . get_class($proxy) . " {$proxy->getId()}");
+                    $this->logError('... with error on interim updates for ' . get_class($proxy) . " {$proxy->getId()}");
                 }
             }
         } else {
@@ -177,7 +177,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
                 ? SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE
                 : SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE;
             $proxy->setSalesforcePushStatus($newStatus);
-            $this->logWarning('...error pushing ' . get_class($proxy) . ' ' . $proxy->getId());
+            $this->logWarning('... error pushing ' . get_class($proxy) . ' ' . $proxy->getId());
         }
 
         $this->save($proxy);
