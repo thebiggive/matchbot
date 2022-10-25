@@ -399,6 +399,7 @@ class Donation extends SalesforceWriteProxy
             'optInCharityEmail' => $this->getCharityComms(),
             'optInChampionEmail' => $this->getChampionComms(),
             'optInTbgEmail' => $this->getTbgComms(),
+            'paymentMethodType' => $this->paymentMethodType,
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
             'pspCustomerId' => $this->getPspCustomerId(),
@@ -1123,6 +1124,33 @@ class Donation extends SalesforceWriteProxy
         }
 
         return $properties;
+    }
+
+    /**
+     * This isn't supported for "customer_balance" Payment Intents, and is also not
+     * really needed for them because the fee is fixed at the lowest level and there
+     * is no new donor bank transaction, so no statement ref to consider.
+     *
+     * @link https://stripe.com/docs/payments/connected-accounts
+     * @link https://stripe.com/docs/connect/destination-charges#settlement-merchant
+     */
+    public function getStripeOnBehalfOfProperties(): array
+    {
+        if ($this->paymentMethodType === 'card') {
+            return ['on_behalf_of' => $this->getCampaign()->getCharity()->getStripeAccountId()];
+        }
+
+        return [];
+    }
+
+    /**
+     * Sidestep "`setup_future_usage` cannot be used with one or more of the values you
+     * specified in `payment_method_types`. Please remove `setup_future_usage` or
+     * remove these types from `payment_method_types`: ["customer_balance"]".
+     */
+    public function supportsSavingPaymentMethod(): bool
+    {
+        return $this->paymentMethodType === 'card';
     }
 
     public function hasEnoughDataForSalesforce(): bool

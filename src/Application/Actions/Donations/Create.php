@@ -144,6 +144,7 @@ class Create extends Action
 
             $createPayload = [
                 ...$donation->getStripeMethodProperties(),
+                ...$donation->getStripeOnBehalfOfProperties(),
                 // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
                 // See https://stripe.com/docs/api/payment_intents/object
                 'amount' => $donation->getAmountFractionalIncTip(),
@@ -170,9 +171,6 @@ class Create extends Action
                 'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
                 // See https://stripe.com/docs/connect/destination-charges#application-fee
                 'application_fee_amount' => $donation->getAmountToDeductFractional(),
-                // See https://stripe.com/docs/payments/connected-accounts and
-                // https://stripe.com/docs/connect/destination-charges#settlement-merchant
-                'on_behalf_of' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
                 'transfer_data' => [
                     'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
                 ],
@@ -183,7 +181,10 @@ class Create extends Action
             // card reuse.
             if ($customerId !== null) {
                 $createPayload['customer'] = $customerId;
-                $createPayload['setup_future_usage'] = 'on_session';
+
+                if ($donation->supportsSavingPaymentMethod()) {
+                    $createPayload['setup_future_usage'] = 'on_session';
+                }
             }
 
             try {
