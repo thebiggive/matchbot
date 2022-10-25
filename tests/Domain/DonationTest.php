@@ -188,13 +188,30 @@ class DonationTest extends TestCase
         $this->assertEquals('12222', $claimBotMessage->org_regulator_number);
     }
 
-    public function testGetStripeMethodPropertiesCustomerBalanceGbp(): void
+    public function testGetStripePIHelpersWithCard(): void
+    {
+        $donation = $this->getTestDonation();
+
+        $expectedPaymentMethodProperties = [
+            'payment_method_types' => ['card'],
+        ];
+
+        $expectedOnBehalfOfProperties = [
+            'on_behalf_of' => 'unitTest_stripeAccount_123',
+        ];
+
+        $this->assertEquals($expectedPaymentMethodProperties, $donation->getStripeMethodProperties());
+        $this->assertEquals($expectedOnBehalfOfProperties, $donation->getStripeOnBehalfOfProperties());
+        $this->assertTrue($donation->supportsSavingPaymentMethod());
+    }
+
+    public function testGetStripePIHelpersWithCustomerBalanceGbp(): void
     {
         $donation = $this->getTestDonation();
         $donation->setCurrencyCode('GBP');
         $donation->setPaymentMethodType('customer_balance');
 
-        $expectedProperties = [
+        $expectedPaymentMethodProperties = [
             'payment_method_types' => ['customer_balance'],
             'payment_method_data' => [
                 'type' => 'customer_balance',
@@ -209,7 +226,9 @@ class DonationTest extends TestCase
             ],
         ];
 
-        $this->assertEquals($expectedProperties, $donation->getStripeMethodProperties());
+        $this->assertEquals($expectedPaymentMethodProperties, $donation->getStripeMethodProperties());
+        $this->assertEquals([], $donation->getStripeOnBehalfOfProperties());
+        $this->assertFalse($donation->supportsSavingPaymentMethod());
     }
 
     public function testGetStripeMethodPropertiesCustomerBalanceUsd(): void
