@@ -153,7 +153,9 @@ class Calculator
     #[Pure] private function isEU(?string $cardCountry): bool
     {
         if ($cardCountry === null) {
-            return true; // Default to 1.5% calculation if card country is not known yet.
+            // Default to 1.5% calculation if card country is not known yet OR remains
+            // null because the donation is settled from a Customer's cash balance.
+            return true;
         }
 
         return in_array($cardCountry, $this->euISOs, true);
