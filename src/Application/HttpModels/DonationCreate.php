@@ -18,6 +18,7 @@ class DonationCreate
     public ?bool $optInCharityEmail = null;
     public ?bool $optInChampionEmail = null;
     public ?bool $optInTbgEmail = null;
+    public string $paymentMethodType = 'card'; // 'card' or 'customer_balance'.
     public string $projectId;
     public string $psp;
     public ?string $pspCustomerId = null;

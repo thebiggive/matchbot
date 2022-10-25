@@ -143,13 +143,11 @@ class Create extends Action
             }
 
             $createPayload = [
+                ...$donation->getStripeMethodProperties(),
                 // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
                 // See https://stripe.com/docs/api/payment_intents/object
                 'amount' => $donation->getAmountFractionalIncTip(),
                 'currency' => strtolower($donation->getCurrencyCode()),
-                // 'card' includes wallets, so it seems reasonable to keep this fixed + preditable
-                // rather than using `automatic_payment_methods`.
-                'payment_method_types' => ['card'],
                 'description' => $donation->__toString(),
                 'metadata' => [
                     /**

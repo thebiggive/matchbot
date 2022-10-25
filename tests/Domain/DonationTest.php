@@ -186,4 +186,40 @@ class DonationTest extends TestCase
         $this->assertNull($claimBotMessage->org_regulator);
         $this->assertEquals('12222', $claimBotMessage->org_regulator_number);
     }
+
+    public function testGetStripeMethodPropertiesCustomerBalanceGbp(): void
+    {
+        $donation = $this->getTestDonation();
+        $donation->setCurrencyCode('GBP');
+        $donation->setPaymentMethodType('customer_balance');
+
+        $expectedProperties = [
+            'payment_method_types' => ['customer_balance'],
+            'payment_method_data' => [
+                'type' => 'customer_balance',
+            ],
+            'payment_method_options' => [
+                'customer_balance' => [
+                    'funding_type' => 'bank_transfer',
+                    'bank_transfer' => [
+                        'type' => 'gb_bank_transfer',
+                    ],
+                ],
+            ],
+        ];
+
+        $this->assertEquals($expectedProperties, $donation->getStripeMethodProperties());
+    }
+
+    public function testGetStripeMethodPropertiesCustomerBalanceUsd(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Customer balance payments only supported for GBP');
+
+        $donation = $this->getTestDonation();
+        $donation->setCurrencyCode('USD');
+        $donation->setPaymentMethodType('customer_balance');
+
+        $donation->getStripeMethodProperties(); // Throws in this getter for now.
+    }
 }

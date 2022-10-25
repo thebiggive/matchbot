@@ -307,6 +307,11 @@ class Donation extends SalesforceWriteProxy
     protected ?string $pspCustomerId = null;
 
     /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    protected ?string $paymentMethodType = 'card';
+
+    /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
      * @var ArrayCollection|FundingWithdrawal[]
      */
@@ -1073,6 +1078,50 @@ class Donation extends SalesforceWriteProxy
     public function setPspCustomerId(?string $pspCustomerId): void
     {
         $this->pspCustomerId = $pspCustomerId;
+    }
+
+    public function setPaymentMethodType(string $paymentMethodType): void
+    {
+        $this->paymentMethodType = $paymentMethodType;
+    }
+
+    /**
+     * We want to ensure each Payment Intent is set up to be settled a specific way, so
+     * we get this from an on-create property of the Donation instead of using
+     * `automatic_payment_methods`.
+     * "card" includes wallets and is the method for the vast majority of donations.
+     * "customer_balance" is used when a previous bank transfer means a donor already
+     * has credits to use for platform charities, *and* for Big Give tips set up when
+     * preparing to make a bank transfer. In the latter case we rely on
+     * `payment_method_options` to allow the PI to be created even though there aren't
+     * yet sufficient funds.
+     */
+    public function getStripeMethodProperties(): array
+    {
+        $properties = [
+            'payment_method_types' => [$this->paymentMethodType],
+        ];
+
+        if ($this->paymentMethodType === 'customer_balance') {
+            if ($this->currencyCode !== 'GBP') {
+                throw new \UnexpectedValueException('Customer balance payments only supported for GBP');
+            }
+
+            $properties['payment_method_data'] = [
+                'type' => 'customer_balance',
+            ];
+
+            $properties['payment_method_options'] = [
+                'customer_balance' => [
+                    'funding_type' => 'bank_transfer',
+                    'bank_transfer' => [
+                        'type' => 'gb_bank_transfer',
+                    ],
+                ],
+            ];
+        }
+
+        return $properties;
     }
 
     public function hasEnoughDataForSalesforce(): bool
