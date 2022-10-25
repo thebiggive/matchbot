@@ -127,6 +127,7 @@ class DonationTest extends TestCase
 
         $this->assertEquals('john.doe@example.com', $donationData['emailAddress']);
         $this->assertIsString($donationData['collectedTime']);
+        $this->assertEquals('card', $donationData['pspMethodType']);
     }
 
     public function testToHookModelTemporaryHack(): void
