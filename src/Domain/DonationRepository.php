@@ -109,7 +109,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     {
         // Fields where we've historically seen blanks and/or there is zero chance
         // of success without them.
-        $checkEarlyFields = ['currencyCode', 'donationAmount', 'projectId'];
+        $checkEarlyFields = ['currencyCode', 'donationAmount', 'paymentMethodType', 'projectId'];
         foreach ($checkEarlyFields as $checkEarlyField) {
             if (empty($donationData->$checkEarlyField)) {
                 throw new \UnexpectedValueException(sprintf(
@@ -117,6 +117,13 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     $checkEarlyField
                 ));
             }
+        }
+
+        if (!in_array($donationData->paymentMethodType, ['card', 'customer_balance'], true)) {
+            throw new \UnexpectedValueException(sprintf(
+                'Payment method %s is invalid',
+                $donationData->paymentMethodType,
+            ));
         }
 
         /** @var Campaign $campaign */
@@ -155,6 +162,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $donation = new Donation();
         $donation->setPsp($donationData->psp);
+        $donation->setPaymentMethodType($donationData->paymentMethodType);
         $donation->setDonationStatus('Pending');
         $donation->setUuid((new UuidGenerator())->generateId($this->getEntityManager(), $donation));
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
