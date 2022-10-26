@@ -1368,8 +1368,10 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->update('pi_externalId_123', [
