@@ -145,7 +145,12 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $request = $this->createRequest('PUT', '/v1/donations/87654321-1234-1234-1234-ba0987654321')
             ->withHeader('x-tbg-auth', DonationToken::create('87654321-1234-1234-1234-ba0987654321'));
@@ -178,7 +183,12 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -222,7 +232,12 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $donationData = $donation->toApiModel();
         unset($donationData['status']); // Simulate an API client omitting the status JSON field
@@ -272,7 +287,12 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -324,7 +344,12 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -386,8 +411,10 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->cancel('pi_externalId_123')
@@ -460,8 +487,10 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripeErrorMessage = 'You cannot cancel this PaymentIntent because it has a status of ' .
             'succeeded. Only a PaymentIntent with one of the following statuses may be canceled: ' .
@@ -527,8 +556,10 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripeErrorMessage = 'You cannot cancel this PaymentIntent because it has a status of ' .
             'canceled. Only a PaymentIntent with one of the following statuses may be canceled: ' .
@@ -590,8 +621,10 @@ class UpdateTest extends TestCase
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->cancel('pi_stripe_pending_123')
@@ -649,7 +682,12 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -692,7 +730,12 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         // Remove giftAid after converting to array, as it makes the internal HTTP model invalid.
         $donationData = $donation->toApiModel();
@@ -742,7 +785,12 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $bodyArray = $donation->toHookModel();
         $bodyArray['homeAddress'] = ['123', 'Main St']; // Invalid array type.
@@ -790,7 +838,12 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         // Remove giftAid after converting to array, as it makes the internal HTTP model invalid.
         $donationData = $donation->toApiModel();
@@ -836,7 +889,12 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $putArray = $donation->toApiModel();
         $putArray['tipAmount'] = '25000.01';
@@ -902,8 +960,10 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->update('pi_externalId_123', [
@@ -993,8 +1053,10 @@ class UpdateTest extends TestCase
 
         // Persist as normal.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripeErrorMessage = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
             'after a capture has already been made.';
@@ -1090,9 +1152,10 @@ class UpdateTest extends TestCase
             ->willReturn($donation) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
+        // Internal persist still goes ahead.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
-        $entityManagerProphecy->flush()->shouldNotBeCalled();
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $stripeErrorMessage = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
             'after a capture has already been made.';
@@ -1194,8 +1257,10 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->update('pi_externalId_123', [
@@ -1303,8 +1368,10 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->update('pi_externalId_123', [

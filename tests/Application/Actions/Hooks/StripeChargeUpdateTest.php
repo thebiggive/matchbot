@@ -424,6 +424,10 @@ class StripeChargeUpdateTest extends StripeTest
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -439,7 +443,7 @@ class StripeChargeUpdateTest extends StripeTest
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function testUnsupportRefundAmount(): void
+    public function testUnsupportedRefundAmount(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */

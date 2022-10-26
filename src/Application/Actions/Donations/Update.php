@@ -53,9 +53,13 @@ class Update extends Action
         }
 
         /** @var Donation $donation */
+        $this->entityManager->beginTransaction();
+
         $donation = $this->donationRepository->findOneBy(['uuid' => $this->args['donationId']]);
 
         if (!$donation) {
+            $this->entityManager->rollback();
+
             throw new DomainRecordNotFoundException('Donation not found');
         }
 
@@ -75,6 +79,8 @@ class Update extends Action
             $message = 'Donation Update data deserialise error';
             $exceptionType = get_class($exception);
 
+            $this->entityManager->rollback();
+
             return $this->validationError(
                 "$message: $exceptionType - {$exception->getMessage()}",
                 $message,
@@ -83,6 +89,8 @@ class Update extends Action
         }
 
         if (!isset($donationData->status)) {
+            $this->entityManager->rollback();
+
             return $this->validationError(
                 "Donation ID {$this->args['donationId']} could not be updated with missing status",
                 'New status is required'
@@ -94,20 +102,29 @@ class Update extends Action
         }
 
         if ($donationData->status !== $donation->getDonationStatus()) {
+            $this->entityManager->rollback();
+
             return $this->validationError(
                 "Donation ID {$this->args['donationId']} could not be set to status {$donationData->status}",
                 'Status update is only supported for cancellation'
             );
         }
 
-        return $this->addData($donation, $donationData);
+        $response = $this->addData($donation, $donationData);
+
+        return $response;
     }
 
+    /**
+     * Assumes it will be called only after starting a transaction pre-donation-select.
+     */
     private function addData(Donation $donation, HttpModels\Donation $donationData): Response
     {
         // If the app tries to PUT with a different amount, something has gone very wrong and we should
         // explicitly fail instead of ignoring that field.
         if (bccomp($donation->getAmount(), (string) $donationData->donationAmount) !== 0) {
+            $this->entityManager->rollback();
+
             return $this->validationError(
                 "Donation ID {$this->args['donationId']} amount did not match",
                 'Amount updates are not supported'
@@ -116,6 +133,8 @@ class Update extends Action
 
         foreach (['optInCharityEmail', 'optInTbgEmail'] as $requiredBoolean) {
             if (!isset($donationData->$requiredBoolean)) {
+                $this->entityManager->rollback();
+
                 return $this->validationError(sprintf(
                     "Required boolean field '%s' not set",
                     $requiredBoolean,
@@ -124,9 +143,9 @@ class Update extends Action
         }
 
         if ($donationData->currencyCode === 'GBP' && !isset($donationData->giftAid)) {
-            return $this->validationError(sprintf(
-                "Required boolean field 'giftAid' not set",
-            ), null, true);
+            $this->entityManager->rollback();
+
+            return $this->validationError("Required boolean field 'giftAid' not set", null, true);
         }
 
         // These 3 fields are currently set up early in the journey, but are harmless and more flexible
@@ -142,6 +161,8 @@ class Update extends Action
             try {
                 $donation->setTipAmount((string) $donationData->tipAmount);
             } catch (\UnexpectedValueException $exception) {
+                $this->entityManager->rollback();
+
                 return $this->validationError(
                     sprintf("Invalid tipAmount '%s'", $donationData->tipAmount),
                     $exception->getMessage(),
@@ -233,11 +254,13 @@ class Update extends Action
                             $exception->getStripeCode(),
                             $exception->getMessage(),
                         ));
-                        // Quickly distinuish fee change case with response message suffix.
+                        // Quickly distinguish fee change case with response message suffix.
                         $error = new ActionError(
                             ActionError::SERVER_ERROR,
                             'Could not update Stripe Payment Intent [A]',
                         );
+                        $this->entityManager->rollback();
+
                         return $this->respond(new ActionPayload(500, null, $error));
                     }
                 } else {
@@ -249,6 +272,8 @@ class Update extends Action
                         $exception->getMessage(),
                     ));
                     $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent [B]');
+                    $this->entityManager->rollback();
+
                     return $this->respond(new ActionPayload(500, null, $error));
                 }
             }
@@ -263,12 +288,16 @@ class Update extends Action
     {
         if ($donation->getDonationStatus() === 'Cancelled') {
             $this->logger->info("Donation ID {$this->args['donationId']} was already Cancelled");
+            $this->entityManager->rollback();
+
             return $this->respondWithData($donation->toApiModel());
         }
 
         if ($donation->isSuccessful()) {
             // If a donor uses browser back before loading the thank you page, it is possible for them to get
             // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
+            $this->entityManager->rollback();
+
             return $this->validationError(
                 "Donation ID {$this->args['donationId']} could not be cancelled as {$donation->getDonationStatus()}",
                 'Donation already finalised'
@@ -279,7 +308,7 @@ class Update extends Action
 
         $donation->setDonationStatus('Cancelled');
 
-        // Save & flush early to reduce the chance of another thread getting the old status.
+        // Save & flush early to reduce chance of lock conflicts.
         $this->save($donation);
 
         if ($donation->getCampaign()->isMatched()) {
@@ -314,6 +343,7 @@ class Update extends Action
 
                 if ($returnError) {
                     $error = new ActionError(ActionError::SERVER_ERROR, 'Could not cancel Stripe Payment Intent');
+
                     return $this->respond(new ActionPayload(500, null, $error));
                 } // Else likely double-send -> fall through to normal 200 OK response and return the donation as-is.
             }
@@ -326,6 +356,8 @@ class Update extends Action
      * Save donation in all cases. Also send updated donation data to Salesforce, *if* we know
      * enough to do so successfully.
      *
+     * Assumes it will be called only after starting a transaction pre-donation-select.
+     *
      * @param Donation $donation
      */
     private function save(Donation $donation): void
@@ -335,6 +367,7 @@ class Update extends Action
         // preferences, so to be safe we persist here first.
         $this->entityManager->persist($donation);
         $this->entityManager->flush();
+        $this->entityManager->commit();
 
         if (!$donation->hasEnoughDataForSalesforce()) {
             return;
