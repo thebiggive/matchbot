@@ -153,6 +153,7 @@ class DonationRepositoryTest extends TestCase
         $createPayload = new DonationCreate();
         $createPayload->currencyCode = 'USD';
         $createPayload->donationAmount = '123.32';
+        $createPayload->paymentMethodType = 'card';
         $createPayload->projectId = 'testProject123';
         $createPayload->psp = 'stripe';
 
@@ -175,6 +176,7 @@ class DonationRepositoryTest extends TestCase
             ->shouldNotBeCalled();
 
         $createPayload = new DonationCreate();
+        $createPayload->paymentMethodType = 'card';
         $createPayload->projectId = 'testProject123';
         $createPayload->psp = 'stripe';
         // Explicitly make this property undefined, not null, to force a TypeError.
@@ -200,6 +202,28 @@ class DonationRepositoryTest extends TestCase
         $createPayload = new DonationCreate();
         $createPayload->currencyCode = 'CAD';
         $createPayload->donationAmount = '144.44';
+        $createPayload->paymentMethodType = 'card';
+        $createPayload->projectId = 'testProject123';
+        $createPayload->psp = 'stripe';
+
+        $this->getRepo(null, false, $campaignRepoProphecy)
+            ->buildFromApiRequest($createPayload);
+    }
+
+    public function testBuildFromApiRequestWithUnsupportedPaymentMethodType(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Payment method cardd is invalid');
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        // We don't even call this if the donation data basics are failing.
+        $campaignRepoProphecy->findOneBy(Argument::type('array'))
+            ->shouldNotBeCalled();
+
+        $createPayload = new DonationCreate();
+        $createPayload->currencyCode = 'GBP';
+        $createPayload->donationAmount = '123.32';
+        $createPayload->paymentMethodType = 'cardd';
         $createPayload->projectId = 'testProject123';
         $createPayload->psp = 'stripe';
 
