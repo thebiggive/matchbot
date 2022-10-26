@@ -25,7 +25,9 @@ use TypeError;
 
 /**
  * Apply a donor-authorised PUT action to update an existing donation. The purpose
- * of the update can be to cancel the donation, or to add more details to it.
+ * of the update can be to cancel the donation, add more details to it, or
+ * confirm it if no further method info is needed (e.g. `customer_balance`
+ * settlements).
  */
 class Update extends Action
 {
@@ -197,6 +199,10 @@ class Update extends Action
                     'application_fee_amount' => $donation->getAmountToDeductFractional(),
                     // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
                 ]);
+
+                if ($donationData->autoConfirmFromCashBalance) {
+                    $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
+                }
             } catch (ApiErrorException $exception) {
                 $alreadyCapturedMsg = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
                     'after a capture has already been made.';
