@@ -356,7 +356,6 @@ class Donation extends SalesforceWriteProxy
         $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
         $data['originalPspFee'] = (float) $this->getOriginalPspFee();
-        $data['pspMethodType'] = $this->paymentMethodType;
 
         unset(
             $data['clientSecret'],
@@ -399,10 +398,10 @@ class Donation extends SalesforceWriteProxy
             'optInCharityEmail' => $this->getCharityComms(),
             'optInChampionEmail' => $this->getChampionComms(),
             'optInTbgEmail' => $this->getTbgComms(),
-            'paymentMethodType' => $this->paymentMethodType,
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
             'pspCustomerId' => $this->getPspCustomerId(),
+            'pspMethodType' => $this->paymentMethodType,
             'status' => $this->getDonationStatus(),
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
