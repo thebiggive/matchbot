@@ -307,6 +307,11 @@ class Donation extends SalesforceWriteProxy
     protected ?string $pspCustomerId = null;
 
     /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    protected ?string $paymentMethodType = 'card';
+
+    /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
      * @var ArrayCollection|FundingWithdrawal[]
      */
@@ -396,6 +401,7 @@ class Donation extends SalesforceWriteProxy
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
             'pspCustomerId' => $this->getPspCustomerId(),
+            'pspMethodType' => $this->paymentMethodType,
             'status' => $this->getDonationStatus(),
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
@@ -1073,6 +1079,77 @@ class Donation extends SalesforceWriteProxy
     public function setPspCustomerId(?string $pspCustomerId): void
     {
         $this->pspCustomerId = $pspCustomerId;
+    }
+
+    public function setPaymentMethodType(string $paymentMethodType): void
+    {
+        $this->paymentMethodType = $paymentMethodType;
+    }
+
+    /**
+     * We want to ensure each Payment Intent is set up to be settled a specific way, so
+     * we get this from an on-create property of the Donation instead of using
+     * `automatic_payment_methods`.
+     * "card" includes wallets and is the method for the vast majority of donations.
+     * "customer_balance" is used when a previous bank transfer means a donor already
+     * has credits to use for platform charities, *and* for Big Give tips set up when
+     * preparing to make a bank transfer. In the latter case we rely on
+     * `payment_method_options` to allow the PI to be created even though there aren't
+     * yet sufficient funds.
+     */
+    public function getStripeMethodProperties(): array
+    {
+        $properties = [
+            'payment_method_types' => [$this->paymentMethodType],
+        ];
+
+        if ($this->paymentMethodType === 'customer_balance') {
+            if ($this->currencyCode !== 'GBP') {
+                throw new \UnexpectedValueException('Customer balance payments only supported for GBP');
+            }
+
+            $properties['payment_method_data'] = [
+                'type' => 'customer_balance',
+            ];
+
+            $properties['payment_method_options'] = [
+                'customer_balance' => [
+                    'funding_type' => 'bank_transfer',
+                    'bank_transfer' => [
+                        'type' => 'gb_bank_transfer',
+                    ],
+                ],
+            ];
+        }
+
+        return $properties;
+    }
+
+    /**
+     * This isn't supported for "customer_balance" Payment Intents, and is also not
+     * really needed for them because the fee is fixed at the lowest level and there
+     * is no new donor bank transaction, so no statement ref to consider.
+     *
+     * @link https://stripe.com/docs/payments/connected-accounts
+     * @link https://stripe.com/docs/connect/destination-charges#settlement-merchant
+     */
+    public function getStripeOnBehalfOfProperties(): array
+    {
+        if ($this->paymentMethodType === 'card') {
+            return ['on_behalf_of' => $this->getCampaign()->getCharity()->getStripeAccountId()];
+        }
+
+        return [];
+    }
+
+    /**
+     * Sidestep "`setup_future_usage` cannot be used with one or more of the values you
+     * specified in `payment_method_types`. Please remove `setup_future_usage` or
+     * remove these types from `payment_method_types`: ["customer_balance"]".
+     */
+    public function supportsSavingPaymentMethod(): bool
+    {
+        return $this->paymentMethodType === 'card';
     }
 
     public function hasEnoughDataForSalesforce(): bool
