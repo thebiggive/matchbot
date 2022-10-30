@@ -23,7 +23,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     private CampaignRepository $campaignRepository;
     private FundRepository $fundRepository;
     private LockFactory $lockFactory;
-    private int $expirySeconds = 17 * 60; // 17 minutes: 15 min official timed window plus 2 mins grace.
+    private int $expirySeconds = 32 * 60; // 32 minutes: 30 min official timed window plus 2 mins grace.
     /** @var int When using a locking matching adapter, maximum number of tries for real-time operations */
     private int $maxLockTries = 5;
     private Matching\Adapter $matchingAdapter;
