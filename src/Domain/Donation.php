@@ -401,7 +401,7 @@ class Donation extends SalesforceWriteProxy
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
             'pspCustomerId' => $this->getPspCustomerId(),
-            'pspMethodType' => $this->paymentMethodType,
+            'pspMethodType' => $this->getPaymentMethodType(),
             'status' => $this->getDonationStatus(),
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
@@ -1079,6 +1079,11 @@ class Donation extends SalesforceWriteProxy
     public function setPspCustomerId(?string $pspCustomerId): void
     {
         $this->pspCustomerId = $pspCustomerId;
+    }
+
+    public function getPaymentMethodType(): ?string
+    {
+        return $this->paymentMethodType;
     }
 
     public function setPaymentMethodType(string $paymentMethodType): void
