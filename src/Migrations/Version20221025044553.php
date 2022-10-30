@@ -19,7 +19,10 @@ final class Version20221025044553 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('ALTER TABLE Donation ADD paymentMethodType VARCHAR(255) DEFAULT NULL');
+        if (!$schema->getTable('Donation')->hasColumn('paymentMethodType')) {
+            $this->addSql('ALTER TABLE Donation ADD paymentMethodType VARCHAR(255) DEFAULT NULL');
+        }
+
         $this->addSql("UPDATE Donation SET paymentMethodType = 'card' WHERE paymentMethodType IS NULL");
     }
 
