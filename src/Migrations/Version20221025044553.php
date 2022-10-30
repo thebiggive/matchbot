@@ -23,7 +23,9 @@ final class Version20221025044553 extends AbstractMigration
             $this->addSql('ALTER TABLE Donation ADD paymentMethodType VARCHAR(255) DEFAULT NULL');
         }
 
-        $this->addSql("UPDATE Donation SET paymentMethodType = 'card' WHERE paymentMethodType IS NULL");
+        // Removed after the fact because Production seems unable to complete
+        // the transaction within the lock time.
+//        $this->addSql("UPDATE Donation SET paymentMethodType = 'card' WHERE paymentMethodType IS NULL");
     }
 
     public function down(Schema $schema): void
