@@ -19,7 +19,9 @@ final class Version20221030095831 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql("UPDATE Donation SET paymentMethodType = :card WHERE paymentMethodType IS NULL", ['card' => 'card']);
+        // Removed after the fact because Production seems unable to complete
+        // the transaction within the lock time.
+//        $this->addSql("UPDATE Donation SET paymentMethodType = :card WHERE paymentMethodType IS NULL", ['card' => 'card']);
     }
 
     public function down(Schema $schema): void
