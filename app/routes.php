@@ -35,7 +35,9 @@ return function (App $app) {
             ->add(RateLimitMiddleware::class);
 
         $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
-            ->add(PersonManagementAuthMiddleware::class);
+            ->add(PersonManagementAuthMiddleware::class)
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
 
         $versionGroup->get('/people/{personId:[a-z0-9-]{36}}/payment_methods', GetPaymentMethods::class)
             ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
