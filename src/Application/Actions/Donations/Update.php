@@ -18,6 +18,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
+use Stripe\Exception\RateLimitException;
 use Stripe\StripeClient;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -194,35 +195,32 @@ class Update extends Action
 
         if ($donation->getPsp() === 'stripe') {
             try {
-                $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
-                    'amount' => $donation->getAmountFractionalIncTip(),
-                    'currency' => strtolower($donation->getCurrencyCode()),
-                    'metadata' => [
-                        /**
-                         * Note that we don't re-set keys that can't change, like `charityId`.
-                         * See the counterpart in {@see Create::action()} too.
-                         */
-                        'coreDonationGiftAid' => $donation->hasGiftAid(),
-                        'feeCoverAmount' => $donation->getFeeCoverAmount(),
-                        'matchedAmount' => $donation->getFundingWithdrawalTotal(),
-                        'optInCharityEmail' => $donation->getCharityComms(),
-                        'optInTbgEmail' => $donation->getTbgComms(),
-                        'salesforceId' => $donation->getSalesforceId(),
-                        'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
-                        'stripeFeeRechargeNet' => $donation->getCharityFee(),
-                        'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
-                        'tbgTipGiftAid' => $donation->hasTipGiftAid(),
-                        'tipAmount' => $donation->getTipAmount(),
-                    ],
-                    // See https://stripe.com/docs/connect/destination-charges#application-fee
-                    // Update the fee amount incase the final charge was from
-                    // a Non EU / Amex card where fees are varied.
-                    'application_fee_amount' => $donation->getAmountToDeductFractional(),
-                    // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
-                ]);
+                $this->updatePaymentIntent($donation);
+            } catch (RateLimitException $exception) {
+                if ($exception->getStripeCode() !== 'lock_timeout') {
+                    throw $exception; // Only re-try when object level lock failed.
+                }
 
-                if ($donationData->autoConfirmFromCashBalance) {
-                    $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
+                $this->logger->info(sprintf(
+                    'Stripe lock "rate limit" hit while updating payment intent for donation %s – retrying in 1s...',
+                    $donation->getId(),
+                ));
+                sleep(1);
+
+                try {
+                    $this->updatePaymentIntent($donation);
+                } catch (RateLimitException $exception) {
+                    $this->logger->error(sprintf(
+                        'Stripe Payment Intent update error from lock "rate limit" on %s, %s [%s]: %s',
+                        $donation->getUuid(),
+                        get_class($exception),
+                        $exception->getStripeCode(),
+                        $exception->getMessage(),
+                    ));
+                    $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent [C]');
+                    $this->entityManager->rollback();
+
+                    return $this->respond(new ActionPayload(500, null, $error));
                 }
             } catch (ApiErrorException $exception) {
                 $alreadyCapturedMsg = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
@@ -276,6 +274,10 @@ class Update extends Action
 
                     return $this->respond(new ActionPayload(500, null, $error));
                 }
+            }
+
+            if ($donationData->autoConfirmFromCashBalance) {
+                $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
             }
         }
 
@@ -376,5 +378,38 @@ class Update extends Action
         // We log if this fails but don't worry the client about it. We'll just re-try
         // sending the updated status to Salesforce in a future batch sync.
         $this->donationRepository->push($donation, false);
+    }
+
+    /**
+     * @throws RateLimitException if e.g. Stripe had locked the PI while processing.
+     */
+    private function updatePaymentIntent(Donation $donation): void
+    {
+        $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
+            'amount' => $donation->getAmountFractionalIncTip(),
+            'currency' => strtolower($donation->getCurrencyCode()),
+            'metadata' => [
+                /**
+                 * Note that we don't re-set keys that can't change, like `charityId`.
+                 * See the counterpart in {@see Create::action()} too.
+                 */
+                'coreDonationGiftAid' => $donation->hasGiftAid(),
+                'feeCoverAmount' => $donation->getFeeCoverAmount(),
+                'matchedAmount' => $donation->getFundingWithdrawalTotal(),
+                'optInCharityEmail' => $donation->getCharityComms(),
+                'optInTbgEmail' => $donation->getTbgComms(),
+                'salesforceId' => $donation->getSalesforceId(),
+                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
+                'tbgTipGiftAid' => $donation->hasTipGiftAid(),
+                'tipAmount' => $donation->getTipAmount(),
+            ],
+            // See https://stripe.com/docs/connect/destination-charges#application-fee
+            // Update the fee amount incase the final charge was from
+            // a Non EU / Amex card where fees are varied.
+            'application_fee_amount' => $donation->getAmountToDeductFractional(),
+            // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
+        ]);
     }
 }
