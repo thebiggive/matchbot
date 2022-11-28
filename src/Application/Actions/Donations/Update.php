@@ -197,7 +197,7 @@ class Update extends Action
             try {
                 $this->updatePaymentIntent($donation);
             } catch (RateLimitException $exception) {
-                if ($exception->getStripeCode() !== 'lock_error') {
+                if ($exception->getStripeCode() !== 'lock_timeout') {
                     throw $exception; // Only re-try when object level lock failed.
                 }
 
