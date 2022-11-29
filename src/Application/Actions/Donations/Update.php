@@ -374,7 +374,7 @@ class Update extends Action
     }
 
     /**
-     * @return Response? Response to send client, if appropriate. HTTP 500.
+     * @return ?Response Response to send client, if appropriate. HTTP 500.
      */
     private function handleGeneralStripeError(ApiErrorException $exception, Donation $donation): ?Response
     {
