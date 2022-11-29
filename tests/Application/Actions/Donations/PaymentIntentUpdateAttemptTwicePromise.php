@@ -10,6 +10,8 @@ use Prophecy\Promise\PromiseInterface;
 use Prophecy\Promise\ThrowPromise;
 use Prophecy\Prophecy\MethodProphecy;
 use Prophecy\Prophecy\ObjectProphecy;
+use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
 use Stripe\PaymentIntent;
 
@@ -22,17 +24,25 @@ class PaymentIntentUpdateAttemptTwicePromise implements PromiseInterface
 
     public function __construct(
         private bool $succeedSecondTry,
+        private bool $throwAlreadyCapturedSecondTry,
         private PaymentIntent $paymentIntent,
     ) {
     }
 
     public function execute(array $args, ObjectProphecy $object, MethodProphecy $method)
     {
-        if ($this->callsCount === 0 || $this->succeedSecondTry === false) {
+        if ($this->callsCount === 0 || (!$this->succeedSecondTry && !$this->throwAlreadyCapturedSecondTry)) {
             $this->callsCount++;
 
             $throwPromise = new ThrowPromise($this->getStripeObjectLockException());
-            $throwPromise->execute($args, $object, $method); // throw appropriately
+            $throwPromise->execute($args, $object, $method);
+        }
+
+        if ($this->callsCount === 1 && $this->throwAlreadyCapturedSecondTry) {
+            $this->callsCount++;
+
+            $throwPromise = new ThrowPromise($this->getStripeAlreadyCapturedException());
+            $throwPromise->execute($args, $object, $method);
         }
 
         return $this->paymentIntent;
@@ -49,5 +59,13 @@ class PaymentIntentUpdateAttemptTwicePromise implements PromiseInterface
         $exception->setStripeCode('lock_timeout');
 
         return $exception;
+    }
+
+    private function getStripeAlreadyCapturedException(): InvalidRequestException
+    {
+        $stripeErrorMessage = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
+            'after a capture has already been made.';
+
+        return new InvalidRequestException($stripeErrorMessage);
     }
 }
