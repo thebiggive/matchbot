@@ -675,7 +675,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
     }
 
-    public function findOneWithLockBy(array $criteria, ?array $orderBy = null): Donation
+    public function findOneWithLockBy(array $criteria, ?array $orderBy = null): ?Donation
     {
         $donation = parent::findOneWithLockBy($criteria, $orderBy);
 
