@@ -99,7 +99,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     ): Charity {
         $charity = $this->getEntityManager()
             ->getRepository(Charity::class)
-            ->findOneBy(['salesforceId' => $salesforceCharityId]);
+            ->findOneWithLockBy(['salesforceId' => $salesforceCharityId]);
         if (!$charity) {
             $charity = new Charity();
             $charity->setSalesforceId($salesforceCharityId);

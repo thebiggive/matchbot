@@ -56,7 +56,7 @@ class Update extends Action
         /** @var Donation $donation */
         $this->entityManager->beginTransaction();
 
-        $donation = $this->donationRepository->findOneBy(['uuid' => $this->args['donationId']]);
+        $donation = $this->donationRepository->findOneWithLockBy(['uuid' => $this->args['donationId']]);
 
         if (!$donation) {
             $this->entityManager->rollback();

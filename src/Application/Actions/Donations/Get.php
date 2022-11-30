@@ -33,7 +33,7 @@ class Get extends Action
         }
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['uuid' => $this->args['donationId']]);
+        $donation = $this->donationRepository->findOneWithLockBy(['uuid' => $this->args['donationId']]);
 
         if (!$donation) {
             throw new DomainRecordNotFoundException('Donation not found');
