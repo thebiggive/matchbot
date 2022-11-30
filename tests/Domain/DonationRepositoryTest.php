@@ -146,7 +146,7 @@ class DonationRepositoryTest extends TestCase
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->findOneWithLockBy(Argument::type('array'))
+        $campaignRepoProphecy->findOneBy(Argument::type('array'))
             ->willReturn($dummyCampaign)
             ->shouldBeCalledOnce();
 
@@ -172,7 +172,7 @@ class DonationRepositoryTest extends TestCase
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // We don't even call this if the donation data basics are failing.
-        $campaignRepoProphecy->findOneWithLockBy(Argument::type('array'))
+        $campaignRepoProphecy->findOneBy(Argument::type('array'))
             ->shouldNotBeCalled();
 
         $createPayload = new DonationCreate();
@@ -195,7 +195,7 @@ class DonationRepositoryTest extends TestCase
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->findOneWithLockBy(Argument::type('array'))
+        $campaignRepoProphecy->findOneBy(Argument::type('array'))
             ->willReturn($dummyCampaign)
             ->shouldBeCalledOnce();
 
@@ -217,7 +217,7 @@ class DonationRepositoryTest extends TestCase
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // We don't even call this if the donation data basics are failing.
-        $campaignRepoProphecy->findOneWithLockBy(Argument::type('array'))
+        $campaignRepoProphecy->findOneBy(Argument::type('array'))
             ->shouldNotBeCalled();
 
         $createPayload = new DonationCreate();

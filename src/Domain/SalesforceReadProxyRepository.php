@@ -26,7 +26,7 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
         // persisted, otherwise we'll try to insert a duplicate and get an ORM crash.
         if (
             $proxy->hasBeenPersisted() &&
-            ($existingProxy = $this->findOneWithLockBy(['salesforceId' => $proxy->getSalesforceId()]))
+            ($existingProxy = $this->findOneBy(['salesforceId' => $proxy->getSalesforceId()]))
         ) {
             $this->logInfo('Updating ' . get_class($proxy) . ' ' . $proxy->getSalesforceId() . '...');
             $proxy = $existingProxy;

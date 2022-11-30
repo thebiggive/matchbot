@@ -347,12 +347,12 @@ class FundRepositoryTest extends TestCase
     ): FundRepository {
         $mockBuilder = $this->getMockBuilder(FundRepository::class);
         $mockBuilder->setConstructorArgs([$entityManager, new ClassMetadata(CampaignFunding::class)]);
-        $mockBuilder->onlyMethods(['findOneWithLockBy']);
+        $mockBuilder->onlyMethods(['findOneBy']);
 
         $repo = $mockBuilder->getMock();
 
         $repo->expects($this->exactly($successfulPersistCase ? 2 : 1))
-            ->method('findOneWithLockBy')
+            ->method('findOneBy')
             ->withConsecutive([['salesforceId' => 'sfFundId123']], [['salesforceId' => 'sfFundId456']])
             ->willReturnOnConsecutiveCalls($existingFundNonShared, $existingFundShared);
 

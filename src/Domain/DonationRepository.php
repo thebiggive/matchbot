@@ -7,7 +7,6 @@ namespace MatchBot\Domain;
 use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
-use Doctrine\DBAL\LockMode;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -19,9 +18,6 @@ use Ramsey\Uuid\Doctrine\UuidGenerator;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 
-/**
- * @template-extends SalesforceWriteProxy<Donation>
- */
 class DonationRepository extends SalesforceWriteProxyRepository
 {
     private CampaignRepository $campaignRepository;
@@ -136,7 +132,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         /** @var Campaign $campaign */
-        $campaign = $this->campaignRepository->findOneWithLockBy(['salesforceId' => $donationData->projectId]);
+        $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId]);
 
         if (!$campaign) {
             // Fetch data for as-yet-unknown campaigns on-demand
@@ -673,15 +669,5 @@ class DonationRepository extends SalesforceWriteProxyRepository
         foreach ($this->queuedForPersist as $donation) {
             $this->getEntityManager()->persist($donation);
         }
-    }
-
-    public function findOneWithLockBy(array $criteria, ?array $orderBy = null): ?Donation
-    {
-        $donation = parent::findOneWithLockBy($criteria, $orderBy);
-
-        // lock to prevent concurrent status changes. See jira MAT-260
-        $this->find($donation->getId(), LockMode::PESSIMISTIC_WRITE);
-
-        return $donation;
     }
 }

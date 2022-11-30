@@ -37,7 +37,7 @@ class GiftAidResultHandlerTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->FindOneWithLockBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($testDonationPassedToProphecy)
             ->shouldBeCalledOnce();
 
@@ -76,7 +76,7 @@ class GiftAidResultHandlerTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->FindOneWithLockBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($testDonationPassedToProphecy)
             ->shouldBeCalledOnce();
 
@@ -119,7 +119,7 @@ class GiftAidResultHandlerTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->FindOneWithLockBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($testDonationPassedToProphecy)
             ->shouldBeCalledOnce();
 

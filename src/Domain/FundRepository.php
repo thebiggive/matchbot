@@ -39,7 +39,7 @@ class FundRepository extends SalesforceReadProxyRepository
         foreach ($fundsData as $fundData) {
             // For each fund linked to the campaign, look it up or create it if unknown
             /** @var Fund $fund */
-            $fund = $this->findOneWithLockBy(['salesforceId' => $fundData['id']]);
+            $fund = $this->findOneBy(['salesforceId' => $fundData['id']]);
             if (!$fund) {
                 $fund = $this->getNewFund($fundData);
             }
@@ -58,7 +58,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 // Somebody else made the fund with this SF ID during the previous operations.
                 $this->logError('Skipping fund create as unique constraint failed on SF ID ' . $fundData['id']);
 
-                $fund = $this->findOneWithLockBy(['salesforceId' => $fundData['id']]);
+                $fund = $this->findOneBy(['salesforceId' => $fundData['id']]);
                 $fund = $this->setAnyFundData($fund, $fundData);
                 $this->getEntityManager()->persist($fund);
             }
