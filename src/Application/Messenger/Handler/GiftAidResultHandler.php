@@ -25,7 +25,7 @@ class GiftAidResultHandler
         ));
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['uuid' => $donationMessage->id]);
+        $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $donationMessage->id]);
 
         if ($donationMessage->response_success === false) {
             $donation->setTbgGiftAidRequestFailedAt(new \DateTime());
