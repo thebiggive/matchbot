@@ -37,7 +37,7 @@ class GetTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -59,7 +59,7 @@ class GetTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -84,7 +84,7 @@ class GetTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -109,7 +109,7 @@ class GetTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '87654321-1234-1234-1234-ba0987654321'])
+            ->findAndLockOneBy(['uuid' => '87654321-1234-1234-1234-ba0987654321'])
             ->willReturn(null)
             ->shouldBeCalledOnce();
 
@@ -133,7 +133,7 @@ class GetTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($this->getTestDonation())
             ->shouldBeCalledOnce();
 
