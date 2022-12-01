@@ -674,13 +674,13 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * Locks row in DB to prevent concurrent updates
      */
-    public function findOneBy(array $criteria, ?array $orderBy = null): ?Donation
-    {
-        $donation = parent::findOneBy($criteria, $orderBy);
-
-        // lock to prevent concurrent status changes. See jira MAT-260
-        $this->find($donation->getId(), LockMode::PESSIMISTIC_WRITE);
-
-        return $donation;
-    }
+//    public function findOneBy(array $criteria, ?array $orderBy = null): ?Donation
+//    {
+//        $donation = parent::findOneBy($criteria, $orderBy);
+//
+//        // lock to prevent concurrent status changes. See jira MAT-260
+//        $this->find($donation->getId(), LockMode::PESSIMISTIC_WRITE);
+//
+//        return $donation;
+//    }
 }
