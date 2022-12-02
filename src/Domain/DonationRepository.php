@@ -7,6 +7,7 @@ namespace MatchBot\Domain;
 use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
+use Doctrine\DBAL\LockMode;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -669,5 +670,23 @@ class DonationRepository extends SalesforceWriteProxyRepository
         foreach ($this->queuedForPersist as $donation) {
             $this->getEntityManager()->persist($donation);
         }
+    }
+
+    /**
+     * Locks row in DB to prevent concurrent updates. See jira MAT-260
+     */
+    public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation
+    {
+        // We can't actually lock the row until we know the ID of the donation, so we fetch it first
+        // using the criteria, and then call find once we know the ID to lock.
+
+        $donation = $this->findOneBy($criteria, $orderBy);
+
+        // Donation is already in Doctrine identity map so this won't actually reload it from the DB,
+        // and we don't need the return value.
+        $this->find($donation->getId(), LockMode::PESSIMISTIC_WRITE);
+        $this->_em->refresh($donation);
+        
+        return $donation;
     }
 }

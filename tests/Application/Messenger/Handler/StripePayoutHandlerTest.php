@@ -67,7 +67,7 @@ class StripePayoutHandlerTest extends TestCase
             ->willReturn([$donationWithInvalidChargeId])
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->findOneBy(['chargeId' => 'ch_invalidId_123'])
+            ->findAndLockOneBy(['chargeId' => 'ch_invalidId_123'])
             ->willReturn(null)
             ->shouldBeCalledOnce();
 
@@ -158,7 +158,7 @@ class StripePayoutHandlerTest extends TestCase
             ->willReturn([$donation])
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->findAndLockOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -224,7 +224,7 @@ class StripePayoutHandlerTest extends TestCase
             ->willReturn([$donation])
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->findAndLockOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -322,11 +322,11 @@ class StripePayoutHandlerTest extends TestCase
             ->willReturn([$altDonation, $donation])
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->findOneBy(['chargeId' => 'ch_externalId_124'])
+            ->findAndLockOneBy(['chargeId' => 'ch_externalId_124'])
             ->willReturn($altDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->findAndLockOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
