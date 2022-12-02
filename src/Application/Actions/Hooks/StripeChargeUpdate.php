@@ -201,7 +201,7 @@ class StripeChargeUpdate extends Stripe
         $this->entityManager->beginTransaction();
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findAndLockOneBy(['chargeId' => $charge->id]);
+        $donation = $this->donationRepository->findOneBy(['chargeId' => $charge->id]);
 
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Charge ID %s', $charge->id));

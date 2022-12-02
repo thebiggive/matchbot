@@ -673,14 +673,16 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
-     * Locks row in DB to prevent concurrent updates
+     * Locks row in DB to prevent concurrent updates. See jira MAT-260
      */
     public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation
     {
+        // We can't actually lock the row until we know the ID of the donation, so we fetch it first
+        // using the criteria, and then call find once we know the ID to lock.
+
         $donation = $this->findOneBy($criteria, $orderBy);
 
-        // lock to prevent concurrent status changes. See jira MAT-260
-        // Donation is already in Doctrine identity map so this won't actually reload it from the DB
+        // Donation is already in Doctrine identity map so this won't actually reload it from the DB,
         // and we don't need the return value.
         $this->find($donation->getId(), LockMode::PESSIMISTIC_WRITE);
         $this->_em->refresh($donation);
