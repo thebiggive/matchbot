@@ -73,7 +73,7 @@ class StripeChargeUpdate extends Stripe
         $this->entityManager->beginTransaction();
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['transactionId' => $intentId]);
+        $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
 
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
@@ -158,7 +158,7 @@ class StripeChargeUpdate extends Stripe
         $this->entityManager->beginTransaction();
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['transactionId' => $intentId]);
+        $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
 
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
