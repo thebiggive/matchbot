@@ -679,14 +679,18 @@ class DonationRepository extends SalesforceWriteProxyRepository
     {
         // We can't actually lock the row until we know the ID of the donation, so we fetch it first
         // using the criteria, and then call find once we know the ID to lock.
-
+        /** @var Donation|null $donation */
         $donation = $this->findOneBy($criteria, $orderBy);
+
+        if ($donation === null) {
+            return null;
+        }
 
         // Donation is already in Doctrine identity map so this won't actually reload it from the DB,
         // and we don't need the return value.
         $this->find($donation->getId(), LockMode::PESSIMISTIC_WRITE);
         $this->_em->refresh($donation);
-        
+
         return $donation;
     }
 }
