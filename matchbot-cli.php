@@ -27,6 +27,7 @@ use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Command\ConsumeMessagesCommand;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Messenger\Transport\TransportInterface;
+use Symfony\Component\Notifier\ChatterInterface;
 
 $cliApp = new Application();
 
@@ -55,7 +56,10 @@ $commands = [
     ),
     new PushDonations($psr11App->get(DonationRepository::class)),
     new ResetMatching($psr11App->get(CampaignFundingRepository::class), $psr11App->get(Matching\Adapter::class)),
-    new RetrospectivelyMatch($psr11App->get(DonationRepository::class)),
+    new RetrospectivelyMatch(
+        $psr11App->get(DonationRepository::class),
+        $psr11App->get(ChatterInterface::class),
+    ),
     new UpdateCampaigns(
         $psr11App->get(CampaignRepository::class),
         $psr11App->get(EntityManagerInterface::class),

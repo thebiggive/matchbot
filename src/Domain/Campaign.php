@@ -10,7 +10,9 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * @ORM\Entity(repositoryClass="CampaignRepository")
  * @ORM\HasLifecycleCallbacks
- * @ORM\Table
+ * @ORM\Table(indexes={
+ *   @ORM\Index(name="end_date_and_is_matched", columns={"endDate", "isMatched"}),
+ * })
  *
  * Represents any Campaign type in Salesforce which can receive donations. Note that this does NOT include Master
  * record type(s). The only way Salesforce type impacts this model is in setting `$isMatched` appropriately.

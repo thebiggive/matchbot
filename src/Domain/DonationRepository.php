@@ -412,7 +412,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->setParameter('expireBefore', $cutoff);
 
         // As this is used by the only regular task working with donations,
-        // `ExpireMatchFunds`, it makes more sense to opt it out of query caching
+        // `ExpireMatchFunds`, it makes more sense to opt it out of result caching
         // here rather than take the performance hit of a full query cache clear
         // after every single persisted donation.
         return $qb->getQuery()
@@ -462,6 +462,34 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * @return Donation[]
      */
+    public function findNotFullyMatchedToCampaignsWhichClosedSince(DateTime $closedSinceDate): array
+    {
+        $now = (new DateTime('now'));
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('d')
+            ->from(Donation::class, 'd')
+            ->join('d.campaign', 'c')
+            ->leftJoin('d.fundingWithdrawals', 'fw')
+            ->where('d.donationStatus IN (:completeStatuses)')
+            ->andWhere('c.isMatched = true')
+            ->andWhere('c.endDate < :now')
+            ->andWhere('c.endDate > :campaignClosedSince')
+            ->groupBy('d')
+            ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
+            ->orderBy('d.createdAt', 'ASC')
+            ->setParameter('completeStatuses', Donation::getSuccessStatuses())
+            ->setParameter('campaignClosedSince', $closedSinceDate)
+            ->setParameter('now', $now);
+
+        // Result caching rationale as per `findWithExpiredMatching()`.
+        return $qb->getQuery()
+            ->disableResultCache()
+            ->getResult();
+    }
+
+    /**
+     * @return Donation[]
+     */
     public function findRecentNotFullyMatchedToMatchCampaigns(DateTime $sinceDate): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder()
@@ -470,13 +498,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->join('d.campaign', 'c')
             ->leftJoin('d.fundingWithdrawals', 'fw')
             ->where('d.donationStatus IN (:completeStatuses)')
-            ->andWhere('c.isMatched = :campaignMatched')
+            ->andWhere('c.isMatched = true')
             ->andWhere('d.createdAt >= :checkAfter')
             ->groupBy('d')
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter('completeStatuses', Donation::getSuccessStatuses())
-            ->setParameter('campaignMatched', true)
             ->setParameter('checkAfter', $sinceDate);
 
         // Result caching rationale as per `findWithExpiredMatching()`, except this is
