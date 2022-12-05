@@ -471,7 +471,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->join('d.campaign', 'c')
             ->leftJoin('d.fundingWithdrawals', 'fw')
             ->where('d.donationStatus IN (:completeStatuses)')
-            ->andWhere('c.isMatched = :campaignMatched')
+            ->andWhere('c.isMatched = true')
             ->andWhere('c.endDate < :now')
             ->andWhere('c.endDate > :campaignClosedSince')
             ->groupBy('d')
