@@ -464,6 +464,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function findNotFullyMatchedToCampaignsWhichClosedSince(DateTime $closedSinceDate): array
     {
+        $now = (new DateTime('now'));
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
@@ -471,13 +472,15 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->leftJoin('d.fundingWithdrawals', 'fw')
             ->where('d.donationStatus IN (:completeStatuses)')
             ->andWhere('c.isMatched = :campaignMatched')
+            ->andWhere('c.endDate < :now')
             ->andWhere('c.endDate > :campaignClosedSince')
             ->groupBy('d')
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter('completeStatuses', Donation::getSuccessStatuses())
             ->setParameter('campaignMatched', true)
-            ->setParameter('campaignClosedSince', $closedSinceDate);
+            ->setParameter('campaignClosedSince', $closedSinceDate)
+            ->setParameter('now', $now);
 
         // Result caching rationale as per `findWithExpiredMatching()`.
         return $qb->getQuery()
