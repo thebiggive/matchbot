@@ -6,46 +6,44 @@ namespace MatchBot\Tests\Application\Commands;
 
 use DateTime;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Psr\Log\NullLogger;
-use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Notifier\ChatterInterface;
 
-/**
- * TODO tests should also cover the case where there are actual donations to match, rather than solely input param
- * handling.
- */
 class RetrospectivelyMatchTest extends TestCase
 {
-    private RetrospectivelyMatch $command;
+    use DonationTestDataTrait;
+
+    private ChatterInterface $chatter;
 
     public function setUp(): void
     {
-        $donationRepo = $this->prophesize(DonationRepository::class);
-        // Simulate not finding any campaigns to match, for now. This test's focus is the Command's own argument logic.
-        $donationRepo->findNotFullyMatchedToCampaignsWhichClosedSince(Argument::type(DateTime::class))->willReturn([]);
-        $donationRepo->findRecentNotFullyMatchedToMatchCampaigns(Argument::type(DateTime::class))->willReturn([]);
-
         $chatterProphecy = $this->prophesize(ChatterInterface::class);
-
-        $this->command = new RetrospectivelyMatch($donationRepo->reveal(), $chatterProphecy->reveal());
-        $this->command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
-        $this->command->setLogger(new NullLogger());
+        $this->chatter = $chatterProphecy->reveal();
     }
 
+    /**
+     * General `setUp()` has the repo method that this test relies on returning 1 donation.
+     */
     public function testMissingDaysBackRunsInDefaultMode(): void
     {
-        $commandTester = new CommandTester($this->command);
+        $command = new RetrospectivelyMatch($this->getDonationRepo(true), $this->chatter);
+        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
+
+        $commandTester = new CommandTester($command);
         $commandTester->execute([]);
 
         $expectedOutputLines = [
             'matchbot:retrospectively-match starting!',
             'Automatically evaluating campaigns which closed in the past hour',
-            'Retrospectively matched 0 of 0 donations. £0.00 total new matching, across 0 campaigns.',
+            'Retrospectively matched 1 of 1 donations. £123.45 total new matching, across 1 campaigns.',
             'matchbot:retrospectively-match complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -54,7 +52,11 @@ class RetrospectivelyMatchTest extends TestCase
 
     public function testNonWholeDaysBackIsRounded(): void
     {
-        $commandTester = new CommandTester($this->command);
+        $command = new RetrospectivelyMatch($this->getDonationRepo(false), $this->chatter);
+        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
+
+        $commandTester = new CommandTester($command);
         $commandTester->execute(['days-back' => '7.5']);
 
         $expectedOutputLines = [
@@ -69,7 +71,11 @@ class RetrospectivelyMatchTest extends TestCase
 
     public function testWholeDaysBackProceeds(): void
     {
-        $commandTester = new CommandTester($this->command);
+        $command = new RetrospectivelyMatch($this->getDonationRepo(false), $this->chatter);
+        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
+
+        $commandTester = new CommandTester($command);
         $commandTester->execute(['days-back' => '8']);
 
         $expectedOutputLines = [
@@ -80,5 +86,31 @@ class RetrospectivelyMatchTest extends TestCase
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
         $this->assertEquals(0, $commandTester->getStatusCode());
+    }
+
+    private function getDonationRepo(bool $matchingIsAllocated)
+    {
+        $donationRepo = $this->prophesize(DonationRepository::class);
+
+        $donationRepo->findNotFullyMatchedToCampaignsWhichClosedSince(Argument::type(DateTime::class))->willReturn([$this->getTestDonation()]);
+
+        // Simulate specific day count mode not finding any campaigns to match, for now.
+        $donationRepo->findRecentNotFullyMatchedToMatchCampaigns(Argument::type(DateTime::class))->willReturn([]);
+
+        if ($matchingIsAllocated) {
+            $donationRepo->allocateMatchFunds(Argument::type(Donation::class))
+                ->shouldBeCalledOnce()
+                ->willReturn('123.45');
+            $donationRepo->push(Argument::type(Donation::class), false)
+                ->shouldBeCalledOnce()
+                ->willReturn(true);
+        } else {
+            $donationRepo->allocateMatchFunds(Argument::type(Donation::class))
+                ->shouldNotBeCalled();
+            $donationRepo->push(Argument::type(Donation::class), false)
+                ->shouldNotBeCalled();
+        }
+
+        return $donationRepo->reveal();
     }
 }
