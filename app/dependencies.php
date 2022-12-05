@@ -51,10 +51,8 @@ use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 use Symfony\Component\Messenger\Transport\TransportFactory;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Notifier\Bridge\Slack\SlackTransport;
-use Symfony\Component\Notifier\Channel\ChatChannel;
 use Symfony\Component\Notifier\Chatter;
-use Symfony\Component\Notifier\Notifier;
-use Symfony\Component\Notifier\NotifierInterface;
+use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -77,6 +75,16 @@ return function (ContainerBuilder $containerBuilder) {
                     3600, // Allow Auto-clearing cache/rate limit data after an hour.
                 ),
             );
+        },
+
+        ChatterInterface::class => static function (ContainerInterface $c): ChatterInterface {
+            $settings = $c->get('settings');
+            $transport = new SlackTransport(
+                $settings['notifier']['slack']['api_token'],
+                $settings['notifier']['slack']['channel'],
+            );
+
+            return new Chatter($transport);
         },
 
         ClaimBotTransport::class => static function (ContainerInterface $c): TransportInterface {
@@ -160,18 +168,6 @@ return function (ContainerBuilder $containerBuilder) {
                         StripePayout::class => [$c->get(StripePayoutHandler::class)],
                     ],
                 )),
-            ]);
-        },
-
-        NotifierInterface::class => static function (ContainerInterface $c): NotifierInterface {
-            $settings = $c->get('settings');
-            $transport = new SlackTransport(
-                $settings['notifier']['slack']['api_token'],
-                $settings['notifier']['slack']['channel'],
-            );
-
-            return new Notifier([
-                new ChatChannel(new Chatter($transport)),
             ]);
         },
 

@@ -9,17 +9,26 @@ use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
+use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
+use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\Notifier\Message\ChatMessage;
 
 /**
- * Find complete donations to matched campaigns with less matching than their full value, from the past 48 hours,
- * and allocate any newly-available match funds to them.
+ * Find complete donations to matched campaigns with less matching than their full value, from the past N days
+ * if specified, and allocate any newly-available match funds to them.
+ *
+ * If not argument (number of days) is given, campaigns which closed within the last hour are checked
+ * and all of their donations are eligible for matching.
  */
 class RetrospectivelyMatch extends LockingCommand
 {
     protected static $defaultName = 'matchbot:retrospectively-match';
 
     public function __construct(
-        private DonationRepository $donationRepository
+        private DonationRepository $donationRepository,
+        private ChatterInterface $chatter,
     ) {
         parent::__construct();
     }
@@ -27,11 +36,12 @@ class RetrospectivelyMatch extends LockingCommand
     protected function configure(): void
     {
         $this->setDescription(
-            "Allocates matching from the last N days' donations if missed due to pending reservations, refunds etc."
+            "Allocates matching for just-closed campaigns' donations, or the " .
+            "last N days' donations, if missed due to pending reservations, refunds etc."
         );
         $this->addArgument(
             'days-back',
-            InputArgument::REQUIRED,
+            InputArgument::OPTIONAL,
             'Number of days back to look for donations that could be matched.'
         );
     }
@@ -39,15 +49,21 @@ class RetrospectivelyMatch extends LockingCommand
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         if (!is_numeric($input->getArgument('days-back'))) {
-            $output->writeln('Cannot proceed with non-numeric days-back argument');
-            return 1;
+            // Default mode is now to auto match for campaigns that *just* closed.
+            $output->writeln('Automatically evaluating campaigns which closed in the past hour');
+
+            $oneHourAgo = (new DateTime('now'))->sub(new \DateInterval('PT1H'));
+            $toCheckForMatching = $this->donationRepository
+                ->findNotFullyMatchedToCampaignsWhichClosedSince($oneHourAgo);
+        } else {
+            // Allow + round non-whole day count.
+            $daysBack = round((float) $input->getArgument('days-back'));
+            $output->writeln("Looking at past $daysBack days' donations");
+
+            $sinceDate = (new DateTime('now'))->sub(new \DateInterval("P{$daysBack}D"));
+            $toCheckForMatching = $this->donationRepository
+                ->findRecentNotFullyMatchedToMatchCampaigns($sinceDate);
         }
-
-        $daysBack = round((float) $input->getArgument('days-back'));
-        $output->writeln("Looking at past $daysBack days' donations");
-
-        $sinceDate = (new DateTime('now'))->sub(new \DateInterval("P{$daysBack}D"));
-        $toCheckForMatching = $this->donationRepository->findRecentNotFullyMatchedToMatchCampaigns($sinceDate);
 
         $numChecked = count($toCheckForMatching);
         $distinctCampaignIds = [];
@@ -70,10 +86,25 @@ class RetrospectivelyMatch extends LockingCommand
 
         $numDistinctCampaigns = count($distinctCampaignIds);
 
-        $output->writeln(
-            "Retrospectively matched $numWithMatchingAllocated of $numChecked donations. " .
-            "£$totalNewMatching total new matching, across $numDistinctCampaigns campaigns."
-        );
+        $summary = "Retrospectively matched $numWithMatchingAllocated of $numChecked donations. " .
+            "£$totalNewMatching total new matching, across $numDistinctCampaigns campaigns.";
+        $output->writeln($summary);
+
+        // If we did any new matching allocation, whether because of campaigns just closed or because
+        // the command was run manually, send the results to Slack.
+        if ($numDistinctCampaigns > 0) {
+            $chatMessage = new ChatMessage('Retrospective matching');
+            $options = (new SlackOptions())
+                ->block((new SlackHeaderBlock(sprintf(
+                    '[%s] %s',
+                    getenv('APP_ENV'),
+                    'Retrospective matching completed',
+                ))))
+                ->block((new SlackSectionBlock())->text($summary));
+            $chatMessage->options($options);
+
+            $this->chatter->send($chatMessage);
+        }
 
         return 0;
     }
