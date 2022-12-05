@@ -17,6 +17,7 @@ use Ramsey\Uuid\UuidInterface;
  * @ORM\Entity(repositoryClass="DonationRepository")
  * @ORM\HasLifecycleCallbacks
  * @ORM\Table(indexes={
+ *   @ORM\Index(name="campaign_and_status", columns={"campaign_id", "donationStatus"}),
  *   @ORM\Index(name="date_and_status", columns={"createdAt", "donationStatus"}),
  *   @ORM\Index(name="salesforcePushStatus", columns={"salesforcePushStatus"}),
  * })
