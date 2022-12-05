@@ -17,7 +17,7 @@ final class Version20221203151735 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Update a missed donation to Paid status and mark for re-pushing to Salesforce';
+        return 'Update a missed donation to Collected status and mark for re-pushing to Salesforce';
     }
 
     public function up(Schema $schema): void
