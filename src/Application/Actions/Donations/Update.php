@@ -18,6 +18,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
+use Stripe\Exception\RateLimitException;
 use Stripe\StripeClient;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -55,7 +56,7 @@ class Update extends Action
         /** @var Donation $donation */
         $this->entityManager->beginTransaction();
 
-        $donation = $this->donationRepository->findOneBy(['uuid' => $this->args['donationId']]);
+        $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $this->args['donationId']]);
 
         if (!$donation) {
             $this->entityManager->rollback();
@@ -194,88 +195,49 @@ class Update extends Action
 
         if ($donation->getPsp() === 'stripe') {
             try {
-                $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
-                    'amount' => $donation->getAmountFractionalIncTip(),
-                    'currency' => strtolower($donation->getCurrencyCode()),
-                    'metadata' => [
-                        /**
-                         * Note that we don't re-set keys that can't change, like `charityId`.
-                         * See the counterpart in {@see Create::action()} too.
-                         */
-                        'coreDonationGiftAid' => $donation->hasGiftAid(),
-                        'feeCoverAmount' => $donation->getFeeCoverAmount(),
-                        'matchedAmount' => $donation->getFundingWithdrawalTotal(),
-                        'optInCharityEmail' => $donation->getCharityComms(),
-                        'optInTbgEmail' => $donation->getTbgComms(),
-                        'salesforceId' => $donation->getSalesforceId(),
-                        'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
-                        'stripeFeeRechargeNet' => $donation->getCharityFee(),
-                        'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
-                        'tbgTipGiftAid' => $donation->hasTipGiftAid(),
-                        'tipAmount' => $donation->getTipAmount(),
-                    ],
-                    // See https://stripe.com/docs/connect/destination-charges#application-fee
-                    // Update the fee amount incase the final charge was from
-                    // a Non EU / Amex card where fees are varied.
-                    'application_fee_amount' => $donation->getAmountToDeductFractional(),
-                    // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
-                ]);
-
-                if ($donationData->autoConfirmFromCashBalance) {
-                    $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
+                $this->updatePaymentIntent($donation);
+            } catch (RateLimitException $exception) {
+                if ($exception->getStripeCode() !== 'lock_timeout') {
+                    throw $exception; // Only re-try when object level lock failed.
                 }
-            } catch (ApiErrorException $exception) {
-                $alreadyCapturedMsg = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
-                    'after a capture has already been made.';
-                if (
-                    $exception instanceof InvalidRequestException &&
-                    str_starts_with($exception->getMessage(), $alreadyCapturedMsg)
-                ) {
-                    $latestPI = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
-                    if ($latestPI->application_fee_amount === $donation->getAmountToDeductFractional()) {
-                        $noFeeChangeMessage = 'Stripe Payment Intent update ignored after capture; no fee ' .
-                            'change on %s, %s [%s]: %s';
-                        $this->logger->info(sprintf(
-                            $noFeeChangeMessage,
-                            $donation->getUuid(),
-                            get_class($exception),
-                            $exception->getStripeCode(),
-                            $exception->getMessage(),
-                        ));
-                        // Fall through to normal save and success response.
-                    } else {
-                        $this->logger->error(sprintf(
-                            'Stripe Payment Intent update after capture; fee change from %d to %d ' .
-                                'not possible on %s, %s [%s]: %s',
-                            $latestPI->application_fee_amount,
-                            $donation->getAmountToDeductFractional(),
-                            $donation->getUuid(),
-                            get_class($exception),
-                            $exception->getStripeCode(),
-                            $exception->getMessage(),
-                        ));
-                        // Quickly distinguish fee change case with response message suffix.
-                        $error = new ActionError(
-                            ActionError::SERVER_ERROR,
-                            'Could not update Stripe Payment Intent [A]',
-                        );
-                        $this->entityManager->rollback();
 
-                        return $this->respond(new ActionPayload(500, null, $error));
-                    }
-                } else {
+                $this->logger->info(sprintf(
+                    'Stripe lock "rate limit" hit while updating payment intent for donation %s – retrying in 1s...',
+                    $donation->getId(),
+                ));
+                sleep(1);
+
+                try {
+                    $this->updatePaymentIntent($donation);
+                } catch (RateLimitException $retryException) {
                     $this->logger->error(sprintf(
-                        'Stripe Payment Intent update error on %s, %s [%s]: %s',
+                        'Stripe Payment Intent update error from lock "rate limit" on %s, %s [%s]: %s',
                         $donation->getUuid(),
-                        get_class($exception),
-                        $exception->getStripeCode(),
-                        $exception->getMessage(),
+                        get_class($retryException),
+                        $retryException->getStripeCode(),
+                        $retryException->getMessage(),
                     ));
-                    $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent [B]');
+                    $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent [C]');
                     $this->entityManager->rollback();
 
                     return $this->respond(new ActionPayload(500, null, $error));
+                } catch (ApiErrorException $retryException) {
+                    $responseIfFinal = $this->handleGeneralStripeError($retryException, $donation);
+
+                    if ($responseIfFinal) {
+                        return $responseIfFinal;
+                    }
                 }
+            } catch (ApiErrorException $exception) {
+                $responseIfFinal = $this->handleGeneralStripeError($exception, $donation);
+
+                if ($responseIfFinal) {
+                    return $responseIfFinal;
+                }
+            }
+
+            if ($donationData->autoConfirmFromCashBalance) {
+                $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
             }
         }
 
@@ -376,5 +338,98 @@ class Update extends Action
         // We log if this fails but don't worry the client about it. We'll just re-try
         // sending the updated status to Salesforce in a future batch sync.
         $this->donationRepository->push($donation, false);
+    }
+
+    /**
+     * @throws RateLimitException if e.g. Stripe had locked the PI while processing.
+     */
+    private function updatePaymentIntent(Donation $donation): void
+    {
+        $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
+            'amount' => $donation->getAmountFractionalIncTip(),
+            'currency' => strtolower($donation->getCurrencyCode()),
+            'metadata' => [
+                /**
+                 * Note that we don't re-set keys that can't change, like `charityId`.
+                 * See the counterpart in {@see Create::action()} too.
+                 */
+                'coreDonationGiftAid' => $donation->hasGiftAid(),
+                'feeCoverAmount' => $donation->getFeeCoverAmount(),
+                'matchedAmount' => $donation->getFundingWithdrawalTotal(),
+                'optInCharityEmail' => $donation->getCharityComms(),
+                'optInTbgEmail' => $donation->getTbgComms(),
+                'salesforceId' => $donation->getSalesforceId(),
+                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
+                'tbgTipGiftAid' => $donation->hasTipGiftAid(),
+                'tipAmount' => $donation->getTipAmount(),
+            ],
+            // See https://stripe.com/docs/connect/destination-charges#application-fee
+            // Update the fee amount incase the final charge was from
+            // a Non EU / Amex card where fees are varied.
+            'application_fee_amount' => $donation->getAmountToDeductFractional(),
+            // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
+        ]);
+    }
+
+    /**
+     * @return ?Response Response to send client, if appropriate. HTTP 500.
+     */
+    private function handleGeneralStripeError(ApiErrorException $exception, Donation $donation): ?Response
+    {
+        $alreadyCapturedMsg = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
+            'after a capture has already been made.';
+        if (
+            $exception instanceof InvalidRequestException &&
+            str_starts_with($exception->getMessage(), $alreadyCapturedMsg)
+        ) {
+            $latestPI = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
+            if ($latestPI->application_fee_amount === $donation->getAmountToDeductFractional()) {
+                $noFeeChangeMessage = 'Stripe Payment Intent update ignored after capture; no fee ' .
+                    'change on %s, %s [%s]: %s';
+                $this->logger->info(sprintf(
+                    $noFeeChangeMessage,
+                    $donation->getUuid(),
+                    get_class($exception),
+                    $exception->getStripeCode(),
+                    $exception->getMessage(),
+                ));
+                // Fall through to normal save and success response.
+            } else {
+                $this->logger->error(sprintf(
+                    'Stripe Payment Intent update after capture; fee change from %d to %d ' .
+                    'not possible on %s, %s [%s]: %s',
+                    $latestPI->application_fee_amount,
+                    $donation->getAmountToDeductFractional(),
+                    $donation->getUuid(),
+                    get_class($exception),
+                    $exception->getStripeCode(),
+                    $exception->getMessage(),
+                ));
+                // Quickly distinguish fee change case with response message suffix.
+                $error = new ActionError(
+                    ActionError::SERVER_ERROR,
+                    'Could not update Stripe Payment Intent [A]',
+                );
+                $this->entityManager->rollback();
+
+                return $this->respond(new ActionPayload(500, null, $error));
+            }
+        } else {
+            $this->logger->error(sprintf(
+                'Stripe Payment Intent update error on %s, %s [%s]: %s',
+                $donation->getUuid(),
+                get_class($exception),
+                $exception->getStripeCode(),
+                $exception->getMessage(),
+            ));
+            $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent [B]');
+            $this->entityManager->rollback();
+
+            return $this->respond(new ActionPayload(500, null, $error));
+        }
+
+        return null;
     }
 }

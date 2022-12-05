@@ -16,6 +16,7 @@ use Prophecy\Argument;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Exception\HttpUnauthorizedException;
 use Stripe\Exception\InvalidRequestException;
+use Stripe\Exception\RateLimitException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
 use Stripe\Service\PaymentIntentService;
@@ -45,7 +46,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -73,7 +74,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -104,7 +105,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -135,7 +136,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '87654321-1234-1234-1234-ba0987654321'])
+            ->findAndLockOneBy(['uuid' => '87654321-1234-1234-1234-ba0987654321'])
             ->willReturn(null)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -173,7 +174,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($this->getTestDonation()) // Get a new mock object so it's 'Collected'.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -222,7 +223,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -277,7 +278,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationResponse)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -333,7 +334,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         // Cancel is a no-op -> no fund release or push to SF
@@ -398,7 +399,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -474,7 +475,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -543,7 +544,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -608,7 +609,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ac'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ac'])
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -672,7 +673,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($this->getTestDonation()) // Get a new mock object so it's £123.45.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -720,7 +721,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -775,7 +776,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -828,7 +829,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -882,7 +883,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($this->getTestDonation()) // Get a new mock object so it's £123.45.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -945,7 +946,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -1040,7 +1041,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -1138,7 +1139,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -1218,6 +1219,317 @@ class UpdateTest extends TestCase
         ], $payloadArray);
     }
 
+    /**
+     * Success on retry.
+     */
+    public function testAddDataHitsStripeLockExceptionOnce(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+        $donation->setDonorCountryCode('US');
+        $donation->setCurrencyCode('USD');
+        $donation->setTipAmount('3.21');
+        $donation->setGiftAid(true);
+        $donation->setTipGiftAid(false);
+        $donation->setDonorHomeAddressLine1('99 Updated St');
+        $donation->setDonorHomePostcode('X1 1XY');
+        $donation->setDonorFirstName('Saul');
+        $donation->setDonorLastName('Williams');
+        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setTbgComms(true);
+        $donation->setCharityComms(false);
+        $donation->setChampionComms(false);
+        $donation->setDonorBillingAddress('Y1 1YX');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->deriveFees(Argument::type(Donation::class), null, null)
+            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->shouldBeCalledOnce();
+
+        // Persist as normal.
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
+
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+
+        $mockPI = new PaymentIntent();
+        $mockPI->application_fee_amount = 526;
+
+        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+            'amount' => 12_666,
+            'currency' => 'usd',
+            'metadata' => [
+                'coreDonationGiftAid' => true,
+                'feeCoverAmount' => '0.00',
+                'matchedAmount' => '0.0',
+                'optInCharityEmail' => false,
+                'optInTbgEmail' => true,
+                'salesforceId' => 'sfDonation369',
+                'stripeFeeRechargeGross' => '2.05',
+                'stripeFeeRechargeNet' => '2.05',
+                'stripeFeeRechargeVat' => '0.00',
+                'tbgTipGiftAid' => false,
+                'tipAmount' => '3.21',
+            ],
+            'application_fee_amount' => 526,
+        ])
+            ->shouldBeCalledTimes(2)
+            ->will(new PaymentIntentUpdateAttemptTwicePromise(
+                true,
+                false,
+                $this->prophesize(PaymentIntent::class)->reveal(),
+            ));
+
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($donation->toApiModel()),
+        )
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        // If retry worked, all good from the API client's perspective.
+        $this->assertJson($payload);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+        $this->assertEquals(2.05, $payloadArray['charityFee']);
+    }
+
+    /**
+     * Bails out after failed retry.
+     */
+    public function testAddDataHitsStripeLockExceptionTwice(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+        $donation->setDonorCountryCode('US');
+        $donation->setCurrencyCode('USD');
+        $donation->setTipAmount('3.21');
+        $donation->setGiftAid(true);
+        $donation->setTipGiftAid(false);
+        $donation->setDonorHomeAddressLine1('99 Updated St');
+        $donation->setDonorHomePostcode('X1 1XY');
+        $donation->setDonorFirstName('Saul');
+        $donation->setDonorLastName('Williams');
+        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setTbgComms(true);
+        $donation->setCharityComms(false);
+        $donation->setChampionComms(false);
+        $donation->setDonorBillingAddress('Y1 1YX');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->deriveFees(Argument::type(Donation::class), null, null)
+            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->shouldBeCalledOnce();
+
+        // Internal persist still goes ahead.
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+
+        $mockPI = new PaymentIntent();
+        $mockPI->application_fee_amount = 526;
+
+        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+            'amount' => 12_666,
+            'currency' => 'usd',
+            'metadata' => [
+                'coreDonationGiftAid' => true,
+                'feeCoverAmount' => '0.00',
+                'matchedAmount' => '0.0',
+                'optInCharityEmail' => false,
+                'optInTbgEmail' => true,
+                'salesforceId' => 'sfDonation369',
+                'stripeFeeRechargeGross' => '2.05',
+                'stripeFeeRechargeNet' => '2.05',
+                'stripeFeeRechargeVat' => '0.00',
+                'tbgTipGiftAid' => false,
+                'tipAmount' => '3.21',
+            ],
+            'application_fee_amount' => 526,
+        ])
+            ->shouldBeCalledTimes(2)
+            ->will(new PaymentIntentUpdateAttemptTwicePromise(
+                false,
+                false,
+                $this->prophesize(PaymentIntent::class)->reveal(),
+            ));
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($donation->toApiModel()),
+        )
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(500, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+        $this->assertEquals([
+            'error' => [
+                'type' => 'SERVER_ERROR',
+                'description' => 'Could not update Stripe Payment Intent [C]',
+            ],
+        ], $payloadArray);
+    }
+
+    /**
+     * Should only info log + succeed from a donor perspective on second attempt.
+     */
+    public function testAddDataHitsStripeLockExceptionThenAlreadyCapturedWithNoFeeChange(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+        $donation->setDonorCountryCode('US');
+        $donation->setCurrencyCode('USD');
+        $donation->setTipAmount('3.21');
+        $donation->setGiftAid(true);
+        $donation->setTipGiftAid(false);
+        $donation->setDonorHomeAddressLine1('99 Updated St');
+        $donation->setDonorHomePostcode('X1 1XY');
+        $donation->setDonorFirstName('Saul');
+        $donation->setDonorLastName('Williams');
+        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setTbgComms(true);
+        $donation->setCharityComms(false);
+        $donation->setChampionComms(false);
+        $donation->setDonorBillingAddress('Y1 1YX');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->deriveFees(Argument::type(Donation::class), null, null)
+            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->shouldBeCalledOnce();
+
+        // Persist as normal.
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
+
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+
+        $mockPI = new PaymentIntent();
+        $mockPI->application_fee_amount = 526;
+
+        $stripePaymentIntentsProphecy->retrieve('pi_externalId_123')
+            ->willReturn($mockPI)
+            ->shouldBeCalledOnce();
+        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+            'amount' => 12_666,
+            'currency' => 'usd',
+            'metadata' => [
+                'coreDonationGiftAid' => true,
+                'feeCoverAmount' => '0.00',
+                'matchedAmount' => '0.0',
+                'optInCharityEmail' => false,
+                'optInTbgEmail' => true,
+                'salesforceId' => 'sfDonation369',
+                'stripeFeeRechargeGross' => '2.05',
+                'stripeFeeRechargeNet' => '2.05',
+                'stripeFeeRechargeVat' => '0.00',
+                'tbgTipGiftAid' => false,
+                'tipAmount' => '3.21',
+            ],
+            'application_fee_amount' => 526,
+        ])
+            ->shouldBeCalledTimes(2)
+            ->will(new PaymentIntentUpdateAttemptTwicePromise(
+                false,
+                true,
+                $this->prophesize(PaymentIntent::class)->reveal(),
+            ));
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($donation->toApiModel()),
+        )
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        // If retry for lock worked, and second error is the expected kinds we get
+        // intermittently from Stripe + don't really need the update, we should
+        // succeed from a donor perspective.
+        $this->assertJson($payload);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+        $this->assertEquals(2.05, $payloadArray['charityFee']);
+    }
+
     public function testAddDataSuccessWithAllValues(): void
     {
         $app = $this->getAppInstance();
@@ -1242,7 +1554,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -1353,7 +1665,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
