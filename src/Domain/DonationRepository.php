@@ -478,7 +478,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter('completeStatuses', Donation::getSuccessStatuses())
-            ->setParameter('campaignMatched', true)
             ->setParameter('campaignClosedSince', $closedSinceDate)
             ->setParameter('now', $now);
 
@@ -499,13 +498,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->join('d.campaign', 'c')
             ->leftJoin('d.fundingWithdrawals', 'fw')
             ->where('d.donationStatus IN (:completeStatuses)')
-            ->andWhere('c.isMatched = :campaignMatched')
+            ->andWhere('c.isMatched = true')
             ->andWhere('d.createdAt >= :checkAfter')
             ->groupBy('d')
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter('completeStatuses', Donation::getSuccessStatuses())
-            ->setParameter('campaignMatched', true)
             ->setParameter('checkAfter', $sinceDate);
 
         // Result caching rationale as per `findWithExpiredMatching()`, except this is
