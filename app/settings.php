@@ -82,6 +82,13 @@ return function (ContainerBuilder $containerBuilder) {
                 'hash_ips' => true, // Required for Redis storage of IPv6 addresses.
             ],
 
+            'notifier' => [
+                'slack' => [
+                    'api_token' => getenv('SLACK_API_TOKEN'),
+                    'channel' => getenv('SLACK_CHANNEL'),
+                ],
+            ],
+
             'recaptcha' => [
                 'secret_key' => getenv('RECAPTCHA_SECRET_KEY'),
             ],
