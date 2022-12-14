@@ -13,6 +13,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
 use Slim\Psr7\Response;
@@ -24,15 +25,17 @@ use Symfony\Component\Serializer\Serializer;
 
 class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
 {
+    use ProphecyTrait;
+
     public function testRetryOnLockWaitTimeOut(): void
     {
+        // arrange
         $donationId = 'donation_id';
 
-        // arrange
         $donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $stripeIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripeClient = $this->fakeStripeClient($stripeIntentsProphecy->reveal());
+        $fakeStripeClient = $this->fakeStripeClient($stripeIntentsProphecy->reveal());
 
         $charity = new Charity();
         $charity->setDonateLinkId('DONATE_LINK_ID');
@@ -54,6 +57,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
         $donation->setDonorLastName('Donor last name');
 
         $donationRepositoryProphecy->findAndLockOneBy(['uuid' => $donationId])->willReturn($donation);
+
         $donationRepositoryProphecy->push($donation, false)
             ->willThrow(new LockWaitTimeoutException($this->createStub(DriverException::class), null));
 
@@ -61,18 +65,29 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
             $donationRepositoryProphecy->reveal(),
             $entityManagerProphecy->reveal(),
             new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
-            $stripeClient,
+            $fakeStripeClient,
             new NullLogger()
         );
 
         $request = new ServerRequest(method: 'PUT', uri: '', body: '{"status": "Cancelled"}');
-        $response = new Response();
 
         // act
-        $updateAction($request, $response, ['donationId' => $donationId]);
+        $response = $updateAction($request, new Response(), ['donationId' => $donationId]);
 
         // assert
-        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(400, $response->getStatusCode());
+        $this->assertJsonStringEqualsJsonString(
+            <<<'JSON'
+              {
+                "error": {
+                  "type": "BAD_REQUEST",
+                  "description": "Cancellation was not possible due to another action at the same time affecting this donation"
+                }
+              }
+            JSON
+            ,
+            (string)$response->getBody()
+        );
     }
 
     /**
@@ -81,7 +96,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
      *
      * It's mabye that the Stripe API requires us to use a public property of their object.
      */
-    public function fakeStripeClient(object $intents): StripeClientInterface
+    public function fakeStripeClient(PaymentIntentService $intents): StripeClientInterface
     {
         $stripeClient = new class implements StripeClientInterface {
             public function getApiKey()
