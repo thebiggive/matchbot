@@ -406,7 +406,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->leftJoin('d.fundingWithdrawals', 'fw')
             ->where('d.donationStatus = :expireWithStatus')
             ->andWhere('d.createdAt < :expireBefore')
-            ->groupBy('d')
+            ->groupBy('d.id')
             ->having('COUNT(fw) > 0')
             ->setParameter('expireWithStatus', 'Pending')
             ->setParameter('expireBefore', $cutoff);
