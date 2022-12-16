@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Donations;
 
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
@@ -19,7 +20,7 @@ use Psr\Log\LogLevel;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
-use Stripe\StripeClient;
+use Stripe\StripeClientInterface;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 use TypeError;
@@ -37,7 +38,7 @@ class Update extends Action
         private DonationRepository $donationRepository,
         private EntityManagerInterface $entityManager,
         private SerializerInterface $serializer,
-        private StripeClient $stripeClient,
+        private StripeClientInterface $stripeClient,
         LoggerInterface $logger
     ) {
         parent::__construct($logger);
@@ -99,7 +100,19 @@ class Update extends Action
         }
 
         if ($donationData->status === 'Cancelled') {
-            return $this->cancel($donation);
+            try {
+                return $this->cancel($donation);
+            } catch (LockWaitTimeoutException $exception) {
+
+                // we could auto retry, but there is probably no point - the other process is likely to have made the donation non-cancelable.
+
+                $message = "Donation ID {$this->args['donationId']} is locked by another process, could not be set to status {$donationData->status}";
+                $this->logger->warning($message);
+                return $this->validationError(
+                    $message,
+                    'Cancellation was not possible due to another action at the same time affecting this donation'
+                );
+            }
         }
 
         if ($donationData->status !== $donation->getDonationStatus()) {

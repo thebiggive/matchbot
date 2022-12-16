@@ -24,6 +24,8 @@ use Symfony\Component\Console\Output\NullOutput;
 
 class StatusTest extends TestCase
 {
+    const DOMAIN_DIR = __DIR__ . '/../../../src/Domain';
+
     public function setUp(): void
     {
         $this->generateORMProxiesAtRealPath();
@@ -85,11 +87,11 @@ class StatusTest extends TestCase
     }
 
     private function getConnectedMockEntityManager(
-        string $proxyPath = '/var/www/html/var/doctrine/proxies',
+        string $proxyPath = __DIR__ . '/../../../var/doctrine/proxies',
     ): EntityManagerInterface {
         $cache = new ArrayCache();
         $config = Setup::createAnnotationMetadataConfiguration(
-            ['/var/www/html/src/Domain'],
+            [self::DOMAIN_DIR],
             false, // Simulate live mode for these tests.
             $proxyPath,
             $cache,
@@ -98,7 +100,7 @@ class StatusTest extends TestCase
         // No auto-generation – like live mode – for these tests.
         $config->setAutoGenerateProxyClasses(false);
         $config->setMetadataDriverImpl(
-            new AnnotationDriver(new AnnotationReader(), ['/var/www/html/src/Domain']),
+            new AnnotationDriver(new AnnotationReader(), [self::DOMAIN_DIR]),
         );
         $config->setMetadataCacheImpl($cache);
 

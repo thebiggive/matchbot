@@ -35,6 +35,7 @@ use ReCaptcha\ReCaptcha;
 use ReCaptcha\RequestMethod\CurlPost;
 use Slim\Psr7\Factory\ResponseFactory;
 use Stripe\StripeClient;
+use Stripe\StripeClientInterface;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\DoctrineDbalStore;
@@ -289,6 +290,10 @@ return function (ContainerBuilder $containerBuilder) {
                 'api_key' => $c->get('settings')['stripe']['apiKey'],
                 'stripe_version' => $c->get('settings')['stripe']['apiVersion'],
             ]);
+        },
+
+        StripeClientInterface::class => static function (ContainerInterface $c): StripeClientInterface {
+            return $c->get(StripeClient::class);
         },
 
         TransportInterface::class => static function (ContainerInterface $c): TransportInterface {
