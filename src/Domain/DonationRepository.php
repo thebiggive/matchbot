@@ -713,10 +713,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             return null;
         }
 
-        // Donation is already in Doctrine identity map so this won't actually reload it from the DB,
-        // and we don't need the return value.
-        $this->find($donation->getId(), LockMode::PESSIMISTIC_WRITE);
-        $this->_em->refresh($donation);
+        $this->getEntityManager()->refresh($donation, LockMode::PESSIMISTIC_WRITE);
 
         return $donation;
     }
