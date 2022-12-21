@@ -139,7 +139,7 @@ class Update extends Action
             }
         }
         throw new \Exception(
-            'Retry count exceeded trying to update donation, retried ' . self::MAX_UPDATE_RETRY_COUNT . " times",
+            "Retry count exceeded trying to update donation #{$donation->getId()} , retried $retryCount times",
             0,
             $lockWaitTimeoutException
         );
