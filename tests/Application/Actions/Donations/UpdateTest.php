@@ -688,7 +688,6 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->refresh($donationInRepo, LockMode::PESSIMISTIC_WRITE)->shouldBeCalledOnce();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -737,7 +736,6 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->refresh($donation, LockMode::PESSIMISTIC_WRITE)->shouldBeCalledOnce();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -846,7 +844,6 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->refresh($donation, LockMode::PESSIMISTIC_WRITE)->shouldBeCalledOnce();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -899,7 +896,6 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->refresh($donationInRepo, LockMode::PESSIMISTIC_WRITE)->shouldBeCalledOnce();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -971,7 +967,6 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->refresh($donationInRepo, LockMode::PESSIMISTIC_WRITE)->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
@@ -1066,7 +1061,6 @@ class UpdateTest extends TestCase
         // Persist as normal.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->refresh($donationInRepo, LockMode::PESSIMISTIC_WRITE)->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
@@ -1169,7 +1163,6 @@ class UpdateTest extends TestCase
         // Internal persist still goes ahead.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->refresh($donationInRepo, LockMode::PESSIMISTIC_WRITE)->shouldBeCalledOnce();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $stripeErrorMessage = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
@@ -1275,7 +1268,6 @@ class UpdateTest extends TestCase
         // Persist as normal.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->refresh($donationInRepo, LockMode::PESSIMISTIC_WRITE)->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
@@ -1381,7 +1373,6 @@ class UpdateTest extends TestCase
         // Internal persist still goes ahead.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->refresh($donationInRepo, LockMode::PESSIMISTIC_WRITE)->shouldBeCalledOnce();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
@@ -1485,7 +1476,6 @@ class UpdateTest extends TestCase
         // Persist as normal.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->refresh($donatinInRepo, LockMode::PESSIMISTIC_WRITE)->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
@@ -1591,7 +1581,6 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->refresh($donationInRepo, LockMode::PESSIMISTIC_WRITE)->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
@@ -1704,7 +1693,6 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->refresh($donationInRepo, LockMode::PESSIMISTIC_WRITE)->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();

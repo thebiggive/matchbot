@@ -129,6 +129,9 @@ class Update extends Action
         $retryCount = 0;
         while ($retryCount < self::MAX_UPDATE_RETRY_COUNT) {
             try {
+                if ($retryCount > 0) {
+                    $this->entityManager->refresh($donation, LockMode::PESSIMISTIC_WRITE);
+                }
                 return $this->addData($donation, $donationData);
             } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
                 \usleep(100_000 * (2 ** $retryCount)); // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
@@ -147,8 +150,6 @@ class Update extends Action
      */
     private function addData(Donation $donation, HttpModels\Donation $donationData): Response
     {
-        $this->entityManager->refresh($donation, LockMode::PESSIMISTIC_WRITE);
-
         // If the app tries to PUT with a different amount, something has gone very wrong and we should
         // explicitly fail instead of ignoring that field.
         if (bccomp($donation->getAmount(), (string) $donationData->donationAmount) !== 0) {
