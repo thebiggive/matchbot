@@ -171,9 +171,6 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
         return $stripeClient;
     }
 
-    /**
-     * @return Donation
-     */
     public function getDonation(): Donation
     {
         $charity = new Charity();
