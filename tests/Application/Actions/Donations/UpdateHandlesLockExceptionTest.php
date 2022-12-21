@@ -101,11 +101,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
             new NullLogger()
         );
 
-        $body = <<<'JSON'
-          {"status": "Pending","donationAmount": "1", "transactionId":null,"autoConfirmFromCashBalance":false,"creationRecaptchaCode":null,"currencyCode":null,"feeCoverAmount":null,"firstName":null,"lastName":null,"emailAddress":null,"billingPostalAddress":null,"countryCode":null,"homeAddress":null,"homePostcode":null,"giftAid":false,"optInCharityEmail":false,"optInTbgEmail":false,"optInChampionEmail":false,"tipAmount":null,"tipGiftAid":null,"cardBrand":"some-card-brand","cardCountry":"some-country"}
-        JSON;
-
-        $request = new ServerRequest(method: 'PUT', uri: '', body: $body);
+        $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody());
 
         $testCase = $this; // prophecy rebinds $this to point to the test double in the closure
         $entityManagerProphecy->flush()->will(function () use ($testCase) {
@@ -201,5 +197,36 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
         $donation->setDonorLastName('Donor last name');
 
         return $donation;
+    }
+
+    private function putRequestBody(): string
+    {
+        // props in alphabetical order
+        return <<<'JSON'
+        {
+          "autoConfirmFromCashBalance": false,
+          "billingPostalAddress": null,
+          "cardBrand": "some-card-brand",
+          "cardCountry": "some-country",
+          "countryCode": null,
+          "creationRecaptchaCode": null,
+          "currencyCode": null,
+          "donationAmount": "1",
+          "emailAddress": null,
+          "feeCoverAmount": null,
+          "firstName": null,
+          "giftAid": false,
+          "homeAddress": null,
+          "homePostcode": null,
+          "lastName": null,
+          "optInChampionEmail": false,
+          "optInCharityEmail": false,
+          "optInTbgEmail": false,
+          "status": "Pending",
+          "tipAmount": null,
+          "tipGiftAid": null,
+          "transactionId": null
+        }
+        JSON;
     }
 }
