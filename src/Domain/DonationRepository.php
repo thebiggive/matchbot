@@ -403,11 +403,11 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
-            ->leftJoin('d.fundingWithdrawals', 'fw')
+            // Only select donations with 1+ FWs. We don't need any further info about the FWs.
+            ->innerJoin('d.fundingWithdrawals', 'fw')
             ->where('d.donationStatus = :expireWithStatus')
             ->andWhere('d.createdAt < :expireBefore')
             ->groupBy('d.id')
-            ->having('COUNT(fw) > 0')
             ->setParameter('expireWithStatus', 'Pending')
             ->setParameter('expireBefore', $cutoff);
 
