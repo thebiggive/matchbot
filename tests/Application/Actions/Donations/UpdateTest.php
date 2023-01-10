@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
@@ -668,13 +669,15 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
-        $donation->setAmount('99.99');
+        $donationInRequest = $this->getTestDonation();
+        $donationInRequest->setAmount('99.99');
 
+        $donationInRepo = $this->getTestDonation(); //  // Get a new mock object so it's £123.45.
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation()) // Get a new mock object so it's £123.45.
+            ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -693,7 +696,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donationInRequest->toApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -882,9 +885,10 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationInRepo = $this->getTestDonation();  // Get a new mock object so it's £123.45.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation()) // Get a new mock object so it's £123.45.
+            ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
@@ -945,9 +949,10 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -1040,9 +1045,10 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationInRepo = $this->getTestDonation(); // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
@@ -1138,9 +1144,10 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -1245,9 +1252,10 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
@@ -1346,9 +1354,10 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationInRepo = $this->getTestDonation(); // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -1451,9 +1460,10 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donatinInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->willReturn($donatinInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
@@ -1553,9 +1563,10 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -1664,9 +1675,10 @@ class UpdateTest extends TestCase
         $donation->setPaymentMethodType('customer_balance');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation()) // Get a new mock object so DB has old values.
+            ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))

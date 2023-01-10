@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Donations;
 
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
@@ -19,7 +21,7 @@ use Psr\Log\LogLevel;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
-use Stripe\StripeClient;
+use Stripe\StripeClientInterface;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 use TypeError;
@@ -32,12 +34,14 @@ use TypeError;
  */
 class Update extends Action
 {
+    private const MAX_UPDATE_RETRY_COUNT = 4;
+
     #[Pure]
     public function __construct(
         private DonationRepository $donationRepository,
         private EntityManagerInterface $entityManager,
         private SerializerInterface $serializer,
-        private StripeClient $stripeClient,
+        private StripeClientInterface $stripeClient,
         LoggerInterface $logger
     ) {
         parent::__construct($logger);
@@ -99,7 +103,18 @@ class Update extends Action
         }
 
         if ($donationData->status === 'Cancelled') {
-            return $this->cancel($donation);
+            try {
+                return $this->cancel($donation);
+            } catch (LockWaitTimeoutException $_exception) {
+                // we could auto retry, but there is probably no point - the other process is likely to have made the donation non-cancelable.
+
+                $message = "Donation ID {$this->args['donationId']} is locked by another process, could not be set to status {$donationData->status}";
+                $this->logger->warning($message);
+                return $this->validationError(
+                    $message,
+                    'Cancellation was not possible due to another action at the same time affecting this donation'
+                );
+            }
         }
 
         if ($donationData->status !== $donation->getDonationStatus()) {
@@ -111,9 +126,23 @@ class Update extends Action
             );
         }
 
-        $response = $this->addData($donation, $donationData);
-
-        return $response;
+        $retryCount = 0;
+        while ($retryCount < self::MAX_UPDATE_RETRY_COUNT) {
+            try {
+                if ($retryCount > 0) {
+                    $this->entityManager->refresh($donation, LockMode::PESSIMISTIC_WRITE);
+                }
+                return $this->addData($donation, $donationData);
+            } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
+                \usleep(100_000 * (2 ** $retryCount)); // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
+                $retryCount++;
+            }
+        }
+        throw new \Exception(
+            "Retry count exceeded trying to update donation #{$donation->getId()} , retried $retryCount times",
+            0,
+            $lockWaitTimeoutException
+        );
     }
 
     /**
