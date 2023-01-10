@@ -45,6 +45,7 @@ workflows:
       - test:
           context:
             - docker-hub-creds
+            - jira
           post-steps:
             - jira/notify:
                 job_type: build
@@ -71,6 +72,7 @@ workflows:
       - aws-ecs/deploy-service-update:
           context:
             - ecs-deploys
+            - jira
           requires:
             - aws-ecr/build-and-push-image
           aws-region: AWS_REGION
@@ -106,6 +108,7 @@ workflows:
       - aws-ecs/deploy-service-update:
           context:
             - ecs-deploys
+            - jira
           requires:
             - aws-ecr/build-and-push-image
           aws-region: AWS_REGION
@@ -142,6 +145,7 @@ workflows:
       - aws-ecs/deploy-service-update:
           context:
             - ecs-deploys
+            - jira
           requires:
             - aws-ecr/build-and-push-image
           aws-region: AWS_REGION
