@@ -70,7 +70,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
             new NullLogger()
         );
 
-        $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody("Pending"));
+        $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Pending"));
 
         // act
         $response = $updateAction($request, new Response(), ['donationId' => $donationId]);
@@ -99,7 +99,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
             new NullLogger()
         );
 
-        $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody("Cancelled"));
+        $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Cancelled"));
 
         // act
         $response = $updateAction($request, new Response(), ['donationId' => $donationId]);
