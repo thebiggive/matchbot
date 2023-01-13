@@ -206,6 +206,10 @@ components:
         optInTbgEmail:
           type: boolean
           example: true
+        pspCustomerId:
+          type: string
+          required: false
+          description: Identifier of the customer within the payment service provider (e.g. Stripe)
         projectId:
           type: string
           description: |
