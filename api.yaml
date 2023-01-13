@@ -87,6 +87,18 @@ paths:
           description: Not authorised to see donation details
         '404':
           description: Donation not found
+  /people/{personId}/payment_methods:
+    get:
+      summary: Get stored payment methods (i.e. payment cards) for a person
+      responses:
+          '200':
+            description: List of payment methods as returned to Matchbot by the Stripe API
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/PaymentMethodsResponse'
+
+
 components:
   schemas:
     DonationCreatedResponse:
@@ -278,6 +290,35 @@ components:
           type: string
           format: date-time
           example: '2020-01-11T08:07:06.005Z'
+    PaymentMethods:
+      # The implementation of this method currently returns data exactly as supplied to matchbot by stripe.
+      # Selected properties are shown here, see https://stripe.com/docs/api/payment_methods/object for more details
+
+      type: array
+      items:
+        minItems: 0
+        type: object
+        properties:
+          id:
+            type: string
+          customer:
+            type: string
+          type:
+            type: string
+            enum: ["card"]
+          card:
+            type: object
+            properties:
+              brand:
+                type: string
+              last4:
+                type: string
+
+      required:
+        - donation
+      properties:
+        donation:
+          $ref: '#/components/schemas/Donation'
   securitySchemes:
     JWT:
       type: apiKey
