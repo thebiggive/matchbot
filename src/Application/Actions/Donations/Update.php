@@ -102,29 +102,6 @@ class Update extends Action
             );
         }
 
-        if ($donationData->status === 'Cancelled') {
-            try {
-                return $this->cancel($donation);
-            } catch (LockWaitTimeoutException $_exception) {
-                // we could auto retry, but there is probably no point - the other process is likely to have made the donation non-cancelable.
-
-                $message = "Donation ID {$this->args['donationId']} is locked by another process, could not be set to status {$donationData->status}";
-                $this->logger->warning($message);
-                return $this->validationError(
-                    $message,
-                    'Cancellation was not possible due to another action at the same time affecting this donation'
-                );
-            }
-        }
-
-        if ($donationData->status !== $donation->getDonationStatus()) {
-            $this->entityManager->rollback();
-
-            return $this->validationError(
-                "Donation ID {$this->args['donationId']} could not be set to status {$donationData->status}",
-                'Status update is only supported for cancellation'
-            );
-        }
 
         $retryCount = 0;
         while ($retryCount < self::MAX_UPDATE_RETRY_COUNT) {
@@ -132,6 +109,19 @@ class Update extends Action
                 if ($retryCount > 0) {
                     $this->entityManager->refresh($donation, LockMode::PESSIMISTIC_WRITE);
                 }
+                if ($donationData->status !== 'Cancelled' && $donationData->status !== $donation->getDonationStatus()) {
+                    $this->entityManager->rollback();
+
+                    return $this->validationError(
+                        "Donation ID {$this->args['donationId']} could not be set to status {$donationData->status}",
+                        'Status update is only supported for cancellation'
+                    );
+                }
+
+                if ($donationData->status === 'Cancelled') {
+                    return $this->cancel($donation);
+                }
+
                 return $this->addData($donation, $donationData);
             } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
                 \usleep(100_000 * (2 ** $retryCount)); // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
