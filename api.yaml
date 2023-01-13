@@ -1,0 +1,274 @@
+openapi: 3.0.0
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/Noel/TBG-Donations/1.0.8
+  - description: "MatchBot staging"
+    url: https://matchbot-staging.thebiggivetest.org.uk/v1
+info:
+  description: The Big Give Donations public API
+  version: 1.0.8
+  title: Donations
+  contact:
+    email: tech@thebiggive.org.uk
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+paths:
+  /donations:
+    post:
+      summary: Creates a donation
+      operationId: addDonation
+      description: Initiates a donation with pending status
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Donation'
+        description: Donation to create
+      responses:
+        '201':
+          description: Donation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationCreatedResponse'
+        '400':
+          description: Invalid donation properties
+  /donations/{donationId}:
+    parameters:
+      - name: donationId
+        in: path
+        schema:
+          type: string
+        description: Case-insensitive Salesforce ID for a donation
+        required: true
+    get:
+      security:
+        - JWT: []
+      summary: Gets a donation's details by ID
+      responses:
+        '200':
+          description: Donation returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Donation'
+        '401':
+          description: Not authorised to see donation details
+        '404':
+          description: Donation not found
+    put:
+      security:
+        - JWT: []
+      summary: Modify an existing donation
+      operationId: editDonation
+      description: |
+        Change something about a donation. Currently supports
+        (a) adding more details, and
+        (b) setting status to Cancelled if it was Pending
+            or Reserved.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Donation'
+        description: Donation to update
+      responses:
+        '200':
+          description: Donation updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Donation'
+        '400':
+          description: Requested update not allowed or in the wrong format
+        '401':
+          description: Not authorised to see donation details
+        '404':
+          description: Donation not found
+components:
+  schemas:
+    DonationCreatedResponse:
+      type: object
+      required:
+        - jwt
+        - donation
+      properties:
+        jwt:
+          readOnly: true
+          type: string
+          description: |
+            A signed JWT to prove identity for subsequent operations on the
+            donation, like reading its status or cancelling it.
+        donation:
+          $ref: '#/components/schemas/Donation'
+    Donation:
+      type: object
+      required:
+        - charityId
+        - currencyCode
+        - donationAmount
+        - donationMatched
+        - projectId
+        - psp
+      properties:
+        donationId:
+          readOnly: true
+          type: string
+          description: |
+            Unique ID for a donation, in Salesforce case-insensitive format.
+            18 character string. Assigned earlier than Charity Checkout's
+            `transactionId`.
+          example: "01I400000009Sds3e2"
+        transactionId:
+          readOnly: true
+          type: string
+          format: uuid
+          description: ID assigned by Charity Checkout upon checkout initiation
+          example: "d290f1ee-6c54-4b01-90e6-d701748f0851"
+        charityId:
+          type: string
+          description: |
+            Unique ID for a charity assigned by the Big Give, in Salesforce
+            case-insensitive format. 18 character string.
+          example: "01I400000009Sds3e2"
+        charityName:
+          type: string
+        creationRecaptchaCode:
+          type: string
+          description: |
+            Human verification code, required on Create and ignored otherwise.
+            Helps prevent abuse by actors using automated tools.
+          example: "human-proof-123"
+        currencyCode:
+          type: string
+          default: "GBP"
+          example: "GBP"
+          description: ISO 4217 code for the currency of all monetary fields
+        donationAmount:
+          type: number
+          example: 100.00
+          maximum: 25000.00
+          minimum: 5.00
+        matchReservedAmount:
+          type: number
+          example: 100.00
+          maximum: 25000.00
+          minimum: 5.00
+          description: The amount reserved to be matched against the donation
+        matchedAmount:
+          type: number
+          example: 100.00
+          maximum: 25000.00
+          minimum: 5.00
+          description: The final amount matched against a completed donation
+        giftAid:
+          type: boolean
+          example: true
+        donationMatched:
+          type: boolean
+          description: |
+            Indicates whether donation was expected to be eligible
+            for either full or partial matching when initiated.
+          example: true
+        firstName:
+          type: string
+          example: Ezra
+        lastName:
+          type: string
+          example: Furman
+        emailAddress:
+          type: string
+          format: email
+          example: ezra@example.com
+        billingPostalAddress:
+          type: string
+          description: |
+            Donor's billing address including postcode, or
+            just postcode
+          example: "1 Main Street, London, N1 1AA"
+        countryCode:
+          type: string
+          description: "Donor's country code in ISO 3166-1 alpha-2 format"
+          example: "GB"
+        homeAddress:
+          type: string
+          description: Start of address if claiming Gift Aid
+          example: "1 Home Lane"
+        homePostcode:
+          type: string
+          description: Postcode if claiming Gift Aid
+          example: "N16 1AA"
+        optInCharityEmail:
+          type: boolean
+          example: true
+        optInTbgEmail:
+          type: boolean
+          example: true
+        projectId:
+          type: string
+          description: |
+            Unique ID for a campaign assigned by the Big Give, in Salesforce
+            case-insensitive format. 18 character string.
+          example: "01I400000009Sds3e2"
+        psp:
+          type: string
+          enum: ['stripe']
+        clientSecret:
+          readOnly: true
+          type: string
+          description: |
+            Identifier used client-side by some PSPs
+            to complete an initialised payment
+        status:
+          readOnly: true
+          type: string
+          enum: [
+            "NotSet",
+            "Pending",
+            "Reserved",
+            "Collected",
+            "Paid",
+            "Cancelled",
+            "Refunded",
+            "Failed",
+            "Chargedback",
+            "RefundingPending",
+            "PendingCancellation"
+          ]
+          example: "Paid"
+        feeCoverAmount:
+          type: number
+          default: 0.00
+          example: 4.50
+          maximum: 25000.00
+        tipAmount:
+          type: number
+          default: 0.00
+          example: 4.50
+          maximum: 25000.00
+        tipGiftAid:
+          type: boolean
+          example: true
+        collectedTime:
+          readOnly: true
+          type: string
+          format: date-time
+          example: '2020-01-10T08:07:06.005Z'
+        createdTime:
+          readOnly: true
+          type: string
+          format: date-time
+          example: '2020-01-10T08:07:06.005Z'
+        updatedTime:
+          readOnly: true
+          type: string
+          format: date-time
+          example: '2020-01-11T08:07:06.005Z'
+  securitySchemes:
+    JWT:
+      type: apiKey
+      name: X-Tbg-Auth
+      in: header
+      description: Compact JWS token, as returned alongside donation when it is created
