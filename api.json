@@ -1,0 +1,366 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Donations",
+    "description": "The Big Give Donations public API",
+    "contact": {
+      "email": "tech@thebiggive.org.uk"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "1.0.8"
+  },
+  "servers": [
+    {
+      "url": "https://virtserver.swaggerhub.com/Noel/TBG-Donations/1.0.8",
+      "description": "SwaggerHub API Auto Mocking"
+    },
+    {
+      "url": "https://matchbot-staging.thebiggivetest.org.uk/v1",
+      "description": "MatchBot staging"
+    }
+  ],
+  "paths": {
+    "/donations": {
+      "post": {
+        "summary": "Creates a donation",
+        "description": "Initiates a donation with pending status",
+        "operationId": "addDonation",
+        "requestBody": {
+          "description": "Donation to create",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Donation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Donation created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DonationCreatedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid donation properties"
+          }
+        }
+      }
+    },
+    "/donations/{donationId}": {
+      "get": {
+        "summary": "Gets a donation's details by ID",
+        "parameters": [
+          {
+            "name": "donationId",
+            "in": "path",
+            "description": "Case-insensitive Salesforce ID for a donation",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Donation returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Donation"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorised to see donation details"
+          },
+          "404": {
+            "description": "Donation not found"
+          }
+        },
+        "security": [
+          {
+            "JWT": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Modify an existing donation",
+        "description": "Change something about a donation. Currently supports\n(a) adding more details, and\n(b) setting status to Cancelled if it was Pending\n    or Reserved.\n",
+        "operationId": "editDonation",
+        "parameters": [
+          {
+            "name": "donationId",
+            "in": "path",
+            "description": "Case-insensitive Salesforce ID for a donation",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Donation to update",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Donation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Donation updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Donation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Requested update not allowed or in the wrong format"
+          },
+          "401": {
+            "description": "Not authorised to see donation details"
+          },
+          "404": {
+            "description": "Donation not found"
+          }
+        },
+        "security": [
+          {
+            "JWT": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DonationCreatedResponse": {
+        "required": [
+          "donation",
+          "jwt"
+        ],
+        "type": "object",
+        "properties": {
+          "jwt": {
+            "type": "string",
+            "description": "A signed JWT to prove identity for subsequent operations on the\ndonation, like reading its status or cancelling it.\n",
+            "readOnly": true
+          },
+          "donation": {
+            "$ref": "#/components/schemas/Donation"
+          }
+        }
+      },
+      "Donation": {
+        "required": [
+          "charityId",
+          "currencyCode",
+          "donationAmount",
+          "donationMatched",
+          "projectId",
+          "psp"
+        ],
+        "type": "object",
+        "properties": {
+          "donationId": {
+            "type": "string",
+            "description": "Unique ID for a donation, in Salesforce case-insensitive format.\n18 character string. Assigned earlier than Charity Checkout's\n`transactionId`.\n",
+            "readOnly": true,
+            "example": "01I400000009Sds3e2"
+          },
+          "transactionId": {
+            "type": "string",
+            "description": "ID assigned by Charity Checkout upon checkout initiation",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+          },
+          "charityId": {
+            "type": "string",
+            "description": "Unique ID for a charity assigned by the Big Give, in Salesforce\ncase-insensitive format. 18 character string.\n",
+            "example": "01I400000009Sds3e2"
+          },
+          "charityName": {
+            "type": "string"
+          },
+          "creationRecaptchaCode": {
+            "type": "string",
+            "description": "Human verification code, required on Create and ignored otherwise.\nHelps prevent abuse by actors using automated tools.\n",
+            "example": "human-proof-123"
+          },
+          "currencyCode": {
+            "type": "string",
+            "description": "ISO 4217 code for the currency of all monetary fields",
+            "example": "GBP",
+            "default": "GBP"
+          },
+          "donationAmount": {
+            "maximum": 25000,
+            "minimum": 5,
+            "type": "number",
+            "example": 100
+          },
+          "matchReservedAmount": {
+            "maximum": 25000,
+            "minimum": 5,
+            "type": "number",
+            "description": "The amount reserved to be matched against the donation",
+            "example": 100
+          },
+          "matchedAmount": {
+            "maximum": 25000,
+            "minimum": 5,
+            "type": "number",
+            "description": "The final amount matched against a completed donation",
+            "example": 100
+          },
+          "giftAid": {
+            "type": "boolean",
+            "example": true
+          },
+          "donationMatched": {
+            "type": "boolean",
+            "description": "Indicates whether donation was expected to be eligible\nfor either full or partial matching when initiated.\n",
+            "example": true
+          },
+          "firstName": {
+            "type": "string",
+            "example": "Ezra"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Furman"
+          },
+          "emailAddress": {
+            "type": "string",
+            "format": "email",
+            "example": "ezra@example.com"
+          },
+          "billingPostalAddress": {
+            "type": "string",
+            "description": "Donor's billing address including postcode, or\njust postcode\n",
+            "example": "1 Main Street, London, N1 1AA"
+          },
+          "countryCode": {
+            "type": "string",
+            "description": "Donor's country code in ISO 3166-1 alpha-2 format",
+            "example": "GB"
+          },
+          "homeAddress": {
+            "type": "string",
+            "description": "Start of address if claiming Gift Aid",
+            "example": "1 Home Lane"
+          },
+          "homePostcode": {
+            "type": "string",
+            "description": "Postcode if claiming Gift Aid",
+            "example": "N16 1AA"
+          },
+          "optInCharityEmail": {
+            "type": "boolean",
+            "example": true
+          },
+          "optInTbgEmail": {
+            "type": "boolean",
+            "example": true
+          },
+          "projectId": {
+            "type": "string",
+            "description": "Unique ID for a campaign assigned by the Big Give, in Salesforce\ncase-insensitive format. 18 character string.\n",
+            "example": "01I400000009Sds3e2"
+          },
+          "psp": {
+            "type": "string",
+            "enum": [
+              "stripe"
+            ]
+          },
+          "clientSecret": {
+            "type": "string",
+            "description": "Identifier used client-side by some PSPs\nto complete an initialised payment\n",
+            "readOnly": true
+          },
+          "status": {
+            "type": "string",
+            "readOnly": true,
+            "example": "Paid",
+            "enum": [
+              "NotSet",
+              "Pending",
+              "Reserved",
+              "Collected",
+              "Paid",
+              "Cancelled",
+              "Refunded",
+              "Failed",
+              "Chargedback",
+              "RefundingPending",
+              "PendingCancellation"
+            ]
+          },
+          "feeCoverAmount": {
+            "maximum": 25000,
+            "type": "number",
+            "example": 4.5,
+            "default": 0
+          },
+          "tipAmount": {
+            "maximum": 25000,
+            "type": "number",
+            "example": 4.5,
+            "default": 0
+          },
+          "tipGiftAid": {
+            "type": "boolean",
+            "example": true
+          },
+          "collectedTime": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "example": "2020-01-10T08:07:06.005Z"
+          },
+          "createdTime": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "example": "2020-01-10T08:07:06.005Z"
+          },
+          "updatedTime": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "example": "2020-01-11T08:07:06.005Z"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "JWT": {
+        "type": "apiKey",
+        "description": "Compact JWS token, as returned alongside donation when it is created",
+        "name": "X-Tbg-Auth",
+        "in": "header"
+      }
+    }
+  }
+}
