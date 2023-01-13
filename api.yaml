@@ -229,6 +229,10 @@ components:
           description: |
             Identifier used client-side by some PSPs
             to complete an initialised payment
+        paymentMethodType:
+          type: string
+          enum: ["card", "customer_balance"]
+          default: "card"
         status:
           readOnly: true
           type: string
