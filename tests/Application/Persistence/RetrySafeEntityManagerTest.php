@@ -162,7 +162,6 @@ class RetrySafeEntityManagerTest extends TestCase
      * @param array         $connectionSettings
      * @param EntityManager $underlyingEmToFailInitially
      * @param EntityManager $underlyingEmToResetTo
-     * @return RetrySafeEntityManager|ObjectProphecy
      */
     private function getRetrySafeEntityManagerPartialMock(
         Configuration $config,
