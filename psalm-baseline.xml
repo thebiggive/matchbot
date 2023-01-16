@@ -1,0 +1,2073 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="5.4.0@62db5d4f6a7ae0a20f7cc5a4952d730272fc0863">
+  <file src="app/dependencies.php">
+    <DeprecatedClass occurrences="3">
+      <code>new ArrayCache()</code>
+      <code>new RedisCache()</code>
+    </DeprecatedClass>
+    <DeprecatedMethod occurrences="1">
+      <code>setMetadataCacheImpl</code>
+    </DeprecatedMethod>
+    <MixedArgument occurrences="31">
+      <code>$c-&gt;get('settings')</code>
+      <code>$c-&gt;get('settings')</code>
+      <code>$c-&gt;get('settings')</code>
+      <code>$c-&gt;get('settings')['doctrine']['connection']</code>
+      <code>$c-&gt;get('settings')['identity']['baseUri']</code>
+      <code>$c-&gt;get('settings')['los_rate_limit']</code>
+      <code>$c-&gt;get('settings')['recaptcha']['secret_key']</code>
+      <code>$c-&gt;get('settings')['redis']['host']</code>
+      <code>$c-&gt;get('settings')['redis']['host']</code>
+      <code>$c-&gt;get(CacheInterface::class)</code>
+      <code>$c-&gt;get(LoggerInterface::class)</code>
+      <code>$c-&gt;get(LoggerInterface::class)</code>
+      <code>$c-&gt;get(LoggerInterface::class)</code>
+      <code>$c-&gt;get(LoggerInterface::class)</code>
+      <code>$c-&gt;get(LoggerInterface::class)</code>
+      <code>$c-&gt;get(LoggerInterface::class)</code>
+      <code>$c-&gt;get(ORM\Configuration::class)</code>
+      <code>$c-&gt;get(ProblemDetailsResponseFactory::class)</code>
+      <code>$c-&gt;get(Redis::class)</code>
+      <code>$c-&gt;get(Redis::class)</code>
+      <code>$c-&gt;get(RetrySafeEntityManager::class)</code>
+      <code>$em-&gt;getConnection()</code>
+      <code>$loggerSettings['name']</code>
+      <code>$loggerSettings['path']</code>
+      <code>$settings['doctrine']['dev_mode']</code>
+      <code>$settings['doctrine']['dev_mode']</code>
+      <code>$settings['doctrine']['metadata_dirs']</code>
+      <code>$settings['doctrine']['metadata_dirs']</code>
+      <code>$settings['notifier']['slack']['api_token']</code>
+      <code>$settings['notifier']['slack']['channel']</code>
+      <code>$settings['redis']['host']</code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion occurrences="1"/>
+    <MixedArrayAccess occurrences="32">
+      <code>$c-&gt;get('settings')['doctrine']</code>
+      <code>$c-&gt;get('settings')['identity']</code>
+      <code>$c-&gt;get('settings')['los_rate_limit']</code>
+      <code>$c-&gt;get('settings')['recaptcha']</code>
+      <code>$c-&gt;get('settings')['redis']</code>
+      <code>$c-&gt;get('settings')['redis']</code>
+      <code>$c-&gt;get('settings')['redis']</code>
+      <code>$c-&gt;get('settings')['stripe']</code>
+      <code>$c-&gt;get('settings')['stripe']</code>
+      <code>$loggerSettings['level']</code>
+      <code>$loggerSettings['name']</code>
+      <code>$loggerSettings['path']</code>
+      <code>$settings['appEnv']</code>
+      <code>$settings['doctrine']</code>
+      <code>$settings['doctrine']</code>
+      <code>$settings['doctrine']</code>
+      <code>$settings['doctrine']</code>
+      <code>$settings['doctrine']</code>
+      <code>$settings['doctrine']['cache_dir']</code>
+      <code>$settings['doctrine']['dev_mode']</code>
+      <code>$settings['doctrine']['dev_mode']</code>
+      <code>$settings['doctrine']['metadata_dirs']</code>
+      <code>$settings['doctrine']['metadata_dirs']</code>
+      <code>$settings['logger']</code>
+      <code>$settings['notifier']</code>
+      <code>$settings['notifier']</code>
+      <code>$settings['notifier']['slack']</code>
+      <code>$settings['notifier']['slack']</code>
+      <code>$settings['notifier']['slack']['api_token']</code>
+      <code>$settings['notifier']['slack']['channel']</code>
+      <code>$settings['redis']</code>
+      <code>$settings['redis']['host']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="6">
+      <code>$em</code>
+      <code>$logger</code>
+      <code>$loggerSettings</code>
+      <code>$settings</code>
+      <code>$settings</code>
+      <code>$settings</code>
+    </MixedAssignment>
+    <MixedInferredReturnType occurrences="2">
+      <code>EntityManagerInterface</code>
+      <code>StripeClientInterface</code>
+    </MixedInferredReturnType>
+    <MixedMethodCall occurrences="4">
+      <code>error</code>
+      <code>getConnection</code>
+      <code>warning</code>
+      <code>warning</code>
+    </MixedMethodCall>
+    <MixedOperand occurrences="2">
+      <code>$c-&gt;get('settings')['redis']['host']</code>
+      <code>$settings['doctrine']['cache_dir']</code>
+    </MixedOperand>
+    <MixedReturnStatement occurrences="2">
+      <code>$c-&gt;get(RetrySafeEntityManager::class)</code>
+      <code>$c-&gt;get(StripeClient::class)</code>
+    </MixedReturnStatement>
+    <PossiblyFalseArgument occurrences="2">
+      <code>getenv('CLAIMBOT_MESSENGER_TRANSPORT_DSN')</code>
+      <code>getenv('MESSENGER_TRANSPORT_DSN')</code>
+    </PossiblyFalseArgument>
+    <UnusedClosureParam occurrences="4">
+      <code>$c</code>
+      <code>$c</code>
+      <code>$c</code>
+      <code>$c</code>
+    </UnusedClosureParam>
+  </file>
+  <file src="app/repositories.php">
+    <MixedAssignment occurrences="3">
+      <code>$repo</code>
+      <code>$repo</code>
+      <code>$repo</code>
+    </MixedAssignment>
+    <MixedInferredReturnType occurrences="6">
+      <code>CampaignFundingRepository</code>
+      <code>CampaignRepository</code>
+      <code>CharityRepository</code>
+      <code>DonationRepository</code>
+      <code>FundRepository</code>
+      <code>FundingWithdrawalRepository</code>
+    </MixedInferredReturnType>
+    <MixedMethodCall occurrences="19">
+      <code>getRepository</code>
+      <code>getRepository</code>
+      <code>getRepository</code>
+      <code>getRepository</code>
+      <code>getRepository</code>
+      <code>getRepository</code>
+      <code>setCampaignFundingRepository</code>
+      <code>setCampaignRepository</code>
+      <code>setClient</code>
+      <code>setClient</code>
+      <code>setClient</code>
+      <code>setFundRepository</code>
+      <code>setLockFactory</code>
+      <code>setLogger</code>
+      <code>setLogger</code>
+      <code>setLogger</code>
+      <code>setMatchingAdapter</code>
+      <code>setMatchingAdapter</code>
+      <code>setSettings</code>
+    </MixedMethodCall>
+    <MixedReturnStatement occurrences="6">
+      <code>$c-&gt;get(EntityManagerInterface::class)-&gt;getRepository(CampaignFunding::class)</code>
+      <code>$c-&gt;get(EntityManagerInterface::class)-&gt;getRepository(Charity::class)</code>
+      <code>$c-&gt;get(EntityManagerInterface::class)-&gt;getRepository(FundingWithdrawal::class)</code>
+      <code>$repo</code>
+      <code>$repo</code>
+      <code>$repo</code>
+    </MixedReturnStatement>
+  </file>
+  <file src="app/routes.php">
+    <MissingClosureParamType occurrences="6">
+      <code>$args</code>
+      <code>$handler</code>
+      <code>$request</code>
+      <code>$request</code>
+      <code>$response</code>
+      <code>$response</code>
+    </MissingClosureParamType>
+    <MissingClosureReturnType occurrences="2">
+      <code>function ($request, $response, $args) {</code>
+      <code>function (RequestInterface $request, $handler) {</code>
+    </MissingClosureReturnType>
+    <MixedArgument occurrences="1">
+      <code>$request</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="1">
+      <code>$response</code>
+    </MixedAssignment>
+    <MixedMethodCall occurrences="4">
+      <code>handle</code>
+      <code>withHeader</code>
+      <code>withHeader</code>
+      <code>withHeader</code>
+    </MixedMethodCall>
+    <UnusedClosureParam occurrences="3">
+      <code>$args</code>
+      <code>$request</code>
+      <code>$response</code>
+    </UnusedClosureParam>
+  </file>
+  <file src="public/index.php">
+    <MixedArgument occurrences="1">
+      <code>$app-&gt;getContainer()-&gt;get(LoggerInterface::class)</code>
+    </MixedArgument>
+    <MixedArrayAccess occurrences="1">
+      <code>$container-&gt;get('settings')['displayErrorDetails']</code>
+    </MixedArrayAccess>
+    <PossiblyNullReference occurrences="1">
+      <code>get</code>
+    </PossiblyNullReference>
+  </file>
+  <file src="src/Application/Actions/Action.php">
+    <PropertyNotSetInConstructor occurrences="3">
+      <code>$args</code>
+      <code>$request</code>
+      <code>$response</code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Application/Actions/Donations/Create.php">
+    <MixedArgument occurrences="2">
+      <code>$campaign</code>
+      <code>$customerId</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="3">
+      <code>$campaign</code>
+      <code>$createPayload['customer']</code>
+      <code>$customerId</code>
+    </MixedAssignment>
+    <MixedMethodCall occurrences="2">
+      <code>getCharity</code>
+      <code>getStripeAccountId</code>
+    </MixedMethodCall>
+    <PossiblyNullArgument occurrences="5">
+      <code>$donation-&gt;getCampaign()-&gt;getCharity()-&gt;getSalesforceId()</code>
+      <code>$donation-&gt;getCampaign()-&gt;getCharity()-&gt;getStripeAccountId()</code>
+      <code>$donation-&gt;getPspCustomerId()</code>
+      <code>$exception-&gt;getStripeCode()</code>
+      <code>$intent-&gt;client_secret</code>
+    </PossiblyNullArgument>
+    <PropertyNotSetInConstructor occurrences="3">
+      <code>Create</code>
+      <code>Create</code>
+      <code>Create</code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Application/Actions/Donations/Get.php">
+    <DocblockTypeContradiction occurrences="2">
+      <code>!$donation</code>
+      <code>$donation</code>
+    </DocblockTypeContradiction>
+    <PropertyNotSetInConstructor occurrences="3">
+      <code>Get</code>
+      <code>Get</code>
+      <code>Get</code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Application/Actions/Donations/Update.php">
+    <ArgumentTypeCoercion occurrences="1">
+      <code>$donation-&gt;getAmount()</code>
+    </ArgumentTypeCoercion>
+    <InvalidArgument occurrences="1">
+      <code>100_000 * (2 ** $retryCount)</code>
+    </InvalidArgument>
+    <MixedArgument occurrences="2">
+      <code>$latestPI-&gt;application_fee_amount</code>
+      <code>$lockWaitTimeoutException</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="1">
+      <code>$latestPI</code>
+    </MixedAssignment>
+    <MixedMethodCall occurrences="4">
+      <code>cancel</code>
+      <code>confirm</code>
+      <code>retrieve</code>
+      <code>update</code>
+    </MixedMethodCall>
+    <MixedPropertyFetch occurrences="1">
+      <code>$latestPI-&gt;application_fee_amount</code>
+    </MixedPropertyFetch>
+    <NoInterfaceProperties occurrences="4">
+      <code>$this-&gt;stripeClient-&gt;paymentIntents</code>
+      <code>$this-&gt;stripeClient-&gt;paymentIntents</code>
+      <code>$this-&gt;stripeClient-&gt;paymentIntents</code>
+      <code>$this-&gt;stripeClient-&gt;paymentIntents</code>
+    </NoInterfaceProperties>
+    <PossiblyNullArgument occurrences="5">
+      <code>$donation-&gt;getId()</code>
+      <code>$exception-&gt;getStripeCode()</code>
+      <code>$exception-&gt;getStripeCode()</code>
+      <code>$exception-&gt;getStripeCode()</code>
+      <code>$retryException-&gt;getStripeCode()</code>
+    </PossiblyNullArgument>
+    <PossiblyUndefinedVariable occurrences="1">
+      <code>$lockWaitTimeoutException</code>
+    </PossiblyUndefinedVariable>
+    <PropertyNotSetInConstructor occurrences="3">
+      <code>Update</code>
+      <code>Update</code>
+      <code>Update</code>
+    </PropertyNotSetInConstructor>
+    <TooManyArguments occurrences="1">
+      <code>refresh</code>
+    </TooManyArguments>
+    <TypeDoesNotContainType occurrences="1">
+      <code>isset($donationData-&gt;status)</code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="src/Application/Actions/GetPaymentMethods.php">
+    <MixedArgument occurrences="1">
+      <code>$customerId</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="1">
+      <code>$customerId</code>
+    </MixedAssignment>
+    <PropertyNotSetInConstructor occurrences="3">
+      <code>GetPaymentMethods</code>
+      <code>GetPaymentMethods</code>
+      <code>GetPaymentMethods</code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Application/Actions/Hooks/Stripe.php">
+    <ImplicitToStringCast occurrences="1">
+      <code>$request-&gt;getBody()</code>
+    </ImplicitToStringCast>
+    <MixedArrayAccess occurrences="1">
+      <code>$container-&gt;get('settings')['stripe']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="1">
+      <code>$this-&gt;stripeSettings</code>
+    </MixedAssignment>
+    <PropertyNotSetInConstructor occurrences="4">
+      <code>$event</code>
+      <code>Stripe</code>
+      <code>Stripe</code>
+      <code>Stripe</code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Application/Actions/Hooks/StripeChargeUpdate.php">
+    <DocblockTypeContradiction occurrences="6">
+      <code>!$donation</code>
+      <code>!$donation</code>
+      <code>!$donation</code>
+      <code>$donation</code>
+      <code>$donation</code>
+      <code>$donation</code>
+    </DocblockTypeContradiction>
+    <ImplicitToStringCast occurrences="5">
+      <code>$intentId</code>
+      <code>$intentId</code>
+      <code>$intentId</code>
+      <code>$intentId</code>
+      <code>$intentId</code>
+    </ImplicitToStringCast>
+    <MixedArgument occurrences="11">
+      <code>$amountRefunded</code>
+      <code>$charge</code>
+      <code>$charge-&gt;id</code>
+      <code>$charge-&gt;id</code>
+      <code>$charge-&gt;id</code>
+      <code>$charge-&gt;id</code>
+      <code>$charge-&gt;status</code>
+      <code>$event-&gt;data-&gt;object</code>
+      <code>$this-&gt;stripeSettings['accountWebhookSecret']</code>
+      <code>$txn-&gt;fee_details[0]-&gt;currency</code>
+      <code>$txn-&gt;fee_details[0]-&gt;type</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="2">
+      <code>$amountRefunded</code>
+      <code>$charge</code>
+    </MixedAssignment>
+    <MixedPropertyFetch occurrences="3">
+      <code>$charge-&gt;id</code>
+      <code>$charge-&gt;status</code>
+      <code>$event-&gt;data-&gt;object-&gt;amount_refunded</code>
+    </MixedPropertyFetch>
+    <PossiblyInvalidArgument occurrences="2">
+      <code>$charge-&gt;balance_transaction</code>
+      <code>$charge-&gt;transfer</code>
+    </PossiblyInvalidArgument>
+    <PossiblyNullArgument occurrences="5">
+      <code>$intentId</code>
+      <code>$intentId</code>
+      <code>$intentId</code>
+      <code>$intentId</code>
+      <code>$intentId</code>
+    </PossiblyNullArgument>
+    <PropertyNotSetInConstructor occurrences="4">
+      <code>StripeChargeUpdate</code>
+      <code>StripeChargeUpdate</code>
+      <code>StripeChargeUpdate</code>
+      <code>StripeChargeUpdate</code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Application/Actions/Hooks/StripePayoutUpdate.php">
+    <ImplicitToStringCast occurrences="1">
+      <code>$this-&gt;request-&gt;getBody()</code>
+    </ImplicitToStringCast>
+    <MixedArgument occurrences="5">
+      <code>$event-&gt;data-&gt;object</code>
+      <code>$payoutId</code>
+      <code>$payoutId</code>
+      <code>$this-&gt;event-&gt;data-&gt;object-&gt;id</code>
+      <code>$this-&gt;stripeSettings['connectAppWebhookSecret']</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="1">
+      <code>$payoutId</code>
+    </MixedAssignment>
+    <MixedPropertyFetch occurrences="3">
+      <code>$event-&gt;data-&gt;object-&gt;automatic</code>
+      <code>$event-&gt;data-&gt;object-&gt;id</code>
+      <code>$this-&gt;event-&gt;data-&gt;object-&gt;id</code>
+    </MixedPropertyFetch>
+    <PropertyNotSetInConstructor occurrences="4">
+      <code>StripePayoutUpdate</code>
+      <code>StripePayoutUpdate</code>
+      <code>StripePayoutUpdate</code>
+      <code>StripePayoutUpdate</code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Application/Actions/Status.php">
+    <InternalMethod occurrences="1">
+      <code>connect</code>
+    </InternalMethod>
+    <PossiblyNullArgument occurrences="2">
+      <code>$emConfig-&gt;getProxyDir()</code>
+      <code>$emConfig-&gt;getProxyNamespace()</code>
+    </PossiblyNullArgument>
+    <PropertyNotSetInConstructor occurrences="3">
+      <code>Status</code>
+      <code>Status</code>
+      <code>Status</code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Application/Auth/DonationPublicAuthMiddleware.php">
+    <PossiblyNullArgument occurrences="1">
+      <code>$donationId</code>
+    </PossiblyNullArgument>
+    <PossiblyNullReference occurrences="1">
+      <code>getArgument</code>
+    </PossiblyNullReference>
+  </file>
+  <file src="src/Application/Auth/DonationRecaptchaMiddleware.php">
+    <MixedArgument occurrences="2">
+      <code>$captchaCode</code>
+      <code>$request-&gt;getAttribute('client-ip')</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="2">
+      <code>$captchaCode</code>
+      <code>$donationData</code>
+    </MixedAssignment>
+    <MixedPropertyFetch occurrences="1">
+      <code>$donationData-&gt;creationRecaptchaCode</code>
+    </MixedPropertyFetch>
+  </file>
+  <file src="src/Application/Auth/DonationToken.php">
+    <FalsableReturnStatement occurrences="1">
+      <code>getenv('JWT_DONATION_SECRET')</code>
+    </FalsableReturnStatement>
+    <InvalidFalsableReturnType occurrences="1">
+      <code>string</code>
+    </InvalidFalsableReturnType>
+    <MixedPropertyFetch occurrences="1">
+      <code>$decodedJwtBody-&gt;sub-&gt;donationId</code>
+    </MixedPropertyFetch>
+  </file>
+  <file src="src/Application/Auth/IdentityToken.php">
+    <FalsableReturnStatement occurrences="1">
+      <code>getenv('JWT_ID_SECRET')</code>
+    </FalsableReturnStatement>
+    <InvalidFalsableReturnType occurrences="1">
+      <code>string</code>
+    </InvalidFalsableReturnType>
+    <MissingParamType occurrences="1">
+      <code>$jws</code>
+    </MissingParamType>
+    <MixedArgument occurrences="1">
+      <code>$jws</code>
+    </MixedArgument>
+    <MixedInferredReturnType occurrences="2">
+      <code>?string</code>
+      <code>bool</code>
+    </MixedInferredReturnType>
+    <MixedPropertyFetch occurrences="3">
+      <code>$decodedJwtBody-&gt;sub-&gt;complete</code>
+      <code>$decodedJwtBody-&gt;sub-&gt;person_id</code>
+      <code>$decodedJwtBody-&gt;sub-&gt;psp_id</code>
+    </MixedPropertyFetch>
+    <MixedReturnStatement occurrences="4">
+      <code>$decodedJwtBody-&gt;sub-&gt;complete ?? false</code>
+      <code>$decodedJwtBody-&gt;sub-&gt;complete ?? false</code>
+      <code>$decodedJwtBody-&gt;sub-&gt;psp_id ?? null</code>
+      <code>$decodedJwtBody-&gt;sub-&gt;psp_id ?? null</code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Application/Auth/PersonManagementAuthMiddleware.php">
+    <PossiblyNullArgument occurrences="1">
+      <code>$personId</code>
+    </PossiblyNullArgument>
+    <PossiblyNullReference occurrences="1">
+      <code>getArgument</code>
+    </PossiblyNullReference>
+  </file>
+  <file src="src/Application/Commands/Command.php">
+    <PossiblyNullOperand occurrences="2">
+      <code>$this-&gt;getName()</code>
+      <code>$this-&gt;getName()</code>
+    </PossiblyNullOperand>
+  </file>
+  <file src="src/Application/Commands/HandleOutOfSyncFunds.php">
+    <ArgumentTypeCoercion occurrences="5">
+      <code>$funding-&gt;getAmount()</code>
+      <code>$fundingAvailable</code>
+      <code>$fundingWithdrawalTotal</code>
+      <code>$fundingWithdrawalTotal</code>
+      <code>$fundingWithdrawalTotal</code>
+    </ArgumentTypeCoercion>
+    <MixedArgument occurrences="1">
+      <code>$excludedFundingIds</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="2">
+      <code>$excludedFundingIds</code>
+      <code>$newTotal</code>
+    </MixedAssignment>
+  </file>
+  <file src="src/Application/Commands/LockingCommand.php">
+    <PossiblyNullArgument occurrences="1">
+      <code>$this-&gt;getName()</code>
+    </PossiblyNullArgument>
+    <PossiblyNullOperand occurrences="1">
+      <code>$this-&gt;getName()</code>
+    </PossiblyNullOperand>
+  </file>
+  <file src="src/Application/Commands/ResetMatching.php">
+    <MixedArgument occurrences="1">
+      <code>$funding</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="1">
+      <code>$funding</code>
+    </MixedAssignment>
+  </file>
+  <file src="src/Application/Commands/RetrospectivelyMatch.php">
+    <ArgumentTypeCoercion occurrences="2">
+      <code>$amountAllocated</code>
+      <code>$amountAllocated</code>
+    </ArgumentTypeCoercion>
+    <PossiblyFalseArgument occurrences="1">
+      <code>getenv('APP_ENV')</code>
+    </PossiblyFalseArgument>
+  </file>
+  <file src="src/Application/Commands/UpdateCampaigns.php">
+    <DeprecatedMethod occurrences="1">
+      <code>getResultCacheImpl</code>
+    </DeprecatedMethod>
+    <MixedArgument occurrences="7">
+      <code>$campaign</code>
+      <code>$campaign</code>
+      <code>$campaign-&gt;getSalesforceId()</code>
+      <code>$campaign-&gt;getSalesforceId()</code>
+      <code>$campaign-&gt;getSalesforceId()</code>
+      <code>$campaign-&gt;getSalesforceId()</code>
+      <code>static::$defaultName</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="1">
+      <code>$campaign</code>
+    </MixedAssignment>
+    <MixedMethodCall occurrences="7">
+      <code>getEndDate</code>
+      <code>getSalesforceId</code>
+      <code>getSalesforceId</code>
+      <code>getSalesforceId</code>
+      <code>getSalesforceId</code>
+      <code>getSalesforceId</code>
+      <code>getSalesforceId</code>
+    </MixedMethodCall>
+    <MixedOperand occurrences="2">
+      <code>$campaign-&gt;getSalesforceId()</code>
+      <code>$campaign-&gt;getSalesforceId()</code>
+    </MixedOperand>
+    <PossiblyNullArgument occurrences="4">
+      <code>$campaign-&gt;getSalesforceId()</code>
+      <code>$campaign-&gt;getSalesforceId()</code>
+      <code>$campaign-&gt;getSalesforceId()</code>
+      <code>$campaign-&gt;getSalesforceId()</code>
+    </PossiblyNullArgument>
+    <PossiblyNullOperand occurrences="1">
+      <code>$campaign-&gt;getSalesforceId()</code>
+    </PossiblyNullOperand>
+  </file>
+  <file src="src/Application/Fees/Calculator.php">
+    <ArgumentTypeCoercion occurrences="10">
+      <code>$amount</code>
+      <code>$feeAmountFromPercentageComponent</code>
+      <code>$grossFeeAmount</code>
+      <code>$this-&gt;amount</code>
+      <code>$this-&gt;amount</code>
+      <code>$this-&gt;amount</code>
+      <code>$this-&gt;getCoreFee()</code>
+      <code>$this-&gt;getCoreFee()</code>
+      <code>$this-&gt;getFeeVatPercentage()</code>
+      <code>$this-&gt;getFeeVatPercentage()</code>
+    </ArgumentTypeCoercion>
+    <MixedArgument occurrences="6">
+      <code>$feeAmountFixed</code>
+      <code>$this-&gt;pspFeeSettings['fixed']</code>
+      <code>$this-&gt;pspFeeSettings['gift_aid_percentage']</code>
+      <code>$this-&gt;pspFeeSettings['main_percentage_amex_or_non_uk_eu']</code>
+      <code>$this-&gt;pspFeeSettings['main_percentage_standard']</code>
+      <code>$this-&gt;pspFeeSettings['vat_live_date']</code>
+    </MixedArgument>
+    <MixedArrayAccess occurrences="2">
+      <code>$settings[$psp]['fee']</code>
+      <code>$this-&gt;pspFeeSettings['fixed']['default']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="3">
+      <code>$feeAmountFixed</code>
+      <code>$feeAmountFixed</code>
+      <code>$this-&gt;pspFeeSettings</code>
+    </MixedAssignment>
+    <MixedInferredReturnType occurrences="1">
+      <code>string</code>
+    </MixedInferredReturnType>
+    <MixedReturnStatement occurrences="2">
+      <code>$this-&gt;pspFeeSettings['vat_percentage_live']</code>
+      <code>$this-&gt;pspFeeSettings['vat_percentage_old']</code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Application/Handlers/HttpErrorHandler.php">
+    <PropertyNotSetInConstructor occurrences="4">
+      <code>HttpErrorHandler</code>
+      <code>HttpErrorHandler</code>
+      <code>HttpErrorHandler</code>
+      <code>HttpErrorHandler</code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Application/HttpModels/Donation.php">
+    <MissingConstructor occurrences="7">
+      <code>$charityId</code>
+      <code>$donationAmount</code>
+      <code>$donationMatched</code>
+      <code>$giftAid</code>
+      <code>$optInTbgEmail</code>
+      <code>$projectId</code>
+      <code>$status</code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Application/HttpModels/DonationCreate.php">
+    <MissingConstructor occurrences="3">
+      <code>$donationAmount</code>
+      <code>$projectId</code>
+      <code>$psp</code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Application/HttpModels/DonationCreatedResponse.php">
+    <MissingConstructor occurrences="2">
+      <code>$donation</code>
+      <code>$jwt</code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Application/Matching/Adapter.php">
+    <MixedAssignment occurrences="1">
+      <code>$result</code>
+    </MixedAssignment>
+  </file>
+  <file src="src/Application/Matching/OptimisticRedisAdapter.php">
+    <ArgumentTypeCoercion occurrences="1">
+      <code>$wholeUnit</code>
+    </ArgumentTypeCoercion>
+    <DeprecatedMethod occurrences="1">
+      <code>transactional</code>
+    </DeprecatedMethod>
+    <ImpureFunctionCall occurrences="1">
+      <code>$function()</code>
+    </ImpureFunctionCall>
+    <ImpureMethodCall occurrences="31">
+      <code>buildKey</code>
+      <code>buildKey</code>
+      <code>buildKey</code>
+      <code>buildKey</code>
+      <code>buildKey</code>
+      <code>buildKey</code>
+      <code>decrBy</code>
+      <code>exec</code>
+      <code>exec</code>
+      <code>incrBy</code>
+      <code>incrBy</code>
+      <code>incrBy</code>
+      <code>multi</code>
+      <code>multi</code>
+      <code>saveFundingsToDatabase</code>
+      <code>set</code>
+      <code>set</code>
+      <code>setFundingValue</code>
+      <code>setFundingValue</code>
+      <code>setFundingValue</code>
+      <code>setFundingValue</code>
+      <code>toCurrencyFractionalUnit</code>
+      <code>toCurrencyFractionalUnit</code>
+      <code>toCurrencyFractionalUnit</code>
+      <code>toCurrencyFractionalUnit</code>
+      <code>toCurrencyWholeUnit</code>
+      <code>toCurrencyWholeUnit</code>
+      <code>toCurrencyWholeUnit</code>
+      <code>toCurrencyWholeUnit</code>
+      <code>toCurrencyWholeUnit</code>
+      <code>toCurrencyWholeUnit</code>
+    </ImpureMethodCall>
+    <ImpureStaticProperty occurrences="2">
+      <code>static::$storageDurationSeconds</code>
+      <code>static::$storageDurationSeconds</code>
+    </ImpureStaticProperty>
+    <InvalidArgument occurrences="2">
+      <code>$this-&gt;toCurrencyFractionalUnit($funding-&gt;getAmountAvailable())</code>
+      <code>$this-&gt;toCurrencyFractionalUnit($funding-&gt;getAmountAvailable())</code>
+    </InvalidArgument>
+    <InvalidCast occurrences="3">
+      <code>$redisFundBalanceFractional</code>
+      <code>$this-&gt;redis-&gt;incrBy($this-&gt;buildKey($funding), $overspendFractional)</code>
+    </InvalidCast>
+    <MixedAssignment occurrences="1">
+      <code>$result</code>
+    </MixedAssignment>
+    <PossiblyInvalidArrayAccess occurrences="4">
+      <code>$fundBalanceFractional</code>
+      <code>$fundBalanceFractional</code>
+      <code>$initResponse</code>
+      <code>$initResponse</code>
+    </PossiblyInvalidArrayAccess>
+    <PossiblyInvalidMethodCall occurrences="6">
+      <code>decrBy</code>
+      <code>exec</code>
+      <code>exec</code>
+      <code>incrBy</code>
+      <code>set</code>
+      <code>set</code>
+    </PossiblyInvalidMethodCall>
+    <UnusedVariable occurrences="2">
+      <code>$initResponse</code>
+      <code>$initResponse</code>
+    </UnusedVariable>
+  </file>
+  <file src="src/Application/Messenger/Handler/StripePayoutHandler.php">
+    <DeprecatedInterface occurrences="1">
+      <code>StripePayoutHandler</code>
+    </DeprecatedInterface>
+    <DocblockTypeContradiction occurrences="2">
+      <code>!$donation</code>
+      <code>$donation</code>
+    </DocblockTypeContradiction>
+    <InvalidArgument occurrences="1">
+      <code>$paidChargeIds</code>
+    </InvalidArgument>
+    <InvalidReturnStatement occurrences="1">
+      <code>$originalChargeIds</code>
+    </InvalidReturnStatement>
+    <InvalidReturnType occurrences="1">
+      <code>string[]</code>
+    </InvalidReturnType>
+    <MixedArgumentTypeCoercion occurrences="1">
+      <code>$sourceTransferIds</code>
+    </MixedArgumentTypeCoercion>
+    <MixedAssignment occurrences="3">
+      <code>$chargeListParams['starting_after']</code>
+      <code>$lastChargeId</code>
+      <code>$sourceTransferIds[]</code>
+    </MixedAssignment>
+    <PossiblyInvalidPropertyFetch occurrences="2">
+      <code>$charges-&gt;data</code>
+      <code>$charges-&gt;has_more</code>
+    </PossiblyInvalidPropertyFetch>
+    <PossiblyNullArgument occurrences="1">
+      <code>$exception-&gt;getStripeCode()</code>
+    </PossiblyNullArgument>
+    <UnnecessaryVarAnnotation occurrences="1">
+      <code>\Stripe\Payout</code>
+    </UnnecessaryVarAnnotation>
+  </file>
+  <file src="src/Application/Messenger/StripePayout.php">
+    <MissingConstructor occurrences="2">
+      <code>$connectAccountId</code>
+      <code>$payoutId</code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Application/Persistence/RetrySafeEntityManager.php">
+    <DeprecatedMethod occurrences="1">
+      <code>EntityManager::create($this-&gt;connectionSettings, $this-&gt;ormConfig)</code>
+    </DeprecatedMethod>
+    <ImpureFunctionCall occurrences="3">
+      <code>$func()</code>
+      <code>random_int</code>
+      <code>usleep</code>
+    </ImpureFunctionCall>
+    <ImpureMethodCall occurrences="10">
+      <code>beginTransaction</code>
+      <code>close</code>
+      <code>commit</code>
+      <code>error</code>
+      <code>error</code>
+      <code>flush</code>
+      <code>resetManager</code>
+      <code>rollback</code>
+      <code>rollback</code>
+      <code>warning</code>
+    </ImpureMethodCall>
+    <LessSpecificReturnStatement occurrences="1">
+      <code>$this-&gt;ormConfig-&gt;getRepositoryFactory()-&gt;getRepository($this, $className)</code>
+    </LessSpecificReturnStatement>
+    <MethodSignatureMustProvideReturnType occurrences="2">
+      <code>getRepository</code>
+      <code>transactional</code>
+    </MethodSignatureMustProvideReturnType>
+    <MissingParamType occurrences="1">
+      <code>$entity</code>
+    </MissingParamType>
+    <MixedArgumentTypeCoercion occurrences="1">
+      <code>$this-&gt;connectionSettings</code>
+    </MixedArgumentTypeCoercion>
+    <MixedAssignment occurrences="1">
+      <code>$ret</code>
+    </MixedAssignment>
+    <MoreSpecificReturnType occurrences="1">
+      <code>getRepository</code>
+    </MoreSpecificReturnType>
+    <TooManyArguments occurrences="2">
+      <code>flush</code>
+      <code>flush</code>
+    </TooManyArguments>
+  </file>
+  <file src="src/Client/Campaign.php">
+    <MixedArrayAccess occurrences="1">
+      <code>$campaignResponse['ready']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="1">
+      <code>$campaignResponse</code>
+    </MixedAssignment>
+    <MixedInferredReturnType occurrences="1">
+      <code>array</code>
+    </MixedInferredReturnType>
+    <MixedReturnStatement occurrences="1">
+      <code>$campaignResponse</code>
+    </MixedReturnStatement>
+    <PossiblyNullReference occurrences="1">
+      <code>getStatusCode</code>
+    </PossiblyNullReference>
+  </file>
+  <file src="src/Client/Common.php">
+    <MixedArrayAccess occurrences="2">
+      <code>$this-&gt;clientSettings[$service][$property]</code>
+      <code>$this-&gt;clientSettings['global']['timeout']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="1">
+      <code>$this-&gt;clientSettings</code>
+    </MixedAssignment>
+    <MixedInferredReturnType occurrences="1">
+      <code>string</code>
+    </MixedInferredReturnType>
+    <MixedReturnStatement occurrences="1">
+      <code>$this-&gt;clientSettings[$service][$property]</code>
+    </MixedReturnStatement>
+    <PropertyNotSetInConstructor occurrences="1">
+      <code>$httpClient</code>
+    </PropertyNotSetInConstructor>
+    <RedundantPropertyInitializationCheck occurrences="1">
+      <code>isset($this-&gt;httpClient)</code>
+    </RedundantPropertyInitializationCheck>
+  </file>
+  <file src="src/Client/Donation.php">
+    <ImplicitToStringCast occurrences="3">
+      <code>$ex-&gt;getResponse() ? $ex-&gt;getResponse()-&gt;getBody() : 'N/A'</code>
+      <code>$ex-&gt;getResponse() ? $ex-&gt;getResponse()-&gt;getBody() : 'N/A'</code>
+      <code>$ex-&gt;getResponse() ? $ex-&gt;getResponse()-&gt;getBody() : 'N/A'</code>
+    </ImplicitToStringCast>
+    <MixedArrayAccess occurrences="2">
+      <code>$donationCreatedResponse['donation']</code>
+      <code>$donationCreatedResponse['donation']['donationId']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="1">
+      <code>$donationCreatedResponse</code>
+    </MixedAssignment>
+    <MixedInferredReturnType occurrences="1">
+      <code>string</code>
+    </MixedInferredReturnType>
+    <MixedReturnStatement occurrences="1">
+      <code>$donationCreatedResponse['donation']['donationId']</code>
+    </MixedReturnStatement>
+    <PossiblyFalseArgument occurrences="1">
+      <code>getenv('WEBHOOK_DONATION_SECRET')</code>
+    </PossiblyFalseArgument>
+    <PossiblyNullReference occurrences="3">
+      <code>getBody</code>
+      <code>getBody</code>
+      <code>getBody</code>
+    </PossiblyNullReference>
+  </file>
+  <file src="src/Client/Fund.php">
+    <MixedInferredReturnType occurrences="2">
+      <code>array</code>
+      <code>array</code>
+    </MixedInferredReturnType>
+    <MixedReturnStatement occurrences="2">
+      <code>json_decode((string) $response-&gt;getBody(), true)</code>
+      <code>json_decode((string) $response-&gt;getBody(), true)</code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Domain/Campaign.php">
+    <MissingConstructor occurrences="6">
+      <code>$charity</code>
+      <code>$currencyCode</code>
+      <code>$endDate</code>
+      <code>$isMatched</code>
+      <code>$name</code>
+      <code>$startDate</code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Domain/CampaignFunding.php">
+    <InvalidMethodCall occurrences="2">
+      <code>add</code>
+      <code>contains</code>
+    </InvalidMethodCall>
+    <InvalidPropertyAssignmentValue occurrences="1">
+      <code>new ArrayCollection()</code>
+    </InvalidPropertyAssignmentValue>
+    <PropertyNotSetInConstructor occurrences="7">
+      <code>$allocationOrder</code>
+      <code>$amount</code>
+      <code>$amountAvailable</code>
+      <code>$currencyCode</code>
+      <code>$fund</code>
+      <code>CampaignFunding</code>
+      <code>CampaignFunding</code>
+    </PropertyNotSetInConstructor>
+  </file>
+  <file src="src/Domain/CampaignFundingRepository.php">
+    <MissingTemplateParam occurrences="1">
+      <code>CampaignFundingRepository</code>
+    </MissingTemplateParam>
+    <MixedInferredReturnType occurrences="3">
+      <code>?CampaignFunding</code>
+      <code>?CampaignFunding</code>
+      <code>CampaignFunding</code>
+    </MixedInferredReturnType>
+    <MixedReturnStatement occurrences="3">
+      <code>$query-&gt;getOneOrNullResult()</code>
+      <code>$query-&gt;getOneOrNullResult()</code>
+      <code>$this-&gt;find($campaignFunding-&gt;getId(), LockMode::PESSIMISTIC_WRITE)</code>
+    </MixedReturnStatement>
+    <MixedReturnTypeCoercion occurrences="2">
+      <code>$query-&gt;getResult()</code>
+      <code>CampaignFunding[]</code>
+    </MixedReturnTypeCoercion>
+  </file>
+  <file src="src/Domain/CampaignRepository.php">
+    <MixedArgument occurrences="16">
+      <code>$campaignData['charity']['donateLinkId']</code>
+      <code>$campaignData['charity']['giftAidOnboardingStatus']</code>
+      <code>$campaignData['charity']['hmrcReferenceNumber']</code>
+      <code>$campaignData['charity']['id']</code>
+      <code>$campaignData['charity']['name']</code>
+      <code>$campaignData['charity']['regulatorNumber']</code>
+      <code>$campaignData['charity']['regulatorRegion']</code>
+      <code>$campaignData['charity']['stripeAccountId']</code>
+      <code>$campaignData['currencyCode']</code>
+      <code>$campaignData['currencyCode'] ?? 'GBP'</code>
+      <code>$campaignData['endDate']</code>
+      <code>$campaignData['feePercentage']</code>
+      <code>$campaignData['id']</code>
+      <code>$campaignData['isMatched']</code>
+      <code>$campaignData['startDate']</code>
+      <code>$campaignData['title']</code>
+    </MixedArgument>
+    <MixedArrayAccess occurrences="25">
+      <code>$campaignData['charity']</code>
+      <code>$campaignData['charity']</code>
+      <code>$campaignData['charity']</code>
+      <code>$campaignData['charity']</code>
+      <code>$campaignData['charity']</code>
+      <code>$campaignData['charity']</code>
+      <code>$campaignData['charity']</code>
+      <code>$campaignData['charity']</code>
+      <code>$campaignData['charity']['donateLinkId']</code>
+      <code>$campaignData['charity']['giftAidOnboardingStatus']</code>
+      <code>$campaignData['charity']['hmrcReferenceNumber']</code>
+      <code>$campaignData['charity']['id']</code>
+      <code>$campaignData['charity']['name']</code>
+      <code>$campaignData['charity']['regulatorNumber']</code>
+      <code>$campaignData['charity']['regulatorRegion']</code>
+      <code>$campaignData['charity']['stripeAccountId']</code>
+      <code>$campaignData['currencyCode']</code>
+      <code>$campaignData['currencyCode']</code>
+      <code>$campaignData['currencyCode']</code>
+      <code>$campaignData['endDate']</code>
+      <code>$campaignData['feePercentage']</code>
+      <code>$campaignData['id']</code>
+      <code>$campaignData['isMatched']</code>
+      <code>$campaignData['startDate']</code>
+      <code>$campaignData['title']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="1">
+      <code>$campaignData</code>
+    </MixedAssignment>
+    <MixedReturnTypeCoercion occurrences="2">
+      <code>$qb-&gt;getQuery()-&gt;getResult()</code>
+      <code>Campaign[]</code>
+    </MixedReturnTypeCoercion>
+    <MoreSpecificImplementedParamType occurrences="1">
+      <code>$campaign</code>
+    </MoreSpecificImplementedParamType>
+    <ParamNameMismatch occurrences="1">
+      <code>$campaign</code>
+    </ParamNameMismatch>
+    <PossiblyNullArgument occurrences="1">
+      <code>$regulator</code>
+    </PossiblyNullArgument>
+    <UndefinedMethod occurrences="1">
+      <code>getById</code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Domain/Charity.php">
+    <MissingConstructor occurrences="2">
+      <code>$donateLinkId</code>
+      <code>$name</code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Domain/CharityRepository.php">
+    <MissingTemplateParam occurrences="1">
+      <code>CharityRepository</code>
+    </MissingTemplateParam>
+  </file>
+  <file src="src/Domain/CommandLockKeys.php">
+    <MissingConstructor occurrences="3">
+      <code>$key_expiration</code>
+      <code>$key_id</code>
+      <code>$key_token</code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Domain/Donation.php">
+    <ArgumentTypeCoercion occurrences="11">
+      <code>$amount</code>
+      <code>$amount</code>
+      <code>$this-&gt;getAmount()</code>
+      <code>$this-&gt;getAmount()</code>
+      <code>$this-&gt;getCharityFee()</code>
+      <code>$this-&gt;getCharityFeeGross()</code>
+      <code>$this-&gt;getCharityFeeVat()</code>
+      <code>$this-&gt;getFeeCoverAmount()</code>
+      <code>$this-&gt;getTipAmount()</code>
+      <code>$this-&gt;getTipAmount()</code>
+      <code>$tipAmount</code>
+    </ArgumentTypeCoercion>
+    <MethodSignatureMustProvideReturnType occurrences="1">
+      <code>__toString</code>
+    </MethodSignatureMustProvideReturnType>
+    <MixedArgument occurrences="5">
+      <code>$data['emailAddress']</code>
+      <code>$data['emailAddress']</code>
+      <code>$fundingWithdrawal-&gt;getAmount()</code>
+      <code>$fundingWithdrawal-&gt;getAmount()</code>
+      <code>$fundingWithdrawal-&gt;getAmount()</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="3">
+      <code>$fundingWithdrawal</code>
+      <code>$fundingWithdrawal</code>
+      <code>$fundingWithdrawal</code>
+    </MixedAssignment>
+    <MixedMethodCall occurrences="7">
+      <code>getAmount</code>
+      <code>getAmount</code>
+      <code>getAmount</code>
+      <code>getCampaignFunding</code>
+      <code>getCampaignFunding</code>
+      <code>getFund</code>
+      <code>getFund</code>
+    </MixedMethodCall>
+    <MixedReturnTypeCoercion occurrences="2">
+      <code>self::$successStatuses</code>
+      <code>string[]</code>
+    </MixedReturnTypeCoercion>
+    <PossiblyInvalidMethodCall occurrences="1">
+      <code>add</code>
+    </PossiblyInvalidMethodCall>
+    <PossiblyNullPropertyAssignmentValue occurrences="3">
+      <code>$this-&gt;donorFirstName</code>
+      <code>$this-&gt;donorLastName</code>
+      <code>$this-&gt;getCollectedAt()?-&gt;format('Y-m-d')</code>
+    </PossiblyNullPropertyAssignmentValue>
+    <PossiblyNullReference occurrences="4">
+      <code>getFund</code>
+      <code>getFund</code>
+      <code>toString</code>
+      <code>toString</code>
+    </PossiblyNullReference>
+    <PropertyNotSetInConstructor occurrences="6">
+      <code>$amount</code>
+      <code>$campaign</code>
+      <code>$currencyCode</code>
+      <code>$psp</code>
+      <code>Donation</code>
+      <code>Donation</code>
+    </PropertyNotSetInConstructor>
+    <RedundantCondition occurrences="1">
+      <code>$this-&gt;getCampaign()-&gt;getCharity()-&gt;getName()</code>
+    </RedundantCondition>
+    <TypeDoesNotContainNull occurrences="1">
+      <code>''</code>
+    </TypeDoesNotContainNull>
+  </file>
+  <file src="src/Domain/DonationRepository.php">
+    <ArgumentTypeCoercion occurrences="8">
+      <code>$amountAllocated</code>
+      <code>$amountAllocated</code>
+      <code>$amountMatchedAtStart</code>
+      <code>$campaign</code>
+      <code>$campaign</code>
+      <code>$donation-&gt;getAmount()</code>
+      <code>$funding-&gt;getAmountAvailable()</code>
+      <code>$newWithdrawal</code>
+    </ArgumentTypeCoercion>
+    <DeprecatedMethod occurrences="3">
+      <code>getResultCacheImpl</code>
+      <code>transactional</code>
+      <code>transactional</code>
+    </DeprecatedMethod>
+    <DocblockTypeContradiction occurrences="2">
+      <code>!$campaign</code>
+      <code>$campaign</code>
+    </DocblockTypeContradiction>
+    <MissingConstructor occurrences="6">
+      <code>$campaignRepository</code>
+      <code>$fundRepository</code>
+      <code>$lockFactory</code>
+      <code>$matchingAdapter</code>
+      <code>$queuedForPersist</code>
+      <code>$settings</code>
+    </MissingConstructor>
+    <MixedArgument occurrences="10">
+      <code>$funding</code>
+      <code>$fundingWithdrawal</code>
+      <code>$fundingWithdrawal-&gt;getAmount()</code>
+      <code>$fundingWithdrawal-&gt;getAmount()</code>
+      <code>$likelyAvailableFunds</code>
+      <code>$lockEndTime - $lockStartTime</code>
+      <code>$lockEndTime - $lockStartTime</code>
+      <code>$newWithdrawal</code>
+      <code>$newWithdrawal-&gt;getAmount()</code>
+      <code>$salesforceDonationId</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="12">
+      <code>$amountNewlyMatched</code>
+      <code>$funding</code>
+      <code>$funding</code>
+      <code>$fundingWithdrawal</code>
+      <code>$fundingWithdrawal</code>
+      <code>$likelyAvailableFunds</code>
+      <code>$newWithdrawal</code>
+      <code>$newWithdrawals</code>
+      <code>$result</code>
+      <code>$salesforceDonationId</code>
+      <code>$this-&gt;campaignRepository</code>
+      <code>$totalAmountReleased</code>
+    </MixedAssignment>
+    <MixedInferredReturnType occurrences="2">
+      <code>bool</code>
+      <code>string</code>
+    </MixedInferredReturnType>
+    <MixedMethodCall occurrences="6">
+      <code>getAmount</code>
+      <code>getAmount</code>
+      <code>getAmount</code>
+      <code>getAmount</code>
+      <code>getCampaignFunding</code>
+      <code>getCurrencyCode</code>
+    </MixedMethodCall>
+    <MixedOperand occurrences="3">
+      <code>$amountNewlyMatched</code>
+      <code>$lockEndTime</code>
+      <code>$lockEndTime</code>
+    </MixedOperand>
+    <MixedReturnStatement occurrences="2">
+      <code>$amountNewlyMatched</code>
+      <code>$result</code>
+    </MixedReturnStatement>
+    <MixedReturnTypeCoercion occurrences="10">
+      <code>$qb-&gt;getQuery()-&gt;getResult()</code>
+      <code>$qb-&gt;getQuery()-&gt;getResult()</code>
+      <code>Donation[]</code>
+      <code>Donation[]</code>
+      <code>Donation[]</code>
+      <code>Donation[]</code>
+      <code>Donation[]</code>
+    </MixedReturnTypeCoercion>
+    <MoreSpecificImplementedParamType occurrences="2">
+      <code>$donation</code>
+      <code>$donation</code>
+    </MoreSpecificImplementedParamType>
+    <ParamNameMismatch occurrences="2">
+      <code>$donation</code>
+      <code>$donation</code>
+    </ParamNameMismatch>
+    <PossiblyNullArgument occurrences="5">
+      <code>$donation-&gt;getId()</code>
+      <code>$donation-&gt;getSalesforceId()</code>
+      <code>$donationData-&gt;currencyCode</code>
+      <code>$donationData-&gt;currencyCode</code>
+      <code>$funding</code>
+    </PossiblyNullArgument>
+    <PossiblyUndefinedVariable occurrences="10">
+      <code>$amountNewlyMatched</code>
+      <code>$amountNewlyMatched</code>
+      <code>$lockEndTime</code>
+      <code>$lockEndTime</code>
+      <code>$lockStartTime</code>
+      <code>$lockStartTime</code>
+      <code>$lockStartTime</code>
+      <code>$lockStartTime</code>
+      <code>$newTotal</code>
+      <code>$totalAmountReleased</code>
+    </PossiblyUndefinedVariable>
+    <RedundantCast occurrences="3">
+      <code>(string) $donationData-&gt;donationAmount</code>
+      <code>(string) $donationData-&gt;feeCoverAmount</code>
+      <code>(string) $donationData-&gt;tipAmount</code>
+    </RedundantCast>
+    <TooManyArguments occurrences="1">
+      <code>refresh</code>
+    </TooManyArguments>
+    <UndefinedMethod occurrences="3">
+      <code>create</code>
+      <code>getCurrencyCode</code>
+      <code>put</code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Domain/Fund.php">
+    <MissingConstructor occurrences="6">
+      <code>$amount</code>
+      <code>$amount</code>
+      <code>$currencyCode</code>
+      <code>$currencyCode</code>
+      <code>$name</code>
+      <code>$name</code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Domain/FundRepository.php">
+    <ArgumentTypeCoercion occurrences="2">
+      <code>$amountForCampaign</code>
+      <code>$campaignFunding-&gt;getAmount()</code>
+    </ArgumentTypeCoercion>
+    <DocblockTypeContradiction occurrences="2">
+      <code>!$fund</code>
+      <code>$fund</code>
+    </DocblockTypeContradiction>
+    <MissingConstructor occurrences="2">
+      <code>$campaignFundingRepository</code>
+      <code>$matchingAdapter</code>
+    </MissingConstructor>
+    <MixedArgument occurrences="11">
+      <code>$fund</code>
+      <code>$fundData</code>
+      <code>$fundData</code>
+      <code>$fundData['currencyCode']</code>
+      <code>$fundData['currencyCode'] ?? 'GBP'</code>
+      <code>$fundData['id']</code>
+      <code>$fundData['id']</code>
+      <code>$fundData['id']</code>
+      <code>$fundData['name'] ?? ''</code>
+      <code>$fundData['name'] ?? ''</code>
+      <code>$fundData['totalAmount']</code>
+    </MixedArgument>
+    <MixedArrayAccess occurrences="3">
+      <code>$fundData['id']</code>
+      <code>$fundData['name']</code>
+      <code>$fundData['totalAmount']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="5">
+      <code>$fund</code>
+      <code>$fundData</code>
+      <code>$fundData</code>
+      <code>$fundsData</code>
+      <code>$newTotal</code>
+    </MixedAssignment>
+    <MixedOperand occurrences="1">
+      <code>$fundData['id']</code>
+    </MixedOperand>
+    <MoreSpecificImplementedParamType occurrences="1">
+      <code>$fund</code>
+    </MoreSpecificImplementedParamType>
+    <ParamNameMismatch occurrences="1">
+      <code>$fund</code>
+    </ParamNameMismatch>
+    <PossiblyNullOperand occurrences="2">
+      <code>$campaign-&gt;getId()</code>
+      <code>$fund-&gt;getId()</code>
+    </PossiblyNullOperand>
+    <UndefinedMethod occurrences="2">
+      <code>getById</code>
+      <code>getForCampaign</code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Domain/FundingWithdrawal.php">
+    <MissingConstructor occurrences="2">
+      <code>$amount</code>
+      <code>$donation</code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Domain/FundingWithdrawalRepository.php">
+    <MissingTemplateParam occurrences="1">
+      <code>FundingWithdrawalRepository</code>
+    </MissingTemplateParam>
+  </file>
+  <file src="src/Domain/SalesforceProxyRepository.php">
+    <MissingConstructor occurrences="6">
+      <code>$client</code>
+      <code>$client</code>
+      <code>$client</code>
+      <code>$logger</code>
+      <code>$logger</code>
+      <code>$logger</code>
+    </MissingConstructor>
+    <MissingTemplateParam occurrences="1">
+      <code>SalesforceProxyRepository</code>
+    </MissingTemplateParam>
+    <TypeDoesNotContainType occurrences="2">
+      <code>!$this-&gt;client</code>
+      <code>$this-&gt;client</code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="src/Domain/SalesforceReadProxyRepository.php">
+    <MissingParamType occurrences="1">
+      <code>$autoSave</code>
+    </MissingParamType>
+    <MixedArgument occurrences="1">
+      <code>$proxy</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="2">
+      <code>$existingProxy</code>
+      <code>$proxy</code>
+    </MixedAssignment>
+    <PossiblyNullOperand occurrences="3">
+      <code>$proxy-&gt;getSalesforceId()</code>
+      <code>$proxy-&gt;getSalesforceId()</code>
+      <code>$proxy-&gt;getSalesforceId()</code>
+    </PossiblyNullOperand>
+  </file>
+  <file src="src/Domain/SalesforceWriteProxy.php">
+    <RedundantCondition occurrences="1">
+      <code>$this-&gt;createdAt !== null</code>
+    </RedundantCondition>
+  </file>
+  <file src="src/Domain/SalesforceWriteProxyRepository.php">
+    <MixedArgument occurrences="2">
+      <code>$proxy</code>
+      <code>$proxy</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="2">
+      <code>$proxy</code>
+      <code>$proxy</code>
+    </MixedAssignment>
+    <PossiblyNullArgument occurrences="5">
+      <code>$proxy-&gt;getId()</code>
+      <code>$proxy-&gt;getId()</code>
+      <code>$proxy-&gt;getId()</code>
+      <code>$proxy-&gt;getId()</code>
+      <code>$proxy-&gt;getSalesforceId()</code>
+    </PossiblyNullArgument>
+    <PossiblyNullOperand occurrences="3">
+      <code>$proxy-&gt;getId()</code>
+      <code>$proxy-&gt;getId()</code>
+      <code>$proxy-&gt;getId()</code>
+    </PossiblyNullOperand>
+  </file>
+  <file src="src/Domain/TimestampsTrait.php">
+    <MissingConstructor occurrences="10">
+      <code>$createdAt</code>
+      <code>$createdAt</code>
+      <code>$createdAt</code>
+      <code>$createdAt</code>
+      <code>$createdAt</code>
+      <code>$updatedAt</code>
+      <code>$updatedAt</code>
+      <code>$updatedAt</code>
+      <code>$updatedAt</code>
+      <code>$updatedAt</code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Migrations/Version20191109151808.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20191109215947.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20191110112409.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20191110121708.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20191110162524.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20191113083835.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20191119154404.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20191126051351.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20200713104818.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20200720102604.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20200804150108.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20200804164545.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20200826135513.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20200925104750.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20201113093420.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20201114144300.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20201118043500.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20201119104427.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20201119205321.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20201208101014.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20210122113600.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20210311133325.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20210408183019.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20210422163630.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20210907103000.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20210907110200.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20211029152640.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20211029163214.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20211029164148.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20211029225612.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20211209083200.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20220104121300.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20220104135535.php">
+    <DeprecatedMethod occurrences="2">
+      <code>getName</code>
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20220201161400.php">
+    <DeprecatedMethod occurrences="1">
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20220201171800.php">
+    <DeprecatedMethod occurrences="1">
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="src/Migrations/Version20220402132739.php">
+    <DeprecatedMethod occurrences="1">
+      <code>getName</code>
+    </DeprecatedMethod>
+  </file>
+  <file src="tests/Application/Actions/Donations/CreateTest.php">
+    <MixedArrayAccess occurrences="10">
+      <code>$payloadArray['error']</code>
+      <code>$payloadArray['error']</code>
+      <code>$payloadArray['error']['description']</code>
+      <code>$payloadArray['error']['type']</code>
+      <code>$payloadArray['jwt']</code>
+      <code>$payloadArray['jwt']</code>
+      <code>$payloadArray['jwt']</code>
+      <code>$payloadArray['jwt']</code>
+      <code>$payloadArray['jwt']</code>
+      <code>$payloadArray['jwt']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="1">
+      <code>$payloadArray</code>
+    </MixedAssignment>
+    <RedundantConditionGivenDocblockType occurrences="5">
+      <code>assertFalse</code>
+      <code>assertFalse</code>
+      <code>assertFalse</code>
+      <code>assertFalse</code>
+      <code>assertFalse</code>
+    </RedundantConditionGivenDocblockType>
+  </file>
+  <file src="tests/Application/Actions/Donations/GetTest.php">
+    <MixedArrayAccess occurrences="1">
+      <code>$payloadArray['createdTime']</code>
+    </MixedArrayAccess>
+  </file>
+  <file src="tests/Application/Actions/Donations/UpdateHandlesLockExceptionTest.php">
+    <InternalMethod occurrences="1">
+      <code>new LockWaitTimeoutException($testCase-&gt;createStub(DriverException::class), null)</code>
+    </InternalMethod>
+  </file>
+  <file src="tests/Application/Actions/Donations/UpdateTest.php">
+    <MixedArrayAccess occurrences="65">
+      <code>$payloadArray['billingPostalAddress']</code>
+      <code>$payloadArray['billingPostalAddress']</code>
+      <code>$payloadArray['billingPostalAddress']</code>
+      <code>$payloadArray['billingPostalAddress']</code>
+      <code>$payloadArray['charityFee']</code>
+      <code>$payloadArray['charityFee']</code>
+      <code>$payloadArray['charityFee']</code>
+      <code>$payloadArray['charityFee']</code>
+      <code>$payloadArray['charityFee']</code>
+      <code>$payloadArray['charityFee']</code>
+      <code>$payloadArray['charityFee']</code>
+      <code>$payloadArray['charityFee']</code>
+      <code>$payloadArray['charityFeeVat']</code>
+      <code>$payloadArray['charityFeeVat']</code>
+      <code>$payloadArray['charityFeeVat']</code>
+      <code>$payloadArray['charityFeeVat']</code>
+      <code>$payloadArray['charityFeeVat']</code>
+      <code>$payloadArray['countryCode']</code>
+      <code>$payloadArray['countryCode']</code>
+      <code>$payloadArray['currencyCode']</code>
+      <code>$payloadArray['currencyCode']</code>
+      <code>$payloadArray['donationAmount']</code>
+      <code>$payloadArray['donationAmount']</code>
+      <code>$payloadArray['donationAmount']</code>
+      <code>$payloadArray['donationAmount']</code>
+      <code>$payloadArray['donationAmount']</code>
+      <code>$payloadArray['emailAddress']</code>
+      <code>$payloadArray['emailAddress']</code>
+      <code>$payloadArray['firstName']</code>
+      <code>$payloadArray['firstName']</code>
+      <code>$payloadArray['giftAid']</code>
+      <code>$payloadArray['giftAid']</code>
+      <code>$payloadArray['giftAid']</code>
+      <code>$payloadArray['giftAid']</code>
+      <code>$payloadArray['giftAid']</code>
+      <code>$payloadArray['homeAddress']</code>
+      <code>$payloadArray['homeAddress']</code>
+      <code>$payloadArray['homePostcode']</code>
+      <code>$payloadArray['homePostcode']</code>
+      <code>$payloadArray['lastName']</code>
+      <code>$payloadArray['lastName']</code>
+      <code>$payloadArray['matchedAmount']</code>
+      <code>$payloadArray['matchedAmount']</code>
+      <code>$payloadArray['matchedAmount']</code>
+      <code>$payloadArray['optInCharityEmail']</code>
+      <code>$payloadArray['optInCharityEmail']</code>
+      <code>$payloadArray['optInCharityEmail']</code>
+      <code>$payloadArray['optInCharityEmail']</code>
+      <code>$payloadArray['optInTbgEmail']</code>
+      <code>$payloadArray['optInTbgEmail']</code>
+      <code>$payloadArray['optInTbgEmail']</code>
+      <code>$payloadArray['optInTbgEmail']</code>
+      <code>$payloadArray['status']</code>
+      <code>$payloadArray['status']</code>
+      <code>$payloadArray['status']</code>
+      <code>$payloadArray['status']</code>
+      <code>$payloadArray['status']</code>
+      <code>$payloadArray['status']</code>
+      <code>$payloadArray['tipAmount']</code>
+      <code>$payloadArray['tipAmount']</code>
+      <code>$payloadArray['tipAmount']</code>
+      <code>$payloadArray['tipAmount']</code>
+      <code>$payloadArray['tipAmount']</code>
+      <code>$payloadArray['tipGiftAid']</code>
+      <code>$payloadArray['tipGiftAid']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="12">
+      <code>$payloadArray</code>
+      <code>$payloadArray</code>
+      <code>$payloadArray</code>
+      <code>$payloadArray</code>
+      <code>$payloadArray</code>
+      <code>$payloadArray</code>
+      <code>$payloadArray</code>
+      <code>$payloadArray</code>
+      <code>$payloadArray</code>
+      <code>$payloadArray</code>
+      <code>$payloadArray</code>
+      <code>$payloadArray</code>
+    </MixedAssignment>
+  </file>
+  <file src="tests/Application/Actions/GetPaymentMethodsTest.php">
+    <MixedArgument occurrences="1">
+      <code>$payloadArray</code>
+    </MixedArgument>
+    <MixedArrayAccess occurrences="4">
+      <code>$payloadArray['data']</code>
+      <code>$payloadArray['data'][0]</code>
+      <code>$payloadArray['data'][0]['card']</code>
+      <code>$payloadArray['data'][0]['card']['last4']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="1">
+      <code>$payloadArray</code>
+    </MixedAssignment>
+  </file>
+  <file src="tests/Application/Actions/Hooks/StripeChargeUpdateTest.php">
+    <MixedArgument occurrences="11">
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+    </MixedArgument>
+    <MixedArrayAccess occurrences="11">
+      <code>$container-&gt;get('settings')['stripe']</code>
+      <code>$container-&gt;get('settings')['stripe']</code>
+      <code>$container-&gt;get('settings')['stripe']</code>
+      <code>$container-&gt;get('settings')['stripe']</code>
+      <code>$container-&gt;get('settings')['stripe']</code>
+      <code>$container-&gt;get('settings')['stripe']</code>
+      <code>$container-&gt;get('settings')['stripe']</code>
+      <code>$container-&gt;get('settings')['stripe']</code>
+      <code>$container-&gt;get('settings')['stripe']</code>
+      <code>$container-&gt;get('settings')['stripe']</code>
+      <code>$container-&gt;get('settings')['stripe']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="11">
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+    </MixedAssignment>
+  </file>
+  <file src="tests/Application/Actions/Hooks/StripePayoutUpdateTest.php">
+    <MixedArgument occurrences="3">
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+    </MixedArgument>
+    <MixedArrayAccess occurrences="3">
+      <code>$container-&gt;get('settings')['stripe']</code>
+      <code>$container-&gt;get('settings')['stripe']</code>
+      <code>$container-&gt;get('settings')['stripe']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="3">
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+      <code>$webhookSecret</code>
+    </MixedAssignment>
+  </file>
+  <file src="tests/Application/Actions/StatusTest.php">
+    <DeprecatedClass occurrences="2">
+      <code>new ArrayCache()</code>
+    </DeprecatedClass>
+    <DeprecatedMethod occurrences="2">
+      <code>ConsoleRunner::createHelperSet($container-&gt;get(EntityManagerInterface::class))</code>
+      <code>setMetadataCacheImpl</code>
+    </DeprecatedMethod>
+    <MixedArgument occurrences="1">
+      <code>$container-&gt;get(EntityManagerInterface::class)</code>
+    </MixedArgument>
+    <PossiblyNullArgument occurrences="2">
+      <code>$config-&gt;getProxyDir()</code>
+      <code>$config-&gt;getProxyNamespace()</code>
+    </PossiblyNullArgument>
+    <PossiblyNullReference occurrences="5">
+      <code>get</code>
+      <code>set</code>
+      <code>set</code>
+      <code>set</code>
+      <code>set</code>
+    </PossiblyNullReference>
+    <UndefinedInterfaceMethod occurrences="4">
+      <code>set</code>
+      <code>set</code>
+      <code>set</code>
+      <code>set</code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="tests/Application/Auth/DonationRecaptchaMiddlewareTest.php">
+    <MixedArgument occurrences="3">
+      <code>$container-&gt;get(LoggerInterface::class)</code>
+      <code>$container-&gt;get(ReCaptcha::class)</code>
+      <code>$container-&gt;get(SerializerInterface::class)</code>
+    </MixedArgument>
+    <PossiblyNullReference occurrences="1">
+      <code>get</code>
+    </PossiblyNullReference>
+  </file>
+  <file src="tests/Application/Auth/PersonManagementAuthMiddlewareTest.php">
+    <MixedAssignment occurrences="1">
+      <code>$middleware</code>
+    </MixedAssignment>
+    <MixedMethodCall occurrences="1">
+      <code>process</code>
+    </MixedMethodCall>
+    <PossiblyNullReference occurrences="1">
+      <code>get</code>
+    </PossiblyNullReference>
+  </file>
+  <file src="tests/Application/Auth/PersonWithPasswordAuthMiddlewareTest.php">
+    <MixedAssignment occurrences="1">
+      <code>$middleware</code>
+    </MixedAssignment>
+    <MixedMethodCall occurrences="1">
+      <code>process</code>
+    </MixedMethodCall>
+    <PossiblyNullReference occurrences="1">
+      <code>get</code>
+    </PossiblyNullReference>
+  </file>
+  <file src="tests/Application/Commands/AlwaysAvailableLockStore.php">
+    <MissingParamType occurrences="1">
+      <code>$ttl</code>
+    </MissingParamType>
+  </file>
+  <file src="tests/Application/Commands/ClaimGiftAidTest.php">
+    <MixedArgument occurrences="3">
+      <code>$donationRepoProphecy-&gt;reveal()</code>
+      <code>$entityManagerProphecy-&gt;reveal()</code>
+      <code>$routableBusProphecy-&gt;reveal()</code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion occurrences="3">
+      <code>$this-&gt;getExpectedStamps($testDonation-&gt;getUuid())</code>
+      <code>$this-&gt;getExpectedStamps($testDonation-&gt;getUuid())</code>
+      <code>$this-&gt;getExpectedStamps($testDonation-&gt;getUuid())</code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="tests/Application/Commands/ExpireMatchFundsTest.php">
+    <MixedArgument occurrences="1">
+      <code>$donationRepoProphecy-&gt;reveal()</code>
+    </MixedArgument>
+  </file>
+  <file src="tests/Application/Commands/HandleOutOfSyncFundsTest.php">
+    <ArgumentTypeCoercion occurrences="8">
+      <code>$this-&gt;getFundingInSync()-&gt;getAmount()</code>
+      <code>$this-&gt;getFundingInSync()-&gt;getAmountAvailable()</code>
+      <code>$this-&gt;getFundingOverMatched()-&gt;getAmount()</code>
+      <code>$this-&gt;getFundingOverMatched()-&gt;getAmountAvailable()</code>
+      <code>$this-&gt;getFundingUnderMatched()-&gt;getAmount()</code>
+      <code>$this-&gt;getFundingUnderMatched()-&gt;getAmountAvailable()</code>
+      <code>$this-&gt;getFundingUnderMatchedWithNothingAllocated()-&gt;getAmount()</code>
+      <code>$this-&gt;getFundingUnderMatchedWithNothingAllocated()-&gt;getAmountAvailable()</code>
+    </ArgumentTypeCoercion>
+    <MissingParamType occurrences="1">
+      <code>$expectFixes</code>
+    </MissingParamType>
+    <MixedArgument occurrences="4">
+      <code>$this-&gt;getCampaignFundingRepoPropechy()-&gt;reveal()</code>
+      <code>$this-&gt;getCampaignFundingRepoPropechy()-&gt;reveal()</code>
+      <code>$this-&gt;getFundingWithdrawalRepoProphecy()-&gt;reveal()</code>
+      <code>$this-&gt;getFundingWithdrawalRepoProphecy()-&gt;reveal()</code>
+    </MixedArgument>
+  </file>
+  <file src="tests/Application/Commands/ResetMatchingTest.php">
+    <InternalClass occurrences="1"/>
+    <InternalMethod occurrences="2"/>
+  </file>
+  <file src="tests/Application/Commands/UpdateCampaignsTest.php">
+    <MixedArgument occurrences="5">
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get(EntityManagerInterface::class)</code>
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get(EntityManagerInterface::class)</code>
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get(EntityManagerInterface::class)</code>
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get(EntityManagerInterface::class)</code>
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get(EntityManagerInterface::class)</code>
+    </MixedArgument>
+    <PossiblyNullReference occurrences="5">
+      <code>get</code>
+      <code>get</code>
+      <code>get</code>
+      <code>get</code>
+      <code>get</code>
+    </PossiblyNullReference>
+  </file>
+  <file src="tests/Application/Fees/CalculatorTest.php">
+    <MixedArgument occurrences="8">
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get('settings')</code>
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get('settings')</code>
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get('settings')</code>
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get('settings')</code>
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get('settings')</code>
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get('settings')</code>
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get('settings')</code>
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get('settings')</code>
+    </MixedArgument>
+    <PossiblyNullReference occurrences="8">
+      <code>get</code>
+      <code>get</code>
+      <code>get</code>
+      <code>get</code>
+      <code>get</code>
+      <code>get</code>
+      <code>get</code>
+      <code>get</code>
+    </PossiblyNullReference>
+  </file>
+  <file src="tests/Application/Messenger/Handler/GiftAidResultHandlerTest.php">
+    <MixedArgument occurrences="9">
+      <code>$container-&gt;get(DonationRepository::class)</code>
+      <code>$container-&gt;get(DonationRepository::class)</code>
+      <code>$container-&gt;get(DonationRepository::class)</code>
+      <code>$container-&gt;get(EntityManagerInterface::class)</code>
+      <code>$container-&gt;get(EntityManagerInterface::class)</code>
+      <code>$container-&gt;get(EntityManagerInterface::class)</code>
+      <code>$container-&gt;get(LoggerInterface::class)</code>
+      <code>$container-&gt;get(LoggerInterface::class)</code>
+      <code>$container-&gt;get(LoggerInterface::class)</code>
+    </MixedArgument>
+  </file>
+  <file src="tests/Application/Messenger/Handler/StripePayoutHandlerTest.php">
+    <MixedArgument occurrences="12">
+      <code>$container-&gt;get(DonationRepository::class)</code>
+      <code>$container-&gt;get(DonationRepository::class)</code>
+      <code>$container-&gt;get(DonationRepository::class)</code>
+      <code>$container-&gt;get(DonationRepository::class)</code>
+      <code>$container-&gt;get(EntityManagerInterface::class)</code>
+      <code>$container-&gt;get(EntityManagerInterface::class)</code>
+      <code>$container-&gt;get(EntityManagerInterface::class)</code>
+      <code>$container-&gt;get(EntityManagerInterface::class)</code>
+      <code>$container-&gt;get(StripeClient::class)</code>
+      <code>$container-&gt;get(StripeClient::class)</code>
+      <code>$container-&gt;get(StripeClient::class)</code>
+      <code>$container-&gt;get(StripeClient::class)</code>
+    </MixedArgument>
+    <PossiblyUndefinedMethod occurrences="12">
+      <code>balanceTransactions</code>
+      <code>balanceTransactions</code>
+      <code>balanceTransactions</code>
+      <code>balanceTransactions</code>
+      <code>charges</code>
+      <code>charges</code>
+      <code>charges</code>
+      <code>charges</code>
+      <code>reveal</code>
+      <code>reveal</code>
+      <code>reveal</code>
+      <code>reveal</code>
+    </PossiblyUndefinedMethod>
+    <UndefinedPropertyAssignment occurrences="8">
+      <code>$stripeClientProphecy-&gt;balanceTransactions</code>
+      <code>$stripeClientProphecy-&gt;balanceTransactions</code>
+      <code>$stripeClientProphecy-&gt;balanceTransactions</code>
+      <code>$stripeClientProphecy-&gt;balanceTransactions</code>
+      <code>$stripeClientProphecy-&gt;charges</code>
+      <code>$stripeClientProphecy-&gt;charges</code>
+      <code>$stripeClientProphecy-&gt;charges</code>
+      <code>$stripeClientProphecy-&gt;charges</code>
+    </UndefinedPropertyAssignment>
+  </file>
+  <file src="tests/Application/Persistence/RetrySafeEntityManagerTest.php">
+    <InternalClass occurrences="1"/>
+    <InternalMethod occurrences="2">
+      <code>addToAssertionCount</code>
+    </InternalMethod>
+    <MixedArgument occurrences="3">
+      <code>$container-&gt;get('settings')['doctrine']['connection']</code>
+      <code>$container-&gt;get('settings')['doctrine']['connection']</code>
+      <code>$container-&gt;get('settings')['doctrine']['connection']</code>
+    </MixedArgument>
+    <MixedArrayAccess occurrences="3">
+      <code>$container-&gt;get('settings')['doctrine']</code>
+      <code>$container-&gt;get('settings')['doctrine']</code>
+      <code>$container-&gt;get('settings')['doctrine']</code>
+    </MixedArrayAccess>
+    <MixedAssignment occurrences="1">
+      <code>$config</code>
+    </MixedAssignment>
+    <MixedInferredReturnType occurrences="1">
+      <code>Configuration</code>
+    </MixedInferredReturnType>
+    <MixedMethodCall occurrences="1">
+      <code>setRepositoryFactory</code>
+    </MixedMethodCall>
+    <MixedReturnStatement occurrences="2">
+      <code>$config</code>
+      <code>$config</code>
+    </MixedReturnStatement>
+    <TypeDoesNotContainType occurrences="1">
+      <code>assertInstanceOf</code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="tests/Application/VatTrait.php">
+    <MixedArrayAssignment occurrences="6">
+      <code>$settings['stripe']['fee']</code>
+      <code>$settings['stripe']['fee']</code>
+      <code>$settings['stripe']['fee']</code>
+      <code>$settings['stripe']['fee']['vat_live_date']</code>
+      <code>$settings['stripe']['fee']['vat_percentage_live']</code>
+      <code>$settings['stripe']['fee']['vat_percentage_old']</code>
+    </MixedArrayAssignment>
+  </file>
+  <file src="tests/Domain/DonationRepositoryTest.php">
+    <MixedArgument occurrences="7">
+      <code>$donationClientProphecy-&gt;reveal()</code>
+      <code>$lockFactoryProphecy-&gt;reveal()</code>
+      <code>$matchingAdapterProphecy-&gt;reveal()</code>
+      <code>$settings</code>
+      <code>$settings</code>
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get('settings')</code>
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get('settings')</code>
+    </MixedArgument>
+    <MixedAssignment occurrences="1">
+      <code>$settings</code>
+    </MixedAssignment>
+    <PossiblyNullReference occurrences="3">
+      <code>get</code>
+      <code>get</code>
+      <code>get</code>
+    </PossiblyNullReference>
+  </file>
+  <file src="tests/Domain/DonationTest.php">
+    <InternalMethod occurrences="1">
+      <code>addToAssertionCount</code>
+    </InternalMethod>
+  </file>
+  <file src="tests/Domain/FundRepositoryTest.php">
+    <MixedArgument occurrences="1">
+      <code>$this-&gt;getAppInstance()-&gt;getContainer()-&gt;get(LoggerInterface::class)</code>
+    </MixedArgument>
+    <PossiblyNullReference occurrences="1">
+      <code>get</code>
+    </PossiblyNullReference>
+    <UndefinedMethod occurrences="2">
+      <code>getAmount</code>
+      <code>getName</code>
+    </UndefinedMethod>
+  </file>
+  <file src="tests/Monolog/Processor/AwsTraceIdProcessorTest.php">
+    <PossiblyNullReference occurrences="2">
+      <code>set</code>
+      <code>set</code>
+    </PossiblyNullReference>
+    <UndefinedInterfaceMethod occurrences="2">
+      <code>set</code>
+      <code>set</code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="tests/TestCase.php">
+    <MixedArgument occurrences="1">
+      <code>$value</code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion occurrences="1">
+      <code>$name</code>
+    </MixedArgumentTypeCoercion>
+    <MixedAssignment occurrences="1">
+      <code>$value</code>
+    </MixedAssignment>
+  </file>
+</files>
