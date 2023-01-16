@@ -62,7 +62,6 @@ class RetrySafeEntityManagerTest extends TestCase
         $retrySafeEntityManagerReflected = new ReflectionClass($this->retrySafeEntityManager);
 
         $emProperty = $retrySafeEntityManagerReflected->getProperty('entityManager');
-        $emProperty->setAccessible(true);
         $emProperty->setValue($this->retrySafeEntityManager, $underlyingEmProphecy->reveal());
 
         $app = $this->getAppInstance();
@@ -113,7 +112,6 @@ class RetrySafeEntityManagerTest extends TestCase
         $retrySafeEntityManagerReflected = new ReflectionClass($this->retrySafeEntityManager);
 
         $emProperty = $retrySafeEntityManagerReflected->getProperty('entityManager');
-        $emProperty->setAccessible(true);
         $emProperty->setValue($this->retrySafeEntityManager, $underlyingEmProphecy->reveal());
 
         $app = $this->getAppInstance();
