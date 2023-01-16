@@ -88,7 +88,7 @@ class RetrospectivelyMatchTest extends TestCase
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    private function getDonationRepo(bool $matchingIsAllocated)
+    private function getDonationRepo(bool $matchingIsAllocated): DonationRepository
     {
         $donationRepo = $this->prophesize(DonationRepository::class);
 

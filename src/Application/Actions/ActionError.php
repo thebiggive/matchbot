@@ -47,10 +47,10 @@ class ActionError implements JsonSerializable
     }
 
     /**
-     * @return string
+     * @return null|string
      */
     #[Pure]
-    public function getDescription(): string
+    public function getDescription(): string|null
     {
         return $this->description;
     }

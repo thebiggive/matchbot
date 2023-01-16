@@ -86,11 +86,9 @@ class DonationRepositoryTest extends TestCase
         $donationReflected = new ReflectionClass($donation);
 
         $createdAtProperty = $donationReflected->getProperty('createdAt');
-        $createdAtProperty->setAccessible(true);
         $createdAtProperty->setValue($donation, new \DateTime('-31 seconds'));
 
         $sfIdProperty = $donationReflected->getProperty('salesforceId');
-        $sfIdProperty->setAccessible(true);
         $sfIdProperty->setValue($donation, null); // Allowed property type but not allowed in public setter.
 
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
@@ -115,7 +113,6 @@ class DonationRepositoryTest extends TestCase
         $donationReflected = new ReflectionClass($donation);
 
         $sfIdProperty = $donationReflected->getProperty('salesforceId');
-        $sfIdProperty->setAccessible(true);
         $sfIdProperty->setValue($donation, null); // Allowed property type but not allowed in public setter.
 
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);

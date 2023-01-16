@@ -12,21 +12,33 @@ use Symfony\Component\Lock\Key;
  */
 class AlwaysAvailableLockStore implements BlockingStoreInterface
 {
+    /**
+     * @return void
+     */
     public function save(Key $key)
     {
         // Do nothing
     }
 
+    /**
+     * @return void
+     */
     public function waitAndSave(Key $key)
     {
         // Do nothing
     }
 
+    /**
+     * @return void
+     */
     public function putOffExpiration(Key $key, $ttl)
     {
         // Do nothing
     }
 
+    /**
+     * @return void
+     */
     public function delete(Key $key)
     {
         // Do nothing

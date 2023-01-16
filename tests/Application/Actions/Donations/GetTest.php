@@ -73,7 +73,7 @@ class GetTest extends TestCase
         $this->expectException(HttpUnauthorizedException::class);
         $this->expectExceptionMessage('Unauthorised');
 
-        $response = $app->handle($request->withAttribute('route', $route));
+        $app->handle($request->withAttribute('route', $route));
     }
 
     public function testAuthForWrongDonation(): void
@@ -98,7 +98,7 @@ class GetTest extends TestCase
         $this->expectException(HttpUnauthorizedException::class);
         $this->expectExceptionMessage('Unauthorised');
 
-        $response = $app->handle($request->withAttribute('route', $route));
+        $app->handle($request->withAttribute('route', $route));
     }
 
     public function testIdNotFound(): void

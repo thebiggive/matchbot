@@ -176,7 +176,10 @@ class HandleOutOfSyncFundsTest extends TestCase
         return $fundingWithdrawalRepoProphecy;
     }
 
-    private function getMatchingAdapterProphecy($expectFixes = false)
+    /**
+     * @psalm-return ObjectProphecy<Adapter>
+     */
+    private function getMatchingAdapterProphecy($expectFixes = false): ObjectProphecy
     {
         $matchingAdapterProphecy = $this->prophesize(Adapter::class);
         $matchingAdapterProphecy
