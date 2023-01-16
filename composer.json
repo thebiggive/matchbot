@@ -50,6 +50,7 @@
         "thebiggive/messages": "^3.0"
     },
     "require-dev": {
+        "jetbrains/phpstorm-attributes": "^1.0",
         "phpspec/prophecy-phpunit": "^2.0",
         "phpunit/phpunit": "^9.5",
         "psalm/plugin-phpunit": "^0.18.4",
