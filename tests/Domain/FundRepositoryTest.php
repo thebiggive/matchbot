@@ -288,8 +288,6 @@ class FundRepositoryTest extends TestCase
      * response from the Campaign API's `getFunds` endpoint.
      *
      * @link https://app.swaggerhub.com/apis/Noel/TBG-Campaigns/#/default/getFunds
-     *
-     * @return Client\Fund|ObjectProphecy
      */
     private function getFundClientForPerCampaignLookup(string $currencyCode = 'GBP'): Client\Fund
     {
@@ -334,7 +332,6 @@ class FundRepositoryTest extends TestCase
      * @param Matching\Adapter          $matchingAdapter
      * @param Fund|null                 $existingFundNonShared
      * @param Fund|null                 $existingFundShared
-     * @return FundRepository|MockObject
      */
     private function getFundRepoPartialMock(
         $entityManager,

@@ -50,10 +50,14 @@
         "thebiggive/messages": "^3.0"
     },
     "require-dev": {
+        "jetbrains/phpstorm-attributes": "^1.0",
         "phpspec/prophecy-phpunit": "^2.0",
         "phpunit/phpunit": "^9.5",
+        "psalm/plugin-phpunit": "^0.18.4",
         "roave/security-advisories": "dev-latest",
-        "squizlabs/php_codesniffer": "^3.6"
+        "squizlabs/php_codesniffer": "^3.6",
+        "vimeo/psalm": "^5.4",
+        "weirdan/doctrine-psalm-plugin": "^2.8"
     },
     "config": {
         "allow-plugins": {
@@ -91,6 +95,7 @@
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
         "doctrine:migrate:generate": "doctrine-migrations generate",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
+        "sa:check": "vendor/bin/psalm",
         "lint:check": "phpcs --standard=phpcs.xml -s .",
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",
         "matchbot:claim-gift-aid": [
