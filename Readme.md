@@ -175,20 +175,23 @@ The most important areas to explore in `src` are:
 
 * [`Domain`](./src/Domain): defines the whole app's data structure. This is essential to both the code and how the
   database schema definition is generated. Changes here must be accompanied by Doctrine-generated migrations
-  so the database stays in sync. [Doctrine annotations](https://www.doctrine-project.org/projects/doctrine-orm/en/2.7/reference/annotations-reference.html)
+  so the database stays in sync. 
+  [Doctrine annotations](https://www.doctrine-project.org/projects/doctrine-orm/en/2.7/reference/annotations-reference.html)
   are used to define important aspects of the data model. Two special things to notice:
   1. Several models rely on the `@ORM\HasLifecycleCallbacks` annotation. In many cases this is because they
      `use TimestampsTrait`. This is a nice time saver but models _must_ include the lifecycle annotation, or their
      timestamps won't work.
-  2. [`Fund`](./src/Domain/Fund.php) and its subclasses use [Single Table Inheritance](https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/inheritance-mapping.html#single-table-inheritance).
+  2. [`Fund`](./src/Domain/Fund.php) and its subclasses use 
+     [Single Table Inheritance](https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/inheritance-mapping.html#single-table-inheritance).
      The point is to build a semantic distinction between fund types (`ChampionFund` vs. `Pledge`) without adding
      avoidable complexity to the database schema, as both objects are extremely similar in their data structure
      and behaviour.
 * [`Client`](./src/Client): custom API clients for communicating with our Salesforce Site.com REST APIs.
 * [`Application\Actions`](./src/Application/Actions): all classes exposing MatchBot APIs to the world. Anything invoked
   directly by a Route should be here.
-* [`Application\Commands`](./src/Application/Commands): all classes extending `Command` (we use the [Symfony Console](https://symfony.com/doc/current/console.html)
-  component). Every custom script we invoke and anything extending `Command` should be here.
+* [`Application\Commands`](./src/Application/Commands): all classes extending `Command` (we use the 
+  [Symfony Console](https://symfony.com/doc/current/console.html) component). Every custom script we invoke and anything
+  extending `Command` should be here.
 
 There are other very important parts of the app, e.g. `Application\Matching` (tracking match fund allocations)
 and `Application\Auth` (security middleware), but generally you should not need to change them. They hopefully also
@@ -224,7 +227,8 @@ working version live even if a broken release is ever deployed. Because of this,
 about 30 minutes after CircleCI reports that a deploy is done. You can monitor this in the AWS Console.
 
 When things are working correctly, any environment with at least two tasks in its ECS Service should get new app
-versions with no downtime. If you make schema changes, be careful to use a [parallel change (expand / contract)](https://www.martinfowler.com/bliki/ParallelChange.html)]
+versions with no downtime. If you make schema changes, be careful to use a 
+[parallel change (expand / contract)](https://www.martinfowler.com/bliki/ParallelChange.html)
 pattern to ensure this remains true.
 
 ## APIs
@@ -232,7 +236,10 @@ pattern to ensure this remains true.
 The API contracts which the app fulfils are currently kept on SwaggerHub and
 split across two manually-maintained docs:
 
-* payment status update hook: [DonationWebhookSwagger2](https://app.swaggerhub.com/apis/Noel/DonationWebhookSwagger2) – using Swagger 2 for historical reasons; this is now used only with MatchBot as a client to send data to Salesforce. Stripe's incoming webhooks to MatchBot follow the schemas defined in Stripe's documentation.
+* payment status update hook: [DonationWebhookSwagger2](https://app.swaggerhub.com/apis/Noel/DonationWebhookSwagger2) –
+  using Swagger 2 for historical reasons; this is now used only with MatchBot as a client to send data to Salesforce.
+  Stripe's incoming webhooks to MatchBot follow the schemas defined in Stripe's documentation.
+
 * everything else: [TBG-Donations](https://app.swaggerhub.com/apis/Noel/TBG-Donations) – using OpenAPI 3
 
 The app also implements *clients* for some endpoints defined in these and some other API
