@@ -113,7 +113,13 @@ class StripePayoutHandler implements MessageHandlerInterface
             return;
         }
 
-        foreach ($this->getOriginalDonationChargeIds($paidChargeIds, $connectAccountId, $payoutCreated) as $chargeId) {
+        $chargeIds = $this->getOriginalDonationChargeIds($paidChargeIds, $connectAccountId, $payoutCreated);
+
+        if (count($chargeIds) > 0) {
+            $this->entityManager->beginTransaction();
+        }
+
+        foreach ($chargeIds as $chargeId) {
             /** @var Donation $donation */
             $donation = $this->donationRepository->findAndLockOneBy(['chargeId' => $chargeId]);
 
@@ -153,8 +159,11 @@ class StripePayoutHandler implements MessageHandlerInterface
             }
         }
 
-        if ($count > 0) {
+        // Ensure we always close a transaction if we opened one, even if no charge IDs
+        // were applicable to update.
+        if (count($chargeIds) > 0) {
             $this->entityManager->flush();
+            $this->entityManager->commit();
         }
 
         $this->logger->info(sprintf('Payout: Updating paid donations complete, persisted %s', $count));
