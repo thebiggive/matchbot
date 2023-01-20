@@ -7,7 +7,7 @@ servers:
     url: https://matchbot-staging.thebiggivetest.org.uk/v1
 info:
   description: The Big Give Donations public API
-  version: 1.0.8
+  version: 1.0.9
   title: Donations
   contact:
     email: tech@thebiggive.org.uk
