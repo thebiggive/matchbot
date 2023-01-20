@@ -155,20 +155,26 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {
+            $sendMiddleware = new SendMessageMiddleware(new SendersLocator(
+                [
+                    Messages\Donation::class => [ClaimBotTransport::class],
+                    StripePayout::class => [TransportInterface::class],
+                ],
+                $c,
+            ));
+            $sendMiddleware->setLogger($c->get(LoggerInterface::class));
+
+            $handleMiddleware = new HandleMessageMiddleware(new HandlersLocator(
+                [
+                    Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
+                    StripePayout::class => [$c->get(StripePayoutHandler::class)],
+                ],
+            ));
+            $handleMiddleware->setLogger($c->get(LoggerInterface::class));
+
             return new MessageBus([
-                new SendMessageMiddleware(new SendersLocator(
-                    [
-                        Messages\Donation::class => [ClaimBotTransport::class],
-                        StripePayout::class => [TransportInterface::class],
-                    ],
-                    $c,
-                )),
-                new HandleMessageMiddleware(new HandlersLocator(
-                    [
-                        Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
-                        StripePayout::class => [$c->get(StripePayoutHandler::class)],
-                    ],
-                )),
+                $sendMiddleware,
+                $handleMiddleware,
             ]);
         },
 
