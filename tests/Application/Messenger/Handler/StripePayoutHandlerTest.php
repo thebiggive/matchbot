@@ -35,8 +35,11 @@ class StripePayoutHandlerTest extends TestCase
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_with_invalid');
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
+        // We call this on each iteration, now we use txns, to ensure it's closed cleanly.
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->all(
@@ -129,8 +132,11 @@ class StripePayoutHandlerTest extends TestCase
         $donation->setDonationStatus('Failed');
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
+        // We call this on each iteration, now we use txns, to ensure it's closed cleanly.
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->all(
@@ -234,8 +240,10 @@ class StripePayoutHandlerTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->getRepository(Donation::class)->willReturn($donationRepoProphecy->reveal());
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripeClientProphecy = $this->getStripeClient();
         $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
@@ -336,8 +344,10 @@ class StripePayoutHandlerTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->getRepository(Donation::class)->willReturn($donationRepoProphecy->reveal());
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledTimes(2);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
+        $entityManagerProphecy->commit()->shouldBeCalledTimes(2);
 
         $stripeClientProphecy = $this->getStripeClient();
         $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();

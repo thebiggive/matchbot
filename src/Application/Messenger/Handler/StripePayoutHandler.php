@@ -113,7 +113,20 @@ class StripePayoutHandler implements MessageHandlerInterface
             return;
         }
 
-        foreach ($this->getOriginalDonationChargeIds($paidChargeIds, $connectAccountId, $payoutCreated) as $chargeId) {
+        $chargeIds = $this->getOriginalDonationChargeIds($paidChargeIds, $connectAccountId, $payoutCreated);
+
+        if ($chargeIds === []) {
+            $this->logger->info(sprintf(
+                'Payout: Exited with no original donation charge IDs for Payout ID %s',
+                $payoutId,
+            ));
+
+            return;
+        }
+
+        foreach ($chargeIds as $chargeId) {
+            $this->entityManager->beginTransaction();
+
             /** @var Donation $donation */
             $donation = $this->donationRepository->findAndLockOneBy(['chargeId' => $chargeId]);
 
@@ -123,6 +136,7 @@ class StripePayoutHandler implements MessageHandlerInterface
             // other donations remains consistent if not.
             if (!$donation) {
                 $this->logger->info(sprintf('Payout: Donation not found with Charge ID %s', $chargeId));
+                $this->entityManager->commit();
                 continue;
             }
 
@@ -132,10 +146,18 @@ class StripePayoutHandler implements MessageHandlerInterface
                 $donation->setDonationStatus('Paid');
 
                 $this->entityManager->persist($donation);
+                $this->entityManager->flush();
+                $this->entityManager->commit();
                 $this->donationRepository->push($donation, false);
 
                 $count++;
-            } elseif ($donation->getDonationStatus() !== 'Paid') {
+                continue;
+            }
+
+            // Else commit the txn without persisting anything, ready for a new one.
+            $this->entityManager->commit();
+
+            if ($donation->getDonationStatus() !== 'Paid') {
                 // Skip updating donations in non-Paid statuses but continue to check the remainder.
                 // 'Refunded' is an expected status when looking through the balance txn list for a
                 // Connect account's payout, e.g.:
@@ -151,10 +173,6 @@ class StripePayoutHandler implements MessageHandlerInterface
                     )
                 );
             }
-        }
-
-        if ($count > 0) {
-            $this->entityManager->flush();
         }
 
         $this->logger->info(sprintf('Payout: Updating paid donations complete, persisted %s', $count));

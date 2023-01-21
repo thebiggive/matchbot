@@ -129,7 +129,7 @@ return function (ContainerBuilder $containerBuilder) {
             return $factory;
         },
 
-        LoggerInterface::class => function (ContainerInterface $c) {
+        LoggerInterface::class => function (ContainerInterface $c): Logger {
             $settings = $c->get('settings');
 
             $loggerSettings = $settings['logger'];
@@ -155,20 +155,29 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {
+            /** @var LoggerInterface $logger */
+            $logger = $c->get(LoggerInterface::class);
+
+            $sendMiddleware = new SendMessageMiddleware(new SendersLocator(
+                [
+                    Messages\Donation::class => [ClaimBotTransport::class],
+                    StripePayout::class => [TransportInterface::class],
+                ],
+                $c,
+            ));
+            $sendMiddleware->setLogger($logger);
+
+            $handleMiddleware = new HandleMessageMiddleware(new HandlersLocator(
+                [
+                    Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
+                    StripePayout::class => [$c->get(StripePayoutHandler::class)],
+                ],
+            ));
+            $handleMiddleware->setLogger($logger);
+
             return new MessageBus([
-                new SendMessageMiddleware(new SendersLocator(
-                    [
-                        Messages\Donation::class => [ClaimBotTransport::class],
-                        StripePayout::class => [TransportInterface::class],
-                    ],
-                    $c,
-                )),
-                new HandleMessageMiddleware(new HandlersLocator(
-                    [
-                        Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
-                        StripePayout::class => [$c->get(StripePayoutHandler::class)],
-                    ],
-                )),
+                $sendMiddleware,
+                $handleMiddleware,
             ]);
         },
 
