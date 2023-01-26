@@ -140,7 +140,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         if (!$campaign) {
             // Fetch data for as-yet-unknown campaigns on-demand
             $this->logInfo("Loading unknown campaign ID {$donationData->projectId} on-demand");
-            $campaign = new Campaign(); // MAT-281 suggests this didn't happen when it needed to at least once.
+            $campaign = new Campaign();
             $campaign->setSalesforceId($donationData->projectId);
             try {
                 $campaign = $this->campaignRepository->pull($campaign);
@@ -150,7 +150,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
             }
             $this->fundRepository->pullForCampaign($campaign);
 
-            $this->getEntityManager()->persist($campaign);
             $this->getEntityManager()->flush();
 
             // Because this case of campaigns being set up individually is relatively rare,
@@ -162,8 +161,40 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $cacheDriver->deleteAll();
         }
 
-        $donation = Donation::getDonation($donationData, $campaign, $this->settings);
+        if ($donationData->currencyCode !== $campaign->getCurrencyCode()) {
+            throw new \UnexpectedValueException(sprintf(
+                'Currency %s is invalid for campaign',
+                $donationData->currencyCode,
+            ));
+        }
+
+        $donation = new Donation();
+        $donation->setPsp($donationData->psp);
+        $donation->setPaymentMethodType($donationData->paymentMethodType);
+        $donation->setDonationStatus('Pending');
         $donation->setUuid((new UuidGenerator())->generateId($this->getEntityManager(), $donation));
+        $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
+        $donation->setAmount((string) $donationData->donationAmount);
+        $donation->setCurrencyCode($donationData->currencyCode);
+        $donation->setGiftAid($donationData->giftAid);
+        $donation->setCharityComms($donationData->optInCharityEmail);
+        $donation->setChampionComms($donationData->optInChampionEmail);
+        $donation->setPspCustomerId($donationData->pspCustomerId);
+        $donation->setTbgComms($donationData->optInTbgEmail);
+
+        if (!empty($donationData->countryCode)) {
+            $donation->setDonorCountryCode($donationData->countryCode);
+        }
+
+        if (isset($donationData->feeCoverAmount)) {
+            $donation->setFeeCoverAmount((string) $donationData->feeCoverAmount);
+        }
+
+        if (isset($donationData->tipAmount)) {
+            $donation->setTipAmount((string) $donationData->tipAmount);
+        }
+
+        $donation = $this->deriveFees($donation);
 
         return $donation;
     }
@@ -544,7 +575,20 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): Donation
     {
-        $donation->deriveFees($this->settings, $cardBrand, $cardCountry);
+        $incursGiftAidFee = $donation->hasGiftAid() && $donation->hasTbgShouldProcessGiftAid();
+
+        $structure = new Calculator(
+            $this->settings,
+            $donation->getPsp(),
+            $cardBrand,
+            $cardCountry,
+            $donation->getAmount(),
+            $donation->getCurrencyCode(),
+            $incursGiftAidFee,
+            $donation->getCampaign()->getFeePercentage(),
+        );
+        $donation->setCharityFee($structure->getCoreFee());
+        $donation->setCharityFeeVat($structure->getFeeVat());
 
         return $donation;
     }
@@ -674,5 +718,4 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         return $donation;
     }
-
 }

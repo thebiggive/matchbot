@@ -10,8 +10,6 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
-use MatchBot\Application\Fees\Calculator;
-use MatchBot\Application\HttpModels\DonationCreate;
 use Messages;
 use Ramsey\Uuid\UuidInterface;
 
@@ -323,45 +321,6 @@ class Donation extends SalesforceWriteProxy
     public function __construct()
     {
         $this->fundingWithdrawals = new ArrayCollection();
-    }
-
-    public static function getDonation(DonationCreate $donationData, Campaign $campaign, array $settings): self
-    {
-        if ($donationData->currencyCode !== $campaign->getCurrencyCode()) {
-            throw new \UnexpectedValueException(sprintf(
-                'Currency %s is invalid for campaign',
-                $donationData->currencyCode,
-            ));
-        }
-
-        $donation = new Donation();
-        $donation->setPsp($donationData->psp);
-        $donation->setPaymentMethodType($donationData->paymentMethodType);
-        $donation->setDonationStatus('Pending');
-        $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
-        $donation->setAmount((string)$donationData->donationAmount);
-        $donation->setCurrencyCode($donationData->currencyCode);
-        $donation->setGiftAid($donationData->giftAid);
-        $donation->setCharityComms($donationData->optInCharityEmail);
-        $donation->setChampionComms($donationData->optInChampionEmail);
-        $donation->setPspCustomerId($donationData->pspCustomerId);
-        $donation->setTbgComms($donationData->optInTbgEmail);
-
-        if (!empty($donationData->countryCode)) {
-            $donation->setDonorCountryCode($donationData->countryCode);
-        }
-
-        if (isset($donationData->feeCoverAmount)) {
-            $donation->setFeeCoverAmount((string)$donationData->feeCoverAmount);
-        }
-
-        if (isset($donationData->tipAmount)) {
-            $donation->setTipAmount((string)$donationData->tipAmount);
-        }
-
-        $donation->deriveFees($settings, null, null);
-
-        return $donation;
     }
 
     public function __toString()
@@ -1268,22 +1227,5 @@ class Donation extends SalesforceWriteProxy
         }
 
         return mb_substr($text, 0, 40);
-    }
-
-    public function deriveFees(array $calculatorSettings, ?string $cardBrand, ?string $cardCountry): void
-    {
-        $incursGiftAidFee = $this->hasGiftAid() && $this->hasTbgShouldProcessGiftAid();
-        $structure = new Calculator(
-            $calculatorSettings,
-            $this->getPsp(),
-            $cardBrand,
-            $cardCountry,
-            $this->getAmount(),
-            $this->getCurrencyCode(),
-            $incursGiftAidFee,
-            $this->getCampaign()->getFeePercentage(),
-        );
-        $this->setCharityFee($structure->getCoreFee());
-        $this->setCharityFeeVat($structure->getFeeVat());
     }
 }
