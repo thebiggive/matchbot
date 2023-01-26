@@ -10,6 +10,9 @@ use MatchBot\Application\Matching;
 use MatchBot\Client;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
+/**
+ * @template-extends SalesforceReadProxyRepository<Fund>
+ */
 class FundRepository extends SalesforceReadProxyRepository
 {
     private CampaignFundingRepository $campaignFundingRepository;
