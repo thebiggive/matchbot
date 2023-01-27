@@ -541,38 +541,18 @@
     <DeprecatedMethod occurrences="1">
       <code>getResultCacheImpl</code>
     </DeprecatedMethod>
-    <MixedArgument occurrences="7">
-      <code>$campaign</code>
-      <code>$campaign</code>
-      <code>$campaign-&gt;getSalesforceId()</code>
-      <code>$campaign-&gt;getSalesforceId()</code>
-      <code>$campaign-&gt;getSalesforceId()</code>
-      <code>$campaign-&gt;getSalesforceId()</code>
+    <MixedArgument occurrences="1">
       <code>static::$defaultName</code>
     </MixedArgument>
-    <MixedAssignment occurrences="1">
-      <code>$campaign</code>
-    </MixedAssignment>
-    <MixedMethodCall occurrences="7">
-      <code>getEndDate</code>
-      <code>getSalesforceId</code>
-      <code>getSalesforceId</code>
-      <code>getSalesforceId</code>
-      <code>getSalesforceId</code>
-      <code>getSalesforceId</code>
-      <code>getSalesforceId</code>
-    </MixedMethodCall>
-    <MixedOperand occurrences="2">
-      <code>$campaign-&gt;getSalesforceId()</code>
-      <code>$campaign-&gt;getSalesforceId()</code>
-    </MixedOperand>
     <PossiblyNullArgument occurrences="4">
       <code>$campaign-&gt;getSalesforceId()</code>
       <code>$campaign-&gt;getSalesforceId()</code>
       <code>$campaign-&gt;getSalesforceId()</code>
       <code>$campaign-&gt;getSalesforceId()</code>
     </PossiblyNullArgument>
-    <PossiblyNullOperand occurrences="1">
+    <PossiblyNullOperand occurrences="3">
+      <code>$campaign-&gt;getSalesforceId()</code>
+      <code>$campaign-&gt;getSalesforceId()</code>
       <code>$campaign-&gt;getSalesforceId()</code>
     </PossiblyNullOperand>
   </file>
@@ -1109,10 +1089,6 @@
       <code>transactional</code>
       <code>transactional</code>
     </DeprecatedMethod>
-    <DocblockTypeContradiction occurrences="2">
-      <code>!$campaign</code>
-      <code>$campaign</code>
-    </DocblockTypeContradiction>
     <MissingConstructor occurrences="6">
       <code>$campaignRepository</code>
       <code>$fundRepository</code>
@@ -1241,8 +1217,7 @@
       <code>$campaignFundingRepository</code>
       <code>$matchingAdapter</code>
     </MissingConstructor>
-    <MixedArgument occurrences="11">
-      <code>$fund</code>
+    <MixedArgument occurrences="10">
       <code>$fundData</code>
       <code>$fundData</code>
       <code>$fundData['currencyCode']</code>
@@ -1259,8 +1234,7 @@
       <code>$fundData['name']</code>
       <code>$fundData['totalAmount']</code>
     </MixedArrayAccess>
-    <MixedAssignment occurrences="5">
-      <code>$fund</code>
+    <MixedAssignment occurrences="4">
       <code>$fundData</code>
       <code>$fundData</code>
       <code>$fundsData</code>
@@ -1275,6 +1249,9 @@
     <ParamNameMismatch occurrences="1">
       <code>$fund</code>
     </ParamNameMismatch>
+    <PossiblyNullArgument occurrences="1">
+      <code>$fund</code>
+    </PossiblyNullArgument>
     <PossiblyNullOperand occurrences="2">
       <code>$campaign-&gt;getId()</code>
       <code>$fund-&gt;getId()</code>
@@ -1304,25 +1281,18 @@
       <code>$logger</code>
       <code>$logger</code>
     </MissingConstructor>
-    <MissingTemplateParam occurrences="1">
-      <code>SalesforceProxyRepository</code>
-    </MissingTemplateParam>
     <TypeDoesNotContainType occurrences="2">
       <code>!$this-&gt;client</code>
       <code>$this-&gt;client</code>
     </TypeDoesNotContainType>
   </file>
   <file src="src/Domain/SalesforceReadProxyRepository.php">
+    <ArgumentTypeCoercion occurrences="1">
+      <code>$proxy</code>
+    </ArgumentTypeCoercion>
     <MissingParamType occurrences="1">
       <code>$autoSave</code>
     </MissingParamType>
-    <MixedArgument occurrences="1">
-      <code>$proxy</code>
-    </MixedArgument>
-    <MixedAssignment occurrences="2">
-      <code>$existingProxy</code>
-      <code>$proxy</code>
-    </MixedAssignment>
     <PossiblyNullOperand occurrences="3">
       <code>$proxy-&gt;getSalesforceId()</code>
       <code>$proxy-&gt;getSalesforceId()</code>
@@ -1335,14 +1305,10 @@
     </RedundantCondition>
   </file>
   <file src="src/Domain/SalesforceWriteProxyRepository.php">
-    <MixedArgument occurrences="2">
+    <ArgumentTypeCoercion occurrences="2">
       <code>$proxy</code>
       <code>$proxy</code>
-    </MixedArgument>
-    <MixedAssignment occurrences="2">
-      <code>$proxy</code>
-      <code>$proxy</code>
-    </MixedAssignment>
+    </ArgumentTypeCoercion>
     <PossiblyNullArgument occurrences="5">
       <code>$proxy-&gt;getId()</code>
       <code>$proxy-&gt;getId()</code>
@@ -1999,9 +1965,6 @@
       <code>$config</code>
       <code>$config</code>
     </MixedReturnStatement>
-    <TypeDoesNotContainType occurrences="1">
-      <code>assertInstanceOf</code>
-    </TypeDoesNotContainType>
   </file>
   <file src="tests/Application/VatTrait.php">
     <MixedArrayAssignment occurrences="6">

@@ -7,6 +7,10 @@ namespace MatchBot\Domain;
 use DateTime;
 use MatchBot\Application\Commands\PushDonations;
 
+/**
+ * @template T of object
+ * @template-extends SalesforceProxyRepository<T>
+ */
 abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 {
     abstract public function doCreate(SalesforceWriteProxy $proxy): bool;

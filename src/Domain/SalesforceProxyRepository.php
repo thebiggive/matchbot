@@ -8,7 +8,10 @@ use Doctrine\ORM\EntityRepository;
 use MatchBot\Client;
 use Psr\Log\LoggerInterface;
 
-abstract class SalesforceProxyRepository extends EntityRepository
+/**
+ * @template T of object
+ * @template-extends EntityRepository<T>
+ */ abstract class SalesforceProxyRepository extends EntityRepository
 {
     protected Client\Common $client;
     protected LoggerInterface $logger;
