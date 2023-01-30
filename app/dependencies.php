@@ -21,6 +21,7 @@ use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
@@ -86,6 +87,15 @@ return function (ContainerBuilder $containerBuilder) {
             );
 
             return new Chatter($transport);
+        },
+
+        SlackChannelChatterFactory::class => static function (ContainerInterface $c): SlackChannelChatterFactory {
+            $settings = $c->get('settings');
+            assert(is_array($settings));
+            /** @psalm-suppress MixedArrayAccess $token */
+            $token = $settings['notifier']['slack']['api_token'];
+            assert(is_string($token));
+            return new SlackChannelChatterFactory($token);
         },
 
         ClaimBotTransport::class => static function (ContainerInterface $c): TransportInterface {
@@ -282,7 +292,7 @@ return function (ContainerBuilder $containerBuilder) {
             $busContainer = new Container();
             $busContainer->set('claimbot.donation.claim', $c->get(MessageBusInterface::class));
             $busContainer->set('claimbot.donation.result', $c->get(MessageBusInterface::class));
-            $busContainer->set('stripe.payout.paid', $c->get(MessageBusInterface::class));
+            $busContainer->set(\Stripe\Event::PAYOUT_PAID, $c->get(MessageBusInterface::class));
 
             return new RoutableMessageBus($busContainer);
         },
