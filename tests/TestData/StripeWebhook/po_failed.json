@@ -1,0 +1,10 @@
+{
+  "account": "acct_unitTest543",
+  "livemode": false,
+  "type": "payout.failed",
+  "data": {
+    "object": {
+      "id": "po_externalId_123"
+    }
+  }
+}

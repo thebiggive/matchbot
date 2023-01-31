@@ -6,6 +6,7 @@ namespace MatchBot\Application\Actions\Hooks;
 
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Messenger\StripePayout;
+use MatchBot\Application\SlackChannelChatterFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
@@ -15,6 +16,7 @@ use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Messenger\Stamp\BusNameStamp;
 use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
+use Symfony\Component\Notifier\Message\ChatMessage;
 
 /**
  * Handle payout.paid and payout.failed events from a Stripe Connect webhook.
@@ -23,12 +25,17 @@ use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
  */
 class StripePayoutUpdate extends Stripe
 {
+
+    private SlackChannelChatterFactory $chatterFactory;
+
     public function __construct(
         ContainerInterface $container,
         LoggerInterface $logger,
         private RoutableMessageBus $bus,
+        SlackChannelChatterFactory $chatterFactory
     ) {
         parent::__construct($container, $logger);
+        $this->chatterFactory = $chatterFactory;
     }
 
     /**
@@ -52,15 +59,20 @@ class StripePayoutUpdate extends Stripe
             $this->event->account,
         ));
 
+
         switch ($this->event->type) {
-            case 'payout.paid':
+            case Event::PAYOUT_PAID:
                 return $this->handlePayoutPaid($this->event);
-            case 'payout.failed':
-                $this->logger->error(sprintf(
+            case Event::PAYOUT_FAILED:
+                $failureMessage = sprintf(
                     'payout.failed for ID %s, account %s',
                     $this->event->data->object->id,
                     $this->event->account,
-                ));
+                );
+                $stripeChannel = $this->chatterFactory->makeChatter('stripe');
+                $stripeChannel->send(new ChatMessage($failureMessage));
+                $this->logger->warning($failureMessage);
+
                 return $this->respond(new ActionPayload(200));
             default:
                 $this->logger->warning(sprintf('Unsupported event type "%s"', $this->event->type));
@@ -85,7 +97,7 @@ class StripePayoutUpdate extends Stripe
             ->setPayoutId($payoutId);
 
         $stamps = [
-            new BusNameStamp('stripe.payout.paid'),
+            new BusNameStamp(Event::PAYOUT_PAID),
             new TransportMessageIdStamp("payout.paid.$payoutId"),
         ];
 
