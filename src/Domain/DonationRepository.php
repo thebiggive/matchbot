@@ -151,7 +151,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $this->fundRepository->pullForCampaign($campaign);
 
             $this->getEntityManager()->flush();
-            $this->getEntityManager()->persist($campaign);
 
             // Because this case of campaigns being set up individually is relatively rare,
             // it is the one place outside of `UpdateCampaigns` where we clear the whole
