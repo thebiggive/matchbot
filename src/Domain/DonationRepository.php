@@ -19,6 +19,9 @@ use Ramsey\Uuid\Doctrine\UuidGenerator;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 
+/**
+ * @template-extends SalesforceWriteProxyRepository<Donation>
+ */
 class DonationRepository extends SalesforceWriteProxyRepository
 {
     private CampaignRepository $campaignRepository;
@@ -132,7 +135,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ));
         }
 
-        /** @var Campaign $campaign */
         $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId]);
 
         if (!$campaign) {
@@ -706,7 +708,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
     {
         // We can't actually lock the row until we know the ID of the donation, so we fetch it first
         // using the criteria, and then call find once we know the ID to lock.
-        /** @var Donation|null $donation */
         $donation = $this->findOneBy($criteria, $orderBy);
 
         if ($donation === null) {

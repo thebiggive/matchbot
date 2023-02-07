@@ -8,6 +8,9 @@ use DateTime;
 use MatchBot\Client;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
+/**
+ * @template-extends SalesforceReadProxyRepository<Campaign>
+ */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
     private static array $giftAidOnboardedStatuses = [
