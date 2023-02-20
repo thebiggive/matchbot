@@ -199,13 +199,6 @@
       <code>get</code>
     </PossiblyNullReference>
   </file>
-  <file src="src/Application/Actions/Action.php">
-    <PropertyNotSetInConstructor occurrences="3">
-      <code>$args</code>
-      <code>$request</code>
-      <code>$response</code>
-    </PropertyNotSetInConstructor>
-  </file>
   <file src="src/Application/Actions/Donations/Create.php">
     <MixedArgument occurrences="2">
       <code>$campaign</code>
@@ -227,22 +220,12 @@
       <code>$exception-&gt;getStripeCode()</code>
       <code>$intent-&gt;client_secret</code>
     </PossiblyNullArgument>
-    <PropertyNotSetInConstructor occurrences="3">
-      <code>Create</code>
-      <code>Create</code>
-      <code>Create</code>
-    </PropertyNotSetInConstructor>
   </file>
   <file src="src/Application/Actions/Donations/Get.php">
     <DocblockTypeContradiction occurrences="2">
       <code>!$donation</code>
       <code>$donation</code>
     </DocblockTypeContradiction>
-    <PropertyNotSetInConstructor occurrences="3">
-      <code>Get</code>
-      <code>Get</code>
-      <code>Get</code>
-    </PropertyNotSetInConstructor>
   </file>
   <file src="src/Application/Actions/Donations/Update.php">
     <ArgumentTypeCoercion occurrences="1">
@@ -283,11 +266,6 @@
     <PossiblyUndefinedVariable occurrences="1">
       <code>$lockWaitTimeoutException</code>
     </PossiblyUndefinedVariable>
-    <PropertyNotSetInConstructor occurrences="3">
-      <code>Update</code>
-      <code>Update</code>
-      <code>Update</code>
-    </PropertyNotSetInConstructor>
     <TooManyArguments occurrences="1">
       <code>refresh</code>
     </TooManyArguments>
@@ -302,11 +280,6 @@
     <MixedAssignment occurrences="1">
       <code>$customerId</code>
     </MixedAssignment>
-    <PropertyNotSetInConstructor occurrences="3">
-      <code>GetPaymentMethods</code>
-      <code>GetPaymentMethods</code>
-      <code>GetPaymentMethods</code>
-    </PropertyNotSetInConstructor>
   </file>
   <file src="src/Application/Actions/Hooks/Stripe.php">
     <ImplicitToStringCast occurrences="1">
@@ -318,11 +291,8 @@
     <MixedAssignment occurrences="1">
       <code>$this-&gt;stripeSettings</code>
     </MixedAssignment>
-    <PropertyNotSetInConstructor occurrences="4">
+    <PropertyNotSetInConstructor occurrences="1">
       <code>$event</code>
-      <code>Stripe</code>
-      <code>Stripe</code>
-      <code>Stripe</code>
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Application/Actions/Hooks/StripeChargeUpdate.php">
@@ -374,7 +344,7 @@
       <code>$intentId</code>
       <code>$intentId</code>
     </PossiblyNullArgument>
-    <PropertyNotSetInConstructor occurrences="4">
+    <PropertyNotSetInConstructor occurrences="1">
       <code>StripeChargeUpdate</code>
       <code>StripeChargeUpdate</code>
       <code>StripeChargeUpdate</code>
@@ -382,9 +352,6 @@
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Application/Actions/Hooks/StripePayoutUpdate.php">
-    <ImplicitToStringCast occurrences="1">
-      <code>$this-&gt;request-&gt;getBody()</code>
-    </ImplicitToStringCast>
     <MixedArgument occurrences="5">
       <code>$event-&gt;data-&gt;object</code>
       <code>$payoutId</code>
@@ -400,7 +367,7 @@
       <code>$event-&gt;data-&gt;object-&gt;id</code>
       <code>$this-&gt;event-&gt;data-&gt;object-&gt;id</code>
     </MixedPropertyFetch>
-    <PropertyNotSetInConstructor occurrences="4">
+    <PropertyNotSetInConstructor occurrences="1">
       <code>StripePayoutUpdate</code>
       <code>StripePayoutUpdate</code>
       <code>StripePayoutUpdate</code>
@@ -415,11 +382,6 @@
       <code>$emConfig-&gt;getProxyDir()</code>
       <code>$emConfig-&gt;getProxyNamespace()</code>
     </PossiblyNullArgument>
-    <PropertyNotSetInConstructor occurrences="3">
-      <code>Status</code>
-      <code>Status</code>
-      <code>Status</code>
-    </PropertyNotSetInConstructor>
   </file>
   <file src="src/Application/Auth/DonationPublicAuthMiddleware.php">
     <PossiblyNullArgument occurrences="1">

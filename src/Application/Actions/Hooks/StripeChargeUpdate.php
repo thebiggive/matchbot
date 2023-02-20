@@ -10,6 +10,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Stripe\Charge;
 use Stripe\Dispute;
@@ -36,12 +37,13 @@ class StripeChargeUpdate extends Stripe
     /**
      * @return Response
      */
-    protected function action(): Response
+    protected function action(Request $request, Response $response, array $args): Response
     {
         $validationErrorResponse = $this->prepareEvent(
-            $this->request,
+            $request,
             $this->stripeSettings['accountWebhookSecret'],
             false,
+            $response,
         );
 
         if ($validationErrorResponse !== null) {
@@ -52,18 +54,18 @@ class StripeChargeUpdate extends Stripe
 
         switch ($this->event->type) {
             case 'charge.dispute.closed':
-                return $this->handleChargeDisputeClosed($this->event);
+                return $this->handleChargeDisputeClosed($this->event, $response);
             case 'charge.refunded':
-                return $this->handleChargeRefunded($this->event);
+                return $this->handleChargeRefunded($this->event, $response);
             case 'charge.succeeded':
-                return $this->handleChargeSucceeded($this->event);
+                return $this->handleChargeSucceeded($this->event, $response);
             default:
                 $this->logger->warning(sprintf('Unsupported event type "%s"', $this->event->type));
-                return $this->respond(new ActionPayload(204));
+                return $this->respond($response, new ActionPayload(204));
         }
     }
 
-    private function handleChargeSucceeded(Event $event): Response
+    private function handleChargeSucceeded(Event $event, Response $response): Response
     {
         /** @var Charge $charge */
         $charge = $event->data->object;
@@ -79,7 +81,7 @@ class StripeChargeUpdate extends Stripe
             $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
             $this->entityManager->rollback();
 
-            return $this->respond(new ActionPayload(204));
+            return $this->respond($response, new ActionPayload(204));
         }
 
         // For now we support the happy success path –
@@ -117,7 +119,7 @@ class StripeChargeUpdate extends Stripe
             ));
             $this->entityManager->rollback();
 
-            return $this->validationError(sprintf('Unsupported Status "%s"', $charge->status));
+            return $this->validationError($response, sprintf('Unsupported Status "%s"', $charge->status));
         }
 
         $this->entityManager->persist($donation);
@@ -128,7 +130,7 @@ class StripeChargeUpdate extends Stripe
         // batch sync.
         $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
-        return $this->respondWithData($charge);
+        return $this->respondWithData($response, $charge);
     }
 
     /**
@@ -137,7 +139,7 @@ class StripeChargeUpdate extends Stripe
      *
      * @link https://stripe.com/docs/issuing/purchases/disputes
      */
-    private function handleChargeDisputeClosed(Event $event): Response
+    private function handleChargeDisputeClosed(Event $event, Response $response): Response
     {
         /** @var Dispute $dispute */
         $dispute = $event->data->object;
@@ -152,7 +154,7 @@ class StripeChargeUpdate extends Stripe
                 $intentId,
                 $dispute->status,
             ));
-            return $this->respond(new ActionPayload(204));
+            return $this->respond($response, new ActionPayload(204));
         }
 
         $this->entityManager->beginTransaction();
@@ -164,7 +166,7 @@ class StripeChargeUpdate extends Stripe
             $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
             $this->entityManager->rollback();
 
-            return $this->respond(new ActionPayload(204));
+            return $this->respond($response, new ActionPayload(204));
         }
 
         if ($donation->getAmountFractionalIncTip() !== $dispute->amount) {
@@ -176,7 +178,7 @@ class StripeChargeUpdate extends Stripe
             ));
             $this->entityManager->rollback();
 
-            return $this->respond(new ActionPayload(204));
+            return $this->respond($response, new ActionPayload(204));
         }
 
         $this->logger->info(sprintf(
@@ -190,10 +192,10 @@ class StripeChargeUpdate extends Stripe
         $donation->setDonationStatus('Refunded');
         $this->doPostMarkRefundedUpdates($donation, true);
 
-        return $this->respondWithData($event->data->object);
+        return $this->respondWithData($response, $event->data->object);
     }
 
-    private function handleChargeRefunded(Event $event): Response
+    private function handleChargeRefunded(Event $event, Response $response): Response
     {
         $charge = $event->data->object;
         $amountRefunded = $event->data->object->amount_refunded; // int: pence.
@@ -206,7 +208,7 @@ class StripeChargeUpdate extends Stripe
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Charge ID %s', $charge->id));
             $this->entityManager->rollback();
-            return $this->respond(new ActionPayload(204));
+            return $this->respond($response, new ActionPayload(204));
         }
 
         $isTipRefund = $donation->getTipAmountFractional() === $amountRefunded;
@@ -218,7 +220,7 @@ class StripeChargeUpdate extends Stripe
         // converting status to the one MatchBot + SF use.
         if ($charge->status !== 'succeeded') {
             $this->entityManager->rollback();
-            return $this->validationError(sprintf('Unsupported Status "%s"', $charge->status));
+            return $this->validationError($response, sprintf('Unsupported Status "%s"', $charge->status));
         }
 
         if ($isTipRefund) {
@@ -243,12 +245,12 @@ class StripeChargeUpdate extends Stripe
                 $charge->id,
             ));
             $this->entityManager->rollback();
-            return $this->respond(new ActionPayload(204));
+            return $this->respond($response, new ActionPayload(204));
         }
 
         $this->doPostMarkRefundedUpdates($donation, $isFullRefund);
 
-        return $this->respondWithData($charge);
+        return $this->respondWithData($response, $charge);
     }
 
     private function getOriginalFeeFractional(string $balanceTransactionId, string $expectedCurrencyCode): int

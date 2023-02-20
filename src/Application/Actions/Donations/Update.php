@@ -16,6 +16,7 @@ use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Stripe\Exception\ApiErrorException;
@@ -51,16 +52,16 @@ class Update extends Action
      * @return Response
      * @throws DomainRecordNotFoundException
      */
-    protected function action(): Response
+    protected function action(Request $request, Response $response, array $args): Response
     {
-        if (empty($this->args['donationId'])) { // When MatchBot made a donation, this is now a UUID
+        if (empty($args['donationId'])) { // When MatchBot made a donation, this is now a UUID
             throw new DomainRecordNotFoundException('Missing donation ID');
         }
 
         /** @var Donation $donation */
         $this->entityManager->beginTransaction();
 
-        $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $this->args['donationId']]);
+        $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $args['donationId']]);
 
         if (!$donation) {
             $this->entityManager->rollback();
@@ -68,7 +69,7 @@ class Update extends Action
             throw new DomainRecordNotFoundException('Donation not found');
         }
 
-        $body = (string) $this->request->getBody();
+        $body = (string) $request->getBody();
 
         try {
             /** @var HttpModels\Donation $donationData */
@@ -86,7 +87,7 @@ class Update extends Action
 
             $this->entityManager->rollback();
 
-            return $this->validationError(
+            return $this->validationError($response, 
                 "$message: $exceptionType - {$exception->getMessage()}",
                 $message,
                 empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
@@ -96,8 +97,8 @@ class Update extends Action
         if (!isset($donationData->status)) {
             $this->entityManager->rollback();
 
-            return $this->validationError(
-                "Donation ID {$this->args['donationId']} could not be updated with missing status",
+            return $this->validationError($response, 
+                "Donation ID {$args['donationId']} could not be updated with missing status",
                 'New status is required'
             );
         }
@@ -112,17 +113,17 @@ class Update extends Action
                 if ($donationData->status !== 'Cancelled' && $donationData->status !== $donation->getDonationStatus()) {
                     $this->entityManager->rollback();
 
-                    return $this->validationError(
-                        "Donation ID {$this->args['donationId']} could not be set to status {$donationData->status}",
+                    return $this->validationError($response, 
+                        "Donation ID {$args['donationId']} could not be set to status {$donationData->status}",
                         'Status update is only supported for cancellation'
                     );
                 }
 
                 if ($donationData->status === 'Cancelled') {
-                    return $this->cancel($donation);
+                    return $this->cancel($donation, $response, $args);
                 }
 
-                return $this->addData($donation, $donationData);
+                return $this->addData($donation, $donationData, $args, $response);
             } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
                 \usleep(100_000 * (2 ** $retryCount)); // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
                 $retryCount++;
@@ -138,15 +139,15 @@ class Update extends Action
     /**
      * Assumes it will be called only after starting a transaction pre-donation-select.
      */
-    private function addData(Donation $donation, HttpModels\Donation $donationData): Response
+    private function addData(Donation $donation, HttpModels\Donation $donationData, array $args, Response $response): Response
     {
         // If the app tries to PUT with a different amount, something has gone very wrong and we should
         // explicitly fail instead of ignoring that field.
         if (bccomp($donation->getAmount(), (string) $donationData->donationAmount) !== 0) {
             $this->entityManager->rollback();
 
-            return $this->validationError(
-                "Donation ID {$this->args['donationId']} amount did not match",
+            return $this->validationError($response, 
+                "Donation ID {$args['donationId']} amount did not match",
                 'Amount updates are not supported'
             );
         }
@@ -155,7 +156,7 @@ class Update extends Action
             if (!isset($donationData->$requiredBoolean)) {
                 $this->entityManager->rollback();
 
-                return $this->validationError(sprintf(
+                return $this->validationError($response, sprintf(
                     "Required boolean field '%s' not set",
                     $requiredBoolean,
                 ), null, true);
@@ -165,7 +166,7 @@ class Update extends Action
         if ($donationData->currencyCode === 'GBP' && !isset($donationData->giftAid)) {
             $this->entityManager->rollback();
 
-            return $this->validationError("Required boolean field 'giftAid' not set", null, true);
+            return $this->validationError($response, "Required boolean field 'giftAid' not set", null, true);
         }
 
         // These 3 fields are currently set up early in the journey, but are harmless and more flexible
@@ -183,7 +184,7 @@ class Update extends Action
             } catch (\UnexpectedValueException $exception) {
                 $this->entityManager->rollback();
 
-                return $this->validationError(
+                return $this->validationError($response, 
                     sprintf("Invalid tipAmount '%s'", $donationData->tipAmount),
                     $exception->getMessage(),
                     false,
@@ -239,16 +240,16 @@ class Update extends Action
                     $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent [C]');
                     $this->entityManager->rollback();
 
-                    return $this->respond(new ActionPayload(500, null, $error));
+                    return $this->respond($response, new ActionPayload(500, null, $error));
                 } catch (ApiErrorException $retryException) {
-                    $responseIfFinal = $this->handleGeneralStripeError($retryException, $donation);
+                    $responseIfFinal = $this->handleGeneralStripeError($retryException, $donation, $response);
 
                     if ($responseIfFinal) {
                         return $responseIfFinal;
                     }
                 }
             } catch (ApiErrorException $exception) {
-                $responseIfFinal = $this->handleGeneralStripeError($exception, $donation);
+                $responseIfFinal = $this->handleGeneralStripeError($exception, $donation, $response);
 
                 if ($responseIfFinal) {
                     return $responseIfFinal;
@@ -262,16 +263,16 @@ class Update extends Action
 
         $this->save($donation);
 
-        return $this->respondWithData($donation->toApiModel());
+        return $this->respondWithData($response, $donation->toApiModel());
     }
 
-    private function cancel(Donation $donation): Response
+    private function cancel(Donation $donation, Response $response, array $args): Response
     {
         if ($donation->getDonationStatus() === 'Cancelled') {
-            $this->logger->info("Donation ID {$this->args['donationId']} was already Cancelled");
+            $this->logger->info("Donation ID {$args['donationId']} was already Cancelled");
             $this->entityManager->rollback();
 
-            return $this->respondWithData($donation->toApiModel());
+            return $this->respondWithData($response, $donation->toApiModel());
         }
 
         if ($donation->isSuccessful()) {
@@ -279,13 +280,13 @@ class Update extends Action
             // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
             $this->entityManager->rollback();
 
-            return $this->validationError(
-                "Donation ID {$this->args['donationId']} could not be cancelled as {$donation->getDonationStatus()}",
+            return $this->validationError($response, 
+                "Donation ID {$args['donationId']} could not be cancelled as {$donation->getDonationStatus()}",
                 'Donation already finalised'
             );
         }
 
-        $this->logger->info("Donor cancelled ID {$this->args['donationId']}");
+        $this->logger->info("Donor cancelled ID {$args['donationId']}");
 
         $donation->setDonationStatus('Cancelled');
 
@@ -325,12 +326,12 @@ class Update extends Action
                 if ($returnError) {
                     $error = new ActionError(ActionError::SERVER_ERROR, 'Could not cancel Stripe Payment Intent');
 
-                    return $this->respond(new ActionPayload(500, null, $error));
+                    return $this->respond($response, new ActionPayload(500, null, $error));
                 } // Else likely double-send -> fall through to normal 200 OK response and return the donation as-is.
             }
         }
 
-        return $this->respondWithData($donation->toApiModel());
+        return $this->respondWithData($response, $donation->toApiModel());
     }
 
     /**
@@ -395,7 +396,7 @@ class Update extends Action
     /**
      * @return ?Response Response to send client, if appropriate. HTTP 500.
      */
-    private function handleGeneralStripeError(ApiErrorException $exception, Donation $donation): ?Response
+    private function handleGeneralStripeError(ApiErrorException $exception, Donation $donation, Response $response): ?Response
     {
         $alreadyCapturedMsg = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
             'after a capture has already been made.';
@@ -433,7 +434,7 @@ class Update extends Action
                 );
                 $this->entityManager->rollback();
 
-                return $this->respond(new ActionPayload(500, null, $error));
+                return $this->respond($response, new ActionPayload(500, null, $error));
             }
         } else {
             $this->logger->error(sprintf(
@@ -446,7 +447,7 @@ class Update extends Action
             $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent [B]');
             $this->entityManager->rollback();
 
-            return $this->respond(new ActionPayload(500, null, $error));
+            return $this->respond($response, new ActionPayload(500, null, $error));
         }
 
         return null;
