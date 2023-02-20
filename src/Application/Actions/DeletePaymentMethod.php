@@ -11,6 +11,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\StripeClient;
 
 class DeletePaymentMethod extends Action
@@ -37,7 +38,12 @@ class DeletePaymentMethod extends Action
 
         // this is throwing a 500 with "No such source: 'pm_xyz'" when testing on my local.
         // I want to see what it does on staging to understand if it's an issue specific to the local environment.
-        $this->stripeClient->customers->deleteSource($customerId, $paymentMethodId);
+        try {
+            $this->stripeClient->paymentMethods->detach($paymentMethodId);
+        } catch (InvalidRequestException $t)
+        {
+            return $this->respondWithData($response, ['error' => "Could not delete payment method"], 400);
+        }
 
         return $this->respondWithData($response, data: [], statusCode: StatusCodeInterface::STATUS_NO_CONTENT);
     }
