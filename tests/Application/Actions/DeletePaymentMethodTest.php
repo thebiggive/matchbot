@@ -9,6 +9,7 @@ use Psr\Log\NullLogger;
 use Slim\Psr7\Request;
 use Slim\Psr7\Response;
 use Stripe\Service\CustomerService;
+use Stripe\Service\PaymentMethodService;
 use Stripe\StripeClient;
 
 class DeletePaymentMethodTest extends TestCase
@@ -16,11 +17,11 @@ class DeletePaymentMethodTest extends TestCase
     public function testItDeletesAPaymentMethod(): void
     {
         // arrange
-        $stripeCustomersProphecy = $this->prophesize(CustomerService::class);
+        $stripePaymentMethodServiceProphecy = $this->prophesize(PaymentMethodService::class);
         $fakeStripeClient = $this->createStub(StripeClient::class);
         /** @psalm-suppress UndefinedPropertyAssignment  Not sure why Psalm isn't reading the @property
          * annotation on the StripeClient class */
-        $fakeStripeClient->customers = $stripeCustomersProphecy->reveal();
+        $fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
 
         $sut = new DeletePaymentMethod($fakeStripeClient, new NullLogger());
 
@@ -28,7 +29,7 @@ class DeletePaymentMethodTest extends TestCase
             ->withAttribute('pspId', 'stripe_customer_id_12');
 
         // assert
-        $stripeCustomersProphecy->deleteSource('stripe_customer_id_12', 'stripe_payment_method_id_35')
+        $stripePaymentMethodServiceProphecy->detach('stripe_payment_method_id_35')
             ->shouldBeCalledOnce();
 
         // act
