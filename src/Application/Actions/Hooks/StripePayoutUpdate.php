@@ -9,6 +9,7 @@ use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\SlackChannelChatterFactory;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Stripe\Event;
 use Symfony\Component\Messenger\Envelope;
@@ -41,12 +42,13 @@ class StripePayoutUpdate extends Stripe
     /**
      * @return Response
      */
-    protected function action(): Response
+    protected function action(Request $request, Response $response, array $args): Response
     {
         $validationErrorResponse = $this->prepareEvent(
-            $this->request,
+            $request,
             $this->stripeSettings['connectAppWebhookSecret'],
             true,
+            $response,
         );
 
         if ($validationErrorResponse !== null) {
@@ -62,7 +64,7 @@ class StripePayoutUpdate extends Stripe
 
         switch ($this->event->type) {
             case Event::PAYOUT_PAID:
-                return $this->handlePayoutPaid($this->event);
+                return $this->handlePayoutPaid($request, $this->event, $response);
             case Event::PAYOUT_FAILED:
                 $failureMessage = sprintf(
                     'payout.failed for ID %s, account %s',
@@ -73,14 +75,14 @@ class StripePayoutUpdate extends Stripe
                 $stripeChannel->send(new ChatMessage($failureMessage));
                 $this->logger->warning($failureMessage);
 
-                return $this->respond(new ActionPayload(200));
+                return $this->respond($response, new ActionPayload(200));
             default:
                 $this->logger->warning(sprintf('Unsupported event type "%s"', $this->event->type));
-                return $this->respond(new ActionPayload(204));
+                return $this->respond($response, new ActionPayload(204));
         }
     }
 
-    private function handlePayoutPaid(Event $event): Response
+    private function handlePayoutPaid(Request $request, Event $event, Response $response): Response
     {
         $payoutId = $event->data->object->id;
 
@@ -89,7 +91,7 @@ class StripePayoutUpdate extends Stripe
             // in the manual payout case, Stripe errors out with "Balance transaction history
             // can only be filtered on automatic transfers, not manual".
             $this->logger->warning(sprintf('Skipping processing of manual Payout ID %s', $payoutId));
-            return $this->respond(new ActionPayload(204));
+            return $this->respond($response, new ActionPayload(204));
         }
 
         $message = (new StripePayout())
@@ -107,12 +109,12 @@ class StripePayoutUpdate extends Stripe
             $this->logger->error(sprintf(
                 'Payout processing queue dispatch error %s. Request body: %s.',
                 $exception->getMessage(),
-                $this->request->getBody(),
+                $request->getBody()->getContents(),
             ));
 
-            return $this->respond(new ActionPayload(500));
+            return $this->respond($response, new ActionPayload(500));
         }
 
-        return $this->respondWithData($event->data->object);
+        return $this->respondWithData($response, $event->data->object);
     }
 }

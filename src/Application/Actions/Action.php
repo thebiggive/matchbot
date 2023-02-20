@@ -13,17 +13,11 @@ use Slim\Exception\HttpNotFoundException;
 
 abstract class Action
 {
-    protected LoggerInterface $logger;
-    protected Request $request;
-    protected Response $response;
-    protected array $args;
-
     /**
      * @param LoggerInterface $logger
      */
-    public function __construct(LoggerInterface $logger)
+    public function __construct(protected readonly LoggerInterface $logger)
     {
-        $this->logger = $logger;
     }
 
     /**
@@ -36,14 +30,10 @@ abstract class Action
      */
     public function __invoke(Request $request, Response $response, $args): Response
     {
-        $this->request = $request;
-        $this->response = $response;
-        $this->args = $args;
-
         try {
-            return $this->action();
+            return $this->action($request, $response, $args);
         } catch (DomainRecordNotFoundException $e) {
-            throw new HttpNotFoundException($this->request, $e->getMessage());
+            throw new HttpNotFoundException($request, $e->getMessage());
         }
     }
 
@@ -52,20 +42,20 @@ abstract class Action
      * @throws DomainRecordNotFoundException
      * @throws HttpBadRequestException
      */
-    abstract protected function action(): Response;
+    abstract protected function action(Request $request, Response $response, array $args): Response;
 
     /**
      * @param  string $name
      * @return mixed
      * @throws HttpBadRequestException
      */
-    protected function resolveArg(string $name)
+    protected function resolveArg(Request $request, string $name, array $args)
     {
-        if (!isset($this->args[$name])) {
-            throw new HttpBadRequestException($this->request, "Could not resolve argument `{$name}`.");
+        if (!isset($args[$name])) {
+            throw new HttpBadRequestException($request, "Could not resolve argument `{$name}`.");
         }
 
-        return $this->args[$name];
+        return $args[$name];
     }
 
     /**
@@ -76,6 +66,7 @@ abstract class Action
      * @return Response with 400 HTTP response code.
      */
     protected function validationError(
+        Response $response,
         string $logMessage,
         ?string $publicMessage = null,
         bool $reduceSeverity = false
@@ -87,29 +78,29 @@ abstract class Action
         }
         $error = new ActionError(ActionError::BAD_REQUEST, $publicMessage ?? $logMessage);
 
-        return $this->respond(new ActionPayload(400, null, $error));
+        return $this->respond($response, new ActionPayload(400, null, $error));
     }
 
     /**
      * @param  array|object|null $data
      * @return Response
      */
-    protected function respondWithData($data = null, int $statusCode = 200): Response
+    protected function respondWithData(Response $response, $data = null, int $statusCode = 200): Response
     {
         $payload = new ActionPayload($statusCode, $data);
-        return $this->respond($payload);
+        return $this->respond($response, $payload);
     }
 
     /**
      * @param ActionPayload $payload
      * @return Response
      */
-    protected function respond(ActionPayload $payload): Response
+    protected function respond(Response $response, ActionPayload $payload): Response
     {
         $json = json_encode($payload, JSON_PRETTY_PRINT);
-        $this->response->getBody()->write($json);
+        $response->getBody()->write($json);
 
-        return $this->response
+        return $response
             ->withStatus($payload->getStatusCode())
             ->withHeader('Content-Type', 'application/json');
     }

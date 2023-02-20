@@ -35,7 +35,8 @@ abstract class Stripe extends Action
     protected function prepareEvent(
         ServerRequestInterface $request,
         string $webhookSecret,
-        bool $connect
+        bool $connect,
+        Response $response,
     ): ?ResponseInterface {
         try {
             $this->event = \Stripe\Webhook::constructEvent(
@@ -44,13 +45,13 @@ abstract class Stripe extends Action
                 $webhookSecret
             );
         } catch (\UnexpectedValueException $e) {
-            return $this->validationError("Invalid Payload: {$e->getMessage()}", 'Invalid Payload');
+            return $this->validationError($response, "Invalid Payload: {$e->getMessage()}", 'Invalid Payload');
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
-            return $this->validationError('Invalid Signature');
+            return $this->validationError($response, 'Invalid Signature');
         }
 
         if (!($this->event instanceof Event)) {
-            return $this->validationError('Invalid event');
+            return $this->validationError($response, 'Invalid event');
         }
 
         if (!$this->event->livemode && getenv('APP_ENV') === 'production') {
@@ -62,7 +63,7 @@ abstract class Stripe extends Action
             $method = $connect ? 'info' : 'warning';
             $this->logger->$method(sprintf('Skipping non-live %s webhook in Production', $this->event->type));
 
-            return $this->respond(new ActionPayload(204));
+            return $this->respond($response, new ActionPayload(204));
         }
 
         return null;

@@ -16,6 +16,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\Pledge;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Redis;
 
@@ -33,7 +34,7 @@ class Status extends Action
     /**
      * @return Response
      */
-    protected function action(): Response
+    protected function action(Request $request, Response $response, array $args): Response
     {
         /** @var string|null $errorMessage */
         $errorMessage = null;
@@ -59,12 +60,12 @@ class Status extends Action
         }
 
         if ($errorMessage === null) {
-            return $this->respondWithData(['status' => 'OK']);
+            return $this->respondWithData($response, ['status' => 'OK']);
         }
 
         $error = new ActionError(ActionError::SERVER_ERROR, $errorMessage);
 
-        return $this->respond(new ActionPayload(500, ['error' => $errorMessage], $error));
+        return $this->respond($response, new ActionPayload(500, ['error' => $errorMessage], $error));
     }
 
     /**
