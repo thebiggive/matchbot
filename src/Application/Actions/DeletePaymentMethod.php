@@ -36,12 +36,13 @@ class DeletePaymentMethod extends Action
         $paymentMethodId = $args['payment_method_id'];
         \assert(is_string($paymentMethodId));
 
-        // this is throwing a 500 with "No such source: 'pm_xyz'" when testing on my local.
-        // I want to see what it does on staging to understand if it's an issue specific to the local environment.
         try {
             $this->stripeClient->paymentMethods->detach($paymentMethodId);
-        } catch (InvalidRequestException $t)
-        {
+        } catch (InvalidRequestException $e) {
+            $this->logger->error(
+                "Failed to delete payment method, error: " . $e->getMessage(),
+                compact('customerId', 'paymentMethodId')
+            );
             return $this->respondWithData($response, ['error' => "Could not delete payment method"], 400);
         }
 
