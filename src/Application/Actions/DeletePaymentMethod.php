@@ -36,6 +36,29 @@ class DeletePaymentMethod extends Action
         $paymentMethodId = $args['payment_method_id'];
         \assert(is_string($paymentMethodId));
 
+        /** @var array<array{id: string}> $allPaymentMethodsOfCustomer */
+        $allPaymentMethodsOfCustomer = $this->stripeClient->customers->allPaymentMethods(
+            $customerId,
+        )->toArray()['data'];
+
+        $allCustomersPaymentMethodIds = array_map(
+            static fn(array $pm): string => $pm['id'],
+            $allPaymentMethodsOfCustomer
+        );
+
+        if (!in_array($paymentMethodId, $allCustomersPaymentMethodIds, true)) {
+            $this->logger->warning(
+                "Refusing to delete stripe payment method as not found for customer",
+                compact('customerId', 'paymentMethodId')
+            );
+
+            return $this->respondWithData(
+                $response,
+                ['error' => 'Payment method not found'],
+                StatusCodeInterface::STATUS_BAD_REQUEST
+            );
+        }
+
         try {
             $this->stripeClient->paymentMethods->detach($paymentMethodId);
         } catch (InvalidRequestException $e) {
