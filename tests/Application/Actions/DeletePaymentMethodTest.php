@@ -9,10 +9,8 @@ use PHPUnit\Framework\MockObject\Stub;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
-use Slim\Psr7\Request;
 use Slim\Psr7\Response;
 use Stripe\Collection;
-use Stripe\PaymentMethod;
 use Stripe\Service\CustomerService;
 use Stripe\Service\PaymentMethodService;
 use Stripe\StripeClient;
@@ -27,7 +25,9 @@ class DeletePaymentMethodTest extends TestCase
         $fakeStripeClient = $this->fakeStripeClient($stripePaymentMethodServiceProphecy, $stripeCustomerServiceProphecy);
 
         $stripeCustomerServiceProphecy->allPaymentMethods('stripe_customer_id_12')->willReturn(
-            $this->stubCollectionOf([new PaymentMethod('stripe_payment_method_id_35')])
+            $this->stubCollectionOf([
+                ['id' => 'stripe_payment_method_id_35']
+            ])
         );
 
         $sut = new DeletePaymentMethod($fakeStripeClient, new NullLogger());
@@ -50,7 +50,9 @@ class DeletePaymentMethodTest extends TestCase
         $fakeStripeClient = $this->fakeStripeClient($stripePaymentMethodServiceProphecy, $stripeCustomerServiceProphecy);
 
         $stripeCustomerServiceProphecy->allPaymentMethods('stripe_customer_id_12')->willReturn(
-            $this->stubCollectionOf([new PaymentMethod('different_method_id')])
+            $this->stubCollectionOf([
+                ['id' => 'different_method_id']
+            ])
         );
 
         $sut = new DeletePaymentMethod($fakeStripeClient, new NullLogger());
@@ -68,7 +70,7 @@ class DeletePaymentMethodTest extends TestCase
     public function stubCollectionOf(array $paymentMethods): Stub&Collection
     {
         $stubCollection = $this->createStub(Collection::class);
-        $stubCollection->method('toArray')->willReturn($paymentMethods);
+        $stubCollection->method('toArray')->willReturn(['data' => $paymentMethods]);
 
         return $stubCollection;
     }

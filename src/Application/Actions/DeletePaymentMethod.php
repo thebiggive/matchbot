@@ -12,7 +12,6 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
-use Stripe\PaymentMethod;
 use Stripe\StripeClient;
 
 class DeletePaymentMethod extends Action
@@ -37,12 +36,13 @@ class DeletePaymentMethod extends Action
         $paymentMethodId = $args['payment_method_id'];
         \assert(is_string($paymentMethodId));
 
+        /** @var array<array{id: string}> $allPaymentMethodsOfCustomer */
         $allPaymentMethodsOfCustomer = $this->stripeClient->customers->allPaymentMethods(
             $customerId,
-        )->toArray();
+        )->toArray()['data'];
 
         $allCustomersPaymentMethodIds = array_map(
-            static fn(PaymentMethod $pm) => $pm->id,
+            static fn(array $pm): string => $pm['id'],
             $allPaymentMethodsOfCustomer
         );
 
