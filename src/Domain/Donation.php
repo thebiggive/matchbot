@@ -24,6 +24,17 @@ use Ramsey\Uuid\UuidInterface;
  */
 class Donation extends SalesforceWriteProxy
 {
+    public const STATUSES = [
+        'Pending',
+        'Collected',
+        'Paid',
+        'Cancelled',
+        'Refunded',
+        'Failed',
+        'Chargedback',
+        'RefundingPending',
+        'PendingCancellation',
+    ];
     /**
      * @var int
      * @see Donation::$currencyCode
@@ -35,19 +46,6 @@ class Donation extends SalesforceWriteProxy
      * @see Donation::$currencyCode
      */
     private int $maximumAmount = 25000;
-
-    /** @var string[] */
-    private array $possibleStatuses = [
-        'Pending',
-        'Collected',
-        'Paid',
-        'Cancelled',
-        'Refunded',
-        'Failed',
-        'Chargedback',
-        'RefundingPending',
-        'PendingCancellation',
-    ];
 
     private array $possiblePSPs = ['stripe'];
 
@@ -164,10 +162,8 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\Column(type="string")
-     * @var string  A status, as sent by the PSP verbatim.
+     * @psalm-var value-of<self::STATUSES>|'NotSet' A status, as sent by the PSP verbatim.
      * @todo Consider vs. Stripe options
-     *              One of: NotSet, Pending, Collected, Paid, Cancelled, Refunded, Failed, Chargedback,
-     *              RefundingPending, PendingCancellation.
      * @link https://docs.google.com/document/d/11ukX2jOxConiVT3BhzbUKzLfSybG8eie7MX0b0kG89U/edit?usp=sharing
      */
     protected string $donationStatus = 'NotSet';
@@ -435,16 +431,21 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string
+     * @psalm-return value-of<self::STATUSES>|'NotSet'
      */
     public function getDonationStatus(): string
     {
         return $this->donationStatus;
     }
 
+    /**
+     * @psalm-param value-of<self::STATUSES> $donationStatus
+     */
     public function setDonationStatus(string $donationStatus): void
     {
-        if (!in_array($donationStatus, $this->possibleStatuses, true)) {
+        /** @psalm-suppress DocblockTypeContradiction - we don't 100% trust all callers to respect the docblock */
+        if (!in_array($donationStatus, self::STATUSES, true)) {
+            /** @psalm-suppress InvalidCast - not invalid if status was different to docblock-type */
             throw new \UnexpectedValueException("Unexpected status '$donationStatus'");
         }
 

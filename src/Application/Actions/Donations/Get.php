@@ -10,6 +10,7 @@ use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 
 class Get extends Action
@@ -26,19 +27,19 @@ class Get extends Action
      * @return Response
      * @throws DomainRecordNotFoundException
      */
-    protected function action(): Response
+    protected function action(Request $request, Response $response, array $args): Response
     {
-        if (empty($this->args['donationId'])) { // When MatchBot made a donation, this is now a UUID
+        if (empty($args['donationId'])) { // When MatchBot made a donation, this is now a UUID
             throw new DomainRecordNotFoundException('Missing donation ID');
         }
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['uuid' => $this->args['donationId']]);
+        $donation = $this->donationRepository->findOneBy(['uuid' => $args['donationId']]);
 
         if (!$donation) {
             throw new DomainRecordNotFoundException('Donation not found');
         }
 
-        return $this->respondWithData($donation->toApiModel());
+        return $this->respondWithData($response, $donation->toApiModel());
     }
 }

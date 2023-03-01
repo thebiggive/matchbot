@@ -19,6 +19,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
@@ -43,15 +44,15 @@ class Create extends Action
      * @throws \MatchBot\Application\Matching\TerminalLockException if the matching adapter can't allocate funds
      * @see PersonManagementAuthMiddleware
      */
-    protected function action(): Response
+    protected function action(Request $request, Response $response, array $args): Response
     {
         // The route at `/people/{personId}/donations` validates that the donor has permission to act
         // as the person, and sets this attribute to the Stripe Customer ID based on JWS claims, all
         // in `PersonManagementAuthMiddleware`. If the legacy route was used or if no such ID was in the
         // JWS, this is null.
-        $customerId = $this->request->getAttribute('pspId');
+        $customerId = $request->getAttribute('pspId');
 
-        $body = (string) $this->request->getBody();
+        $body = (string) $request->getBody();
 
         try {
             /** @var DonationCreate $donationData */
@@ -62,7 +63,7 @@ class Create extends Action
             $message = 'Donation Create data deserialise error';
             $exceptionType = get_class($exception);
 
-            return $this->validationError(
+            return $this->validationError($response, 
                 "$message: $exceptionType - {$exception->getMessage()}",
                 $message,
                 empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
@@ -77,7 +78,7 @@ class Create extends Action
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $exception->getMessage());
 
-            return $this->validationError($message . ': ' . $exception->getMessage(), $exception->getMessage());
+            return $this->validationError($response, $message . ': ' . $exception->getMessage(), $exception->getMessage());
         } catch (UniqueConstraintViolationException $exception) {
             // If we get this, the most likely explanation is that another donation request
             // created the same campaign a very short time before this request tried to. We
@@ -93,7 +94,7 @@ class Create extends Action
         }
 
         if ($customerId !== $donation->getPspCustomerId()) {
-            return $this->validationError(sprintf(
+            return $this->validationError($response, sprintf(
                 'Route customer ID %s did not match %s in donation body',
                 $customerId,
                 $donation->getPspCustomerId(),
@@ -101,7 +102,7 @@ class Create extends Action
         }
 
         if (!$donation->getCampaign()->isOpen()) {
-            return $this->validationError(
+            return $this->validationError($response, 
                 "Campaign {$donation->getCampaign()->getSalesforceId()} is not open",
                 null,
                 true, // Reduce to info log as some instances expected on campaign close
@@ -118,7 +119,7 @@ class Create extends Action
             } catch (DomainLockContentionException $exception) {
                 $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
 
-                return $this->respond(new ActionPayload(503, null, $error));
+                return $this->respond($response, new ActionPayload(503, null, $error));
             }
         }
 
@@ -135,7 +136,7 @@ class Create extends Action
                         $donation->getCampaign()->getCharity()->getSalesforceId(),
                     ));
                     $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (A)');
-                    return $this->respond(new ActionPayload(500, null, $error));
+                    return $this->respond($response, new ActionPayload(500, null, $error));
                 }
 
                 // Else we found new Stripe info and can proceed
@@ -200,7 +201,7 @@ class Create extends Action
                     $donation->getCampaign()->getCharity()->getStripeAccountId()
                 ));
                 $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (B)');
-                return $this->respond(new ActionPayload(500, null, $error));
+                return $this->respond($response, new ActionPayload(500, null, $error));
             }
 
             $donation->setClientSecret($intent->client_secret);
@@ -210,14 +211,14 @@ class Create extends Action
             $this->entityManager->flush();
         }
 
-        $response = new DonationCreatedResponse();
-        $response->donation = $donation->toApiModel();
-        $response->jwt = DonationToken::create($donation->getUuid());
+        $data = new DonationCreatedResponse();
+        $data->donation = $donation->toApiModel();
+        $data->jwt = DonationToken::create($donation->getUuid());
 
         // Attempt immediate sync. Buffered for a future batch sync if the SF call fails.
         $this->donationRepository->push($donation, true);
 
-        return $this->respondWithData($response, 201);
+        return $this->respondWithData($response, $data, 201);
     }
 
     private function getStatementDescriptor(Charity $charity): string
