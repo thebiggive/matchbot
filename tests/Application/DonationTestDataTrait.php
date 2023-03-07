@@ -5,6 +5,7 @@ namespace MatchBot\Tests\Application;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\SalesforceWriteProxy;
 use Ramsey\Uuid\Uuid;
 
 trait DonationTestDataTrait
@@ -53,6 +54,7 @@ trait DonationTestDataTrait
         $donation->setGiftAid(true);
         $donation->setPsp('stripe');
         $donation->setSalesforceId('sfDonation369');
+        $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
         $donation->setTbgComms(false);
         $donation->setTipAmount('1.00');
         $donation->setTransferId('tr_externalId_123');

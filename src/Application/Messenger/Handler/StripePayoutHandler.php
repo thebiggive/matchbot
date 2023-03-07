@@ -7,6 +7,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\SalesforceWriteProxy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Stripe\Charge;
@@ -17,7 +18,8 @@ use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
 /**
  * Takes `Payout` messages off the queue, calls back out to Stripe to find out which donations
- * to mark Paid, and pushes updates to Salesforce.
+ * to mark Paid, and marks updates for a *future* push to Salesforce. Large payouts are liable to run
+ * over the time limit for SQS acks if we push to Salesforce immediately.
  */
 class StripePayoutHandler implements MessageHandlerInterface
 {
@@ -145,10 +147,10 @@ class StripePayoutHandler implements MessageHandlerInterface
                 // method is called only when Stripe event `payout.paid` is received.
                 $donation->setDonationStatus('Paid');
 
+                $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
                 $this->entityManager->persist($donation);
                 $this->entityManager->flush();
                 $this->entityManager->commit();
-                $this->donationRepository->push($donation, false);
 
                 $count++;
                 continue;
