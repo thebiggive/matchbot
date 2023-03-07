@@ -343,7 +343,7 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
-            ->shouldNotBeCalled(2);
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->getRepository(Donation::class)->willReturn($donationRepoProphecy->reveal());
