@@ -29,7 +29,7 @@ class PushDonations extends LockingCommand
             $output->writeln("Abandoned $numberAbandoned old Cancelled donations from Salesforce push");
         }
 
-        $numberPushed = $this->donationRepository->pushAllPending();
+        $numberPushed = $this->donationRepository->pushSalesforcePending();
         $output->writeln("Pushed $numberPushed donations to Salesforce");
 
         return 0;

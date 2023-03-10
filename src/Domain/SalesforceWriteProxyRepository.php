@@ -106,7 +106,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
      * @param int $limit    Maximum of each type of pending object to process
      * @return int  Number of objects pushed
      */
-    public function pushAllPending(int $limit = 200): int
+    public function pushSalesforcePending(int $limit = 200): int
     {
         $proxiesToCreate = $this->findBy(
             ['salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE],
