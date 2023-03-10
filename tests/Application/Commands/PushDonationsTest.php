@@ -19,7 +19,7 @@ class PushDonationsTest extends TestCase
         $donationRepoProphecy->abandonOldCancelled()
             ->willReturn(0)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy->pushAllPending()
+        $donationRepoProphecy->pushSalesforcePending()
             ->willReturn(1)
             ->shouldBeCalledOnce();
 
@@ -45,7 +45,7 @@ class PushDonationsTest extends TestCase
         $donationRepoProphecy->abandonOldCancelled()
             ->willReturn(1)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy->pushAllPending()
+        $donationRepoProphecy->pushSalesforcePending()
             ->willReturn(1)
             ->shouldBeCalledOnce();
 
