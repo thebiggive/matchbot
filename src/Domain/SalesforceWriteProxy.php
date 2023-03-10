@@ -90,6 +90,7 @@ abstract class SalesforceWriteProxy extends SalesforceProxy
     }
 
     /**
+     * @psalm-param self::PUSH_STATUS_* $salesforcePushStatus
      * @param string $salesforcePushStatus
      */
     public function setSalesforcePushStatus(string $salesforcePushStatus): void

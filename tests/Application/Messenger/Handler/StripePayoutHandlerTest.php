@@ -10,6 +10,7 @@ use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -192,6 +193,9 @@ class StripePayoutHandlerTest extends TestCase
 
         // We expect donations that are not in 'Collected' status to remain the same.
         $this->assertEquals('Failed', $donation->getDonationStatus());
+
+        // Nothing to push to SF.
+        $this->assertEquals(SalesforceWriteProxy::PUSH_STATUS_COMPLETE, $donation->getSalesforcePushStatus());
     }
 
     public function testSuccessfulUpdate(): void
@@ -235,8 +239,7 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledOnce();
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->getRepository(Donation::class)->willReturn($donationRepoProphecy->reveal());
@@ -268,6 +271,7 @@ class StripePayoutHandlerTest extends TestCase
         $payoutHandler($payoutMessage);
 
         $this->assertEquals('Paid', $donation->getDonationStatus());
+        $this->assertEquals(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $donation->getSalesforcePushStatus());
     }
 
     public function testSuccessfulUpdateWithBalanceTransactionsPagination(): void
@@ -339,8 +343,7 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledTimes(2);
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->getRepository(Donation::class)->willReturn($donationRepoProphecy->reveal());
@@ -371,9 +374,11 @@ class StripePayoutHandlerTest extends TestCase
             ->setPayoutId('po_externalId_123');
         $payoutHandler($payoutMessage);
 
-        // Ensure both donations looked up are now Paid.
+        // Ensure both donations looked up are now Paid, and pending a future SF push.
         $this->assertEquals('Paid', $altDonation->getDonationStatus());
         $this->assertEquals('Paid', $donation->getDonationStatus());
+        $this->assertEquals(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $altDonation->getSalesforcePushStatus());
+        $this->assertEquals(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $donation->getSalesforcePushStatus());
     }
 
     /**
