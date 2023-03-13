@@ -17,6 +17,24 @@ jobs:
         auth:
           username: $DOCKER_HUB_USERNAME
           password: $DOCKER_HUB_ACCESS_TOKEN
+        environment:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_SCHEMA: matchbot
+          MYSQL_USER: root
+          MYSQL_PASSWORD: tbgCircle123
+
+          REDIS_HOST: 127.0.0.1
+      - image: cimg/mysql:8.0
+        auth:
+          username: $DOCKER_HUB_USERNAME
+          password: $DOCKER_HUB_ACCESS_TOKEN
+        environment:
+          MYSQL_DATABASE: matchbot
+          MYSQL_ROOT_PASSWORD: tbgCircle123
+      - image: redis:6.2
+        auth:
+          username: $DOCKER_HUB_USERNAME
+          password: $DOCKER_HUB_ACCESS_TOKEN
 
     steps:
       - checkout
@@ -37,6 +55,8 @@ jobs:
       - run: composer run sa:check
 
       - run: composer run test
+
+      - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose
 
       - codecov/upload:
           file: 'coverage.xml'
