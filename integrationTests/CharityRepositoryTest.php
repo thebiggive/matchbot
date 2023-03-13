@@ -19,7 +19,7 @@ use PHPUnit\Framework\TestCase;
 
         $found = $sut->find("non-existant-id");
 
-        $this->assertSame(null, $found);
+        $this->assertNull($found);
     }
 
     public function testItFindsACharity(): void
