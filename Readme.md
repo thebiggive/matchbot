@@ -54,6 +54,7 @@ Docker container, or just flush the data store:
 Once you have the app running, you can test with: 
 
     docker-compose exec app composer run test
+    docker-compose exec app composer run integration-test
 
 When run with a coverage driver (e.g. Xdebug enabled by using `thebiggive/php:dev-8.1`),
 this will save coverage data to `./coverage.xml`.
