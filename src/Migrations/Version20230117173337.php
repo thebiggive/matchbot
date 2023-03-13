@@ -21,7 +21,7 @@ final class Version20230117173337 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $updateCollectedAtSql = <<<EOT
-UPDATE Donation
+UPDATE DonationXXXXXXXXXx
 SET salesforcePushStatus = 'pending-update', donationStatus = 'Paid', collectedAt = createdAt
 WHERE salesforceId IN (:sfIds)
 LIMIT 3
