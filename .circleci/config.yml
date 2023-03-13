@@ -58,6 +58,8 @@ jobs:
 
       - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose
 
+      - run: composer run integration-test
+
       - codecov/upload:
           file: 'coverage.xml'
 

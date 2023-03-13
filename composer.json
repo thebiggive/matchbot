@@ -76,7 +76,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "MatchBot\\Tests\\": "tests/"
+            "MatchBot\\Tests\\": "tests/",
+            "MatchBot\\IntegrationTests\\": "integrationTests/"
         }
     },
     "scripts": {
@@ -145,6 +146,7 @@
             "php matchbot-cli.php messenger:consume -vv --time-limit=7080"
         ],
         "start": "php -S localhost:8080 -t public",
-        "test": "XDEBUG_MODE=coverage phpunit"
+        "test": "XDEBUG_MODE=coverage phpunit --order-by=random",
+        "integration-test": "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random"
     }
 }
