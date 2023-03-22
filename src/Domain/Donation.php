@@ -153,8 +153,6 @@ class Donation extends SalesforceWriteProxy
      */
     protected ?bool $charityComms = null;
 
-    //     #[Column(type: Types::STRING, enumType: DonationStatus::class)]
-
     /**
      * @ORM\Column(type="boolean", nullable=true)
      * @var bool
