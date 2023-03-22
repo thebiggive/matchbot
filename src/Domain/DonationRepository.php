@@ -135,6 +135,13 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ));
         }
 
+        if (!in_array($donationData->psp, ['stripe'], true)) {
+            throw new \UnexpectedValueException(sprintf(
+                'PSP %s is invalid',
+                $donationData->psp,
+            ));
+        }
+
         $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId]);
 
         if (!$campaign) {

@@ -765,6 +765,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
+     * @psalm-param 'stripe' $psp
      * @param string $psp   Payment Service Provider short identifier, e.g. 'stripe'.
      */
     public function setPsp(string $psp): void
