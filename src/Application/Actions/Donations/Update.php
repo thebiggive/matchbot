@@ -15,6 +15,7 @@ use MatchBot\Application\HttpModels;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -110,7 +111,7 @@ class Update extends Action
                 if ($retryCount > 0) {
                     $this->entityManager->refresh($donation, LockMode::PESSIMISTIC_WRITE);
                 }
-                if ($donationData->status !== 'Cancelled' && $donationData->status !== $donation->getDonationStatus()) {
+                if ($donationData->status !== 'Cancelled' && $donationData->status !== $donation->getDonationStatus()->value) {
                     $this->entityManager->rollback();
 
                     return $this->validationError($response, 
@@ -268,7 +269,7 @@ class Update extends Action
 
     private function cancel(Donation $donation, Response $response, array $args): Response
     {
-        if ($donation->getDonationStatus() === 'Cancelled') {
+        if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
             $this->logger->info("Donation ID {$args['donationId']} was already Cancelled");
             $this->entityManager->rollback();
 
@@ -281,14 +282,14 @@ class Update extends Action
             $this->entityManager->rollback();
 
             return $this->validationError($response, 
-                "Donation ID {$args['donationId']} could not be cancelled as {$donation->getDonationStatus()}",
+                "Donation ID {$args['donationId']} could not be cancelled as {$donation->getDonationStatus()->value}",
                 'Donation already finalised'
             );
         }
 
         $this->logger->info("Donor cancelled ID {$args['donationId']}");
 
-        $donation->setDonationStatus('Cancelled');
+        $donation->setDonationStatus(DonationStatus::Cancelled);
 
         // Save & flush early to reduce chance of lock conflicts.
         $this->save($donation);

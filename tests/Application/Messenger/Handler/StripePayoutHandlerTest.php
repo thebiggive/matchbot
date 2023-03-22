@@ -10,6 +10,7 @@ use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
@@ -130,7 +131,7 @@ class StripePayoutHandlerTest extends TestCase
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
         $donation = $this->getTestDonation();
 
-        $donation->setDonationStatus('Failed');
+        $donation->setDonationStatus(DonationStatus::Failed);
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -192,7 +193,7 @@ class StripePayoutHandlerTest extends TestCase
         $payoutHandler($payoutMessage);
 
         // We expect donations that are not in 'Collected' status to remain the same.
-        $this->assertEquals('Failed', $donation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Failed, $donation->getDonationStatus());
 
         // Nothing to push to SF.
         $this->assertEquals(SalesforceWriteProxy::PUSH_STATUS_COMPLETE, $donation->getSalesforcePushStatus());
@@ -270,7 +271,7 @@ class StripePayoutHandlerTest extends TestCase
             ->setPayoutId('po_externalId_123');
         $payoutHandler($payoutMessage);
 
-        $this->assertEquals('Paid', $donation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Paid, $donation->getDonationStatus());
         $this->assertEquals(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $donation->getSalesforcePushStatus());
     }
 
@@ -375,8 +376,8 @@ class StripePayoutHandlerTest extends TestCase
         $payoutHandler($payoutMessage);
 
         // Ensure both donations looked up are now Paid, and pending a future SF push.
-        $this->assertEquals('Paid', $altDonation->getDonationStatus());
-        $this->assertEquals('Paid', $donation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Paid, $altDonation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Paid, $donation->getDonationStatus());
         $this->assertEquals(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $altDonation->getSalesforcePushStatus());
         $this->assertEquals(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $donation->getSalesforcePushStatus());
     }

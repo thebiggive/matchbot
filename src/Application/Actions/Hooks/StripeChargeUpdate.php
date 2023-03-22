@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -90,7 +91,7 @@ class StripeChargeUpdate extends Stripe
             $donation->setChargeId($charge->id);
             $donation->setTransferId($charge->transfer);
 
-            $donation->setDonationStatus('Collected');
+            $donation->setDonationStatus(DonationStatus::Collected);
             $donation->setCollectedAt(new \DateTime("@{$charge->created}"));
 
             // To give *simulated* webhooks, for Donation API-only load tests, an easy way to complete
@@ -189,7 +190,7 @@ class StripeChargeUpdate extends Stripe
             $intentId,
         ));
 
-        $donation->setDonationStatus('Refunded');
+        $donation->setDonationStatus(DonationStatus::Refunded);
         $this->doPostMarkRefundedUpdates($donation, true);
 
         return $this->respondWithData($response, $event->data->object);
@@ -236,7 +237,7 @@ class StripeChargeUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
-            $donation->setDonationStatus('Refunded');
+            $donation->setDonationStatus(DonationStatus::Refunded);
         } else {
             $this->logger->error(sprintf(
                 'Skipping unexpected partial non-tip refund amount %s pence for donation %s based on charge ID %s',

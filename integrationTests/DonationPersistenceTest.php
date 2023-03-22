@@ -3,6 +3,7 @@
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use MatchBot\IntegrationTests\IntegrationTest;
 use Ramsey\Uuid\Uuid;
 
@@ -38,7 +39,7 @@ class DonationPersistenceTest extends IntegrationTest
         $donation = $donationRepo->findOneBy(['uuid' => $donationRow['uuid']]);
 
         $this->assertNotNull($donation);
-        $this->assertSame('Refunded', $donation->getDonationStatus());
+        $this->assertSame(DonationStatus::Refunded, $donation->getDonationStatus());
     }
 
     /**
@@ -112,7 +113,7 @@ class DonationPersistenceTest extends IntegrationTest
         $donation->setPsp('stripe');
         $donation->setCurrencyCode('GBP');
         $donation->setAmount('1');
-        $donation->setDonationStatus('Refunded');
+        $donation->setDonationStatus(DonationStatus::Refunded);
 
         return $donation;
     }

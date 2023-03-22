@@ -15,6 +15,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -155,7 +156,7 @@ class CreateTest extends TestCase
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -291,7 +292,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
         $app = $this->getAppInstance();
@@ -420,7 +421,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
         $app = $this->getAppInstance();
@@ -533,7 +534,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
         $app = $this->getAppInstance();
@@ -652,7 +653,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
         $app = $this->getAppInstance();
@@ -697,7 +698,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
         $app = $this->getAppInstance();
@@ -753,7 +754,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
         $app = $this->getAppInstance();

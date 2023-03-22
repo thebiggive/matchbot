@@ -7,6 +7,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\SalesforceWriteProxy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
@@ -142,10 +143,10 @@ class StripePayoutHandler implements MessageHandlerInterface
                 continue;
             }
 
-            if ($donation->getDonationStatus() === 'Collected') {
+            if ($donation->getDonationStatus() === DonationStatus::Collected) {
                 // We're confident to set donation status to paid because this
                 // method is called only when Stripe event `payout.paid` is received.
-                $donation->setDonationStatus('Paid');
+                $donation->setDonationStatus(DonationStatus::Paid);
 
                 $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
                 $this->entityManager->persist($donation);
@@ -159,7 +160,7 @@ class StripePayoutHandler implements MessageHandlerInterface
             // Else commit the txn without persisting anything, ready for a new one.
             $this->entityManager->commit();
 
-            if ($donation->getDonationStatus() !== 'Paid') {
+            if ($donation->getDonationStatus() !== DonationStatus::Paid) {
                 // Skip updating donations in non-Paid statuses but continue to check the remainder.
                 // 'Refunded' is an expected status when looking through the balance txn list for a
                 // Connect account's payout, e.g.:
@@ -167,10 +168,10 @@ class StripePayoutHandler implements MessageHandlerInterface
                 // Payment         £112.50 (£14.54)   £97.96  py_1IUDF94FoHYWqtVFeuW0E4Yb ...
                 // So we log that case with INFO level (no alert / action generally) and others with ERROR.
                 $this->logger->log(
-                    $donation->getDonationStatus() === 'Refunded' ? LogLevel::INFO : LogLevel::ERROR,
+                    $donation->getDonationStatus() === DonationStatus::Refunded ? LogLevel::INFO : LogLevel::ERROR,
                     sprintf(
                         'Payout: Skipping donation status %s found for Charge ID %s',
-                        $donation->getDonationStatus(),
+                        $donation->getDonationStatus()->value,
                         $chargeId,
                     )
                 );

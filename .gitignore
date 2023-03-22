@@ -1,6 +1,7 @@
 /.env
 .idea/
 /coverage.xml
+/coverage-integration.xml
 /vendor/
 /logs/*
 !/logs/README.md
