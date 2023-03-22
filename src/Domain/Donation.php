@@ -41,11 +41,6 @@ class Donation extends SalesforceWriteProxy
     private array $possiblePSPs = ['stripe'];
 
     /**
-     * @link https://thebiggive.slack.com/archives/GGQRV08BZ/p1576070168066200?thread_ts=1575655432.161800&cid=GGQRV08BZ
-     */
-    private static array $reversedStatuses = [DonationStatus::Refunded, DonationStatus::Failed, DonationStatus::Chargedback];
-
-    /**
      * The donation ID for PSPs and public APIs. Not the same as the internal auto-increment $id used
      * by Doctrine internally for fast joins.
      *
@@ -413,7 +408,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function isReversed(): bool
     {
-        return in_array($this->donationStatus, self::$reversedStatuses, true);
+        return in_array($this->donationStatus, DonationStatus::REVERSED_STATUSES, true);
     }
 
     public function getDonationStatus(): DonationStatus
