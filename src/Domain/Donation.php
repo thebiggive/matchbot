@@ -40,10 +40,6 @@ class Donation extends SalesforceWriteProxy
 
     private array $possiblePSPs = ['stripe'];
 
-    private array $newStatuses = [DonationStatus::NotSet, DonationStatus::Pending];
-
-    private static array $successStatuses = [DonationStatus::Collected, DonationStatus::Paid];
-
     /**
      * @link https://thebiggive.slack.com/archives/GGQRV08BZ/p1576070168066200?thread_ts=1575655432.161800&cid=GGQRV08BZ
      */
@@ -409,7 +405,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function isSuccessful(): bool
     {
-        return in_array($this->donationStatus, self::$successStatuses, true);
+        return in_array($this->donationStatus, DonationStatus::SUCCESS_STATUSES, true);
     }
 
     /**
@@ -863,7 +859,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function hasPostCreateUpdates(): bool
     {
-        return !in_array($this->getDonationStatus(), $this->newStatuses, true);
+        return !in_array($this->getDonationStatus(), DonationStatus::NEW_STATUSES, true);
     }
 
     /**
@@ -903,14 +899,6 @@ class Donation extends SalesforceWriteProxy
             $this->getFeeCoverAmountFractional() +
             $this->getTipAmountFractional() -
             $this->getAmountToDeductFractional();
-    }
-
-    /**
-     * @return string[]
-     */
-    public static function getSuccessStatuses(): array
-    {
-        return self::$successStatuses;
     }
 
     /**
@@ -1145,7 +1133,7 @@ class Donation extends SalesforceWriteProxy
 
     public function isNew(): bool
     {
-        return in_array($this->donationStatus, $this->newStatuses, true);
+        return in_array($this->donationStatus, DonationStatus::NEW_STATUSES, true);
     }
 
     public function toClaimBotModel(): Messages\Donation

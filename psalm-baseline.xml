@@ -1055,10 +1055,6 @@
       <code>getFund</code>
       <code>getFund</code>
     </MixedMethodCall>
-    <MixedReturnTypeCoercion>
-      <code>self::$successStatuses</code>
-      <code>string[]</code>
-    </MixedReturnTypeCoercion>
     <PossiblyInvalidMethodCall>
       <code>add</code>
     </PossiblyInvalidMethodCall>
