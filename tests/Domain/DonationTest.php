@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
@@ -25,6 +26,22 @@ class DonationTest extends TestCase
         $this->assertNull($donation->hasGiftAid());
         $this->assertNull($donation->getCharityComms());
         $this->assertNull($donation->getTbgComms());
+    }
+
+    public function testPendingDonationDoesNotHavePostCreateUpdates(): void
+    {
+        $donation = new Donation();
+        $donation->setDonationStatus(DonationStatus::Pending);
+
+        $this->assertFalse($donation->hasPostCreateUpdates());
+    }
+
+    public function testPendingDonationHasPostCreateUpdates(): void
+    {
+        $donation = new Donation();
+        $donation->setDonationStatus(DonationStatus::Paid);
+
+        $this->assertTrue($donation->hasPostCreateUpdates());
     }
 
     public function testValidDataPersisted(): void

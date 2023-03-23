@@ -12,12 +12,18 @@ enum DonationStatus: string
 {
     public const SUCCESS_STATUSES = [self::Collected, self::Paid];
 
-    public const NEW_STATUSES = [self::NotSet, self::Pending];
-
     /**
      * @link https://thebiggive.slack.com/archives/GGQRV08BZ/p1576070168066200?thread_ts=1575655432.161800&cid=GGQRV08BZ
      */
     public const REVERSED_STATUSES = [self::Refunded, self::Failed, self::Chargedback];
+
+    public function isNew(): bool
+    {
+        return match ($this) {
+            self::NotSet, self::Pending => true,
+            default => false,
+        };
+    }
 
     /**
      * Never saved to database - this is just a placeholder used on incomplete donation objects in memory.

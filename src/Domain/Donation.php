@@ -852,7 +852,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function hasPostCreateUpdates(): bool
     {
-        return !in_array($this->getDonationStatus(), DonationStatus::NEW_STATUSES, true);
+        return ! $this->getDonationStatus()->isNew();
     }
 
     /**
@@ -1122,11 +1122,6 @@ class Donation extends SalesforceWriteProxy
     public function hasEnoughDataForSalesforce(): bool
     {
         return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
-    }
-
-    public function isNew(): bool
-    {
-        return in_array($this->donationStatus, DonationStatus::NEW_STATUSES, true);
     }
 
     public function toClaimBotModel(): Messages\Donation
