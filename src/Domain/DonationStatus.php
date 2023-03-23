@@ -26,6 +26,16 @@ enum DonationStatus: string
     }
 
     /**
+     * @return bool Whether this donation is *currently* in a state that we consider to be successful.
+     *              Note that this is not guaranteed to be permanent: donations can be refunded or charged back after
+     *              being in a state where this method is `true`.
+     */
+    public function isSuccessful(): bool
+    {
+        return in_array($this, self::SUCCESS_STATUSES, true);
+    }
+
+    /**
      * Never saved to database - this is just a placeholder used on incomplete donation objects in memory.
      * @todo consider removing this, either replace with `null` or preferably force every donation to have a real
      * status when constructed.

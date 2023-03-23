@@ -369,7 +369,7 @@ class Donation extends SalesforceWriteProxy
             'homeAddress' => $this->getDonorHomeAddressLine1(),
             'homePostcode' => $this->getDonorHomePostcode(),
             'lastName' => $this->getDonorLastName(true),
-            'matchedAmount' => $this->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0,
+            'matchedAmount' => $this->getDonationStatus()->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0,
             'matchReservedAmount' => 0,
             'optInCharityEmail' => $this->getCharityComms(),
             'optInChampionEmail' => $this->getChampionComms(),
@@ -389,16 +389,6 @@ class Donation extends SalesforceWriteProxy
         }
 
         return $data;
-    }
-
-    /**
-     * @return bool Whether this donation is *currently* in a state that we consider to be successful.
-     *              Note that this is not guaranteed to be permanent: donations can be refunded or charged back after
-     *              being in a state where this method is `true`.
-     */
-    public function isSuccessful(): bool
-    {
-        return in_array($this->donationStatus, DonationStatus::SUCCESS_STATUSES, true);
     }
 
     /**
@@ -641,7 +631,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function getConfirmedChampionWithdrawalTotal(): string
     {
-        if (!$this->isSuccessful()) {
+        if (!$this->getDonationStatus()->isSuccessful()) {
             return '0.0';
         }
 
@@ -661,7 +651,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function getConfirmedPledgeWithdrawalTotal(): string
     {
-        if (!$this->isSuccessful()) {
+        if (!$this->getDonationStatus()->isSuccessful()) {
             return '0.0';
         }
 
