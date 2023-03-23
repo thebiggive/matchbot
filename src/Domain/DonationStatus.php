@@ -35,6 +35,11 @@ enum DonationStatus: string
         return in_array($this, self::SUCCESS_STATUSES, true);
     }
 
+    public function isReversed(): bool
+    {
+        return in_array($this, DonationStatus::REVERSED_STATUSES, true);
+    }
+
     /**
      * Never saved to database - this is just a placeholder used on incomplete donation objects in memory.
      * @todo consider removing this, either replace with `null` or preferably force every donation to have a real

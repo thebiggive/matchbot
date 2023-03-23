@@ -391,14 +391,6 @@ class Donation extends SalesforceWriteProxy
         return $data;
     }
 
-    /**
-     * @return bool Whether this donation is in a reversed / failed state.
-     */
-    public function isReversed(): bool
-    {
-        return in_array($this->donationStatus, DonationStatus::REVERSED_STATUSES, true);
-    }
-
     public function getDonationStatus(): DonationStatus
     {
         return $this->donationStatus;
@@ -1174,4 +1166,5 @@ class Donation extends SalesforceWriteProxy
 
         return mb_substr($text, 0, 40);
     }
+
 }
