@@ -26,6 +26,5 @@ enum DonationStatus: string
     case NotSet = 'NotSet';
     case Paid = 'Paid';
     case Pending = 'Pending';
-    case PendingCancellation = 'PendingCancellation';
     case Refunded = 'Refunded';
 }
