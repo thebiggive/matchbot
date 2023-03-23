@@ -19,7 +19,13 @@ enum DonationStatus: string
      */
     public const REVERSED_STATUSES = [self::Refunded, self::Failed, self::Chargedback];
 
+    case NotSet = 'NotSet';
+    case Pending = 'Pending';
+    case Collected = 'Collected';
+    case Paid = 'Paid';
+    case Refunded = 'Refunded';
     case Cancelled = 'Cancelled';
+    case Failed = 'Failed';
 
     /**
      * Exists in database entries from 2020 only. There is now no code that can set a Chargedback status.
@@ -27,10 +33,4 @@ enum DonationStatus: string
      * removed.
      */
     case Chargedback = 'Chargedback';
-    case Collected = 'Collected';
-    case Failed = 'Failed';
-    case NotSet = 'NotSet';
-    case Paid = 'Paid';
-    case Pending = 'Pending';
-    case Refunded = 'Refunded';
 }
