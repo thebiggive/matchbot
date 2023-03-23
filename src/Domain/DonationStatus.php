@@ -20,6 +20,12 @@ enum DonationStatus: string
     public const REVERSED_STATUSES = [self::Refunded, self::Failed, self::Chargedback];
 
     case Cancelled = 'Cancelled';
+
+    /**
+     * Exists in database entries from 2020 only. There is now no code that can set a Chargedback status.
+     * We may want to see if eventually these can be archived and moved out of the live DB, and then this case can be
+     * removed.
+     */
     case Chargedback = 'Chargedback';
     case Collected = 'Collected';
     case Failed = 'Failed';
