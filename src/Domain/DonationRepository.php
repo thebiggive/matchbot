@@ -135,6 +135,13 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ));
         }
 
+        if (!in_array($donationData->psp, ['stripe'], true)) {
+            throw new \UnexpectedValueException(sprintf(
+                'PSP %s is invalid',
+                $donationData->psp,
+            ));
+        }
+
         $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId]);
 
         if (!$campaign) {
@@ -171,7 +178,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $donation = new Donation();
         $donation->setPsp($donationData->psp);
         $donation->setPaymentMethodType($donationData->paymentMethodType);
-        $donation->setDonationStatus('Pending');
+        $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setUuid((new UuidGenerator())->generateId($this->getEntityManager(), $donation));
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
         $donation->setAmount((string) $donationData->donationAmount);
@@ -479,7 +486,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->groupBy('d')
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
-            ->setParameter('completeStatuses', Donation::getSuccessStatuses())
+            ->setParameter('completeStatuses', array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES))
             ->setParameter('campaignClosedSince', $closedSinceDate)
             ->setParameter('now', $now);
 
@@ -505,7 +512,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->groupBy('d')
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
-            ->setParameter('completeStatuses', Donation::getSuccessStatuses())
+            ->setParameter('completeStatuses', array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES))
             ->setParameter('checkAfter', $sinceDate);
 
         // Result caching rationale as per `findWithExpiredMatching()`, except this is

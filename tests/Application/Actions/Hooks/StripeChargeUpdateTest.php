@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use Prophecy\Argument;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\StripeClient;
@@ -139,7 +140,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
         $this->assertEquals('tr_id_t987', $donation->getTransferId());
-        $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
         $this->assertEquals('0.37', $donation->getOriginalPspFee());
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -190,7 +191,7 @@ class StripeChargeUpdateTest extends StripeTest
 
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
         $this->assertEquals('tr_id_t988', $donation->getTransferId());
-        $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
         $this->assertEquals('18.72', $donation->getOriginalPspFee());
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -232,7 +233,7 @@ class StripeChargeUpdateTest extends StripeTest
         $response = $app->handle($request);
 
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals('Refunded', $donation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
         $this->assertEquals('1.00', $donation->getTipAmount());
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -277,7 +278,7 @@ class StripeChargeUpdateTest extends StripeTest
         // No change to any donation data. Return 204 for no change. Will log
         // info to help in case of any confusion.
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
         $this->assertEquals('1.00', $donation->getTipAmount());
         $this->assertEquals(204, $response->getStatusCode());
     }
@@ -350,7 +351,7 @@ class StripeChargeUpdateTest extends StripeTest
         // No change to any donation data. Return 204 for no change. Will also log
         // an error so we can investigate.
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
         $this->assertEquals('1.00', $donation->getTipAmount());
         $this->assertEquals(204, $response->getStatusCode());
     }
@@ -392,7 +393,7 @@ class StripeChargeUpdateTest extends StripeTest
         $response = $app->handle($request);
 
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals('Refunded', $donation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
         $this->assertEquals('1.00', $donation->getTipAmount());
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -438,7 +439,7 @@ class StripeChargeUpdateTest extends StripeTest
         $response = $app->handle($request);
 
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
         $this->assertEquals('0.00', $donation->getTipAmount());
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -482,7 +483,7 @@ class StripeChargeUpdateTest extends StripeTest
         // No change to any donation data. Return 204 for no change. Will also log
         // an error so we can investigate.
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
-        $this->assertEquals('Collected', $donation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
         $this->assertEquals('1.00', $donation->getTipAmount());
         $this->assertEquals(204, $response->getStatusCode());
     }

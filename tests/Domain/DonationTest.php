@@ -76,6 +76,7 @@ class DonationTest extends TestCase
         $this->expectExceptionMessage("Unexpected PSP 'paypal'");
 
         $donation = new Donation();
+        /** @psalm-suppress InvalidArgument */
         $donation->setPsp('paypal');
     }
 

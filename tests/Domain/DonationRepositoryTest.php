@@ -16,6 +16,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\Application\VatTrait;
@@ -54,7 +55,7 @@ class DonationRepositoryTest extends TestCase
             ->shouldNotBeCalled();
 
         $pendingDonation = $this->getTestDonation();
-        $pendingDonation->setDonationStatus('Pending');
+        $pendingDonation->setDonationStatus(DonationStatus::Pending);
         $success = $this->getRepo($donationClientProphecy)->push($pendingDonation, false);
 
         $this->assertTrue($success);

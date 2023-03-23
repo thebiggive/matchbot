@@ -7,8 +7,10 @@ namespace MatchBot\Domain;
 use DateTime;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\Column;
 use JetBrains\PhpStorm\Pure;
 use Messages;
 use Ramsey\Uuid\UuidInterface;
@@ -24,17 +26,6 @@ use Ramsey\Uuid\UuidInterface;
  */
 class Donation extends SalesforceWriteProxy
 {
-    public const STATUSES = [
-        'Pending',
-        'Collected',
-        'Paid',
-        'Cancelled',
-        'Refunded',
-        'Failed',
-        'Chargedback',
-        'RefundingPending',
-        'PendingCancellation',
-    ];
     /**
      * @var int
      * @see Donation::$currencyCode
@@ -48,15 +39,6 @@ class Donation extends SalesforceWriteProxy
     private int $maximumAmount = 25000;
 
     private array $possiblePSPs = ['stripe'];
-
-    private array $newStatuses = ['NotSet', 'Pending'];
-
-    private static array $successStatuses = ['Collected', 'Paid'];
-
-    /**
-     * @link https://thebiggive.slack.com/archives/GGQRV08BZ/p1576070168066200?thread_ts=1575655432.161800&cid=GGQRV08BZ
-     */
-    private static array $reversedStatuses = ['Refunded', 'Failed', 'Chargedback'];
 
     /**
      * The donation ID for PSPs and public APIs. Not the same as the internal auto-increment $id used
@@ -161,12 +143,9 @@ class Donation extends SalesforceWriteProxy
     protected string $originalPspFee = '0.00';
 
     /**
-     * @ORM\Column(type="string")
-     * @psalm-var value-of<self::STATUSES>|'NotSet' A status, as sent by the PSP verbatim.
-     * @todo Consider vs. Stripe options
-     * @link https://docs.google.com/document/d/11ukX2jOxConiVT3BhzbUKzLfSybG8eie7MX0b0kG89U/edit?usp=sharing
+     * @ORM\Column(type="string", enumType="MatchBot\Domain\DonationStatus")
      */
-    protected string $donationStatus = 'NotSet';
+    protected DonationStatus $donationStatus = DonationStatus::NotSet;
 
     /**
      * @ORM\Column(type="boolean", nullable=true)
@@ -405,7 +384,7 @@ class Donation extends SalesforceWriteProxy
             'transactionId' => $this->getTransactionId(),
         ];
 
-        if (in_array($this->getDonationStatus(), ['Pending', 'Reserved'], true)) {
+        if (in_array($this->getDonationStatus(), [DonationStatus::Pending, DonationStatus::Reserved], true)) {
             $data['matchReservedAmount'] = (float) $this->getFundingWithdrawalTotal();
         }
 
@@ -419,7 +398,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function isSuccessful(): bool
     {
-        return in_array($this->donationStatus, self::$successStatuses, true);
+        return in_array($this->donationStatus, DonationStatus::SUCCESS_STATUSES, true);
     }
 
     /**
@@ -427,28 +406,16 @@ class Donation extends SalesforceWriteProxy
      */
     public function isReversed(): bool
     {
-        return in_array($this->donationStatus, self::$reversedStatuses, true);
+        return in_array($this->donationStatus, DonationStatus::REVERSED_STATUSES, true);
     }
 
-    /**
-     * @psalm-return value-of<self::STATUSES>|'NotSet'
-     */
-    public function getDonationStatus(): string
+    public function getDonationStatus(): DonationStatus
     {
         return $this->donationStatus;
     }
 
-    /**
-     * @psalm-param value-of<self::STATUSES> $donationStatus
-     */
-    public function setDonationStatus(string $donationStatus): void
+    public function setDonationStatus(DonationStatus $donationStatus): void
     {
-        /** @psalm-suppress DocblockTypeContradiction - we don't 100% trust all callers to respect the docblock */
-        if (!in_array($donationStatus, self::STATUSES, true)) {
-            /** @psalm-suppress InvalidCast - not invalid if status was different to docblock-type */
-            throw new \UnexpectedValueException("Unexpected status '$donationStatus'");
-        }
-
         $this->donationStatus = $donationStatus;
     }
 
@@ -765,6 +732,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
+     * @psalm-param 'stripe' $psp
      * @param string $psp   Payment Service Provider short identifier, e.g. 'stripe'.
      */
     public function setPsp(string $psp): void
@@ -884,7 +852,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function hasPostCreateUpdates(): bool
     {
-        return !in_array($this->getDonationStatus(), $this->newStatuses, true);
+        return !in_array($this->getDonationStatus(), DonationStatus::NEW_STATUSES, true);
     }
 
     /**
@@ -924,14 +892,6 @@ class Donation extends SalesforceWriteProxy
             $this->getFeeCoverAmountFractional() +
             $this->getTipAmountFractional() -
             $this->getAmountToDeductFractional();
-    }
-
-    /**
-     * @return string[]
-     */
-    public static function getSuccessStatuses(): array
-    {
-        return self::$successStatuses;
     }
 
     /**
@@ -1166,7 +1126,7 @@ class Donation extends SalesforceWriteProxy
 
     public function isNew(): bool
     {
-        return in_array($this->donationStatus, $this->newStatuses, true);
+        return in_array($this->donationStatus, DonationStatus::NEW_STATUSES, true);
     }
 
     public function toClaimBotModel(): Messages\Donation

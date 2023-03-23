@@ -5,6 +5,7 @@ namespace MatchBot\Tests\Application;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\SalesforceWriteProxy;
 use Ramsey\Uuid\Uuid;
 
@@ -42,7 +43,7 @@ trait DonationTestDataTrait
         $donation->setCharityComms(true);
         $donation->setChampionComms(false);
         $donation->setCurrencyCode('GBP');
-        $donation->setDonationStatus('Collected');
+        $donation->setDonationStatus(DonationStatus::Collected);
         $donation->setCollectedAt(new \DateTime());
         $donation->setDonorCountryCode('GB');
         $donation->setDonorEmailAddress('john.doe@example.com');
@@ -92,7 +93,7 @@ trait DonationTestDataTrait
         $donation->setCharityFee('2.57');
         $donation->setCampaign($campaign);
         $donation->setCurrencyCode('GBP');
-        $donation->setDonationStatus('Pending');
+        $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setPsp('stripe');
         $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setTipAmount('2.00');

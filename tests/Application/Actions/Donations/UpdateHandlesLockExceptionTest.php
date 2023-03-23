@@ -14,6 +14,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use PHPUnit\Framework\MockObject\Builder\InvocationMocker;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -167,7 +168,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
 
         $donation = new Donation();
         $donation->createdNow();
-        $donation->setDonationStatus('Pending');
+        $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setCampaign($campaign);
         $donation->setPsp('stripe');
         $donation->setCurrencyCode('GBP');
@@ -226,7 +227,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
         $this->entityManagerProphecy->beginTransaction()->shouldBeCalled();
         $this->entityManagerProphecy->refresh($donation, LockMode::PESSIMISTIC_WRITE)->shouldBeCalled()
             ->will(function () use ($donation) {
-                $donation->setDonationStatus('Pending'); // simulate refreshing donation from DB.
+                $donation->setDonationStatus(DonationStatus::Pending); // simulate refreshing donation from DB.
             });
         $this->entityManagerProphecy->persist($donation)->shouldBeCalled();
         $this->entityManagerProphecy->commit()->shouldBeCalled();
