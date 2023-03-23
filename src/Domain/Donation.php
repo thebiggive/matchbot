@@ -384,7 +384,7 @@ class Donation extends SalesforceWriteProxy
             'transactionId' => $this->getTransactionId(),
         ];
 
-        if (in_array($this->getDonationStatus(), [DonationStatus::Pending, DonationStatus::Reserved], true)) {
+        if ($this->getDonationStatus() === DonationStatus::Pending) {
             $data['matchReservedAmount'] = (float) $this->getFundingWithdrawalTotal();
         }
 

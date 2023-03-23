@@ -23,11 +23,10 @@ enum DonationStatus: string
     case Chargedback = 'Chargedback';
     case Collected = 'Collected';
     case Failed = 'Failed';
-    case NotSet = "NotSet";
+    case NotSet = 'NotSet';
     case Paid = 'Paid';
-    case Pending = "Pending";
+    case Pending = 'Pending';
     case PendingCancellation = 'PendingCancellation';
-    case Refunded = "Refunded";
+    case Refunded = 'Refunded';
     case RefundingPending = 'RefundingPending';
-    case Reserved = 'Reserved';
 }
