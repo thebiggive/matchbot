@@ -287,7 +287,6 @@ components:
             "Refunded",
             "Failed",
             "Chargedback",
-            "RefundingPending",
             "PendingCancellation"
           ]
           example: "Paid"

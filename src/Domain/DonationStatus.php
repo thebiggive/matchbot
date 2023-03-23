@@ -28,5 +28,4 @@ enum DonationStatus: string
     case Pending = 'Pending';
     case PendingCancellation = 'PendingCancellation';
     case Refunded = 'Refunded';
-    case RefundingPending = 'RefundingPending';
 }
