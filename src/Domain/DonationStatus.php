@@ -58,17 +58,20 @@ enum DonationStatus: string
     case Pending = 'Pending';
 
     /**
-     * Set when "a charge is successful" in stripe.
+     * Donation has been paid in to Big Give's Stripe account, but not yet transferred to the charity.
      *
-     * TBH I'm (bdsl) not clear on the difference in meaning between this and Paid. Both are considered succesful
-     * donations.
+     * Generally this should just be temporary status, but there are a few old donations marked 'Collected' in the DB
+     * for historical reasons.
      *
+     * Set when receive the charge.succeded event from Stripe.
      * @see https://stripe.com/docs/api/events/types/#event_types-charge.succeeded
      */
     case Collected = 'Collected';
 
     /**
-     * A donor has transferred the funds for their donation to Big Give.
+     * Donation has been paid out to the charity.
+     *
+     * Set when we receive the payout.paid event from Stripe.
      * @see https://stripe.com/docs/api/events/types#event_types-payout.paid
      */
     case Paid = 'Paid';
