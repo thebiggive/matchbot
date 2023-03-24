@@ -300,7 +300,7 @@ class StripeChargeUpdate extends Stripe
         // the refunded amount is equal to the local txn amount.
         if (
             $isFullRefundOrLostDispute &&
-            $donation->isReversed() &&
+            $donation->getDonationStatus()->isReversed() &&
             $donation->getCampaign()->isMatched()
         ) {
             $this->donationRepository->releaseMatchFunds($donation);
