@@ -21,7 +21,6 @@
       <code><![CDATA[$c->get('settings')['doctrine']['connection']]]></code>
       <code><![CDATA[$c->get('settings')['identity']['baseUri']]]></code>
       <code><![CDATA[$c->get('settings')['los_rate_limit']]]></code>
-      <code><![CDATA[$c->get('settings')['recaptcha']['secret_key']]]></code>
       <code><![CDATA[$c->get('settings')['redis']['host']]]></code>
       <code><![CDATA[$c->get('settings')['redis']['host']]]></code>
       <code><![CDATA[$c->get(CacheInterface::class)]]></code>
@@ -57,7 +56,6 @@
       <code><![CDATA[$c->get('settings')['doctrine']]]></code>
       <code><![CDATA[$c->get('settings')['identity']]]></code>
       <code><![CDATA[$c->get('settings')['los_rate_limit']]]></code>
-      <code><![CDATA[$c->get('settings')['recaptcha']]]></code>
       <code><![CDATA[$c->get('settings')['redis']]]></code>
       <code><![CDATA[$c->get('settings')['redis']]]></code>
       <code><![CDATA[$c->get('settings')['redis']]]></code>
@@ -396,19 +394,6 @@
       <code>getArgument</code>
     </PossiblyNullReference>
   </file>
-  <file src="src/Application/Auth/DonationRecaptchaMiddleware.php">
-    <MixedArgument>
-      <code>$captchaCode</code>
-      <code><![CDATA[$request->getAttribute('client-ip')]]></code>
-    </MixedArgument>
-    <MixedAssignment>
-      <code>$captchaCode</code>
-      <code>$donationData</code>
-    </MixedAssignment>
-    <MixedPropertyFetch>
-      <code><![CDATA[$donationData->creationRecaptchaCode]]></code>
-    </MixedPropertyFetch>
-  </file>
   <file src="src/Application/Auth/DonationToken.php">
     <FalsableReturnStatement>
       <code><![CDATA[getenv('JWT_DONATION_SECRET')]]></code>
@@ -584,7 +569,6 @@
     </MissingConstructor>
     <PossiblyUnusedProperty>
       <code>$charityId</code>
-      <code>$creationRecaptchaCode</code>
       <code>$donationMatched</code>
       <code>$projectId</code>
       <code>$transactionId</code>
@@ -1607,13 +1591,11 @@
       <code><![CDATA[$payloadArray['jwt']]]></code>
       <code><![CDATA[$payloadArray['jwt']]]></code>
       <code><![CDATA[$payloadArray['jwt']]]></code>
-      <code><![CDATA[$payloadArray['jwt']]]></code>
     </MixedArrayAccess>
     <MixedAssignment>
       <code>$payloadArray</code>
     </MixedAssignment>
     <RedundantConditionGivenDocblockType>
-      <code>assertFalse</code>
       <code>assertFalse</code>
       <code>assertFalse</code>
       <code>assertFalse</code>
@@ -1822,16 +1804,6 @@
       <code>set</code>
       <code>set</code>
     </UndefinedInterfaceMethod>
-  </file>
-  <file src="tests/Application/Auth/DonationRecaptchaMiddlewareTest.php">
-    <MixedArgument>
-      <code><![CDATA[$container->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$container->get(ReCaptcha::class)]]></code>
-      <code><![CDATA[$container->get(SerializerInterface::class)]]></code>
-    </MixedArgument>
-    <PossiblyNullReference>
-      <code>get</code>
-    </PossiblyNullReference>
   </file>
   <file src="tests/Application/Auth/PersonManagementAuthMiddlewareTest.php">
     <MixedAssignment>
