@@ -279,7 +279,6 @@ components:
           readOnly: true
           type: string
           enum: [
-            "NotSet",
             "Pending",
             "Reserved",
             "Collected",

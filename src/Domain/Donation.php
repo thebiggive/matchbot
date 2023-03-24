@@ -146,7 +146,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @ORM\Column(type="string", enumType="MatchBot\Domain\DonationStatus")
      */
-    protected DonationStatus $donationStatus = DonationStatus::NotSet;
+    protected DonationStatus $donationStatus;
 
     /**
      * @ORM\Column(type="boolean", nullable=true)
@@ -366,7 +366,7 @@ class Donation extends SalesforceWriteProxy
     {
         return new self(
             uuid: Uuid::fromString(Uuid::NIL),
-            status: DonationStatus::NotSet,
+            status: DonationStatus::Pending,
             psp: 'stripe',
             paymentMethodType: 'card',
             amount: '1',

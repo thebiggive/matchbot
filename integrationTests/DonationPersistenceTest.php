@@ -18,6 +18,7 @@ class DonationPersistenceTest extends IntegrationTest
         $donation = $this->makeDonationObject();
 
         // act
+        $em->persist($donation->getCampaign());
         $em->persist($donation);
         $em->flush();
 
@@ -48,7 +49,7 @@ class DonationPersistenceTest extends IntegrationTest
      */
     private function assertRowsSimilar(array $expected, array $actual, string $message = ''): void
     {
-        $ignoredColumns = ['id' => 0, 'uuid' => 0, 'updatedAt' => 0, 'createdAt' => 0];
+        $ignoredColumns = ['id' => 0, 'uuid' => 0, 'updatedAt' => 0, 'createdAt' => 0, 'campaign_id' => 0];
 
         $this->assertSame($ignoredColumns + $expected, $ignoredColumns + $actual , $message);
     }
@@ -109,12 +110,19 @@ class DonationPersistenceTest extends IntegrationTest
      */
     public function makeDonationObject(): Donation
     {
+        $campaign = new Campaign();
+        $campaign->setCurrencyCode('GBP');
+        $campaign->setName('');
+        $campaign->setStartDate(new \DateTime());
+        $campaign->setEndDate(new \DateTime());
+        $campaign->setIsMatched(false);
+
         $donation = Donation::createPendingStripeDonation(
             Uuid::uuid4(),
             'card',
             '1',
             'GBP',
-            $this->createStub(Campaign::class),
+            $campaign,
             null,
             null,
             null,

@@ -13,7 +13,7 @@ enum DonationStatus: string
     public function isNew(): bool
     {
         return match ($this) {
-            self::NotSet, self::Pending => true,
+            self::Pending => true,
             default => false,
         };
     }
@@ -38,13 +38,6 @@ enum DonationStatus: string
             default => false,
         };
     }
-
-    /**
-     * Never saved to database - this is just a placeholder used on incomplete donation objects in memory.
-     * @todo consider removing this, either replace with `null` or preferably force every donation to have a real
-     * status when constructed.
-     */
-    case NotSet = 'NotSet';
 
     /**
      * A Pending donation represents a non-binding statement of intent to donate. We don't know whether
