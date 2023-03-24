@@ -36,7 +36,7 @@ class DonationTest extends TestCase
         $this->assertFalse($donation->hasPostCreateUpdates());
     }
 
-    public function testPendingDonationHasPostCreateUpdates(): void
+    public function testPaidDonationHasPostCreateUpdates(): void
     {
         $donation = new Donation();
         $donation->setDonationStatus(DonationStatus::Paid);
