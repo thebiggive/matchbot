@@ -276,7 +276,7 @@ class Update extends Action
             return $this->respondWithData($response, $donation->toApiModel());
         }
 
-        if ($donation->isSuccessful()) {
+        if ($donation->getDonationStatus()->isSuccessful()) {
             // If a donor uses browser back before loading the thank you page, it is possible for them to get
             // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
             $this->entityManager->rollback();

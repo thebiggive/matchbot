@@ -369,7 +369,7 @@ class Donation extends SalesforceWriteProxy
             'homeAddress' => $this->getDonorHomeAddressLine1(),
             'homePostcode' => $this->getDonorHomePostcode(),
             'lastName' => $this->getDonorLastName(true),
-            'matchedAmount' => $this->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0,
+            'matchedAmount' => $this->getDonationStatus()->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0,
             'matchReservedAmount' => 0,
             'optInCharityEmail' => $this->getCharityComms(),
             'optInChampionEmail' => $this->getChampionComms(),
@@ -384,29 +384,11 @@ class Donation extends SalesforceWriteProxy
             'transactionId' => $this->getTransactionId(),
         ];
 
-        if (in_array($this->getDonationStatus(), [DonationStatus::Pending, DonationStatus::Reserved], true)) {
+        if ($this->getDonationStatus() === DonationStatus::Pending) {
             $data['matchReservedAmount'] = (float) $this->getFundingWithdrawalTotal();
         }
 
         return $data;
-    }
-
-    /**
-     * @return bool Whether this donation is *currently* in a state that we consider to be successful.
-     *              Note that this is not guaranteed to be permanent: donations can be refunded or charged back after
-     *              being in a state where this method is `true`.
-     */
-    public function isSuccessful(): bool
-    {
-        return in_array($this->donationStatus, DonationStatus::SUCCESS_STATUSES, true);
-    }
-
-    /**
-     * @return bool Whether this donation is in a reversed / failed state.
-     */
-    public function isReversed(): bool
-    {
-        return in_array($this->donationStatus, DonationStatus::REVERSED_STATUSES, true);
     }
 
     public function getDonationStatus(): DonationStatus
@@ -641,7 +623,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function getConfirmedChampionWithdrawalTotal(): string
     {
-        if (!$this->isSuccessful()) {
+        if (!$this->getDonationStatus()->isSuccessful()) {
             return '0.0';
         }
 
@@ -661,7 +643,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function getConfirmedPledgeWithdrawalTotal(): string
     {
-        if (!$this->isSuccessful()) {
+        if (!$this->getDonationStatus()->isSuccessful()) {
             return '0.0';
         }
 
@@ -852,7 +834,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function hasPostCreateUpdates(): bool
     {
-        return !in_array($this->getDonationStatus(), DonationStatus::NEW_STATUSES, true);
+        return ! $this->getDonationStatus()->isNew();
     }
 
     /**
@@ -1124,11 +1106,6 @@ class Donation extends SalesforceWriteProxy
         return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
     }
 
-    public function isNew(): bool
-    {
-        return in_array($this->donationStatus, DonationStatus::NEW_STATUSES, true);
-    }
-
     public function toClaimBotModel(): Messages\Donation
     {
         $donationMessage = new Messages\Donation();
@@ -1189,4 +1166,5 @@ class Donation extends SalesforceWriteProxy
 
         return mb_substr($text, 0, 40);
     }
+
 }
