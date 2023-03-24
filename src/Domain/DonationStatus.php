@@ -2,10 +2,6 @@
 
 namespace MatchBot\Domain;
 
-/**
- * @link https://docs.google.com/document/d/11ukX2jOxConiVT3BhzbUKzLfSybG8eie7MX0b0kG89U/edit?usp=sharing
- * @todo Consider vs. Stripe options
- */
 enum DonationStatus: string
 {
     public const SUCCESS_STATUSES = [self::Collected, self::Paid];
