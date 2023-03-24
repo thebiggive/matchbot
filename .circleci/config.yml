@@ -74,7 +74,9 @@ workflows:
             - jira/notify:
                 job_type: build
                 environment_type: development
-            - slack/notify-on-failure: ~
+            - slack/notify:
+                event: fail
+                template: basic_fail_1
 
   deploy-regression:
     jobs:
@@ -91,7 +93,7 @@ workflows:
           requires:
             - test
           repo: '${AWS_ECR_REPO_NAME}'
-          region: '${AWS_REGION}'
+          aws-region: '${AWS_REGION}'
           tag: 'regression,regression-${CIRCLE_SHA1}'
       - aws-ecs/deploy-service-update:
           context:
@@ -104,13 +106,26 @@ workflows:
           cluster-name: 'tbg-regression-${AWS_REGION}'
           container-image-name-updates: 'container=matchbot_web,tag=regression-${CIRCLE_SHA1}'
           post-steps:
-            - slack/notify-on-failure: ~
             - jira/notify:
                 job_type: deployment
             - slack/notify:
-                color: '#009900'
-                message: 'Visitors to regression will see the updated app version in ~20 minutes.'
-                title: 'Regression: MatchBot deployed!'
+                custom: |
+                  {
+                    "blocks": [
+                      {
+                        "type": "section",
+                        "fields": [
+                          {
+                            "type": "mrkdwn",
+                            "text": "*Regression: Matchbot deployed!* All visitors should see the updated app version within 30 minutes."
+                          }
+                        ]
+                      }
+                    ]
+                  }
+            - slack/notify:
+                event: fail
+                template: basic_fail_1
 
   deploy-staging:
     jobs:
@@ -127,7 +142,7 @@ workflows:
           requires:
             - test
           repo: '${AWS_ECR_REPO_NAME}'
-          region: AWS_REGION
+          aws-region: '${AWS_REGION}'
           tag: 'staging,staging-${CIRCLE_SHA1}'
       - aws-ecs/deploy-service-update:
           context:
@@ -135,19 +150,32 @@ workflows:
             - jira
           requires:
             - aws-ecr/build-and-push-image
-          aws-region: AWS_REGION
+          aws-region: '${AWS_REGION}'
           family: 'tbg-staging-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_WEB}'
           cluster-name: 'tbg-staging-${AWS_REGION}'
           container-image-name-updates: 'container=matchbot_web,tag=staging-${CIRCLE_SHA1}'
           post-steps:
-            - slack/notify-on-failure: ~
+            - slack/notify:
+                event: fail
+                template: basic_fail_1
             - jira/notify:
                 job_type: deployment
                 environment_type: staging
             - slack/notify:
-                color: '#009900'
-                message: 'We use rolling blue/green deploys. All visitors to staging will see the updated app version within ~30 minutes.'
-                title: 'Staging: MatchBot deployed!'
+                custom: |
+                  {
+                    "blocks": [
+                      {
+                        "type": "section",
+                        "fields": [
+                          {
+                            "type": "mrkdwn",
+                            "text": "*Staging: Matchbot deployed!* All visitors should see the updated app version within 30 minutes."
+                          }
+                        ]
+                      }
+                    ]
+                  }
 
   deploy-production:
     jobs:
@@ -164,7 +192,7 @@ workflows:
           requires:
             - test
           repo: '${AWS_ECR_REPO_NAME}'
-          region: AWS_REGION
+          aws-region: '${AWS_REGION}'
           tag: 'production,production-${CIRCLE_SHA1}'
       - aws-ecs/deploy-service-update:
           context:
@@ -172,16 +200,29 @@ workflows:
             - jira
           requires:
             - aws-ecr/build-and-push-image
-          aws-region: AWS_REGION
+          aws-region: '${AWS_REGION}'
           family: 'tbg-production-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_WEB}'
           cluster-name: 'tbg-production-${AWS_REGION}'
           container-image-name-updates: 'container=matchbot_web,tag=production-${CIRCLE_SHA1}'
           post-steps:
-            - slack/notify-on-failure: ~
+            - slack/notify:
+                event: fail
+                template: basic_fail_1
             - jira/notify:
                 job_type: deployment
                 environment_type: production
             - slack/notify:
-                color: '#009900'
-                message: 'We use rolling blue/green deploys. All visitors to production will see the updated app version within ~30 minutes.'
-                title: 'Production: MatchBot deployed!'
+                custom: |
+                  {
+                    "blocks": [
+                      {
+                        "type": "section",
+                        "fields": [
+                          {
+                            "type": "mrkdwn",
+                            "text": "*Production: Matchbhot deployed!* All visitors should see the updated app version within 30 minutes."
+                          }
+                        ]
+                      }
+                    ]
+                  }
