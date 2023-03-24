@@ -83,10 +83,11 @@ enum DonationStatus: string
     /**
      * A donor changed their mind and decided not to donate after initially declaring an intention to donate.
      *
-     * Currently, this status is only set when sent explicilty from the doante-frontend, e.g. if they leave the
+     * Currently, this status is only set when sent explicitly from the donate-frontend, e.g. if they leave the
      * browser open for a long time without completing the donation.
      *
-     * @todo In future, we might think about auto-cancelling old pending donations.
+     * @todo In future, we might think about auto-cancelling old pending donations - or alternately merging this status
+     *       with Pending if we don't need a distinction.
      */
     case Cancelled = 'Cancelled';
 
