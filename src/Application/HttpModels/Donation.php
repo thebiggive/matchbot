@@ -14,8 +14,6 @@ class Donation
     public string $charityId;
     /** @var bool|null Used only to tell credit donations to complete; not persisted. */
     public ?bool $autoConfirmFromCashBalance = false;
-    /** @var string|null Used only on creates; not persisted. */
-    public ?string $creationRecaptchaCode = null;
     public ?string $currencyCode = null;
     public float $donationAmount;
     public ?float $feeCoverAmount = null;

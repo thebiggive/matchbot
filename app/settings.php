@@ -89,10 +89,6 @@ return function (ContainerBuilder $containerBuilder) {
                 ],
             ],
 
-            'recaptcha' => [
-                'secret_key' => getenv('RECAPTCHA_SECRET_KEY'),
-            ],
-
             'redis' => [
                 'host' => getenv('REDIS_HOST'),
             ],

@@ -9,7 +9,6 @@ use MatchBot\Application\Actions\GetPaymentMethods;
 use MatchBot\Application\Actions\Hooks;
 use MatchBot\Application\Actions\Status;
 use MatchBot\Application\Auth\DonationPublicAuthMiddleware;
-use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use Middlewares\ClientIp;
@@ -21,33 +20,21 @@ use Slim\Routing\RouteCollectorProxy;
 return function (App $app) {
     $app->get('/ping', Status::class);
 
-    $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
-        // Provides real IP for reCAPTCHA
-        $ipMiddleware = getenv('APP_ENV') === 'local'
-            ? new ClientIp()
-            : (new ClientIp())->proxy([], ['X-Forwarded-For']);
-
-        // Current unauthenticated endpoint in the `/v1` group. Middlewares run in reverse
-        // order when chained this way – so we check rate limits first, then get the real
-        // IP in an attribute for reCAPTCHA sending, then check the captcha.
-        $versionGroup->post('/donations', Donations\Create::class)
-            ->add(DonationRecaptchaMiddleware::class) // Runs last
-            ->add($ipMiddleware)
-            ->add(RateLimitMiddleware::class);
-
+    // TODO once `/v2` is used by live Donate, support only that prefix.
+    // We should think about whether Salesforce should be treated as a "v1 client"
+    // still, probably while also discussing the value vs. complexity of introducing
+    // a 1:1 relationship between Stripe customers and Salesforce contacts.
+    $app->group('/v{version:[12]}', function (RouteCollectorProxy $versionGroup) {
         $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
-            ->add(PersonManagementAuthMiddleware::class)
-            ->add($ipMiddleware)
+            ->add(PersonManagementAuthMiddleware::class) // Runs last
             ->add(RateLimitMiddleware::class);
 
         $versionGroup->get('/people/{personId:[a-z0-9-]{36}}/payment_methods', GetPaymentMethods::class)
             ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
-            ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
         $versionGroup->delete('/people/{personId:[a-z0-9-]{36}}/payment_methods/{payment_method_id:[a-zA-Z0-9_]{10,50}}', DeletePaymentMethod::class)
             ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
-            ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {

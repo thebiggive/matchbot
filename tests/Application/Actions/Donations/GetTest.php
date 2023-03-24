@@ -25,7 +25,8 @@ class GetTest extends TestCase
         // Route not matched at all
         $this->expectException(HttpNotFoundException::class);
 
-        $request = $this->createRequest('GET', '/v1/donations/');
+        // Use v2 flavour of a v1-valid, now-404 route.
+        $request = $this->createRequest('GET', '/v2/donations');
         $app->handle($request);
     }
 
@@ -42,7 +43,7 @@ class GetTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $request = $this->createRequest('GET', '/v1/donations/12345678-1234-1234-1234-1234567890ab');
+        $request = $this->createRequest('GET', '/v2/donations/12345678-1234-1234-1234-1234567890ab');
         $route = $this->getRouteWithDonationId('get', '12345678-1234-1234-1234-1234567890ab');
 
         $this->expectException(HttpUnauthorizedException::class);
@@ -66,7 +67,7 @@ class GetTest extends TestCase
 
         $jwtWithBadSignature = DonationToken::create('12345678-1234-1234-1234-1234567890ab') . 'x';
 
-        $request = $this->createRequest('GET', '/v1/donations/12345678-1234-1234-1234-1234567890ab')
+        $request = $this->createRequest('GET', '/v2/donations/12345678-1234-1234-1234-1234567890ab')
             ->withHeader('x-tbg-auth', $jwtWithBadSignature);
         $route = $this->getRouteWithDonationId('get', '12345678-1234-1234-1234-1234567890ab');
 
@@ -91,7 +92,7 @@ class GetTest extends TestCase
 
         $jwtForAnotherDonation = DonationToken::create('87654321-1234-1234-1234-ba0987654321');
 
-        $request = $this->createRequest('GET', '/v1/donations/12345678-1234-1234-1234-1234567890ab')
+        $request = $this->createRequest('GET', '/v2/donations/12345678-1234-1234-1234-1234567890ab')
             ->withHeader('x-tbg-auth', $jwtForAnotherDonation);
         $route = $this->getRouteWithDonationId('get', '12345678-1234-1234-1234-1234567890ab');
 
@@ -115,7 +116,7 @@ class GetTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $request = $this->createRequest('GET', '/v1/donations/87654321-1234-1234-1234-ba0987654321')
+        $request = $this->createRequest('GET', '/v2/donations/87654321-1234-1234-1234-ba0987654321')
             ->withHeader('x-tbg-auth', DonationToken::create('87654321-1234-1234-1234-ba0987654321'));
 
         $this->expectException(HttpNotFoundException::class);
@@ -139,7 +140,7 @@ class GetTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $request = $this->createRequest('GET', '/v1/donations/12345678-1234-1234-1234-1234567890ab')
+        $request = $this->createRequest('GET', '/v2/donations/12345678-1234-1234-1234-1234567890ab')
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('get', '12345678-1234-1234-1234-1234567890ab');
 

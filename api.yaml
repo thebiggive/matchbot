@@ -181,12 +181,6 @@ components:
           description: Used only to tell credit donations to complete; not persisted.
         charityName:
           type: string
-        creationRecaptchaCode:
-          type: string
-          description: |
-            Human verification code, required on Create and ignored otherwise.
-            Helps prevent abuse by actors using automated tools.
-          example: "human-proof-123"
         currencyCode:
           type: string
           default: "GBP"

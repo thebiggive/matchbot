@@ -51,7 +51,7 @@ class PersonWithPasswordAuthMiddlewareTest extends TestCase
         $this->expectException(HttpUnauthorizedException::class);
         $this->expectExceptionMessage('Unauthorised');
 
-        $request = $this->createRequest('GET', '/v1/people/12345678-1234-1234-1234-1234567890ab/payment_methods')
+        $request = $this->createRequest('GET', '/v2/people/12345678-1234-1234-1234-1234567890ab/payment_methods')
             ->withHeader('x-tbg-auth', $this->getTestIdentityTokenIncomplete());
 
         // Because the error ends the request, we can dispatch this against realistic, full app
@@ -66,7 +66,7 @@ class PersonWithPasswordAuthMiddlewareTest extends TestCase
         $this->expectException(HttpUnauthorizedException::class);
         $this->expectExceptionMessage('Unauthorised');
 
-        $request = $this->createRequest('GET', '/v1/people/12345678-1234-1234-1234-1234567890ab/payment_methods');
+        $request = $this->createRequest('GET', '/v2/people/12345678-1234-1234-1234-1234567890ab/payment_methods');
 
         // Because the error ends the request, we can dispatch this against realistic, full app
         // middleware and test this piece of middleware in the process.
@@ -82,7 +82,7 @@ class PersonWithPasswordAuthMiddlewareTest extends TestCase
     {
         return new Route(
             ['GET'],
-            '/v1/people/12345678-1234-1234-1234-1234567890ab/payment_methods',
+            '/v2/people/12345678-1234-1234-1234-1234567890ab/payment_methods',
             static function () {
                 return new Response(200);
             },

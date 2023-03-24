@@ -190,7 +190,6 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
           "cardBrand": "some-card-brand",
           "cardCountry": "some-country",
           "countryCode": null,
-          "creationRecaptchaCode": null,
           "currencyCode": null,
           "donationAmount": "1",
           "emailAddress": null,
