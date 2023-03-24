@@ -166,7 +166,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
         $campaign->setIsMatched(true);
         $campaign->setCharity($charity);
 
-        $donation = new Donation();
+        $donation = Donation::onePoundTestDonation();
         $donation->createdNow();
         $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setCampaign($campaign);

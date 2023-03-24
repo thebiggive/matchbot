@@ -69,7 +69,7 @@ class RetrySafeEntityManagerTest extends TestCase
         $container = $app->getContainer();
         $container->set(EntityManager::class, $underlyingEmProphecy->reveal());
 
-        $this->retrySafeEntityManager->persist(new Donation());
+        $this->retrySafeEntityManager->persist(Donation::onePoundTestDonation());
     }
 
     public function testPersistWithRetry(): void
@@ -100,7 +100,7 @@ class RetrySafeEntityManagerTest extends TestCase
         $container->set(RetrySafeEntityManager::class, $this->retrySafeEntityManager);
         $container->set(EntityManagerInterface::class, $this->retrySafeEntityManager);
 
-        $this->retrySafeEntityManager->persist(new Donation());
+        $this->retrySafeEntityManager->persist(Donation::onePoundTestDonation());
     }
 
     public function testFlush(): void

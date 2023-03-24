@@ -16,6 +16,7 @@ use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 
@@ -175,19 +176,19 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ));
         }
 
-        $donation = new Donation();
-        $donation->setPsp($donationData->psp);
-        $donation->setPaymentMethodType($donationData->paymentMethodType);
-        $donation->setDonationStatus(DonationStatus::Pending);
-        $donation->setUuid((new UuidGenerator())->generateId($this->getEntityManager(), $donation));
-        $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
-        $donation->setAmount((string) $donationData->donationAmount);
-        $donation->setCurrencyCode($donationData->currencyCode);
-        $donation->setGiftAid($donationData->giftAid);
-        $donation->setCharityComms($donationData->optInCharityEmail);
-        $donation->setChampionComms($donationData->optInChampionEmail);
-        $donation->setPspCustomerId($donationData->pspCustomerId);
-        $donation->setTbgComms($donationData->optInTbgEmail);
+        $donation = Donation::createPendingStripeDonation(
+            uuid: Uuid::uuid4(),
+            paymentMethodType: $donationData->paymentMethodType,
+            amount: (string) $donationData->donationAmount,
+            currencyCode: $donationData->currencyCode,
+            campaign: $campaign,  // Charity & match expectation determined implicitly from this
+            giftAid: $donationData->giftAid,
+            optInCharityEmail: $donationData->optInCharityEmail,
+            optInChampionEmail: $donationData->optInChampionEmail,
+            pspCustomerId: $donationData->pspCustomerId,
+            optInTbgEmail: $donationData->optInTbgEmail,
+        );
+
 
         if (!empty($donationData->countryCode)) {
             $donation->setDonorCountryCode($donationData->countryCode);

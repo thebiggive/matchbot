@@ -1074,10 +1074,6 @@
       <code>preUpdate</code>
     </PossiblyUnusedMethod>
     <PropertyNotSetInConstructor>
-      <code>$amount</code>
-      <code>$campaign</code>
-      <code>$currencyCode</code>
-      <code>$psp</code>
       <code>Donation</code>
       <code>Donation</code>
     </PropertyNotSetInConstructor>

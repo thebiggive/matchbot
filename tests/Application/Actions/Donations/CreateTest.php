@@ -1105,7 +1105,7 @@ class CreateTest extends TestCase
             $campaign->setEndDate((new \DateTime())->sub(new \DateInterval('P1D')));
         }
 
-        $donation = new Donation();
+        $donation = Donation::onePoundTestDonation();
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCurrencyCode('GBP');
         $donation->setAmount('12.00');

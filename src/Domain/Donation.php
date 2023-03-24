@@ -13,6 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\Column;
 use JetBrains\PhpStorm\Pure;
 use Messages;
+use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -293,9 +294,90 @@ class Donation extends SalesforceWriteProxy
      */
     protected $fundingWithdrawals;
 
-    public function __construct()
-    {
+    /**
+     * @param DonationStatus $status
+     * @param 'stripe' $psp
+     */
+    private function __construct(
+        UuidInterface $uuid,
+        DonationStatus $status,
+        string $psp,
+        string $paymentMethodType,
+        string $amount,
+        string $currencyCode,
+        Campaign $campaign,
+        ?bool $giftAid,
+        ?bool $optInCharityEmail,
+        ?bool $optInChampionEmail,
+        ?string $pspCustomerId,
+        ?bool $optInTbgEmail
+    ) {
+        $this->setUuid($uuid);
         $this->fundingWithdrawals = new ArrayCollection();
+        $this->donationStatus = $status;
+        $this->setPsp($psp);
+        $this->setPaymentMethodType($paymentMethodType);
+        $this->setCurrencyCode($currencyCode);
+        $this->setAmount($amount);
+        $this->setCampaign($campaign);
+        $this->setGiftAid($giftAid);
+        $this->setCharityComms($optInCharityEmail);
+        $this->setChampionComms($optInChampionEmail);
+        $this->setPspCustomerId($pspCustomerId);
+        $this->setTbgComms($optInTbgEmail);
+    }
+
+    /**
+     * @param string $amount Core donation amount, excluding any tip, in major currency units (e.g. Pounds).
+     */
+    public static function createPendingStripeDonation(
+        UuidInterface $uuid,
+        string $paymentMethodType,
+        string $amount,
+        string $currencyCode,
+        Campaign $campaign,
+        ?bool $giftAid,
+        ?bool $optInCharityEmail,
+        ?bool $optInChampionEmail,
+        ?string $pspCustomerId,
+        ?bool $optInTbgEmail
+    ): self {
+        return new self(
+            uuid: $uuid,
+            status: DonationStatus::Pending,
+            psp: 'stripe',
+            paymentMethodType: $paymentMethodType,
+            amount: $amount,
+            currencyCode: $currencyCode,
+            campaign: $campaign,
+            giftAid: $giftAid,
+            optInCharityEmail: $optInCharityEmail,
+            optInChampionEmail: $optInChampionEmail,
+            pspCustomerId: $pspCustomerId,
+            optInTbgEmail: $optInTbgEmail
+        );
+    }
+
+    /**
+     * This function exists only because it's used in legacy tests. It is never called from production code and should
+     * probably not be used in new tests.
+     */
+    public static function onePoundTestDonation(): self
+    {
+        return new self(
+            uuid: Uuid::fromString(Uuid::NIL),
+            status: DonationStatus::NotSet,
+            psp: 'stripe',
+            paymentMethodType: 'card',
+            amount: '1',
+            currencyCode: 'GBP',
+            campaign: (new Campaign()),
+            giftAid: null,
+            optInCharityEmail: null,
+            optInChampionEmail: null,
+            pspCustomerId: null,
+            optInTbgEmail: null
+        );
     }
 
     public function __toString()
@@ -1166,5 +1248,4 @@ class Donation extends SalesforceWriteProxy
 
         return mb_substr($text, 0, 40);
     }
-
 }

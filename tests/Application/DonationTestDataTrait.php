@@ -35,7 +35,7 @@ trait DonationTestDataTrait
         $campaign->setName('Test campaign');
         $campaign->setSalesforceId('456ProjectId');
 
-        $donation = new Donation();
+        $donation = Donation::onePoundTestDonation();
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setAmount('123.45');
         $donation->setCharityFee('2.05');
@@ -87,7 +87,7 @@ trait DonationTestDataTrait
         $campaign->setName('Test campaign');
         $campaign->setSalesforceId('456ProjectId');
 
-        $donation = new Donation();
+        $donation = Donation::onePoundTestDonation();
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setAmount('124.56');
         $donation->setCharityFee('2.57');

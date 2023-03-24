@@ -1,6 +1,7 @@
 <?php
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -108,11 +109,19 @@ class DonationPersistenceTest extends IntegrationTest
      */
     public function makeDonationObject(): Donation
     {
-        $donation = new Donation();
-        $donation->setUuid(Uuid::uuid4());
-        $donation->setPsp('stripe');
-        $donation->setCurrencyCode('GBP');
-        $donation->setAmount('1');
+        $donation = Donation::createPendingStripeDonation(
+            Uuid::uuid4(),
+            'card',
+            '1',
+            'GBP',
+            $this->createStub(Campaign::class),
+            null,
+            null,
+            null,
+            null,
+            null,
+        );
+
         $donation->setDonationStatus(DonationStatus::Refunded);
 
         return $donation;
