@@ -275,6 +275,7 @@ components:
           enum: ["card", "customer_balance"]
           default: "card"
         status:
+          description: See comments in \MatchBot\Domain\DonationStatus for semantics
           readOnly: true
           type: string
           enum: [
