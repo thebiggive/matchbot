@@ -5,8 +5,6 @@ namespace MatchBot\Domain;
 /**
  * @link https://docs.google.com/document/d/11ukX2jOxConiVT3BhzbUKzLfSybG8eie7MX0b0kG89U/edit?usp=sharing
  * @todo Consider vs. Stripe options
- *
- * @todo before merging BG2-2296 - check that the prod DB doesn't have any statuses recorded not listed below.
  */
 enum DonationStatus: string
 {
