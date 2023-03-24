@@ -77,7 +77,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         try {
-            if ($donation->isNew()) {
+            if ($donation->getDonationStatus()->isNew()) {
                 // A new status but an existing Salesforce ID suggests pushes might have ended up out
                 // of order due to race conditions pushing to Salesforce, variable and quite slow
                 // Salesforce performance characteristics, and both client (this) & server (SF) apps being
