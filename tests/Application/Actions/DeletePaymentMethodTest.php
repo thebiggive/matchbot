@@ -1,6 +1,6 @@
 <?php
 
-namespace MatchBot\Tests\Application;
+namespace MatchBot\Tests\Application\Actions;
 
 use Laminas\Diactoros\ServerRequest;
 use MatchBot\Application\Actions\DeletePaymentMethod;
