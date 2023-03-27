@@ -26,8 +26,8 @@ use Symfony\Component\Notifier\Message\ChatMessage;
  */
 class StripePayoutUpdate extends Stripe
 {
-
     private SlackChannelChatterFactory $chatterFactory;
+    protected string $slackStripeChannel;
 
     public function __construct(
         ContainerInterface $container,
@@ -37,6 +37,18 @@ class StripePayoutUpdate extends Stripe
     ) {
         parent::__construct($container, $logger);
         $this->chatterFactory = $chatterFactory;
+
+        /**
+         * @var array{
+         *    notifier: array{
+         *      slack: array{
+         *        stripe_channel: string
+         *      }
+         *    }
+         *  } $settings
+         */
+        $settings = $container->get('settings');
+        $this->slackStripeChannel = $settings['notifier']['slack']['stripe_channel'];
     }
 
     /**
@@ -71,9 +83,17 @@ class StripePayoutUpdate extends Stripe
                     $this->event->data->object->id,
                     $this->event->account,
                 );
-                $stripeChannel = $this->chatterFactory->makeChatter('stripe');
-                $stripeChannel->send(new ChatMessage($failureMessage));
+                $stripeChannel = $this->chatterFactory->makeChatter($this->slackStripeChannel);
+
                 $this->logger->warning($failureMessage);
+                /** @var string $env */
+                $env = getenv('APP_ENV');
+                $failureMessageWithContext = sprintf(
+                    '[%s] %s',
+                    $env,
+                    $failureMessage,
+                );
+                $stripeChannel->send(new ChatMessage($failureMessageWithContext));
 
                 return $this->respond($response, new ActionPayload(200));
             default:

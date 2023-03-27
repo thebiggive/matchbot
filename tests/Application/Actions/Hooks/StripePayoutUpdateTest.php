@@ -154,9 +154,9 @@ class StripePayoutUpdateTest extends StripeTest
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $this->getStripeHookMock('po_failed'), $webhookSecret));
 
         $chatterProphecy->send(
-            new ChatMessage('payout.failed for ID po_externalId_123, account acct_unitTest543')
+            new ChatMessage('[test] payout.failed for ID po_externalId_123, account acct_unitTest543')
         )
-            ->shouldBeCalled();
+            ->shouldBeCalledOnce();
         $response = $app->handle($request);
 
         $this->assertEquals(200, $response->getStatusCode());
