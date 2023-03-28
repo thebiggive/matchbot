@@ -27,7 +27,7 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 class StripePayoutUpdate extends Stripe
 {
     private SlackChannelChatterFactory $chatterFactory;
-    protected string $slackStripeChannel;
+    private string $slackStripeChannel;
 
     public function __construct(
         ContainerInterface $container,
