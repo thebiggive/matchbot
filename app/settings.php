@@ -85,7 +85,10 @@ return function (ContainerBuilder $containerBuilder) {
             'notifier' => [
                 'slack' => [
                     'api_token' => getenv('SLACK_API_TOKEN'),
+                    // e.g. '#matchbot' – channel for app's own general actions.
                     'channel' => getenv('SLACK_CHANNEL'),
+                    // Override channel for administrative Stripe notifications.
+                    'stripe_channel' => 'stripe',
                 ],
             ],
 
