@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use LosMiddleware\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Actions\DeletePaymentMethod;
+use MatchBot\Application\Actions\UpdatePaymentMethod;
 use MatchBot\Application\Actions\Donations;
 use MatchBot\Application\Actions\GetPaymentMethods;
 use MatchBot\Application\Actions\Hooks;
@@ -45,7 +46,14 @@ return function (App $app) {
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
-        $versionGroup->delete('/people/{personId:[a-z0-9-]{36}}/payment_methods/{payment_method_id:[a-zA-Z0-9_]{10,50}}', DeletePaymentMethod::class)
+        $paymentMethodUriPattern = '/people/{personId:[a-z0-9-]{36}}/payment_methods/{payment_method_id:[a-zA-Z0-9_]{10,50}}';
+
+        $versionGroup->delete($paymentMethodUriPattern, DeletePaymentMethod::class)
+            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
+
+        $versionGroup->put($paymentMethodUriPattern . "/billing_details", UpdatePaymentMethod::class)
             ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
