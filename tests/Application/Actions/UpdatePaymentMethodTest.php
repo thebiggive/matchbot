@@ -16,7 +16,9 @@ use Stripe\Service\CustomerService;
 use Stripe\Service\PaymentMethodService;
 use Stripe\StripeClient;
 
-class UpdatePaymentMethodTest extends TestCase
+/**
+ * A lot of this is copied from the DeletePaymentMethodTest - consider refactoring before making a third copy.
+ */ class UpdatePaymentMethodTest extends TestCase
 {
     public function testItUpdatesAPaymentMethod(): void
     {
@@ -33,11 +35,20 @@ class UpdatePaymentMethodTest extends TestCase
 
         $sut = new UpdatePaymentMethod($fakeStripeClient, new NullLogger());
 
-        $request = (new ServerRequest())
+        $updatedBillingDetails = [
+            'billing_details' => [
+            ],
+            'card' => [
+                'exp_month' => '02',
+                'exp_year' => '2040',
+            ],
+        ];
+
+        $request = $this->createRequest('PUT', '/', \json_encode($updatedBillingDetails))
             ->withAttribute('pspId', 'stripe_customer_id_12');
 
         // assert
-        $stripePaymentMethodServiceProphecy->update('stripe_payment_method_id_35')
+        $stripePaymentMethodServiceProphecy->update('stripe_payment_method_id_35', $updatedBillingDetails)
             ->shouldBeCalledOnce();
 
         // act

@@ -52,14 +52,24 @@ class UpdatePaymentMethod extends Action
             );
         }
 
+        $body = (string)$request->getBody();
+
+        // We don't need to know the details inside the billing details - we are just a thin layer between the front end
+        // and Stripe here.
+
+        $newBillingDetails = json_decode($body, true, 512, \JSON_THROW_ON_ERROR);
+
+        assert(is_array($newBillingDetails));
+
         try {
-            $this->stripeClient->paymentMethods->update($paymentMethodId);
+            // see https://stripe.com/docs/api/payment_methods/update
+            $this->stripeClient->paymentMethods->update($paymentMethodId, $newBillingDetails);
         } catch (InvalidRequestException $e) {
             $this->logger->error(
                 "Failed to update payment method, error: " . $e->getMessage(),
                 compact('customerId', 'paymentMethodId')
             );
-            return $this->respondWithData($response, ['error' => "Could not delete payment method"], 400);
+            return $this->respondWithData($response, ['error' => "Could not update payment method"], 400);
         }
 
         return $this->respondWithData($response, data: [], statusCode: StatusCodeInterface::STATUS_NO_CONTENT);
