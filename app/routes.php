@@ -36,33 +36,30 @@ return function (App $app) {
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
-        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
-            ->add(PersonManagementAuthMiddleware::class)
-            ->add($ipMiddleware)
-            ->add(RateLimitMiddleware::class);
-
-        $versionGroup->get('/people/{personId:[a-z0-9-]{36}}/payment_methods', GetPaymentMethods::class)
-            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
-            ->add($ipMiddleware)
-            ->add(RateLimitMiddleware::class);
-
-        $paymentMethodUriPattern = '/people/{personId:[a-z0-9-]{36}}/payment_methods/{payment_method_id:[a-zA-Z0-9_]{10,50}}';
-
-        $versionGroup->delete($paymentMethodUriPattern, DeletePaymentMethod::class)
-            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
-            ->add($ipMiddleware)
-            ->add(RateLimitMiddleware::class);
-
-        $versionGroup->put($paymentMethodUriPattern . "/billing_details", UpdatePaymentMethod::class)
-            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
-            ->add($ipMiddleware)
-            ->add(RateLimitMiddleware::class);
-
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {
             $group->get('', Donations\Get::class);
             $group->put('', Donations\Update::class); // Includes cancelling.
         })
             ->add(DonationPublicAuthMiddleware::class);
+
+        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
+            ->add(PersonManagementAuthMiddleware::class)
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
+
+        $versionGroup->group(
+            '/people/{personId:[a-z0-9-]{36}}/payment_methods',
+            function (RouteCollectorProxy $paymentMethodsGroup) {
+                $paymentMethodUriSuffixPattern = '/{payment_method_id:[a-zA-Z0-9_]{10,50}}';
+
+                $paymentMethodsGroup->get('', GetPaymentMethods::class);
+                $paymentMethodsGroup->delete($paymentMethodUriSuffixPattern, DeletePaymentMethod::class);
+                $paymentMethodsGroup->put("$paymentMethodUriSuffixPattern/billing_details", UpdatePaymentMethod::class);
+            }
+        )
+            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
     });
 
     // Authenticated through Stripe's SDK signature verification
