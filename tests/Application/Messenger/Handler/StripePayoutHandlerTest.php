@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Messenger\Handler;
 
-use ArrayIterator;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
@@ -14,21 +13,21 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
+use MatchBot\Tests\Application\StripeFormattingTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Stripe\Collection;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\Service\ChargeService;
 use Stripe\Service\PayoutService;
 use Stripe\StripeClient;
-use Stripe\StripeObject;
 
 class StripePayoutHandlerTest extends TestCase
 {
     use DonationTestDataTrait;
+    use StripeFormattingTrait;
 
     public function testUnrecognisedChargeId(): void
     {
@@ -310,18 +309,5 @@ class StripePayoutHandlerTest extends TestCase
             ],
             'limit' => 100
         ];
-    }
-
-    protected function buildAutoIterableCollection(string $json): Collection|ObjectProphecy
-    {
-        /** @var \stdClass $itemsArray */
-        $itemsArray = json_decode($json, false);
-        /** @var StripeObject[] $itemData */
-        $itemData = $itemsArray->data;
-
-        $iterableCollection = $this->prophesize(Collection::class);
-        $iterableCollection->autoPagingIterator()->willReturn(new ArrayIterator($itemData));
-
-        return $iterableCollection->reveal();
     }
 }
