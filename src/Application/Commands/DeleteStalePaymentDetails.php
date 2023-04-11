@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
-use Stripe\Service\ChargeService;
-use Stripe\Service\CustomerService;
-use Stripe\Service\PaymentMethodService;
+use Psr\Log\LoggerInterface;
 use Stripe\StripeClient;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -23,8 +21,9 @@ class DeleteStalePaymentDetails extends LockingCommand
     protected static $defaultName = 'matchbot:delete-stale-payment-details';
 
     public function __construct(
-        private readonly StripeClient $stripeClient,
         private readonly \DateTimeImmutable $initDate,
+        private LoggerInterface $logger,
+        private readonly StripeClient $stripeClient,
     ) {
         parent::__construct();
     }
@@ -63,14 +62,26 @@ class DeleteStalePaymentDetails extends LockingCommand
 
             foreach ($paymentMethods->autoPagingIterator() as $paymentMethod) {
                 // Check if this payment method has been used for any successful charges.
-                $charges = $this->stripeClient->charges->all([
-                    'payment_method' => $paymentMethod->id,
-                    'status' => 'succeeded',
+                // We may *query* (not list) charges and include a card's fingerprint (but
+                // not ID).
+                // https://stripe.com/docs/api/charges/search
+                // https://stripe.com/docs/search#supported-query-fields-for-each-resource
+                $charges = $this->stripeClient->charges->search([
+                    'query' => sprintf(
+                        'customer:"%s" and payment_method_details.card.fingerprint:"%s" and status:"succeeded"',
+                        $customer->id,
+                        $paymentMethod->card->fingerprint,
+                    ),
                     'limit' => $stripePageSize,
                 ]);
 
                 if ($charges->count() === 0) {
-                    // Delete the payment method.
+                    // Soft-delete / prevent reuse of the payment method.
+                    $this->logger->info(sprintf(
+                        'Detaching payment method %s, previously of customer %s',
+                        $paymentMethod->id,
+                        $customer->id,
+                    ));
                     $this->stripeClient->paymentMethods->detach($paymentMethod->id);
                     $methodsDeleted++;
                 }

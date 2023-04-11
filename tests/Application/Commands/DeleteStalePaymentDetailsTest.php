@@ -27,12 +27,16 @@ class DeleteStalePaymentDetailsTest extends TestCase
     {
         $initDate = new \DateTimeImmutable('now');
         $testCustomerId = 'cus_aaaaaaaaaaaa11';
-        $testPmId = 'pm_aaaaaaaaaaaa13';
+        $testPaymentMethodId = 'pm_aaaaaaaaaaaa13';
+        $testPaymentMethodFingerprint = 'Xt5EWLLDS7FJjR1c';
 
         $stripeChargesProphecy = $this->prophesize(ChargeService::class);
-        $stripeChargesProphecy->all([
-            'payment_method' => $testPmId,
-            'status' => 'succeeded',
+        $stripeChargesProphecy->search([
+            'query' => sprintf(
+                'customer:"%s" and payment_method_details.card.fingerprint:"%s" and status:"succeeded"',
+                $testCustomerId,
+                $testPaymentMethodFingerprint,
+            ),
             'limit' => 100,
         ])
             ->shouldBeCalledOnce()
@@ -50,7 +54,7 @@ class DeleteStalePaymentDetailsTest extends TestCase
             ));
 
         // One PM should be detached i.e. soft deleted.
-        $stripePaymentMethodsProphecy->detach($testPmId)
+        $stripePaymentMethodsProphecy->detach($testPaymentMethodId)
             ->shouldBeCalledOnce()
             ->willReturn($this->getStripeHookMock('ApiResponse/pm'));
 
@@ -94,12 +98,15 @@ class DeleteStalePaymentDetailsTest extends TestCase
     {
         $initDate = new \DateTimeImmutable('now');
         $testCustomerId = 'cus_aaaaaaaaaaaa11';
-        $testPmId = 'pm_aaaaaaaaaaaa13';
+        $testPaymentMethodFingerprint = 'Xt5EWLLDS7FJjR1c';
 
         $stripeChargesProphecy = $this->prophesize(ChargeService::class);
-        $stripeChargesProphecy->all([
-            'payment_method' => $testPmId,
-            'status' => 'succeeded',
+        $stripeChargesProphecy->search([
+            'query' => sprintf(
+                'customer:"%s" and payment_method_details.card.fingerprint:"%s" and status:"succeeded"',
+                $testCustomerId,
+                $testPaymentMethodFingerprint,
+            ),
             'limit' => 100,
         ])
             ->shouldBeCalledOnce()
@@ -162,7 +169,7 @@ class DeleteStalePaymentDetailsTest extends TestCase
     ): DeleteStalePaymentDetails {
         $stripeClient = $stripeClientProphecy->reveal();
         \assert($stripeClient instanceof StripeClient);
-        $command = new DeleteStalePaymentDetails($stripeClient, $initDate);
+        $command = new DeleteStalePaymentDetails($initDate, new NullLogger(), $stripeClient);
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
 

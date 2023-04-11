@@ -51,8 +51,9 @@ $commands = [
         [$messengerReceiverKey],
     ),
     new DeleteStalePaymentDetails(
-        $psr11App->get(StripeClient::class),
         new \DateTimeImmutable('now'),
+        $psr11App->get(LoggerInterface::class),
+        $psr11App->get(StripeClient::class),
     ),
     new ExpireMatchFunds($psr11App->get(DonationRepository::class)),
     new HandleOutOfSyncFunds(
