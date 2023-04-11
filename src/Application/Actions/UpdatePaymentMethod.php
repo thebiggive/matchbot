@@ -7,7 +7,7 @@ use JetBrains\PhpStorm\Pure;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Stripe\Exception\InvalidRequestException;
+use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 
 class UpdatePaymentMethod extends Action
@@ -64,12 +64,12 @@ class UpdatePaymentMethod extends Action
         try {
             // see https://stripe.com/docs/api/payment_methods/update
             $this->stripeClient->paymentMethods->update($paymentMethodId, $newBillingDetails);
-        } catch (InvalidRequestException $e) {
+        } catch (ApiErrorException $e) {
             $this->logger->error(
                 "Failed to update payment method, error: " . $e->getMessage(),
                 compact('customerId', 'paymentMethodId')
             );
-            return $this->respondWithData($response, ['error' => "Could not update payment method"], 400);
+            return $this->respondWithData($response, ['error' => $e->getMessage()], 400);
         }
 
         return $this->respondWithData($response, data: [], statusCode: StatusCodeInterface::STATUS_NO_CONTENT);
