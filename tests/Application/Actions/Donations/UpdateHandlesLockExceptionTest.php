@@ -115,7 +115,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
         return $stripeClientProphecy->reveal();
     }
 
-    public function getDonation(): Donation
+    private function getDonation(): Donation
     {
         $charity = new Charity();
         $charity->setDonateLinkId('DONATE_LINK_ID');
@@ -135,6 +135,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
         $donation->setUuid(Uuid::uuid4());
         $donation->setDonorFirstName('Donor first name');
         $donation->setDonorLastName('Donor last name');
+        $donation->setTransactionId('pi_dummyIntent_id');
 
         return $donation;
     }

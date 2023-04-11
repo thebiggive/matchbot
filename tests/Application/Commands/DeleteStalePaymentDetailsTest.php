@@ -33,6 +33,7 @@ class DeleteStalePaymentDetailsTest extends TestCase
         $stripeChargesProphecy->all([
             'payment_method' => $testPmId,
             'status' => 'succeeded',
+            'limit' => 100,
         ])
             ->shouldBeCalledOnce()
             ->willReturn($this->buildEmptyCollection());
@@ -41,6 +42,7 @@ class DeleteStalePaymentDetailsTest extends TestCase
         $stripePaymentMethodsProphecy->all([
             'customer' => $testCustomerId,
             'type' => 'card',
+            'limit' => 100,
         ])
             ->shouldBeCalledOnce()
             ->willReturn($this->buildCollectionFromSingleObjectFixture(
@@ -59,6 +61,7 @@ class DeleteStalePaymentDetailsTest extends TestCase
         $stripeCustomersProphecy = $this->prophesize(CustomerService::class);
         $stripeCustomersProphecy->search([
             'query' => "created<$oneDayBeforeTest and metadata['hasPasswordSince']:null",
+            'limit' => 100,
         ])
             ->shouldBeCalledOnce()
             ->willReturn($this->buildCollectionFromSingleObjectFixture(
@@ -97,6 +100,7 @@ class DeleteStalePaymentDetailsTest extends TestCase
         $stripeChargesProphecy->all([
             'payment_method' => $testPmId,
             'status' => 'succeeded',
+            'limit' => 100,
         ])
             ->shouldBeCalledOnce()
             ->willReturn($this->buildCollectionFromSingleObjectFixture('ch_succeeded'));
@@ -105,6 +109,7 @@ class DeleteStalePaymentDetailsTest extends TestCase
         $stripePaymentMethodsProphecy->all([
             'customer' => $testCustomerId,
             'type' => 'card',
+            'limit' => 100,
         ])
             ->shouldBeCalledOnce()
             ->willReturn($this->buildCollectionFromSingleObjectFixture(
@@ -122,6 +127,7 @@ class DeleteStalePaymentDetailsTest extends TestCase
         $stripeCustomersProphecy = $this->prophesize(CustomerService::class);
         $stripeCustomersProphecy->search([
             'query' => "created<$oneDayBeforeTest and metadata['hasPasswordSince']:null",
+            'limit' => 100,
         ])
             ->shouldBeCalledOnce()
             ->willReturn($this->buildCollectionFromSingleObjectFixture(

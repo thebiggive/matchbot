@@ -26,11 +26,6 @@ class DeleteStalePaymentDetails extends LockingCommand
         private readonly StripeClient $stripeClient,
         private readonly \DateTimeImmutable $initDate,
     ) {
-//        \assert($this->stripeClient instanceof StripeClient);
-//        \assert($this->stripeClient->charges instanceof ChargeService);
-//        \assert($this->stripeClient->customers instanceof CustomerService);
-//        \assert($this->stripeClient->paymentMethods instanceof PaymentMethodService);
-
         parent::__construct();
     }
 
@@ -41,6 +36,7 @@ class DeleteStalePaymentDetails extends LockingCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
+        $stripePageSize = 100; // Maximum allowed. Iterators page through automatically.
         $customerCount = 0;
         $methodsDeleted = 0;
         $oneDayAgo = $this->initDate
@@ -52,6 +48,7 @@ class DeleteStalePaymentDetails extends LockingCommand
         // so this `query` covers conditions (1) and (2) from the class doc block.
         $customers = $this->stripeClient->customers->search([
             'query' => "created<$oneDayAgo and metadata['hasPasswordSince']:null",
+            'limit' => $stripePageSize,
         ]);
 
         foreach ($customers->autoPagingIterator() as $customer) {
@@ -61,6 +58,7 @@ class DeleteStalePaymentDetails extends LockingCommand
             $paymentMethods = $this->stripeClient->paymentMethods->all([
                 'customer' => $customer->id,
                 'type' => 'card',
+                'limit' => $stripePageSize,
             ]);
 
             foreach ($paymentMethods->autoPagingIterator() as $paymentMethod) {
@@ -68,6 +66,7 @@ class DeleteStalePaymentDetails extends LockingCommand
                 $charges = $this->stripeClient->charges->all([
                     'payment_method' => $paymentMethod->id,
                     'status' => 'succeeded',
+                    'limit' => $stripePageSize,
                 ]);
 
                 if ($charges->count() === 0) {
