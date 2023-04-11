@@ -61,6 +61,11 @@ class DeleteStalePaymentDetails extends LockingCommand
             ]);
 
             foreach ($paymentMethods->autoPagingIterator() as $paymentMethod) {
+                /** @var string $cardFingerprint    Only "card" type methods are queried, and every
+                 *                                  card should have a string fingerprint.
+                 */
+                $cardFingerprint = $paymentMethod->card->fingerprint;
+
                 // Check if this payment method has been used for any successful charges.
                 // We may *query* (not list) charges and include a card's fingerprint (but
                 // not ID).
@@ -70,7 +75,7 @@ class DeleteStalePaymentDetails extends LockingCommand
                     'query' => sprintf(
                         'customer:"%s" and payment_method_details.card.fingerprint:"%s" and status:"succeeded"',
                         $customer->id,
-                        $paymentMethod->card->fingerprint,
+                        $cardFingerprint,
                     ),
                     'limit' => $stripePageSize,
                 ]);
