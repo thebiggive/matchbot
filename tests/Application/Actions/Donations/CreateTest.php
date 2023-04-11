@@ -346,7 +346,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'statement_descriptor' => 'The Big Give Create te',
+            'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_newStripeAccount_456',
             'transfer_data' => [
@@ -458,7 +458,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'statement_descriptor' => 'The Big Give Create te',
+            'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
@@ -573,7 +573,7 @@ class CreateTest extends TestCase
                 'tipAmount' => '1.11',
             ],
             'setup_future_usage' => 'on_session',
-            'statement_descriptor' => 'The Big Give Create te',
+            'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
@@ -795,7 +795,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'statement_descriptor' => 'The Big Give Create te',
+            'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
@@ -899,7 +899,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'statement_descriptor' => 'The Big Give Create te',
+            'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 154,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
@@ -1004,7 +1004,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'statement_descriptor' => 'The Big Give Create te',
+            'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 154,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
