@@ -1079,6 +1079,14 @@ class Donation extends SalesforceWriteProxy
      * really needed for them because the fee is fixed at the lowest level and there
      * is no new donor bank transaction, so no statement ref to consider.
      *
+     * An important side effect to keep in mind is that this means payout timing for
+     * donations funded by bank transfer / customer balance is dictated by the platform
+     * (Big Give) Stripe settings, *not* those of the receiving charity's connected
+     * account. This means we cannot currently add a delay, so depending on the day of the
+     * week it's received, a donation could be paid out to the charity almost immediately.
+     * This may necessitate us having a different refund policy for donations via credit –
+     * to be discussed further in early/mid 2023.
+     *
      * @link https://stripe.com/docs/payments/connected-accounts
      * @link https://stripe.com/docs/connect/destination-charges#settlement-merchant
      */
