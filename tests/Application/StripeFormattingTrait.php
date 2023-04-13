@@ -12,12 +12,15 @@ trait StripeFormattingTrait
 {
     use ProphecyTrait;
 
-    private function buildAutoIterableCollection(string $json): Collection
+    protected function buildAutoIterableCollection(string $json): Collection|ObjectProphecy
     {
-        $itemData = json_decode($json, false, 512, JSON_THROW_ON_ERROR)->data;
+        /** @var \stdClass $itemsArray */
+        $itemsArray = json_decode($json, false);
+        /** @var StripeObject[] $itemData */
+        $itemData = $itemsArray->data;
 
         $iterableCollection = $this->prophesize(Collection::class);
-        $iterableCollection->autoPagingIterator()->willReturn($itemData);
+        $iterableCollection->autoPagingIterator()->willReturn(new ArrayIterator($itemData));
         $iterableCollection->count()->willReturn(count($itemData));
 
         return $iterableCollection->reveal();
