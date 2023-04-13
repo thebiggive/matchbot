@@ -658,8 +658,19 @@ class Donation extends SalesforceWriteProxy
         return $withdrawalTotal;
     }
 
-    public function getTransactionId(): ?string
+    /**
+     * We may call this safely *only* after a donation has a PSP's transaction ID.
+     * Stripe assigns the ID before we return a usable donation object to the Donate client,
+     * so this should be true in most of the app.
+     *
+     * @throws \LogicException if the transaction ID is not set
+     */
+    public function getTransactionId(): string
     {
+        if (!$this->transactionId) {
+            throw new \LogicException('Transaction ID not set');
+        }
+
         return $this->transactionId;
     }
 

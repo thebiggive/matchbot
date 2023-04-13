@@ -1114,6 +1114,7 @@ class CreateTest extends TestCase
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
         $donation->setDonorCountryCode('GB');
         $donation->setTipAmount('1.11');
+        $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setCharityFee('0.43');
 
         if (!$minimalSetupData) {

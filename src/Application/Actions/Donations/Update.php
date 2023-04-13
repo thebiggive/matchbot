@@ -215,9 +215,6 @@ class Update extends Action
         );
 
         if ($donation->getPsp() === 'stripe') {
-            $transactionId = $donation->getTransactionId();
-            \assert(is_string($transactionId));
-
             try {
                 $this->updatePaymentIntent($donation);
             } catch (RateLimitException $exception) {
@@ -261,7 +258,7 @@ class Update extends Action
             }
 
             if ($donationData->autoConfirmFromCashBalance) {
-                $this->stripeClient->paymentIntents->confirm($transactionId);
+                $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
             }
         }
 
@@ -272,9 +269,6 @@ class Update extends Action
 
     private function cancel(Donation $donation, Response $response, array $args): Response
     {
-        $transactionId = $donation->getTransactionId();
-        \assert(is_string($transactionId));
-
         if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
             $this->logger->info("Donation ID {$args['donationId']} was already Cancelled");
             $this->entityManager->rollback();
@@ -306,8 +300,7 @@ class Update extends Action
 
         if ($donation->getPsp() === 'stripe') {
             try {
-                \assert(is_string($donation->getTransactionId()));
-                $this->stripeClient->paymentIntents->cancel($transactionId);
+                $this->stripeClient->paymentIntents->cancel($donation->getTransactionId());
             } catch (ApiErrorException $exception) {
                 /**
                  * As per the notes in {@see DonationRepository::releaseMatchFunds()}, we
@@ -373,12 +366,7 @@ class Update extends Action
      */
     private function updatePaymentIntent(Donation $donation): void
     {
-        $transactionId = $donation->getTransactionId();
-        // We know it's a string by now because Stripe assigns one before we return a
-        // usable donation object to the Donate client.
-        \assert(is_string($transactionId));
-
-        $this->stripeClient->paymentIntents->update($transactionId, [
+        $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
             'amount' => $donation->getAmountFractionalIncTip(),
             'currency' => strtolower($donation->getCurrencyCode()),
             'metadata' => [
@@ -411,16 +399,13 @@ class Update extends Action
      */
     private function handleGeneralStripeError(ApiErrorException $exception, Donation $donation, Response $response): ?Response
     {
-        $transactionId = $donation->getTransactionId();
-        \assert(is_string($transactionId));
-
         $alreadyCapturedMsg = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
             'after a capture has already been made.';
         if (
             $exception instanceof InvalidRequestException &&
             str_starts_with($exception->getMessage(), $alreadyCapturedMsg)
         ) {
-            $latestPI = $this->stripeClient->paymentIntents->retrieve($transactionId);
+            $latestPI = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
             if ($latestPI->application_fee_amount === $donation->getAmountToDeductFractional()) {
                 $noFeeChangeMessage = 'Stripe Payment Intent update ignored after capture; no fee ' .
                     'change on %s, %s [%s]: %s';
