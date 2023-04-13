@@ -153,12 +153,14 @@ class DeleteStalePaymentDetailsTest extends TestCase
         ));
         $commandTester->execute([]);
 
-        $expectedOutputLines = [
-            'matchbot:delete-stale-payment-details starting!',
-            'Deleted 0 payment methods from Stripe, having checked 1 customers',
-            'matchbot:delete-stale-payment-details complete!',
-        ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertSame(<<<EXPECTED
+            matchbot:delete-stale-payment-details starting!
+            Deleted 1 payment methods from Stripe, having checked 1 customers
+            matchbot:delete-stale-payment-details complete!
+
+            EXPECTED,
+            $commandTester->getDisplay()
+        );
 
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
