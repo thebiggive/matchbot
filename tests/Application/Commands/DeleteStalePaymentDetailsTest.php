@@ -165,12 +165,14 @@ class DeleteStalePaymentDetailsTest extends TestCase
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
+    /**
+     * @param ObjectProphecy<StripeClient> $stripeClientProphecy
+     */
     private function getCommand(
         ObjectProphecy $stripeClientProphecy,
         \DateTimeImmutable $initDate,
     ): DeleteStalePaymentDetails {
         $stripeClient = $stripeClientProphecy->reveal();
-        \assert($stripeClient instanceof StripeClient);
         $command = new DeleteStalePaymentDetails($initDate, new NullLogger(), $stripeClient);
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
