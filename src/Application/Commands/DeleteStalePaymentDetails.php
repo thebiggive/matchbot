@@ -18,6 +18,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class DeleteStalePaymentDetails extends LockingCommand
 {
+    const STRIPE_PAGE_SIZE = 100; // Maximum allowed. Iterators page through automatically.
+
     protected static $defaultName = 'matchbot:delete-stale-payment-details';
 
     public function __construct(
@@ -35,7 +37,6 @@ class DeleteStalePaymentDetails extends LockingCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $stripePageSize = 100; // Maximum allowed. Iterators page through automatically.
         $customerCount = 0;
         $methodsDeleted = 0;
         $oneDayAgo = $this->initDate
@@ -47,7 +48,7 @@ class DeleteStalePaymentDetails extends LockingCommand
         // so this `query` covers conditions (1) and (2) from the class doc block.
         $customers = $this->stripeClient->customers->search([
             'query' => "created<$oneDayAgo and metadata['hasPasswordSince']:null",
-            'limit' => $stripePageSize,
+            'limit' => static::STRIPE_PAGE_SIZE,
         ]);
 
         foreach ($customers->autoPagingIterator() as $customer) {
@@ -57,7 +58,7 @@ class DeleteStalePaymentDetails extends LockingCommand
             $paymentMethods = $this->stripeClient->paymentMethods->all([
                 'customer' => $customer->id,
                 'type' => 'card',
-                'limit' => $stripePageSize,
+                'limit' => static::STRIPE_PAGE_SIZE,
             ]);
 
             foreach ($paymentMethods->autoPagingIterator() as $paymentMethod) {
@@ -77,7 +78,7 @@ class DeleteStalePaymentDetails extends LockingCommand
                         $customer->id,
                         $cardFingerprint,
                     ),
-                    'limit' => $stripePageSize,
+                    'limit' => static::STRIPE_PAGE_SIZE,
                 ]);
 
                 if ($charges->count() === 0) {
