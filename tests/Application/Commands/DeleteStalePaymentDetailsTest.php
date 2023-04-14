@@ -74,9 +74,7 @@ class DeleteStalePaymentDetailsTest extends TestCase
 
         // assert
         // One PM should be detached i.e. soft deleted.
-        $stripePaymentMethodsProphecy->detach($testPaymentMethodId)
-            ->shouldBeCalledOnce()
-            ->willReturn($this->getStripeHookMock('ApiResponse/pm'));
+        $stripePaymentMethodsProphecy->detach($testPaymentMethodId)->shouldBeCalledOnce();
 
         // act
         $commandTester->execute([]);
