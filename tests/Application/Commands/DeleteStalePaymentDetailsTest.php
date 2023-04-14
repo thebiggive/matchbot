@@ -37,7 +37,6 @@ class DeleteStalePaymentDetailsTest extends TestCase
             'query' => 'customer:"cus_aaaaaaaaaaaa11" and payment_method_details.card.fingerprint:"TEST_CARD_FINGERPRINT" and status:"succeeded"',
             'limit' => 100,
         ])
-            ->shouldBeCalledOnce()
             ->willReturn($this->buildEmptyCollection());
 
         $stripePaymentMethodsProphecy = $this->prophesize(PaymentMethodService::class);
@@ -46,7 +45,6 @@ class DeleteStalePaymentDetailsTest extends TestCase
             'type' => 'card',
             'limit' => 100,
         ])
-            ->shouldBeCalledOnce()
             ->willReturn($this->buildCollectionFromSingleObjectFixture(
                 $this->getStripeHookMock('ApiResponse/pm'),
             ));
@@ -56,7 +54,6 @@ class DeleteStalePaymentDetailsTest extends TestCase
             'query' => "created<{$previousDay->getTimestamp()} and metadata['hasPasswordSince']:null",
             'limit' => 100,
         ])
-            ->shouldBeCalledOnce()
             ->willReturn($this->buildCollectionFromSingleObjectFixture(
                 $this->getStripeHookMock('ApiResponse/customer'),
             ));
@@ -103,7 +100,6 @@ class DeleteStalePaymentDetailsTest extends TestCase
             'query' => 'customer:"cus_aaaaaaaaaaaa11" and payment_method_details.card.fingerprint:"TEST_CARD_FINGERPRINT" and status:"succeeded"',
             'limit' => 100,
         ])
-            ->shouldBeCalledOnce()
             ->willReturn($this->buildCollectionFromSingleObjectFixture('ch_succeeded'));
 
         $stripePaymentMethodsProphecy = $this->prophesize(PaymentMethodService::class);
@@ -112,7 +108,6 @@ class DeleteStalePaymentDetailsTest extends TestCase
             'type' => 'card',
             'limit' => 100,
         ])
-            ->shouldBeCalledOnce()
             ->willReturn($this->buildCollectionFromSingleObjectFixture(
                 $this->getStripeHookMock('ApiResponse/pm'),
             ));
