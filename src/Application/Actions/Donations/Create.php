@@ -63,7 +63,7 @@ class Create extends Action
             $message = 'Donation Create data deserialise error';
             $exceptionType = get_class($exception);
 
-            return $this->validationError($response, 
+            return $this->validationError($response,
                 "$message: $exceptionType - {$exception->getMessage()}",
                 $message,
                 empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
@@ -102,7 +102,7 @@ class Create extends Action
         }
 
         if (!$donation->getCampaign()->isOpen()) {
-            return $this->validationError($response, 
+            return $this->validationError($response,
                 "Campaign {$donation->getCampaign()->getSalesforceId()} is not open",
                 null,
                 true, // Reduce to info log as some instances expected on campaign close
@@ -224,7 +224,7 @@ class Create extends Action
     private function getStatementDescriptor(Charity $charity): string
     {
         $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
-        $prefix = 'The Big Give ';
+        $prefix = 'Big Give ';
 
         return $prefix . mb_substr(
             $this->removeSpecialChars($charity->getName()),
