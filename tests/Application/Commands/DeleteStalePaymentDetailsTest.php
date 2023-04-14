@@ -147,7 +147,9 @@ class DeleteStalePaymentDetailsTest extends TestCase
             Deleted 0 payment methods from Stripe, having checked 1 customers
             matchbot:delete-stale-payment-details complete!
             
-            EXPECTED, $commandTester->getDisplay());
+            EXPECTED, 
+            $commandTester->getDisplay()
+        );
 
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
