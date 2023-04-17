@@ -97,7 +97,6 @@
     </MixedAssignment>
     <MixedInferredReturnType>
       <code>EntityManagerInterface</code>
-      <code>StripeClientInterface</code>
     </MixedInferredReturnType>
     <MixedMethodCall>
       <code>error</code>
@@ -111,7 +110,6 @@
     </MixedOperand>
     <MixedReturnStatement>
       <code><![CDATA[$c->get(RetrySafeEntityManager::class)]]></code>
-      <code><![CDATA[$c->get(StripeClient::class)]]></code>
     </MixedReturnStatement>
     <PossiblyFalseArgument>
       <code><![CDATA[getenv('CLAIMBOT_MESSENGER_TRANSPORT_DSN')]]></code>
@@ -246,27 +244,8 @@
       <code>100_000 * (2 ** $retryCount)</code>
     </InvalidArgument>
     <MixedArgument>
-      <code><![CDATA[$latestPI->application_fee_amount]]></code>
       <code>$lockWaitTimeoutException</code>
     </MixedArgument>
-    <MixedAssignment>
-      <code>$latestPI</code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code>cancel</code>
-      <code>confirm</code>
-      <code>retrieve</code>
-      <code>update</code>
-    </MixedMethodCall>
-    <MixedPropertyFetch>
-      <code><![CDATA[$latestPI->application_fee_amount]]></code>
-    </MixedPropertyFetch>
-    <NoInterfaceProperties>
-      <code><![CDATA[$this->stripeClient->paymentIntents]]></code>
-      <code><![CDATA[$this->stripeClient->paymentIntents]]></code>
-      <code><![CDATA[$this->stripeClient->paymentIntents]]></code>
-      <code><![CDATA[$this->stripeClient->paymentIntents]]></code>
-    </NoInterfaceProperties>
     <PossiblyNullArgument>
       <code><![CDATA[$donation->getId()]]></code>
       <code><![CDATA[$exception->getStripeCode()]]></code>
@@ -1055,10 +1034,6 @@
       <code>getFund</code>
       <code>getFund</code>
     </MixedMethodCall>
-    <MixedReturnTypeCoercion>
-      <code>self::$successStatuses</code>
-      <code>string[]</code>
-    </MixedReturnTypeCoercion>
     <PossiblyInvalidMethodCall>
       <code>add</code>
     </PossiblyInvalidMethodCall>
@@ -1986,12 +1961,9 @@
       <code><![CDATA[$container->get(DonationRepository::class)]]></code>
       <code><![CDATA[$container->get(DonationRepository::class)]]></code>
       <code><![CDATA[$container->get(DonationRepository::class)]]></code>
-      <code><![CDATA[$container->get(DonationRepository::class)]]></code>
       <code><![CDATA[$container->get(EntityManagerInterface::class)]]></code>
       <code><![CDATA[$container->get(EntityManagerInterface::class)]]></code>
       <code><![CDATA[$container->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$container->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$container->get(StripeClient::class)]]></code>
       <code><![CDATA[$container->get(StripeClient::class)]]></code>
       <code><![CDATA[$container->get(StripeClient::class)]]></code>
       <code><![CDATA[$container->get(StripeClient::class)]]></code>
@@ -2000,12 +1972,9 @@
       <code>balanceTransactions</code>
       <code>balanceTransactions</code>
       <code>balanceTransactions</code>
-      <code>balanceTransactions</code>
       <code>charges</code>
       <code>charges</code>
       <code>charges</code>
-      <code>charges</code>
-      <code>reveal</code>
       <code>reveal</code>
       <code>reveal</code>
       <code>reveal</code>
@@ -2014,8 +1983,6 @@
       <code><![CDATA[$stripeClientProphecy->balanceTransactions]]></code>
       <code><![CDATA[$stripeClientProphecy->balanceTransactions]]></code>
       <code><![CDATA[$stripeClientProphecy->balanceTransactions]]></code>
-      <code><![CDATA[$stripeClientProphecy->balanceTransactions]]></code>
-      <code><![CDATA[$stripeClientProphecy->charges]]></code>
       <code><![CDATA[$stripeClientProphecy->charges]]></code>
       <code><![CDATA[$stripeClientProphecy->charges]]></code>
       <code><![CDATA[$stripeClientProphecy->charges]]></code>

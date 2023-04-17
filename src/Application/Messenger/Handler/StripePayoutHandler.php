@@ -7,6 +7,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\SalesforceWriteProxy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Stripe\Charge;
@@ -17,7 +19,8 @@ use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
 /**
  * Takes `Payout` messages off the queue, calls back out to Stripe to find out which donations
- * to mark Paid, and pushes updates to Salesforce.
+ * to mark Paid, and marks updates for a *future* push to Salesforce. Large payouts are liable to run
+ * over the time limit for SQS acks if we push to Salesforce immediately.
  */
 class StripePayoutHandler implements MessageHandlerInterface
 {
@@ -49,8 +52,6 @@ class StripePayoutHandler implements MessageHandlerInterface
             $connectAccountId,
         ));
 
-        $hasMore = true;
-        $lastBalanceTransactionId = null;
         $paidChargeIds = [];
         $attributes = [
             'limit' => 100,
@@ -58,44 +59,30 @@ class StripePayoutHandler implements MessageHandlerInterface
             'type' => 'payment',
         ];
 
-        while ($hasMore) {
-            // Get all balance transactions (`py_...`) related to the specific payout defined in
-            // `$attributes`, scoping the lookup to the correct Connect account.
-            try {
-                $balanceTransactions = $this->stripeClient->balanceTransactions->all(
-                    $attributes,
-                    ['stripe_account' => $connectAccountId],
-                );
-            } catch (ApiErrorException $exception) {
-                $this->logger->error(sprintf(
-                    'Stripe Balance Transaction lookup error for Payout ID %s, %s [%s]: %s',
-                    $payoutId,
-                    get_class($exception),
-                    $exception->getStripeCode(),
-                    $exception->getMessage(),
-                ));
-                break;
-            }
+        // Get all balance transactions (`py_...`) related to the specific payout defined in
+        // `$attributes`, scoping the lookup to the correct Connect account.
+        try {
+            $balanceTransactions = $this->stripeClient->balanceTransactions->all(
+                $attributes,
+                ['stripe_account' => $connectAccountId],
+            );
+        } catch (ApiErrorException $exception) {
+            $this->logger->error(sprintf(
+                'Stripe Balance Transaction lookup error for Payout ID %s, %s [%s]: %s',
+                $payoutId,
+                get_class($exception),
+                $exception->getStripeCode(),
+                $exception->getMessage(),
+            ));
 
-            foreach ($balanceTransactions->data as $balanceTransaction) {
-                $paidChargeIds[] = $balanceTransaction->source;
-                $lastBalanceTransactionId = $balanceTransaction->id;
-            }
-
-            $hasMore = $balanceTransactions->has_more;
-
-            // We get a Stripe exception if we start this with a null or empty value,
-            // so we only include this once we've iterated the first time and captured
-            // a transaction Id.
-            if ($hasMore && $lastBalanceTransactionId !== null) {
-                $attributes['starting_after'] = $lastBalanceTransactionId;
-                $this->logger->debug(sprintf(
-                    'Stripe Balance Transaction for Payout ID %s will next use starting_after: %s',
-                    $payoutId,
-                    $lastBalanceTransactionId,
-                ));
-            }
+            return;
         }
+
+        // Auto page, iterating in reverse chronological order. https://stripe.com/docs/api/pagination/auto?lang=php
+        foreach ($balanceTransactions->autoPagingIterator() as $balanceTransaction) {
+            $paidChargeIds[] = $balanceTransaction->source;
+        }
+
         $this->logger->info(
             sprintf(
                 'Payout: Getting all Connect account paid Charge IDs for Payout ID %s complete, found %s',
@@ -140,15 +127,15 @@ class StripePayoutHandler implements MessageHandlerInterface
                 continue;
             }
 
-            if ($donation->getDonationStatus() === 'Collected') {
+            if ($donation->getDonationStatus() === DonationStatus::Collected) {
                 // We're confident to set donation status to paid because this
                 // method is called only when Stripe event `payout.paid` is received.
-                $donation->setDonationStatus('Paid');
+                $donation->setDonationStatus(DonationStatus::Paid);
 
+                $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
                 $this->entityManager->persist($donation);
                 $this->entityManager->flush();
                 $this->entityManager->commit();
-                $this->donationRepository->push($donation, false);
 
                 $count++;
                 continue;
@@ -157,7 +144,7 @@ class StripePayoutHandler implements MessageHandlerInterface
             // Else commit the txn without persisting anything, ready for a new one.
             $this->entityManager->commit();
 
-            if ($donation->getDonationStatus() !== 'Paid') {
+            if ($donation->getDonationStatus() !== DonationStatus::Paid) {
                 // Skip updating donations in non-Paid statuses but continue to check the remainder.
                 // 'Refunded' is an expected status when looking through the balance txn list for a
                 // Connect account's payout, e.g.:
@@ -165,10 +152,10 @@ class StripePayoutHandler implements MessageHandlerInterface
                 // Payment         £112.50 (£14.54)   £97.96  py_1IUDF94FoHYWqtVFeuW0E4Yb ...
                 // So we log that case with INFO level (no alert / action generally) and others with ERROR.
                 $this->logger->log(
-                    $donation->getDonationStatus() === 'Refunded' ? LogLevel::INFO : LogLevel::ERROR,
+                    $donation->getDonationStatus() === DonationStatus::Refunded ? LogLevel::INFO : LogLevel::ERROR,
                     sprintf(
                         'Payout: Skipping donation status %s found for Charge ID %s',
-                        $donation->getDonationStatus(),
+                        $donation->getDonationStatus()->value,
                         $chargeId,
                     )
                 );

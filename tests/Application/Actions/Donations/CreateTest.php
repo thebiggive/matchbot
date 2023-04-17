@@ -15,6 +15,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -155,7 +156,7 @@ class CreateTest extends TestCase
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -291,7 +292,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
         $app = $this->getAppInstance();
@@ -345,7 +346,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'statement_descriptor' => 'The Big Give Create te',
+            'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_newStripeAccount_456',
             'transfer_data' => [
@@ -420,7 +421,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
         $app = $this->getAppInstance();
@@ -457,7 +458,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'statement_descriptor' => 'The Big Give Create te',
+            'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
@@ -533,7 +534,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
         $app = $this->getAppInstance();
@@ -572,7 +573,7 @@ class CreateTest extends TestCase
                 'tipAmount' => '1.11',
             ],
             'setup_future_usage' => 'on_session',
-            'statement_descriptor' => 'The Big Give Create te',
+            'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
@@ -652,7 +653,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
         $app = $this->getAppInstance();
@@ -697,7 +698,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
         $app = $this->getAppInstance();
@@ -753,7 +754,7 @@ class CreateTest extends TestCase
         $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus('Pending');
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
         $app = $this->getAppInstance();
@@ -794,7 +795,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'statement_descriptor' => 'The Big Give Create te',
+            'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
@@ -898,7 +899,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'statement_descriptor' => 'The Big Give Create te',
+            'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 154,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
@@ -1003,7 +1004,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'statement_descriptor' => 'The Big Give Create te',
+            'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 154,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
@@ -1113,6 +1114,7 @@ class CreateTest extends TestCase
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
         $donation->setDonorCountryCode('GB');
         $donation->setTipAmount('1.11');
+        $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setCharityFee('0.43');
 
         if (!$minimalSetupData) {

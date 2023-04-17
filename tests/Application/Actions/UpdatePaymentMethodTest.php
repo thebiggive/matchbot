@@ -4,6 +4,7 @@ namespace MatchBot\Tests\Application\Actions;
 
 use Laminas\Diactoros\ServerRequest;
 use MatchBot\Application\Actions\DeletePaymentMethod;
+use MatchBot\Application\Actions\UpdatePaymentMethod;
 use MatchBot\Tests\TestCase;
 use PHPUnit\Framework\MockObject\Stub;
 use Prophecy\Argument;
@@ -15,9 +16,11 @@ use Stripe\Service\CustomerService;
 use Stripe\Service\PaymentMethodService;
 use Stripe\StripeClient;
 
-class DeletePaymentMethodTest extends TestCase
+/**
+ * A lot of this is copied from the DeletePaymentMethodTest - consider refactoring before making a third copy.
+ */ class UpdatePaymentMethodTest extends TestCase
 {
-    public function testItDeletesAPaymentMethod(): void
+    public function testItUpdatesAPaymentMethod(): void
     {
         // arrange
         $stripePaymentMethodServiceProphecy = $this->prophesize(PaymentMethodService::class);
@@ -30,20 +33,29 @@ class DeletePaymentMethodTest extends TestCase
             ])
         );
 
-        $sut = new DeletePaymentMethod($fakeStripeClient, new NullLogger());
+        $sut = new UpdatePaymentMethod($fakeStripeClient, new NullLogger());
 
-        $request = (new ServerRequest())
+        $updatedBillingDetails = [
+            'billing_details' => [
+            ],
+            'card' => [
+                'exp_month' => '02',
+                'exp_year' => '2040',
+            ],
+        ];
+
+        $request = $this->createRequest('PUT', '/', \json_encode($updatedBillingDetails))
             ->withAttribute('pspId', 'stripe_customer_id_12');
 
         // assert
-        $stripePaymentMethodServiceProphecy->detach('stripe_payment_method_id_35')
+        $stripePaymentMethodServiceProphecy->update('stripe_payment_method_id_35', $updatedBillingDetails)
             ->shouldBeCalledOnce();
 
         // act
         $sut->__invoke($request, new Response(), ['payment_method_id' => 'stripe_payment_method_id_35']);
     }
 
-    public function testItRefusesToToDeletePaymentMethodThatDoesNotBelongToRquester(): void
+    public function testItRefusesToToUpdatePaymentMethodThatDoesNotBelongToRquester(): void
     {
         $stripePaymentMethodServiceProphecy = $this->prophesize(PaymentMethodService::class);
         $stripeCustomerServiceProphecy = $this->prophesize(CustomerService::class);

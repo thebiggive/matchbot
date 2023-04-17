@@ -14,6 +14,7 @@
         <directory name="public"/>
         <directory name="src"/>
         <directory name="tests"/>
+        <directory name="integrationTests"/>
         <ignoreFiles>
             <directory name="vendor"/>
         </ignoreFiles>
@@ -22,6 +23,7 @@
         <UnusedClass>
             <errorLevel type="suppress">
                 <directory name="src/Migrations" />
+                <directory name="integrationTests" />
             </errorLevel>
         </UnusedClass>
         <PossiblyUnusedMethod>

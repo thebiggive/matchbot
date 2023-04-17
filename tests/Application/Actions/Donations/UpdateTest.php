@@ -11,6 +11,7 @@ use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -171,7 +172,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setDonationStatus('Failed');
+        $donation->setDonationStatus(DonationStatus::Failed);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -220,7 +221,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setDonationStatus('Pending');
+        $donation->setDonationStatus(DonationStatus::Pending);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -272,10 +273,10 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donationResponse = $this->getTestDonation();
-        $donationResponse->setDonationStatus('Collected');
+        $donationResponse->setDonationStatus(DonationStatus::Collected);
 
         $donation = $this->getTestDonation();
-        $donation->setDonationStatus('Cancelled');
+        $donation->setDonationStatus(DonationStatus::Cancelled);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -324,14 +325,14 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setDonationStatus('Cancelled');
+        $donation->setDonationStatus(DonationStatus::Cancelled);
         // Check this is ignored and only status patched. N.B. this is currently a bit circular as we simulate both
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
         $donation->setAmount('999.99');
 
         $responseDonation = $this->getTestDonation();
-        $responseDonation->setDonationStatus('Cancelled');
+        $responseDonation->setDonationStatus(DonationStatus::Cancelled);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -387,7 +388,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setDonationStatus('Cancelled');
+        $donation->setDonationStatus(DonationStatus::Cancelled);
         // Check this is ignored and only status patched. N.B. this is currently a bit circular as we simulate both
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
@@ -396,7 +397,7 @@ class UpdateTest extends TestCase
         $responseDonation = $this->getTestDonation();
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
         // mock donation.
-        $responseDonation->setDonationStatus('Pending');
+        $responseDonation->setDonationStatus(DonationStatus::Pending);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -467,12 +468,12 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setDonationStatus('Cancelled');
+        $donation->setDonationStatus(DonationStatus::Cancelled);
 
         $responseDonation = $this->getTestDonation();
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
         // mock donation.
-        $responseDonation->setDonationStatus('Pending');
+        $responseDonation->setDonationStatus(DonationStatus::Pending);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -536,12 +537,12 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setDonationStatus('Cancelled');
+        $donation->setDonationStatus(DonationStatus::Cancelled);
 
         $responseDonation = $this->getTestDonation();
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
         // mock donation.
-        $responseDonation->setDonationStatus('Pending');
+        $responseDonation->setDonationStatus(DonationStatus::Pending);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -604,7 +605,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getAnonymousPendingTestDonation();
-        $donation->setDonationStatus('Cancelled');
+        $donation->setDonationStatus(DonationStatus::Cancelled);
 
         $responseDonation = $this->getAnonymousPendingTestDonation();
 

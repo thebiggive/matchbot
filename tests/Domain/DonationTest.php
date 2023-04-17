@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
@@ -17,7 +18,7 @@ class DonationTest extends TestCase
     {
         $donation = new Donation();
 
-        $this->assertFalse($donation->isSuccessful());
+        $this->assertFalse($donation->getDonationStatus()->isSuccessful());
         $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
         $this->assertNull($donation->getSalesforceLastPush());
         $this->assertNull($donation->getSalesforceId());
@@ -25,6 +26,22 @@ class DonationTest extends TestCase
         $this->assertNull($donation->hasGiftAid());
         $this->assertNull($donation->getCharityComms());
         $this->assertNull($donation->getTbgComms());
+    }
+
+    public function testPendingDonationDoesNotHavePostCreateUpdates(): void
+    {
+        $donation = new Donation();
+        $donation->setDonationStatus(DonationStatus::Pending);
+
+        $this->assertFalse($donation->hasPostCreateUpdates());
+    }
+
+    public function testPaidDonationHasPostCreateUpdates(): void
+    {
+        $donation = new Donation();
+        $donation->setDonationStatus(DonationStatus::Paid);
+
+        $this->assertTrue($donation->hasPostCreateUpdates());
     }
 
     public function testValidDataPersisted(): void
@@ -76,6 +93,7 @@ class DonationTest extends TestCase
         $this->expectExceptionMessage("Unexpected PSP 'paypal'");
 
         $donation = new Donation();
+        /** @psalm-suppress InvalidArgument */
         $donation->setPsp('paypal');
     }
 

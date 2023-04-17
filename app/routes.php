@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use LosMiddleware\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Actions\DeletePaymentMethod;
+use MatchBot\Application\Actions\UpdatePaymentMethod;
 use MatchBot\Application\Actions\Donations;
 use MatchBot\Application\Actions\GetPaymentMethods;
 use MatchBot\Application\Actions\Hooks;
@@ -35,26 +36,30 @@ return function (App $app) {
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
-        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
-            ->add(PersonManagementAuthMiddleware::class)
-            ->add($ipMiddleware)
-            ->add(RateLimitMiddleware::class);
-
-        $versionGroup->get('/people/{personId:[a-z0-9-]{36}}/payment_methods', GetPaymentMethods::class)
-            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
-            ->add($ipMiddleware)
-            ->add(RateLimitMiddleware::class);
-
-        $versionGroup->delete('/people/{personId:[a-z0-9-]{36}}/payment_methods/{payment_method_id:[a-zA-Z0-9_]{10,50}}', DeletePaymentMethod::class)
-            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
-            ->add($ipMiddleware)
-            ->add(RateLimitMiddleware::class);
-
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {
             $group->get('', Donations\Get::class);
             $group->put('', Donations\Update::class); // Includes cancelling.
         })
             ->add(DonationPublicAuthMiddleware::class);
+
+        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
+            ->add(PersonManagementAuthMiddleware::class)
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
+
+        $versionGroup->group(
+            '/people/{personId:[a-z0-9-]{36}}/payment_methods',
+            function (RouteCollectorProxy $paymentMethodsGroup) {
+                $paymentMethodUriSuffixPattern = '/{payment_method_id:[a-zA-Z0-9_]{10,50}}';
+
+                $paymentMethodsGroup->get('', GetPaymentMethods::class);
+                $paymentMethodsGroup->delete($paymentMethodUriSuffixPattern, DeletePaymentMethod::class);
+                $paymentMethodsGroup->put("$paymentMethodUriSuffixPattern/billing_details", UpdatePaymentMethod::class);
+            }
+        )
+            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
     });
 
     // Authenticated through Stripe's SDK signature verification
@@ -76,6 +81,7 @@ return function (App $app) {
             'https://localhost:4200', // Local via native `ng serve --ssl`
             'https://donate-ecs-staging.thebiggivetest.org.uk', // ECS staging direct
             'https://donate-staging.thebiggivetest.org.uk', // ECS + S3 staging via CloudFront
+            'https://donate-staging.thebiggive.global', // ECS + S3 production via CloudFront, temporary testing global alias
             'https://donate-ecs-regression.thebiggivetest.org.uk', // ECS regression direct
             'https://donate-regression.thebiggivetest.org.uk', // ECS + S3 regression via CloudFront
             'https://donate-ecs-production.thebiggive.org.uk', // ECS production direct

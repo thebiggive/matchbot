@@ -15,6 +15,7 @@ use MatchBot\Application\HttpModels;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -22,7 +23,7 @@ use Psr\Log\LogLevel;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
-use Stripe\StripeClientInterface;
+use Stripe\StripeClient;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 use TypeError;
@@ -42,7 +43,7 @@ class Update extends Action
         private DonationRepository $donationRepository,
         private EntityManagerInterface $entityManager,
         private SerializerInterface $serializer,
-        private StripeClientInterface $stripeClient,
+        private StripeClient $stripeClient,
         LoggerInterface $logger
     ) {
         parent::__construct($logger);
@@ -87,7 +88,7 @@ class Update extends Action
 
             $this->entityManager->rollback();
 
-            return $this->validationError($response, 
+            return $this->validationError($response,
                 "$message: $exceptionType - {$exception->getMessage()}",
                 $message,
                 empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
@@ -97,7 +98,7 @@ class Update extends Action
         if (!isset($donationData->status)) {
             $this->entityManager->rollback();
 
-            return $this->validationError($response, 
+            return $this->validationError($response,
                 "Donation ID {$args['donationId']} could not be updated with missing status",
                 'New status is required'
             );
@@ -110,10 +111,10 @@ class Update extends Action
                 if ($retryCount > 0) {
                     $this->entityManager->refresh($donation, LockMode::PESSIMISTIC_WRITE);
                 }
-                if ($donationData->status !== 'Cancelled' && $donationData->status !== $donation->getDonationStatus()) {
+                if ($donationData->status !== 'Cancelled' && $donationData->status !== $donation->getDonationStatus()->value) {
                     $this->entityManager->rollback();
 
-                    return $this->validationError($response, 
+                    return $this->validationError($response,
                         "Donation ID {$args['donationId']} could not be set to status {$donationData->status}",
                         'Status update is only supported for cancellation'
                     );
@@ -146,7 +147,7 @@ class Update extends Action
         if (bccomp($donation->getAmount(), (string) $donationData->donationAmount) !== 0) {
             $this->entityManager->rollback();
 
-            return $this->validationError($response, 
+            return $this->validationError($response,
                 "Donation ID {$args['donationId']} amount did not match",
                 'Amount updates are not supported'
             );
@@ -184,7 +185,7 @@ class Update extends Action
             } catch (\UnexpectedValueException $exception) {
                 $this->entityManager->rollback();
 
-                return $this->validationError($response, 
+                return $this->validationError($response,
                     sprintf("Invalid tipAmount '%s'", $donationData->tipAmount),
                     $exception->getMessage(),
                     false,
@@ -268,27 +269,27 @@ class Update extends Action
 
     private function cancel(Donation $donation, Response $response, array $args): Response
     {
-        if ($donation->getDonationStatus() === 'Cancelled') {
+        if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
             $this->logger->info("Donation ID {$args['donationId']} was already Cancelled");
             $this->entityManager->rollback();
 
             return $this->respondWithData($response, $donation->toApiModel());
         }
 
-        if ($donation->isSuccessful()) {
+        if ($donation->getDonationStatus()->isSuccessful()) {
             // If a donor uses browser back before loading the thank you page, it is possible for them to get
             // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
             $this->entityManager->rollback();
 
-            return $this->validationError($response, 
-                "Donation ID {$args['donationId']} could not be cancelled as {$donation->getDonationStatus()}",
+            return $this->validationError($response,
+                "Donation ID {$args['donationId']} could not be cancelled as {$donation->getDonationStatus()->value}",
                 'Donation already finalised'
             );
         }
 
         $this->logger->info("Donor cancelled ID {$args['donationId']}");
 
-        $donation->setDonationStatus('Cancelled');
+        $donation->setDonationStatus(DonationStatus::Cancelled);
 
         // Save & flush early to reduce chance of lock conflicts.
         $this->save($donation);
@@ -420,7 +421,7 @@ class Update extends Action
                 $this->logger->error(sprintf(
                     'Stripe Payment Intent update after capture; fee change from %d to %d ' .
                     'not possible on %s, %s [%s]: %s',
-                    $latestPI->application_fee_amount,
+                    (int) $latestPI->application_fee_amount,
                     $donation->getAmountToDeductFractional(),
                     $donation->getUuid(),
                     get_class($exception),

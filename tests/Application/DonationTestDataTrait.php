@@ -5,6 +5,8 @@ namespace MatchBot\Tests\Application;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\SalesforceWriteProxy;
 use Ramsey\Uuid\Uuid;
 
 trait DonationTestDataTrait
@@ -41,7 +43,7 @@ trait DonationTestDataTrait
         $donation->setCharityComms(true);
         $donation->setChampionComms(false);
         $donation->setCurrencyCode('GBP');
-        $donation->setDonationStatus('Collected');
+        $donation->setDonationStatus(DonationStatus::Collected);
         $donation->setCollectedAt(new \DateTime());
         $donation->setDonorCountryCode('GB');
         $donation->setDonorEmailAddress('john.doe@example.com');
@@ -53,21 +55,13 @@ trait DonationTestDataTrait
         $donation->setGiftAid(true);
         $donation->setPsp('stripe');
         $donation->setSalesforceId('sfDonation369');
+        $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
         $donation->setTbgComms(false);
         $donation->setTipAmount('1.00');
         $donation->setTransferId('tr_externalId_123');
         $donation->setTransactionId('pi_externalId_123');
         $donation->setChargeId('ch_externalId_123');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
-
-        return $donation;
-    }
-
-    protected function getAltTestDonation(): Donation
-    {
-        $donation = clone $this->getTestDonation();
-        $donation->setTransactionId('pi_externalId_124');
-        $donation->setChargeId('ch_externalId_124');
 
         return $donation;
     }
@@ -90,7 +84,7 @@ trait DonationTestDataTrait
         $donation->setCharityFee('2.57');
         $donation->setCampaign($campaign);
         $donation->setCurrencyCode('GBP');
-        $donation->setDonationStatus('Pending');
+        $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setPsp('stripe');
         $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setTipAmount('2.00');

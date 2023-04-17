@@ -14,15 +14,14 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
-use PHPUnit\Framework\MockObject\Builder\InvocationMocker;
-use Prophecy\Argument;
+use MatchBot\Domain\DonationStatus;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
 use Slim\Psr7\Response;
 use Stripe\Service\PaymentIntentService;
-use Stripe\StripeClientInterface;
+use Stripe\StripeClient;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -41,14 +40,14 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
     /** @var ObjectProphecy<PaymentIntentService>  */
     private ObjectProphecy $stripeIntentsProphecy;
 
-    private StripeClientInterface $fakeStripeClient;
+    private StripeClient $fakeStripeClient;
 
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $this->stripeIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $this->fakeStripeClient = $this->fakeStripeClient($this->stripeIntentsProphecy->reveal());
+        $this->fakeStripeClient = $this->fakeStripeClient($this->stripeIntentsProphecy);
     }
 
     public function testRetriesOnUpdateStillPendingLockException(): void
@@ -108,54 +107,15 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
         $this->assertSame(200, $response->getStatusCode());
     }
 
-    /**
-     * We can't use prophecy for this because we need a public property, which Prophecy does not support
-     * See https://github.com/phpspec/prophecy/issues/86
-     *
-     * It's mabye that the Stripe API requires us to use a public property of their object.
-     */
-    public function fakeStripeClient(PaymentIntentService $intents): StripeClientInterface
+    public function fakeStripeClient(ObjectProphecy $intentsProphecy): StripeClient
     {
-        $stripeClient = new class implements StripeClientInterface {
-            public function getApiKey()
-            {
-                throw new \Exception('Not implemented');
-            }
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $intentsProphecy->reveal();
 
-            public function getClientId()
-            {
-                throw new \Exception('Not implemented');
-            }
-
-            public function getApiBase()
-            {
-                throw new \Exception('Not implemented');
-            }
-
-            public function getConnectBase()
-            {
-                throw new \Exception('Not implemented');
-            }
-
-            public function getFilesBase()
-            {
-                throw new \Exception('Not implemented');
-            }
-
-            public function request($method, $path, $params, $opts)
-            {
-                throw new \Exception('Not implemented');
-            }
-
-            public mixed $paymentIntents;
-        };
-
-        $stripeClient->paymentIntents = $intents;
-
-        return $stripeClient;
+        return $stripeClientProphecy->reveal();
     }
 
-    public function getDonation(): Donation
+    private function getDonation(): Donation
     {
         $charity = new Charity();
         $charity->setDonateLinkId('DONATE_LINK_ID');
@@ -167,7 +127,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
 
         $donation = new Donation();
         $donation->createdNow();
-        $donation->setDonationStatus('Pending');
+        $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setCampaign($campaign);
         $donation->setPsp('stripe');
         $donation->setCurrencyCode('GBP');
@@ -175,6 +135,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
         $donation->setUuid(Uuid::uuid4());
         $donation->setDonorFirstName('Donor first name');
         $donation->setDonorLastName('Donor last name');
+        $donation->setTransactionId('pi_dummyIntent_id');
 
         return $donation;
     }
@@ -226,7 +187,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
         $this->entityManagerProphecy->beginTransaction()->shouldBeCalled();
         $this->entityManagerProphecy->refresh($donation, LockMode::PESSIMISTIC_WRITE)->shouldBeCalled()
             ->will(function () use ($donation) {
-                $donation->setDonationStatus('Pending'); // simulate refreshing donation from DB.
+                $donation->setDonationStatus(DonationStatus::Pending); // simulate refreshing donation from DB.
             });
         $this->entityManagerProphecy->persist($donation)->shouldBeCalled();
         $this->entityManagerProphecy->commit()->shouldBeCalled();

@@ -76,7 +76,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "MatchBot\\Tests\\": "tests/"
+            "MatchBot\\Tests\\": "tests/",
+            "MatchBot\\IntegrationTests\\": "integrationTests/"
         }
     },
     "scripts": {
@@ -105,6 +106,10 @@
         "matchbot:claim-gift-aid-with-resends": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:claim-gift-aid --with-resends"
+        ],
+        "matchbot:delete-stale-payment-details": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:delete-stale-payment-details"
         ],
         "matchbot:expire-match-funds": [
             "Composer\\Config::disableProcessTimeout",
@@ -145,6 +150,7 @@
             "php matchbot-cli.php messenger:consume -vv --time-limit=7080"
         ],
         "start": "php -S localhost:8080 -t public",
-        "test": "XDEBUG_MODE=coverage phpunit"
+        "test": "XDEBUG_MODE=coverage phpunit --order-by=random",
+        "integration-test": "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random"
     }
 }
