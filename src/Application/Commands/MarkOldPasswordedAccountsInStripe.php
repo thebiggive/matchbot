@@ -35,7 +35,7 @@ class MarkOldPasswordedAccountsInStripe extends LockingCommand
         }
 
         $personRows = $this->identityDBConnection->fetchAllAssociative(
-            'SELECT BIN_TO_UUID(id) as uuid, updated_at, stripe_customer_id from Person
+            'SELECT BIN_TO_UUID(id) as uuid, updated_at, stripe_customer_id, email_address from Person
                        where Password IS NOT NULL AND created_at >= :completed_up_to
                        AND Person.created_at < "2023-04-19" -- We dont need to do accounts from after this date as the password status is already in stripe.
                                                             -- see https://github.com/thebiggive/identity/blob/443c4cbb2589f99de4709172104b99ad2ee7c5d6/src/Application/Actions/Person/Update.php#L213
@@ -48,8 +48,9 @@ class MarkOldPasswordedAccountsInStripe extends LockingCommand
         foreach($personRows as $row) {
             \assert(is_string($row['stripe_customer_id']));
             \assert(is_string($row['uuid']));
+            \assert(is_string($row['email_address']));
 
-            $this->stripeClient->customers->update($row['stripe_customer_id'], ['metadata' => ['hasPasswordSince' => $row['updated_at']]]);
+            $this->stripeClient->customers->update($row['stripe_customer_id'], ['metadata' => ['hasPasswordSince' => $row['updated_at'], 'emailAddress' => $row['email_address']]]);
             $this->logger->info("Set password metadata in stripe for user " . $row['uuid']);
         }
 

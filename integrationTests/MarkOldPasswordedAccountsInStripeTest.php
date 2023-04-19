@@ -79,10 +79,15 @@ class MarkOldPasswordedAccountsInStripeTest extends IntegrationTest
         $this->redisProphecy->get('password-push-to-stripe-completed-up-to')
             ->willReturn(false);
 
-        $this->stripeCustomersProphecy->update('cus_NHDQHoQP8Abgbp', ['metadata' => ['hasPasswordSince' => '2023-02-01 12:01:26']])
-            ->shouldBeCalled();
-        $this->stripeCustomersProphecy->update('cus_NHZfwfpyGaCGLk', ['metadata' => ['hasPasswordSince' => '2023-02-22 11:26:46']])
-            ->shouldBeCalled();
+        $this->stripeCustomersProphecy->update('cus_NHDQHoQP8Abgbp', ['metadata' => [
+            'hasPasswordSince' => '2023-02-01 12:01:26',
+            'emailAddress' => 'same@example.com',
+        ]])->shouldBeCalled();
+
+        $this->stripeCustomersProphecy->update('cus_NHZfwfpyGaCGLk', ['metadata' => [
+            'hasPasswordSince' => '2023-02-22 11:26:46',
+            'emailAddress' => 'barney@thebiggive.org.uk',
+            ]])->shouldBeCalled();
 
         $this->redisProphecy->set('password-push-to-stripe-completed-up-to', '2023-02-22 11:26:46')
             ->shouldBeCalled();
@@ -105,10 +110,15 @@ class MarkOldPasswordedAccountsInStripeTest extends IntegrationTest
         $this->redisProphecy->get('password-push-to-stripe-completed-up-to')
             ->willReturn('2023-02-22 11:26:46');
 
-        $this->stripeCustomersProphecy->update('cus_NP4fRXVvhy9gLU', ['metadata' => ['hasPasswordSince' => '2023-02-22 11:31:21']])
-            ->shouldBeCalled();
-        $this->stripeCustomersProphecy->update('cus_NRkbj60fdOoytj', ['metadata' => ['hasPasswordSince' => '2023-03-01 15:00:09']])
-            ->shouldBeCalled();
+        $this->stripeCustomersProphecy->update('cus_NP4fRXVvhy9gLU', ['metadata' => [
+            'hasPasswordSince' => '2023-02-22 11:31:21',
+            'emailAddress' => 'someoneelse@example.com',
+            ]])->shouldBeCalled();
+
+        $this->stripeCustomersProphecy->update('cus_NRkbj60fdOoytj', ['metadata' => [
+            'hasPasswordSince' => '2023-03-01 15:00:09',
+            'emailAddress' => 'barney+march12023@thebiggive.org.uk',
+            ]])->shouldBeCalled();
 
         $this->redisProphecy->set('password-push-to-stripe-completed-up-to', '2023-03-01 15:00:09')
             ->shouldBeCalled();
