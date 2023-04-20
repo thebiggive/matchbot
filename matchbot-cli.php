@@ -11,6 +11,7 @@ use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\LockingCommand;
+use MatchBot\Application\Commands\MarkOldPasswordedAccountsInStripe;
 use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
@@ -72,6 +73,12 @@ $commands = [
         $psr11App->get(EntityManagerInterface::class),
         $psr11App->get(FundRepository::class),
         $psr11App->get(LoggerInterface::class),
+    ),
+    new MarkOldPasswordedAccountsInStripe(
+        $psr11App->get(LoggerInterface::class),
+        $psr11App->get(StripeClient::class),
+        $psr11App->get(Redis::class),
+        $psr11App->get(MarkOldPasswordedAccountsInStripe::IDENTITY_DBAL_CONNECTION_SERVICE_NAME),
     ),
 ];
 
