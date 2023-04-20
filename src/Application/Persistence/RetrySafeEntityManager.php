@@ -92,6 +92,17 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         }
     }
 
+    public function refresh($object): void
+    {
+        try {
+            $this->entityManager->refresh($object);
+        } catch (EntityManagerClosed $closedException) {
+            $this->logger->warning('EM closed. RetrySafeEntityManager::refresh() trying with a new instance');
+            $this->resetManager();
+            $this->entityManager->refresh($object);
+        }
+    }
+
     /**
      * Attempt a flush the normal way, and if the underlying EM is closed, make a new one
      * and try a second time. We were forced to take this approach because the properties

@@ -152,6 +152,61 @@ class RetrySafeEntityManagerTest extends TestCase
         $this->retrySafeEntityManager->flush();
     }
 
+    public function testRefresh(): void
+    {
+        $underlyingEmProphecy = $this->prophesize(EntityManager::class);
+        $underlyingEmProphecy->refresh(Argument::type(Donation::class))
+            ->shouldBeCalledOnce();
+
+        $retrySafeEntityManagerReflected = new ReflectionClass($this->retrySafeEntityManager);
+
+        $emProperty = $retrySafeEntityManagerReflected->getProperty('entityManager');
+        $emProperty->setValue($this->retrySafeEntityManager, $underlyingEmProphecy->reveal());
+
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $container->set(EntityManager::class, $underlyingEmProphecy->reveal());
+
+        $this->retrySafeEntityManager->refresh(new Donation());
+    }
+
+    public function testRefreshWithRetry(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        // First underlying EM should throw closed error.
+        $underlyingEmProphecy1 = $this->prophesize(EntityManager::class);
+        $underlyingEmProphecy1->refresh(Argument::type(Donation::class))
+            ->willThrow(new EntityManagerClosed())
+            ->shouldBeCalledOnce();
+
+        // Second should work.
+        $underlyingEmProphecy2 = $this->prophesize(EntityManager::class);
+        $underlyingEmProphecy2->refresh(Argument::type(Donation::class))->shouldBeCalledOnce();
+
+        /** @var array<string, mixed> $settings */
+        $settings = $container->get('settings');
+        /** @var array<string, mixed> $doctrineSettings */
+        $doctrineSettings = $settings['doctrine'];
+        /** @var array<string, mixed> $connectionSettings */
+        $connectionSettings = $doctrineSettings['connection'];
+        $this->retrySafeEntityManager = $this->getRetrySafeEntityManagerPartialMock(
+            $this->getConfiguration($container),
+            $connectionSettings,
+            $underlyingEmProphecy1->reveal(),
+            $underlyingEmProphecy2->reveal(),
+        );
+
+        $container->set(EntityManager::class, $underlyingEmProphecy1->reveal());
+        $container->set(RetrySafeEntityManager::class, $this->retrySafeEntityManager);
+        $container->set(EntityManagerInterface::class, $this->retrySafeEntityManager);
+
+        $this->retrySafeEntityManager->refresh(new Donation());
+    }
+
     /**
      * Because we need to mock `resetManager()` in this test – as it's called in the
      * midst of methods we must test – and also need to make real calls to those methods
