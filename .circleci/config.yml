@@ -217,7 +217,7 @@ workflows:
                         "fields": [
                           {
                             "type": "mrkdwn",
-                            "text": "*Production: Matchbhot deployed!* All visitors should see the updated app version within 30 minutes."
+                            "text": "*Production: Matchbot deployed!* All visitors should see the updated app version within 30 minutes."
                           }
                         ]
                       }
