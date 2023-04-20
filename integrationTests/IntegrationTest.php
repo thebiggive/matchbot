@@ -49,4 +49,9 @@ abstract class IntegrationTest extends TestCase
 
         return $service;
     }
+
+    public function getServiceByName(string $name): mixed
+    {
+        return $this->getContainer()->get($name);
+    }
 }
