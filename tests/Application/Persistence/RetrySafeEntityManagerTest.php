@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Persistence;
 
 use DI\Container;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -16,7 +17,6 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
 use PHPUnit\Framework\MockObject\Stub\ReturnCallback;
 use Prophecy\Argument;
-use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 use ReflectionClass;
 
@@ -155,7 +155,8 @@ class RetrySafeEntityManagerTest extends TestCase
     public function testRefresh(): void
     {
         $underlyingEmProphecy = $this->prophesize(EntityManager::class);
-        $underlyingEmProphecy->refresh(Argument::type(Donation::class))
+        $underlyingEmProphecy
+            ->refresh(Argument::type(Donation::class),LockMode::PESSIMISTIC_WRITE)
             ->shouldBeCalledOnce();
 
         $retrySafeEntityManagerReflected = new ReflectionClass($this->retrySafeEntityManager);
@@ -168,7 +169,7 @@ class RetrySafeEntityManagerTest extends TestCase
         $container = $app->getContainer();
         $container->set(EntityManager::class, $underlyingEmProphecy->reveal());
 
-        $this->retrySafeEntityManager->refresh(new Donation());
+        $this->retrySafeEntityManager->refresh(new Donation(), LockMode::PESSIMISTIC_WRITE);
     }
 
     public function testRefreshWithRetry(): void
@@ -179,13 +180,16 @@ class RetrySafeEntityManagerTest extends TestCase
 
         // First underlying EM should throw closed error.
         $underlyingEmProphecy1 = $this->prophesize(EntityManager::class);
-        $underlyingEmProphecy1->refresh(Argument::type(Donation::class))
+        $underlyingEmProphecy1
+            ->refresh(Argument::type(Donation::class), LockMode::PESSIMISTIC_WRITE)
             ->willThrow(new EntityManagerClosed())
             ->shouldBeCalledOnce();
 
         // Second should work.
         $underlyingEmProphecy2 = $this->prophesize(EntityManager::class);
-        $underlyingEmProphecy2->refresh(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $underlyingEmProphecy2
+            ->refresh(Argument::type(Donation::class), LockMode::PESSIMISTIC_WRITE)
+            ->shouldBeCalledOnce();
 
         /** @var array<string, mixed> $settings */
         $settings = $container->get('settings');
@@ -204,7 +208,7 @@ class RetrySafeEntityManagerTest extends TestCase
         $container->set(RetrySafeEntityManager::class, $this->retrySafeEntityManager);
         $container->set(EntityManagerInterface::class, $this->retrySafeEntityManager);
 
-        $this->retrySafeEntityManager->refresh(new Donation());
+        $this->retrySafeEntityManager->refresh(new Donation(), LockMode::PESSIMISTIC_WRITE);
     }
 
     /**

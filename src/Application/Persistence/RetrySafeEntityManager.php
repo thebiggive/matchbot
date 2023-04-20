@@ -8,7 +8,6 @@ use Doctrine\DBAL\Exception\RetryableException;
 use Doctrine\ORM;
 use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\EntityManagerClosed;
 use JetBrains\PhpStorm\Pure;
 use Psr\Log\LoggerInterface;
@@ -19,7 +18,7 @@ use Psr\Log\LoggerInterface;
  */
 class RetrySafeEntityManager extends EntityManagerDecorator
 {
-    private EntityManagerInterface $entityManager;
+    private EntityManager $entityManager;
 
     /**
      * @var int For non-matching updates that always use Doctrine, maximum number of times to try again when
@@ -92,14 +91,14 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         }
     }
 
-    public function refresh($object): void
+    public function refresh($object, ?int $lockMode = null): void
     {
         try {
-            $this->entityManager->refresh($object);
+            $this->entityManager->refresh($object, $lockMode);
         } catch (EntityManagerClosed $closedException) {
             $this->logger->warning('EM closed. RetrySafeEntityManager::refresh() trying with a new instance');
             $this->resetManager();
-            $this->entityManager->refresh($object);
+            $this->entityManager->refresh($object, $lockMode);
         }
     }
 
@@ -139,12 +138,12 @@ class RetrySafeEntityManager extends EntityManagerDecorator
      * Currently just used for easier testing, to avoid needing a very complex mix of both reflection
      * and partial mocks.
      */
-    public function setEntityManager(EntityManagerInterface $entityManager): void
+    public function setEntityManager(EntityManager $entityManager): void
     {
         $this->entityManager = $entityManager;
     }
 
-    private function buildEntityManager(): EntityManagerInterface
+    private function buildEntityManager(): EntityManager
     {
         return EntityManager::create($this->connectionSettings, $this->ormConfig);
     }
