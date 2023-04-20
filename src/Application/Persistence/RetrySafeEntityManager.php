@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace MatchBot\Application\Persistence;
 
 use Doctrine\DBAL\Exception\RetryableException;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM;
 use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Exception\EntityManagerClosed;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Domain\Model;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -91,6 +93,12 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         }
     }
 
+
+    /**
+     * @param Model $object
+     * @param 0|1|2|4|null  $lockMode
+     * @see LockMode
+     */
     public function refresh($object, ?int $lockMode = null): void
     {
         try {
@@ -109,7 +117,7 @@ class RetrySafeEntityManager extends EntityManagerDecorator
      *
      * {@inheritDoc}
      */
-    public function flush($entity = null): void
+    public function flush(array|\stdClass $entity = null): void
     {
         try {
             $this->entityManager->flush($entity);
