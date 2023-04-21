@@ -95,7 +95,7 @@ class RetrySafeEntityManager extends EntityManagerDecorator
 
 
     /**
-     * @param Model $object
+     * @param object $object
      * @param 0|1|2|4|null  $lockMode
      * @see LockMode
      */
@@ -115,9 +115,10 @@ class RetrySafeEntityManager extends EntityManagerDecorator
      * and try a second time. We were forced to take this approach because the properties
      * tracking a closed EM are annotated private.
      *
+     * @param object|mixed[]|null $entity
      * {@inheritDoc}
      */
-    public function flush(array|\stdClass $entity = null): void
+    public function flush($entity = null): void
     {
         try {
             $this->entityManager->flush($entity);
