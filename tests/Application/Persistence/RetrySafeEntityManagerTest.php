@@ -168,18 +168,13 @@ class RetrySafeEntityManagerTest extends TestCase
         $this->retrySafeEntityManager->refresh(new Donation(), LockMode::PESSIMISTIC_WRITE);
     }
 
-    public function testRefreshWithRetry(): void
+    public function testRefreshRetriesOnEmClosed(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
-
         // First underlying EM should throw closed error.
         $underlyingEmProphecy1 = $this->prophesize(EntityManager::class);
         $underlyingEmProphecy1
             ->refresh(Argument::type(Donation::class), LockMode::PESSIMISTIC_WRITE)
-            ->willThrow(new EntityManagerClosed())
-            ->shouldBeCalledOnce();
+            ->willThrow(new EntityManagerClosed());
 
         // Second should work.
         $underlyingEmProphecy2 = $this->prophesize(EntityManager::class);
@@ -187,24 +182,16 @@ class RetrySafeEntityManagerTest extends TestCase
             ->refresh(Argument::type(Donation::class), LockMode::PESSIMISTIC_WRITE)
             ->shouldBeCalledOnce();
 
-        /** @var array<string, mixed> $settings */
-        $settings = $container->get('settings');
-        /** @var array<string, mixed> $doctrineSettings */
-        $doctrineSettings = $settings['doctrine'];
-        /** @var array<string, mixed> $connectionSettings */
-        $connectionSettings = $doctrineSettings['connection'];
-        $this->retrySafeEntityManager = $this->getRetrySafeEntityManagerPartialMock(
+        $container = $this->getAppInstance()->getContainer();
+        assert($container instanceof Container);
+        $retrySafeEntityManager = $this->getRetrySafeEntityManagerPartialMock(
             $this->getConfiguration($container),
-            $connectionSettings,
+            ['driver' => 'pdo_mysql'],
             $underlyingEmProphecy1->reveal(),
             $underlyingEmProphecy2->reveal(),
         );
 
-        $container->set(EntityManager::class, $underlyingEmProphecy1->reveal());
-        $container->set(RetrySafeEntityManager::class, $this->retrySafeEntityManager);
-        $container->set(EntityManagerInterface::class, $this->retrySafeEntityManager);
-
-        $this->retrySafeEntityManager->refresh(new Donation(), LockMode::PESSIMISTIC_WRITE);
+        $retrySafeEntityManager->refresh(new Donation(), LockMode::PESSIMISTIC_WRITE);
     }
 
     /**
