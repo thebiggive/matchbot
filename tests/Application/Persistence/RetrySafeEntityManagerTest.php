@@ -152,7 +152,7 @@ class RetrySafeEntityManagerTest extends TestCase
         $this->retrySafeEntityManager->flush();
     }
 
-    public function testRefresh(): void
+    public function testRefreshWithSuccessFirstTime(): void
     {
         $underlyingEmProphecy = $this->prophesize(EntityManager::class);
         $underlyingEmProphecy
@@ -163,7 +163,6 @@ class RetrySafeEntityManagerTest extends TestCase
 
         $emProperty = $retrySafeEntityManagerReflected->getProperty('entityManager');
         $emProperty->setValue($this->retrySafeEntityManager, $underlyingEmProphecy->reveal());
-
 
         $this->retrySafeEntityManager->refresh(new Donation(), LockMode::PESSIMISTIC_WRITE);
     }
