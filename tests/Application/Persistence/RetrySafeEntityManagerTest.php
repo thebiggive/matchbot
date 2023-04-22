@@ -164,10 +164,6 @@ class RetrySafeEntityManagerTest extends TestCase
         $emProperty = $retrySafeEntityManagerReflected->getProperty('entityManager');
         $emProperty->setValue($this->retrySafeEntityManager, $underlyingEmProphecy->reveal());
 
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
-        $container->set(EntityManager::class, $underlyingEmProphecy->reveal());
 
         $this->retrySafeEntityManager->refresh(new Donation(), LockMode::PESSIMISTIC_WRITE);
     }
