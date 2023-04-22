@@ -69,7 +69,9 @@ class DonationToken
         }
 
         if ($donationId !== $decodedJwtBody->sub->donationId) {
-            $logger->error("JWT error: Not authorised for donation ID $donationId");
+            // We've seen this rarely from things like sharing thank you URLs across browsers / devices.
+            // We want stats of this on dashboards to monitor frequency, but not error alarms.
+            $logger->warning("JWT error: Not authorised for donation ID $donationId");
 
             return false;
         }
