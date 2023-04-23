@@ -191,15 +191,27 @@ class Create extends Action
             try {
                 $intent = $this->stripeClient->paymentIntents->create($createPayload);
             } catch (ApiErrorException $exception) {
-                $this->logger->error(sprintf(
-                    'Stripe Payment Intent create error on %s, %s [%s]: %s. Charity: %s [%s].',
-                    $donation->getUuid(),
-                    $exception->getStripeCode(),
-                    get_class($exception),
-                    $exception->getMessage(),
-                    $donation->getCampaign()->getCharity()->getName(),
-                    $donation->getCampaign()->getCharity()->getStripeAccountId()
-                ));
+                if ($donation->getCampaign()->getId() === 4690) {
+                    $this->logger->warning(sprintf(
+                        'Stripe Payment Intent create error on %s, %s [%s]: %s. Known charity: %s [%s].',
+                        $donation->getUuid(),
+                        $exception->getStripeCode(),
+                        get_class($exception),
+                        $exception->getMessage(),
+                        $donation->getCampaign()->getCharity()->getName(),
+                        $donation->getCampaign()->getCharity()->getStripeAccountId()
+                    ));
+                } else {
+                    $this->logger->error(sprintf(
+                        'Stripe Payment Intent create error on %s, %s [%s]: %s. Charity: %s [%s].',
+                        $donation->getUuid(),
+                        $exception->getStripeCode(),
+                        get_class($exception),
+                        $exception->getMessage(),
+                        $donation->getCampaign()->getCharity()->getName(),
+                        $donation->getCampaign()->getCharity()->getStripeAccountId()
+                    ));
+                }
                 $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (B)');
                 return $this->respond($response, new ActionPayload(500, null, $error));
             }
