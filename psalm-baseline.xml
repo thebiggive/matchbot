@@ -224,9 +224,7 @@
     </MixedMethodCall>
     <PossiblyNullArgument>
       <code><![CDATA[$donation->getCampaign()->getCharity()->getSalesforceId()]]></code>
-      <code><![CDATA[$donation->getCampaign()->getCharity()->getStripeAccountId()]]></code>
       <code><![CDATA[$donation->getPspCustomerId()]]></code>
-      <code><![CDATA[$exception->getStripeCode()]]></code>
       <code><![CDATA[$intent->client_secret]]></code>
     </PossiblyNullArgument>
   </file>
