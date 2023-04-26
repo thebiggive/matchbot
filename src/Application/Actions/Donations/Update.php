@@ -48,21 +48,26 @@ class Update extends Action
     ) {
         parent::__construct($logger);
     }
-
     /**
      * @return Response
      * @throws DomainRecordNotFoundException
      */
     protected function action(Request $request, Response $response, array $args): Response
     {
-        if (empty($args['donationId'])) { // When MatchBot made a donation, this is now a UUID
+        if (empty($args['donationId']) || ! is_string($args['donationId'])) {
+            // When MatchBot made a donation, this is now a UUID
             throw new DomainRecordNotFoundException('Missing donation ID');
         }
 
         /** @var Donation $donation */
         $this->entityManager->beginTransaction();
 
-        $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $args['donationId']]);
+        try {
+            $donation = $this->getDonationWithRetry($args['donationId']);
+        } catch (LockWaitTimeoutException $e) {
+            $this->logger->error("Lock Wait Timeout for donationId '{$args['donationId']}' even after retry");
+            throw $e;
+        }
 
         if (!$donation) {
             $this->entityManager->rollback();
@@ -136,6 +141,20 @@ class Update extends Action
             $lockWaitTimeoutException
         );
     }
+
+    /**
+     * @throws LockWaitTimeoutException
+     */
+    private function getDonationWithRetry(string $donationId): ?Donation
+    {
+        try {
+            return $this->donationRepository->findAndLockOneBy(['uuid' => $donationId]);
+        } catch (LockWaitTimeoutException) {
+            // allow one retry. If we fail a second time let the exception go uncaught and return 500
+            return $this->donationRepository->findAndLockOneBy(['uuid' => $donationId]);
+        }
+    }
+
 
     /**
      * Assumes it will be called only after starting a transaction pre-donation-select.
