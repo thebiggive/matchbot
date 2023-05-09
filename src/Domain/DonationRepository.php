@@ -710,6 +710,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     /**
      * Locks row in DB to prevent concurrent updates. See jira MAT-260
+     * @throws DBALException\LockWaitTimeoutException
      */
     public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation
     {
