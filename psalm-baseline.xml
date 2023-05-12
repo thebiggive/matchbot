@@ -1684,47 +1684,6 @@
       <code>$payloadArray</code>
     </MixedAssignment>
   </file>
-  <file src="tests/Application/Actions/Hooks/StripeChargeUpdateTest.php">
-    <MixedArgument>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-    </MixedArgument>
-    <MixedArrayAccess>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-    </MixedArrayAccess>
-    <MixedAssignment>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-      <code>$webhookSecret</code>
-    </MixedAssignment>
-  </file>
   <file src="tests/Application/Actions/Hooks/StripePayoutUpdateTest.php">
     <MixedArgument>
       <code>$webhookSecret</code>
