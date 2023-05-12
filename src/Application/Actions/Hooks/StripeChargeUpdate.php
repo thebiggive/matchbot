@@ -189,7 +189,7 @@ class StripeChargeUpdate extends Stripe
             return $this->respond($response, new ActionPayload(204));
         }
 
-        if ($donation->getAmountFractionalIncTip() < $dispute->amount) {
+        if ($dispute->amount > $donation->getAmountFractionalIncTip()) {
             // More than the original amount was returned/refunded, which we don't
             // *really* expect but are best to continue processing as a full refund
             // with a warning.
