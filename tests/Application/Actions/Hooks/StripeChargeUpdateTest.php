@@ -431,7 +431,7 @@ class StripeChargeUpdateTest extends StripeTest
         $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
 
         // Double-check that the normal success case isn't messaging Slack.
-        $chatterProphecy->send(Argument::type(ChatMessage::class))->shouldNotBeCalled();
+        $chatterProphecy->send(Argument::cetera())->shouldNotBeCalled();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
 
