@@ -408,7 +408,13 @@ class StripeChargeUpdateTest extends StripeTest
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function testSuccessfulOverRefund(): void
+    /**
+     * Verifies that:
+     * * Slack gets a warning with the correct details
+     * * The donation record is updated with the new status, and
+     * * Match funds are released.
+     */
+    public function testOverRefundSendsSlackNoticeAndUpdatesRecord(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
