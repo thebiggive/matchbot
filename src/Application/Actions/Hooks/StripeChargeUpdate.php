@@ -221,6 +221,14 @@ class StripeChargeUpdate extends Stripe
         $charge = $event->data->object;
         $amountRefunded = $charge->amount_refunded; // int: pence.
 
+        // Available status' (pending, succeeded, failed, canceled),
+        // see: https://stripe.com/docs/api/refunds/object.
+        // For now we support the successful refund path (inc. partial refund IF it's for the tip amount),
+        // converting status to the one MatchBot + SF use.
+        if ($charge->status !== 'succeeded') {
+            return $this->validationError($response, sprintf('Unsupported Status "%s"', $charge->status));
+        }
+
         $this->entityManager->beginTransaction();
 
         /** @var Donation $donation */
@@ -242,15 +250,6 @@ class StripeChargeUpdate extends Stripe
             $donation->getAmountFractionalIncTip() === $charge->amount_captured &&
             $amountRefunded > $donation->getAmountFractionalIncTip()
         );
-
-        // Available status' (pending, succeeded, failed, canceled),
-        // see: https://stripe.com/docs/api/refunds/object.
-        // For now we support the successful refund path (inc. partial refund IF it's for the tip amount),
-        // converting status to the one MatchBot + SF use.
-        if ($charge->status !== 'succeeded') {
-            $this->entityManager->rollback();
-            return $this->validationError($response, sprintf('Unsupported Status "%s"', $charge->status));
-        }
 
         if ($isTipRefund) {
             $this->logger->info(sprintf(
