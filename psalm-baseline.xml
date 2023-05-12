@@ -300,27 +300,11 @@
       <code>$intentId</code>
     </ImplicitToStringCast>
     <MixedArgument>
-      <code>$amountRefunded</code>
-      <code>$charge</code>
-      <code><![CDATA[$charge->id]]></code>
-      <code><![CDATA[$charge->id]]></code>
-      <code><![CDATA[$charge->id]]></code>
-      <code><![CDATA[$charge->id]]></code>
-      <code><![CDATA[$charge->status]]></code>
       <code><![CDATA[$event->data->object]]></code>
       <code><![CDATA[$this->stripeSettings['accountWebhookSecret']]]></code>
       <code><![CDATA[$txn->fee_details[0]->currency]]></code>
       <code><![CDATA[$txn->fee_details[0]->type]]></code>
     </MixedArgument>
-    <MixedAssignment>
-      <code>$amountRefunded</code>
-      <code>$charge</code>
-    </MixedAssignment>
-    <MixedPropertyFetch>
-      <code><![CDATA[$charge->id]]></code>
-      <code><![CDATA[$charge->status]]></code>
-      <code><![CDATA[$event->data->object->amount_refunded]]></code>
-    </MixedPropertyFetch>
     <PossiblyInvalidArgument>
       <code><![CDATA[$charge->balance_transaction]]></code>
       <code><![CDATA[$charge->transfer]]></code>

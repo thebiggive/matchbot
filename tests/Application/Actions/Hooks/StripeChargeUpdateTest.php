@@ -7,12 +7,17 @@ namespace MatchBot\Tests\Application\Actions\Hooks;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use Prophecy\Argument;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\StripeClient;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
+use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
+use Symfony\Component\Notifier\Message\ChatMessage;
 
 class StripeChargeUpdateTest extends StripeTest
 {
@@ -367,6 +372,10 @@ class StripeChargeUpdateTest extends StripeTest
         $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
         $time = (string) time();
 
+        $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
+        // Double-check that the normal success case isn't messaging Slack.
+        $chatterProphecy->send(Argument::type(ChatMessage::class))->shouldNotBeCalled();
+
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->findOneBy(['chargeId' => 'ch_externalId_123'])
@@ -386,6 +395,61 @@ class StripeChargeUpdateTest extends StripeTest
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
+
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+
+        $response = $app->handle($request);
+
+        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
+        $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
+        $this->assertEquals('1.00', $donation->getTipAmount());
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+
+    public function testSuccessfulOverRefund(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = $this->getStripeHookMock('ch_over_refunded');
+        $donation = $this->getTestDonation();
+        $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
+        $time = (string) time();
+
+        $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
+        // We expect a Slack notice about the unusual over-refund.
+
+        $options = (new SlackOptions())
+            ->block((new SlackHeaderBlock('[test] Over-refund detected')))
+            ->block((new SlackSectionBlock())->text('Over-refund detected for donation 12345678-1234-1234-1234-1234567890ab based on charge.refunded hook. Donation inc. tip was 124.45 GBP and refund or dispute was 134.45 GBP'))
+            ->iconEmoji(':o');
+        $message = (new ChatMessage('Over-refund detected'))
+            ->options($options);
+        $chatterProphecy->send($message)->shouldBeCalledOnce();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+
+        $donationRepoProphecy
+            ->releaseMatchFunds($donation)
+            ->shouldBeCalledOnce();
+
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
 
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
@@ -452,7 +516,15 @@ class StripeChargeUpdateTest extends StripeTest
 
         $body = $this->getStripeHookMock('ch_unsupported_partial_refund');
         $donation = $this->getTestDonation();
-        $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
+        /**
+         * @var array{
+         *    stripe: array{
+         *      accountWebhookSecret: string
+         *    }
+         *  } $settings
+         */
+        $settings = $container->get('settings');
+        $webhookSecret = $settings['stripe']['accountWebhookSecret'];
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);

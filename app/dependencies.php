@@ -23,6 +23,7 @@ use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
@@ -91,9 +92,26 @@ return function (ContainerBuilder $containerBuilder) {
             return new Chatter($transport);
         },
 
-        SlackChannelChatterFactory::class => static function (ContainerInterface $c): SlackChannelChatterFactory {
+        StripeChatterInterface::class => static function (ContainerInterface $c): ChatterInterface {
+            /**
+             * @var array{
+             *    notifier: array{
+             *      slack: array{
+             *        stripe_channel: string
+             *      }
+             *    }
+             *  } $settings
+             */
             $settings = $c->get('settings');
-            assert(is_array($settings));
+            $stripeChannel = $settings['notifier']['slack']['stripe_channel'];
+            /** @var SlackChannelChatterFactory $chatterFactory */
+            $chatterFactory = $c->get(SlackChannelChatterFactory::class);
+            return $chatterFactory->makeChatter($stripeChannel);
+        },
+
+        SlackChannelChatterFactory::class => static function (ContainerInterface $c): SlackChannelChatterFactory {
+            /** @var array $settings */
+            $settings = $c->get('settings');
             /** @psalm-suppress MixedArrayAccess $token */
             $token = $settings['notifier']['slack']['api_token'];
             assert(is_string($token));
