@@ -296,10 +296,7 @@ class StripeChargeUpdate extends Stripe
     }
 
     /**
-     * @param string $eventType
-     * @param Donation $donation
      * @param int $refundedOrDisputedAmount In small currency unit, e.g. pence or cents.
-     * @param string $refundedOrDisputedCurrencyCode
      */
     private function warnAboutOverRefund(
         string $eventType,
