@@ -6,7 +6,7 @@ namespace MatchBot\Application\Actions\Hooks;
 
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Messenger\StripePayout;
-use MatchBot\Application\SlackChannelChatterFactory;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -26,29 +26,13 @@ use Symfony\Component\Notifier\Message\ChatMessage;
  */
 class StripePayoutUpdate extends Stripe
 {
-    private SlackChannelChatterFactory $chatterFactory;
-    private string $slackStripeChannel;
-
     public function __construct(
         ContainerInterface $container,
         LoggerInterface $logger,
         private RoutableMessageBus $bus,
-        SlackChannelChatterFactory $chatterFactory
+        private StripeChatterInterface $chatter,
     ) {
         parent::__construct($container, $logger);
-        $this->chatterFactory = $chatterFactory;
-
-        /**
-         * @var array{
-         *    notifier: array{
-         *      slack: array{
-         *        stripe_channel: string
-         *      }
-         *    }
-         *  } $settings
-         */
-        $settings = $container->get('settings');
-        $this->slackStripeChannel = $settings['notifier']['slack']['stripe_channel'];
     }
 
     /**
@@ -83,7 +67,6 @@ class StripePayoutUpdate extends Stripe
                     $this->event->data->object->id,
                     $this->event->account,
                 );
-                $stripeChannel = $this->chatterFactory->makeChatter($this->slackStripeChannel);
 
                 $this->logger->warning($failureMessage);
                 /** @var string $env */
@@ -93,7 +76,7 @@ class StripePayoutUpdate extends Stripe
                     $env,
                     $failureMessage,
                 );
-                $stripeChannel->send(new ChatMessage($failureMessageWithContext));
+                $this->chatter->send(new ChatMessage($failureMessageWithContext));
 
                 return $this->respond($response, new ActionPayload(200));
             default:

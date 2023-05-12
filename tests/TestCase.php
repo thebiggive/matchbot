@@ -6,6 +6,7 @@ namespace MatchBot\Tests;
 
 use DI\ContainerBuilder;
 use Exception;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -80,6 +81,10 @@ class TestCase extends PHPUnitTestCase
 
         // By default, tests don't get a real logger.
         $container->set(LoggerInterface::class, new NullLogger());
+
+        // By default, tests don't get a real #stripe chat sender – we replace this when we
+        // want to make specific assertions about Stripe messages sent or not.
+        $container->set(StripeChatterInterface::class, $this->prophesize(StripeChatterInterface::class)->reveal());
 
         // Instantiate the app
         AppFactory::setContainer($container);
