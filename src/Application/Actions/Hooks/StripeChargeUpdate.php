@@ -240,7 +240,7 @@ class StripeChargeUpdate extends Stripe
         // like a simple refund from a donation status perspective.
         $isOverRefund = (
             $donation->getAmountFractionalIncTip() === $charge->amount_captured &&
-             $amountRefunded > $donation->getAmountFractionalIncTip()
+            $amountRefunded > $donation->getAmountFractionalIncTip()
         );
 
         // Available status' (pending, succeeded, failed, canceled),
