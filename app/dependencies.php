@@ -92,6 +92,8 @@ return function (ContainerBuilder $containerBuilder) {
             return new Chatter($transport);
         },
 
+        // Don't inject this directly for now, since its return type doesn't actually implement
+        // our custom interface. We're working around needing two services with distinct channels.
         StripeChatterInterface::class => static function (ContainerInterface $c): ChatterInterface {
             /**
              * @var array{
