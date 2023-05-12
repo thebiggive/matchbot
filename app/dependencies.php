@@ -110,8 +110,8 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         SlackChannelChatterFactory::class => static function (ContainerInterface $c): SlackChannelChatterFactory {
-            /** @var array $settings */
             $settings = $c->get('settings');
+            assert(is_array($settings));
             /** @psalm-suppress MixedArrayAccess $token */
             $token = $settings['notifier']['slack']['api_token'];
             assert(is_string($token));
