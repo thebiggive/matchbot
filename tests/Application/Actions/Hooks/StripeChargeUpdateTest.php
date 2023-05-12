@@ -317,7 +317,62 @@ class StripeChargeUpdateTest extends StripeTest
         $this->assertEquals(204, $response->getStatusCode());
     }
 
-    public function testDisputeLostWithUnexpectedAmount(): void
+    public function testDisputeLostWithAmountUnexpectedlyHighIsStillProcessedButAlertsSlack(): void
+    {
+        // arrange (plus assert some donation repo & chatter method call counts)
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $body = $this->getStripeHookMock('ch_dispute_closed_lost_higher_amount');
+        $donation = $this->getTestDonation();
+        $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
+        $time = (string) time();
+
+        $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
+
+        $options = (new SlackOptions())
+            ->block((new SlackHeaderBlock('[test] Over-refund detected')))
+            ->block((new SlackSectionBlock())->text('Over-refund detected for donation 12345678-1234-1234-1234-1234567890ab based on charge.dispute.closed (lost) hook. Donation inc. tip was 124.45 GBP and refund or dispute was 124.46 GBP'))
+            ->iconEmoji(':o');
+        $message = (new ChatMessage('Over-refund detected'))
+            ->options($options);
+
+        $chatterProphecy->send($message)->shouldBeCalledOnce();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->findAndLockOneBy(['transactionId' => 'pi_externalId_123'])
+            ->willReturn($donation)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->releaseMatchFunds($donation)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
+
+        // act
+        $request = $this->createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+
+        $response = $app->handle($request);
+
+        // assert
+        $this->assertEquals('ch_externalId_123', $donation->getChargeId());
+        $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
+        $this->assertEquals('1.00', $donation->getTipAmount());
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+
+    public function testDisputeLostWithAmountTooLowIsSkipped(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -363,6 +418,7 @@ class StripeChargeUpdateTest extends StripeTest
 
     public function testSuccessfulFullRefund(): void
     {
+        // arrange (plus assert a couple of donation repo method call counts)
         $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $app->getContainer();
@@ -373,10 +429,12 @@ class StripeChargeUpdateTest extends StripeTest
         $time = (string) time();
 
         $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
+
         // Double-check that the normal success case isn't messaging Slack.
         $chatterProphecy->send(Argument::type(ChatMessage::class))->shouldNotBeCalled();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+
         $donationRepoProphecy
             ->findOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
@@ -397,11 +455,13 @@ class StripeChargeUpdateTest extends StripeTest
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
 
+        // act
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
 
         $response = $app->handle($request);
 
+        // assert
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
         $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
         $this->assertEquals('1.00', $donation->getTipAmount());
@@ -416,6 +476,7 @@ class StripeChargeUpdateTest extends StripeTest
      */
     public function testOverRefundSendsSlackNoticeAndUpdatesRecord(): void
     {
+        // arrange
         $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $app->getContainer();
@@ -426,7 +487,6 @@ class StripeChargeUpdateTest extends StripeTest
         $time = (string) time();
 
         $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
-        // We expect a Slack notice about the unusual over-refund.
 
         $options = (new SlackOptions())
             ->block((new SlackHeaderBlock('[test] Over-refund detected')))
@@ -434,7 +494,6 @@ class StripeChargeUpdateTest extends StripeTest
             ->iconEmoji(':o');
         $message = (new ChatMessage('Over-refund detected'))
             ->options($options);
-        $chatterProphecy->send($message)->shouldBeCalledOnce();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -457,10 +516,16 @@ class StripeChargeUpdateTest extends StripeTest
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
 
+        // act
         $request = $this->createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
 
         $response = $app->handle($request);
+
+        // assert
+
+        // We expect a Slack notice about the unusual over-refund.
+        $chatterProphecy->send($message)->shouldBeCalledOnce();
 
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
         $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
@@ -473,10 +538,18 @@ class StripeChargeUpdateTest extends StripeTest
         $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $app->getContainer();
+        /**
+         * @var array{
+         *    stripe: array{
+         *      accountWebhookSecret: string
+         *    }
+         *  } $settings
+         */
+        $settings = $container->get('settings');
+        $webhookSecret = $settings['stripe']['accountWebhookSecret'];
 
         $body = $this->getStripeHookMock('ch_tip_refunded');
         $donation = $this->getTestDonation();
-        $webhookSecret = $container->get('settings')['stripe']['accountWebhookSecret'];
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
