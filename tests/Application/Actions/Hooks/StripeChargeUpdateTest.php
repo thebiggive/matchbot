@@ -335,10 +335,10 @@ class StripeChargeUpdateTest extends StripeTest
             ->block((new SlackHeaderBlock('[test] Over-refund detected')))
             ->block((new SlackSectionBlock())->text('Over-refund detected for donation 12345678-1234-1234-1234-1234567890ab based on charge.dispute.closed (lost) hook. Donation inc. tip was 124.45 GBP and refund or dispute was 124.46 GBP'))
             ->iconEmoji(':o');
-        $message = (new ChatMessage('Over-refund detected'))
+        $expectedMessage = (new ChatMessage('Over-refund detected'))
             ->options($options);
 
-        $chatterProphecy->send($message)->shouldBeCalledOnce();
+        $chatterProphecy->send($expectedMessage)->shouldBeCalledOnce();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -492,7 +492,7 @@ class StripeChargeUpdateTest extends StripeTest
             ->block((new SlackHeaderBlock('[test] Over-refund detected')))
             ->block((new SlackSectionBlock())->text('Over-refund detected for donation 12345678-1234-1234-1234-1234567890ab based on charge.refunded hook. Donation inc. tip was 124.45 GBP and refund or dispute was 134.45 GBP'))
             ->iconEmoji(':o');
-        $message = (new ChatMessage('Over-refund detected'))
+        $expectedMessage = (new ChatMessage('Over-refund detected'))
             ->options($options);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -525,7 +525,7 @@ class StripeChargeUpdateTest extends StripeTest
         // assert
 
         // We expect a Slack notice about the unusual over-refund.
-        $chatterProphecy->send($message)->shouldBeCalledOnce();
+        $chatterProphecy->send($expectedMessage)->shouldBeCalledOnce();
 
         $this->assertEquals('ch_externalId_123', $donation->getChargeId());
         $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
