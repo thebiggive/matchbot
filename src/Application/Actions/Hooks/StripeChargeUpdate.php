@@ -21,6 +21,7 @@ use Stripe\StripeClient;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
 use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
+use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
 /**
@@ -30,14 +31,23 @@ use Symfony\Component\Notifier\Message\ChatMessage;
  */
 class StripeChargeUpdate extends Stripe
 {
+    private ChatterInterface $chatter;
+
     public function __construct(
         protected DonationRepository $donationRepository,
         protected EntityManagerInterface $entityManager,
-        protected StripeChatterInterface $chatter,
         protected StripeClient $stripeClient,
         ContainerInterface $container,
         LoggerInterface $logger,
     ) {
+        /**
+         * @var ChatterInterface $chatter
+         * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
+         * is final and does not implement our custom interface.
+         */
+        $chatter = $container->get(StripeChatterInterface::class);
+        $this->chatter = $chatter;
+
         parent::__construct($container, $logger);
     }
 

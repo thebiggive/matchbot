@@ -17,6 +17,7 @@ use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Messenger\Stamp\BusNameStamp;
 use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
+use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
 /**
@@ -26,12 +27,21 @@ use Symfony\Component\Notifier\Message\ChatMessage;
  */
 class StripePayoutUpdate extends Stripe
 {
+    private ChatterInterface $chatter;
+
     public function __construct(
         ContainerInterface $container,
         LoggerInterface $logger,
         private RoutableMessageBus $bus,
-        private StripeChatterInterface $chatter,
     ) {
+        /**
+         * @var ChatterInterface $chatter
+         * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
+         * is final and does not implement our custom interface.
+         */
+        $chatter = $container->get(StripeChatterInterface::class);
+        $this->chatter = $chatter;
+
         parent::__construct($container, $logger);
     }
 
