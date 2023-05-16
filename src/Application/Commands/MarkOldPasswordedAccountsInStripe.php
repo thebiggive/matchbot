@@ -4,6 +4,7 @@ namespace MatchBot\Application\Commands;
 
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
+use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -52,8 +53,16 @@ class MarkOldPasswordedAccountsInStripe extends LockingCommand
 
             usleep(20_000);
 
-            $this->stripeClient->customers->update($row['stripe_customer_id'], ['metadata' => ['hasPasswordSince' => $row['updated_at'], 'emailAddress' => $row['email_address']]]);
-            $this->logger->info("Set password metadata in stripe for user " . $row['uuid']);
+            try {
+                $this->stripeClient->customers->update($row['stripe_customer_id'], ['metadata' => ['hasPasswordSince' => $row['updated_at'], 'emailAddress' => $row['email_address']]]);
+                $this->logger->info("Set password metadata in stripe for user " . $row['uuid']);
+            } catch (ApiErrorException $exception) {
+                if (str_starts_with($exception->getMessage(), 'No such customer:')) {
+                    $this->logger->info("Customer was deleted in Stripe for user " . $row['uuid']);
+                } else {
+                    throw $exception;
+                }
+            }
         }
 
         if (isset($row)) {
