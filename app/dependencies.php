@@ -23,6 +23,7 @@ use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
@@ -89,6 +90,25 @@ return function (ContainerBuilder $containerBuilder) {
             );
 
             return new Chatter($transport);
+        },
+
+        // Don't inject this directly for now, since its return type doesn't actually implement
+        // our custom interface. We're working around needing two services with distinct channels.
+        StripeChatterInterface::class => static function (ContainerInterface $c): ChatterInterface {
+            /**
+             * @var array{
+             *    notifier: array{
+             *      slack: array{
+             *        stripe_channel: string
+             *      }
+             *    }
+             *  } $settings
+             */
+            $settings = $c->get('settings');
+            $stripeChannel = $settings['notifier']['slack']['stripe_channel'];
+            /** @var SlackChannelChatterFactory $chatterFactory */
+            $chatterFactory = $c->get(SlackChannelChatterFactory::class);
+            return $chatterFactory->makeChatter($stripeChannel);
         },
 
         SlackChannelChatterFactory::class => static function (ContainerInterface $c): SlackChannelChatterFactory {

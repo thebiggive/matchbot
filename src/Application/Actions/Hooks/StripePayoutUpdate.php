@@ -6,7 +6,7 @@ namespace MatchBot\Application\Actions\Hooks;
 
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Messenger\StripePayout;
-use MatchBot\Application\SlackChannelChatterFactory;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -17,6 +17,7 @@ use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Messenger\Stamp\BusNameStamp;
 use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
+use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
 /**
@@ -26,29 +27,22 @@ use Symfony\Component\Notifier\Message\ChatMessage;
  */
 class StripePayoutUpdate extends Stripe
 {
-    private SlackChannelChatterFactory $chatterFactory;
-    private string $slackStripeChannel;
+    private ChatterInterface $chatter;
 
     public function __construct(
         ContainerInterface $container,
         LoggerInterface $logger,
         private RoutableMessageBus $bus,
-        SlackChannelChatterFactory $chatterFactory
     ) {
-        parent::__construct($container, $logger);
-        $this->chatterFactory = $chatterFactory;
-
         /**
-         * @var array{
-         *    notifier: array{
-         *      slack: array{
-         *        stripe_channel: string
-         *      }
-         *    }
-         *  } $settings
+         * @var ChatterInterface $chatter
+         * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
+         * is final and does not implement our custom interface.
          */
-        $settings = $container->get('settings');
-        $this->slackStripeChannel = $settings['notifier']['slack']['stripe_channel'];
+        $chatter = $container->get(StripeChatterInterface::class);
+        $this->chatter = $chatter;
+
+        parent::__construct($container, $logger);
     }
 
     /**
@@ -83,7 +77,6 @@ class StripePayoutUpdate extends Stripe
                     $this->event->data->object->id,
                     $this->event->account,
                 );
-                $stripeChannel = $this->chatterFactory->makeChatter($this->slackStripeChannel);
 
                 $this->logger->warning($failureMessage);
                 /** @var string $env */
@@ -93,7 +86,7 @@ class StripePayoutUpdate extends Stripe
                     $env,
                     $failureMessage,
                 );
-                $stripeChannel->send(new ChatMessage($failureMessageWithContext));
+                $this->chatter->send(new ChatMessage($failureMessageWithContext));
 
                 return $this->respond($response, new ActionPayload(200));
             default:

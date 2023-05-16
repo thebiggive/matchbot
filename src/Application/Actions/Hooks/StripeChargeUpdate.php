@@ -6,6 +6,7 @@ namespace MatchBot\Application\Actions\Hooks;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -17,6 +18,11 @@ use Stripe\Charge;
 use Stripe\Dispute;
 use Stripe\Event;
 use Stripe\StripeClient;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
+use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
+use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\Notifier\Message\ChatMessage;
 
 /**
  * Handle charge.succeeded, charge.refunded and charge.dispute.closed events from a Stripe Direct webhook.
@@ -25,6 +31,8 @@ use Stripe\StripeClient;
  */
 class StripeChargeUpdate extends Stripe
 {
+    private ChatterInterface $chatter;
+
     public function __construct(
         protected DonationRepository $donationRepository,
         protected EntityManagerInterface $entityManager,
@@ -32,6 +40,14 @@ class StripeChargeUpdate extends Stripe
         ContainerInterface $container,
         LoggerInterface $logger,
     ) {
+        /**
+         * @var ChatterInterface $chatter
+         * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
+         * is final and does not implement our custom interface.
+         */
+        $chatter = $container->get(StripeChatterInterface::class);
+        $this->chatter = $chatter;
+
         parent::__construct($container, $logger);
     }
 
@@ -170,7 +186,8 @@ class StripeChargeUpdate extends Stripe
             return $this->respond($response, new ActionPayload(204));
         }
 
-        if ($donation->getAmountFractionalIncTip() !== $dispute->amount) {
+        if ($donation->getAmountFractionalIncTip() > $dispute->amount) {
+            // Less than the original amount was returned/refunded, which we don't expect.
             $this->logger->error(sprintf(
                 'Skipping unexpected dispute lost amount %s pence for donation %s based on Payment Intent ID %s',
                 $dispute->amount, // int: pence / cents.
@@ -180,6 +197,18 @@ class StripeChargeUpdate extends Stripe
             $this->entityManager->rollback();
 
             return $this->respond($response, new ActionPayload(204));
+        }
+
+        if ($dispute->amount > $donation->getAmountFractionalIncTip()) {
+            // More than the original amount was returned/refunded, which we don't
+            // *really* expect but are best to continue processing as a full refund
+            // with a warning.
+            $this->warnAboutOverRefund(
+                'charge.dispute.closed (lost)',
+                $donation,
+                $dispute->amount,
+                $dispute->currency,
+            );
         }
 
         $this->logger->info(sprintf(
@@ -198,8 +227,17 @@ class StripeChargeUpdate extends Stripe
 
     private function handleChargeRefunded(Event $event, Response $response): Response
     {
+        /** @var Charge $charge */
         $charge = $event->data->object;
-        $amountRefunded = $event->data->object->amount_refunded; // int: pence.
+        $amountRefunded = $charge->amount_refunded; // int: pence.
+
+        // Available status' (pending, succeeded, failed, canceled),
+        // see: https://stripe.com/docs/api/refunds/object.
+        // For now we support the successful refund path (inc. partial refund IF it's for the tip amount),
+        // converting status to the one MatchBot + SF use.
+        if ($charge->status !== 'succeeded') {
+            return $this->validationError($response, sprintf('Unsupported Status "%s"', $charge->status));
+        }
 
         $this->entityManager->beginTransaction();
 
@@ -214,15 +252,14 @@ class StripeChargeUpdate extends Stripe
 
         $isTipRefund = $donation->getTipAmountFractional() === $amountRefunded;
         $isFullRefund = $donation->getAmountFractionalIncTip() === $amountRefunded;
-
-        // Available status' (pending, succeeded, failed, canceled),
-        // see: https://stripe.com/docs/api/refunds/object.
-        // For now we support the successful refund path (inc. partial refund IF it's for the tip amount),
-        // converting status to the one MatchBot + SF use.
-        if ($charge->status !== 'succeeded') {
-            $this->entityManager->rollback();
-            return $this->validationError($response, sprintf('Unsupported Status "%s"', $charge->status));
-        }
+        // If things disagree about the original captured amount, this is still uncharted
+        // territory and we should refrain from processing. If that matches but there is an
+        // over-refund, we'll want to notify the team but we know we are best off handling it
+        // like a simple refund from a donation status perspective.
+        $isOverRefund = (
+            $donation->getAmountFractionalIncTip() === $charge->amount_captured &&
+            $amountRefunded > $donation->getAmountFractionalIncTip()
+        );
 
         if ($isTipRefund) {
             $this->logger->info(sprintf(
@@ -238,6 +275,20 @@ class StripeChargeUpdate extends Stripe
                 $charge->id,
             ));
             $donation->setDonationStatus(DonationStatus::Refunded);
+        } elseif ($isOverRefund) {
+            $this->warnAboutOverRefund(
+                'charge.refunded',
+                $donation,
+                $amountRefunded,
+                $charge->currency,
+            );
+
+            $this->logger->info(sprintf(
+                'Marking donation %s refunded (with extra) based on charge ID %s',
+                $donation->getUuid(),
+                $charge->id,
+            ));
+            $donation->setDonationStatus(DonationStatus::Refunded);
         } else {
             $this->logger->error(sprintf(
                 'Skipping unexpected partial non-tip refund amount %s pence for donation %s based on charge ID %s',
@@ -249,9 +300,43 @@ class StripeChargeUpdate extends Stripe
             return $this->respond($response, new ActionPayload(204));
         }
 
-        $this->doPostMarkRefundedUpdates($donation, $isFullRefund);
+        $this->doPostMarkRefundedUpdates($donation, $isFullRefund || $isOverRefund);
 
         return $this->respondWithData($response, $charge);
+    }
+
+    /**
+     * @param int $refundedOrDisputedAmount In small currency unit, e.g. pence or cents.
+     */
+    private function warnAboutOverRefund(
+        string $eventType,
+        Donation $donation,
+        int $refundedOrDisputedAmount,
+        string $refundedOrDisputedCurrencyCode,
+    ): void {
+        $detailsMessage = sprintf(
+            'Over-refund detected for donation %s based on %s hook. Donation inc. tip was %s %s and refund or dispute was %s %s',
+            $donation->getUuid(),
+            $eventType,
+            bcdiv((string) $donation->getAmountFractionalIncTip(),  '100', 2),
+            $donation->getCurrencyCode(),
+            bcdiv((string) $refundedOrDisputedAmount, '100', 2),
+            strtoupper($refundedOrDisputedCurrencyCode),
+        );
+        $this->logger->warning($detailsMessage);
+
+        $chatMessage = new ChatMessage('Over-refund detected');
+        $options = (new SlackOptions())
+            ->block((new SlackHeaderBlock(sprintf(
+                '[%s] %s',
+                (string) getenv('APP_ENV'),
+                'Over-refund detected',
+            ))))
+            ->block((new SlackSectionBlock())->text($detailsMessage))
+            ->iconEmoji(':o');
+        $chatMessage->options($options);
+
+        $this->chatter->send($chatMessage);
     }
 
     private function getOriginalFeeFractional(string $balanceTransactionId, string $expectedCurrencyCode): int
@@ -289,8 +374,11 @@ class StripeChargeUpdate extends Stripe
      * after a partial tip refund.
      *
      * Assumes it will be called only after starting a transaction pre-donation-select.
+     *
+     * @param Donation $donation
+     * @param bool $isCoreDonationReversed Should be true for full refunds, over-refunds and disputes closed lost. False for tip refunds.
      */
-    private function doPostMarkRefundedUpdates(Donation $donation, bool $isFullRefundOrLostDispute): void
+    private function doPostMarkRefundedUpdates(Donation $donation, bool $isCoreDonationReversed): void
     {
         $this->entityManager->persist($donation);
         $this->entityManager->flush();
@@ -299,7 +387,7 @@ class StripeChargeUpdate extends Stripe
         // Release match funds only if the donation was matched and
         // the refunded amount is equal to the local txn amount.
         if (
-            $isFullRefundOrLostDispute &&
+            $isCoreDonationReversed &&
             $donation->getDonationStatus()->isReversed() &&
             $donation->getCampaign()->isMatched()
         ) {

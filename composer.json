@@ -97,6 +97,7 @@
         "doctrine:migrate:generate": "doctrine-migrations generate",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
         "sa:check": "vendor/bin/psalm",
+        "sa:check-with-new-cache": "vendor/bin/psalm --clear-cache; vendor/bin/psalm",
         "lint:check": "phpcs --standard=phpcs.xml -s .",
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",
         "matchbot:claim-gift-aid": [

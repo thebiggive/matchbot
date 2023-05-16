@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Actions\Hooks;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Domain\DonationRepository;
 use Prophecy\Argument;
@@ -136,10 +137,8 @@ class StripePayoutUpdateTest extends StripeTest
         $container = $app->getContainer();
         $transport = new InMemoryTransport();
         $container->set(TransportInterface::class, $transport);
-        $stripeChatterFactoryProphecy = $this->prophesize(SlackChannelChatterFactory::class);
-        $chatterProphecy = $this->prophesize(ChatterInterface::class);
-        $container->set(SlackChannelChatterFactory::class, $stripeChatterFactoryProphecy->reveal());
-        $stripeChatterFactoryProphecy->makeChatter('stripe')->willReturn($chatterProphecy);
+        $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
+        $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
