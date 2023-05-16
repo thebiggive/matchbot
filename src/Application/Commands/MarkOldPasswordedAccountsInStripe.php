@@ -40,7 +40,7 @@ class MarkOldPasswordedAccountsInStripe extends LockingCommand
                        AND Person.created_at < "2023-04-19" -- We dont need to do accounts from after this date as the password status is already in stripe.
                                                             -- see https://github.com/thebiggive/identity/blob/443c4cbb2589f99de4709172104b99ad2ee7c5d6/src/Application/Actions/Person/Update.php#L213
                        ORDER BY Person.created_at ASC
-                       LIMIT 2 -- @todo increase the limit to do hundreds or thousands at a time after testing in production.
+                       LIMIT 200000 -- should be enough to complete over four runs
                        ',
             ['completed_up_to' => $completedUpTo]
         );
@@ -49,6 +49,8 @@ class MarkOldPasswordedAccountsInStripe extends LockingCommand
             \assert(is_string($row['stripe_customer_id']));
             \assert(is_string($row['uuid']));
             \assert(is_string($row['email_address']));
+
+            usleep(20_000);
 
             $this->stripeClient->customers->update($row['stripe_customer_id'], ['metadata' => ['hasPasswordSince' => $row['updated_at'], 'emailAddress' => $row['email_address']]]);
             $this->logger->info("Set password metadata in stripe for user " . $row['uuid']);
