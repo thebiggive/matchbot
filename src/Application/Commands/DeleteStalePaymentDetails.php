@@ -12,9 +12,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Deletes payment methods from Stripe if:
  *   1. they (or more specifically, their Customer) are 24h+ old; and
- *   2. they do not belong to a Person with a password set after mid-April 2023; and
+ *   2. they do not belong to a Person with a password set
  *   3. they are a credit/debit card based method; and
- *   4. they have not been used for any complete donations.
  */
 class DeleteStalePaymentDetails extends LockingCommand
 {
@@ -62,26 +61,6 @@ class DeleteStalePaymentDetails extends LockingCommand
             ]);
 
             foreach ($paymentMethods->autoPagingIterator() as $paymentMethod) {
-                /** @var string $cardFingerprint    Only "card" type methods are queried, and every
-                 *                                  card should have a string fingerprint.
-                 */
-                $cardFingerprint = $paymentMethod->card->fingerprint;
-
-                // Check if this payment method has been used for any successful charges.
-                // We may *query* (not list) charges and include a card's fingerprint (but
-                // not ID).
-                // https://stripe.com/docs/api/charges/search
-                // https://stripe.com/docs/search#supported-query-fields-for-each-resource
-                $charges = $this->stripeClient->charges->search([
-                    'query' => sprintf(
-                        'customer:"%s" and payment_method_details.card.fingerprint:"%s" and status:"succeeded"',
-                        $customer->id,
-                        $cardFingerprint,
-                    ),
-                    'limit' => static::STRIPE_PAGE_SIZE,
-                ]);
-
-                if ($charges->count() === 0) {
                     // Soft-delete / prevent reuse of the payment method.
                     $this->logger->info(sprintf(
                         'Detaching payment method %s, previously of customer %s',
@@ -90,7 +69,6 @@ class DeleteStalePaymentDetails extends LockingCommand
                     ));
                     $this->stripeClient->paymentMethods->detach($paymentMethod->id);
                     $methodsDeleted++;
-                }
             }
         }
 
