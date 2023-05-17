@@ -142,6 +142,10 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:update-campaigns"
         ],
+        "matchbot:mark-old-passworded-accounts-in-stripe": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:mark-old-passworded-accounts-in-stripe"
+        ],
         "matchbot:update-campaigns-inc-historic": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:update-campaigns --all"
