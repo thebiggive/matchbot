@@ -17,7 +17,6 @@ use LosMiddleware\RateLimit\RateLimitMiddleware;
 use LosMiddleware\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
-use MatchBot\Application\Commands\MarkOldPasswordedAccountsInStripe;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
@@ -346,15 +345,5 @@ return function (ContainerBuilder $containerBuilder) {
                 new PhpSerializer(),
             );
         },
-
-        MarkOldPasswordedAccountsInStripe::IDENTITY_DBAL_CONNECTION_SERVICE_NAME => static fn(ContainerInterface $_c): Connection =>
-            DriverManager::getConnection([
-                'dbname' => 'identity',
-                'user' => (string) getenv('IDENTITY_MYSQL_USER'),
-                'password' => (string) getenv('IDENTITY_MYSQL_PASSWORD'),
-                'host' => (string) getenv('IDENTITY_MYSQL_HOST'),
-                'port' => (int) getenv('IDENTITY_MYSQL_PORT'),
-                'driver' => 'pdo_mysql'
-            ])
     ]);
 };
