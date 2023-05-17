@@ -46,7 +46,7 @@ class DeleteStalePaymentDetails extends LockingCommand
         // The metadata restriction lets us better leave people with passwords since April 2023,
         // so this `query` covers conditions (1) and (2) from the class doc block.
         $customers = $this->stripeClient->customers->search([
-            'query' => "created<$oneDayAgo and metadata['hasPasswordSince']:null",
+            'query' => "created<$oneDayAgo and metadata['hasPasswordSince']:null and metadata['paymentMethodsCleared']:null",
             'limit' => static::STRIPE_PAGE_SIZE,
         ]);
 
@@ -70,6 +70,11 @@ class DeleteStalePaymentDetails extends LockingCommand
                     $this->stripeClient->paymentMethods->detach($paymentMethod->id);
                     $methodsDeleted++;
             }
+
+            $this->stripeClient->customers->update(
+                $customer->id,
+                ['metadata' => ['paymentMethodsCleared' => $this->initDate->format('Y-m-d H:i:s')]]
+            );
         }
 
         $output->writeln("Deleted $methodsDeleted payment methods from Stripe, having checked $customerCount customers");
