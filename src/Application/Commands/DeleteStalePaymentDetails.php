@@ -61,14 +61,14 @@ class DeleteStalePaymentDetails extends LockingCommand
             ]);
 
             foreach ($paymentMethods->autoPagingIterator() as $paymentMethod) {
-                    // Soft-delete / prevent reuse of the payment method.
-                    $this->logger->info(sprintf(
-                        'Detaching payment method %s, previously of customer %s',
-                        $paymentMethod->id,
-                        $customer->id,
-                    ));
-                    $this->stripeClient->paymentMethods->detach($paymentMethod->id);
-                    $methodsDeleted++;
+                // Soft-delete / prevent reuse of the payment method.
+                $this->logger->info(sprintf(
+                    'Detaching payment method %s, previously of customer %s',
+                    $paymentMethod->id,
+                    $customer->id,
+                ));
+                $this->stripeClient->paymentMethods->detach($paymentMethod->id);
+                $methodsDeleted++;
             }
 
             $this->stripeClient->customers->update(
