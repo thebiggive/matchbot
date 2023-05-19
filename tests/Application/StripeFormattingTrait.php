@@ -33,12 +33,4 @@ trait StripeFormattingTrait
 
         return $this->buildAutoIterableCollection(json_encode($collectionRaw));
     }
-
-    protected function buildEmptyCollection(): Collection|ObjectProphecy
-    {
-        $collectionRaw = new \stdClass();
-        $collectionRaw->data = [];
-
-        return $this->buildAutoIterableCollection(json_encode($collectionRaw));
-    }
 }
