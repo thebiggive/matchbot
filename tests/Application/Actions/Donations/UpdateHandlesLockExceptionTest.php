@@ -15,6 +15,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
@@ -57,7 +58,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
 
         $donation = $this->getDonation();
 
-        $this->setExpectationsForPersistAfterRetry($donationId, $donation, 'Pending');
+        $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Pending);
 
         $this->donationRepositoryProphecy->deriveFees($donation, 'some-card-brand', 'some-country')->shouldBeCalled()->willReturn($donation);
 
@@ -85,7 +86,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
 
         $donation = $this->getDonation();
 
-        $this->setExpectationsForPersistAfterRetry($donationId, $donation, 'Pending');
+        $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Cancelled);
 
         $this->donationRepositoryProphecy->push($donation, false)->shouldBeCalled()->willReturn(true);
         $this->donationRepositoryProphecy->releaseMatchFunds($donation)->shouldBeCalled();
@@ -171,9 +172,17 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
         JSON;
     }
 
-    public function setExpectationsForPersistAfterRetry(string $donationId, Donation $donation, string $newStatus): void
-    {
-        $this->donationRepositoryProphecy->findAndLockOneBy(['uuid' => $donationId])->willReturn($donation);
+    public function setExpectationsForPersistAfterRetry(
+        string $donationId,
+        Donation $donation,
+        DonationStatus $newStatus,
+    ): void {
+        $this->donationRepositoryProphecy->findAndLockOneBy(['uuid' => $donationId])
+            ->will(function () use ($donation) {
+                $donation->setDonationStatus(DonationStatus::Pending); // simulate loading pending donation from DB.
+
+                return $donation;
+            });
 
         $testCase = $this; // prophecy rebinds $this to point to the test double in the closure
         $this->entityManagerProphecy->flush()->will(function () use ($testCase) {
@@ -184,12 +193,11 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
             return null;
         });
 
-        $this->entityManagerProphecy->beginTransaction()->shouldBeCalled();
-        $this->entityManagerProphecy->refresh($donation, LockMode::PESSIMISTIC_WRITE)->shouldBeCalled()
-            ->will(function () use ($donation) {
-                $donation->setDonationStatus(DonationStatus::Pending); // simulate refreshing donation from DB.
-            });
-        $this->entityManagerProphecy->persist($donation)->shouldBeCalled();
-        $this->entityManagerProphecy->commit()->shouldBeCalled();
+        // On first lock exception, EM transaction is rolled back and a new one started.
+        $this->entityManagerProphecy->rollback()->shouldBeCalledOnce();
+
+        $this->entityManagerProphecy->beginTransaction()->shouldBeCalledTimes(2);
+        $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2); // One failure, one success
+        $this->entityManagerProphecy->commit()->shouldBeCalledOnce();
     }
 }

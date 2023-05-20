@@ -245,7 +245,6 @@
       <code>$lockWaitTimeoutException</code>
     </MixedArgument>
     <PossiblyNullArgument>
-      <code><![CDATA[$donation->getId()]]></code>
       <code><![CDATA[$exception->getStripeCode()]]></code>
       <code><![CDATA[$exception->getStripeCode()]]></code>
       <code><![CDATA[$exception->getStripeCode()]]></code>
@@ -254,9 +253,6 @@
     <PossiblyUndefinedVariable>
       <code>$lockWaitTimeoutException</code>
     </PossiblyUndefinedVariable>
-    <TooManyArguments>
-      <code>refresh</code>
-    </TooManyArguments>
     <TypeDoesNotContainType>
       <code><![CDATA[isset($donationData->status)]]></code>
     </TypeDoesNotContainType>
