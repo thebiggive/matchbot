@@ -59,22 +59,6 @@ class Update extends Action
             throw new DomainRecordNotFoundException('Missing donation ID');
         }
 
-        /** @var Donation $donation */
-        $this->entityManager->beginTransaction();
-
-        try {
-            $donation = $this->getDonationWithRetry($args['donationId']);
-        } catch (LockWaitTimeoutException $e) {
-            $this->logger->error("Lock Wait Timeout for donationId '{$args['donationId']}' even after retry");
-            throw $e;
-        }
-
-        if (!$donation) {
-            $this->entityManager->rollback();
-
-            throw new DomainRecordNotFoundException('Donation not found');
-        }
-
         $body = (string) $request->getBody();
 
         try {
@@ -91,8 +75,6 @@ class Update extends Action
             $message = 'Donation Update data deserialise error';
             $exceptionType = get_class($exception);
 
-            $this->entityManager->rollback();
-
             return $this->validationError($response,
                 "$message: $exceptionType - {$exception->getMessage()}",
                 $message,
@@ -101,21 +83,27 @@ class Update extends Action
         }
 
         if (!isset($donationData->status)) {
-            $this->entityManager->rollback();
-
             return $this->validationError($response,
                 "Donation ID {$args['donationId']} could not be updated with missing status",
                 'New status is required'
             );
         }
 
-
+        // Lock wait errors on the select OR update mean we should try the transaction again
+        // after a short pause, up to self::MAX_UPDATE_RETRY_COUNT times.
         $retryCount = 0;
         while ($retryCount < self::MAX_UPDATE_RETRY_COUNT) {
+            $this->entityManager->beginTransaction();
+
             try {
-                if ($retryCount > 0) {
-                    $this->entityManager->refresh($donation, LockMode::PESSIMISTIC_WRITE);
+                $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $args['donationId']]);
+
+                if (!$donation) {
+                    $this->entityManager->rollback();
+
+                    throw new DomainRecordNotFoundException('Donation not found');
                 }
+
                 if ($donationData->status !== 'Cancelled' && $donationData->status !== $donation->getDonationStatus()->value) {
                     $this->entityManager->rollback();
 
@@ -131,30 +119,23 @@ class Update extends Action
 
                 return $this->addData($donation, $donationData, $args, $response);
             } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
+                $this->logger->warning(sprintf(
+                    'Caught LockWaitTimeoutException in Update for donation %s, retry count %d',
+                    $args['donationId'],
+                    $retryCount,
+                ));
+
                 \usleep(100_000 * (2 ** $retryCount)); // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
                 $retryCount++;
+
+                $this->entityManager->rollback();
             }
         }
+
         throw new \Exception(
-            "Retry count exceeded trying to update donation #{$donation->getId()} , retried $retryCount times",
-            0,
-            $lockWaitTimeoutException
+            "Retry count exceeded trying to update donation {$args['donationId']} , retried $retryCount times",
         );
     }
-
-    /**
-     * @throws LockWaitTimeoutException
-     */
-    private function getDonationWithRetry(string $donationId): ?Donation
-    {
-        try {
-            return $this->donationRepository->findAndLockOneBy(['uuid' => $donationId]);
-        } catch (LockWaitTimeoutException) {
-            // allow one retry. If we fail a second time let the exception go uncaught and return 500
-            return $this->donationRepository->findAndLockOneBy(['uuid' => $donationId]);
-        }
-    }
-
 
     /**
      * Assumes it will be called only after starting a transaction pre-donation-select.
@@ -243,7 +224,7 @@ class Update extends Action
 
                 $this->logger->info(sprintf(
                     'Stripe lock "rate limit" hit while updating payment intent for donation %s – retrying in 1s...',
-                    $donation->getId(),
+                    $donation->getUuid(),
                 ));
                 sleep(1);
 

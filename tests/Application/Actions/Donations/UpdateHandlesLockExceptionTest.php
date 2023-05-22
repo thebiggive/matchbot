@@ -6,7 +6,6 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
-use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\Donations\Update;
@@ -15,6 +14,8 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
@@ -26,7 +27,7 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
-class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
+class UpdateHandlesLockExceptionTest extends TestCase
 {
     use ProphecyTrait;
 
@@ -57,7 +58,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
 
         $donation = $this->getDonation();
 
-        $this->setExpectationsForPersistAfterRetry($donationId, $donation, 'Pending');
+        $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Pending);
 
         $this->donationRepositoryProphecy->deriveFees($donation, 'some-card-brand', 'some-country')->shouldBeCalled()->willReturn($donation);
 
@@ -85,7 +86,7 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
 
         $donation = $this->getDonation();
 
-        $this->setExpectationsForPersistAfterRetry($donationId, $donation, 'Pending');
+        $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Cancelled);
 
         $this->donationRepositoryProphecy->push($donation, false)->shouldBeCalled()->willReturn(true);
         $this->donationRepositoryProphecy->releaseMatchFunds($donation)->shouldBeCalled();
@@ -171,25 +172,34 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
         JSON;
     }
 
-    public function setExpectationsForPersistAfterRetry(string $donationId, Donation $donation, string $newStatus): void
-    {
-        $this->donationRepositoryProphecy->findAndLockOneBy(['uuid' => $donationId])->willReturn($donation);
+    public function setExpectationsForPersistAfterRetry(
+        string $donationId,
+        Donation $donation,
+        DonationStatus $newStatus,
+    ): void {
+        $this->donationRepositoryProphecy->findAndLockOneBy(['uuid' => $donationId])
+            ->will(function () use ($donation) {
+                $donation->setDonationStatus(DonationStatus::Pending); // simulate loading pending donation from DB.
+
+                return $donation;
+            });
 
         $testCase = $this; // prophecy rebinds $this to point to the test double in the closure
-        $this->entityManagerProphecy->flush()->will(function () use ($testCase) {
+        $this->entityManagerProphecy->flush()->will(function () use ($donation, $newStatus, $testCase) {
             if ($testCase->alreadyThrewTimes < 1) { // we could make this 3 but that would slow test down.
                 $testCase->alreadyThrewTimes++;
                 throw new LockWaitTimeoutException($testCase->createStub(DriverException::class), null);
             }
+
+            TestCase::assertEquals($newStatus, $donation->getDonationStatus());
             return null;
         });
 
-        $this->entityManagerProphecy->beginTransaction()->shouldBeCalled();
-        $this->entityManagerProphecy->refresh($donation, LockMode::PESSIMISTIC_WRITE)->shouldBeCalled()
-            ->will(function () use ($donation) {
-                $donation->setDonationStatus(DonationStatus::Pending); // simulate refreshing donation from DB.
-            });
-        $this->entityManagerProphecy->persist($donation)->shouldBeCalled();
-        $this->entityManagerProphecy->commit()->shouldBeCalled();
+        // On first lock exception, EM transaction is rolled back and a new one started.
+        $this->entityManagerProphecy->rollback()->shouldBeCalledOnce();
+
+        $this->entityManagerProphecy->beginTransaction()->shouldBeCalledTimes(2);
+        $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2); // One failure, one success
+        $this->entityManagerProphecy->commit()->shouldBeCalledOnce();
     }
 }
