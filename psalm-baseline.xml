@@ -1573,9 +1573,6 @@
     <InternalMethod>
       <code><![CDATA[new LockWaitTimeoutException($testCase->createStub(DriverException::class), null)]]></code>
     </InternalMethod>
-    <PossiblyUnusedParam>
-      <code>$newStatus</code>
-    </PossiblyUnusedParam>
   </file>
   <file src="tests/Application/Actions/Donations/UpdateTest.php">
     <MixedArrayAccess>

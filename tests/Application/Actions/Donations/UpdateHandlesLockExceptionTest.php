@@ -6,7 +6,6 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
-use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\Donations\Update;
@@ -15,6 +14,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -27,7 +27,7 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
-class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
+class UpdateHandlesLockExceptionTest extends TestCase
 {
     use ProphecyTrait;
 
@@ -185,11 +185,13 @@ class UpdateHandlesLockExceptionTest extends \PHPUnit\Framework\TestCase
             });
 
         $testCase = $this; // prophecy rebinds $this to point to the test double in the closure
-        $this->entityManagerProphecy->flush()->will(function () use ($testCase) {
+        $this->entityManagerProphecy->flush()->will(function () use ($donation, $newStatus, $testCase) {
             if ($testCase->alreadyThrewTimes < 1) { // we could make this 3 but that would slow test down.
                 $testCase->alreadyThrewTimes++;
                 throw new LockWaitTimeoutException($testCase->createStub(DriverException::class), null);
             }
+
+            TestCase::assertEquals($newStatus, $donation->getDonationStatus());
             return null;
         });
 
