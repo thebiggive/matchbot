@@ -52,7 +52,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
             $this->logInfo(
-                "Marking Salesforce donation {$donation->getId()} as campaign removed; will not try to push again."
+                "Marking Salesforce donation {$donation->getUuid()} as campaign removed; will not try to push again."
             );
             $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_REMOVED);
             $this->getEntityManager()->persist($donation);
@@ -98,7 +98,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push the removed donation.
             $this->logInfo(
-                "Marking old Salesforce donation {$donation->getId()} as removed; will not try to push again."
+                "Marking old Salesforce donation {$donation->getUuid()} as removed; will not try to push again."
             );
             $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_REMOVED);
             $this->getEntityManager()->persist($donation);

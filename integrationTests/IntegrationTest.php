@@ -50,6 +50,10 @@ abstract class IntegrationTest extends TestCase
         return $service;
     }
 
+    /**
+     * Used in the past, maybe useful again, so
+     * @psalm-suppress PossiblyUnusedMethod
+     */
     public function getServiceByName(string $name): mixed
     {
         return $this->getContainer()->get($name);

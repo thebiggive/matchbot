@@ -241,22 +241,12 @@
     <InvalidArgument>
       <code>100_000 * (2 ** $retryCount)</code>
     </InvalidArgument>
-    <MixedArgument>
-      <code>$lockWaitTimeoutException</code>
-    </MixedArgument>
     <PossiblyNullArgument>
-      <code><![CDATA[$donation->getId()]]></code>
       <code><![CDATA[$exception->getStripeCode()]]></code>
       <code><![CDATA[$exception->getStripeCode()]]></code>
       <code><![CDATA[$exception->getStripeCode()]]></code>
       <code><![CDATA[$retryException->getStripeCode()]]></code>
     </PossiblyNullArgument>
-    <PossiblyUndefinedVariable>
-      <code>$lockWaitTimeoutException</code>
-    </PossiblyUndefinedVariable>
-    <TooManyArguments>
-      <code>refresh</code>
-    </TooManyArguments>
     <TypeDoesNotContainType>
       <code><![CDATA[isset($donationData->status)]]></code>
     </TypeDoesNotContainType>
@@ -1583,9 +1573,6 @@
     <InternalMethod>
       <code><![CDATA[new LockWaitTimeoutException($testCase->createStub(DriverException::class), null)]]></code>
     </InternalMethod>
-    <PossiblyUnusedParam>
-      <code>$newStatus</code>
-    </PossiblyUnusedParam>
   </file>
   <file src="tests/Application/Actions/Donations/UpdateTest.php">
     <MixedArrayAccess>

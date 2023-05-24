@@ -74,12 +74,6 @@ $commands = [
         $psr11App->get(FundRepository::class),
         $psr11App->get(LoggerInterface::class),
     ),
-    new MarkOldPasswordedAccountsInStripe(
-        $psr11App->get(LoggerInterface::class),
-        $psr11App->get(StripeClient::class),
-        $psr11App->get(Redis::class),
-        $psr11App->get(MarkOldPasswordedAccountsInStripe::IDENTITY_DBAL_CONNECTION_SERVICE_NAME),
-    ),
 ];
 
 foreach ($commands as $command) {
