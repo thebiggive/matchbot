@@ -113,6 +113,20 @@ class Update extends Action
                     );
                 }
 
+                if ($donationData->autoConfirmFromCashBalance && $donation->getPaymentMethodType() !== 'customer_balance') {
+                    $this->entityManager->rollback();
+
+                    // Log a warning to more easily spot occurrences in dashboards.
+                    $this->logger->warning(
+                        "Donation ID {$args['donationId']} auto-confirm attempted with '{$donation->getPaymentMethodType()}' payment method",
+                    );
+
+                    return $this->validationError($response,
+                        "Donation ID {$args['donationId']} could not be auto-confirmed",
+                        'Processing incomplete. Please refresh and check your donation funds balance'
+                    );
+                }
+
                 if ($donationData->status === 'Cancelled') {
                     return $this->cancel($donation, $response, $args);
                 }
@@ -262,6 +276,9 @@ class Update extends Action
             }
         }
 
+        // We hold off finishing the transaction for now, because the current logic
+        // involves rolling back our whole Update in *some* Stripe error scenarios.
+        // We don't have enough info to detect these without making the Stripe API call.
         $this->save($donation);
 
         return $this->respondWithData($response, $donation->toApiModel());
