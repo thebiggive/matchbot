@@ -1657,20 +1657,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setDonorCountryCode('GB');
-        $donation->setCurrencyCode('GBP');
-        $donation->setGiftAid(true);
-        $donation->setTipAmount('0');
-        $donation->setTipGiftAid(false);
-        $donation->setDonorHomeAddressLine1('99 Updated St');
-        $donation->setDonorHomePostcode('X1 1XY');
-        $donation->setDonorFirstName('Saul');
-        $donation->setDonorLastName('Williams');
-        $donation->setDonorEmailAddress('saul@example.com');
-        $donation->setTbgComms(true);
-        $donation->setCharityComms(false);
-        $donation->setChampionComms(false);
-        $donation->setDonorBillingAddress('Y1 1YX');
+        $donation = $this->prepareDonationBasics($donation);
         $donation->setPaymentMethodType('customer_balance');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -1776,20 +1763,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setDonorCountryCode('GB');
-        $donation->setCurrencyCode('GBP');
-        $donation->setGiftAid(true);
-        $donation->setTipAmount('0');
-        $donation->setTipGiftAid(false);
-        $donation->setDonorHomeAddressLine1('99 Updated St');
-        $donation->setDonorHomePostcode('X1 1XY');
-        $donation->setDonorFirstName('Saul');
-        $donation->setDonorLastName('Williams');
-        $donation->setDonorEmailAddress('saul@example.com');
-        $donation->setTbgComms(true);
-        $donation->setCharityComms(false);
-        $donation->setChampionComms(false);
-        $donation->setDonorBillingAddress('Y1 1YX');
+        $donation = $this->prepareDonationBasics($donation);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
@@ -1850,5 +1824,172 @@ class UpdateTest extends TestCase
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
         $this->assertEquals($expectedSerialised, $payload);
+    }
+
+    public function testAddDataAutoconfirmHitsNoPaymentMethodException(): void
+    {
+        // arrange
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+        $donation = $this->prepareDonationBasics($donation);
+        $donation->setPaymentMethodType('customer_balance');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
+        // Make it explicit that the payment method type is (the unsupported
+        // for auto-confirms) "card".
+        $donationInRepo->setPaymentMethodType('customer_balance');
+
+        $donationRepoProphecy
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($donationInRepo)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->deriveFees(Argument::type(Donation::class), null, null)
+            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled(); // Updates pushed to Salesforce
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy->flush()->shouldNotBeCalled();
+        $entityManagerProphecy->commit()->shouldNotBeCalled();
+
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+        $stripePaymentIntentsProphecy->update('pi_externalId_123', Argument::type('array'))
+            ->shouldBeCalledOnce();
+        $stripePaymentIntentsProphecy->confirm('pi_externalId_123')
+            ->willThrow(new InvalidRequestException("You cannot confirm this PaymentIntent because it's missing a payment method. To confirm the PaymentIntent with cus_aaa1111aa, specify a payment method attached to this customer along with the customer ID"))
+            ->shouldBeCalledOnce();
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $requestPayload = $donation->toApiModel();
+        $requestPayload['autoConfirmFromCashBalance'] = true;
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($requestPayload),
+        )
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        // act
+        $response = $app->handle($request->withAttribute('route', $route));
+
+        // assert
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(500, $response->getStatusCode());
+
+        $expectedPayload = new ActionPayload(500, ['error' => [
+            'type' => 'SERVER_ERROR',
+            'description' => 'Could not confirm Stripe Payment Intent',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $this->assertEquals($expectedSerialised, $payload);
+    }
+
+    public function testAddDataAutoconfirmHitsUnknownInvalidRequestException(): void
+    {
+        // arrange
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+        $donation = $this->prepareDonationBasics($donation);
+        $donation->setPaymentMethodType('customer_balance');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
+        // Make it explicit that the payment method type is (the unsupported
+        // for auto-confirms) "card".
+        $donationInRepo->setPaymentMethodType('customer_balance');
+
+        $donationRepoProphecy
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($donationInRepo)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->deriveFees(Argument::type(Donation::class), null, null)
+            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled(); // Updates pushed to Salesforce
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy->flush()->shouldNotBeCalled();
+        $entityManagerProphecy->commit()->shouldNotBeCalled();
+
+        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+        $stripePaymentIntentsProphecy->update('pi_externalId_123', Argument::type('array'))
+            ->shouldBeCalledOnce();
+        $stripePaymentIntentsProphecy->confirm('pi_externalId_123')
+            ->willThrow(new InvalidRequestException('Not the one we know!'))
+            ->shouldBeCalledOnce();
+        $stripeClientProphecy = $this->prophesize(StripeClient::class);
+        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $requestPayload = $donation->toApiModel();
+        $requestPayload['autoConfirmFromCashBalance'] = true;
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($requestPayload),
+        )
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        // assert [early]
+
+        // We re-throw this unknown type and leave it to be handled "downstream" in
+        // the shutdown handler.
+        $this->expectException(InvalidRequestException::class);
+        $this->expectExceptionMessage('Not the one we know!');
+
+        // act
+        $app->handle($request->withAttribute('route', $route));
+    }
+
+    private function prepareDonationBasics(Donation $donation): Donation
+    {
+        $donation->setDonorCountryCode('GB');
+        $donation->setCurrencyCode('GBP');
+        $donation->setGiftAid(true);
+        $donation->setTipAmount('0');
+        $donation->setTipGiftAid(false);
+        $donation->setDonorHomeAddressLine1('99 Updated St');
+        $donation->setDonorHomePostcode('X1 1XY');
+        $donation->setDonorFirstName('Saul');
+        $donation->setDonorLastName('Williams');
+        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setTbgComms(true);
+        $donation->setCharityComms(false);
+        $donation->setChampionComms(false);
+        $donation->setDonorBillingAddress('Y1 1YX');
+
+        return $donation;
     }
 }

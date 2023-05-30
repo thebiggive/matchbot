@@ -272,7 +272,29 @@ class Update extends Action
             }
 
             if ($donationData->autoConfirmFromCashBalance) {
-                $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
+                try {
+                    $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
+                } catch (InvalidRequestException $exception) {
+                    // Currently a typical Update call which auto-confirms is being made for just
+                    // that purpose. So our safest options are to return a 500 and roll back any
+                    // database changes.
+                    $this->entityManager->rollback();
+
+                    // To help analyse it quicker we handle the specific auto-confirm API failure we've
+                    // seen before with a distinct message, but both options give the client an HTTP 500,
+                    // as we expect neither with our updated guard conditions.
+                    if (str_contains($exception->getMessage(), 'missing a payment method')) {
+                        $this->logger->error(sprintf(
+                            'Stripe Payment Intent for donation ID %s was missing a payment method, so we could not confirm it',
+                            $donation->getUuid(),
+                        ));
+                        $error = new ActionError(ActionError::SERVER_ERROR, 'Could not confirm Stripe Payment Intent');
+
+                        return $this->respond($response, new ActionPayload(500, null, $error));
+                    }
+
+                    throw $exception;
+                }
             }
         }
 
