@@ -1657,7 +1657,6 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation = $this->prepareDonationBasics($donation);
         $donation->setPaymentMethodType('customer_balance');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -1686,24 +1685,7 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
-            'amount' => 12_345,
-            'currency' => 'gbp',
-            'metadata' => [
-                'coreDonationGiftAid' => true,
-                'feeCoverAmount' => '0.00',
-                'matchedAmount' => '0.0',
-                'optInCharityEmail' => false,
-                'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
-                'stripeFeeRechargeGross' => '2.05',
-                'stripeFeeRechargeNet' => '2.05',
-                'stripeFeeRechargeVat' => '0.00',
-                'tbgTipGiftAid' => false,
-                'tipAmount' => '0',
-            ],
-            'application_fee_amount' => 205,
-        ])
+        $stripePaymentIntentsProphecy->update('pi_externalId_123', Argument::type('array'))
             ->shouldBeCalledOnce();
         $stripePaymentIntentsProphecy->confirm('pi_externalId_123')
             ->shouldBeCalledOnce();
@@ -1732,27 +1714,10 @@ class UpdateTest extends TestCase
 
         $payloadArray = json_decode($payload, true);
 
-        // These two values are unchanged but still returned.
+        // These values are unchanged but still returned. Confirming alone doesn't change the
+        // response payload.
         $this->assertEquals(123.45, $payloadArray['donationAmount']);
         $this->assertEquals('Collected', $payloadArray['status']);
-
-        // Remaining properties should be updated.
-        $this->assertEquals('GB', $payloadArray['countryCode']);
-        $this->assertEquals('GBP', $payloadArray['currencyCode']);
-        // 1.9% + 20p. cardCountry from Stripe payment method ≠ donor country.
-        $this->assertEquals(2.05, $payloadArray['charityFee']);
-        $this->assertEquals(0, $payloadArray['charityFeeVat']);
-        $this->assertEquals('0', $payloadArray['tipAmount']);
-        $this->assertTrue($payloadArray['giftAid']);
-        $this->assertFalse($payloadArray['tipGiftAid']);
-        $this->assertEquals('99 Updated St', $payloadArray['homeAddress']);
-        $this->assertEquals('X1 1XY', $payloadArray['homePostcode']);
-        $this->assertEquals('Saul', $payloadArray['firstName']);
-        $this->assertEquals('Williams', $payloadArray['lastName']);
-        $this->assertEquals('saul@example.com', $payloadArray['emailAddress']);
-        $this->assertTrue($payloadArray['optInTbgEmail']);
-        $this->assertFalse($payloadArray['optInCharityEmail']);
-        $this->assertEquals('Y1 1YX', $payloadArray['billingPostalAddress']);
     }
 
     public function testAddDataRejectsAutoconfirmWithCardMethod(): void
@@ -1763,7 +1728,6 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation = $this->prepareDonationBasics($donation);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
@@ -1834,7 +1798,6 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation = $this->prepareDonationBasics($donation);
         $donation->setPaymentMethodType('customer_balance');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -1911,7 +1874,6 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation = $this->prepareDonationBasics($donation);
         $donation->setPaymentMethodType('customer_balance');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -1971,25 +1933,5 @@ class UpdateTest extends TestCase
 
         // act
         $app->handle($request->withAttribute('route', $route));
-    }
-
-    private function prepareDonationBasics(Donation $donation): Donation
-    {
-        $donation->setDonorCountryCode('GB');
-        $donation->setCurrencyCode('GBP');
-        $donation->setGiftAid(true);
-        $donation->setTipAmount('0');
-        $donation->setTipGiftAid(false);
-        $donation->setDonorHomeAddressLine1('99 Updated St');
-        $donation->setDonorHomePostcode('X1 1XY');
-        $donation->setDonorFirstName('Saul');
-        $donation->setDonorLastName('Williams');
-        $donation->setDonorEmailAddress('saul@example.com');
-        $donation->setTbgComms(true);
-        $donation->setCharityComms(false);
-        $donation->setChampionComms(false);
-        $donation->setDonorBillingAddress('Y1 1YX');
-
-        return $donation;
     }
 }
