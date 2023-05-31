@@ -541,13 +541,6 @@
       <code>$transactionId</code>
     </PossiblyUnusedProperty>
   </file>
-  <file src="src/Application/HttpModels/DonationCreate.php">
-    <MissingConstructor>
-      <code>$donationAmount</code>
-      <code>$projectId</code>
-      <code>$psp</code>
-    </MissingConstructor>
-  </file>
   <file src="src/Application/HttpModels/DonationCreatedResponse.php">
     <MissingConstructor>
       <code>$donation</code>

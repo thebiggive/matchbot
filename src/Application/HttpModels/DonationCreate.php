@@ -6,6 +6,7 @@ namespace MatchBot\Application\HttpModels;
 
 /**
  * Request-only payload for setting up new donations.
+ * @psalm-suppress MissingConstructor Seems we can't use an enum w/o default without hitting this.
  */
 class DonationCreate
 {
@@ -18,7 +19,7 @@ class DonationCreate
     public ?bool $optInCharityEmail = null;
     public ?bool $optInChampionEmail = null;
     public ?bool $optInTbgEmail = null;
-    public string $paymentMethodType = 'card'; // 'card' or 'customer_balance'.
+    public PaymentMethodType $paymentMethodType;
     public string $projectId;
     public string $psp;
     public ?string $pspCustomerId = null;

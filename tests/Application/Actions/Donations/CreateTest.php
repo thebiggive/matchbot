@@ -28,6 +28,10 @@ use UnexpectedValueException;
 
 class CreateTest extends TestCase
 {
+    /**
+     * While we don't test it separately, we now expect invalid `paymentMethodType` to be caught by the
+     * same condition, as the property is now an enum.
+     */
     public function testDeserialiseError(): void
     {
         $app = $this->getAppInstance();

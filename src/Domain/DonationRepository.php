@@ -11,6 +11,7 @@ use Doctrine\DBAL\LockMode;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\HttpModels\PaymentMethodType;
 use MatchBot\Application\Matching;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
@@ -72,7 +73,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function doUpdate(SalesforceWriteProxy $donation): bool
     {
         if ($donation->getPaymentMethodType() === null) {
-            $donation->setPaymentMethodType('card');
+            $donation->setPaymentMethodType(PaymentMethodType::card->name);
             $this->getEntityManager()->persist($donation);
         }
 
@@ -128,13 +129,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
             }
         }
 
-        if (!in_array($donationData->paymentMethodType, ['card', 'customer_balance'], true)) {
-            throw new \UnexpectedValueException(sprintf(
-                'Payment method %s is invalid',
-                $donationData->paymentMethodType,
-            ));
-        }
-
         if (!in_array($donationData->psp, ['stripe'], true)) {
             throw new \UnexpectedValueException(sprintf(
                 'PSP %s is invalid',
@@ -177,7 +171,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $donation = new Donation();
         $donation->setPsp($donationData->psp);
-        $donation->setPaymentMethodType($donationData->paymentMethodType);
+        $donation->setPaymentMethodType($donationData->paymentMethodType->name);
         $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setUuid((new UuidGenerator())->generateId($this->getEntityManager(), $donation));
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
