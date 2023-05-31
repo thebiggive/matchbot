@@ -48,9 +48,12 @@ class Update extends Action
     ) {
         parent::__construct($logger);
     }
+
     /**
      * @return Response
-     * @throws DomainRecordNotFoundException
+     * @throws DomainRecordNotFoundException on missing donation
+     * @throws ApiErrorException if Stripe Payment Intent confirm() fails, other than because of a
+     *                           missing payment method.
      */
     protected function action(Request $request, Response $response, array $args): Response
     {
@@ -153,6 +156,8 @@ class Update extends Action
 
     /**
      * Assumes it will be called only after starting a transaction pre-donation-select.
+     *
+     * @throws ApiErrorException if confirm() fails other than because of a missing payment method.
      */
     private function addData(Donation $donation, HttpModels\Donation $donationData, array $args, Response $response): Response
     {
@@ -284,7 +289,6 @@ class Update extends Action
                     // seen before with a distinct message, but both options give the client an HTTP 500,
                     // as we expect neither with our updated guard conditions.
                     if (str_starts_with($exception->getMessage(), "You cannot confirm this PaymentIntent because it's missing a payment method")) {
-
                         $this->logger->error(sprintf(
                             'Stripe Payment Intent for donation ID %s was missing a payment method, so we could not confirm it',
                             $donation->getUuid(),
