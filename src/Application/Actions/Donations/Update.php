@@ -283,7 +283,8 @@ class Update extends Action
                     // To help analyse it quicker we handle the specific auto-confirm API failure we've
                     // seen before with a distinct message, but both options give the client an HTTP 500,
                     // as we expect neither with our updated guard conditions.
-                    if (str_contains($exception->getMessage(), 'missing a payment method')) {
+                    if (str_starts_with($exception->getMessage(), "You cannot confirm this PaymentIntent because it's missing a payment method")) {
+
                         $this->logger->error(sprintf(
                             'Stripe Payment Intent for donation ID %s was missing a payment method, so we could not confirm it',
                             $donation->getUuid(),
