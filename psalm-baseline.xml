@@ -1584,7 +1584,6 @@
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['countryCode']]]></code>
-      <code><![CDATA[$payloadArray['countryCode']]]></code>
       <code><![CDATA[$payloadArray['currencyCode']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
@@ -1592,8 +1591,6 @@
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['emailAddress']]]></code>
-      <code><![CDATA[$payloadArray['emailAddress']]]></code>
-      <code><![CDATA[$payloadArray['firstName']]]></code>
       <code><![CDATA[$payloadArray['firstName']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
@@ -1601,7 +1598,6 @@
       <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['homeAddress']]]></code>
       <code><![CDATA[$payloadArray['homePostcode']]]></code>
-      <code><![CDATA[$payloadArray['lastName']]]></code>
       <code><![CDATA[$payloadArray['lastName']]]></code>
       <code><![CDATA[$payloadArray['matchedAmount']]]></code>
       <code><![CDATA[$payloadArray['matchedAmount']]]></code>
