@@ -7,10 +7,8 @@ namespace MatchBot\Domain;
 use DateTime;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Mapping\Column;
 use JetBrains\PhpStorm\Pure;
 use Messages;
 use Ramsey\Uuid\UuidInterface;
@@ -283,9 +281,9 @@ class Donation extends SalesforceWriteProxy
     protected ?string $pspCustomerId = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
+     * @ORM\Column(type="string",  enumType="MatchBot\Domain\PaymentMethodType", nullable=true)
      */
-    protected ?string $paymentMethodType = 'card';
+    protected ?PaymentMethodType $paymentMethodType = PaymentMethodType::Card;
 
     /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
@@ -377,7 +375,7 @@ class Donation extends SalesforceWriteProxy
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
             'pspCustomerId' => $this->getPspCustomerId(),
-            'pspMethodType' => $this->getPaymentMethodType(),
+            'pspMethodType' => $this->getPaymentMethodType()?->value,
             'status' => $this->getDonationStatus(),
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
@@ -1036,12 +1034,12 @@ class Donation extends SalesforceWriteProxy
         $this->pspCustomerId = $pspCustomerId;
     }
 
-    public function getPaymentMethodType(): ?string
+    public function getPaymentMethodType(): ?PaymentMethodType
     {
         return $this->paymentMethodType;
     }
 
-    public function setPaymentMethodType(string $paymentMethodType): void
+    public function setPaymentMethodType(PaymentMethodType $paymentMethodType): void
     {
         $this->paymentMethodType = $paymentMethodType;
     }
@@ -1060,16 +1058,16 @@ class Donation extends SalesforceWriteProxy
     public function getStripeMethodProperties(): array
     {
         $properties = [
-            'payment_method_types' => [$this->paymentMethodType],
+            'payment_method_types' => [$this->paymentMethodType?->value],
         ];
 
-        if ($this->paymentMethodType === 'customer_balance') {
+        if ($this->paymentMethodType === PaymentMethodType::CustomerBalance) {
             if ($this->currencyCode !== 'GBP') {
                 throw new \UnexpectedValueException('Customer balance payments only supported for GBP');
             }
 
             $properties['payment_method_data'] = [
-                'type' => 'customer_balance',
+                'type' => PaymentMethodType::CustomerBalance->value,
             ];
 
             $properties['payment_method_options'] = [
@@ -1103,7 +1101,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function getStripeOnBehalfOfProperties(): array
     {
-        if ($this->paymentMethodType === 'card') {
+        if ($this->paymentMethodType === PaymentMethodType::Card) {
             return ['on_behalf_of' => $this->getCampaign()->getCharity()->getStripeAccountId()];
         }
 
@@ -1117,7 +1115,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function supportsSavingPaymentMethod(): bool
     {
-        return $this->paymentMethodType === 'card';
+        return $this->paymentMethodType === PaymentMethodType::Card;
     }
 
     public function hasEnoughDataForSalesforce(): bool

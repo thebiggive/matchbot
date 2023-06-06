@@ -541,13 +541,6 @@
       <code>$transactionId</code>
     </PossiblyUnusedProperty>
   </file>
-  <file src="src/Application/HttpModels/DonationCreate.php">
-    <MissingConstructor>
-      <code>$donationAmount</code>
-      <code>$projectId</code>
-      <code>$psp</code>
-    </MissingConstructor>
-  </file>
   <file src="src/Application/HttpModels/DonationCreatedResponse.php">
     <MissingConstructor>
       <code>$donation</code>
@@ -1132,8 +1125,6 @@
     <PossiblyNullArgument>
       <code><![CDATA[$donation->getId()]]></code>
       <code><![CDATA[$donation->getSalesforceId()]]></code>
-      <code><![CDATA[$donationData->currencyCode]]></code>
-      <code><![CDATA[$donationData->currencyCode]]></code>
       <code>$funding</code>
     </PossiblyNullArgument>
     <PossiblyUndefinedVariable>
@@ -1579,7 +1570,6 @@
       <code><![CDATA[$payloadArray['billingPostalAddress']]]></code>
       <code><![CDATA[$payloadArray['billingPostalAddress']]]></code>
       <code><![CDATA[$payloadArray['billingPostalAddress']]]></code>
-      <code><![CDATA[$payloadArray['billingPostalAddress']]]></code>
       <code><![CDATA[$payloadArray['charityFee']]]></code>
       <code><![CDATA[$payloadArray['charityFee']]]></code>
       <code><![CDATA[$payloadArray['charityFee']]]></code>
@@ -1587,15 +1577,11 @@
       <code><![CDATA[$payloadArray['charityFee']]]></code>
       <code><![CDATA[$payloadArray['charityFee']]]></code>
       <code><![CDATA[$payloadArray['charityFee']]]></code>
-      <code><![CDATA[$payloadArray['charityFee']]]></code>
-      <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['countryCode']]]></code>
-      <code><![CDATA[$payloadArray['countryCode']]]></code>
-      <code><![CDATA[$payloadArray['currencyCode']]]></code>
       <code><![CDATA[$payloadArray['currencyCode']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
@@ -1603,19 +1589,13 @@
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['emailAddress']]]></code>
-      <code><![CDATA[$payloadArray['emailAddress']]]></code>
-      <code><![CDATA[$payloadArray['firstName']]]></code>
       <code><![CDATA[$payloadArray['firstName']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
-      <code><![CDATA[$payloadArray['giftAid']]]></code>
-      <code><![CDATA[$payloadArray['homeAddress']]]></code>
       <code><![CDATA[$payloadArray['homeAddress']]]></code>
       <code><![CDATA[$payloadArray['homePostcode']]]></code>
-      <code><![CDATA[$payloadArray['homePostcode']]]></code>
-      <code><![CDATA[$payloadArray['lastName']]]></code>
       <code><![CDATA[$payloadArray['lastName']]]></code>
       <code><![CDATA[$payloadArray['matchedAmount']]]></code>
       <code><![CDATA[$payloadArray['matchedAmount']]]></code>
@@ -1623,11 +1603,9 @@
       <code><![CDATA[$payloadArray['optInCharityEmail']]]></code>
       <code><![CDATA[$payloadArray['optInCharityEmail']]]></code>
       <code><![CDATA[$payloadArray['optInCharityEmail']]]></code>
-      <code><![CDATA[$payloadArray['optInCharityEmail']]]></code>
       <code><![CDATA[$payloadArray['optInTbgEmail']]]></code>
       <code><![CDATA[$payloadArray['optInTbgEmail']]]></code>
       <code><![CDATA[$payloadArray['optInTbgEmail']]]></code>
-      <code><![CDATA[$payloadArray['optInTbgEmail']]]></code>
       <code><![CDATA[$payloadArray['status']]]></code>
       <code><![CDATA[$payloadArray['status']]]></code>
       <code><![CDATA[$payloadArray['status']]]></code>
@@ -1638,8 +1616,6 @@
       <code><![CDATA[$payloadArray['tipAmount']]]></code>
       <code><![CDATA[$payloadArray['tipAmount']]]></code>
       <code><![CDATA[$payloadArray['tipAmount']]]></code>
-      <code><![CDATA[$payloadArray['tipAmount']]]></code>
-      <code><![CDATA[$payloadArray['tipGiftAid']]]></code>
       <code><![CDATA[$payloadArray['tipGiftAid']]]></code>
     </MixedArrayAccess>
     <MixedAssignment>
