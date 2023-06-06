@@ -28,10 +28,6 @@ use UnexpectedValueException;
 
 class CreateTest extends TestCase
 {
-    /**
-     * While we don't test it separately, we now expect invalid `paymentMethodType` to be caught by the
-     * same condition, as the property is now an enum.
-     */
     public function testDeserialiseError(): void
     {
         $app = $this->getAppInstance();
@@ -51,6 +47,33 @@ class CreateTest extends TestCase
         $expectedPayload = new ActionPayload(400, ['error' => [
             'type' => 'BAD_REQUEST',
             'description' => 'Donation Create data deserialise error',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertEquals(400, $response->getStatusCode());
+    }
+
+    public function testModelError(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->buildFromApiRequest(new DonationCreate()) // empty DonationCreate == {} deserialised.
+            ->willThrow(new UnexpectedValueException('Required field "projectId" not set'));
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $data = '{}'; // Valid JSON but `buildFromApiRequest()` will error
+        $request = $this->createRequest('POST', '/v1/donations', $data);
+        $response = $app->handle($request);
+
+        $payload = (string) $response->getBody();
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'Required field "projectId" not set',
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 

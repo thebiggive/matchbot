@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions\Donations;
 
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
@@ -47,12 +48,9 @@ class Update extends Action
     ) {
         parent::__construct($logger);
     }
-
     /**
      * @return Response
-     * @throws DomainRecordNotFoundException on missing donation
-     * @throws ApiErrorException if Stripe Payment Intent confirm() fails, other than because of a
-     *                           missing payment method.
+     * @throws DomainRecordNotFoundException
      */
     protected function action(Request $request, Response $response, array $args): Response
     {
@@ -115,21 +113,6 @@ class Update extends Action
                     );
                 }
 
-                if ($donationData->autoConfirmFromCashBalance && $donation->getPaymentMethodType() !== \MatchBot\Domain\PaymentMethodType::CustomerBalance) {
-                    $this->entityManager->rollback();
-
-                    // Log a warning to more easily spot occurrences in dashboards.
-                    $methodSummary = $donation->getPaymentMethodType()?->value ?? '[null]';
-                    $this->logger->warning(
-                        "Donation ID {$args['donationId']} auto-confirm attempted with '$methodSummary' payment method",
-                    );
-
-                    return $this->validationError($response,
-                        "Donation ID {$args['donationId']} could not be auto-confirmed",
-                        'Processing incomplete. Please refresh and check your donation funds balance'
-                    );
-                }
-
                 if ($donationData->status === 'Cancelled') {
                     return $this->cancel($donation, $response, $args);
                 }
@@ -156,8 +139,6 @@ class Update extends Action
 
     /**
      * Assumes it will be called only after starting a transaction pre-donation-select.
-     *
-     * @throws ApiErrorException if confirm() fails other than because of a missing payment method.
      */
     private function addData(Donation $donation, HttpModels\Donation $donationData, array $args, Response $response): Response
     {
@@ -277,29 +258,7 @@ class Update extends Action
             }
 
             if ($donationData->autoConfirmFromCashBalance) {
-                try {
-                    $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
-                } catch (InvalidRequestException $exception) {
-                    // Currently a typical Update call which auto-confirms is being made for just
-                    // that purpose. So our safest options are to return a 500 and roll back any
-                    // database changes.
-                    $this->entityManager->rollback();
-
-                    // To help analyse it quicker we handle the specific auto-confirm API failure we've
-                    // seen before with a distinct message, but both options give the client an HTTP 500,
-                    // as we expect neither with our updated guard conditions.
-                    if (str_starts_with($exception->getMessage(), "You cannot confirm this PaymentIntent because it's missing a payment method")) {
-                        $this->logger->error(sprintf(
-                            'Stripe Payment Intent for donation ID %s was missing a payment method, so we could not confirm it',
-                            $donation->getUuid(),
-                        ));
-                        $error = new ActionError(ActionError::SERVER_ERROR, 'Could not confirm Stripe Payment Intent');
-
-                        return $this->respond($response, new ActionPayload(500, null, $error));
-                    }
-
-                    throw $exception;
-                }
+                $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
             }
         }
 
