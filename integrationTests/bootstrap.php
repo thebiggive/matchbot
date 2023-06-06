@@ -26,6 +26,7 @@ $container = require __DIR__ . '/../bootstrap.php';
 IntegrationTest::setContainer($container);
 $container->set(DonationRecaptchaMiddleware::class, $noOpMiddlware);
 $container->set(RateLimitMiddleware::class, $noOpMiddlware);
+$container->set(\Psr\Log\LoggerInterface::class, new \Psr\Log\NullLogger());
 
 // Instantiate the app
 AppFactory::setContainer($container);
