@@ -119,8 +119,9 @@ class Update extends Action
                     $this->entityManager->rollback();
 
                     // Log a warning to more easily spot occurrences in dashboards.
+                    $methodSummary = $donation->getPaymentMethodType()?->value ?? '[null]';
                     $this->logger->warning(
-                        "Donation ID {$args['donationId']} auto-confirm attempted with '{$donation->getPaymentMethodType()->value}' payment method",
+                        "Donation ID {$args['donationId']} auto-confirm attempted with '$methodSummary' payment method",
                     );
 
                     return $this->validationError($response,
