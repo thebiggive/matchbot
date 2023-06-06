@@ -375,7 +375,7 @@ class Donation extends SalesforceWriteProxy
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
             'pspCustomerId' => $this->getPspCustomerId(),
-            'pspMethodType' => $this->getPaymentMethodType()->value,
+            'pspMethodType' => $this->getPaymentMethodType()?->value,
             'status' => $this->getDonationStatus(),
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
@@ -1058,7 +1058,7 @@ class Donation extends SalesforceWriteProxy
     public function getStripeMethodProperties(): array
     {
         $properties = [
-            'payment_method_types' => [$this->paymentMethodType->value],
+            'payment_method_types' => [$this->paymentMethodType?->value],
         ];
 
         if ($this->paymentMethodType === PaymentMethodType::CustomerBalance) {
