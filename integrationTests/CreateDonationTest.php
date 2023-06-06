@@ -115,9 +115,6 @@ class CreateDonationTest extends IntegrationTest
         return $stripePaymentIntentsProphecy;
     }
 
-    /**
-     * @return string
-     */
     public function randomString(): string
     {
         return substr(Uuid::uuid4()->toString(), 0, 18);
