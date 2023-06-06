@@ -7,7 +7,6 @@ namespace MatchBot\Tests\Domain;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
-use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 
@@ -228,7 +227,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
         $donation->setCurrencyCode('GBP');
-        $donation->setPaymentMethodType(PaymentMethodType::CustomerBalance);
+        $donation->setPaymentMethodType('customer_balance');
 
         $expectedPaymentMethodProperties = [
             'payment_method_types' => ['customer_balance'],
@@ -257,7 +256,7 @@ class DonationTest extends TestCase
 
         $donation = $this->getTestDonation();
         $donation->setCurrencyCode('USD');
-        $donation->setPaymentMethodType(PaymentMethodType::CustomerBalance);
+        $donation->setPaymentMethodType('customer_balance');
 
         $donation->getStripeMethodProperties(); // Throws in this getter for now.
     }
