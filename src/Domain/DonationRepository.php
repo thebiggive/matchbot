@@ -11,7 +11,6 @@ use Doctrine\DBAL\LockMode;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Application\HttpModels\PaymentMethodType;
 use MatchBot\Application\Matching;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
@@ -73,7 +72,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function doUpdate(SalesforceWriteProxy $donation): bool
     {
         if ($donation->getPaymentMethodType() === null) {
-            $donation->setPaymentMethodType(PaymentMethodType::card->name);
+            $donation->setPaymentMethodType(PaymentMethodType::Card);
             $this->getEntityManager()->persist($donation);
         }
 
@@ -171,7 +170,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $donation = new Donation();
         $donation->setPsp($donationData->psp);
-        $donation->setPaymentMethodType($donationData->paymentMethodType->name);
+        $donation->setPaymentMethodType($donationData->paymentMethodType);
         $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setUuid((new UuidGenerator())->generateId($this->getEntityManager(), $donation));
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this

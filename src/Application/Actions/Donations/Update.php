@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions\Donations;
 
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
-use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
@@ -116,12 +115,12 @@ class Update extends Action
                     );
                 }
 
-                if ($donationData->autoConfirmFromCashBalance && $donation->getPaymentMethodType() !== 'customer_balance') {
+                if ($donationData->autoConfirmFromCashBalance && $donation->getPaymentMethodType() !== \MatchBot\Domain\PaymentMethodType::CustomerBalance) {
                     $this->entityManager->rollback();
 
                     // Log a warning to more easily spot occurrences in dashboards.
                     $this->logger->warning(
-                        "Donation ID {$args['donationId']} auto-confirm attempted with '{$donation->getPaymentMethodType()}' payment method",
+                        "Donation ID {$args['donationId']} auto-confirm attempted with '{$donation->getPaymentMethodType()->value}' payment method",
                     );
 
                     return $this->validationError($response,

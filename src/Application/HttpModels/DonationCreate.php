@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\HttpModels;
 
+use MatchBot\Domain\PaymentMethodType;
+
 /**
  * Request-only payload for setting up new donations.
  * @psalm-suppress MissingConstructor Seems we can't use an enum w/o default without hitting this.

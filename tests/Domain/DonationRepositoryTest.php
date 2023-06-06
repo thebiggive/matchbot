@@ -10,7 +10,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Application\HttpModels\PaymentMethodType;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
@@ -18,6 +17,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\Application\VatTrait;
@@ -152,7 +152,7 @@ class DonationRepositoryTest extends TestCase
         $createPayload = new DonationCreate();
         $createPayload->currencyCode = 'USD';
         $createPayload->donationAmount = '123.32';
-        $createPayload->paymentMethodType = PaymentMethodType::card;
+        $createPayload->paymentMethodType = PaymentMethodType::Card;
         $createPayload->projectId = 'testProject123';
         $createPayload->psp = 'stripe';
 
@@ -175,7 +175,7 @@ class DonationRepositoryTest extends TestCase
             ->shouldNotBeCalled();
 
         $createPayload = new DonationCreate();
-        $createPayload->paymentMethodType = PaymentMethodType::card;
+        $createPayload->paymentMethodType = PaymentMethodType::Card;
         $createPayload->projectId = 'testProject123';
         $createPayload->psp = 'stripe';
         // Explicitly make this property undefined, not null, to force a TypeError.
@@ -201,7 +201,7 @@ class DonationRepositoryTest extends TestCase
         $createPayload = new DonationCreate();
         $createPayload->currencyCode = 'CAD';
         $createPayload->donationAmount = '144.44';
-        $createPayload->paymentMethodType = PaymentMethodType::card;
+        $createPayload->paymentMethodType = PaymentMethodType::Card;
         $createPayload->projectId = 'testProject123';
         $createPayload->psp = 'stripe';
 

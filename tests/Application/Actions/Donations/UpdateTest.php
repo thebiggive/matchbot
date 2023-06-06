@@ -11,6 +11,7 @@ use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -1657,11 +1658,11 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setPaymentMethodType('customer_balance');
+        $donation->setPaymentMethodType(PaymentMethodType::CustomerBalance);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
-        $donationInRepo->setPaymentMethodType('customer_balance');
+        $donationInRepo->setPaymentMethodType(PaymentMethodType::CustomerBalance);
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
@@ -1733,7 +1734,7 @@ class UpdateTest extends TestCase
         $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
-        $donationInRepo->setPaymentMethodType('card');
+        $donationInRepo->setPaymentMethodType(PaymentMethodType::Card);
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
@@ -1798,13 +1799,13 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setPaymentMethodType('customer_balance');
+        $donation->setPaymentMethodType(PaymentMethodType::CustomerBalance);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
-        $donationInRepo->setPaymentMethodType('customer_balance');
+        $donationInRepo->setPaymentMethodType(PaymentMethodType::CustomerBalance);
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
@@ -1874,13 +1875,13 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setPaymentMethodType('customer_balance');
+        $donation->setPaymentMethodType(PaymentMethodType::CustomerBalance);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
-        $donationInRepo->setPaymentMethodType('customer_balance');
+        $donationInRepo->setPaymentMethodType(PaymentMethodType::CustomerBalance);
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
