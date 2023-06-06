@@ -1125,8 +1125,6 @@
     <PossiblyNullArgument>
       <code><![CDATA[$donation->getId()]]></code>
       <code><![CDATA[$donation->getSalesforceId()]]></code>
-      <code><![CDATA[$donationData->currencyCode]]></code>
-      <code><![CDATA[$donationData->currencyCode]]></code>
       <code>$funding</code>
     </PossiblyNullArgument>
     <PossiblyUndefinedVariable>

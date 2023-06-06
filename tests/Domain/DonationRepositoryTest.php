@@ -29,6 +29,7 @@ use ReflectionClass;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
+use Symfony\Component\Serializer\Serializer;
 
 class DonationRepositoryTest extends TestCase
 {
@@ -149,12 +150,13 @@ class DonationRepositoryTest extends TestCase
             ->willReturn($dummyCampaign)
             ->shouldBeCalledOnce();
 
-        $createPayload = new DonationCreate();
-        $createPayload->currencyCode = 'USD';
-        $createPayload->donationAmount = '123.32';
-        $createPayload->paymentMethodType = PaymentMethodType::Card;
-        $createPayload->projectId = 'testProject123';
-        $createPayload->psp = 'stripe';
+        $createPayload = new DonationCreate(
+            currencyCode: 'USD',
+            donationAmount: '123.32',
+            paymentMethodType: PaymentMethodType::Card,
+            projectId: 'testProject123',
+            psp: 'stripe',
+        );
 
         $donation = $this->getRepo(null, false, $campaignRepoProphecy)
             ->buildFromApiRequest($createPayload);
@@ -162,27 +164,6 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals('USD', $donation->getCurrencyCode());
         $this->assertEquals('123.32', $donation->getAmount());
         $this->assertEquals(12_332, $donation->getAmountFractionalIncTip());
-    }
-
-    public function testBuildFromApiRequestWithUndefinedCurrency(): void
-    {
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Required field "currencyCode" not set');
-
-        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        // We don't even call this if the donation data basics are failing.
-        $campaignRepoProphecy->findOneBy(Argument::type('array'))
-            ->shouldNotBeCalled();
-
-        $createPayload = new DonationCreate();
-        $createPayload->paymentMethodType = PaymentMethodType::Card;
-        $createPayload->projectId = 'testProject123';
-        $createPayload->psp = 'stripe';
-        // Explicitly make this property undefined, not null, to force a TypeError.
-        unset($createPayload->currencyCode);
-
-        $this->getRepo(null, false, $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload);
     }
 
     public function testBuildFromApiRequestWithCurrencyMismatch(): void
@@ -198,12 +179,13 @@ class DonationRepositoryTest extends TestCase
             ->willReturn($dummyCampaign)
             ->shouldBeCalledOnce();
 
-        $createPayload = new DonationCreate();
-        $createPayload->currencyCode = 'CAD';
-        $createPayload->donationAmount = '144.44';
-        $createPayload->paymentMethodType = PaymentMethodType::Card;
-        $createPayload->projectId = 'testProject123';
-        $createPayload->psp = 'stripe';
+        $createPayload = new DonationCreate(
+            currencyCode: 'CAD',
+            donationAmount: '144.44',
+            paymentMethodType: PaymentMethodType::Card,
+            projectId: 'testProject123',
+            psp: 'stripe',
+        );
 
         $this->getRepo(null, false, $campaignRepoProphecy)
             ->buildFromApiRequest($createPayload);

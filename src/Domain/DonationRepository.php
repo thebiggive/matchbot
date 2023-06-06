@@ -116,18 +116,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function buildFromApiRequest(DonationCreate $donationData): Donation
     {
-        // Fields where we've historically seen blanks and/or there is zero chance
-        // of success without them.
-        $checkEarlyFields = ['currencyCode', 'donationAmount', 'paymentMethodType', 'projectId'];
-        foreach ($checkEarlyFields as $checkEarlyField) {
-            if (empty($donationData->$checkEarlyField)) {
-                throw new \UnexpectedValueException(sprintf(
-                    'Required field "%s" not set',
-                    $checkEarlyField
-                ));
-            }
-        }
-
         if (!in_array($donationData->psp, ['stripe'], true)) {
             throw new \UnexpectedValueException(sprintf(
                 'PSP %s is invalid',
