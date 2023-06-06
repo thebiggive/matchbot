@@ -45,11 +45,14 @@ class CreateDonationTest extends IntegrationTest
         assert($donationRepo instanceof DonationRepository);
         $donationRepo->setClient($donationClientProphecy->reveal());
 
-        $request = new ServerRequest(
-            'POST',
-            '/v1/donations',
-            // The Symfony Serializer will throw an exception if the JSON document doesn't include all the required constructor params of DonationCreate
-            body: <<<EOF
+        // act
+        $response = $this->getApp()->handle(
+            new ServerRequest(
+                'POST',
+                '/v1/donations',
+                // The Symfony Serializer will throw an exception if the JSON document doesn't include all the required
+                // constructor params of DonationCreate
+                body: <<<EOF
                 {
                     "currencyCode": "GBP",
                     "donationAmount": "100",
@@ -57,11 +60,9 @@ class CreateDonationTest extends IntegrationTest
                     "psp": "stripe" 
                 }
             EOF,
-            serverParams: ['REMOTE_ADDR' => '127.0.0.1']
+                serverParams: ['REMOTE_ADDR' => '127.0.0.1']
+            )
         );
-
-        // act
-        $response = $this->getApp()->handle($request);
 
         // assert
 
