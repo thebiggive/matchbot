@@ -17,7 +17,7 @@ class DonationTest extends TestCase
 
     public function testBasicsAsExpectedOnInstantion(): void
     {
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation();
 
         $this->assertFalse($donation->getDonationStatus()->isSuccessful());
         $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
@@ -31,7 +31,7 @@ class DonationTest extends TestCase
 
     public function testPendingDonationDoesNotHavePostCreateUpdates(): void
     {
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation();
         $donation->setDonationStatus(DonationStatus::Pending);
 
         $this->assertFalse($donation->hasPostCreateUpdates());
@@ -39,7 +39,7 @@ class DonationTest extends TestCase
 
     public function testPaidDonationHasPostCreateUpdates(): void
     {
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation();
         $donation->setDonationStatus(DonationStatus::Paid);
 
         $this->assertTrue($donation->hasPostCreateUpdates());
@@ -47,7 +47,7 @@ class DonationTest extends TestCase
 
     public function testValidDataPersisted(): void
     {
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation();
         $donation->setCurrencyCode('GBP');
         $donation->setAmount('100.00');
         $donation->setTipAmount('1.13');
@@ -63,7 +63,7 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation();
         $donation->setCurrencyCode('GBP');
         $donation->setAmount('0.99');
     }
@@ -73,7 +73,7 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation();
         $donation->setCurrencyCode('GBP');
         $donation->setAmount('25000.01');
     }
@@ -83,7 +83,7 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Tip amount must not exceed 25000 GBP');
 
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation();
         $donation->setCurrencyCode('GBP');
         $donation->setTipAmount('25000.01');
     }
@@ -93,14 +93,14 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage("Unexpected PSP 'paypal'");
 
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation();
         /** @psalm-suppress InvalidArgument */
         $donation->setPsp('paypal');
     }
 
     public function testValidPspAccepted(): void
     {
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation();
         $donation->setPsp('stripe');
 
         $this->addToAssertionCount(1); // Just check setPsp() doesn't hit an exception
@@ -108,7 +108,7 @@ class DonationTest extends TestCase
 
     public function testSetAndGetOriginalFee(): void
     {
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation();
         $donation->setOriginalPspFeeFractional(123);
 
         $this->assertEquals('1.23', $donation->getOriginalPspFee());

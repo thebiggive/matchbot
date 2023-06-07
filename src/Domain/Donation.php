@@ -293,7 +293,16 @@ class Donation extends SalesforceWriteProxy
      */
     protected $fundingWithdrawals;
 
-    public function __construct()
+    /**
+     * @deprecated but retained for now as used in old test classes. Not recommend for continued use - either use
+     * fromApiModel or create a new named constructor that takes required data for your use case.
+     */
+    public static function emptyTestDonation(): self
+    {
+        return new self();
+    }
+
+    private function __construct()
     {
         $this->fundingWithdrawals = new ArrayCollection();
     }
