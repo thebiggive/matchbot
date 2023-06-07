@@ -949,10 +949,9 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -961,8 +960,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1045,17 +1043,15 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(); // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+        $donationRepoProphecy // here
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Persist as normal.
@@ -1144,10 +1140,9 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -1156,8 +1151,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Internal persist still goes ahead.
@@ -1252,17 +1246,15 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Persist as normal.
@@ -1354,10 +1346,9 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(); // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -1366,8 +1357,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Internal persist still goes ahead.
@@ -1460,17 +1450,15 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donatinInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donatinInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Persist as normal.
@@ -1563,10 +1551,9 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -1575,8 +1562,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce(); // Updates pushed to Salesforce
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1675,8 +1661,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce(); // Updates pushed to Salesforce
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1812,8 +1797,7 @@ class UpdateTest extends TestCase
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
@@ -1888,8 +1872,7 @@ class UpdateTest extends TestCase
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)

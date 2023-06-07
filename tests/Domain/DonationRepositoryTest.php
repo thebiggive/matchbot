@@ -213,7 +213,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $donation = $this->getRepo()->deriveFees($donation, 'amex');
+        $this->getRepo()->deriveFees($donation, 'amex');
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -234,7 +234,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $donation = $this->getRepo()->deriveFees($donation, 'visa', 'US');
+        $this->getRepo()->deriveFees($donation, 'visa', 'US');
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -259,7 +259,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setPsp('stripe');
         $donation->setFeeCoverAmount('44.44'); // 4.5% fee, inc. any VAT.
         $donation->getCampaign()->setFeePercentage(4.5);
-        $donation = $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation);
 
         // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
         // Fixed fee        = £  0.00
@@ -282,7 +282,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $donation = $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -305,7 +305,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setTipAmount('10.00');
 
         // Get repo with 20% VAT enabled from now setting override.
-        $donation = $this->getRepo(null, true)->deriveFees($donation);
+        $this->getRepo(null, true)->deriveFees($donation);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -327,7 +327,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
-        $donation = $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -346,7 +346,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
-        $donation = $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation);
 
         // £987.65 *  1.5%  = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -365,7 +365,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setAmount('6.25');
         $donation->setTipAmount('0.00');
         $donation->setCurrencyCode('GBP');
-        $donation = $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation);
 
         // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)
         // Fixed fee    = £ 0.20

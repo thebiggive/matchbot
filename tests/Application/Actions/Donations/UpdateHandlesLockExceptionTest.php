@@ -60,7 +60,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Pending);
 
-        $this->donationRepositoryProphecy->deriveFees($donation, 'some-card-brand', 'some-country')->shouldBeCalled()->willReturn($donation);
+        $this->donationRepositoryProphecy->deriveFees($donation, 'some-card-brand', 'some-country')->shouldBeCalled();
 
         $updateAction = new Update(
             $this->donationRepositoryProphecy->reveal(),

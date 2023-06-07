@@ -182,7 +182,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $donation->setTipAmount((string) $donationData->tipAmount);
         }
 
-        $donation = $this->deriveFees($donation);
+        $this->deriveFees($donation);
 
         return $donation;
     }
@@ -561,7 +561,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return count($donations);
     }
 
-    public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): Donation
+    public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): void
     {
         $incursGiftAidFee = $donation->hasGiftAid() && $donation->hasTbgShouldProcessGiftAid();
 
@@ -577,8 +577,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
         );
         $donation->setCharityFee($structure->getCoreFee());
         $donation->setCharityFeeVat($structure->getFeeVat());
-
-        return $donation;
     }
 
     /**

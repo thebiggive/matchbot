@@ -227,7 +227,7 @@ class Update extends Action
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setDonorBillingAddress($donationData->billingPostalAddress);
 
-        $donation = $this->donationRepository->deriveFees(
+        $this->donationRepository->deriveFees(
             $donation,
             $donationData->cardBrand,
             $donationData->cardCountry
