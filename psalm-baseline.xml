@@ -199,7 +199,7 @@
   </file>
   <file src="integrationTests/DonationPersistenceTest.php">
     <DeprecatedMethod>
-      <code>Donation::emptyTestDonation()</code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
     </DeprecatedMethod>
   </file>
   <file src="public/index.php">
@@ -1016,9 +1016,7 @@
       <code>preUpdate</code>
     </PossiblyUnusedMethod>
     <PropertyNotSetInConstructor>
-      <code>$amount</code>
       <code>$campaign</code>
-      <code>$currencyCode</code>
       <code>$psp</code>
       <code>Donation</code>
       <code>Donation</code>
@@ -1533,7 +1531,7 @@
   </file>
   <file src="tests/Application/Actions/Donations/CreateTest.php">
     <DeprecatedMethod>
-      <code>Donation::emptyTestDonation()</code>
+      <code><![CDATA[Donation::emptyTestDonation('12.00')]]></code>
     </DeprecatedMethod>
     <MixedArrayAccess>
       <code><![CDATA[$payloadArray['error']]]></code>
@@ -1565,7 +1563,7 @@
   </file>
   <file src="tests/Application/Actions/Donations/UpdateHandlesLockExceptionTest.php">
     <DeprecatedMethod>
-      <code>Donation::emptyTestDonation()</code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
     </DeprecatedMethod>
     <InternalMethod>
       <code><![CDATA[new LockWaitTimeoutException($testCase->createStub(DriverException::class), null)]]></code>
@@ -1756,8 +1754,8 @@
   </file>
   <file src="tests/Application/Commands/ExpireMatchFundsTest.php">
     <DeprecatedMethod>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
     </DeprecatedMethod>
     <MixedArgument>
       <code><![CDATA[$donationRepoProphecy->reveal()]]></code>
@@ -1830,8 +1828,8 @@
   </file>
   <file src="tests/Application/DonationTestDataTrait.php">
     <DeprecatedMethod>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
+      <code>Donation::emptyTestDonation($amount, $paymentMethodType)</code>
+      <code><![CDATA[Donation::emptyTestDonation('124.56')]]></code>
     </DeprecatedMethod>
   </file>
   <file src="tests/Application/Fees/CalculatorTest.php">
@@ -1903,10 +1901,10 @@
   </file>
   <file src="tests/Application/Persistence/RetrySafeEntityManagerTest.php">
     <DeprecatedMethod>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
     </DeprecatedMethod>
     <InternalClass>
       <code><![CDATA[new ReturnCallback(static function () use ($retrySafeEm, $underlyingEmToResetTo) {
@@ -1974,16 +1972,16 @@
   </file>
   <file src="tests/Domain/DonationTest.php">
     <DeprecatedMethod>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
-      <code>Donation::emptyTestDonation()</code>
+      <code><![CDATA[Donation::emptyTestDonation('0.99')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('100.00')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('25000.01')]]></code>
     </DeprecatedMethod>
     <InternalMethod>
       <code>addToAssertionCount</code>

@@ -225,9 +225,8 @@ class DonationTest extends TestCase
 
     public function testGetStripePIHelpersWithCustomerBalanceGbp(): void
     {
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);
         $donation->setCurrencyCode('GBP');
-        $donation->setPaymentMethodType(PaymentMethodType::CustomerBalance);
 
         $expectedPaymentMethodProperties = [
             'payment_method_types' => ['customer_balance'],
@@ -254,9 +253,8 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Customer balance payments only supported for GBP');
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);
         $donation->setCurrencyCode('USD');
-        $donation->setPaymentMethodType(PaymentMethodType::CustomerBalance);
 
         $donation->getStripeMethodProperties(); // Throws in this getter for now.
     }

@@ -6,6 +6,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\SalesforceWriteProxy;
 use Ramsey\Uuid\Uuid;
 
@@ -22,7 +23,7 @@ trait DonationTestDataTrait
         return file_get_contents($fullPath);
     }
 
-    protected function getTestDonation(string $amount = '123.45'): Donation
+    protected function getTestDonation(string $amount = '123.45', PaymentMethodType $paymentMethodType = PaymentMethodType::Card): Donation
     {
         $charity = new Charity();
         $charity->setDonateLinkId('123CharityId');
@@ -35,7 +36,7 @@ trait DonationTestDataTrait
         $campaign->setName('Test campaign');
         $campaign->setSalesforceId('456ProjectId');
 
-        $donation = Donation::emptyTestDonation($amount);
+        $donation = Donation::emptyTestDonation($amount, $paymentMethodType);
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCharityFee('2.05');
         $donation->setCampaign($campaign);

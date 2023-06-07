@@ -298,15 +298,16 @@ class Donation extends SalesforceWriteProxy
      * @deprecated but retained for now as used in old test classes. Not recommend for continued use - either use
      * fromApiModel or create a new named constructor that takes required data for your use case.
      */
-    public static function emptyTestDonation(string $amount): self
+    public static function emptyTestDonation(string $amount, PaymentMethodType $paymentMethodType = PaymentMethodType::Card): self
     {
-        return new self($amount, 'GBP');
+        return new self($amount, 'GBP', $paymentMethodType);
     }
 
-    private function __construct(string $amount, string $currencyCode)
+    private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
     {
         $this->fundingWithdrawals = new ArrayCollection();
         $this->setCurrencyCode($currencyCode);
+        $this->setPaymentMethodType($paymentMethodType);
         $this->setAmount($amount);
     }
 
@@ -316,9 +317,9 @@ class Donation extends SalesforceWriteProxy
         $psp = $donationData->psp;
         assert($psp === 'stripe');
 
-        $donation = new self($donationData->donationAmount, $donationData->currencyCode);
+        $donation = new self($donationData->donationAmount, $donationData->currencyCode, $donationData->paymentMethodType);
+
         $donation->setPsp($psp);
-        $donation->setPaymentMethodType($donationData->paymentMethodType);
         $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setUuid(Uuid::uuid4());
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
@@ -362,6 +363,14 @@ class Donation extends SalesforceWriteProxy
         if ($args->getOldValue('amount') !== $args->getNewValue('amount')) {
             throw new \LogicException('Amount may not be changed after a donation is created');
         }
+    }
+
+    public function replaceNullPaymentMethodTypeWithCard(): void
+    {
+        if ($this->paymentMethodType !== null) {
+            throw new \Exception('Should only be called when payment method type is null');
+        }
+        $this->setPaymentMethodType(PaymentMethodType::Card);
     }
 
     public function toHookModel(): array
@@ -1086,7 +1095,7 @@ class Donation extends SalesforceWriteProxy
         return $this->paymentMethodType;
     }
 
-    public function setPaymentMethodType(PaymentMethodType $paymentMethodType): void
+    private function setPaymentMethodType(PaymentMethodType $paymentMethodType): void
     {
         $this->paymentMethodType = $paymentMethodType;
     }

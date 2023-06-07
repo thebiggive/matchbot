@@ -73,7 +73,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function doUpdate(SalesforceWriteProxy $donation): bool
     {
         if ($donation->getPaymentMethodType() === null) {
-            $donation->setPaymentMethodType(PaymentMethodType::Card);
+            $donation->replaceNullPaymentMethodTypeWithCard();
             $this->getEntityManager()->persist($donation);
         }
 
