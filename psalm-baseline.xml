@@ -1142,11 +1142,6 @@
     <PossiblyUnusedMethod>
       <code>setFundRepository</code>
     </PossiblyUnusedMethod>
-    <RedundantCast>
-      <code><![CDATA[(string) $donationData->donationAmount]]></code>
-      <code><![CDATA[(string) $donationData->feeCoverAmount]]></code>
-      <code><![CDATA[(string) $donationData->tipAmount]]></code>
-    </RedundantCast>
     <TooManyArguments>
       <code>refresh</code>
     </TooManyArguments>

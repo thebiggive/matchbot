@@ -10,7 +10,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\HttpModels\DonationCreate;
 use Messages;
+use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -294,6 +296,41 @@ class Donation extends SalesforceWriteProxy
     public function __construct()
     {
         $this->fundingWithdrawals = new ArrayCollection();
+    }
+
+    public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
+    {
+
+        $psp = $donationData->psp;
+        assert($psp === 'stripe');
+
+        $donation = new self();
+        $donation->setPsp($psp);
+        $donation->setPaymentMethodType($donationData->paymentMethodType);
+        $donation->setDonationStatus(DonationStatus::Pending);
+        $donation->setUuid(Uuid::uuid4());
+        $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
+        $donation->setCurrencyCode($donationData->currencyCode);
+        $donation->setAmount($donationData->donationAmount);
+        $donation->setGiftAid($donationData->giftAid);
+        $donation->setCharityComms($donationData->optInCharityEmail);
+        $donation->setChampionComms($donationData->optInChampionEmail);
+        $donation->setPspCustomerId($donationData->pspCustomerId);
+        $donation->setTbgComms($donationData->optInTbgEmail);
+
+        if (!empty($donationData->countryCode)) {
+            $donation->setDonorCountryCode($donationData->countryCode);
+        }
+
+        if (isset($donationData->feeCoverAmount)) {
+            $donation->setFeeCoverAmount($donationData->feeCoverAmount);
+        }
+
+        if (isset($donationData->tipAmount)) {
+            $donation->setTipAmount($donationData->tipAmount);
+        }
+
+        return $donation;
     }
 
     public function __toString()
