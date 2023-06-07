@@ -27,16 +27,16 @@ use Ramsey\Uuid\UuidInterface;
 class Donation extends SalesforceWriteProxy
 {
     /**
-     * @var int
      * @see Donation::$currencyCode
      */
-    private int $minimumAmount = 1;
+    public const MAXIMUM_CARD_DONATION = 25_000;
 
+    public const MAXIMUM_CUSTOMER_BALANCE_DONATION = 200_000;
     /**
      * @var int
      * @see Donation::$currencyCode
      */
-    private int $maximumAmount = 25000;
+    private int $minimumAmount = 1;
 
     private array $possiblePSPs = ['stripe'];
 
@@ -307,8 +307,7 @@ class Donation extends SalesforceWriteProxy
     {
         $this->fundingWithdrawals = new ArrayCollection();
         $this->setCurrencyCode($currencyCode);
-        $this->setPaymentMethodType($paymentMethodType);
-        $this->setAmount($amount);
+        $this->setAmountAndMethod($amount, $paymentMethodType);
     }
 
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
@@ -344,6 +343,14 @@ class Donation extends SalesforceWriteProxy
         return $donation;
     }
 
+    private static function maximumAmount(PaymentMethodType $paymentMethodType): int
+    {
+        return match ($paymentMethodType) {
+            PaymentMethodType::CustomerBalance => self::MAXIMUM_CUSTOMER_BALANCE_DONATION,
+            PaymentMethodType::Card => self::MAXIMUM_CARD_DONATION,
+        };
+    }
+
     public function __toString()
     {
         return "Donation {$this->getUuid()} to {$this->getCampaign()->getCharity()->getName()}";
@@ -370,7 +377,7 @@ class Donation extends SalesforceWriteProxy
         if ($this->paymentMethodType !== null) {
             throw new \Exception('Should only be called when payment method type is null');
         }
-        $this->setPaymentMethodType(PaymentMethodType::Card);
+        $this->paymentMethodType = PaymentMethodType::Card;
     }
 
     public function toHookModel(): array
@@ -606,21 +613,24 @@ class Donation extends SalesforceWriteProxy
     /**
      * @param string $amount    Core donation amount, excluding any tip, in full pounds GBP.
      */
-    private function setAmount(string $amount): void
+    private function setAmountAndMethod(string $amount, PaymentMethodType $paymentMethodType): void
     {
+        $maximumAmount = self::maximumAmount($paymentMethodType);
+
         if (
             bccomp($amount, (string) $this->minimumAmount, 2) === -1 ||
-            bccomp($amount, (string) $this->maximumAmount, 2) === 1
+            bccomp($amount, (string)$maximumAmount, 2) === 1
         ) {
             throw new \UnexpectedValueException(sprintf(
                 'Amount must be %d-%d %s',
                 $this->minimumAmount,
-                $this->maximumAmount,
+                $maximumAmount,
                 $this->currencyCode,
             ));
         }
 
         $this->amount = $amount;
+        $this->paymentMethodType = $paymentMethodType;
     }
 
     public function setCharityFee(string $charityFee): void
@@ -836,10 +846,12 @@ class Donation extends SalesforceWriteProxy
      */
     public function setTipAmount(string $tipAmount): void
     {
-        if (bccomp($tipAmount, (string) $this->maximumAmount, 2) === 1) {
+        $max = self::maximumAmount($this->paymentMethodType ?? PaymentMethodType::Card);
+
+        if (bccomp($tipAmount, (string)$max, 2) === 1) {
             throw new \UnexpectedValueException(sprintf(
                 'Tip amount must not exceed %d %s',
-                $this->maximumAmount,
+                $max,
                 $this->currencyCode,
             ));
         }
@@ -1093,11 +1105,6 @@ class Donation extends SalesforceWriteProxy
     public function getPaymentMethodType(): ?PaymentMethodType
     {
         return $this->paymentMethodType;
-    }
-
-    private function setPaymentMethodType(PaymentMethodType $paymentMethodType): void
-    {
-        $this->paymentMethodType = $paymentMethodType;
     }
 
     /**

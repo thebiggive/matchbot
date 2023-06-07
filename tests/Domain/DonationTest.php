@@ -77,14 +77,72 @@ class DonationTest extends TestCase
         $donation->setCurrencyCode('GBP');
     }
 
+    public function test25k1CardIsTooHigh(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Amount must be 1-25000 GBP');
+
+        Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '25001',
+            projectId: "any project",
+            psp:'stripe',
+            paymentMethodType: PaymentMethodType::Card
+        ), new Campaign());
+    }
+
+    public function test200kCustomerBalanceDonationIsAllowed(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '200000',
+            projectId: "any project",
+            psp:'stripe',
+            paymentMethodType: PaymentMethodType::CustomerBalance
+        ), new Campaign());
+
+        $this->assertSame('200000', $donation->getAmount());
+    }
+
+    public function test200k1CustomerBalanceDonationIsTooHigh(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Amount must be 1-200000 GBP');
+
+        Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '200001',
+            projectId: "any project",
+            psp:'stripe',
+            paymentMethodType: PaymentMethodType::CustomerBalance
+        ), new Campaign());
+    }
+
     public function testTipAmountTooHighNotPersisted(): void
     {
+        $donation = Donation::emptyTestDonation('1');
+        $donation->setCurrencyCode('GBP');
+
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Tip amount must not exceed 25000 GBP');
 
-        $donation = Donation::emptyTestDonation('1');
-        $donation->setCurrencyCode('GBP');
         $donation->setTipAmount('25000.01');
+    }
+
+    public function testTipAmount200kAllowedForCustomerBalances(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '1',
+            projectId: "any project",
+            psp:'stripe',
+            paymentMethodType: PaymentMethodType::CustomerBalance
+        ), new Campaign());
+
+        $donation->setCurrencyCode('GBP');
+        $donation->setTipAmount('200000');
+
+        $this->assertSame('200000', $donation->getTipAmount());
     }
 
     public function testInvalidPspRejected(): void
