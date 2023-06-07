@@ -18,6 +18,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\DonationRepository;
+use Monolog\Logger;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -63,7 +64,8 @@ class Create extends Action
             $message = 'Donation Create data deserialise error';
             $exceptionType = get_class($exception);
 
-            return $this->validationError($response,
+            return $this->validationError(
+                $response,
                 "$message: $exceptionType - {$exception->getMessage()}",
                 $message,
                 empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
@@ -102,7 +104,8 @@ class Create extends Action
         }
 
         if (!$donation->getCampaign()->isOpen()) {
-            return $this->validationError($response,
+            return $this->validationError(
+                $response,
                 "Campaign {$donation->getCampaign()->getSalesforceId()} is not open",
                 null,
                 true, // Reduce to info log as some instances expected on campaign close
@@ -191,12 +194,21 @@ class Create extends Action
             try {
                 $intent = $this->stripeClient->paymentIntents->create($createPayload);
             } catch (ApiErrorException $exception) {
-                $this->logger->error(sprintf(
+                $message = $exception->getMessage();
+
+                $level = str_contains(
+                    $message,
+                    // this message is an issue the charity needs to fix, we can't fix it for them.
+                    'Your destination account needs to have at least one of the following capabilities enabled'
+                ) ?
+                    Logger::WARNING : Logger::ERROR;
+
+                $this->logger->log($level, sprintf(
                     'Stripe Payment Intent create error on %s, %s [%s]: %s. Charity: %s [%s].',
                     $donation->getUuid(),
                     $exception->getStripeCode() ?? 'unknown',
                     get_class($exception),
-                    $exception->getMessage(),
+                    $message,
                     $donation->getCampaign()->getCharity()->getName(),
                     $donation->getCampaign()->getCharity()->getStripeAccountId() ?? 'unknown',
                 ));
