@@ -2,10 +2,13 @@
 
 namespace MatchBot\IntegrationTests;
 
+use CreateDonationTest;
 use IntegrationTests;
 use PHPUnit\Framework\TestCase;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Container\ContainerInterface;
 use Slim\App;
+use Stripe\StripeClient;
 
 abstract class IntegrationTest extends TestCase
 {
@@ -28,6 +31,11 @@ abstract class IntegrationTest extends TestCase
             throw new \Exception("Test container not set");
         }
         return self::$integrationTestContainer;
+    }
+
+    public function db(): \Doctrine\DBAL\Connection
+    {
+        return $this->getService(\Doctrine\ORM\EntityManagerInterface::class)->getConnection();
     }
 
     protected function getApp(): App
@@ -57,5 +65,22 @@ abstract class IntegrationTest extends TestCase
     public function getServiceByName(string $name): mixed
     {
         return $this->getContainer()->get($name);
+    }
+
+    /**
+     * @psalm-suppress UndefinedPropertyAssignment - StripeClient does declare the properties via docblock, not sure
+     * Psalm doesn't see them as defined.
+     */
+    public function fakeStripeClient(
+        ObjectProphecy $stripePaymentMethodServiceProphecy,
+        ObjectProphecy $stripeCustomerServiceProphecy,
+        ObjectProphecy $stripePaymentIntents,
+    ): StripeClient {
+        $fakeStripeClient = $this->createStub(StripeClient::class);
+        $fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
+        $fakeStripeClient->customers = $stripeCustomerServiceProphecy->reveal();
+        $fakeStripeClient->paymentIntents =$stripePaymentIntents->reveal();
+
+        return $fakeStripeClient;
     }
 }
