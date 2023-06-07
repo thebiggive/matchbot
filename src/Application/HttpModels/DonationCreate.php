@@ -7,6 +7,7 @@ namespace MatchBot\Application\HttpModels;
 use MatchBot\Domain\PaymentMethodType;
 
 /**
+ * @psalm-immutable
  * Request-only payload for setting up new donations.
  */
 class DonationCreate
