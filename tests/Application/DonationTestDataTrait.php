@@ -22,7 +22,7 @@ trait DonationTestDataTrait
         return file_get_contents($fullPath);
     }
 
-    protected function getTestDonation(): Donation
+    protected function getTestDonation(string $amount = '123.45'): Donation
     {
         $charity = new Charity();
         $charity->setDonateLinkId('123CharityId');
@@ -35,9 +35,8 @@ trait DonationTestDataTrait
         $campaign->setName('Test campaign');
         $campaign->setSalesforceId('456ProjectId');
 
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation($amount);
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
-        $donation->setAmount('123.45');
         $donation->setCharityFee('2.05');
         $donation->setCampaign($campaign);
         $donation->setCharityComms(true);
@@ -78,9 +77,8 @@ trait DonationTestDataTrait
         $campaign->setName('Test campaign');
         $campaign->setSalesforceId('456ProjectId');
 
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation('124.56');
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
-        $donation->setAmount('124.56');
         $donation->setCharityFee('2.57');
         $donation->setCampaign($campaign);
         $donation->setCurrencyCode('GBP');

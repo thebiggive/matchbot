@@ -325,12 +325,11 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation('999.99');
         $donation->setDonationStatus(DonationStatus::Cancelled);
         // Check this is ignored and only status patched. N.B. this is currently a bit circular as we simulate both
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
-        $donation->setAmount('999.99');
 
         $responseDonation = $this->getTestDonation();
         $responseDonation->setDonationStatus(DonationStatus::Cancelled);
@@ -388,12 +387,11 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation('999.99');
         $donation->setDonationStatus(DonationStatus::Cancelled);
         // Check this is ignored and only status patched. N.B. this is currently a bit circular as we simulate both
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
-        $donation->setAmount('999.99');
 
         $responseDonation = $this->getTestDonation();
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
@@ -671,8 +669,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donationInRequest = $this->getTestDonation();
-        $donationInRequest->setAmount('99.99');
+        $donationInRequest = $this->getTestDonation('99.99');
 
         $donationInRepo = $this->getTestDonation(); //  // Get a new mock object so it's £123.45.
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);

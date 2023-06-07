@@ -1082,10 +1082,9 @@ class CreateTest extends TestCase
             $campaign->setEndDate((new \DateTime())->sub(new \DateInterval('P1D')));
         }
 
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation('12.00');
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCurrencyCode('GBP');
-        $donation->setAmount('12.00');
         $donation->setCampaign($campaign);
         $donation->setPsp('stripe');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));

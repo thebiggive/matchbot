@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Domain;
 
+use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
@@ -17,7 +19,7 @@ class DonationTest extends TestCase
 
     public function testBasicsAsExpectedOnInstantion(): void
     {
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation('1');
 
         $this->assertFalse($donation->getDonationStatus()->isSuccessful());
         $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
@@ -31,7 +33,7 @@ class DonationTest extends TestCase
 
     public function testPendingDonationDoesNotHavePostCreateUpdates(): void
     {
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation('1');
         $donation->setDonationStatus(DonationStatus::Pending);
 
         $this->assertFalse($donation->hasPostCreateUpdates());
@@ -39,7 +41,7 @@ class DonationTest extends TestCase
 
     public function testPaidDonationHasPostCreateUpdates(): void
     {
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation('1');
         $donation->setDonationStatus(DonationStatus::Paid);
 
         $this->assertTrue($donation->hasPostCreateUpdates());
@@ -47,9 +49,8 @@ class DonationTest extends TestCase
 
     public function testValidDataPersisted(): void
     {
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation('100.00');
         $donation->setCurrencyCode('GBP');
-        $donation->setAmount('100.00');
         $donation->setTipAmount('1.13');
 
         $this->assertEquals('100.00', $donation->getAmount());
@@ -63,9 +64,8 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation('0.99');
         $donation->setCurrencyCode('GBP');
-        $donation->setAmount('0.99');
     }
 
     public function testAmountTooHighNotPersisted(): void
@@ -73,9 +73,8 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation('25000.01');
         $donation->setCurrencyCode('GBP');
-        $donation->setAmount('25000.01');
     }
 
     public function testTipAmountTooHighNotPersisted(): void
@@ -83,7 +82,7 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Tip amount must not exceed 25000 GBP');
 
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation('1');
         $donation->setCurrencyCode('GBP');
         $donation->setTipAmount('25000.01');
     }
@@ -93,14 +92,14 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage("Unexpected PSP 'paypal'");
 
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation('1');
         /** @psalm-suppress InvalidArgument */
         $donation->setPsp('paypal');
     }
 
     public function testValidPspAccepted(): void
     {
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation('1');
         $donation->setPsp('stripe');
 
         $this->addToAssertionCount(1); // Just check setPsp() doesn't hit an exception
@@ -108,7 +107,7 @@ class DonationTest extends TestCase
 
     public function testSetAndGetOriginalFee(): void
     {
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation('1');
         $donation->setOriginalPspFeeFractional(123);
 
         $this->assertEquals('1.23', $donation->getOriginalPspFee());

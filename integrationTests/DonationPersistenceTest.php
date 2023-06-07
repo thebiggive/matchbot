@@ -108,11 +108,10 @@ class DonationPersistenceTest extends IntegrationTest
      */
     public function makeDonationObject(): Donation
     {
-        $donation = Donation::emptyTestDonation();
+        $donation = Donation::emptyTestDonation('1');
         $donation->setUuid(Uuid::uuid4());
         $donation->setPsp('stripe');
         $donation->setCurrencyCode('GBP');
-        $donation->setAmount('1');
         $donation->setDonationStatus(DonationStatus::Refunded);
 
         return $donation;

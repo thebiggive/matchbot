@@ -294,17 +294,20 @@ class Donation extends SalesforceWriteProxy
     protected $fundingWithdrawals;
 
     /**
+     * @param string $amount
      * @deprecated but retained for now as used in old test classes. Not recommend for continued use - either use
      * fromApiModel or create a new named constructor that takes required data for your use case.
      */
-    public static function emptyTestDonation(): self
+    public static function emptyTestDonation(string $amount): self
     {
-        return new self();
+        return new self($amount, 'GBP');
     }
 
-    private function __construct()
+    private function __construct(string $amount, string $currencyCode)
     {
         $this->fundingWithdrawals = new ArrayCollection();
+        $this->setCurrencyCode($currencyCode);
+        $this->setAmount($amount);
     }
 
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
@@ -313,14 +316,12 @@ class Donation extends SalesforceWriteProxy
         $psp = $donationData->psp;
         assert($psp === 'stripe');
 
-        $donation = new self();
+        $donation = new self($donationData->donationAmount, $donationData->currencyCode);
         $donation->setPsp($psp);
         $donation->setPaymentMethodType($donationData->paymentMethodType);
         $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setUuid(Uuid::uuid4());
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
-        $donation->setCurrencyCode($donationData->currencyCode);
-        $donation->setAmount($donationData->donationAmount);
         $donation->setGiftAid($donationData->giftAid);
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
@@ -596,7 +597,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @param string $amount    Core donation amount, excluding any tip, in full pounds GBP.
      */
-    public function setAmount(string $amount): void
+    private function setAmount(string $amount): void
     {
         if (
             bccomp($amount, (string) $this->minimumAmount, 2) === -1 ||
