@@ -23,7 +23,11 @@ trait DonationTestDataTrait
         return file_get_contents($fullPath);
     }
 
-    protected function getTestDonation(string $amount = '123.45', PaymentMethodType $paymentMethodType = PaymentMethodType::Card): Donation
+    protected function getTestDonation(
+        string $amount = '123.45',
+        PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
+        string $tipAmount = '1.00',
+    ): Donation
     {
         $charity = new Charity();
         $charity->setDonateLinkId('123CharityId');
@@ -57,7 +61,7 @@ trait DonationTestDataTrait
         $donation->setSalesforceId('sfDonation369');
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
         $donation->setTbgComms(false);
-        $donation->setTipAmount('1.00');
+        $donation->setTipAmount($tipAmount);
         $donation->setTransferId('tr_externalId_123');
         $donation->setTransactionId('pi_externalId_123');
         $donation->setChargeId('ch_externalId_123');

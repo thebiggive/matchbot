@@ -841,14 +841,22 @@ class Donation extends SalesforceWriteProxy
         return $this->tipAmount;
     }
 
-    /**
-     * @param string $tipAmount
-     */
     public function setTipAmount(string $tipAmount): void
     {
-        $max = self::maximumAmount($this->paymentMethodType ?? PaymentMethodType::Card);
+        /** @var numeric-string $tipAmount */
 
-        if (bccomp($tipAmount, (string)$max, 2) === 1) {
+        if (
+            $this->paymentMethodType == PaymentMethodType::CustomerBalance &&
+            bccomp($tipAmount, '0') !== 0
+        ) {
+            // We would have accepted a tip at the time the customer balance was created, so we don't take a second
+            // tip as part of the donation.
+            throw new \UnexpectedValueException('A Customer Balance Donation may not include a tip');
+        }
+
+        $max = self::MAXIMUM_CARD_DONATION;
+
+        if (bccomp($tipAmount, (string)(self::MAXIMUM_CARD_DONATION), 2) === 1) {
             throw new \UnexpectedValueException(sprintf(
                 'Tip amount must not exceed %d %s',
                 $max,
@@ -1246,5 +1254,4 @@ class Donation extends SalesforceWriteProxy
 
         return mb_substr($text, 0, 40);
     }
-
 }
