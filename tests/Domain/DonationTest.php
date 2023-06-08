@@ -129,20 +129,19 @@ class DonationTest extends TestCase
         $donation->setTipAmount('25000.01');
     }
 
-    public function testTipAmount200kAllowedForCustomerBalances(): void
+    public function testCustomerBalananceDonationsDoNotAcceptTips(): void
     {
-        $donation = Donation::fromApiModel(new DonationCreate(
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('A Customer Balance Donation may not include a tip');
+
+        Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '1',
             projectId: "any project",
             psp:'stripe',
-            paymentMethodType: PaymentMethodType::CustomerBalance
+            paymentMethodType: PaymentMethodType::CustomerBalance,
+            tipAmount: '1',
         ), new Campaign());
-
-        $donation->setCurrencyCode('GBP');
-        $donation->setTipAmount('200000');
-
-        $this->assertSame('200000', $donation->getTipAmount());
     }
 
     public function testInvalidPspRejected(): void
@@ -283,7 +282,7 @@ class DonationTest extends TestCase
 
     public function testGetStripePIHelpersWithCustomerBalanceGbp(): void
     {
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);
+        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
         $donation->setCurrencyCode('GBP');
 
         $expectedPaymentMethodProperties = [
@@ -311,7 +310,7 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Customer balance payments only supported for GBP');
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);
+        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
         $donation->setCurrencyCode('USD');
 
         $donation->getStripeMethodProperties(); // Throws in this getter for now.

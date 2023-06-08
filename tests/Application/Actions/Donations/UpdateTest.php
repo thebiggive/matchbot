@@ -1640,10 +1640,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);
+        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);  // Get a new mock object so DB has old values.
+        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
@@ -1777,7 +1777,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);
+        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::Card);
@@ -1845,10 +1845,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);
+        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);  // Get a new mock object so DB has old values.
+        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
 

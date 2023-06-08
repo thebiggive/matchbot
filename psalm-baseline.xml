@@ -971,7 +971,6 @@
       <code><![CDATA[$this->getFeeCoverAmount()]]></code>
       <code><![CDATA[$this->getTipAmount()]]></code>
       <code><![CDATA[$this->getTipAmount()]]></code>
-      <code>$tipAmount</code>
     </ArgumentTypeCoercion>
     <MethodSignatureMustProvideReturnType>
       <code>__toString</code>
