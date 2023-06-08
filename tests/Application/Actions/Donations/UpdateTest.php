@@ -325,12 +325,11 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation('999.99');
         $donation->setDonationStatus(DonationStatus::Cancelled);
         // Check this is ignored and only status patched. N.B. this is currently a bit circular as we simulate both
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
-        $donation->setAmount('999.99');
 
         $responseDonation = $this->getTestDonation();
         $responseDonation->setDonationStatus(DonationStatus::Cancelled);
@@ -388,12 +387,11 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation('999.99');
         $donation->setDonationStatus(DonationStatus::Cancelled);
         // Check this is ignored and only status patched. N.B. this is currently a bit circular as we simulate both
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
-        $donation->setAmount('999.99');
 
         $responseDonation = $this->getTestDonation();
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
@@ -671,8 +669,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donationInRequest = $this->getTestDonation();
-        $donationInRequest->setAmount('99.99');
+        $donationInRequest = $this->getTestDonation('99.99');
 
         $donationInRepo = $this->getTestDonation(); //  // Get a new mock object so it's £123.45.
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -949,10 +946,9 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -961,8 +957,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1045,17 +1040,15 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(); // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+        $donationRepoProphecy // here
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Persist as normal.
@@ -1144,10 +1137,9 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -1156,8 +1148,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Internal persist still goes ahead.
@@ -1252,17 +1243,15 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Persist as normal.
@@ -1354,10 +1343,9 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(); // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -1366,8 +1354,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Internal persist still goes ahead.
@@ -1460,17 +1447,15 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donatinInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donatinInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Persist as normal.
@@ -1563,10 +1548,9 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -1575,8 +1559,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce(); // Updates pushed to Salesforce
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1657,12 +1640,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
-        $donation->setPaymentMethodType(PaymentMethodType::CustomerBalance);
+        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
-        $donationInRepo->setPaymentMethodType(PaymentMethodType::CustomerBalance);
+        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);  // Get a new mock object so DB has old values.
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
@@ -1675,8 +1656,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce(); // Updates pushed to Salesforce
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1731,10 +1711,9 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
+        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::Card);  // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
-        $donationInRepo->setPaymentMethodType(PaymentMethodType::Card);
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
@@ -1791,29 +1770,24 @@ class UpdateTest extends TestCase
         $this->assertEquals($expectedSerialised, $payload);
     }
 
-    public function testAddDataAutoconfirmHitsNoPaymentMethodException(): void
+    public function testCannotAutoConfirmCardPayment(): void
     {
         // arrange
         $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
-        $donation->setPaymentMethodType(PaymentMethodType::CustomerBalance);
+        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
+        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::Card);
+        // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
-        $donationInRepo->setPaymentMethodType(PaymentMethodType::CustomerBalance);
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationInRepo)
-            ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
@@ -1827,11 +1801,8 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->commit()->shouldNotBeCalled();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', Argument::type('array'))
-            ->shouldBeCalledOnce();
-        $stripePaymentIntentsProphecy->confirm('pi_externalId_123')
-            ->willThrow(new InvalidRequestException("You cannot confirm this PaymentIntent because it's missing a payment method. To confirm the PaymentIntent with cus_aaa1111aa, specify a payment method attached to this customer along with the customer ID"))
-            ->shouldBeCalledOnce();
+        $stripePaymentIntentsProphecy->update(Argument::cetera())
+            ->shouldNotBeCalled();
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
@@ -1856,11 +1827,11 @@ class UpdateTest extends TestCase
         $payload = (string) $response->getBody();
 
         $this->assertJson($payload);
-        $this->assertEquals(500, $response->getStatusCode());
+        $this->assertEquals(400, $response->getStatusCode());
 
-        $expectedPayload = new ActionPayload(500, ['error' => [
-            'type' => 'SERVER_ERROR',
-            'description' => 'Could not confirm Stripe Payment Intent',
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'Processing incomplete. Please refresh and check your donation funds balance',
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
@@ -1874,22 +1845,19 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
-        $donation->setPaymentMethodType(PaymentMethodType::CustomerBalance);
+        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
+        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance);  // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
-        $donationInRepo->setPaymentMethodType(PaymentMethodType::CustomerBalance);
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)

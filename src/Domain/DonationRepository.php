@@ -16,6 +16,7 @@ use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 
@@ -72,7 +73,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function doUpdate(SalesforceWriteProxy $donation): bool
     {
         if ($donation->getPaymentMethodType() === null) {
-            $donation->setPaymentMethodType(PaymentMethodType::Card);
+            $donation->replaceNullPaymentMethodTypeWithCard();
             $this->getEntityManager()->persist($donation);
         }
 
@@ -156,33 +157,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ));
         }
 
-        $donation = new Donation();
-        $donation->setPsp($donationData->psp);
-        $donation->setPaymentMethodType($donationData->paymentMethodType);
-        $donation->setDonationStatus(DonationStatus::Pending);
-        $donation->setUuid((new UuidGenerator())->generateId($this->getEntityManager(), $donation));
-        $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
-        $donation->setCurrencyCode($donationData->currencyCode);
-        $donation->setAmount((string) $donationData->donationAmount);
-        $donation->setGiftAid($donationData->giftAid);
-        $donation->setCharityComms($donationData->optInCharityEmail);
-        $donation->setChampionComms($donationData->optInChampionEmail);
-        $donation->setPspCustomerId($donationData->pspCustomerId);
-        $donation->setTbgComms($donationData->optInTbgEmail);
-
-        if (!empty($donationData->countryCode)) {
-            $donation->setDonorCountryCode($donationData->countryCode);
-        }
-
-        if (isset($donationData->feeCoverAmount)) {
-            $donation->setFeeCoverAmount((string) $donationData->feeCoverAmount);
-        }
-
-        if (isset($donationData->tipAmount)) {
-            $donation->setTipAmount((string) $donationData->tipAmount);
-        }
-
-        $donation = $this->deriveFees($donation);
+        $donation = Donation::fromApiModel($donationData, $campaign);
+        $this->deriveFees($donation);
 
         return $donation;
     }
@@ -561,7 +537,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return count($donations);
     }
 
-    public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): Donation
+    public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): void
     {
         $incursGiftAidFee = $donation->hasGiftAid() && $donation->hasTbgShouldProcessGiftAid();
 
@@ -577,8 +553,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
         );
         $donation->setCharityFee($structure->getCoreFee());
         $donation->setCharityFeeVat($structure->getFeeVat());
-
-        return $donation;
     }
 
     /**

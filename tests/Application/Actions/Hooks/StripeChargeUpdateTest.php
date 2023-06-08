@@ -157,8 +157,7 @@ class StripeChargeUpdateTest extends StripeTest
         $container = $app->getContainer();
 
         $body = $this->getStripeHookMock('ch_succeeded_sek');
-        $donation = $this->getTestDonation();
-        $donation->setAmount('6000.00');
+        $donation = $this->getTestDonation('6000.00');
         $donation->setCurrencyCode('SEK');
 
         $webhookSecret = $this->getValidWebhookSecret($container);
