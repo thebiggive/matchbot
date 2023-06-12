@@ -60,7 +60,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Pending);
 
-        $this->donationRepositoryProphecy->deriveFees($donation, 'some-card-brand', 'some-country')->shouldBeCalled()->willReturn($donation);
+        $this->donationRepositoryProphecy->deriveFees($donation, 'some-card-brand', 'some-country')->shouldBeCalled();
 
         $updateAction = new Update(
             $this->donationRepositoryProphecy->reveal(),
@@ -126,13 +126,12 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $campaign->setIsMatched(true);
         $campaign->setCharity($charity);
 
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation('1');
         $donation->createdNow();
         $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setCampaign($campaign);
         $donation->setPsp('stripe');
         $donation->setCurrencyCode('GBP');
-        $donation->setAmount('1');
         $donation->setUuid(Uuid::uuid4());
         $donation->setDonorFirstName('Donor first name');
         $donation->setDonorLastName('Donor last name');

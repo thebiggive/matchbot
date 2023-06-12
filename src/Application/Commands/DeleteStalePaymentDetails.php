@@ -19,10 +19,7 @@ class DeleteStalePaymentDetails extends LockingCommand
 {
     const STRIPE_PAGE_SIZE = 100; // Maximum allowed. Iterators page through automatically.
 
-    /**
-     * 2 for the first few times we run it in prod, after that maybe we can set to 200 or 500 or something.
-     */
-    const MAX_CUSTOMER_COUNT_TO_DETATCH_PER_RUN = 2;
+    const MAX_CUSTOMER_COUNT_TO_DETATCH_PER_RUN = 500;
 
     protected static $defaultName = 'matchbot:delete-stale-payment-details';
 
@@ -56,11 +53,11 @@ class DeleteStalePaymentDetails extends LockingCommand
         ]);
 
         foreach ($customers->autoPagingIterator() as $customer) {
-            $customerCount++;
-
-            if ($customerCount > self::MAX_CUSTOMER_COUNT_TO_DETATCH_PER_RUN) {
+            if ($customerCount >= self::MAX_CUSTOMER_COUNT_TO_DETATCH_PER_RUN) {
                 break;
             }
+
+            $customerCount++;
 
             // Get all *card* type payment methods for this customer – condition (3).
             $paymentMethods = $this->stripeClient->paymentMethods->all([

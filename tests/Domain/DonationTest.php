@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Domain;
 
+use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 
@@ -16,7 +19,7 @@ class DonationTest extends TestCase
 
     public function testBasicsAsExpectedOnInstantion(): void
     {
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation('1');
 
         $this->assertFalse($donation->getDonationStatus()->isSuccessful());
         $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
@@ -30,7 +33,7 @@ class DonationTest extends TestCase
 
     public function testPendingDonationDoesNotHavePostCreateUpdates(): void
     {
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation('1');
         $donation->setDonationStatus(DonationStatus::Pending);
 
         $this->assertFalse($donation->hasPostCreateUpdates());
@@ -38,7 +41,7 @@ class DonationTest extends TestCase
 
     public function testPaidDonationHasPostCreateUpdates(): void
     {
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation('1');
         $donation->setDonationStatus(DonationStatus::Paid);
 
         $this->assertTrue($donation->hasPostCreateUpdates());
@@ -46,9 +49,8 @@ class DonationTest extends TestCase
 
     public function testValidDataPersisted(): void
     {
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation('100.00');
         $donation->setCurrencyCode('GBP');
-        $donation->setAmount('100.00');
         $donation->setTipAmount('1.13');
 
         $this->assertEquals('100.00', $donation->getAmount());
@@ -62,9 +64,8 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation('0.99');
         $donation->setCurrencyCode('GBP');
-        $donation->setAmount('0.99');
     }
 
     public function testAmountTooHighNotPersisted(): void
@@ -72,19 +73,75 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation('25000.01');
         $donation->setCurrencyCode('GBP');
-        $donation->setAmount('25000.01');
+    }
+
+    public function test25k1CardIsTooHigh(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Amount must be 1-25000 GBP');
+
+        Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '25001',
+            projectId: "any project",
+            psp:'stripe',
+            paymentMethodType: PaymentMethodType::Card
+        ), new Campaign());
+    }
+
+    public function test200kCustomerBalanceDonationIsAllowed(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '200000',
+            projectId: "any project",
+            psp:'stripe',
+            paymentMethodType: PaymentMethodType::CustomerBalance
+        ), new Campaign());
+
+        $this->assertSame('200000', $donation->getAmount());
+    }
+
+    public function test200k1CustomerBalanceDonationIsTooHigh(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Amount must be 1-200000 GBP');
+
+        Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '200001',
+            projectId: "any project",
+            psp:'stripe',
+            paymentMethodType: PaymentMethodType::CustomerBalance
+        ), new Campaign());
     }
 
     public function testTipAmountTooHighNotPersisted(): void
     {
+        $donation = Donation::emptyTestDonation('1');
+        $donation->setCurrencyCode('GBP');
+
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Tip amount must not exceed 25000 GBP');
 
-        $donation = new Donation();
-        $donation->setCurrencyCode('GBP');
         $donation->setTipAmount('25000.01');
+    }
+
+    public function testCustomerBalananceDonationsDoNotAcceptTips(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('A Customer Balance Donation may not include a tip');
+
+        Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '1',
+            projectId: "any project",
+            psp:'stripe',
+            paymentMethodType: PaymentMethodType::CustomerBalance,
+            tipAmount: '1',
+        ), new Campaign());
     }
 
     public function testInvalidPspRejected(): void
@@ -92,14 +149,14 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage("Unexpected PSP 'paypal'");
 
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation('1');
         /** @psalm-suppress InvalidArgument */
         $donation->setPsp('paypal');
     }
 
     public function testValidPspAccepted(): void
     {
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation('1');
         $donation->setPsp('stripe');
 
         $this->addToAssertionCount(1); // Just check setPsp() doesn't hit an exception
@@ -107,7 +164,7 @@ class DonationTest extends TestCase
 
     public function testSetAndGetOriginalFee(): void
     {
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation('1');
         $donation->setOriginalPspFeeFractional(123);
 
         $this->assertEquals('1.23', $donation->getOriginalPspFee());
@@ -225,9 +282,8 @@ class DonationTest extends TestCase
 
     public function testGetStripePIHelpersWithCustomerBalanceGbp(): void
     {
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
         $donation->setCurrencyCode('GBP');
-        $donation->setPaymentMethodType('customer_balance');
 
         $expectedPaymentMethodProperties = [
             'payment_method_types' => ['customer_balance'],
@@ -254,9 +310,8 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Customer balance payments only supported for GBP');
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
         $donation->setCurrencyCode('USD');
-        $donation->setPaymentMethodType('customer_balance');
 
         $donation->getStripeMethodProperties(); // Throws in this getter for now.
     }

@@ -197,6 +197,11 @@
       <code>$response</code>
     </UnusedClosureParam>
   </file>
+  <file src="integrationTests/DonationPersistenceTest.php">
+    <DeprecatedMethod>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+    </DeprecatedMethod>
+  </file>
   <file src="public/index.php">
     <MixedArgument>
       <code><![CDATA[$app->getContainer()->get(LoggerInterface::class)]]></code>
@@ -540,13 +545,6 @@
       <code>$projectId</code>
       <code>$transactionId</code>
     </PossiblyUnusedProperty>
-  </file>
-  <file src="src/Application/HttpModels/DonationCreate.php">
-    <MissingConstructor>
-      <code>$donationAmount</code>
-      <code>$projectId</code>
-      <code>$psp</code>
-    </MissingConstructor>
   </file>
   <file src="src/Application/HttpModels/DonationCreatedResponse.php">
     <MissingConstructor>
@@ -973,7 +971,6 @@
       <code><![CDATA[$this->getFeeCoverAmount()]]></code>
       <code><![CDATA[$this->getTipAmount()]]></code>
       <code><![CDATA[$this->getTipAmount()]]></code>
-      <code>$tipAmount</code>
     </ArgumentTypeCoercion>
     <MethodSignatureMustProvideReturnType>
       <code>__toString</code>
@@ -1018,9 +1015,7 @@
       <code>preUpdate</code>
     </PossiblyUnusedMethod>
     <PropertyNotSetInConstructor>
-      <code>$amount</code>
       <code>$campaign</code>
-      <code>$currencyCode</code>
       <code>$psp</code>
       <code>Donation</code>
       <code>Donation</code>
@@ -1132,8 +1127,6 @@
     <PossiblyNullArgument>
       <code><![CDATA[$donation->getId()]]></code>
       <code><![CDATA[$donation->getSalesforceId()]]></code>
-      <code><![CDATA[$donationData->currencyCode]]></code>
-      <code><![CDATA[$donationData->currencyCode]]></code>
       <code>$funding</code>
     </PossiblyNullArgument>
     <PossiblyUndefinedVariable>
@@ -1151,11 +1144,6 @@
     <PossiblyUnusedMethod>
       <code>setFundRepository</code>
     </PossiblyUnusedMethod>
-    <RedundantCast>
-      <code><![CDATA[(string) $donationData->donationAmount]]></code>
-      <code><![CDATA[(string) $donationData->feeCoverAmount]]></code>
-      <code><![CDATA[(string) $donationData->tipAmount]]></code>
-    </RedundantCast>
     <TooManyArguments>
       <code>refresh</code>
     </TooManyArguments>
@@ -1541,6 +1529,9 @@
     </DeprecatedMethod>
   </file>
   <file src="tests/Application/Actions/Donations/CreateTest.php">
+    <DeprecatedMethod>
+      <code><![CDATA[Donation::emptyTestDonation('12.00')]]></code>
+    </DeprecatedMethod>
     <MixedArrayAccess>
       <code><![CDATA[$payloadArray['error']]]></code>
       <code><![CDATA[$payloadArray['error']]]></code>
@@ -1570,6 +1561,9 @@
     </MixedArrayAccess>
   </file>
   <file src="tests/Application/Actions/Donations/UpdateHandlesLockExceptionTest.php">
+    <DeprecatedMethod>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+    </DeprecatedMethod>
     <InternalMethod>
       <code><![CDATA[new LockWaitTimeoutException($testCase->createStub(DriverException::class), null)]]></code>
     </InternalMethod>
@@ -1579,7 +1573,6 @@
       <code><![CDATA[$payloadArray['billingPostalAddress']]]></code>
       <code><![CDATA[$payloadArray['billingPostalAddress']]]></code>
       <code><![CDATA[$payloadArray['billingPostalAddress']]]></code>
-      <code><![CDATA[$payloadArray['billingPostalAddress']]]></code>
       <code><![CDATA[$payloadArray['charityFee']]]></code>
       <code><![CDATA[$payloadArray['charityFee']]]></code>
       <code><![CDATA[$payloadArray['charityFee']]]></code>
@@ -1587,15 +1580,11 @@
       <code><![CDATA[$payloadArray['charityFee']]]></code>
       <code><![CDATA[$payloadArray['charityFee']]]></code>
       <code><![CDATA[$payloadArray['charityFee']]]></code>
-      <code><![CDATA[$payloadArray['charityFee']]]></code>
-      <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['countryCode']]]></code>
-      <code><![CDATA[$payloadArray['countryCode']]]></code>
-      <code><![CDATA[$payloadArray['currencyCode']]]></code>
       <code><![CDATA[$payloadArray['currencyCode']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
@@ -1603,19 +1592,13 @@
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['emailAddress']]]></code>
-      <code><![CDATA[$payloadArray['emailAddress']]]></code>
-      <code><![CDATA[$payloadArray['firstName']]]></code>
       <code><![CDATA[$payloadArray['firstName']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
-      <code><![CDATA[$payloadArray['giftAid']]]></code>
-      <code><![CDATA[$payloadArray['homeAddress']]]></code>
       <code><![CDATA[$payloadArray['homeAddress']]]></code>
       <code><![CDATA[$payloadArray['homePostcode']]]></code>
-      <code><![CDATA[$payloadArray['homePostcode']]]></code>
-      <code><![CDATA[$payloadArray['lastName']]]></code>
       <code><![CDATA[$payloadArray['lastName']]]></code>
       <code><![CDATA[$payloadArray['matchedAmount']]]></code>
       <code><![CDATA[$payloadArray['matchedAmount']]]></code>
@@ -1623,11 +1606,9 @@
       <code><![CDATA[$payloadArray['optInCharityEmail']]]></code>
       <code><![CDATA[$payloadArray['optInCharityEmail']]]></code>
       <code><![CDATA[$payloadArray['optInCharityEmail']]]></code>
-      <code><![CDATA[$payloadArray['optInCharityEmail']]]></code>
       <code><![CDATA[$payloadArray['optInTbgEmail']]]></code>
       <code><![CDATA[$payloadArray['optInTbgEmail']]]></code>
       <code><![CDATA[$payloadArray['optInTbgEmail']]]></code>
-      <code><![CDATA[$payloadArray['optInTbgEmail']]]></code>
       <code><![CDATA[$payloadArray['status']]]></code>
       <code><![CDATA[$payloadArray['status']]]></code>
       <code><![CDATA[$payloadArray['status']]]></code>
@@ -1638,8 +1619,6 @@
       <code><![CDATA[$payloadArray['tipAmount']]]></code>
       <code><![CDATA[$payloadArray['tipAmount']]]></code>
       <code><![CDATA[$payloadArray['tipAmount']]]></code>
-      <code><![CDATA[$payloadArray['tipAmount']]]></code>
-      <code><![CDATA[$payloadArray['tipGiftAid']]]></code>
       <code><![CDATA[$payloadArray['tipGiftAid']]]></code>
     </MixedArrayAccess>
     <MixedAssignment>
@@ -1773,6 +1752,10 @@
     </MixedArgumentTypeCoercion>
   </file>
   <file src="tests/Application/Commands/ExpireMatchFundsTest.php">
+    <DeprecatedMethod>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+    </DeprecatedMethod>
     <MixedArgument>
       <code><![CDATA[$donationRepoProphecy->reveal()]]></code>
     </MixedArgument>
@@ -1842,6 +1825,12 @@
       <code>get</code>
     </PossiblyNullReference>
   </file>
+  <file src="tests/Application/DonationTestDataTrait.php">
+    <DeprecatedMethod>
+      <code>Donation::emptyTestDonation($amount, $paymentMethodType)</code>
+      <code><![CDATA[Donation::emptyTestDonation('124.56')]]></code>
+    </DeprecatedMethod>
+  </file>
   <file src="tests/Application/Fees/CalculatorTest.php">
     <MixedArgument>
       <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
@@ -1910,6 +1899,12 @@
     </UndefinedPropertyAssignment>
   </file>
   <file src="tests/Application/Persistence/RetrySafeEntityManagerTest.php">
+    <DeprecatedMethod>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+    </DeprecatedMethod>
     <InternalClass>
       <code><![CDATA[new ReturnCallback(static function () use ($retrySafeEm, $underlyingEmToResetTo) {
                 $retrySafeEm->setEntityManager($underlyingEmToResetTo);
@@ -1975,6 +1970,18 @@
     </PossiblyNullReference>
   </file>
   <file src="tests/Domain/DonationTest.php">
+    <DeprecatedMethod>
+      <code><![CDATA[Donation::emptyTestDonation('0.99')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('100.00')]]></code>
+      <code><![CDATA[Donation::emptyTestDonation('25000.01')]]></code>
+    </DeprecatedMethod>
     <InternalMethod>
       <code>addToAssertionCount</code>
     </InternalMethod>

@@ -7,12 +7,12 @@ namespace MatchBot\Domain;
 use DateTime;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Mapping\Column;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\HttpModels\DonationCreate;
 use Messages;
+use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -27,16 +27,16 @@ use Ramsey\Uuid\UuidInterface;
 class Donation extends SalesforceWriteProxy
 {
     /**
-     * @var int
      * @see Donation::$currencyCode
      */
-    private int $minimumAmount = 1;
+    public const MAXIMUM_CARD_DONATION = 25_000;
 
+    public const MAXIMUM_CUSTOMER_BALANCE_DONATION = 200_000;
     /**
      * @var int
      * @see Donation::$currencyCode
      */
-    private int $maximumAmount = 25000;
+    private int $minimumAmount = 1;
 
     private array $possiblePSPs = ['stripe'];
 
@@ -283,9 +283,9 @@ class Donation extends SalesforceWriteProxy
     protected ?string $pspCustomerId = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
+     * @ORM\Column(type="string",  enumType="MatchBot\Domain\PaymentMethodType", nullable=true)
      */
-    protected ?string $paymentMethodType = 'card';
+    protected ?PaymentMethodType $paymentMethodType = PaymentMethodType::Card;
 
     /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
@@ -293,9 +293,62 @@ class Donation extends SalesforceWriteProxy
      */
     protected $fundingWithdrawals;
 
-    public function __construct()
+    /**
+     * @param string $amount
+     * @deprecated but retained for now as used in old test classes. Not recommend for continued use - either use
+     * fromApiModel or create a new named constructor that takes required data for your use case.
+     */
+    public static function emptyTestDonation(string $amount, PaymentMethodType $paymentMethodType = PaymentMethodType::Card): self
+    {
+        return new self($amount, 'GBP', $paymentMethodType);
+    }
+
+    private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
     {
         $this->fundingWithdrawals = new ArrayCollection();
+        $this->setCurrencyCode($currencyCode);
+        $this->setAmountAndMethod($amount, $paymentMethodType);
+    }
+
+    public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
+    {
+
+        $psp = $donationData->psp;
+        assert($psp === 'stripe');
+
+        $donation = new self($donationData->donationAmount, $donationData->currencyCode, $donationData->paymentMethodType);
+
+        $donation->setPsp($psp);
+        $donation->setDonationStatus(DonationStatus::Pending);
+        $donation->setUuid(Uuid::uuid4());
+        $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
+        $donation->setGiftAid($donationData->giftAid);
+        $donation->setCharityComms($donationData->optInCharityEmail);
+        $donation->setChampionComms($donationData->optInChampionEmail);
+        $donation->setPspCustomerId($donationData->pspCustomerId);
+        $donation->setTbgComms($donationData->optInTbgEmail);
+
+        if (!empty($donationData->countryCode)) {
+            $donation->setDonorCountryCode($donationData->countryCode);
+        }
+
+        if (isset($donationData->feeCoverAmount)) {
+            $donation->setFeeCoverAmount($donationData->feeCoverAmount);
+        }
+
+        if (isset($donationData->tipAmount)) {
+            $donation->setTipAmount($donationData->tipAmount);
+        }
+
+        return $donation;
+    }
+
+    private static function maximumAmount(PaymentMethodType $paymentMethodType): int
+    {
+        return match ($paymentMethodType) {
+            PaymentMethodType::CustomerBalance => self::MAXIMUM_CUSTOMER_BALANCE_DONATION,
+            PaymentMethodType::Card => self::MAXIMUM_CARD_DONATION,
+        };
     }
 
     public function __toString()
@@ -317,6 +370,14 @@ class Donation extends SalesforceWriteProxy
         if ($args->getOldValue('amount') !== $args->getNewValue('amount')) {
             throw new \LogicException('Amount may not be changed after a donation is created');
         }
+    }
+
+    public function replaceNullPaymentMethodTypeWithCard(): void
+    {
+        if ($this->paymentMethodType !== null) {
+            throw new \Exception('Should only be called when payment method type is null');
+        }
+        $this->paymentMethodType = PaymentMethodType::Card;
     }
 
     public function toHookModel(): array
@@ -377,7 +438,7 @@ class Donation extends SalesforceWriteProxy
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
             'pspCustomerId' => $this->getPspCustomerId(),
-            'pspMethodType' => $this->getPaymentMethodType(),
+            'pspMethodType' => $this->getPaymentMethodType()?->value,
             'status' => $this->getDonationStatus(),
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
@@ -552,21 +613,24 @@ class Donation extends SalesforceWriteProxy
     /**
      * @param string $amount    Core donation amount, excluding any tip, in full pounds GBP.
      */
-    public function setAmount(string $amount): void
+    private function setAmountAndMethod(string $amount, PaymentMethodType $paymentMethodType): void
     {
+        $maximumAmount = self::maximumAmount($paymentMethodType);
+
         if (
             bccomp($amount, (string) $this->minimumAmount, 2) === -1 ||
-            bccomp($amount, (string) $this->maximumAmount, 2) === 1
+            bccomp($amount, (string)$maximumAmount, 2) === 1
         ) {
             throw new \UnexpectedValueException(sprintf(
                 'Amount must be %d-%d %s',
                 $this->minimumAmount,
-                $this->maximumAmount,
+                $maximumAmount,
                 $this->currencyCode,
             ));
         }
 
         $this->amount = $amount;
+        $this->paymentMethodType = $paymentMethodType;
     }
 
     public function setCharityFee(string $charityFee): void
@@ -777,15 +841,25 @@ class Donation extends SalesforceWriteProxy
         return $this->tipAmount;
     }
 
-    /**
-     * @param string $tipAmount
-     */
     public function setTipAmount(string $tipAmount): void
     {
-        if (bccomp($tipAmount, (string) $this->maximumAmount, 2) === 1) {
+        /** @var numeric-string $tipAmount */
+
+        if (
+            $this->paymentMethodType == PaymentMethodType::CustomerBalance &&
+            bccomp($tipAmount, '0') !== 0
+        ) {
+            // We would have accepted a tip at the time the customer balance was created, so we don't take a second
+            // tip as part of the donation.
+            throw new \UnexpectedValueException('A Customer Balance Donation may not include a tip');
+        }
+
+        $max = self::MAXIMUM_CARD_DONATION;
+
+        if (bccomp($tipAmount, (string)(self::MAXIMUM_CARD_DONATION), 2) === 1) {
             throw new \UnexpectedValueException(sprintf(
                 'Tip amount must not exceed %d %s',
-                $this->maximumAmount,
+                $max,
                 $this->currencyCode,
             ));
         }
@@ -1036,14 +1110,9 @@ class Donation extends SalesforceWriteProxy
         $this->pspCustomerId = $pspCustomerId;
     }
 
-    public function getPaymentMethodType(): ?string
+    public function getPaymentMethodType(): ?PaymentMethodType
     {
         return $this->paymentMethodType;
-    }
-
-    public function setPaymentMethodType(string $paymentMethodType): void
-    {
-        $this->paymentMethodType = $paymentMethodType;
     }
 
     /**
@@ -1060,16 +1129,16 @@ class Donation extends SalesforceWriteProxy
     public function getStripeMethodProperties(): array
     {
         $properties = [
-            'payment_method_types' => [$this->paymentMethodType],
+            'payment_method_types' => [$this->paymentMethodType?->value],
         ];
 
-        if ($this->paymentMethodType === 'customer_balance') {
+        if ($this->paymentMethodType === PaymentMethodType::CustomerBalance) {
             if ($this->currencyCode !== 'GBP') {
                 throw new \UnexpectedValueException('Customer balance payments only supported for GBP');
             }
 
             $properties['payment_method_data'] = [
-                'type' => 'customer_balance',
+                'type' => PaymentMethodType::CustomerBalance->value,
             ];
 
             $properties['payment_method_options'] = [
@@ -1103,7 +1172,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function getStripeOnBehalfOfProperties(): array
     {
-        if ($this->paymentMethodType === 'card') {
+        if ($this->paymentMethodType === PaymentMethodType::Card) {
             return ['on_behalf_of' => $this->getCampaign()->getCharity()->getStripeAccountId()];
         }
 
@@ -1117,7 +1186,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function supportsSavingPaymentMethod(): bool
     {
-        return $this->paymentMethodType === 'card';
+        return $this->paymentMethodType === PaymentMethodType::Card;
     }
 
     public function hasEnoughDataForSalesforce(): bool
@@ -1185,5 +1254,4 @@ class Donation extends SalesforceWriteProxy
 
         return mb_substr($text, 0, 40);
     }
-
 }

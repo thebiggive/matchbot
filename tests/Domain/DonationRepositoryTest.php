@@ -17,6 +17,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\Application\VatTrait;
@@ -28,6 +29,7 @@ use ReflectionClass;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
+use Symfony\Component\Serializer\Serializer;
 
 class DonationRepositoryTest extends TestCase
 {
@@ -148,12 +150,13 @@ class DonationRepositoryTest extends TestCase
             ->willReturn($dummyCampaign)
             ->shouldBeCalledOnce();
 
-        $createPayload = new DonationCreate();
-        $createPayload->currencyCode = 'USD';
-        $createPayload->donationAmount = '123.32';
-        $createPayload->paymentMethodType = 'card';
-        $createPayload->projectId = 'testProject123';
-        $createPayload->psp = 'stripe';
+        $createPayload = new DonationCreate(
+            currencyCode: 'USD',
+            donationAmount: '123.32',
+            paymentMethodType: PaymentMethodType::Card,
+            projectId: 'testProject123',
+            psp: 'stripe',
+        );
 
         $donation = $this->getRepo(null, false, $campaignRepoProphecy)
             ->buildFromApiRequest($createPayload);
@@ -161,27 +164,6 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals('USD', $donation->getCurrencyCode());
         $this->assertEquals('123.32', $donation->getAmount());
         $this->assertEquals(12_332, $donation->getAmountFractionalIncTip());
-    }
-
-    public function testBuildFromApiRequestWithUndefinedCurrency(): void
-    {
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Required field "currencyCode" not set');
-
-        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        // We don't even call this if the donation data basics are failing.
-        $campaignRepoProphecy->findOneBy(Argument::type('array'))
-            ->shouldNotBeCalled();
-
-        $createPayload = new DonationCreate();
-        $createPayload->paymentMethodType = 'card';
-        $createPayload->projectId = 'testProject123';
-        $createPayload->psp = 'stripe';
-        // Explicitly make this property undefined, not null, to force a TypeError.
-        unset($createPayload->currencyCode);
-
-        $this->getRepo(null, false, $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload);
     }
 
     public function testBuildFromApiRequestWithCurrencyMismatch(): void
@@ -197,33 +179,13 @@ class DonationRepositoryTest extends TestCase
             ->willReturn($dummyCampaign)
             ->shouldBeCalledOnce();
 
-        $createPayload = new DonationCreate();
-        $createPayload->currencyCode = 'CAD';
-        $createPayload->donationAmount = '144.44';
-        $createPayload->paymentMethodType = 'card';
-        $createPayload->projectId = 'testProject123';
-        $createPayload->psp = 'stripe';
-
-        $this->getRepo(null, false, $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload);
-    }
-
-    public function testBuildFromApiRequestWithUnsupportedPaymentMethodType(): void
-    {
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Payment method cardd is invalid');
-
-        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        // We don't even call this if the donation data basics are failing.
-        $campaignRepoProphecy->findOneBy(Argument::type('array'))
-            ->shouldNotBeCalled();
-
-        $createPayload = new DonationCreate();
-        $createPayload->currencyCode = 'GBP';
-        $createPayload->donationAmount = '123.32';
-        $createPayload->paymentMethodType = 'cardd';
-        $createPayload->projectId = 'testProject123';
-        $createPayload->psp = 'stripe';
+        $createPayload = new DonationCreate(
+            currencyCode: 'CAD',
+            donationAmount: '144.44',
+            paymentMethodType: PaymentMethodType::Card,
+            projectId: 'testProject123',
+            psp: 'stripe',
+        );
 
         $this->getRepo(null, false, $campaignRepoProphecy)
             ->buildFromApiRequest($createPayload);
@@ -246,12 +208,11 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation();
-        $donation->setAmount('987.65');
+        $donation = $this->getTestDonation('987.65');;
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $donation = $this->getRepo()->deriveFees($donation, 'amex');
+        $this->getRepo()->deriveFees($donation, 'amex');
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -267,12 +228,11 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation();
-        $donation->setAmount('987.65');
+        $donation = $this->getTestDonation('987.65');;
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $donation = $this->getRepo()->deriveFees($donation, 'visa', 'US');
+        $this->getRepo()->deriveFees($donation, 'visa', 'US');
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -291,13 +251,12 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation();
-        $donation->setAmount('987.65');
+        $donation = $this->getTestDonation('987.65');;
         $donation->setTipAmount('0.00');
         $donation->setPsp('stripe');
         $donation->setFeeCoverAmount('44.44'); // 4.5% fee, inc. any VAT.
         $donation->getCampaign()->setFeePercentage(4.5);
-        $donation = $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation);
 
         // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
         // Fixed fee        = £  0.00
@@ -315,12 +274,11 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation();
-        $donation->setAmount('987.65');
+        $donation = $this->getTestDonation('987.65');;
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $donation = $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -336,14 +294,13 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation();
-        $donation->setAmount('987.65');
+        $donation = $this->getTestDonation('987.65');;
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
 
         // Get repo with 20% VAT enabled from now setting override.
-        $donation = $this->getRepo(null, true)->deriveFees($donation);
+        $this->getRepo(null, true)->deriveFees($donation);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -360,12 +317,11 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTip(): void
     {
-        $donation = $this->getTestDonation();
-        $donation->setAmount('987.65');
+        $donation = $this->getTestDonation('987.65');;
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
-        $donation = $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -378,13 +334,12 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTipWhenTbgClaimingGiftAid(): void
     {
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation('987.65');
         $donation->setTbgShouldProcessGiftAid(true);
-        $donation->setAmount('987.65');
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
-        $donation = $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation);
 
         // £987.65 *  1.5%  = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -398,12 +353,11 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
     {
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation('6.25');
         $donation->setPsp('stripe');
-        $donation->setAmount('6.25');
         $donation->setTipAmount('0.00');
         $donation->setCurrencyCode('GBP');
-        $donation = $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation);
 
         // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)
         // Fixed fee    = £ 0.20

@@ -16,6 +16,7 @@ use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 
@@ -72,7 +73,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function doUpdate(SalesforceWriteProxy $donation): bool
     {
         if ($donation->getPaymentMethodType() === null) {
-            $donation->setPaymentMethodType('card');
+            $donation->replaceNullPaymentMethodTypeWithCard();
             $this->getEntityManager()->persist($donation);
         }
 
@@ -116,25 +117,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function buildFromApiRequest(DonationCreate $donationData): Donation
     {
-        // Fields where we've historically seen blanks and/or there is zero chance
-        // of success without them.
-        $checkEarlyFields = ['currencyCode', 'donationAmount', 'paymentMethodType', 'projectId'];
-        foreach ($checkEarlyFields as $checkEarlyField) {
-            if (empty($donationData->$checkEarlyField)) {
-                throw new \UnexpectedValueException(sprintf(
-                    'Required field "%s" not set',
-                    $checkEarlyField
-                ));
-            }
-        }
-
-        if (!in_array($donationData->paymentMethodType, ['card', 'customer_balance'], true)) {
-            throw new \UnexpectedValueException(sprintf(
-                'Payment method %s is invalid',
-                $donationData->paymentMethodType,
-            ));
-        }
-
         if (!in_array($donationData->psp, ['stripe'], true)) {
             throw new \UnexpectedValueException(sprintf(
                 'PSP %s is invalid',
@@ -175,33 +157,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ));
         }
 
-        $donation = new Donation();
-        $donation->setPsp($donationData->psp);
-        $donation->setPaymentMethodType($donationData->paymentMethodType);
-        $donation->setDonationStatus(DonationStatus::Pending);
-        $donation->setUuid((new UuidGenerator())->generateId($this->getEntityManager(), $donation));
-        $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
-        $donation->setCurrencyCode($donationData->currencyCode);
-        $donation->setAmount((string) $donationData->donationAmount);
-        $donation->setGiftAid($donationData->giftAid);
-        $donation->setCharityComms($donationData->optInCharityEmail);
-        $donation->setChampionComms($donationData->optInChampionEmail);
-        $donation->setPspCustomerId($donationData->pspCustomerId);
-        $donation->setTbgComms($donationData->optInTbgEmail);
-
-        if (!empty($donationData->countryCode)) {
-            $donation->setDonorCountryCode($donationData->countryCode);
-        }
-
-        if (isset($donationData->feeCoverAmount)) {
-            $donation->setFeeCoverAmount((string) $donationData->feeCoverAmount);
-        }
-
-        if (isset($donationData->tipAmount)) {
-            $donation->setTipAmount((string) $donationData->tipAmount);
-        }
-
-        $donation = $this->deriveFees($donation);
+        $donation = Donation::fromApiModel($donationData, $campaign);
+        $this->deriveFees($donation);
 
         return $donation;
     }
@@ -580,7 +537,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return count($donations);
     }
 
-    public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): Donation
+    public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): void
     {
         $incursGiftAidFee = $donation->hasGiftAid() && $donation->hasTbgShouldProcessGiftAid();
 
@@ -596,8 +553,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
         );
         $donation->setCharityFee($structure->getCoreFee());
         $donation->setCharityFeeVat($structure->getFeeVat());
-
-        return $donation;
     }
 
     /**
