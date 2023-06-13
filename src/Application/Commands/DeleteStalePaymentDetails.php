@@ -38,6 +38,7 @@ class DeleteStalePaymentDetails extends LockingCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
+        $startTime = microtime(true);
         $customerCount = 0;
         $methodsDeleted = 0;
         $oneDayAgo = $this->initDate
@@ -83,7 +84,10 @@ class DeleteStalePaymentDetails extends LockingCommand
             );
         }
 
-        $output->writeln("Deleted $methodsDeleted payment methods from Stripe, having checked $customerCount customers");
+        $timeTaken = microtime(true) - $startTime;
+        $timeTaken = round($timeTaken, 2);
+
+        $output->writeln("Deleted $methodsDeleted payment methods from Stripe, having checked $customerCount customers. Time Taken: {$timeTaken}s");
 
         return 0;
     }
