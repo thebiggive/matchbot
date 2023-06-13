@@ -73,7 +73,7 @@ class DeleteStalePaymentDetailsTest extends TestCase
         // assert
         $expectedOutputLines = [
             'matchbot:delete-stale-payment-details starting!',
-            'Deleted 1 payment methods from Stripe, having checked 1 customers',
+            'Deleted 1 payment methods from Stripe, having checked 1 customers. Time Taken: 0s',
             'matchbot:delete-stale-payment-details complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
