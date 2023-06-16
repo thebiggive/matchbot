@@ -140,7 +140,7 @@ class DonationTest extends TestCase
             projectId: "any project",
             psp:'stripe',
             paymentMethodType: PaymentMethodType::CustomerBalance,
-            tipAmount: '1',
+            tipAmount: '0.01',
         ), new Campaign());
     }
 

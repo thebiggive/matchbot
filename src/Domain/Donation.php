@@ -843,11 +843,10 @@ class Donation extends SalesforceWriteProxy
 
     public function setTipAmount(string $tipAmount): void
     {
-        /** @var numeric-string $tipAmount */
-
+        /** @psalm-var numeric-string $tipAmount */
         if (
-            $this->paymentMethodType == PaymentMethodType::CustomerBalance &&
-            bccomp($tipAmount, '0') !== 0
+            $this->paymentMethodType === PaymentMethodType::CustomerBalance &&
+            bccomp($tipAmount, '0', 2) !== 0
         ) {
             // We would have accepted a tip at the time the customer balance was created, so we don't take a second
             // tip as part of the donation.
