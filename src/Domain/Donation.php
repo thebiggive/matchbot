@@ -841,11 +841,9 @@ class Donation extends SalesforceWriteProxy
         return $this->tipAmount;
     }
 
-    /**
-     * @param string $tipAmount Numeric string
-     */
     public function setTipAmount(string $tipAmount): void
     {
+        /** @psalm-var numeric-string $tipAmount */
         if (
             $this->paymentMethodType === PaymentMethodType::CustomerBalance &&
             bccomp($tipAmount, '0', 2) !== 0
