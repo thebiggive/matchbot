@@ -19,7 +19,7 @@ class DeleteStalePaymentDetails extends LockingCommand
 {
     const STRIPE_PAGE_SIZE = 100; // Maximum allowed. Iterators page through automatically.
 
-    const MAX_CUSTOMER_COUNT_TO_DETATCH_PER_RUN = 500;
+    const MAX_CUSTOMER_COUNT_TO_DETATCH_PER_RUN = 2_000;
 
     protected static $defaultName = 'matchbot:delete-stale-payment-details';
 
