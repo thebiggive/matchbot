@@ -294,6 +294,12 @@ class Donation extends SalesforceWriteProxy
     protected $fundingWithdrawals;
 
     /**
+     * Date at which we refunded this to the donor. Ideally will be null. Should be not null only iff status is
+     * DonationStatus::Refunded
+     */
+    private ?\DateTimeImmutable $refundedAt = null;
+
+    /**
      * @param string $amount
      * @deprecated but retained for now as used in old test classes. Not recommend for continued use - either use
      * fromApiModel or create a new named constructor that takes required data for your use case.
@@ -380,8 +386,12 @@ class Donation extends SalesforceWriteProxy
         $this->paymentMethodType = PaymentMethodType::Card;
     }
 
+    /**
+     * @return array A json encode-ready array representation of the donation, for sending to Salesforce.
+     */
     public function toHookModel(): array
     {
+        // this should include the refund datetime
         $data = $this->toApiModel();
 
         // MAT-234 - remove dubious patterns from email for now so records can save in SF.
@@ -390,6 +400,7 @@ class Donation extends SalesforceWriteProxy
         }
 
         $data['updatedTime'] = $this->getUpdatedDate()->format(DateTimeInterface::ATOM);
+        $data['refundedTime'] = $this->refundedAt?->format(DateTimeInterface::ATOM);
         $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
         $data['originalPspFee'] = (float) $this->getOriginalPspFee();
@@ -1252,5 +1263,11 @@ class Donation extends SalesforceWriteProxy
         }
 
         return mb_substr($text, 0, 40);
+    }
+
+    public function recordRefundAt(\DateTimeImmutable $refundDate): void
+    {
+        $this->donationStatus = DonationStatus::Refunded;
+        $this->refundedAt = $refundDate;
     }
 }

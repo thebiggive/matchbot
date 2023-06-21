@@ -315,4 +315,29 @@ class DonationTest extends TestCase
 
         $donation->getStripeMethodProperties(); // Throws in this getter for now.
     }
+
+    public function testDonationDateTimeIsIncludedInSfHookModel(): void
+    {
+        $donation = $this->getTestDonation();
+
+        $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 15:00'));
+
+        $toHookModel = $donation->toHookModel();
+        $this->assertSame(DonationStatus::Refunded, $toHookModel['status']);
+        $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
+    }
+
+    public function testMarkingRefundTwiceOnSameDonationDoesNotUpdateRefundTime(): void
+    {
+        $donation = $this->getTestDonation();
+
+        $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 15:00'));
+        $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 16:00'));
+
+
+        $toHookModel = $donation->toHookModel();
+        $this->assertSame(DonationStatus::Refunded, $toHookModel['status']);
+        $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
+    }
+
 }
