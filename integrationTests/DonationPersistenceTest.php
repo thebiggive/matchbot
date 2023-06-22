@@ -15,6 +15,7 @@ class DonationPersistenceTest extends IntegrationTest
         $em = $this->getService(EntityManagerInterface::class);
         $connection = $em->getConnection();
         $donation = $this->makeDonationObject();
+        $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 10:00:00'));
 
         // act
         $em->persist($donation);
@@ -39,7 +40,7 @@ class DonationPersistenceTest extends IntegrationTest
         $donation = $donationRepo->findOneBy(['uuid' => $donationRow['uuid']]);
 
         $this->assertNotNull($donation);
-        $this->assertSame(DonationStatus::Collected, $donation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
     }
 
     /**
@@ -62,7 +63,7 @@ class DonationPersistenceTest extends IntegrationTest
             'uuid' => Uuid::uuid4(),
             'transactionId' => NULL,
             'amount' => '1.00',
-            'donationStatus' => 'Collected',
+            'donationStatus' => 'Refunded',
             'charityComms' => NULL,
             'giftAid' => NULL,
             'tbgComms' => NULL,
@@ -88,6 +89,7 @@ class DonationPersistenceTest extends IntegrationTest
             'currencyCode' => 'GBP',
             'feeCoverAmount' => '0.00',
             'collectedAt' => NULL,
+            'refundedAt' => '2023-06-22 10:00:00',
             'tbgShouldProcessGiftAid' => NULL,
             'tbgGiftAidRequestQueuedAt' => NULL,
             'tbgGiftAidRequestFailedAt' => NULL,
