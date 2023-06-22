@@ -145,7 +145,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @ORM\Column(type="string", enumType="MatchBot\Domain\DonationStatus")
      */
-    protected DonationStatus $donationStatus = DonationStatus::NotSet;
+    protected DonationStatus $donationStatus = DonationStatus::Pending;
 
     /**
      * @ORM\Column(type="boolean", nullable=true)
@@ -327,7 +327,6 @@ class Donation extends SalesforceWriteProxy
         $donation = new self($donationData->donationAmount, $donationData->currencyCode, $donationData->paymentMethodType);
 
         $donation->setPsp($psp);
-        $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setUuid(Uuid::uuid4());
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
         $donation->setGiftAid($donationData->giftAid);
@@ -934,7 +933,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function hasPostCreateUpdates(): bool
     {
-        return ! $this->getDonationStatus()->isNew();
+        return $this->getDonationStatus() !== DonationStatus::Pending;
     }
 
     /**

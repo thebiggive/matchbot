@@ -78,8 +78,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         try {
-            if ($donation->getDonationStatus()->isNew()) {
-                // A new status but an existing Salesforce ID suggests pushes might have ended up out
+            if ($donation->getDonationStatus() === DonationStatus::Pending) {
+                // A pending status but an existing Salesforce ID suggests pushes might have ended up out
                 // of order due to race conditions pushing to Salesforce, variable and quite slow
                 // Salesforce performance characteristics, and both client (this) & server (SF) apps being
                 // multi-threaded. The safest thing is not to push a Pending donation to Salesforce a 2nd
