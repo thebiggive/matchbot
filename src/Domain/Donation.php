@@ -1277,4 +1277,13 @@ class Donation extends SalesforceWriteProxy
         $this->donationStatus = DonationStatus::Refunded;
         $this->refundedAt = $refundDate;
     }
+
+    /**
+     * When a donation has been partially refunded (e.g. a tip-only refund) we record the refund date but we
+     * don't change the status.
+     */
+    public function setPartialRefundDate(\DateTimeImmutable $datetime): void
+    {
+        $this->refundedAt = $datetime;
+    }
 }
