@@ -219,7 +219,7 @@ class StripeChargeUpdate extends Stripe
             $intentId,
         ));
 
-        $donation->setDonationStatus(DonationStatus::Refunded);
+        $donation->recordRefundAt(new \DateTimeImmutable());
         $this->doPostMarkRefundedUpdates($donation, true);
 
         return $this->respondWithData($response, $event->data->object);
@@ -274,7 +274,7 @@ class StripeChargeUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
-            $donation->setDonationStatus(DonationStatus::Refunded);
+            $donation->recordRefundAt(new \DateTimeImmutable());
         } elseif ($isOverRefund) {
             $this->warnAboutOverRefund(
                 'charge.refunded',
@@ -288,7 +288,7 @@ class StripeChargeUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
-            $donation->setDonationStatus(DonationStatus::Refunded);
+            $donation->recordRefundAt(new \DateTimeImmutable());
         } else {
             $this->logger->error(sprintf(
                 'Skipping unexpected partial non-tip refund amount %s pence for donation %s based on charge ID %s',

@@ -469,6 +469,10 @@ class Donation extends SalesforceWriteProxy
 
     public function setDonationStatus(DonationStatus $donationStatus): void
     {
+        if ($donationStatus === DonationStatus::Refunded) {
+            throw new \Exception('Donation::recordRefundAt must be used to set refunded status');
+        }
+
         $this->donationStatus = $donationStatus;
     }
 
@@ -1266,6 +1270,9 @@ class Donation extends SalesforceWriteProxy
 
     public function recordRefundAt(\DateTimeImmutable $refundDate): void
     {
+        if ($this->donationStatus === DonationStatus::Refunded) {
+            return;
+        }
         $this->donationStatus = DonationStatus::Refunded;
         $this->refundedAt = $refundDate;
     }

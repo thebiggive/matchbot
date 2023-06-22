@@ -39,7 +39,7 @@ class DonationPersistenceTest extends IntegrationTest
         $donation = $donationRepo->findOneBy(['uuid' => $donationRow['uuid']]);
 
         $this->assertNotNull($donation);
-        $this->assertSame(DonationStatus::Refunded, $donation->getDonationStatus());
+        $this->assertSame(DonationStatus::Collected, $donation->getDonationStatus());
     }
 
     /**
@@ -62,7 +62,7 @@ class DonationPersistenceTest extends IntegrationTest
             'uuid' => Uuid::uuid4(),
             'transactionId' => NULL,
             'amount' => '1.00',
-            'donationStatus' => 'Refunded',
+            'donationStatus' => 'Collected',
             'charityComms' => NULL,
             'giftAid' => NULL,
             'tbgComms' => NULL,
@@ -112,7 +112,7 @@ class DonationPersistenceTest extends IntegrationTest
         $donation->setUuid(Uuid::uuid4());
         $donation->setPsp('stripe');
         $donation->setCurrencyCode('GBP');
-        $donation->setDonationStatus(DonationStatus::Refunded);
+        $donation->setDonationStatus(DonationStatus::Collected);
 
         return $donation;
     }
