@@ -391,7 +391,6 @@ class Donation extends SalesforceWriteProxy
      */
     public function toHookModel(): array
     {
-        // this should include the refund datetime
         $data = $this->toApiModel();
 
         // MAT-234 - remove dubious patterns from email for now so records can save in SF.

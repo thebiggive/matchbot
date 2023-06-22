@@ -71,7 +71,6 @@ class Donation extends Common
      */
     public function put(DonationModel $donation): bool
     {
-        // this should start to send the refunded datetime
         if (getenv('DISABLE_CLIENT_PUSH')) {
             $this->logger->info("Client push off: Skipping update of donation {$donation->getUuid()}");
 
