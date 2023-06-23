@@ -145,7 +145,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @ORM\Column(type="string", enumType="MatchBot\Domain\DonationStatus")
      */
-    protected DonationStatus $donationStatus = DonationStatus::NotSet;
+    protected DonationStatus $donationStatus = DonationStatus::Pending;
 
     /**
      * @ORM\Column(type="boolean", nullable=true)
@@ -294,6 +294,16 @@ class Donation extends SalesforceWriteProxy
     protected $fundingWithdrawals;
 
     /**
+     * Date at which we refunded this to the donor. Ideally will be null. Should be not null only iff status is
+     * DonationStatus::Refunded
+     *
+     * @ORM\Column(nullable=true)
+     *
+     * @psalm-suppress UnusedProperty - this is just because we have some temporarily commented out code.
+     */
+    private ?\DateTimeImmutable $refundedAt = null;
+
+    /**
      * @param string $amount
      * @deprecated but retained for now as used in old test classes. Not recommend for continued use - either use
      * fromApiModel or create a new named constructor that takes required data for your use case.
@@ -319,7 +329,6 @@ class Donation extends SalesforceWriteProxy
         $donation = new self($donationData->donationAmount, $donationData->currencyCode, $donationData->paymentMethodType);
 
         $donation->setPsp($psp);
-        $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setUuid(Uuid::uuid4());
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
         $donation->setGiftAid($donationData->giftAid);
@@ -380,6 +389,9 @@ class Donation extends SalesforceWriteProxy
         $this->paymentMethodType = PaymentMethodType::Card;
     }
 
+    /**
+     * @return array A json encode-ready array representation of the donation, for sending to Salesforce.
+     */
     public function toHookModel(): array
     {
         $data = $this->toApiModel();
@@ -393,6 +405,9 @@ class Donation extends SalesforceWriteProxy
         $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
         $data['originalPspFee'] = (float) $this->getOriginalPspFee();
+
+        // We can't send refundedTime to SF yet as SF isn't ready to take it. When it is ready, uncomment the next line. See BG2-2306
+        // $data['refundedTime'] = $this->refundedAt?->format(DateTimeInterface::ATOM);
 
         unset(
             $data['clientSecret'],
@@ -459,6 +474,10 @@ class Donation extends SalesforceWriteProxy
 
     public function setDonationStatus(DonationStatus $donationStatus): void
     {
+        if ($donationStatus === DonationStatus::Refunded) {
+            throw new \Exception('Donation::recordRefundAt must be used to set refunded status');
+        }
+
         $this->donationStatus = $donationStatus;
     }
 
@@ -918,7 +937,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function hasPostCreateUpdates(): bool
     {
-        return ! $this->getDonationStatus()->isNew();
+        return $this->getDonationStatus() !== DonationStatus::Pending;
     }
 
     /**
@@ -1252,5 +1271,23 @@ class Donation extends SalesforceWriteProxy
         }
 
         return mb_substr($text, 0, 40);
+    }
+
+    public function recordRefundAt(\DateTimeImmutable $refundDate): void
+    {
+        if ($this->donationStatus === DonationStatus::Refunded) {
+            return;
+        }
+        $this->donationStatus = DonationStatus::Refunded;
+        $this->refundedAt = $refundDate;
+    }
+
+    /**
+     * When a donation has been partially refunded (e.g. a tip-only refund) we record the refund date but we
+     * don't change the status.
+     */
+    public function setPartialRefundDate(\DateTimeImmutable $datetime): void
+    {
+        $this->refundedAt = $datetime;
     }
 }
