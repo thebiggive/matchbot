@@ -298,6 +298,8 @@ class Donation extends SalesforceWriteProxy
      * DonationStatus::Refunded
      *
      * @ORM\Column(nullable=true)
+     *
+     * @psalm-suppress UnusedProperty - this is just because we have some temporarily commented out code.
      */
     private ?\DateTimeImmutable $refundedAt = null;
 
@@ -400,10 +402,12 @@ class Donation extends SalesforceWriteProxy
         }
 
         $data['updatedTime'] = $this->getUpdatedDate()->format(DateTimeInterface::ATOM);
-        $data['refundedTime'] = $this->refundedAt?->format(DateTimeInterface::ATOM);
         $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
         $data['originalPspFee'] = (float) $this->getOriginalPspFee();
+
+        // We can't send refundedTime to SF yet as SF isn't ready to take it. When it is ready, uncomment the next line. See BG2-2306
+        // $data['refundedTime'] = $this->refundedAt?->format(DateTimeInterface::ATOM);
 
         unset(
             $data['clientSecret'],
