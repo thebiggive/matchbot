@@ -315,4 +315,41 @@ class DonationTest extends TestCase
 
         $donation->getStripeMethodProperties(); // Throws in this getter for now.
     }
+
+
+    /**
+     * @psalm-suppress UnusedVariable
+     * @psalm-suppress UnevaluatedCode
+     */
+    public function testDonationRefundDateTimeIsIncludedInSfHookModel(): void
+    {
+        $donation = $this->getTestDonation();
+
+        $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 15:00'));
+
+        $toHookModel = $donation->toHookModel();
+
+        $this->markTestIncomplete("Waiting for changes in Salesforce before we can turn this on, see BG2-2306");
+        $this->assertSame(DonationStatus::Refunded, $toHookModel['status']);
+        $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
+    }
+
+    /**
+     * @psalm-suppress UnusedVariable
+     * @psalm-suppress UnevaluatedCode
+     */
+    public function testMarkingRefundTwiceOnSameDonationDoesNotUpdateRefundTime(): void
+    {
+        $donation = $this->getTestDonation();
+
+        $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 15:00'));
+        $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 16:00'));
+
+
+        $toHookModel = $donation->toHookModel();
+
+        $this->markTestIncomplete("Waiting for changes in Salesforce before we can turn this on, see BG2-2306");
+        $this->assertSame(DonationStatus::Refunded, $toHookModel['status']);
+        $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
+    }
 }

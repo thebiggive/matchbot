@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<files psalm-version="5.7.4@c46eccda769925073b8f65d66c4a3a7dc5d440b1">
+<files psalm-version="5.13.0@a0a9c27630bcf8301ee78cb06741d2907d8c9fef">
   <file src="app/dependencies.php">
     <DeprecatedClass>
       <code><![CDATA[Setup::createAnnotationMetadataConfiguration(
@@ -193,7 +193,6 @@
     </MixedMethodCall>
     <UnusedClosureParam>
       <code>$args</code>
-      <code>$request</code>
       <code>$response</code>
     </UnusedClosureParam>
   </file>
@@ -657,6 +656,7 @@
     </DocblockTypeContradiction>
     <InvalidArgument>
       <code>$paidChargeIds</code>
+      <code>$sourceTransferIds</code>
     </InvalidArgument>
     <InvalidReturnStatement>
       <code>$originalChargeIds</code>
@@ -664,18 +664,6 @@
     <InvalidReturnType>
       <code>string[]</code>
     </InvalidReturnType>
-    <MixedArgumentTypeCoercion>
-      <code>$sourceTransferIds</code>
-    </MixedArgumentTypeCoercion>
-    <MixedAssignment>
-      <code><![CDATA[$chargeListParams['starting_after']]]></code>
-      <code>$lastChargeId</code>
-      <code>$sourceTransferIds[]</code>
-    </MixedAssignment>
-    <PossiblyInvalidPropertyFetch>
-      <code><![CDATA[$charges->data]]></code>
-      <code><![CDATA[$charges->has_more]]></code>
-    </PossiblyInvalidPropertyFetch>
     <PossiblyNullArgument>
       <code><![CDATA[$exception->getStripeCode()]]></code>
     </PossiblyNullArgument>
@@ -976,7 +964,6 @@
       <code>__toString</code>
     </MethodSignatureMustProvideReturnType>
     <MixedArgument>
-      <code><![CDATA[$data['emailAddress']]]></code>
       <code><![CDATA[$data['emailAddress']]]></code>
       <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
       <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>

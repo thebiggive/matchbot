@@ -204,7 +204,6 @@ class StripePayoutHandler implements MessageHandlerInterface
         ];
 
         while ($moreCharges) {
-            /** @var Charge[]|Collection $charges */
             $charges = $this->stripeClient->charges->all(
                 $chargeListParams,
                 ['stripe_account' => $connectAccountId],

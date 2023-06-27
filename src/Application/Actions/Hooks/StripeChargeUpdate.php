@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Hooks;
 
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -219,7 +220,9 @@ class StripeChargeUpdate extends Stripe
             $intentId,
         ));
 
-        $donation->setDonationStatus(DonationStatus::Refunded);
+        $refundDate = DateTimeImmutable::createFromFormat('U', (string)$this->event->created);
+        assert($refundDate instanceof DateTimeImmutable);
+        $donation->recordRefundAt($refundDate);
         $this->doPostMarkRefundedUpdates($donation, true);
 
         return $this->respondWithData($response, $event->data->object);
@@ -267,6 +270,9 @@ class StripeChargeUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
+            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$this->event->created);
+            assert($refundDate instanceof DateTimeImmutable);
+            $donation->setPartialRefundDate($refundDate);
             $donation->setTipAmount('0.00');
         } elseif ($isFullRefund) {
             $this->logger->info(sprintf(
@@ -274,7 +280,9 @@ class StripeChargeUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
-            $donation->setDonationStatus(DonationStatus::Refunded);
+            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$this->event->created);
+            assert($refundDate instanceof DateTimeImmutable);
+            $donation->recordRefundAt($refundDate);
         } elseif ($isOverRefund) {
             $this->warnAboutOverRefund(
                 'charge.refunded',
@@ -288,7 +296,9 @@ class StripeChargeUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
-            $donation->setDonationStatus(DonationStatus::Refunded);
+            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$this->event->created);
+            assert($refundDate instanceof DateTimeImmutable);
+            $donation->recordRefundAt($refundDate);
         } else {
             $this->logger->error(sprintf(
                 'Skipping unexpected partial non-tip refund amount %s pence for donation %s based on charge ID %s',
