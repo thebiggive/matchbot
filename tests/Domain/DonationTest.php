@@ -202,7 +202,19 @@ class DonationTest extends TestCase
 
         $this->assertEquals('john.doe@example.com', $donationData['emailAddress']);
         $this->assertIsString($donationData['collectedTime']);
+        $this->assertNull($donationData['refundedTime']);
         $this->assertEquals('card', $donationData['pspMethodType']);
+    }
+
+    public function testToHookModelWhenRefunded(): void
+    {
+        $donation = $this->getTestDonation();
+        $donation->recordRefundAt(new \DateTimeImmutable());
+
+        $donationData = $donation->toHookModel();
+
+        $this->assertIsString($donationData['collectedTime']);
+        $this->assertIsString($donationData['refundedTime']);
     }
 
     public function testToHookModelTemporaryHack(): void
