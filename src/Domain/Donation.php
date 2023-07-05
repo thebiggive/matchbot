@@ -405,9 +405,7 @@ class Donation extends SalesforceWriteProxy
         $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
         $data['originalPspFee'] = (float) $this->getOriginalPspFee();
-
-        // We can't send refundedTime to SF yet as SF isn't ready to take it. When it is ready, uncomment the next line. See BG2-2306
-        // $data['refundedTime'] = $this->refundedAt?->format(DateTimeInterface::ATOM);
+        $data['refundedTime'] = $this->refundedAt?->format(DateTimeInterface::ATOM);
 
         unset(
             $data['clientSecret'],
