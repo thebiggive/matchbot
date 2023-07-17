@@ -297,9 +297,7 @@ class Donation extends SalesforceWriteProxy
      * Date at which we refunded this to the donor. Ideally will be null. Should be not null only iff status is
      * DonationStatus::Refunded
      *
-     * @ORM\Column(nullable=true)
-     *
-     * @psalm-suppress UnusedProperty - this is just because we have some temporarily commented out code.
+     * @ORM\Column(nullable=true)*
      */
     private ?\DateTimeImmutable $refundedAt = null;
 
