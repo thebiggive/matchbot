@@ -353,4 +353,24 @@ class DonationTest extends TestCase
         $this->assertSame(DonationStatus::Refunded, $toHookModel['status']);
         $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
     }
+
+    public function testCreateDonationModelWithDonorFields(): void {
+
+
+        $donation = Donation::fromApiModel(new DonationCreate(
+            donorFirstName: 'Test First Name',
+            donorLastName: 'Test Last Name',
+            donorEmail: 'donor@email.test',
+            currencyCode: 'GBP',
+            donationAmount: '200000',
+            projectId: "any project",
+            psp:'stripe',
+            paymentMethodType: PaymentMethodType::CustomerBalance
+        ), new Campaign());
+
+
+        $this->assertSame('Test First Name', $donation->getDonorFirstName(true));
+        $this->assertSame('Test Last Name', $donation->getDonorLastName(true));
+        $this->assertSame('donor@email.test', $donation->getDonorEmailAddress());
+    }
 }

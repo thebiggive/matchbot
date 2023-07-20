@@ -334,6 +334,9 @@ class Donation extends SalesforceWriteProxy
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setPspCustomerId($donationData->pspCustomerId);
         $donation->setTbgComms($donationData->optInTbgEmail);
+        $donation->setDonorFirstName($donationData->donorFirstName);
+        $donation->setDonorLastName($donationData->donorLastName);
+        $donation->setDonorEmailAddress($donationData->donorEmail);
 
         if (!empty($donationData->countryCode)) {
             $donation->setDonorCountryCode($donationData->countryCode);
