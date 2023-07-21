@@ -29,7 +29,7 @@ class GetPaymentMethods extends Action
         // The route at `/people/{personId}/donations` validates that the donor has permission to act
         // as the person, and sets this attribute to the Stripe Customer ID based on JWS claims, all
         // in `PersonWithPasswordAuthMiddleware`.
-        $customerId = $request->getAttribute('pspId');
+        $customerId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PSP_ATTRIBUTE_NAME);
 
         $paymentMethods = $this->stripeClient->customers->allPaymentMethods(
             $customerId,

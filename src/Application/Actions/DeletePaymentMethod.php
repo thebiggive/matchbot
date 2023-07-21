@@ -30,7 +30,7 @@ class DeletePaymentMethod extends Action
      */
     protected function action(Request $request, Response $response, array $args): Response
     {
-        $customerId = $request->getAttribute('pspId');
+        $customerId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PSP_ATTRIBUTE_NAME);
         \assert(is_string($customerId));
 
         $paymentMethodId = $args['payment_method_id'];
