@@ -32,9 +32,9 @@ class DonationCreate
         public ?bool $optInTbgEmail = null,
         public ?string $pspCustomerId = null,
         public ?string $tipAmount = '0.00',
-        public ?string $donorFirstName = null,
-        public ?string $donorLastName = null,
-        public ?string $donorEmail = null
+        public ?string $firstName = null,
+        public ?string $lastName = null,
+        public ?string $emailAddress = null
     ) {
     }
 }
