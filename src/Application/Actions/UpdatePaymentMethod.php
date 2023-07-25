@@ -4,7 +4,7 @@ namespace MatchBot\Application\Actions;
 
 use Fig\Http\Message\StatusCodeInterface;
 use JetBrains\PhpStorm\Pure;
-use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
+use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -24,7 +24,7 @@ class UpdatePaymentMethod extends Action
 
     protected function action(Request $request, Response $response, array $args): Response
     {
-        $customerId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PSP_ATTRIBUTE_NAME);
+        $customerId = $request->getAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME);
         \assert(is_string($customerId));
 
         $paymentMethodId = $args['payment_method_id'];
