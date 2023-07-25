@@ -12,6 +12,7 @@ use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
+use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Domain\Campaign;
@@ -51,7 +52,7 @@ class Create extends Action
         // as the person, and sets this attribute to the Stripe Customer ID based on JWS claims, all
         // in `PersonManagementAuthMiddleware`. If the legacy route was used or if no such ID was in the
         // JWS, this is null.
-        $customerId = $request->getAttribute('pspId');
+        $customerId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PSP_ATTRIBUTE_NAME);
 
         $body = (string) $request->getBody();
 

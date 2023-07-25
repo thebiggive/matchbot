@@ -298,8 +298,6 @@ class Donation extends SalesforceWriteProxy
      * DonationStatus::Refunded
      *
      * @ORM\Column(nullable=true)
-     *
-     * @psalm-suppress UnusedProperty - this is just because we have some temporarily commented out code.
      */
     private ?\DateTimeImmutable $refundedAt = null;
 
@@ -336,6 +334,9 @@ class Donation extends SalesforceWriteProxy
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setPspCustomerId($donationData->pspCustomerId);
         $donation->setTbgComms($donationData->optInTbgEmail);
+        $donation->setDonorFirstName($donationData->firstName);
+        $donation->setDonorLastName($donationData->lastName);
+        $donation->setDonorEmailAddress($donationData->emailAddress);
 
         if (!empty($donationData->countryCode)) {
             $donation->setDonorCountryCode($donationData->countryCode);
