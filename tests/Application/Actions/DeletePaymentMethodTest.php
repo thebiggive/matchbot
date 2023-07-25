@@ -4,7 +4,7 @@ namespace MatchBot\Tests\Application\Actions;
 
 use Laminas\Diactoros\ServerRequest;
 use MatchBot\Application\Actions\DeletePaymentMethod;
-use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
+use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Tests\TestCase;
 use PHPUnit\Framework\MockObject\Stub;
 use Prophecy\Argument;
@@ -34,7 +34,7 @@ class DeletePaymentMethodTest extends TestCase
         $sut = new DeletePaymentMethod($fakeStripeClient, new NullLogger());
 
         $request = (new ServerRequest())
-            ->withAttribute(PersonWithPasswordAuthMiddleware::PSP_ATTRIBUTE_NAME, 'stripe_customer_id_12');
+            ->withAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME, 'stripe_customer_id_12');
 
         // assert
         $stripePaymentMethodServiceProphecy->detach('stripe_payment_method_id_35')
@@ -59,7 +59,7 @@ class DeletePaymentMethodTest extends TestCase
         $sut = new DeletePaymentMethod($fakeStripeClient, new NullLogger());
 
         $request = (new ServerRequest())
-            ->withAttribute(PersonWithPasswordAuthMiddleware::PSP_ATTRIBUTE_NAME, 'stripe_customer_id_12');
+            ->withAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME, 'stripe_customer_id_12');
 
         // assert
         $stripePaymentMethodServiceProphecy->detach(Argument::any())->shouldNotBeCalled();
