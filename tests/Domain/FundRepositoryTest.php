@@ -350,8 +350,10 @@ class FundRepositoryTest extends TestCase
 
         $repo->expects($this->exactly($successfulPersistCase ? 2 : 1))
             ->method('findOneBy')
-            ->withConsecutive([['salesforceId' => 'sfFundId123']], [['salesforceId' => 'sfFundId456']])
-            ->willReturnOnConsecutiveCalls($existingFundNonShared, $existingFundShared);
+            ->willReturnCallback(fn(array $constraint) => match ($constraint) {
+                ['salesforceId' => 'sfFundId123'] => $existingFundNonShared,
+                ['salesforceId' => 'sfFundId456'] => $existingFundShared,
+            });
 
         $repo->setCampaignFundingRepository($campaignFundingRepo);
         $repo->setClient($fundClient);
