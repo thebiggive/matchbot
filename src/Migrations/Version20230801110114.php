@@ -11,7 +11,7 @@ final class Version20230801110114 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Resumbit Gift Aid claims (MAT-308)';
+        return 'Resubmit Gift Aid claims (MAT-308)';
     }
 
     public function up(Schema $schema): void
