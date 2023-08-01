@@ -5,6 +5,7 @@ namespace MatchBot\Tests\Application\Actions;
 use Laminas\Diactoros\ServerRequest;
 use MatchBot\Application\Actions\DeletePaymentMethod;
 use MatchBot\Application\Actions\UpdatePaymentMethod;
+use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Tests\TestCase;
 use PHPUnit\Framework\MockObject\Stub;
 use Prophecy\Argument;
@@ -45,7 +46,7 @@ use Stripe\StripeClient;
         ];
 
         $request = $this->createRequest('PUT', '/', \json_encode($updatedBillingDetails))
-            ->withAttribute('pspId', 'stripe_customer_id_12');
+            ->withAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME, 'stripe_customer_id_12');
 
         // assert
         $stripePaymentMethodServiceProphecy->update('stripe_payment_method_id_35', $updatedBillingDetails)
@@ -70,7 +71,7 @@ use Stripe\StripeClient;
         $sut = new DeletePaymentMethod($fakeStripeClient, new NullLogger());
 
         $request = (new ServerRequest())
-            ->withAttribute('pspId', 'stripe_customer_id_12');
+            ->withAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME, 'stripe_customer_id_12');
 
         // assert
         $stripePaymentMethodServiceProphecy->detach(Argument::any())->shouldNotBeCalled();
