@@ -31,7 +31,7 @@ final class Version20230801110114 extends AbstractMigration
                 tbgShouldProcessGiftAid = 1 AND
                 tbgGiftAidRequestCorrelationId IS NOT NULL AND
                 donationStatus = 'Paid'
-            LIMIT 224;
+            LIMIT 97;
         SQL
         );
     }
