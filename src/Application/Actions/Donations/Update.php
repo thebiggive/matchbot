@@ -107,6 +107,7 @@ class Update extends Action
                 }
 
                 if ($donationData->status !== 'Cancelled' && $donationData->status !== $donation->getDonationStatus()->value) {
+//                    var_dump($donation->getDonationStatus()->value);
                     $this->entityManager->rollback();
 
                     return $this->validationError($response,
@@ -187,6 +188,13 @@ class Update extends Action
             $this->entityManager->rollback();
 
             return $this->validationError($response, "Required boolean field 'giftAid' not set", null, true);
+        }
+
+        var_dump($donation->getDonationStatus());
+        if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
+            $this->entityManager->rollback();
+
+            return $this->validationError($response, "Can not update cancelled donation", null, true);
         }
 
         // These 3 fields are currently set up early in the journey, but are harmless and more flexible
