@@ -37,7 +37,6 @@ class StripePayoutUpdate extends Stripe
         ContainerInterface $container,
         LoggerInterface $logger,
         private RoutableMessageBus $bus,
-        private DonationRepository $donationRepository,
     ) {
         /**
          * @var ChatterInterface $chatter
@@ -94,8 +93,6 @@ class StripePayoutUpdate extends Stripe
                 $this->chatter->send(new ChatMessage($failureMessageWithContext));
 
                 return $this->respond($response, new ActionPayload(200));
-            case Event::PAYMENT_INTENT_CANCELED:
-                return $this->handlePayoutCancelled($request, $this->event, $response);
             default:
                 $this->logger->warning(sprintf('Unsupported event type "%s"', $this->event->type));
                 return $this->respond($response, new ActionPayload(204));
@@ -138,30 +135,4 @@ class StripePayoutUpdate extends Stripe
         return $this->respondWithData($response, $event->data->object);
     }
 
-    private function handlePayoutCancelled(Request $request, Event $event, Response $response): Response
-    {
-        /** @var PaymentIntent $paymentIntent */
-        $paymentIntent = $event->data->object;
-        $donation = $this->donationRepository->findOneBy(['transactionId' => $paymentIntent->id]);
-
-        if ($donation === null) {
-            return $this->respond($response, new ActionPayload(404));
-        }
-
-        if ($donation->getDonationStatus() !== DonationStatus::Cancelled) {
-            $this->logger->info(sprintf(
-                'Received Stripe cancellation request, Donation ID %s, payment intent ID %s',
-                $donation->getId() ?? throw new \Exception("Missing ID on donation"),
-                $paymentIntent->id,
-            ));
-        }
-
-        try {
-            $donation->cancel();
-        } catch (\UnexpectedValueException) {
-            return $this->respond($response, new ActionPayload(400));
-        }
-
-        return $this->respond($response, new ActionPayload(200));
-    }
 }

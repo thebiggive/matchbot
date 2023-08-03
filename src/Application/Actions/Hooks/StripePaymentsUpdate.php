@@ -18,6 +18,7 @@ use Psr\Log\LoggerInterface;
 use Stripe\Charge;
 use Stripe\Dispute;
 use Stripe\Event;
+use Stripe\PaymentIntent;
 use Stripe\StripeClient;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
@@ -77,6 +78,8 @@ class StripePaymentsUpdate extends Stripe
                 return $this->handleChargeRefunded($this->event, $response);
             case 'charge.succeeded':
                 return $this->handleChargeSucceeded($this->event, $response);
+            case Event::PAYMENT_INTENT_CANCELED:
+                return $this->handlePaymentIntentCancelled($request, $this->event, $response);
             default:
                 $this->logger->warning(sprintf('Unsupported event type "%s"', $this->event->type));
                 return $this->respond($response, new ActionPayload(204));
@@ -313,6 +316,33 @@ class StripePaymentsUpdate extends Stripe
         $this->doPostMarkRefundedUpdates($donation, $isFullRefund || $isOverRefund);
 
         return $this->respondWithData($response, $charge);
+    }
+
+    private function handlePaymentIntentCancelled(Request $request, Event $event, Response $response): Response
+    {
+        /** @var PaymentIntent $paymentIntent */
+        $paymentIntent = $event->data->object;
+        $donation = $this->donationRepository->findOneBy(['transactionId' => $paymentIntent->id]);
+
+        if ($donation === null) {
+            return $this->respond($response, new ActionPayload(404));
+        }
+
+        if ($donation->getDonationStatus() !== DonationStatus::Cancelled) {
+            $this->logger->info(sprintf(
+                'Received Stripe cancellation request, Donation ID %s, payment intent ID %s',
+                $donation->getId() ?? throw new \Exception("Missing ID on donation"),
+                $paymentIntent->id,
+            ));
+        }
+
+        try {
+            $donation->cancel();
+        } catch (\UnexpectedValueException) {
+            return $this->respond($response, new ActionPayload(400));
+        }
+
+        return $this->respond($response, new ActionPayload(200));
     }
 
     /**
