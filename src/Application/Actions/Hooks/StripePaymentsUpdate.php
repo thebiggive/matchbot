@@ -72,11 +72,11 @@ class StripePaymentsUpdate extends Stripe
         $this->logger->info(sprintf('Received Stripe account event type "%s"', $this->event->type));
 
         switch ($this->event->type) {
-            case 'charge.dispute.closed':
+            case Event::CHARGE_DISPUTE_CLOSED:
                 return $this->handleChargeDisputeClosed($this->event, $response);
-            case 'charge.refunded':
+            case Event::CHARGE_REFUNDED:
                 return $this->handleChargeRefunded($this->event, $response);
-            case 'charge.succeeded':
+            case Event::CHARGE_SUCCEEDED:
                 return $this->handleChargeSucceeded($this->event, $response);
             case Event::PAYMENT_INTENT_CANCELED:
                 return $this->handlePaymentIntentCancelled($request, $this->event, $response);
