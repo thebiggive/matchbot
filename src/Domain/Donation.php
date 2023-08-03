@@ -76,6 +76,8 @@ class Donation extends SalesforceWriteProxy
     /**
      * @ORM\Column(type="string", unique=true, nullable=true)
      * @var string|null PSP's transaction ID assigned on their processing.
+     *
+     * In the case of stripe (which is the only thing we support at present, this is the payment intent ID)
      */
     protected ?string $transactionId = null;
 
@@ -1288,5 +1290,14 @@ class Donation extends SalesforceWriteProxy
     public function setPartialRefundDate(\DateTimeImmutable $datetime): void
     {
         $this->refundedAt = $datetime;
+    }
+
+    public function cancel(): void
+    {
+        if (! in_array($this->donationStatus, [DonationStatus::Pending, DonationStatus::Cancelled], true)) {
+            throw new \UnexpectedValueException("Cannot cancel {$this->donationStatus->value} donation");
+        }
+
+        $this->donationStatus = DonationStatus::Cancelled;
     }
 }
