@@ -19,7 +19,7 @@ use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
 use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
-class StripeChargeUpdateTest extends StripeTest
+class StripePaymentsUpdateTest extends StripeTest
 {
     public function testUnsupportedAction(): void
     {

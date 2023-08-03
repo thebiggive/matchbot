@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<files psalm-version="5.13.0@a0a9c27630bcf8301ee78cb06741d2907d8c9fef">
+<files psalm-version="5.14.0@b2942cefed8443002bd3f245c4cd0a54193716d8">
   <file src="app/dependencies.php">
     <DeprecatedClass>
       <code><![CDATA[Setup::createAnnotationMetadataConfiguration(
@@ -277,7 +277,7 @@
       <code>$event</code>
     </PropertyNotSetInConstructor>
   </file>
-  <file src="src/Application/Actions/Hooks/StripeChargeUpdate.php">
+  <file src="src/Application/Actions/Hooks/StripePaymentsUpdate.php">
     <DocblockTypeContradiction>
       <code>!$donation</code>
       <code>!$donation</code>
@@ -311,7 +311,7 @@
       <code>$intentId</code>
     </PossiblyNullArgument>
     <PropertyNotSetInConstructor>
-      <code>StripeChargeUpdate</code>
+      <code>StripePaymentsUpdate</code>
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Application/Actions/Hooks/StripePayoutUpdate.php">

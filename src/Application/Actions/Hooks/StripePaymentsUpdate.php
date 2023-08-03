@@ -30,7 +30,7 @@ use Symfony\Component\Notifier\Message\ChatMessage;
  *
  * @return Response
  */
-class StripeChargeUpdate extends Stripe
+class StripePaymentsUpdate extends Stripe
 {
     private ChatterInterface $chatter;
 
