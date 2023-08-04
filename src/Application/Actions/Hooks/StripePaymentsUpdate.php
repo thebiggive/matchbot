@@ -79,7 +79,7 @@ class StripePaymentsUpdate extends Stripe
             case Event::CHARGE_SUCCEEDED:
                 return $this->handleChargeSucceeded($this->event, $response);
             case Event::PAYMENT_INTENT_CANCELED:
-                return $this->handlePaymentIntentCancelled($request, $this->event, $response);
+                return $this->handlePaymentIntentCancelled($this->event, $response);
             default:
                 $this->logger->warning(sprintf('Unsupported event type "%s"', $this->event->type));
                 return $this->respond($response, new ActionPayload(204));
@@ -318,7 +318,7 @@ class StripePaymentsUpdate extends Stripe
         return $this->respondWithData($response, $charge);
     }
 
-    private function handlePaymentIntentCancelled(Request $request, Event $event, Response $response): Response
+    private function handlePaymentIntentCancelled(Event $event, Response $response): Response
     {
         $paymentIntent = $event->data->object;
         \assert($paymentIntent instanceof PaymentIntent);
