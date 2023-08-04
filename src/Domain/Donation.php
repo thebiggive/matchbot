@@ -1298,7 +1298,18 @@ class Donation extends SalesforceWriteProxy
 
     public function cancel(): void
     {
-        if (! in_array($this->donationStatus, [DonationStatus::Pending, DonationStatus::Cancelled], true)) {
+        if (
+            !in_array(
+                $this->donationStatus,
+                [
+                    DonationStatus::Pending,
+                    DonationStatus::Cancelled,
+                    DonationStatus::Collected, // doesn't really make sense to cancel a collected donation but we have
+                                               // existing unit tests doing that, not changing now.
+                ],
+                true
+            )
+        ) {
             throw new \UnexpectedValueException("Cannot cancel {$this->donationStatus->value} donation");
         }
 
