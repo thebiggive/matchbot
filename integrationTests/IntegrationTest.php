@@ -3,10 +3,13 @@
 namespace MatchBot\IntegrationTests;
 
 use CreateDonationTest;
-use IntegrationTests;
+use GuzzleHttp\Psr7\ServerRequest;
 use LosMiddleware\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
+use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationRepository;
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -14,8 +17,10 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
+use Ramsey\Uuid\Uuid;
 use Slim\App;
 use Slim\Factory\AppFactory;
+use Stripe\PaymentIntent;
 use Stripe\StripeClient;
 
 abstract class IntegrationTest extends TestCase
@@ -72,6 +77,48 @@ abstract class IntegrationTest extends TestCase
         return $this->getService(\Doctrine\ORM\EntityManagerInterface::class)->getConnection();
     }
 
+    public function addCampaignAndCharityToDB(string $campaginId): void
+    {
+        $charityId = random_int(1000, 100000);
+        $charitySfID = $this->randomString();
+        $charityStripeId = $this->randomString();
+
+        $this->db()->executeStatement(<<<EOF
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, donateLinkId, stripeAccountId, hmrcReferenceNumber, tbgClaimingGiftAid, regulator, regulatorNumber) 
+            VALUES ($charityId, 'Some Charity', '$charitySfID', '2023-01-01', '2093-01-01', '2023-01-01', 1, '$charityStripeId', null, 0, null, null)
+            EOF
+        );
+        $this->db()->executeStatement(<<<EOF
+            INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull, createdAt, updatedAt, currencyCode, feePercentage) 
+            VALUES ('$charityId', 'some charity', '2023-01-01', '2093-01-01', 0, '$campaginId', '2023-01-01', '2023-01-01', '2023-01-01', 'GBP', 0)
+            EOF
+        );
+    }
+
+    /**
+     * @return ObjectProphecy<\Stripe\Service\PaymentIntentService>
+     */
+    public function setUpFakeStripeClient(): ObjectProphecy
+    {
+        $stripePaymentIntentsProphecy = $this->prophesize(\Stripe\Service\PaymentIntentService::class);
+
+        $fakeStripeClient = $this->fakeStripeClient(
+            $this->prophesize(\Stripe\Service\PaymentMethodService::class),
+            $this->prophesize(\Stripe\Service\CustomerService::class),
+            $stripePaymentIntentsProphecy,
+        );
+
+        /** @var \DI\Container $container */
+        $container = $this->getContainer();
+        $container->set(StripeClient::class, $fakeStripeClient);
+        return $stripePaymentIntentsProphecy;
+    }
+
+    public function randomString(): string
+    {
+        return substr(Uuid::uuid4()->toString(), 0, 18);
+    }
+
     protected function getApp(): App
     {
         if (self::$app === null) {
@@ -116,5 +163,51 @@ abstract class IntegrationTest extends TestCase
         $fakeStripeClient->paymentIntents =$stripePaymentIntents->reveal();
 
         return $fakeStripeClient;
+    }
+
+    protected function createDonation(): \Psr\Http\Message\ResponseInterface
+    {
+        $campaignId = $this->randomString();
+        $paymentIntentId = $this->randomString();
+
+        $this->addCampaignAndCharityToDB($campaignId);
+
+        $stripePaymentIntent = new PaymentIntent($paymentIntentId);
+        $stripePaymentIntent->client_secret = 'any string, doesnt affect test';
+        $stripePaymentIntentsProphecy = $this->setUpFakeStripeClient();
+
+        $stripePaymentIntentsProphecy->create(Argument::type('array'))
+            ->shouldBeCalled()
+            ->willReturn($stripePaymentIntent);
+
+        /** @var \DI\Container $container */
+        $container = $this->getContainer();
+
+        $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
+        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
+
+        $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
+
+        $donationRepo = $container->get(DonationRepository::class);
+        assert($donationRepo instanceof DonationRepository);
+        $donationRepo->setClient($donationClientProphecy->reveal());
+
+        return $this->getApp()->handle(
+            new ServerRequest(
+                'POST',
+                '/v1/donations',
+                // The Symfony Serializer will throw an exception if the JSON document doesn't include all the required
+                // constructor params of DonationCreate
+                body: <<<EOF
+                {
+                    "currencyCode": "GBP",
+                    "donationAmount": "100",
+                    "projectId": "$campaignId",
+                    "psp": "stripe"
+                }
+            EOF,
+                serverParams: ['REMOTE_ADDR' => '127.0.0.1']
+            )
+        );
     }
 }
