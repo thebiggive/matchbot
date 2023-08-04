@@ -21,9 +21,8 @@ class StripeCancelsDonationTest extends IntegrationTest
          * @psalm-suppress MixedArrayAccess
          * @var array<string,string> $donation
          */
-        $contents = (string)$this->createDonation()->getBody();
         $donation = json_decode(
-            $contents,
+            (string)$this->createDonation()->getBody(),
             true,
             flags: JSON_THROW_ON_ERROR
         )['donation'];
