@@ -7,15 +7,11 @@ namespace MatchBot\Application\Actions\Hooks;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Notifier\StripeChatterInterface;
-use MatchBot\Domain\DonationRepository;
-use MatchBot\Domain\DonationStatus;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Stripe\Charge;
 use Stripe\Event;
-use Stripe\PaymentIntent;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Messenger\RoutableMessageBus;
@@ -134,5 +130,4 @@ class StripePayoutUpdate extends Stripe
 
         return $this->respondWithData($response, $event->data->object);
     }
-
 }
