@@ -61,7 +61,6 @@ abstract class Stripe extends Action
             return $this->validationError($response, 'Invalid event');
         }
 
-        var_dump($this->event);
         if (!$this->event->livemode && getenv('APP_ENV') === 'production') {
             /**
              * This is normal for Connect events so just `info()` log it in that case.

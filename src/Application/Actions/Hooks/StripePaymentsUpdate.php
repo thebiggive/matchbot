@@ -67,8 +67,6 @@ class StripePaymentsUpdate extends Stripe
         );
 
         if ($validationErrorResponse !== null) {
-//            var_dump(compact(['validationErrorResponse']));
-            die();
             return $validationErrorResponse;
         }
 
@@ -325,7 +323,6 @@ class StripePaymentsUpdate extends Stripe
     private function handlePaymentIntentCancelled(Event $event, Response $response): Response
     {
         $paymentIntent = $event->data->object;
-        var_dump(compact(['paymentIntent']));
         \assert($paymentIntent instanceof PaymentIntent);
 
         $donation = $this->donationRepository->findOneBy(['transactionId' => $paymentIntent->id]);
@@ -337,7 +334,7 @@ class StripePaymentsUpdate extends Stripe
         if ($donation->getDonationStatus() !== DonationStatus::Cancelled) {
             $this->logger->info(sprintf(
                 'Received Stripe cancellation request, Donation UUID %s, payment intent ID %s',
-                $donation->getUuid() ?? throw new \Exception("Missing ID on donation"),
+                $donation->getUuid(),
                 $paymentIntent->id,
             ));
         }

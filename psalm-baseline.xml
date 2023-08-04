@@ -201,6 +201,14 @@
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
     </DeprecatedMethod>
   </file>
+  <file src="integrationTests/StripeCancelsDonationTest.php">
+    <MixedArrayAccess>
+      <code><![CDATA[$this->getContainer()->get('settings')['stripe']]]></code>
+    </MixedArrayAccess>
+    <UnusedVariable>
+      <code>$hookResponse</code>
+    </UnusedVariable>
+  </file>
   <file src="public/index.php">
     <MixedArgument>
       <code><![CDATA[$app->getContainer()->get(LoggerInterface::class)]]></code>
@@ -248,6 +256,9 @@
       <code><![CDATA[$exception->getStripeCode()]]></code>
       <code><![CDATA[$retryException->getStripeCode()]]></code>
     </PossiblyNullArgument>
+    <PossiblyUndefinedVariable>
+      <code>$donation</code>
+    </PossiblyUndefinedVariable>
     <TypeDoesNotContainType>
       <code><![CDATA[isset($donationData->status)]]></code>
     </TypeDoesNotContainType>
@@ -994,10 +1005,6 @@
       <code>toString</code>
       <code>toString</code>
     </PossiblyNullReference>
-    <PossiblyUnusedMethod>
-      <code>getTbgGiftAidRequestQueuedAt</code>
-      <code>preUpdate</code>
-    </PossiblyUnusedMethod>
     <PropertyNotSetInConstructor>
       <code>$campaign</code>
       <code>$psp</code>
@@ -1290,14 +1297,6 @@
       <code>$updatedAt</code>
       <code>$updatedAt</code>
     </MissingConstructor>
-    <PossiblyUnusedMethod>
-      <code>updatedNow</code>
-      <code>updatedNow</code>
-      <code>updatedNow</code>
-      <code>updatedNow</code>
-      <code>updatedNow</code>
-      <code>updatedNow</code>
-    </PossiblyUnusedMethod>
   </file>
   <file src="src/Migrations/Version20191109151808.php">
     <DeprecatedMethod>

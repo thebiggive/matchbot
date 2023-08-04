@@ -17,8 +17,12 @@ class StripeCancelsDonationTest extends IntegrationTest
 
     public function testStripeCanCancelDonation(): void
     {
+        /**
+         * @psalm-suppress MixedArrayAccess
+         * @var array<string,string> $donation
+         */
         $donation = json_decode(
-            $this->createDonation()->getBody(),
+            $this->createDonation()->getBody()->getContents(),
             true,
             flags: JSON_THROW_ON_ERROR
         )['donation'];
@@ -26,6 +30,7 @@ class StripeCancelsDonationTest extends IntegrationTest
         $paymentIntentId = $donation['transactionId'];
 
 
+        /** @var string $webhookSecret */
         $webhookSecret = $this->getContainer()->get('settings')['stripe']['accountWebhookSecret'];
 //        var_dump(compact('webhookSecret'));
 
@@ -51,13 +56,13 @@ class StripeCancelsDonationTest extends IntegrationTest
             )
         );
 
-        echo "----------- hook response ------- \n";
-        var_dump($hookResponse->getStatusCode());
-        var_dump($hookResponse->getHeaders());
-        var_dump($hookResponse->getBody()->getContents());
+//        echo "----------- hook response ------- \n";
+//        var_dump($hookResponse->getStatusCode());
+//        var_dump($hookResponse->getHeaders());
+//        var_dump($hookResponse->getBody()->getContents());
 
-        $donationRow = $this->db()->fetchAssociative("SELECT * from Donation where Donation.id = ?", [$donation['donationId']]);
-        var_dump(compact('donationRow'));
+        /** @psalm-suppress MixedArrayAccess */
+        $_donationRow = $this->db()->fetchAssociative("SELECT * from Donation where Donation.id = ?", [$donation['donationId']]);
 
         $this->assertSame('Cancelled', $this->db()->fetchOne('SELECT donationStatus from Donation where id = ?', [$donation['donationId']]));
     }
