@@ -97,14 +97,15 @@ class Update extends Action
         while ($retryCount < self::MAX_UPDATE_RETRY_COUNT) {
             $this->entityManager->beginTransaction();
 
-            $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $args['donationId']]);
-
-            if (!$donation) {
-                $this->entityManager->rollback();
-
-                throw new DomainRecordNotFoundException('Donation not found');
-            }
             try {
+                $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $args['donationId']]);
+
+                if (!$donation) {
+                    $this->entityManager->rollback();
+
+                    throw new DomainRecordNotFoundException('Donation not found');
+                }
+
                 if ($donationData->status !== 'Cancelled' && $donationData->status !== $donation->getDonationStatus()->value) {
                     $this->entityManager->rollback();
 
@@ -155,6 +156,11 @@ class Update extends Action
                         needle: "This PaymentIntent's amount could not be updated because it has a status of canceled",
                     )
                 ) {
+                    \assert(
+                        isset($donation),
+                        "If we've got as far as Stripe throwing an exception we must have a Donation"
+                    );
+
                     $this->logger->warning(sprintf(
                         'Stripe rejected payment intent update as PI was cancelled, presumably by stripe' .
                         ' itself very recently. Donation UUID %s',
