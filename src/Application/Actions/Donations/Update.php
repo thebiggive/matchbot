@@ -158,8 +158,8 @@ class Update extends Action
                 ) {
                     $this->logger->warning(sprintf(
                         'Stripe rejected payment intent update as PI was cancelled, presumably by stripe' .
-                        ' itself very recently. Donation # %s',
-                        $args['donationId'],
+                        ' itself very recently. Donation UUID %s',
+                        $donation->getUuid(),
                     ));
                     $this->entityManager->rollback();
 

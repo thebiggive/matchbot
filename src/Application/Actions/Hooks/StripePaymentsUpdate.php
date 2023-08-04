@@ -27,7 +27,8 @@ use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
 /**
- * Handle charge.succeeded, charge.refunded and charge.dispute.closed events from a Stripe Direct webhook.
+ * Handles some events from Stripe's `charge` and `payment_intent` objects from a Stripe Direct webhook. See
+ * self::action for details.
  *
  * @return Response
  */
@@ -331,8 +332,8 @@ class StripePaymentsUpdate extends Stripe
 
         if ($donation->getDonationStatus() !== DonationStatus::Cancelled) {
             $this->logger->info(sprintf(
-                'Received Stripe cancellation request, Donation ID %s, payment intent ID %s',
-                $donation->getId() ?? throw new \Exception("Missing ID on donation"),
+                'Received Stripe cancellation request, Donation UUID %s, payment intent ID %s',
+                $donation->getUuid() ?? throw new \Exception("Missing ID on donation"),
                 $paymentIntent->id,
             ));
         }
