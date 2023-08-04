@@ -39,14 +39,21 @@ abstract class Stripe extends Action
         Response $response,
     ): ?ResponseInterface {
         try {
+//            echo "trying to prepare event..\n";
+
+            $headerLine = $request->getHeaderLine('stripe-signature');
+//            var_dump(compact('headerLine'));
             $this->event = \Stripe\Webhook::constructEvent(
                 $request->getBody(),
-                $request->getHeaderLine('stripe-signature'),
+                $headerLine,
                 $webhookSecret
             );
+//            echo "made event\n";
         } catch (\UnexpectedValueException $e) {
+        //    var_dump($e->getMessage());
             return $this->validationError($response, "Invalid Payload: {$e->getMessage()}", 'Invalid Payload');
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
+//            var_dump($e->getMessage());
             return $this->validationError($response, 'Invalid Signature');
         }
 
@@ -54,6 +61,7 @@ abstract class Stripe extends Action
             return $this->validationError($response, 'Invalid event');
         }
 
+        var_dump($this->event);
         if (!$this->event->livemode && getenv('APP_ENV') === 'production') {
             /**
              * This is normal for Connect events so just `info()` log it in that case.

@@ -67,12 +67,15 @@ class StripePaymentsUpdate extends Stripe
         );
 
         if ($validationErrorResponse !== null) {
+//            var_dump(compact(['validationErrorResponse']));
+            die();
             return $validationErrorResponse;
         }
 
-        $this->logger->info(sprintf('Received Stripe account event type "%s"', $this->event->type));
+        $type = $this->event->type;
+        $this->logger->info(sprintf('Received Stripe account event type "%s"', $type));
 
-        switch ($this->event->type) {
+        switch ($type) {
             case Event::CHARGE_DISPUTE_CLOSED:
                 return $this->handleChargeDisputeClosed($this->event, $response);
             case Event::CHARGE_REFUNDED:
@@ -82,7 +85,7 @@ class StripePaymentsUpdate extends Stripe
             case Event::PAYMENT_INTENT_CANCELED:
                 return $this->handlePaymentIntentCancelled($this->event, $response);
             default:
-                $this->logger->warning(sprintf('Unsupported event type "%s"', $this->event->type));
+                $this->logger->warning(sprintf('Unsupported event type "%s"', $type));
                 return $this->respond($response, new ActionPayload(204));
         }
     }
@@ -322,6 +325,7 @@ class StripePaymentsUpdate extends Stripe
     private function handlePaymentIntentCancelled(Event $event, Response $response): Response
     {
         $paymentIntent = $event->data->object;
+        var_dump(compact(['paymentIntent']));
         \assert($paymentIntent instanceof PaymentIntent);
 
         $donation = $this->donationRepository->findOneBy(['transactionId' => $paymentIntent->id]);
@@ -343,6 +347,8 @@ class StripePaymentsUpdate extends Stripe
         } catch (\UnexpectedValueException) {
             return $this->respond($response, new ActionPayload(400));
         }
+
+        $this->entityManager->flush();
 
         return $this->respond($response, new ActionPayload(200));
     }
