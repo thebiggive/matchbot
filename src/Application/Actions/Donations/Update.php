@@ -142,13 +142,14 @@ class Update extends Action
                     $retryCount,
                 ));
 
-                $microseconds = 100_000 * (2 ** $retryCount); // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
+                $microseconds = (int)(100_000 * (2 ** $retryCount)); // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
                 \assert($microseconds >= 0);
                 \usleep($microseconds);
                 $retryCount++;
 
                 $this->entityManager->rollback();
-            } catch (InvalidRequestException $invalidRequestException) {
+            }
+            catch (InvalidRequestException $invalidRequestException) {
                 if (
                     str_starts_with(
                         haystack: $invalidRequestException->getMessage(),
@@ -168,9 +169,10 @@ class Update extends Action
                         'This donation payment intent has been cancelled. You may wish to start a fresh donation.'
                     );
                 }
+
+                throw $invalidRequestException;
             }
 
-            throw $invalidRequestException;
         }
 
         throw new \Exception(
