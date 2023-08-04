@@ -19,7 +19,7 @@ use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
 use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
-class StripeChargeUpdateTest extends StripeTest
+class StripePaymentsUpdateTest extends StripeTest
 {
     public function testUnsupportedAction(): void
     {
@@ -27,8 +27,8 @@ class StripeChargeUpdateTest extends StripeTest
         /** @var Container $container */
         $container = $app->getContainer();
 
-        // Payment Intent events, including cancellations, return a 204 No Content no-op for now.
-        $body = $this->getStripeHookMock('pi_canceled');
+        // Payout Object events, return a 204 No Content no-op for now.
+        $body = $this->getStripeHookMock('po_created');
         $webhookSecret = $this->getValidWebhookSecret($container);
         $time = (string) time();
 

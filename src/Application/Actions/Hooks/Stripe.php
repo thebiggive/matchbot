@@ -39,9 +39,10 @@ abstract class Stripe extends Action
         Response $response,
     ): ?ResponseInterface {
         try {
+            $headerLine = $request->getHeaderLine('stripe-signature');
             $this->event = \Stripe\Webhook::constructEvent(
                 $request->getBody(),
-                $request->getHeaderLine('stripe-signature'),
+                $headerLine,
                 $webhookSecret
             );
         } catch (\UnexpectedValueException $e) {

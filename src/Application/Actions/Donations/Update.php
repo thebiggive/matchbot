@@ -142,11 +142,42 @@ class Update extends Action
                     $retryCount,
                 ));
 
-                \usleep(100_000 * (2 ** $retryCount)); // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
+                $microseconds = (int)(100_000 * (2 ** $retryCount)); // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
+                \assert($microseconds >= 0);
+                \usleep($microseconds);
                 $retryCount++;
 
                 $this->entityManager->rollback();
             }
+            catch (InvalidRequestException $invalidRequestException) {
+                if (
+                    str_starts_with(
+                        haystack: $invalidRequestException->getMessage(),
+                        needle: "This PaymentIntent's amount could not be updated because it has a status of canceled",
+                    )
+                ) {
+                    \assert(
+                        isset($donation),
+                        "If we've got as far as Stripe throwing an exception we must have a Donation"
+                    );
+
+                    $this->logger->warning(sprintf(
+                        'Stripe rejected payment intent update as PI was cancelled, presumably by stripe' .
+                        ' itself very recently. Donation UUID %s',
+                        $donation->getUuid(),
+                    ));
+                    $this->entityManager->rollback();
+
+                    return $this->validationError(
+                        $response,
+                        "Donation ID {$args['donationId']} could not be updated",
+                        'This donation payment intent has been cancelled. You may wish to start a fresh donation.'
+                    );
+                }
+
+                throw $invalidRequestException;
+            }
+
         }
 
         throw new \Exception(
@@ -156,7 +187,7 @@ class Update extends Action
 
     /**
      * Assumes it will be called only after starting a transaction pre-donation-select.
-     *
+     * @throws InvalidRequestException
      * @throws ApiErrorException if confirm() fails other than because of a missing payment method.
      */
     private function addData(Donation $donation, HttpModels\Donation $donationData, array $args, Response $response): Response
@@ -187,6 +218,22 @@ class Update extends Action
             $this->entityManager->rollback();
 
             return $this->validationError($response, "Required boolean field 'giftAid' not set", null, true);
+        }
+
+        if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
+            // this guard clause is technically not needed, and impossible to unit test, as this is covered by two
+            // previous clauses:
+            //
+            // - if donation from the DB is cancelled and the request sends a non-cancelled status we bail out all other
+            //      status changes are not supported
+            // - if donation from the DB is cancelled and the request is sending a cancelled status as well then we do
+            //      nothing.
+            //
+            // But worth keeping here IMHO just in case the other parts change.
+
+            $this->entityManager->rollback();
+
+            return $this->validationError($response, "Can not update cancelled donation", null, true);
         }
 
         // These 3 fields are currently set up early in the journey, but are harmless and more flexible
@@ -330,7 +377,7 @@ class Update extends Action
 
         $this->logger->info("Donor cancelled ID {$args['donationId']}");
 
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation->cancel();
 
         // Save & flush early to reduce chance of lock conflicts.
         $this->save($donation);
@@ -404,6 +451,7 @@ class Update extends Action
 
     /**
      * @throws RateLimitException if e.g. Stripe had locked the PI while processing.
+     * @throws InvalidRequestException - for example if the payment intent has just been cancelled by stripe.
      */
     private function updatePaymentIntent(Donation $donation): void
     {
