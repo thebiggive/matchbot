@@ -205,9 +205,6 @@
     <MixedArrayAccess>
       <code><![CDATA[$this->getContainer()->get('settings')['stripe']]]></code>
     </MixedArrayAccess>
-    <UnusedVariable>
-      <code>$hookResponse</code>
-    </UnusedVariable>
   </file>
   <file src="public/index.php">
     <MixedArgument>

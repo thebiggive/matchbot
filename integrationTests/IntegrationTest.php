@@ -10,6 +10,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -25,6 +26,8 @@ use Stripe\StripeClient;
 
 abstract class IntegrationTest extends TestCase
 {
+    use ProphecyTrait;
+
     public static ?ContainerInterface $integrationTestContainer = null;
     public static ?App $app = null;
 
