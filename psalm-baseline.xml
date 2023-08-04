@@ -1005,6 +1005,10 @@
       <code>toString</code>
       <code>toString</code>
     </PossiblyNullReference>
+    <PossiblyUnusedMethod>
+      <code>getTbgGiftAidRequestQueuedAt</code>
+      <code>preUpdate</code>
+    </PossiblyUnusedMethod>
     <PropertyNotSetInConstructor>
       <code>$campaign</code>
       <code>$psp</code>
@@ -1297,6 +1301,14 @@
       <code>$updatedAt</code>
       <code>$updatedAt</code>
     </MissingConstructor>
+    <PossiblyUnusedMethod>
+      <code>updatedNow</code>
+      <code>updatedNow</code>
+      <code>updatedNow</code>
+      <code>updatedNow</code>
+      <code>updatedNow</code>
+      <code>updatedNow</code>
+    </PossiblyUnusedMethod>
   </file>
   <file src="src/Migrations/Version20191109151808.php">
     <DeprecatedMethod>
