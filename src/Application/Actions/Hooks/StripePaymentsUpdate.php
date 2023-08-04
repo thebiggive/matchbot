@@ -320,8 +320,9 @@ class StripePaymentsUpdate extends Stripe
 
     private function handlePaymentIntentCancelled(Request $request, Event $event, Response $response): Response
     {
-        /** @var PaymentIntent $paymentIntent */
         $paymentIntent = $event->data->object;
+        \assert($paymentIntent instanceof PaymentIntent);
+
         $donation = $this->donationRepository->findOneBy(['transactionId' => $paymentIntent->id]);
 
         if ($donation === null) {
