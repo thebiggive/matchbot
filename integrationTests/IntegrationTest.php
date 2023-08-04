@@ -35,7 +35,7 @@ abstract class IntegrationTest extends TestCase
     {
         parent::setUp();
 
-        $noOpMiddlware = new class implements MiddlewareInterface {
+        $noOpMiddleware = new class implements MiddlewareInterface {
             public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
             {
                 return $handler->handle($request);
@@ -44,8 +44,8 @@ abstract class IntegrationTest extends TestCase
 
         $container = require __DIR__ . '/../bootstrap.php';
         IntegrationTest::setContainer($container);
-        $container->set(DonationRecaptchaMiddleware::class, $noOpMiddlware);
-        $container->set(RateLimitMiddleware::class, $noOpMiddlware);
+        $container->set(DonationRecaptchaMiddleware::class, $noOpMiddleware);
+        $container->set(RateLimitMiddleware::class, $noOpMiddleware);
         $container->set(\Psr\Log\LoggerInterface::class, new \Psr\Log\NullLogger());
 
         AppFactory::setContainer($container);
