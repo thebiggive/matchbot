@@ -346,7 +346,7 @@ class Update extends Action
 
         $this->logger->info("Donor cancelled ID {$args['donationId']}");
 
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation->cancel();
 
         // Save & flush early to reduce chance of lock conflicts.
         $this->save($donation);

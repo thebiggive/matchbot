@@ -479,6 +479,10 @@ class Donation extends SalesforceWriteProxy
             throw new \Exception('Donation::recordRefundAt must be used to set refunded status');
         }
 
+        if ($donationStatus === DonationStatus::Cancelled) {
+            throw new \Exception('Donation::cancelled must be used to cancel');
+        }
+
         $this->donationStatus = $donationStatus;
     }
 
