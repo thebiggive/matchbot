@@ -248,9 +248,6 @@
       <code><![CDATA[$exception->getStripeCode()]]></code>
       <code><![CDATA[$retryException->getStripeCode()]]></code>
     </PossiblyNullArgument>
-    <PossiblyUndefinedVariable>
-      <code>$donation</code>
-    </PossiblyUndefinedVariable>
     <TypeDoesNotContainType>
       <code><![CDATA[isset($donationData->status)]]></code>
     </TypeDoesNotContainType>

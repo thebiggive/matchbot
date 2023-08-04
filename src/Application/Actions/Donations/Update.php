@@ -97,15 +97,14 @@ class Update extends Action
         while ($retryCount < self::MAX_UPDATE_RETRY_COUNT) {
             $this->entityManager->beginTransaction();
 
+            $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $args['donationId']]);
+
+            if (!$donation) {
+                $this->entityManager->rollback();
+
+                throw new DomainRecordNotFoundException('Donation not found');
+            }
             try {
-                $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $args['donationId']]);
-
-                if (!$donation) {
-                    $this->entityManager->rollback();
-
-                    throw new DomainRecordNotFoundException('Donation not found');
-                }
-
                 if ($donationData->status !== 'Cancelled' && $donationData->status !== $donation->getDonationStatus()->value) {
                     $this->entityManager->rollback();
 
