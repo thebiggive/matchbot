@@ -132,50 +132,6 @@ class UpdateTest extends TestCase
         $app->handle($request->withAttribute('route', $route));
     }
 
-    public function testCannotUpdateCancelledDonation(): void
-    {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
-
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donation = $this->getCancelledDonation();
-        $donationId = '12345678-1234-1234-1234-1234567890ab';
-        $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '' . $donationId . ''])
-            ->willReturn($donation);
-
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
-
-        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-
-        $apiModel = $donation->toApiModel();
-        $apiModel['status'] = 'Pending';
-        $request = $this->createRequest(
-            'PUT',
-            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($apiModel),
-        )->withHeader('x-tbg-auth', DonationToken::create($donationId));
-
-        $route = $this->getRouteWithDonationId('put', $donationId);
-
-        $response = $app->handle($request->withAttribute('route', $route));
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(400, ['error' => [
-            'type' => 'BAD_REQUEST',
-            'description' => 'Can not update cancelled donation',
-        ]]);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(400, $response->getStatusCode());
-    }
-
     public function testIdNotFound(): void
     {
         $app = $this->getAppInstance();
@@ -1949,25 +1905,5 @@ class UpdateTest extends TestCase
 
         // act
         $app->handle($request->withAttribute('route', $route));
-    }
-
-    private function getCancelledDonation(): Donation
-    {
-        $campaign = new Campaign();
-        $campaign->setIsMatched(true);
-        $campaign->setSalesforceId('sf-id');
-        $charity = new Charity();
-        $charity->setDonateLinkId('link-id');
-        $charity->setName('name');
-        $campaign->setCharity($charity);
-        $donation = Donation::fromApiModel(new DonationCreate('GBP', '1.0', 'project-id', 'stripe'), $campaign);
-        $donation->setTransactionId('transaction-id');
-        $donation->setDonorHomeAddressLine1('Home address');
-        $donation->setDonorHomePostcode('postcode');
-        $donation->createdNow();
-
-        $donation->cancel();;
-
-        return $donation;
     }
 }

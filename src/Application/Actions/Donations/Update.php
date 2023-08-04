@@ -107,7 +107,6 @@ class Update extends Action
                 }
 
                 if ($donationData->status !== 'Cancelled' && $donationData->status !== $donation->getDonationStatus()->value) {
-//                    var_dump($donation->getDonationStatus()->value);
                     $this->entityManager->rollback();
 
                     return $this->validationError($response,
@@ -190,8 +189,17 @@ class Update extends Action
             return $this->validationError($response, "Required boolean field 'giftAid' not set", null, true);
         }
 
-        var_dump($donation->getDonationStatus());
         if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
+            // this guard clause is technically not needed, and impossible to unit test, as this is covered by two
+            // previous clauses:
+            //
+            // - if donation from the DB is cancelled and the request sends a non-cancelled status we bail out all other
+            //      status changes are not supported
+            // - if donation from the DB is cancelled and the request is sending a cancelled status as well then we do
+            //      nothing.
+            //
+            // But worth keeping here IMHO just in case the other parts change.
+
             $this->entityManager->rollback();
 
             return $this->validationError($response, "Can not update cancelled donation", null, true);
