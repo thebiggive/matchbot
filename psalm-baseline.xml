@@ -201,11 +201,6 @@
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
     </DeprecatedMethod>
   </file>
-  <file src="integrationTests/StripeCancelsDonationTest.php">
-    <MixedArrayAccess>
-      <code><![CDATA[$this->getContainer()->get('settings')['stripe']]]></code>
-    </MixedArrayAccess>
-  </file>
   <file src="public/index.php">
     <MixedArgument>
       <code><![CDATA[$app->getContainer()->get(LoggerInterface::class)]]></code>
