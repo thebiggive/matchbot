@@ -39,21 +39,15 @@ abstract class Stripe extends Action
         Response $response,
     ): ?ResponseInterface {
         try {
-//            echo "trying to prepare event..\n";
-
             $headerLine = $request->getHeaderLine('stripe-signature');
-//            var_dump(compact('headerLine'));
             $this->event = \Stripe\Webhook::constructEvent(
                 $request->getBody(),
                 $headerLine,
                 $webhookSecret
             );
-//            echo "made event\n";
         } catch (\UnexpectedValueException $e) {
-        //    var_dump($e->getMessage());
             return $this->validationError($response, "Invalid Payload: {$e->getMessage()}", 'Invalid Payload');
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
-//            var_dump($e->getMessage());
             return $this->validationError($response, 'Invalid Signature');
         }
 

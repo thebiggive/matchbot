@@ -18,9 +18,7 @@ abstract class StripeTest extends TestCase
 
     protected static function getSignedPayload(string $time, string $body): string
     {
-        $payloadinTest = "$time.$body";
-//        var_dump(compact('payloadinTest'));
-        return $payloadinTest;
+        return "$time.$body";
     }
 
     protected static function getValidAuth(string $signedPayload, string $webhookSecret): string
