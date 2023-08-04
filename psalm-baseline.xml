@@ -242,9 +242,6 @@
     <ArgumentTypeCoercion>
       <code><![CDATA[$donation->getAmount()]]></code>
     </ArgumentTypeCoercion>
-    <InvalidArgument>
-      <code>100_000 * (2 ** $retryCount)</code>
-    </InvalidArgument>
     <PossiblyNullArgument>
       <code><![CDATA[$exception->getStripeCode()]]></code>
       <code><![CDATA[$exception->getStripeCode()]]></code>

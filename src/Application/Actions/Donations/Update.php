@@ -142,11 +142,35 @@ class Update extends Action
                     $retryCount,
                 ));
 
-                \usleep(100_000 * (2 ** $retryCount)); // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
+                $microseconds = 100_000 * (2 ** $retryCount); // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
+                \assert($microseconds >= 0);
+                \usleep($microseconds);
                 $retryCount++;
 
                 $this->entityManager->rollback();
+            } catch (InvalidRequestException $invalidRequestException) {
+                if (
+                    str_starts_with(
+                        haystack: $invalidRequestException->getMessage(),
+                        needle: "This PaymentIntent's amount could not be updated because it has a status of canceled",
+                    )
+                ) {
+                    $this->logger->warning(sprintf(
+                        'Stripe rejected payment intent update as PI was cancelled, presumably by stripe' .
+                        ' itself very recently. Donation # %s',
+                        $args['donationId'],
+                    ));
+                    $this->entityManager->rollback();
+
+                    return $this->validationError(
+                        $response,
+                        "Donation ID {$args['donationId']} could not be updated",
+                        'This donation payment intent has been cancelled. You may wish to start a fresh donation.'
+                    );
+                }
             }
+
+            throw $invalidRequestException;
         }
 
         throw new \Exception(
@@ -156,7 +180,7 @@ class Update extends Action
 
     /**
      * Assumes it will be called only after starting a transaction pre-donation-select.
-     *
+     * @throws InvalidRequestException
      * @throws ApiErrorException if confirm() fails other than because of a missing payment method.
      */
     private function addData(Donation $donation, HttpModels\Donation $donationData, array $args, Response $response): Response
@@ -420,6 +444,7 @@ class Update extends Action
 
     /**
      * @throws RateLimitException if e.g. Stripe had locked the PI while processing.
+     * @throws InvalidRequestException - for example if the payment intent has just been cancelled by stripe.
      */
     private function updatePaymentIntent(Donation $donation): void
     {
