@@ -65,6 +65,7 @@ class StripeCancelsDonationTest extends IntegrationTest
         /** @psalm-suppress MixedArrayAccess */
         $_donationRow = $this->db()->fetchAssociative("SELECT * from Donation where Donation.id = ?", [$donation['donationId']]);
 
+        /** @psalm-suppress MixedArrayAccess */
         $this->assertSame('Cancelled', $this->db()->fetchOne('SELECT donationStatus from Donation where id = ?', [$donation['donationId']]));
     }
 
