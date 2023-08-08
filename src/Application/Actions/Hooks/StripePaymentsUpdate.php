@@ -331,13 +331,15 @@ class StripePaymentsUpdate extends Stripe
             return $this->respond($response, new ActionPayload(404));
         }
 
-        if ($donation->getDonationStatus() !== DonationStatus::Cancelled) {
-            $this->logger->info(sprintf(
-                'Received Stripe cancellation request, Donation UUID %s, payment intent ID %s',
-                $donation->getUuid(),
-                $paymentIntent->id,
-            ));
+        if (DonationStatus::Cancelled === $donation->getDonationStatus()) {
+            return $this->respond($response, new ActionPayload(204, ['reason' => 'Donation is already cancelled']));
         }
+
+        $this->logger->info(sprintf(
+            'Received Stripe cancellation request, Donation UUID %s, payment intent ID %s',
+            $donation->getUuid(),
+            $paymentIntent->id,
+        ));
 
         try {
             $donation->cancel();
@@ -346,6 +348,7 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->entityManager->flush();
+        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
         return $this->respond($response, new ActionPayload(200));
     }

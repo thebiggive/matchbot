@@ -188,6 +188,7 @@ abstract class IntegrationTest extends TestCase
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
         $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
+        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
