@@ -8,6 +8,9 @@ use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
+use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Domain\Campaign;
+use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -277,7 +280,7 @@ class UpdateTest extends TestCase
         $donationResponse->setDonationStatus(DonationStatus::Collected);
 
         $donation = $this->getTestDonation();
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation->cancel();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -326,13 +329,13 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation('999.99');
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation->cancel();
         // Check this is ignored and only status patched. N.B. this is currently a bit circular as we simulate both
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
 
         $responseDonation = $this->getTestDonation();
-        $responseDonation->setDonationStatus(DonationStatus::Cancelled);
+        $responseDonation->cancel();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -388,7 +391,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation('999.99');
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation->cancel();
         // Check this is ignored and only status patched. N.B. this is currently a bit circular as we simulate both
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
@@ -467,7 +470,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation->cancel();
 
         $responseDonation = $this->getTestDonation();
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
@@ -536,7 +539,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation->cancel();
 
         $responseDonation = $this->getTestDonation();
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
@@ -604,7 +607,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getAnonymousPendingTestDonation();
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation->cancel();
 
         $responseDonation = $this->getAnonymousPendingTestDonation();
 

@@ -18,6 +18,7 @@ use Psr\Log\LoggerInterface;
 use Stripe\Charge;
 use Stripe\Dispute;
 use Stripe\Event;
+use Stripe\PaymentIntent;
 use Stripe\StripeClient;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
@@ -26,11 +27,12 @@ use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
 /**
- * Handle charge.succeeded, charge.refunded and charge.dispute.closed events from a Stripe Direct webhook.
+ * Handles some events from Stripe's `charge` and `payment_intent` objects from a Stripe Direct webhook. See
+ * self::action for details.
  *
  * @return Response
  */
-class StripeChargeUpdate extends Stripe
+class StripePaymentsUpdate extends Stripe
 {
     private ChatterInterface $chatter;
 
@@ -68,17 +70,20 @@ class StripeChargeUpdate extends Stripe
             return $validationErrorResponse;
         }
 
-        $this->logger->info(sprintf('Received Stripe account event type "%s"', $this->event->type));
+        $type = $this->event->type;
+        $this->logger->info(sprintf('Received Stripe account event type "%s"', $type));
 
-        switch ($this->event->type) {
-            case 'charge.dispute.closed':
+        switch ($type) {
+            case Event::CHARGE_DISPUTE_CLOSED:
                 return $this->handleChargeDisputeClosed($this->event, $response);
-            case 'charge.refunded':
+            case Event::CHARGE_REFUNDED:
                 return $this->handleChargeRefunded($this->event, $response);
-            case 'charge.succeeded':
+            case Event::CHARGE_SUCCEEDED:
                 return $this->handleChargeSucceeded($this->event, $response);
+            case Event::PAYMENT_INTENT_CANCELED:
+                return $this->handlePaymentIntentCancelled($this->event, $response);
             default:
-                $this->logger->warning(sprintf('Unsupported event type "%s"', $this->event->type));
+                $this->logger->warning(sprintf('Unsupported event type "%s"', $type));
                 return $this->respond($response, new ActionPayload(204));
         }
     }
@@ -313,6 +318,39 @@ class StripeChargeUpdate extends Stripe
         $this->doPostMarkRefundedUpdates($donation, $isFullRefund || $isOverRefund);
 
         return $this->respondWithData($response, $charge);
+    }
+
+    private function handlePaymentIntentCancelled(Event $event, Response $response): Response
+    {
+        $paymentIntent = $event->data->object;
+        \assert($paymentIntent instanceof PaymentIntent);
+
+        $donation = $this->donationRepository->findOneBy(['transactionId' => $paymentIntent->id]);
+
+        if ($donation === null) {
+            return $this->respond($response, new ActionPayload(404));
+        }
+
+        if (DonationStatus::Cancelled === $donation->getDonationStatus()) {
+            return $this->respond($response, new ActionPayload(204, ['reason' => 'Donation is already cancelled']));
+        }
+
+        $this->logger->info(sprintf(
+            'Received Stripe cancellation request, Donation UUID %s, payment intent ID %s',
+            $donation->getUuid(),
+            $paymentIntent->id,
+        ));
+
+        try {
+            $donation->cancel();
+        } catch (\UnexpectedValueException) {
+            return $this->respond($response, new ActionPayload(400));
+        }
+
+        $this->entityManager->flush();
+        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
+
+        return $this->respond($response, new ActionPayload(200));
     }
 
     /**

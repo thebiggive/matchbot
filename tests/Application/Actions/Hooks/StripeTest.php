@@ -11,17 +11,17 @@ abstract class StripeTest extends TestCase
 {
     use DonationTestDataTrait;
 
-    protected function generateSignature(string $time, string $body, string $webhookSecret): string
+    public static function generateSignature(string $time, string $body, string $webhookSecret): string
     {
-        return 't=' . $time . ',' . 'v1=' . $this->getValidAuth($this->getSignedPayload($time, $body), $webhookSecret);
+        return 't=' . $time . ',' . 'v1=' . self::getValidAuth(self::getSignedPayload($time, $body), $webhookSecret);
     }
 
-    private function getSignedPayload(string $time, string $body): string
+    protected static function getSignedPayload(string $time, string $body): string
     {
         return "$time.$body";
     }
 
-    private function getValidAuth(string $signedPayload, string $webhookSecret): string
+    protected static function getValidAuth(string $signedPayload, string $webhookSecret): string
     {
         return hash_hmac('sha256', $signedPayload, $webhookSecret);
     }

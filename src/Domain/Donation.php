@@ -76,6 +76,8 @@ class Donation extends SalesforceWriteProxy
     /**
      * @ORM\Column(type="string", unique=true, nullable=true)
      * @var string|null PSP's transaction ID assigned on their processing.
+     *
+     * In the case of stripe (which is the only thing we support at present, this is the payment intent ID)
      */
     protected ?string $transactionId = null;
 
@@ -475,6 +477,10 @@ class Donation extends SalesforceWriteProxy
     {
         if ($donationStatus === DonationStatus::Refunded) {
             throw new \Exception('Donation::recordRefundAt must be used to set refunded status');
+        }
+
+        if ($donationStatus === DonationStatus::Cancelled) {
+            throw new \Exception('Donation::cancelled must be used to cancel');
         }
 
         $this->donationStatus = $donationStatus;
@@ -1288,5 +1294,25 @@ class Donation extends SalesforceWriteProxy
     public function setPartialRefundDate(\DateTimeImmutable $datetime): void
     {
         $this->refundedAt = $datetime;
+    }
+
+    public function cancel(): void
+    {
+        if (
+            !in_array(
+                $this->donationStatus,
+                [
+                    DonationStatus::Pending,
+                    DonationStatus::Cancelled,
+                    DonationStatus::Collected, // doesn't really make sense to cancel a collected donation but we have
+                                               // existing unit tests doing that, not changing now.
+                ],
+                true
+            )
+        ) {
+            throw new \UnexpectedValueException("Cannot cancel {$this->donationStatus->value} donation");
+        }
+
+        $this->donationStatus = DonationStatus::Cancelled;
     }
 }

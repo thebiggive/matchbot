@@ -63,7 +63,7 @@ return function (App $app) {
     });
 
     // Authenticated through Stripe's SDK signature verification
-    $app->post('/hooks/stripe', Hooks\StripeChargeUpdate::class);
+    $app->post('/hooks/stripe', Hooks\StripePaymentsUpdate::class);
     $app->post('/hooks/stripe-connect', Hooks\StripePayoutUpdate::class);
 
     $app->options('/{routes:.+}', function ($request, $response, $args) {

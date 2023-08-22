@@ -370,4 +370,21 @@ class DonationTest extends TestCase
         $this->assertSame('Test Last Name', $donation->getDonorLastName(true));
         $this->assertSame('donor@email.test', $donation->getDonorEmailAddress());
     }
+
+    public function testCanCancelPendingDonation(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate('GBP', '1.00', 'project-id', 'stripe'), new Campaign());
+        $donation->cancel();
+
+        $this->assertEquals(DonationStatus::Cancelled, $donation->getDonationStatus());
+    }
+
+    public function testCantCancelPaidDonation(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate('GBP', '1.00', 'project-id', 'stripe'), new Campaign());
+        $donation->setDonationStatus(DonationStatus::Paid);
+
+        $this->expectExceptionMessage('Cannot cancel Paid donation');
+        $donation->cancel();
+    }
 }
