@@ -8,6 +8,7 @@ use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 
@@ -75,7 +76,7 @@ class UpdatePaymentMethod extends Action
             $isExpectedExceptionMessage = $e->getMessage() === "Your card's security code is incorrect.";
 
             $this->logger->log(
-                level: $isExpectedExceptionMessage ? 'info' : 'error',
+                level: $isExpectedExceptionMessage ? LogLevel::INFO : LogLevel::ERROR,
                 message: "Failed to update payment method, $exceptionClass: " . $e->getMessage(),
                 context: compact('customerId', 'paymentMethodId')
             );
