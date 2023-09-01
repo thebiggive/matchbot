@@ -70,9 +70,14 @@ class UpdatePaymentMethod extends Action
             // will not be able to update their card and can choose to delete it and add a new card for their
             // next donation. Donor will see the message in frontend.
 
-            $this->logger->info(
-                "Failed to update payment method, error: " . $e->getMessage(),
-                compact('customerId', 'paymentMethodId')
+            $exceptionClass = get_class($e);
+
+            $isExpectedExceptionMessage = $e->getMessage() === "Your card's security code is incorrect.";
+
+            $this->logger->log(
+                level: $isExpectedExceptionMessage ? 'info' : 'error',
+                message: "Failed to update payment method, $exceptionClass: " . $e->getMessage(),
+                context: compact('customerId', 'paymentMethodId')
             );
             return $this->respondWithData($response, ['error' => $e->getMessage()], 400);
         }
