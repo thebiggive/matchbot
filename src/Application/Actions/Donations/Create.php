@@ -156,7 +156,7 @@ class Create extends Action
                 $stripeMethodProperties = [
                     'automatic_payment_methods' => [
                     'enabled' => true,
-                    'allow_redirects' => 'always',
+                    'allow_redirects' => 'never',
                     ]
                 ];
             } else {
