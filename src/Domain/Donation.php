@@ -1151,9 +1151,19 @@ class Donation extends SalesforceWriteProxy
      */
     public function getStripeMethodProperties(): array
     {
-        $properties = [
-            'payment_method_types' => [$this->paymentMethodType?->value],
-        ];
+        $properties = match ($this->paymentMethodType) {
+            PaymentMethodType::CustomerBalance => [
+                'payment_method_types' => ['customer_balance'],
+            ],
+            PaymentMethodType::Card => [
+                // in this case we want to use the Stripe Payment Element, so we can't specify card explicitly, we
+                // need to turn on automatic methods instead and let the element decide what methods to show.
+                'automatic_payment_methods' => [
+                    'enabled' => true,
+                    'allow_redirects' => 'never',
+                ]
+            ],
+        };
 
         if ($this->paymentMethodType === PaymentMethodType::CustomerBalance) {
             if ($this->currencyCode !== 'GBP') {
