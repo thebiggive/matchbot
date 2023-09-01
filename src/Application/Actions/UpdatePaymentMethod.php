@@ -66,7 +66,11 @@ class UpdatePaymentMethod extends Action
             // see https://stripe.com/docs/api/payment_methods/update
             $this->stripeClient->paymentMethods->update($paymentMethodId, $newBillingDetails);
         } catch (ApiErrorException $e) {
-            $this->logger->error(
+            // Error message could be e.g. "Your card's security code is incorrect." in which case the donor
+            // will not be able to update their card and can choose to delete it and add a new card for their
+            // next donation. Donor will see the message in frontend.
+
+            $this->logger->info(
                 "Failed to update payment method, error: " . $e->getMessage(),
                 compact('customerId', 'paymentMethodId')
             );
