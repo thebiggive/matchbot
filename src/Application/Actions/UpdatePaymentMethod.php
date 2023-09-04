@@ -8,6 +8,7 @@ use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 
@@ -66,9 +67,18 @@ class UpdatePaymentMethod extends Action
             // see https://stripe.com/docs/api/payment_methods/update
             $this->stripeClient->paymentMethods->update($paymentMethodId, $newBillingDetails);
         } catch (ApiErrorException $e) {
-            $this->logger->error(
-                "Failed to update payment method, error: " . $e->getMessage(),
-                compact('customerId', 'paymentMethodId')
+            // Error message could be e.g. "Your card's security code is incorrect." in which case the donor
+            // will not be able to update their card and can choose to delete it and add a new card for their
+            // next donation. Donor will see the message in frontend.
+
+            $exceptionClass = get_class($e);
+
+            $isExpectedExceptionMessage = $e->getMessage() === "Your card's security code is incorrect.";
+
+            $this->logger->log(
+                level: $isExpectedExceptionMessage ? LogLevel::INFO : LogLevel::ERROR,
+                message: "Failed to update payment method, $exceptionClass: " . $e->getMessage(),
+                context: compact('customerId', 'paymentMethodId')
             );
             return $this->respondWithData($response, ['error' => $e->getMessage()], 400);
         }

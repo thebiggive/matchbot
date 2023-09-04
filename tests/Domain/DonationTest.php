@@ -280,7 +280,10 @@ class DonationTest extends TestCase
         $donation = $this->getTestDonation();
 
         $expectedPaymentMethodProperties = [
-            'payment_method_types' => ['card'],
+            'automatic_payment_methods' => [
+                'enabled' => true,
+                'allow_redirects' => 'never',
+            ],
         ];
 
         $expectedOnBehalfOfProperties = [
