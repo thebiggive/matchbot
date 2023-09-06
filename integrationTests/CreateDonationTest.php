@@ -14,12 +14,9 @@ class CreateDonationTest extends IntegrationTest
 {
     use \Prophecy\PhpUnit\ProphecyTrait;
 
-    public function testItCreatesADonation(): void
+    public function setUp(): void
     {
-        // This test should be using fake stripe and salesforce clients, but things within our app,
-        // from the HTTP router to the DB is using our real prod code.
-
-        // arrange
+        parent::setUp();
         $this->addCampaignAndCharityToDB($this->randomString());
 
         /** @var \DI\Container $container */
@@ -33,6 +30,12 @@ class CreateDonationTest extends IntegrationTest
         $donationRepo = $container->get(DonationRepository::class);
         assert($donationRepo instanceof DonationRepository);
         $donationRepo->setClient($donationClientProphecy->reveal());
+    }
+
+    public function testItCreatesADonation(): void
+    {
+        // This test should be using fake stripe and salesforce clients, but things within our app,
+        // from the HTTP router to the DB is using our real prod code.
 
         // act
         $response = $this->createDonation();
@@ -52,4 +55,16 @@ class CreateDonationTest extends IntegrationTest
         assert(is_array($donationFetchedFromDB));
         $this->assertSame('100.00', $donationFetchedFromDB['amount']);
     }
+
+    public function testCannotCreateDonationWithNegativeTip(): void
+    {
+        // This test should be using fake stripe and salesforce clients, but things within our app,
+        // from the HTTP router to the DB is using our real prod code.
+
+        // act
+        $response = $this->createDonation(tipAmount: -1);
+
+        $this->assertSame(400, $response->getStatusCode());
+    }
+
 }
