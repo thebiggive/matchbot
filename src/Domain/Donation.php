@@ -887,6 +887,10 @@ class Donation extends SalesforceWriteProxy
             ));
         }
 
+        if (bccomp($tipAmount, '0', 2) === -1) {
+            throw new \UnexpectedValueException('Tip amount must not be negative');
+        }
+
         $this->tipAmount = $tipAmount;
     }
 

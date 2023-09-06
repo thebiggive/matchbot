@@ -12,6 +12,7 @@ use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
+use UnexpectedValueException;
 
 class DonationTest extends TestCase
 {
@@ -389,5 +390,19 @@ class DonationTest extends TestCase
 
         $this->expectExceptionMessage('Cannot cancel Paid donation');
         $donation->cancel();
+    }
+
+    public function testCannotCreateDonationWithNegativeTip(): void
+    {
+        $this->expectException(UnexpectedValueException::class);
+
+        Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '10',
+            projectId: 'project-id',
+            psp: 'stripe',
+            tipAmount: '-0.01'
+        ), new Campaign());
+
     }
 }
