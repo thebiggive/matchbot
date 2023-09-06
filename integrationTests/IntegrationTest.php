@@ -168,7 +168,7 @@ abstract class IntegrationTest extends TestCase
         return $fakeStripeClient;
     }
 
-    protected function createDonation(): \Psr\Http\Message\ResponseInterface
+    protected function createDonation(int $tipAmount = 0): \Psr\Http\Message\ResponseInterface
     {
         $campaignId = $this->randomString();
         $paymentIntentId = $this->randomString();
@@ -180,7 +180,6 @@ abstract class IntegrationTest extends TestCase
         $stripePaymentIntentsProphecy = $this->setUpFakeStripeClient();
 
         $stripePaymentIntentsProphecy->create(Argument::type('array'))
-            ->shouldBeCalled()
             ->willReturn($stripePaymentIntent);
 
         /** @var \DI\Container $container */
@@ -207,7 +206,8 @@ abstract class IntegrationTest extends TestCase
                     "currencyCode": "GBP",
                     "donationAmount": "100",
                     "projectId": "$campaignId",
-                    "psp": "stripe"
+                    "psp": "stripe",
+                    "tipAmount": $tipAmount
                 }
             EOF,
                 serverParams: ['REMOTE_ADDR' => '127.0.0.1']
