@@ -883,7 +883,6 @@
       <code><![CDATA[$campaignData['charity']]]></code>
       <code><![CDATA[$campaignData['charity']]]></code>
       <code><![CDATA[$campaignData['charity']]]></code>
-      <code><![CDATA[$campaignData['charity']]]></code>
       <code><![CDATA[$campaignData['charity']['giftAidOnboardingStatus']]]></code>
       <code><![CDATA[$campaignData['charity']['hmrcReferenceNumber']]]></code>
       <code><![CDATA[$campaignData['charity']['id']]]></code>
