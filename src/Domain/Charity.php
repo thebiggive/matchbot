@@ -10,18 +10,14 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Entity(repositoryClass="CharityRepository")
  * @ORM\HasLifecycleCallbacks
  * @ORM\Table
+ *
+ * The former external identifier "donateLinkId" has always been Salesforce Account
+ * ID since 2020, even for older charities. So this is now deleted and we simply
+ * use `$salesforceId` as declared in `SalesforceReadProxy`.
  */
 class Charity extends SalesforceReadProxy
 {
     use TimestampsTrait;
-
-    /**
-     * @ORM\Column(type="string")
-     * @var string  The ID PSPs expect us to identify the charity by. Currently matches
-     *              `$id` for new charities but has a numeric value for those imported from the
-     *              legacy database.
-     */
-    protected string $donateLinkId;
 
     /**
      * @ORM\Column(type="string")
@@ -79,16 +75,6 @@ class Charity extends SalesforceReadProxy
     public function getName(): string
     {
         return $this->name;
-    }
-
-    public function getDonateLinkId(): string
-    {
-        return $this->donateLinkId;
-    }
-
-    public function setDonateLinkId(string $donateLinkId): void
-    {
-        $this->donateLinkId = $donateLinkId;
     }
 
     /**

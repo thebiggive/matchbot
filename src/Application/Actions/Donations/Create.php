@@ -177,7 +177,7 @@ class Create extends Action
                      */
                     'campaignId' => $donation->getCampaign()->getSalesforceId(),
                     'campaignName' => $donation->getCampaign()->getCampaignName(),
-                    'charityId' => $donation->getCampaign()->getCharity()->getDonateLinkId(),
+                    'charityId' => $donation->getCampaign()->getCharity()->getSalesforceId(),
                     'charityName' => $donation->getCampaign()->getCharity()->getName(),
                     'donationId' => $donation->getUuid(),
                     'environment' => getenv('APP_ENV'),
