@@ -70,11 +70,11 @@ class TestCase extends PHPUnitTestCase
             $redisProphecy->mget(Argument::type('array'))->willReturn([]);
             // symfony/cache Redis adapter apparently does something around prepping value-setting
             // through a fancy pipeline() and calls this.
-            $redisProphecy->multi(Argument::any())->willReturn();
+            $redisProphecy->multi(Argument::any())->willReturn(true);
             $redisProphecy
                 ->setex(Argument::type('string'), 3600, Argument::type('string'))
                 ->willReturn(true);
-            $redisProphecy->exec()->willReturn(); // Commits the multi() operation.
+            $redisProphecy->exec()->willReturn([]); // Commits the multi() operation.
             $container->set(Redis::class, $redisProphecy->reveal());
         }
 
