@@ -56,9 +56,6 @@ class Create extends Action
 
         $body = (string) $request->getBody();
 
-        // Frontend just has to send this temporarily so we know when its switched over from the card element to the new payment element.
-        $forNewPaymentElement = ($request->getQueryParams()['forNewPaymentElement'] ?? '') === 'true';
-
         try {
             /** @var DonationCreate $donationData */
             $donationData = $this->serializer->deserialize($body, DonationCreate::class, 'json');
@@ -150,20 +147,8 @@ class Create extends Action
                 $donation->setCampaign($campaign);
             }
 
-            if ($forNewPaymentElement) {
-                // We don't need to set specific payment methods here, they are set on the client side by the payment
-                // element.
-                $stripeMethodProperties = [
-                    'automatic_payment_methods' => [
-                    'enabled' => true,
-                    'allow_redirects' => 'always',
-                    ]
-                ];
-            } else {
-                $stripeMethodProperties = $donation->getStripeMethodProperties();
-            }
             $createPayload = [
-                ...$stripeMethodProperties,
+                ...$donation->getStripeMethodProperties(),
                 ...$donation->getStripeOnBehalfOfProperties(),
                 // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
                 // See https://stripe.com/docs/api/payment_intents/object
