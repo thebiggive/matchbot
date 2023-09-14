@@ -87,8 +87,8 @@ abstract class IntegrationTest extends TestCase
         $charityStripeId = $this->randomString();
 
         $this->db()->executeStatement(<<<EOF
-            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, donateLinkId, stripeAccountId, hmrcReferenceNumber, tbgClaimingGiftAid, regulator, regulatorNumber) 
-            VALUES ($charityId, 'Some Charity', '$charitySfID', '2023-01-01', '2093-01-01', '2023-01-01', 1, '$charityStripeId', null, 0, null, null)
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId, hmrcReferenceNumber, tbgClaimingGiftAid, regulator, regulatorNumber) 
+            VALUES ($charityId, 'Some Charity', '$charitySfID', '2023-01-01', '2023-01-01', '2093-01-01', '$charityStripeId', null, 0, null, null)
             EOF
         );
         $this->db()->executeStatement(<<<EOF

@@ -28,7 +28,6 @@ use PHPUnit\Framework\TestCase;
         $sut = $this->getService(CharityRepository::class);
 
         $charity = new Charity();
-        $charity->setDonateLinkId("doesn't matter, has to be set");
         $charity->setName("Charity Name");
 
         $em = $this->getService(EntityManagerInterface::class);

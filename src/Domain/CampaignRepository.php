@@ -66,7 +66,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charity = $this->pullCharity(
             $campaignData['charity']['id'],
             $campaignData['charity']['name'],
-            $campaignData['charity']['donateLinkId'],
             $campaignData['charity']['stripeAccountId'],
             $campaignData['charity']['giftAidOnboardingStatus'],
             $campaignData['charity']['hmrcReferenceNumber'],
@@ -93,7 +92,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
     private function pullCharity(
         string $salesforceCharityId,
         string $charityName,
-        string $donateLinkId,
         ?string $stripeAccountId,
         ?string $giftAidOnboardingStatus,
         ?string $hmrcReferenceNumber,
@@ -107,7 +105,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $charity = new Charity();
             $charity->setSalesforceId($salesforceCharityId);
         }
-        $charity->setDonateLinkId($donateLinkId);
         $charity->setName($charityName);
         $charity->setStripeAccountId($stripeAccountId);
 
