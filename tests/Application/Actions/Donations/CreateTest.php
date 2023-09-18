@@ -1084,7 +1084,7 @@ class CreateTest extends TestCase
         bool $minimalSetupData = false
     ): Donation {
         $charity = new Charity();
-        $charity->setDonateLinkId('567CharitySFID');
+        $charity->setSalesforceId('567CharitySFID');
         $charity->setName('Create test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
 

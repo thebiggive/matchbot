@@ -30,7 +30,7 @@ trait DonationTestDataTrait
     ): Donation
     {
         $charity = new Charity();
-        $charity->setDonateLinkId('123CharityId');
+        $charity->setSalesforceId('123CharityId');
         $charity->setName('Test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
@@ -73,7 +73,7 @@ trait DonationTestDataTrait
     protected function getAnonymousPendingTestDonation(): Donation
     {
         $charity = new Charity();
-        $charity->setDonateLinkId('123CharityId');
+        $charity->setSalesforceId('123CharityId');
         $charity->setName('Test charity');
 
         $campaign = new Campaign();

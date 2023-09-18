@@ -11,7 +11,6 @@ use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\LockingCommand;
-use MatchBot\Application\Commands\MarkOldPasswordedAccountsInStripe;
 use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;

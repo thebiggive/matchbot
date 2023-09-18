@@ -430,7 +430,7 @@ class Donation extends SalesforceWriteProxy
             'clientSecret' => $this->getClientSecret(),
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
-            'charityId' => $this->getCampaign()->getCharity()->getDonateLinkId(),
+            'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
             'charityName' => $this->getCampaign()->getCharity()->getName(),
             'countryCode' => $this->getDonorCountryCode(),
             'collectedTime' => $this->getCollectedAt()?->format(DateTimeInterface::ATOM),
