@@ -10,7 +10,7 @@ SELECT Donation.id as DonationID,
        Charity.regulatorNumber as "Charity Reg number",
 
        Donation.tbgGiftAidRequestCorrelationId as "Correlation ID",
-       Donation.amount as "Donation Value in GPB",
+       Donation.amount as "Donation Value in GBP",
        Donation.tbgGiftAidRequestConfirmedCompleteAt as "Gift Aid Request Confirmed at"
 FROM Donation
          JOIN Campaign on Donation.campaign_id = Campaign.id
