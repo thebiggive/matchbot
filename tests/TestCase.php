@@ -67,14 +67,14 @@ class TestCase extends PHPUnitTestCase
             // crash trying to actually connect to REDIS_HOST "dummy-redis-hostname".
             $redisProphecy = $this->prophesize(Redis::class);
             $redisProphecy->isConnected()->willReturn(true);
-            $redisProphecy->mget(['matchbot-cache:10d49f663215e991d10df22692f03e89'])->willReturn(null);
+            $redisProphecy->mget(Argument::type('array'))->willReturn([]);
             // symfony/cache Redis adapter apparently does something around prepping value-setting
             // through a fancy pipeline() and calls this.
-            $redisProphecy->multi(Argument::any())->willReturn();
+            $redisProphecy->multi(Argument::any())->willReturn(true);
             $redisProphecy
-                ->setex('matchbot-cache:10d49f663215e991d10df22692f03e89', 3600, Argument::type('string'))
+                ->setex(Argument::type('string'), 3600, Argument::type('string'))
                 ->willReturn(true);
-            $redisProphecy->exec()->willReturn(); // Commits the multi() operation.
+            $redisProphecy->exec()->willReturn([]); // Commits the multi() operation.
             $container->set(Redis::class, $redisProphecy->reveal());
         }
 
