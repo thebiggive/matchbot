@@ -6,10 +6,13 @@ namespace MatchBot\Application\Fees;
 
 use JetBrains\PhpStorm\Pure;
 
+/**
+ * @psalm-immutable
+ */
 class Calculator
 {
     /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
-    private array $euISOs = [
+    private const EU_COUNTRY_CODES = [
         'AT', 'BE', 'BG', 'CY', 'CZ', 'DK', 'EE',
         'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT',
         'LV', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL',
@@ -17,17 +20,17 @@ class Calculator
         'CH', 'GB',
     ];
 
-    private array $pspFeeSettings;
+    readonly private array $pspFeeSettings;
 
     public function __construct(
         array $settings,
         string $psp,
-        private ?string $cardBrand,
-        private ?string $cardCountry,
-        private string $amount,
-        private string $currencyCode,
-        private bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
-        private ?float $feePercentageOverride = null,
+        readonly private ?string $cardBrand,
+        readonly private ?string $cardCountry,
+        readonly private string $amount,
+        readonly private string $currencyCode,
+        readonly private bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
+        readonly private ?float $feePercentageOverride = null,
     ) {
         $this->pspFeeSettings = $settings[$psp]['fee'];
     }
@@ -158,6 +161,6 @@ class Calculator
             return true;
         }
 
-        return in_array($cardCountry, $this->euISOs, true);
+        return in_array($cardCountry, self::EU_COUNTRY_CODES, true);
     }
 }
