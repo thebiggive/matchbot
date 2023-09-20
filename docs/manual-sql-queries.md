@@ -8,6 +8,7 @@ Fill in the salesforce ID for the charity of interest to run.
 SELECT Donation.id as DonationID,
        Charity.name as "Charity Name",
        Charity.regulatorNumber as "Charity Reg number",
+       Charity.hmrcReferenceNumber as "Charity HMRC Ref",
 
        Donation.tbgGiftAidRequestCorrelationId as "Correlation ID",
        Donation.amount as "Donation Value in GBP",
