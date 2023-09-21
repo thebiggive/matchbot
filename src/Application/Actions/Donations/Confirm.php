@@ -3,6 +3,7 @@
 namespace MatchBot\Application\Actions\Donations;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Laminas\Diactoros\Response\EmptyResponse;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Client\NotFoundException;
@@ -53,12 +54,42 @@ class Confirm extends Action
         // todo - use paymentMethod object to get card type and country, derive fees on donation and apply those fees
         // before or when confirming the payment.
 
+        // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
+        $cardBrand = $paymentMethod->card->brand;
+        $cardCountry = $paymentMethod->card->country;
+
+        // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
+        // that, would like to find a way to make it so if its left out we get an error instead - either by having
+        // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
+        $this->donationRepository->deriveFees($donation, $cardBrand, $cardCountry);
+
+        $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
+            // only setting things that may need to be updated at this point.
+            'metadata' => [
+                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
+            ],
+            // See https://stripe.com/docs/connect/destination-charges#application-fee
+            // Update the fee amount incase the final charge was from
+            // a Non EU / Amex card where fees are varied.
+            'application_fee_amount' => $donation->getAmountToDeductFractional(),
+            // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
+        ]);
+
         $paymentIntent->confirm([
             'payment_method' => $paymentMethod->id,
         ]);
 
-        $this->logger->info("Confirmed donation " . $donation->getUuid() . " using payment method id " . $paymentMethod->id);
+        $updatedIntent = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
 
-        return new JsonResponse([]);
+        $this->entityManager->flush();
+
+        return new JsonResponse([
+                'paymentIntent' => [
+                    'status' => $updatedIntent->status,
+                    'next_action' => $updatedIntent->next_action
+                ]]
+        );
     }
 }
