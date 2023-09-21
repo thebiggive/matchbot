@@ -34,9 +34,11 @@ class Confirm extends Action
         // todo - add tests. Might have done test-first, but was copying JS code from
         // https://stripe.com/docs/payments/finalize-payments-on-the-server?platform=web&type=payment and translating to PHP.
 
-        $requestBody = json_decode(json: $request->getBody(), associative: true, flags: JSON_THROW_ON_ERROR);
+        $requestBody = json_decode(json: $request->getBody()->getContents(), associative: true, flags: JSON_THROW_ON_ERROR);
+        \assert(is_array($requestBody));
 
         $pamentMethodId = $requestBody['stripePaymentMethodId'];
+        \assert((is_string($pamentMethodId)));
 
         $this->entityManager->beginTransaction();
 
