@@ -28,7 +28,8 @@ class Confirm extends Action
 
     /**
      * Called to confirm that the donor wishes to make a donation immediately. We will tell Stripe to take their money
-     * using the payment method provided.
+     * using the payment method provided. Does not update the donation status, that only gets updated when stripe calls
+     * back to say the money is taken.
      */
     protected function action(Request $request, Response $response, array $args): Response
     {
@@ -37,7 +38,11 @@ class Confirm extends Action
         // todo - add tests. Might have done test-first, but was copying JS code from
         // https://stripe.com/docs/payments/finalize-payments-on-the-server?platform=web&type=payment and translating to PHP.
 
-        $requestBody = json_decode(json: $request->getBody()->getContents(), associative: true, flags: JSON_THROW_ON_ERROR);
+        try {
+            $requestBody = json_decode(json: $request->getBody()->getContents(), associative: true, flags: JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            throw new HttpBadRequestException($request, 'Cannot parse request body as JSON');
+        }
         \assert(is_array($requestBody));
 
         $pamentMethodId = $requestBody['stripePaymentMethodId'];
@@ -50,7 +55,7 @@ class Confirm extends Action
             throw new NotFoundException();
         }
 
-        $paymentIntent = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
+        $paymentIntentId = $donation->getTransactionId();
         $paymentMethod = $this->stripeClient->paymentMethods->retrieve($pamentMethodId);
 
         if ($paymentMethod->type !== 'card') {
@@ -71,7 +76,7 @@ class Confirm extends Action
         // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
         $this->donationRepository->deriveFees($donation, $cardBrand, $cardCountry);
 
-        $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
+        $this->stripeClient->paymentIntents->update($paymentIntentId, [
             // only setting things that may need to be updated at this point.
             'metadata' => [
                 'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
@@ -85,11 +90,11 @@ class Confirm extends Action
             // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
         ]);
 
-        $paymentIntent->confirm([
-            'payment_method' => $paymentMethod->id,
+        $this->stripeClient->paymentIntents->confirm($paymentIntentId, [
+            'payment_method' => $pamentMethodId,
         ]);
 
-        $updatedIntent = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
+        $updatedIntent = $this->stripeClient->paymentIntents->retrieve($paymentIntentId);
 
         $this->entityManager->flush();
 
