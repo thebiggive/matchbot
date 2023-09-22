@@ -20,6 +20,13 @@ class Calculator
         'CH', 'GB',
     ];
 
+    /**
+     * From https://stripe.com/docs/api/errors#errors-payment_method-card-brand
+     */
+    private const STRIPE_CARD_BRANDS = [
+        'amex', 'diners', 'discover', 'eftpos_au', 'jcb', 'mastercard', 'unionpay', 'visa', 'unknown'
+    ];
+
     readonly private array $pspFeeSettings;
 
     public function __construct(
@@ -33,6 +40,9 @@ class Calculator
         readonly private ?float $feePercentageOverride = null,
     ) {
         $this->pspFeeSettings = $settings[$psp]['fee'];
+        if (! in_array($this->cardBrand, [...self::STRIPE_CARD_BRANDS, null], true)) {
+            throw new \UnexpectedValueException('Unexpected card brand, expected brands are ' . implode(', ', self::STRIPE_CARD_BRANDS));
+        }
     }
 
     public function getCoreFee(): string

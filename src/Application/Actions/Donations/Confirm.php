@@ -55,7 +55,10 @@ class Confirm extends Action
         // before or when confirming the payment.
 
         // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
+        // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not 'Visa' or 'American Express'
         $cardBrand = $paymentMethod->card->brand;
+
+        // two letter upper string, e.g. 'GB', 'US'.
         $cardCountry = $paymentMethod->card->country;
 
         // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
@@ -82,6 +85,8 @@ class Confirm extends Action
         ]);
 
         $updatedIntent = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
+        var_dump($paymentMethod->toArray());
+        $this->logger->info($paymentMethod->card->brand);
 
         $this->entityManager->flush();
 
