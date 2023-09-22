@@ -43,7 +43,7 @@ return function (App $app) {
             ->add(DonationPublicAuthMiddleware::class);
 
         $versionGroup->post('/donations/{donationId:[a-z0-9-]{36}}/confirm', Donations\Confirm::class)
-            ->add(DonationPublicAuthMiddleware::class);;
+            ->add(DonationPublicAuthMiddleware::class);
 
         $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
             ->add(PersonManagementAuthMiddleware::class)
