@@ -26,6 +26,12 @@ class ConfirmTest extends TestCase
     public function test_it_confirms_a_card_donation(): void
     {
         // arrange
+
+        // in reality the fee would be calculated according to details of the card etc. The Calculator class is
+        //tested separately. This is just a dummy value.
+        $newCharityFee = "42.00";
+        $newApplicationFeeAmount = 4200;
+
         $stripeClientProphecy = $this->fakeStripeClient(
             cardDetails: ['brand' => 'acme-payment-cards', 'country' => 'some-country'],
             paymentMethodId: 'PAYMENT_METHOD_ID',
@@ -36,11 +42,11 @@ class ConfirmTest extends TestCase
             paymentIntentId: 'PAYMENT_INTENT_ID',
             expectedMetadataUpdate: [
             "metadata" => [
-                "stripeFeeRechargeGross" => "42.00",
-                "stripeFeeRechargeNet" => "42.00",
-                "stripeFeeRechargeVat" => "0.00"
+                "stripeFeeRechargeGross" => $newCharityFee,
+                "stripeFeeRechargeNet" => $newCharityFee,
+                "stripeFeeRechargeVat" => "0.00",
             ],
-            "application_fee_amount" => 4200
+            "application_fee_amount" => $newApplicationFeeAmount,
             ]
         );
 
@@ -54,9 +60,7 @@ class ConfirmTest extends TestCase
 
         $donationRepositoryProphecy->deriveFees($donation, 'acme-payment-cards', 'some-country')
             ->will(
-                // in reality the fee would be calculated according to details of the card etc. The Calculator class is
-                //tested separately. 42 is just a stub value.
-                fn() => $donation->setCharityFee('42.00')
+                fn() => $donation->setCharityFee($newCharityFee)
             );
 
         $donationRepositoryProphecy->findAndLockOneBy(['uuid' => 'DONATION_ID'])->willReturn(
