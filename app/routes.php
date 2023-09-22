@@ -43,10 +43,9 @@ return function (App $app) {
             ->add(DonationPublicAuthMiddleware::class);
 
         $versionGroup->post('/donations/{donationId:[a-z0-9-]{36}}/confirm', Donations\Confirm::class)
-            // todo - add needed middlewares. Not in right now as interferes with testing.
-//            ->add(DonationRecaptchaMiddleware::class) // Runs last
-//            ->add($ipMiddleware)
-//            ->add(RateLimitMiddleware::class)
+            ->add(DonationRecaptchaMiddleware::class) // Runs last
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class)
         ;
 
         $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
