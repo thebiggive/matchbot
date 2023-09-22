@@ -3,6 +3,7 @@
 namespace MatchBot\Application\Actions\Donations;
 
 use Doctrine\ORM\EntityManagerInterface;
+use http\Exception\BadMethodCallException;
 use Laminas\Diactoros\Response\EmptyResponse;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
@@ -11,6 +12,7 @@ use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Slim\Exception\HttpBadRequestException;
 use Stripe\StripeClient;
 
 class Confirm extends Action
@@ -51,15 +53,18 @@ class Confirm extends Action
         $paymentIntent = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
         $paymentMethod = $this->stripeClient->paymentMethods->retrieve($pamentMethodId);
 
-        // todo - use paymentMethod object to get card type and country, derive fees on donation and apply those fees
-        // before or when confirming the payment.
+        if ($paymentMethod->type !== 'card') {
+            throw new HttpBadRequestException($request, 'Confirm endpoint only supports card payments for now');
+        }
 
         // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
         // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not 'Visa' or 'American Express'
         $cardBrand = $paymentMethod->card->brand;
+        \assert(is_string($cardBrand));
 
         // two letter upper string, e.g. 'GB', 'US'.
         $cardCountry = $paymentMethod->card->country;
+        \assert(is_string($cardCountry));
 
         // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
@@ -85,8 +90,6 @@ class Confirm extends Action
         ]);
 
         $updatedIntent = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
-        var_dump($paymentMethod->toArray());
-        $this->logger->info($paymentMethod->card->brand);
 
         $this->entityManager->flush();
 
