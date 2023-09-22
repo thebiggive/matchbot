@@ -37,7 +37,7 @@ class ConfirmTest extends TestCase
             paymentMethodId: 'PAYMENT_METHOD_ID',
             updatedIntentData: [
             'status' => 'final_intent_status',
-            'next_action' => 'some_next_action',
+            'client_secret' => 'some_client_secret',
             ],
             paymentIntentId: 'PAYMENT_INTENT_ID',
             expectedMetadataUpdate: [
@@ -92,7 +92,7 @@ class ConfirmTest extends TestCase
 
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame(
-            ['paymentIntent' => ['status' => 'final_intent_status', 'next_action' => 'some_next_action']],
+            ['paymentIntent' => ['status' => 'final_intent_status', 'client_secret' => 'some_client_secret']],
             \json_decode($response->getBody()->getContents(), true)
         );
     }
