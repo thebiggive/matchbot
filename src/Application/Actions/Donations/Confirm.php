@@ -33,13 +33,10 @@ class Confirm extends Action
      */
     protected function action(Request $request, Response $response, array $args): Response
     {
-        // todo - harden code - make sure we bail out early if any needed data is missing or doesn't make sense.
-
-        // todo - add tests. Might have done test-first, but was copying JS code from
-        // https://stripe.com/docs/payments/finalize-payments-on-the-server?platform=web&type=payment and translating to PHP.
-
         try {
-            $requestBody = json_decode(json: $request->getBody()->getContents(), associative: true, flags: JSON_THROW_ON_ERROR);
+            $requestBody = json_decode(
+                $request->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR
+            );
         } catch (\JsonException) {
             throw new HttpBadRequestException($request, 'Cannot parse request body as JSON');
         }
@@ -63,7 +60,8 @@ class Confirm extends Action
         }
 
         // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
-        // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not 'Visa' or 'American Express'
+        // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not 'Visa' or
+        // 'American Express'
         $cardBrand = $paymentMethod->card->brand;
         \assert(is_string($cardBrand));
 
@@ -84,8 +82,8 @@ class Confirm extends Action
                 'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
             ],
             // See https://stripe.com/docs/connect/destination-charges#application-fee
-            // Update the fee amount incase the final charge was from
-            // a Non EU / Amex card where fees are varied.
+            // Update the fee amount in case the final charge was from
+            // e.g. a Non EU / Amex card where fees are varied.
             'application_fee_amount' => $donation->getAmountToDeductFractional(),
             // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
         ]);
