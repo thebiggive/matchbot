@@ -77,7 +77,6 @@ class DonationPersistenceTest extends IntegrationTest
             'salesforceId' => NULL,
             'tipAmount' => '0.00',
             'psp' => 'stripe',
-            'clientSecret' => NULL,
             'donorHomeAddressLine1' => NULL,
             'donorHomePostcode' => NULL,
             'tipGiftAid' => NULL,

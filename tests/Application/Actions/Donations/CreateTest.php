@@ -387,7 +387,6 @@ class CreateTest extends TestCase
         $this->assertEquals('Pending', $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
         $this->assertEquals('pi_dummyIntent456_id', $payloadArray['donation']['transactionId']);
-        $this->assertEquals('pi_dummySecret_456', $payloadArray['donation']['clientSecret']);
     }
 
     public function testSuccessWithMatchedCampaign(): void
@@ -502,7 +501,6 @@ class CreateTest extends TestCase
         $this->assertEquals('Pending', $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
         $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
-        $this->assertEquals('pi_dummySecret_123', $payloadArray['donation']['clientSecret']);
     }
 
     public function testSuccessWithMatchedCampaignAndPspCustomerId(): void
@@ -621,7 +619,6 @@ class CreateTest extends TestCase
         $this->assertEquals('Pending', $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
         $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
-        $this->assertEquals('pi_dummySecret_123', $payloadArray['donation']['clientSecret']);
     }
 
     public function testMatchedCampaignAndPspCustomerIdButWrongPersonInRoute(): void
@@ -845,7 +842,6 @@ class CreateTest extends TestCase
         $this->assertEquals('Pending', $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
         $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
-        $this->assertEquals('pi_dummySecret_123', $payloadArray['donation']['clientSecret']);
     }
 
     public function testSuccessWithUnmatchedCampaign(): void

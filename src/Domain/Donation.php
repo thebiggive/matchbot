@@ -68,12 +68,6 @@ class Donation extends SalesforceWriteProxy
     protected ?DateTime $collectedAt = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
-     * @var string  Token for the client to complete payment, set by PSPs like Stripe for Payment Intents.
-     */
-    protected ?string $clientSecret = null;
-
-    /**
      * @ORM\Column(type="string", unique=true, nullable=true)
      * @var string|null PSP's transaction ID assigned on their processing.
      *
@@ -411,7 +405,6 @@ class Donation extends SalesforceWriteProxy
         $data['refundedTime'] = $this->refundedAt?->format(DateTimeInterface::ATOM);
 
         unset(
-            $data['clientSecret'],
             $data['charityName'],
             $data['donationId'],
             $data['matchReservedAmount'],
@@ -427,7 +420,6 @@ class Donation extends SalesforceWriteProxy
     {
         $data = [
             'billingPostalAddress' => $this->getDonorBillingAddress(),
-            'clientSecret' => $this->getClientSecret(),
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
             'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
@@ -823,22 +815,6 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->psp = $psp;
-    }
-
-    /**
-     * @return string
-     */
-    public function getClientSecret(): ?string
-    {
-        return $this->clientSecret;
-    }
-
-    /**
-     * @param string $clientSecret
-     */
-    public function setClientSecret(string $clientSecret): void
-    {
-        $this->clientSecret = $clientSecret;
     }
 
     /**
