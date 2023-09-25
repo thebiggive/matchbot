@@ -248,3 +248,7 @@ contracts, including:
 
 * [TBG-Campaigns](https://app.swaggerhub.com/apis/Noel/TBG-Campaigns)
 * [TBG-Funds](https://app.swaggerhub.com/apis/Noel/TBG-Funds)
+
+## Documentation
+
+Further docs available at [docs](./docs).

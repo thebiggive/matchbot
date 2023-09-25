@@ -6,10 +6,13 @@ namespace MatchBot\Application\Fees;
 
 use JetBrains\PhpStorm\Pure;
 
+/**
+ * @psalm-immutable
+ */
 class Calculator
 {
     /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
-    private array $euISOs = [
+    private const EU_COUNTRY_CODES = [
         'AT', 'BE', 'BG', 'CY', 'CZ', 'DK', 'EE',
         'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT',
         'LV', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL',
@@ -17,19 +20,29 @@ class Calculator
         'CH', 'GB',
     ];
 
-    private array $pspFeeSettings;
+    /**
+     * From https://stripe.com/docs/api/errors#errors-payment_method-card-brand
+     */
+    private const STRIPE_CARD_BRANDS = [
+        'amex', 'diners', 'discover', 'eftpos_au', 'jcb', 'mastercard', 'unionpay', 'visa', 'unknown'
+    ];
+
+    readonly private array $pspFeeSettings;
 
     public function __construct(
         array $settings,
         string $psp,
-        private ?string $cardBrand,
-        private ?string $cardCountry,
-        private string $amount,
-        private string $currencyCode,
-        private bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
-        private ?float $feePercentageOverride = null,
+        readonly private ?string $cardBrand,
+        readonly private ?string $cardCountry,
+        readonly private string $amount,
+        readonly private string $currencyCode,
+        readonly private bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
+        readonly private ?float $feePercentageOverride = null,
     ) {
         $this->pspFeeSettings = $settings[$psp]['fee'];
+        if (! in_array($this->cardBrand, [...self::STRIPE_CARD_BRANDS, null], true)) {
+            throw new \UnexpectedValueException('Unexpected card brand, expected brands are ' . implode(', ', self::STRIPE_CARD_BRANDS));
+        }
     }
 
     public function getCoreFee(): string
@@ -158,6 +171,6 @@ class Calculator
             return true;
         }
 
-        return in_array($cardCountry, $this->euISOs, true);
+        return in_array($cardCountry, self::EU_COUNTRY_CODES, true);
     }
 }
