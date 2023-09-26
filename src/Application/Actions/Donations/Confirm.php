@@ -7,6 +7,7 @@ use http\Exception\BadMethodCallException;
 use Laminas\Diactoros\Response\EmptyResponse;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Fees\Calculator;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -68,6 +69,9 @@ class Confirm extends Action
         // two letter upper string, e.g. 'GB', 'US'.
         $cardCountry = $paymentMethod->card->country;
         \assert(is_string($cardCountry));
+        if (! in_array($cardBrand, Calculator::STRIPE_CARD_BRANDS, true)) {
+            throw new HttpBadRequestException($request, "Unrecognised card brand");
+        }
 
         // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
         // that, would like to find a way to make it so if its left out we get an error instead - either by having

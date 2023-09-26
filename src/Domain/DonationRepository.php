@@ -165,7 +165,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         $donation = Donation::fromApiModel($donationData, $campaign);
-        $this->deriveFees($donation);
+        $this->deriveFees($donation, null, null);
 
         return $donation;
     }
@@ -544,7 +544,15 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return count($donations);
     }
 
-    public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): void
+    /**
+     * Updates a donation to set the appropriate fees. If card details are null then we assume for now that a card with
+     * the lowest possible fees will be used, and this should be called again with the details of the selected card
+     * when confirming the payment.
+     *
+     * @psalm-param value-of<Calculator::STRIPE_CARD_BRANDS>|null $cardBrand
+     * @param string|null $cardCountry ISO two letter uppercase code
+     */
+    public function deriveFees(Donation $donation, ?string $cardBrand, ?string $cardCountry): void
     {
         $incursGiftAidFee = $donation->hasGiftAid() && $donation->hasTbgShouldProcessGiftAid();
 

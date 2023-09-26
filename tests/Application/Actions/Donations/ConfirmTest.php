@@ -33,7 +33,7 @@ class ConfirmTest extends TestCase
         $newApplicationFeeAmount = 4200;
 
         $stripeClientProphecy = $this->fakeStripeClient(
-            cardDetails: ['brand' => 'acme-payment-cards', 'country' => 'some-country'],
+            cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
             paymentMethodId: 'PAYMENT_METHOD_ID',
             updatedIntentData: [
             'status' => 'final_intent_status',
@@ -58,7 +58,7 @@ class ConfirmTest extends TestCase
         );
         $donation->setTransactionId('PAYMENT_INTENT_ID');
 
-        $donationRepositoryProphecy->deriveFees($donation, 'acme-payment-cards', 'some-country')
+        $donationRepositoryProphecy->deriveFees($donation, 'discover', 'some-country')
             ->will(
                 fn() => $donation->setCharityFee($newCharityFee)
             );
