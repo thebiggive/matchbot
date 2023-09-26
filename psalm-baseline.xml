@@ -2,6 +2,12 @@
 <files psalm-version="5.14.0@b2942cefed8443002bd3f245c4cd0a54193716d8">
   <file src="app/dependencies.php">
     <DeprecatedClass>
+      <code><![CDATA[Setup::createAnnotationMetadataConfiguration(
+                $settings['doctrine']['metadata_dirs'],
+                $settings['doctrine']['dev_mode'],
+                $settings['doctrine']['cache_dir'] . '/proxies',
+                $cache
+            )]]></code>
       <code>new ArrayCache()</code>
       <code>new RedisCache()</code>
     </DeprecatedClass>
