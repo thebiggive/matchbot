@@ -2,12 +2,6 @@
 <files psalm-version="5.14.0@b2942cefed8443002bd3f245c4cd0a54193716d8">
   <file src="app/dependencies.php">
     <DeprecatedClass>
-      <code><![CDATA[Setup::createAnnotationMetadataConfiguration(
-                $settings['doctrine']['metadata_dirs'],
-                $settings['doctrine']['dev_mode'],
-                $settings['doctrine']['cache_dir'] . '/proxies',
-                $cache
-            )]]></code>
       <code>new ArrayCache()</code>
       <code>new RedisCache()</code>
     </DeprecatedClass>
@@ -229,7 +223,6 @@
     <PossiblyNullArgument>
       <code><![CDATA[$donation->getCampaign()->getCharity()->getSalesforceId()]]></code>
       <code><![CDATA[$donation->getPspCustomerId()]]></code>
-      <code><![CDATA[$intent->client_secret]]></code>
     </PossiblyNullArgument>
   </file>
   <file src="src/Application/Actions/Donations/Get.php">
@@ -1810,28 +1803,6 @@
       <code>Donation::emptyTestDonation($amount, $paymentMethodType)</code>
       <code><![CDATA[Donation::emptyTestDonation('124.56')]]></code>
     </DeprecatedMethod>
-  </file>
-  <file src="tests/Application/Fees/CalculatorTest.php">
-    <MixedArgument>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-    </MixedArgument>
-    <PossiblyNullReference>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-    </PossiblyNullReference>
   </file>
   <file src="tests/Application/Messenger/Handler/GiftAidResultHandlerTest.php">
     <MixedArgument>
