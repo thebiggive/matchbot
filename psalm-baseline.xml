@@ -229,7 +229,6 @@
     <PossiblyNullArgument>
       <code><![CDATA[$donation->getCampaign()->getCharity()->getSalesforceId()]]></code>
       <code><![CDATA[$donation->getPspCustomerId()]]></code>
-      <code><![CDATA[$intent->client_secret]]></code>
     </PossiblyNullArgument>
   </file>
   <file src="src/Application/Actions/Donations/Get.php">
@@ -1810,28 +1809,6 @@
       <code>Donation::emptyTestDonation($amount, $paymentMethodType)</code>
       <code><![CDATA[Donation::emptyTestDonation('124.56')]]></code>
     </DeprecatedMethod>
-  </file>
-  <file src="tests/Application/Fees/CalculatorTest.php">
-    <MixedArgument>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-    </MixedArgument>
-    <PossiblyNullReference>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-    </PossiblyNullReference>
   </file>
   <file src="tests/Application/Messenger/Handler/GiftAidResultHandlerTest.php">
     <MixedArgument>

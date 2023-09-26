@@ -217,7 +217,6 @@ class Create extends Action
                 return $this->respond($response, new ActionPayload(500, null, $error));
             }
 
-            $donation->setClientSecret($intent->client_secret);
             $donation->setTransactionId($intent->id);
 
             $this->entityManager->persist($donation);
