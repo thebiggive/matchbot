@@ -328,6 +328,12 @@ class StripePaymentsUpdate extends Stripe
         $donation = $this->donationRepository->findOneBy(['transactionId' => $paymentIntent->id]);
 
         if ($donation === null) {
+            if (getenv('APP_ENV') !== 'production') {
+                // outside of production we expect Stripe to combine things from multiple test environments
+                // (staging & regtest) into one, so we may get irrelevant cancellation requests. We don't want
+                // them logged as errors.
+                return $this->respond($response, new ActionPayload(204));
+            }
             return $this->respond($response, new ActionPayload(404));
         }
 
