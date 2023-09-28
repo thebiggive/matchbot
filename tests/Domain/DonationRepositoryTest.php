@@ -520,10 +520,10 @@ class DonationRepositoryTest extends TestCase
         $queryBuilderProphecy->where('d.donationStatus = :claimGiftAidWithStatus')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
 
-        // 5 `andWhere()`s in all, excluding the first `where()` but including the one
+        // 6 `andWhere()`s in all, excluding the first `where()` but including the one
         // NOT for `$withResends` calls.
         $queryBuilderProphecy->andWhere(Argument::type('string'))
-            ->shouldBeCalledTimes(5)->willReturn($queryBuilderProphecy->reveal());
+            ->shouldBeCalledTimes(6)->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->orderBy('charity.id', 'ASC')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->addOrderBy('d.collectedAt', 'ASC') ->shouldBeCalledOnce()

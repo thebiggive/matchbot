@@ -65,7 +65,7 @@ class Donation extends SalesforceWriteProxy
      * @ORM\Column(type="datetime", nullable=true)
      * @var ?DateTime    When the donation first moved to status Collected, i.e. the donor finished paying.
      */
-    protected ?DateTime $collectedAt = null;
+    protected ?DateTimeInterface $collectedAt = null;
 
     /**
      * @ORM\Column(type="string", unique=true, nullable=true)
@@ -478,12 +478,12 @@ class Donation extends SalesforceWriteProxy
         $this->donationStatus = $donationStatus;
     }
 
-    public function getCollectedAt(): ?DateTime
+    public function getCollectedAt(): ?DateTimeInterface
     {
         return $this->collectedAt;
     }
 
-    public function setCollectedAt(?DateTime $collectedAt): void
+    public function setCollectedAt(?DateTimeInterface $collectedAt): void
     {
         $this->collectedAt = $collectedAt;
     }

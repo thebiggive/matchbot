@@ -2,7 +2,6 @@
 
 namespace MatchBot\IntegrationTests;
 
-use CreateDonationTest;
 use GuzzleHttp\Psr7\ServerRequest;
 use LosMiddleware\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
@@ -87,8 +86,8 @@ abstract class IntegrationTest extends TestCase
         $charityStripeId = $this->randomString();
 
         $this->db()->executeStatement(<<<EOF
-            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId, hmrcReferenceNumber, tbgClaimingGiftAid, regulator, regulatorNumber) 
-            VALUES ($charityId, 'Some Charity', '$charitySfID', '2023-01-01', '2023-01-01', '2093-01-01', '$charityStripeId', null, 0, null, null)
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId, hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber) 
+            VALUES ($charityId, 'Some Charity', '$charitySfID', '2023-01-01', '2023-01-01', '2093-01-01', '$charityStripeId', null, 0, 0, null, null)
             EOF
         );
         $this->db()->executeStatement(<<<EOF
