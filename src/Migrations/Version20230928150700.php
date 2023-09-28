@@ -8,13 +8,13 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
- * Auto-generated Migration: Please modify to your needs!
+ * MAT-318 – Add tbgApprovedToClaimGiftAid to Charity
  */
 final class Version20230928150700 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Add tbgApprovedToClaimGiftAid to Charity';
     }
 
     public function up(Schema $schema): void
