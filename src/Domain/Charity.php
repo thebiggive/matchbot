@@ -7,6 +7,9 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
+ * @psalm-api Work around Psalm being unhappy with the property or method being unused
+ *  outside of Doctrine.
+ *
  * @ORM\Entity(repositoryClass="CharityRepository")
  * @ORM\HasLifecycleCallbacks
  * @ORM\Table

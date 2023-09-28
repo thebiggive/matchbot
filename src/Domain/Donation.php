@@ -63,7 +63,7 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\Column(type="datetime", nullable=true)
-     * @var ?DateTime    When the donation first moved to status Collected, i.e. the donor finished paying.
+     * @var ?DateTimeInterface  When the donation first moved to status Collected, i.e. the donor finished paying.
      */
     protected ?DateTimeInterface $collectedAt = null;
 
@@ -330,7 +330,8 @@ class Donation extends SalesforceWriteProxy
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
 
         $donation->setGiftAid($donationData->giftAid);
-        $donation->setTipGiftAid($donationData->tipGiftAid ?? $donationData->giftAid);
+        // `DonationCreate` doesn't support a distinct property yet & we only ask once about GA.
+        $donation->setTipGiftAid($donationData->giftAid);
         $donation->setTbgShouldProcessGiftAid($donation->getCampaign()->getCharity()->isTbgClaimingGiftAid());
 
         $donation->setCharityComms($donationData->optInCharityEmail);
