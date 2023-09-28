@@ -316,16 +316,21 @@ class Donation extends SalesforceWriteProxy
 
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
     {
-
         $psp = $donationData->psp;
         assert($psp === 'stripe');
 
-        $donation = new self($donationData->donationAmount, $donationData->currencyCode, $donationData->paymentMethodType);
+        $donation = new self(
+            $donationData->donationAmount,
+            $donationData->currencyCode,
+            $donationData->paymentMethodType,
+        );
 
         $donation->setPsp($psp);
         $donation->setUuid(Uuid::uuid4());
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
         $donation->setGiftAid($donationData->giftAid);
+        $donation->setTipGiftAid($donationData->tipGiftAid ?? $donationData->giftAid);
+        $donation->setTbgShouldProcessGiftAid($donation->getCampaign()->getCharity()->isTbgClaimingGiftAid());
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setPspCustomerId($donationData->pspCustomerId);

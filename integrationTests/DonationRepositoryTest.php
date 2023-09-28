@@ -13,6 +13,12 @@ use MatchBot\Domain\PaymentMethodType;
 
 class DonationRepositoryTest extends IntegrationTest
 {
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->clearPreviousCampaignsCharitiesAndRelated(); // Avoid e.g. HMRC ref dupes
+    }
+
     public function testItFindsGiftAidSendableDonationsForCharityThatIsReady(): void
     {
         $charity = $this->prepareOnboardedCharity(withAgentApproval: true);
@@ -43,18 +49,26 @@ class DonationRepositoryTest extends IntegrationTest
         $charity->setTbgClaimingGiftAid(true);
         $charity->setTbgApprovedToClaimGiftAid($withAgentApproval);
 
-        $em = $this->getService(EntityManagerInterface::class);
-        $em->persist($charity);
-        $em->flush();
-
         return $charity;
+    }
+
+    private function prepareCampaign(Charity $charity): Campaign
+    {
+        $campaign = new Campaign();
+        $campaign->setCharity($charity);
+        $campaign->setName('Campaign Name');
+        $campaign->setSalesforceId('ccampaign123');
+        $campaign->setCurrencyCode('GBP');
+        $campaign->setStartDate((new \DateTime())->sub(new \DateInterval('P16D')));
+        $campaign->setEndDate((new \DateTime())->add(new \DateInterval('P15D')));
+        $campaign->setIsMatched(true);
+
+        return $campaign;
     }
 
     private function prepareDonation(Charity $charity): Donation
     {
-        $campaign = new Campaign();
-        $campaign->setCharity($charity);
-        $campaign->setSalesforceId('ccampaign123');
+        $campaign = $this->prepareCampaign($charity);
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($campaign);
@@ -71,7 +85,7 @@ class DonationRepositoryTest extends IntegrationTest
         $donation->setCollectedAt((new \DateTimeImmutable())->sub(new \DateInterval('P14D')));
 
         $em->persist($donation);
-        $em->flush();
+        $em->flush(); // Cascade persists campaign and charity.
 
         return $donation;
     }

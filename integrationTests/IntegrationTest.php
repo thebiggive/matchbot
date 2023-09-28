@@ -79,7 +79,16 @@ abstract class IntegrationTest extends TestCase
         return $this->getService(\Doctrine\ORM\EntityManagerInterface::class)->getConnection();
     }
 
-    public function addCampaignAndCharityToDB(string $campaginId): void
+    public function clearPreviousCampaignsCharitiesAndRelated(): void
+    {
+        $this->db()->executeStatement('DELETE FROM FundingWithdrawal');
+        $this->db()->executeStatement('DELETE FROM Donation');
+        $this->db()->executeStatement('DELETE FROM Campaign_CampaignFunding');
+        $this->db()->executeStatement('DELETE FROM Campaign');
+        $this->db()->executeStatement('DELETE FROM Charity');
+    }
+
+    public function addCampaignAndCharityToDB(string $campaignId): void
     {
         $charityId = random_int(1000, 100000);
         $charitySfID = $this->randomString();
@@ -92,7 +101,7 @@ abstract class IntegrationTest extends TestCase
         );
         $this->db()->executeStatement(<<<EOF
             INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull, createdAt, updatedAt, currencyCode, feePercentage) 
-            VALUES ('$charityId', 'some charity', '2023-01-01', '2093-01-01', 0, '$campaginId', '2023-01-01', '2023-01-01', '2023-01-01', 'GBP', 0)
+            VALUES ('$charityId', 'some charity', '2023-01-01', '2093-01-01', 0, '$campaignId', '2023-01-01', '2023-01-01', '2023-01-01', 'GBP', 0)
             EOF
         );
     }
