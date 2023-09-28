@@ -13,7 +13,7 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
-    private const GIFT_AID_ONBOARDED_STATUSES = [
+    public const GIFT_AID_ONBOARDED_STATUSES = [
         'Onboarded',
         'Onboarded & Data Sent to HMRC',
         'Onboarded & Approved',
@@ -21,7 +21,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         'Onboarded but HMRC Rejected',
     ];
 
-    private const GIFT_AID_APPROVED_STATUSES = [
+    public const GIFT_AID_APPROVED_STATUSES = [
         'Onboarded & Approved',
     ];
 
@@ -112,29 +112,17 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $charity = new Charity();
             $charity->setSalesforceId($salesforceCharityId);
         }
-        $charity->setName($charityName);
-        $charity->setStripeAccountId($stripeAccountId);
 
-        $tbgCanClaimGiftAid = (
-            !empty($hmrcReferenceNumber) &&
-            in_array($giftAidOnboardingStatus, self::GIFT_AID_ONBOARDED_STATUSES, true)
+        $charity->updateFromSFData(
+            $charityName,
+            $stripeAccountId,
+            $hmrcReferenceNumber,
+            $giftAidOnboardingStatus,
+            $regulator,
+            $regulatorNumber,
+            new DateTime('now')
         );
-        $tbgApprovedToClaimGiftAid = (
-            !empty($hmrcReferenceNumber) &&
-            in_array($giftAidOnboardingStatus, self::GIFT_AID_APPROVED_STATUSES, true)
-        );
 
-        $charity->setTbgClaimingGiftAid($tbgCanClaimGiftAid);
-        $charity->setTbgApprovedToClaimGiftAid($tbgApprovedToClaimGiftAid);
-
-        // May be null. Should be set to its string value if provided even if the charity is now opted out for new
-        // claims, because there could still be historic donations that should be claimed by TBG.
-        $charity->setHmrcReferenceNumber($hmrcReferenceNumber);
-
-        $charity->setRegulator($this->getRegulatorHMRCIdentifier($regulator));
-        $charity->setRegulatorNumber($regulatorNumber);
-
-        $charity->setSalesforceLastPull(new DateTime('now'));
         $this->getEntityManager()->persist($charity);
 
         return $charity;

@@ -67,7 +67,7 @@ class Charity extends SalesforceReadProxy
      * @ORM\Column(type="boolean")
      * @var bool    Whether the charity's Gift Aid may NOW be claimed by the Big Give according to HMRC.
      */
-    protected bool $tbgApprovedToClaimGiftAid = false;
+    protected bool $tbgApprovedToClaimGiftAid;
 
     /**
      * @param string $name
@@ -154,5 +154,33 @@ class Charity extends SalesforceReadProxy
     public function setTbgApprovedToClaimGiftAid(bool $tbgApprovedToClaimGiftAid): void
     {
         $this->tbgApprovedToClaimGiftAid = $tbgApprovedToClaimGiftAid;
+    }
+
+
+    public function updateFromSFData(string $charityName, ?string $stripeAccountId, ?string $hmrcReferenceNumber, ?string $giftAidOnboardingStatus, ?string $regulator, ?string $regulatorNumber, \DateTime $salesforceLastPullDateTime): void
+    {
+        $this->setName($charityName);
+        $this->setStripeAccountId($stripeAccountId);
+
+        $tbgCanClaimGiftAid = (
+            !empty($hmrcReferenceNumber) &&
+            in_array($giftAidOnboardingStatus, CampaignRepository::GIFT_AID_ONBOARDED_STATUSES, true)
+        );
+        $tbgApprovedToClaimGiftAid = (
+            !empty($hmrcReferenceNumber) &&
+            in_array($giftAidOnboardingStatus, CampaignRepository::GIFT_AID_APPROVED_STATUSES, true)
+        );
+
+        $this->setTbgClaimingGiftAid($tbgCanClaimGiftAid);
+        $this->setTbgApprovedToClaimGiftAid($tbgApprovedToClaimGiftAid);
+
+        // May be null. Should be set to its string value if provided even if the charity is now opted out for new
+        // claims, because there could still be historic donations that should be claimed by TBG.
+        $this->setHmrcReferenceNumber($hmrcReferenceNumber);
+
+        $this->setRegulator($this->getRegulatorHMRCIdentifier($regulator));
+        $this->setRegulatorNumber($regulatorNumber);
+
+        $this->setSalesforceLastPull($salesforceLastPullDateTime);
     }
 }
