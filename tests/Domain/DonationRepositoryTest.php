@@ -494,9 +494,6 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals(1, $repo->abandonOldCancelled());
     }
 
-    /**
-     * Pilot env var default value is set in `phpunit.xml`.
-     */
     public function testFindReadyToClaimGiftAid(): void
     {
         // This needs a local var so it can be used both to set up the `Query::getResult()` prophecy
@@ -532,7 +529,7 @@ class DonationRepositoryTest extends TestCase
         $queryBuilderProphecy->addOrderBy('d.collectedAt', 'ASC') ->shouldBeCalledOnce()
             ->willReturn($queryBuilderProphecy->reveal());
 
-        // 2 param sets, including the one for `$pilotCharitiesOnly`.
+        // 2 param sets.
         $queryBuilderProphecy->setParameter('claimGiftAidWithStatus', 'Paid')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->setParameter('claimGiftAidForDonationsBefore', Argument::type(\DateTime::class))

@@ -13,9 +13,16 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
-    private static array $giftAidOnboardedStatuses = [
+    private const GIFT_AID_ONBOARDED_STATUSES = [
         'Onboarded',
         'Onboarded & Data Sent to HMRC',
+        'Onboarded & Approved',
+        // We'll always aim to fix data problems with HMRC, so should still plan to claim.
+        'Onboarded but HMRC Rejected',
+    ];
+
+    private const GIFT_AID_APPROVED_STATUSES = [
+        'Onboarded & Approved',
     ];
 
     /**
@@ -110,10 +117,16 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $tbgCanClaimGiftAid = (
             !empty($hmrcReferenceNumber) &&
-            in_array($giftAidOnboardingStatus, static::$giftAidOnboardedStatuses, true)
+            in_array($giftAidOnboardingStatus, self::GIFT_AID_ONBOARDED_STATUSES, true)
+        );
+        $tbgApprovedToClaimGiftAid = (
+            !empty($hmrcReferenceNumber) &&
+            in_array($giftAidOnboardingStatus, self::GIFT_AID_APPROVED_STATUSES, true)
         );
 
         $charity->setTbgClaimingGiftAid($tbgCanClaimGiftAid);
+        $charity->setTbgApprovedToClaimGiftAid($tbgApprovedToClaimGiftAid);
+
         // May be null. Should be set to its string value if provided even if the charity is now opted out for new
         // claims, because there could still be historic donations that should be claimed by TBG.
         $charity->setHmrcReferenceNumber($hmrcReferenceNumber);

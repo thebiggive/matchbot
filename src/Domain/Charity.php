@@ -57,9 +57,17 @@ class Charity extends SalesforceReadProxy
 
     /**
      * @ORM\Column(type="boolean")
-     * @var bool    Whether the charity's Gift Aid is currently to be claimed by the Big Give.
+     * @var bool    Whether the charity's Gift Aid is expected to be claimed by the Big Give. This
+     *              indicates we should charge a fee and plan to claim, but not that we are necessarily
+     *              set up as an approved Agent yet.
      */
     protected bool $tbgClaimingGiftAid = false;
+
+    /**
+     * @ORM\Column(type="boolean")
+     * @var bool    Whether the charity's Gift Aid may NOW be claimed by the Big Give according to HMRC.
+     */
+    protected bool $tbgApprovedToClaimGiftAid = false;
 
     /**
      * @param string $name
@@ -93,17 +101,11 @@ class Charity extends SalesforceReadProxy
         $this->stripeAccountId = $stripeAccountId;
     }
 
-    /**
-     * @return bool
-     */
     public function isTbgClaimingGiftAid(): bool
     {
         return $this->tbgClaimingGiftAid;
     }
 
-    /**
-     * @param bool $tbgClaimingGiftAid
-     */
     public function setTbgClaimingGiftAid(bool $tbgClaimingGiftAid): void
     {
         $this->tbgClaimingGiftAid = $tbgClaimingGiftAid;
@@ -147,5 +149,10 @@ class Charity extends SalesforceReadProxy
     public function setRegulatorNumber(?string $regulatorNumber): void
     {
         $this->regulatorNumber = $regulatorNumber;
+    }
+
+    public function setTbgApprovedToClaimGiftAid(bool $tbgApprovedToClaimGiftAid): void
+    {
+        $this->tbgApprovedToClaimGiftAid = $tbgApprovedToClaimGiftAid;
     }
 }
