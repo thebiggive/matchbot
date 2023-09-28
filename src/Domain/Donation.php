@@ -328,9 +328,11 @@ class Donation extends SalesforceWriteProxy
         $donation->setPsp($psp);
         $donation->setUuid(Uuid::uuid4());
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
+
         $donation->setGiftAid($donationData->giftAid);
         $donation->setTipGiftAid($donationData->tipGiftAid ?? $donationData->giftAid);
         $donation->setTbgShouldProcessGiftAid($donation->getCampaign()->getCharity()->isTbgClaimingGiftAid());
+
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setPspCustomerId($donationData->pspCustomerId);

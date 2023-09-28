@@ -5,18 +5,14 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Laminas\Diactoros\ServerRequest;
 use MatchBot\Application\Actions\Donations\Confirm;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 use Slim\Psr7\Response;
-use Stripe\PaymentIntent;
-use Stripe\PaymentMethod;
 use Stripe\Service\PaymentIntentService;
 use Stripe\Service\PaymentMethodService;
 use Stripe\StripeClient;
@@ -54,7 +50,7 @@ class ConfirmTest extends TestCase
 
         $donation = Donation::fromApiModel(
             new DonationCreate(currencyCode: 'GBP', donationAmount: '63.0', projectId: 'doesnt-matter', psp: 'stripe'),
-            new Campaign()
+            $this->getMinimalCampaign(),
         );
         $donation->setTransactionId('PAYMENT_INTENT_ID');
 

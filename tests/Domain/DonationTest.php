@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Domain;
 
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
@@ -88,7 +89,7 @@ class DonationTest extends TestCase
             projectId: "any project",
             psp:'stripe',
             paymentMethodType: PaymentMethodType::Card
-        ), new Campaign());
+        ), $this->getMinimalCampaign());
     }
 
     public function test200kCustomerBalanceDonationIsAllowed(): void
@@ -99,7 +100,7 @@ class DonationTest extends TestCase
             projectId: "any project",
             psp:'stripe',
             paymentMethodType: PaymentMethodType::CustomerBalance
-        ), new Campaign());
+        ), $this->getMinimalCampaign());
 
         $this->assertSame('200000', $donation->getAmount());
     }
@@ -115,7 +116,7 @@ class DonationTest extends TestCase
             projectId: "any project",
             psp:'stripe',
             paymentMethodType: PaymentMethodType::CustomerBalance
-        ), new Campaign());
+        ), $this->getMinimalCampaign());
     }
 
     public function testTipAmountTooHighNotPersisted(): void
@@ -141,7 +142,7 @@ class DonationTest extends TestCase
             psp:'stripe',
             paymentMethodType: PaymentMethodType::CustomerBalance,
             tipAmount: '0.01',
-        ), new Campaign());
+        ), $this->getMinimalCampaign());
     }
 
     public function testInvalidPspRejected(): void
@@ -331,7 +332,6 @@ class DonationTest extends TestCase
         $donation->getStripeMethodProperties(); // Throws in this getter for now.
     }
 
-
     public function testDonationRefundDateTimeIsIncludedInSfHookModel(): void
     {
         $donation = $this->getTestDonation();
@@ -357,7 +357,8 @@ class DonationTest extends TestCase
         $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
     }
 
-    public function testCreateDonationModelWithDonorFields(): void {
+    public function testCreateDonationModelWithDonorFields(): void
+    {
         $donation = Donation::fromApiModel(new DonationCreate(
             firstName: 'Test First Name',
             lastName: 'Test Last Name',
@@ -367,7 +368,7 @@ class DonationTest extends TestCase
             projectId: "any project",
             psp:'stripe',
             paymentMethodType: PaymentMethodType::CustomerBalance
-        ), new Campaign());
+        ), $this->getMinimalCampaign());
 
         $this->assertSame('Test First Name', $donation->getDonorFirstName(true));
         $this->assertSame('Test Last Name', $donation->getDonorLastName(true));
@@ -376,7 +377,7 @@ class DonationTest extends TestCase
 
     public function testCanCancelPendingDonation(): void
     {
-        $donation = Donation::fromApiModel(new DonationCreate('GBP', '1.00', 'project-id', 'stripe'), new Campaign());
+        $donation = Donation::fromApiModel(new DonationCreate('GBP', '1.00', 'project-id', 'stripe'), $this->getMinimalCampaign());
         $donation->cancel();
 
         $this->assertEquals(DonationStatus::Cancelled, $donation->getDonationStatus());
@@ -384,7 +385,7 @@ class DonationTest extends TestCase
 
     public function testCantCancelPaidDonation(): void
     {
-        $donation = Donation::fromApiModel(new DonationCreate('GBP', '1.00', 'project-id', 'stripe'), new Campaign());
+        $donation = Donation::fromApiModel(new DonationCreate('GBP', '1.00', 'project-id', 'stripe'), $this->getMinimalCampaign());
         $donation->setDonationStatus(DonationStatus::Paid);
 
         $this->expectExceptionMessage('Cannot cancel Paid donation');
@@ -401,7 +402,6 @@ class DonationTest extends TestCase
             projectId: 'project-id',
             psp: 'stripe',
             tipAmount: '-0.01'
-        ), new Campaign());
-
+        ), $this->getMinimalCampaign());
     }
 }

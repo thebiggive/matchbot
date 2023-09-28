@@ -6,6 +6,8 @@ namespace MatchBot\Tests;
 
 use DI\ContainerBuilder;
 use Exception;
+use MatchBot\Domain\Campaign;
+use MatchBot\Domain\Charity;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -166,5 +168,14 @@ class TestCase extends PHPUnitTestCase
             'Y3VzX2FhYWFhYWFhYWFhYTExIn19.KdeGTDkkWCjI4-Kayay0LKn9TXziPXCUxxTPIZgGxxE';
 
         return $dummyPersonAuthTokenValidUntil2050;
+    }
+
+    protected function getMinimalCampaign(): Campaign
+    {
+        $charity = new Charity();
+        $campaign = new Campaign();
+        $campaign->setCharity($charity);
+
+        return $campaign;
     }
 }

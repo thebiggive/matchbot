@@ -14,6 +14,7 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -29,7 +30,6 @@ use ReflectionClass;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
-use Symfony\Component\Serializer\Serializer;
 
 class DonationRepositoryTest extends TestCase
 {
@@ -144,6 +144,7 @@ class DonationRepositoryTest extends TestCase
     {
         $dummyCampaign = new Campaign();
         $dummyCampaign->setCurrencyCode('USD');
+        $dummyCampaign->setCharity(new Charity());
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
         $campaignRepoProphecy->findOneBy(Argument::type('array'))
