@@ -20,6 +20,9 @@ final class Version20230928150700 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $this->addSql('ALTER TABLE Charity ADD tbgApprovedToClaimGiftAid TINYINT(1) NOT NULL');
+
+        // For existing charities, set starting state to the same as the previous onboarded flag.
+        $this->addSql('UPDATE Charity SET tbgApprovedToClaimGiftAid = tbgClaimingGiftAid');
     }
 
     public function down(Schema $schema): void
