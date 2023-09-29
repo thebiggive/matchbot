@@ -7,9 +7,6 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @psalm-api Work around Psalm being unhappy with the property or method being unused
- *  outside of Doctrine.
- *
  * @ORM\Entity(repositoryClass="CharityRepository")
  * @ORM\HasLifecycleCallbacks
  * @ORM\Table
@@ -67,6 +64,7 @@ class Charity extends SalesforceReadProxy
     protected bool $tbgClaimingGiftAid = false;
 
     /**
+     * @psalm-suppress PossiblyUnusedProperty - used in a database query in DonationRepository::findReadyToClaimGiftAid
      * @ORM\Column(type="boolean")
      * @var bool    Whether the charity's Gift Aid may NOW be claimed by the Big Give according to HMRC.
      */
