@@ -21,9 +21,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         'Onboarded but HMRC Rejected',
     ];
 
-    private const GIFT_AID_APPROVED_STATUSES = [
-        'Onboarded & Approved',
-    ];
+    private const GIFT_AID_APPROVED_STATUS = 'Onboarded & Approved';
 
     /**
      * Gets those campaigns which are live now or recently closed (in the last week),
@@ -121,7 +119,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         );
         $tbgApprovedToClaimGiftAid = (
             !empty($hmrcReferenceNumber) &&
-            in_array($giftAidOnboardingStatus, self::GIFT_AID_APPROVED_STATUSES, true)
+            $giftAidOnboardingStatus === self::GIFT_AID_APPROVED_STATUS
         );
 
         $charity->setTbgClaimingGiftAid($tbgCanClaimGiftAid);
