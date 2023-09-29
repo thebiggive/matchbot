@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use DateTime;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -17,6 +18,16 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class Charity extends SalesforceReadProxy
 {
+    private const GIFT_AID_APPROVED_STATUS = 'Onboarded & Approved';
+
+    private const GIFT_AID_ONBOARDED_STATUSES = [
+        'Onboarded',
+        'Onboarded & Data Sent to HMRC',
+        self::GIFT_AID_APPROVED_STATUS,
+        // We'll always aim to fix data problems with HMRC, so should still plan to claim.
+        'Onboarded but HMRC Rejected',
+    ];
+
     use TimestampsTrait;
 
     /**
@@ -155,5 +166,40 @@ class Charity extends SalesforceReadProxy
     public function setTbgApprovedToClaimGiftAid(bool $tbgApprovedToClaimGiftAid): void
     {
         $this->tbgApprovedToClaimGiftAid = $tbgApprovedToClaimGiftAid;
+    }
+
+    public function updateFromSfPull(
+        string   $charityName,
+        ?string  $stripeAccountId,
+        ?string  $hmrcReferenceNumber,
+        ?string  $giftAidOnboardingStatus,
+        ?string  $regulator,
+        ?string  $regulatorNumber,
+        DateTime $time,
+    ): void
+    {
+        $this->setName($charityName);
+        $this->setStripeAccountId($stripeAccountId);
+
+        $tbgCanClaimGiftAid = (
+            !empty($hmrcReferenceNumber) &&
+            in_array($giftAidOnboardingStatus, self::GIFT_AID_ONBOARDED_STATUSES, true)
+        );
+        $tbgApprovedToClaimGiftAid = (
+            !empty($hmrcReferenceNumber) &&
+            $giftAidOnboardingStatus === self::GIFT_AID_APPROVED_STATUS
+        );
+
+        $this->setTbgClaimingGiftAid($tbgCanClaimGiftAid);
+        $this->setTbgApprovedToClaimGiftAid($tbgApprovedToClaimGiftAid);
+
+        // May be null. Should be set to its string value if provided even if the charity is now opted out for new
+        // claims, because there could still be historic donations that should be claimed by TBG.
+        $this->setHmrcReferenceNumber($hmrcReferenceNumber);
+
+        $this->setRegulator($regulator);
+        $this->setRegulatorNumber($regulatorNumber);
+
+        $this->setSalesforceLastPull($time);
     }
 }
