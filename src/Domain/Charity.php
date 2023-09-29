@@ -68,7 +68,7 @@ class Charity extends SalesforceReadProxy
      * @ORM\Column(type="boolean")
      * @var bool    Whether the charity's Gift Aid may NOW be claimed by the Big Give according to HMRC.
      */
-    protected bool $tbgApprovedToClaimGiftAid = false;
+    private bool $tbgApprovedToClaimGiftAid = false;
 
     /**
      * @param string $name
