@@ -54,7 +54,7 @@ class DonationRepositoryTest extends IntegrationTest
 
     private function prepareCampaign(Charity $charity): Campaign
     {
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setCharity($charity);
         $campaign->setName('Campaign Name');
         $campaign->setSalesforceId('ccampaign123');

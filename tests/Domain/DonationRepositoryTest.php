@@ -142,7 +142,7 @@ class DonationRepositoryTest extends TestCase
 
     public function testBuildFromApiRequestSuccess(): void
     {
-        $dummyCampaign = new Campaign();
+        $dummyCampaign = new Campaign(charity: null);
         $dummyCampaign->setCurrencyCode('USD');
         $dummyCampaign->setCharity(new Charity());
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
@@ -172,7 +172,7 @@ class DonationRepositoryTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Currency CAD is invalid for campaign');
 
-        $dummyCampaign = new Campaign();
+        $dummyCampaign = new Campaign(charity: null);
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.

@@ -14,6 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
  *   @ORM\Index(name="end_date_and_is_matched", columns={"endDate", "isMatched"}),
  * })
  *
+ *
  * Represents any Campaign type in Salesforce which can receive donations. Note that this does NOT include Master
  * record type(s). The only way Salesforce type impacts this model is in setting `$isMatched` appropriately.
  */
@@ -62,6 +63,17 @@ class Campaign extends SalesforceReadProxy
      * @var bool    Whether the Campaign has any match funds
      */
     protected bool $isMatched;
+
+    /**
+     * Every campaign must have a charity, but we pass null when we don't know the charity because
+     * the campaign is just a near empty placeholder to be filled by a pull from Salesforce.
+     */
+    public function __construct(?Charity $charity)
+    {
+        if ($charity) {
+            $this->charity = $charity;
+        }
+    }
 
     /**
      * @return bool

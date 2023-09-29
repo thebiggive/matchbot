@@ -172,10 +172,6 @@ class TestCase extends PHPUnitTestCase
 
     protected function getMinimalCampaign(): Campaign
     {
-        $charity = new Charity();
-        $campaign = new Campaign();
-        $campaign->setCharity($charity);
-
-        return $campaign;
+        return new Campaign(new Charity());
     }
 }

@@ -136,7 +136,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         if (!$campaign) {
             // Fetch data for as-yet-unknown campaigns on-demand
             $this->logInfo("Loading unknown campaign ID {$donationData->projectId} on-demand");
-            $campaign = new Campaign();
+            $campaign = new Campaign(charity: null);
             $campaign->setSalesforceId($donationData->projectId);
             try {
                 $campaign = $this->campaignRepository->pull($campaign);

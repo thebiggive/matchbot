@@ -122,7 +122,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $charity->setSalesforceId('DONATE_LINK_ID');
         $charity->setName('Charity name');
 
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setIsMatched(true);
         $campaign->setCharity($charity);
 

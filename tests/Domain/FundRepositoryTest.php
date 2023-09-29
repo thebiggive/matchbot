@@ -91,7 +91,7 @@ class FundRepositoryTest extends TestCase
             null
         );
 
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setSalesforceId('sfFakeId987');
 
         $repo->pullForCampaign($campaign);
@@ -137,7 +137,7 @@ class FundRepositoryTest extends TestCase
             $this->getExistingFund(true),
         );
 
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setSalesforceId('sfFakeId987');
 
         $repo->pullForCampaign($campaign);
@@ -202,7 +202,7 @@ class FundRepositoryTest extends TestCase
             $this->getExistingFund(true),
         );
 
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setSalesforceId('sfFakeId987');
 
         $repo->pullForCampaign($campaign);
@@ -253,7 +253,7 @@ class FundRepositoryTest extends TestCase
             false, // No persists in this scenario
         );
 
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setSalesforceId('sfFakeId987');
 
         $repo->pullForCampaign($campaign);

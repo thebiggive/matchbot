@@ -799,14 +799,16 @@
     </PossiblyUnusedMethod>
   </file>
   <file src="src/Domain/Campaign.php">
-    <MissingConstructor>
+    <PropertyNotSetInConstructor>
       <code>$charity</code>
       <code>$currencyCode</code>
       <code>$endDate</code>
       <code>$isMatched</code>
       <code>$name</code>
       <code>$startDate</code>
-    </MissingConstructor>
+      <code>Campaign</code>
+      <code>Campaign</code>
+    </PropertyNotSetInConstructor>
   </file>
   <file src="src/Domain/CampaignFunding.php">
     <InvalidMethodCall>
@@ -1278,8 +1280,6 @@
       <code>$createdAt</code>
       <code>$createdAt</code>
       <code>$createdAt</code>
-      <code>$createdAt</code>
-      <code>$updatedAt</code>
       <code>$updatedAt</code>
       <code>$updatedAt</code>
       <code>$updatedAt</code>
