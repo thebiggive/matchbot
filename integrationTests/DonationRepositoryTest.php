@@ -22,7 +22,7 @@ class DonationRepositoryTest extends IntegrationTest
     public function testItFindsGiftAidSendableDonationsForCharityThatIsReady(): void
     {
         $charity = $this->prepareOnboardedCharity(withAgentApproval: true);
-        $donation = $this->prepareDonation($charity);
+        $donation = $this->prepareAndPersistDonation($charity);
 
         $sut = $this->getService(DonationRepository::class);
         $donationsReady = $sut->findReadyToClaimGiftAid(withResends: false);
@@ -33,7 +33,7 @@ class DonationRepositoryTest extends IntegrationTest
     public function testItFindsNoGiftAidSendableDonationsForCharityPendingAgentApproval(): void
     {
         $charity = $this->prepareOnboardedCharity(withAgentApproval: false);
-        $this->prepareDonation($charity);
+        $this->prepareAndPersistDonation($charity);
 
         $sut = $this->getService(DonationRepository::class);
         $donationsReady = $sut->findReadyToClaimGiftAid(withResends: false);
@@ -66,7 +66,7 @@ class DonationRepositoryTest extends IntegrationTest
         return $campaign;
     }
 
-    private function prepareDonation(Charity $charity): Donation
+    private function prepareAndPersistDonation(Charity $charity): Donation
     {
         $campaign = $this->prepareCampaign($charity);
 
