@@ -48,7 +48,7 @@ trait DonationTestDataTrait
         $donation->setChampionComms(false);
         $donation->setCurrencyCode('GBP');
         $donation->setDonationStatus(DonationStatus::Collected);
-        $donation->setCollectedAt(new \DateTime());
+        $donation->setCollectedAt(new \DateTimeImmutable());
         $donation->setDonorCountryCode('GB');
         $donation->setDonorEmailAddress('john.doe@example.com');
         $donation->setDonorFirstName('John');

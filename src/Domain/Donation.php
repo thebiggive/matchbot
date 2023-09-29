@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
@@ -62,10 +63,10 @@ class Donation extends SalesforceWriteProxy
     protected string $psp;
 
     /**
-     * @ORM\Column(type="datetime", nullable=true)
-     * @var ?DateTimeInterface  When the donation first moved to status Collected, i.e. the donor finished paying.
+     * @ORM\Column(type="datetime_immutable", nullable=true)
+     * @var ?DateTimeImmutable  When the donation first moved to status Collected, i.e. the donor finished paying.
      */
-    protected ?DateTimeInterface $collectedAt = null;
+    protected ?DateTimeImmutable $collectedAt = null;
 
     /**
      * @ORM\Column(type="string", unique=true, nullable=true)
@@ -486,12 +487,12 @@ class Donation extends SalesforceWriteProxy
         $this->donationStatus = $donationStatus;
     }
 
-    public function getCollectedAt(): ?DateTimeInterface
+    public function getCollectedAt(): ?DateTimeImmutable
     {
         return $this->collectedAt;
     }
 
-    public function setCollectedAt(?DateTimeInterface $collectedAt): void
+    public function setCollectedAt(?DateTimeImmutable $collectedAt): void
     {
         $this->collectedAt = $collectedAt;
     }
