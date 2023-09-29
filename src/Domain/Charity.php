@@ -28,6 +28,12 @@ class Charity extends SalesforceReadProxy
         'Onboarded but HMRC Rejected',
     ];
 
+    private const POSSIBLE_GIFT_AID_STATUSES = [
+        ...self::GIFT_AID_ONBOARDED_STATUSES,
+        'Invited to Onboard',
+        'Withdrawn',
+    ];
+
     use TimestampsTrait;
 
     /**
@@ -168,16 +174,22 @@ class Charity extends SalesforceReadProxy
         $this->tbgApprovedToClaimGiftAid = $tbgApprovedToClaimGiftAid;
     }
 
+    /**
+     * @throws \UnexpectedValueException if $giftAidOnboardingStatus is not listed in self::POSSIBLE_GIFT_AID_STATUSES
+     */
     public function updateFromSfPull(
-        string   $charityName,
-        ?string  $stripeAccountId,
-        ?string  $hmrcReferenceNumber,
-        ?string  $giftAidOnboardingStatus,
-        ?string  $regulator,
-        ?string  $regulatorNumber,
+        string $charityName,
+        ?string $stripeAccountId,
+        ?string $hmrcReferenceNumber,
+        ?string $giftAidOnboardingStatus,
+        ?string $regulator,
+        ?string $regulatorNumber,
         DateTime $time,
-    ): void
-    {
+    ): void {
+        if (!is_null($giftAidOnboardingStatus) && !in_array($giftAidOnboardingStatus, self::POSSIBLE_GIFT_AID_STATUSES, true)) {
+            throw new \UnexpectedValueException();
+        }
+
         $this->setName($charityName);
         $this->setStripeAccountId($stripeAccountId);
 
