@@ -45,7 +45,7 @@ class DonationRepositoryTest extends IntegrationTest
     {
         $charity = new Charity();
         $charity->setName('Charity Name');
-        $charity->setHmrcReferenceNumber($withAgentApproval ? 'YY54321' : 'NN54321');
+        $charity->setHmrcReferenceNumber('any-ref');
         $charity->setTbgClaimingGiftAid(true);
         $charity->setTbgApprovedToClaimGiftAid($withAgentApproval);
 
