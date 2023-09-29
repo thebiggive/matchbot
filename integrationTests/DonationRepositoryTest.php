@@ -38,7 +38,7 @@ class DonationRepositoryTest extends IntegrationTest
         $sut = $this->getService(DonationRepository::class);
         $donationsReady = $sut->findReadyToClaimGiftAid(withResends: false);
 
-        $this->assertEquals([], $donationsReady);
+        $this->assertEmpty($donationsReady);
     }
 
     private function prepareOnboardedCharity(bool $withAgentApproval): Charity
