@@ -332,7 +332,7 @@ class Donation extends SalesforceWriteProxy
         $donation->setGiftAid($donationData->giftAid);
         // `DonationCreate` doesn't support a distinct property yet & we only ask once about GA.
         $donation->setTipGiftAid($donationData->giftAid);
-        $donation->setTbgShouldProcessGiftAid($donation->getCampaign()->getCharity()->isTbgClaimingGiftAid());
+        $donation->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
 
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
