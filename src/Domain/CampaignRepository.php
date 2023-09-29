@@ -13,15 +13,15 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
+    private const GIFT_AID_APPROVED_STATUS = 'Onboarded & Approved';
+
     private const GIFT_AID_ONBOARDED_STATUSES = [
         'Onboarded',
         'Onboarded & Data Sent to HMRC',
-        'Onboarded & Approved',
+        self::GIFT_AID_APPROVED_STATUS,
         // We'll always aim to fix data problems with HMRC, so should still plan to claim.
         'Onboarded but HMRC Rejected',
     ];
-
-    private const GIFT_AID_APPROVED_STATUS = 'Onboarded & Approved';
 
     /**
      * Gets those campaigns which are live now or recently closed (in the last week),
