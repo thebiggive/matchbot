@@ -1084,9 +1084,8 @@ class CreateTest extends TestCase
         $charity->setName('Create test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
-        $campaign = new Campaign(charity: null);
+        $campaign = new Campaign(charity: $charity);
         $campaign->setName('123CampaignName');
-        $campaign->setCharity($charity);
         $campaign->setIsMatched($campaignMatched);
         $campaign->setSalesforceId('123CampaignId');
         $campaign->setStartDate((new \DateTime())->sub(new \DateInterval('P2D')));
