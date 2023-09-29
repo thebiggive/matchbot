@@ -57,7 +57,7 @@ Once you have the app running, you can test with:
     docker-compose exec app composer run integration-test
 
 When run with a coverage driver (e.g. Xdebug enabled by using `thebiggive/php:dev-8.1`),
-this will save coverage data to `./coverage.xml`.
+this will save coverage data to `./coverage.xml` and `./coverage-integration.xml`.
 
 Linting is run with
 

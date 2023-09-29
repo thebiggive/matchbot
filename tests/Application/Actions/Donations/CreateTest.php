@@ -1084,7 +1084,7 @@ class CreateTest extends TestCase
         $charity->setName('Create test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setName('123CampaignName');
         $campaign->setCharity($charity);
         $campaign->setIsMatched($campaignMatched);

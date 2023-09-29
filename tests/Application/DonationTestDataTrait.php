@@ -34,7 +34,7 @@ trait DonationTestDataTrait
         $charity->setName('Test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setCharity($charity);
         $campaign->setIsMatched(true);
         $campaign->setName('Test campaign');
@@ -48,7 +48,7 @@ trait DonationTestDataTrait
         $donation->setChampionComms(false);
         $donation->setCurrencyCode('GBP');
         $donation->setDonationStatus(DonationStatus::Collected);
-        $donation->setCollectedAt(new \DateTime());
+        $donation->setCollectedAt(new \DateTimeImmutable());
         $donation->setDonorCountryCode('GB');
         $donation->setDonorEmailAddress('john.doe@example.com');
         $donation->setDonorFirstName('John');
@@ -76,7 +76,7 @@ trait DonationTestDataTrait
         $charity->setSalesforceId('123CharityId');
         $charity->setName('Test charity');
 
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setCharity($charity);
         $campaign->setIsMatched(true);
         $campaign->setName('Test campaign');

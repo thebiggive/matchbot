@@ -114,7 +114,7 @@ class StripePaymentsUpdate extends Stripe
             $donation->setTransferId($charge->transfer);
 
             $donation->setDonationStatus(DonationStatus::Collected);
-            $donation->setCollectedAt(new \DateTime("@{$charge->created}"));
+            $donation->setCollectedAt(new \DateTimeImmutable("@{$charge->created}"));
 
             // To give *simulated* webhooks, for Donation API-only load tests, an easy way to complete
             // without crashing, we support skipping the original fee derivation by omitting

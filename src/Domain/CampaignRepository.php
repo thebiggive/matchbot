@@ -13,10 +13,6 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
-    private static array $giftAidOnboardedStatuses = [
-        'Onboarded',
-        'Onboarded & Data Sent to HMRC',
-    ];
 
     /**
      * Gets those campaigns which are live now or recently closed (in the last week),
@@ -105,23 +101,17 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $charity = new Charity();
             $charity->setSalesforceId($salesforceCharityId);
         }
-        $charity->setName($charityName);
-        $charity->setStripeAccountId($stripeAccountId);
 
-        $tbgCanClaimGiftAid = (
-            !empty($hmrcReferenceNumber) &&
-            in_array($giftAidOnboardingStatus, static::$giftAidOnboardedStatuses, true)
+        $charity->updateFromSfPull(
+            charityName: $charityName,
+            stripeAccountId: $stripeAccountId,
+            hmrcReferenceNumber: $hmrcReferenceNumber,
+            giftAidOnboardingStatus: $giftAidOnboardingStatus,
+            regulator: $this->getRegulatorHMRCIdentifier($regulator),
+            regulatorNumber: $regulatorNumber,
+            time: new \DateTime('now'),
         );
 
-        $charity->setTbgClaimingGiftAid($tbgCanClaimGiftAid);
-        // May be null. Should be set to its string value if provided even if the charity is now opted out for new
-        // claims, because there could still be historic donations that should be claimed by TBG.
-        $charity->setHmrcReferenceNumber($hmrcReferenceNumber);
-
-        $charity->setRegulator($this->getRegulatorHMRCIdentifier($regulator));
-        $charity->setRegulatorNumber($regulatorNumber);
-
-        $charity->setSalesforceLastPull(new DateTime('now'));
         $this->getEntityManager()->persist($charity);
 
         return $charity;

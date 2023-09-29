@@ -22,7 +22,7 @@ class UpdateCampaignsTest extends TestCase
 {
     public function testSingleUpdateSuccess(): void
     {
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setSalesforceId('someCampaignId');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findRecentAndLive()
@@ -58,7 +58,7 @@ class UpdateCampaignsTest extends TestCase
     {
         // This case should be skipped over without crashing, in non-production envs.
 
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setSalesforceId('missingOnSfCampaignId');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findRecentAndLive()
@@ -98,7 +98,7 @@ class UpdateCampaignsTest extends TestCase
             new Request('GET', 'https://example.com'),
         );
 
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setSalesforceId('someCampaignId');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findRecentAndLive()
@@ -144,7 +144,7 @@ class UpdateCampaignsTest extends TestCase
             new Request('GET', 'https://example.com'),
         );
 
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setSalesforceId('someCampaignId');
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -191,7 +191,7 @@ class UpdateCampaignsTest extends TestCase
 
     public function testSingleUpdateSuccessWithAllOption(): void
     {
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: null);
         $campaign->setSalesforceId('someCampaignId');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findAll()

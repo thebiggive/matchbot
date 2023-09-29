@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
@@ -62,10 +63,10 @@ class Donation extends SalesforceWriteProxy
     protected string $psp;
 
     /**
-     * @ORM\Column(type="datetime", nullable=true)
-     * @var ?DateTime    When the donation first moved to status Collected, i.e. the donor finished paying.
+     * @ORM\Column(type="datetime_immutable", nullable=true)
+     * @var ?DateTimeImmutable  When the donation first moved to status Collected, i.e. the donor finished paying.
      */
-    protected ?DateTime $collectedAt = null;
+    protected ?DateTimeImmutable $collectedAt = null;
 
     /**
      * @ORM\Column(type="string", unique=true, nullable=true)
@@ -316,16 +317,24 @@ class Donation extends SalesforceWriteProxy
 
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
     {
-
         $psp = $donationData->psp;
         assert($psp === 'stripe');
 
-        $donation = new self($donationData->donationAmount, $donationData->currencyCode, $donationData->paymentMethodType);
+        $donation = new self(
+            $donationData->donationAmount,
+            $donationData->currencyCode,
+            $donationData->paymentMethodType,
+        );
 
         $donation->setPsp($psp);
         $donation->setUuid(Uuid::uuid4());
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
+
         $donation->setGiftAid($donationData->giftAid);
+        // `DonationCreate` doesn't support a distinct property yet & we only ask once about GA.
+        $donation->setTipGiftAid($donationData->giftAid);
+        $donation->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
+
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setPspCustomerId($donationData->pspCustomerId);
@@ -478,12 +487,12 @@ class Donation extends SalesforceWriteProxy
         $this->donationStatus = $donationStatus;
     }
 
-    public function getCollectedAt(): ?DateTime
+    public function getCollectedAt(): ?DateTimeImmutable
     {
         return $this->collectedAt;
     }
 
-    public function setCollectedAt(?DateTime $collectedAt): void
+    public function setCollectedAt(?DateTimeImmutable $collectedAt): void
     {
         $this->collectedAt = $collectedAt;
     }

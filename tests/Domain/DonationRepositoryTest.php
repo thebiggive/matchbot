@@ -14,6 +14,7 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -29,7 +30,6 @@ use ReflectionClass;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
-use Symfony\Component\Serializer\Serializer;
 
 class DonationRepositoryTest extends TestCase
 {
@@ -142,8 +142,9 @@ class DonationRepositoryTest extends TestCase
 
     public function testBuildFromApiRequestSuccess(): void
     {
-        $dummyCampaign = new Campaign();
+        $dummyCampaign = new Campaign(charity: null);
         $dummyCampaign->setCurrencyCode('USD');
+        $dummyCampaign->setCharity(new Charity());
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
         $campaignRepoProphecy->findOneBy(Argument::type('array'))
@@ -171,7 +172,7 @@ class DonationRepositoryTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Currency CAD is invalid for campaign');
 
-        $dummyCampaign = new Campaign();
+        $dummyCampaign = new Campaign(charity: null);
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -494,9 +495,6 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals(1, $repo->abandonOldCancelled());
     }
 
-    /**
-     * Pilot env var default value is set in `phpunit.xml`.
-     */
     public function testFindReadyToClaimGiftAid(): void
     {
         // This needs a local var so it can be used both to set up the `Query::getResult()` prophecy
@@ -523,16 +521,16 @@ class DonationRepositoryTest extends TestCase
         $queryBuilderProphecy->where('d.donationStatus = :claimGiftAidWithStatus')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
 
-        // 5 `andWhere()`s in all, excluding the first `where()` but including the one
+        // 6 `andWhere()`s in all, excluding the first `where()` but including the one
         // NOT for `$withResends` calls.
         $queryBuilderProphecy->andWhere(Argument::type('string'))
-            ->shouldBeCalledTimes(5)->willReturn($queryBuilderProphecy->reveal());
+            ->shouldBeCalledTimes(6)->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->orderBy('charity.id', 'ASC')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->addOrderBy('d.collectedAt', 'ASC') ->shouldBeCalledOnce()
             ->willReturn($queryBuilderProphecy->reveal());
 
-        // 2 param sets, including the one for `$pilotCharitiesOnly`.
+        // 2 param sets.
         $queryBuilderProphecy->setParameter('claimGiftAidWithStatus', 'Paid')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->setParameter('claimGiftAidForDonationsBefore', Argument::type(\DateTime::class))

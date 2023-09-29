@@ -7,8 +7,8 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\EntityRepository;
 
 /**
- * Not a SalesforceReadyProxyRepository for now, because we currently only pull basic charity data (SF ID and name)
- * as part of Campaign updates, and don't get this from a dedicated Charity/Account API.
+ * Not a SalesforceReadyProxyRepository for now, because we only need to pull charity data
+ * as part of Campaign updates, and don't get it from a dedicated Charity/Account API.
  *
  * @see CampaignRepository
  */
