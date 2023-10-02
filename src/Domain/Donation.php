@@ -366,7 +366,7 @@ class Donation extends SalesforceWriteProxy
         };
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return "Donation {$this->getUuid()} to {$this->getCampaign()->getCharity()->getName()}";
     }

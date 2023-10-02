@@ -9,7 +9,7 @@ use MatchBot\Client;
 use Psr\Log\LoggerInterface;
 
 /**
- * @template T of object
+ * @template T of SalesforceProxy
  * @template-extends EntityRepository<T>
  */ abstract class SalesforceProxyRepository extends EntityRepository
 {

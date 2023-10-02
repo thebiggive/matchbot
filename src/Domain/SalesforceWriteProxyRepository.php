@@ -8,7 +8,7 @@ use DateTime;
 use MatchBot\Application\Commands\PushDonations;
 
 /**
- * @template T of object
+ * @template T of SalesforceWriteProxy
  * @template-extends SalesforceProxyRepository<T>
  */
 abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository

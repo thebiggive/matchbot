@@ -214,18 +214,12 @@
   </file>
   <file src="src/Application/Actions/Donations/Create.php">
     <MixedArgument>
-      <code>$campaign</code>
       <code>$customerId</code>
     </MixedArgument>
     <MixedAssignment>
-      <code>$campaign</code>
       <code><![CDATA[$createPayload['customer']]]></code>
       <code>$customerId</code>
     </MixedAssignment>
-    <MixedMethodCall>
-      <code>getCharity</code>
-      <code>getStripeAccountId</code>
-    </MixedMethodCall>
     <PossiblyNullArgument>
       <code><![CDATA[$donation->getCampaign()->getCharity()->getSalesforceId()]]></code>
       <code><![CDATA[$donation->getPspCustomerId()]]></code>
@@ -440,14 +434,6 @@
     <PossiblyNullOperand>
       <code><![CDATA[$this->getName()]]></code>
     </PossiblyNullOperand>
-  </file>
-  <file src="src/Application/Commands/ResetMatching.php">
-    <MixedArgument>
-      <code>$funding</code>
-    </MixedArgument>
-    <MixedAssignment>
-      <code>$funding</code>
-    </MixedAssignment>
   </file>
   <file src="src/Application/Commands/RetrospectivelyMatch.php">
     <ArgumentTypeCoercion>
@@ -699,14 +685,10 @@
     </LessSpecificReturnStatement>
     <MethodSignatureMustProvideReturnType>
       <code>getRepository</code>
-      <code>transactional</code>
     </MethodSignatureMustProvideReturnType>
     <MixedArgumentTypeCoercion>
       <code><![CDATA[$this->connectionSettings]]></code>
     </MixedArgumentTypeCoercion>
-    <MixedAssignment>
-      <code>$ret</code>
-    </MixedAssignment>
     <MoreSpecificReturnType>
       <code>getRepository</code>
     </MoreSpecificReturnType>
@@ -836,23 +818,24 @@
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Domain/CampaignFundingRepository.php">
-    <MissingTemplateParam>
-      <code>CampaignFundingRepository</code>
-    </MissingTemplateParam>
+    <InvalidNullableReturnType>
+      <code>CampaignFunding</code>
+    </InvalidNullableReturnType>
     <MixedInferredReturnType>
       <code>?CampaignFunding</code>
       <code>?CampaignFunding</code>
-      <code>CampaignFunding</code>
     </MixedInferredReturnType>
     <MixedReturnStatement>
       <code><![CDATA[$query->getOneOrNullResult()]]></code>
       <code><![CDATA[$query->getOneOrNullResult()]]></code>
-      <code><![CDATA[$this->find($campaignFunding->getId(), LockMode::PESSIMISTIC_WRITE)]]></code>
     </MixedReturnStatement>
     <MixedReturnTypeCoercion>
       <code><![CDATA[$query->getResult()]]></code>
       <code>CampaignFunding[]</code>
     </MixedReturnTypeCoercion>
+    <NullableReturnStatement>
+      <code><![CDATA[$this->find($campaignFunding->getId(), LockMode::PESSIMISTIC_WRITE)]]></code>
+    </NullableReturnStatement>
     <PossiblyUnusedMethod>
       <code>getAvailableFundings</code>
       <code>getOneWithWriteLock</code>
@@ -908,9 +891,6 @@
       <code><![CDATA[$qb->getQuery()->getResult()]]></code>
       <code>Campaign[]</code>
     </MixedReturnTypeCoercion>
-    <MoreSpecificImplementedParamType>
-      <code>$campaign</code>
-    </MoreSpecificImplementedParamType>
     <ParamNameMismatch>
       <code>$campaign</code>
     </ParamNameMismatch>
@@ -925,11 +905,6 @@
     <MissingConstructor>
       <code>$name</code>
     </MissingConstructor>
-  </file>
-  <file src="src/Domain/CharityRepository.php">
-    <MissingTemplateParam>
-      <code>CharityRepository</code>
-    </MissingTemplateParam>
   </file>
   <file src="src/Domain/CommandLockKeys.php">
     <MissingConstructor>
@@ -954,9 +929,6 @@
       <code><![CDATA[$this->getTipAmount()]]></code>
       <code><![CDATA[$this->getTipAmount()]]></code>
     </ArgumentTypeCoercion>
-    <MethodSignatureMustProvideReturnType>
-      <code>__toString</code>
-    </MethodSignatureMustProvideReturnType>
     <MixedArgument>
       <code><![CDATA[$data['emailAddress']]]></code>
       <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
@@ -1013,8 +985,6 @@
       <code>$amountAllocated</code>
       <code>$amountAllocated</code>
       <code>$amountMatchedAtStart</code>
-      <code>$campaign</code>
-      <code>$campaign</code>
       <code><![CDATA[$donation->getAmount()]]></code>
       <code><![CDATA[$funding->getAmountAvailable()]]></code>
       <code>$newWithdrawal</code>
@@ -1130,7 +1100,6 @@
     </TooManyArguments>
     <UndefinedMethod>
       <code>create</code>
-      <code>getCurrencyCode</code>
       <code>put</code>
     </UndefinedMethod>
   </file>
@@ -1143,10 +1112,6 @@
       <code>$name</code>
       <code>$name</code>
     </MissingConstructor>
-    <PossiblyUnusedMethod>
-      <code>getAmount</code>
-      <code>getName</code>
-    </PossiblyUnusedMethod>
   </file>
   <file src="src/Domain/FundRepository.php">
     <ArgumentTypeCoercion>
@@ -1187,9 +1152,6 @@
     <MixedOperand>
       <code><![CDATA[$fundData['id']]]></code>
     </MixedOperand>
-    <MoreSpecificImplementedParamType>
-      <code>$fund</code>
-    </MoreSpecificImplementedParamType>
     <ParamNameMismatch>
       <code>$fund</code>
     </ParamNameMismatch>
@@ -1214,11 +1176,6 @@
       <code>$donation</code>
     </PossiblyUnusedProperty>
   </file>
-  <file src="src/Domain/FundingWithdrawalRepository.php">
-    <MissingTemplateParam>
-      <code>FundingWithdrawalRepository</code>
-    </MissingTemplateParam>
-  </file>
   <file src="src/Domain/SalesforceProxyRepository.php">
     <MissingConstructor>
       <code>$client</code>
@@ -1239,9 +1196,6 @@
     </PossiblyUnusedMethod>
   </file>
   <file src="src/Domain/SalesforceReadProxyRepository.php">
-    <ArgumentTypeCoercion>
-      <code>$proxy</code>
-    </ArgumentTypeCoercion>
     <MissingParamType>
       <code>$autoSave</code>
     </MissingParamType>
@@ -1257,10 +1211,6 @@
     </RedundantCondition>
   </file>
   <file src="src/Domain/SalesforceWriteProxyRepository.php">
-    <ArgumentTypeCoercion>
-      <code>$proxy</code>
-      <code>$proxy</code>
-    </ArgumentTypeCoercion>
     <PossiblyNullArgument>
       <code><![CDATA[$proxy->getId()]]></code>
       <code><![CDATA[$proxy->getId()]]></code>
@@ -1950,10 +1900,6 @@
     <PossiblyNullReference>
       <code>get</code>
     </PossiblyNullReference>
-    <UndefinedMethod>
-      <code>getAmount</code>
-      <code>getName</code>
-    </UndefinedMethod>
   </file>
   <file src="tests/Monolog/Processor/AwsTraceIdProcessorTest.php">
     <PossiblyNullReference>
