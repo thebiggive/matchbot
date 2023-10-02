@@ -12,6 +12,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
+use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\StripeClient;
 
@@ -112,6 +113,23 @@ class Confirm extends Action
                     'decline_code' => $exception->getDeclineCode(),
                 ],
             ], 402);
+        } catch (ApiErrorException $exception) {
+            $this->logger->error(sprintf(
+                'Stripe %s on Confirm for donation %s (%s): %s',
+                get_class($exception),
+                $donation->getUuid(),
+                $paymentIntentId,
+                $exception->getMessage(),
+            ));
+
+            $this->entityManager->rollback();
+
+            return new JsonResponse([
+                'error' => [
+                    'message' => $exception->getMessage(),
+                    'code' => $exception->getStripeCode(),
+                ],
+            ], 500);
         }
 
         $updatedIntent = $this->stripeClient->paymentIntents->retrieve($paymentIntentId);
