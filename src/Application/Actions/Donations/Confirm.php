@@ -139,7 +139,7 @@ class Confirm extends Action
         return new JsonResponse([
                 'paymentIntent' => [
                     'status' => $updatedIntent->status,
-                    'client_secret' => $updatedIntent->status === 'needs_action'
+                    'client_secret' => $updatedIntent->status === 'requires_action'
                         ?  $updatedIntent->client_secret
                         : null,
                 ]]

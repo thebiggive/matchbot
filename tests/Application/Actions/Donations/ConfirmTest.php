@@ -35,7 +35,7 @@ class ConfirmTest extends TestCase
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
             paymentMethodId: 'PAYMENT_METHOD_ID',
             updatedIntentData: [
-                'status' => 'needs_action',
+                'status' => 'requires_action',
                 'client_secret' => 'some_client_secret',
             ],
             paymentIntentId: 'PAYMENT_INTENT_ID',
@@ -65,7 +65,7 @@ class ConfirmTest extends TestCase
 
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame(
-            ['paymentIntent' => ['status' => 'needs_action', 'client_secret' => 'some_client_secret']],
+            ['paymentIntent' => ['status' => 'requires_action', 'client_secret' => 'some_client_secret']],
             \json_decode($response->getBody()->getContents(), true)
         );
     }
