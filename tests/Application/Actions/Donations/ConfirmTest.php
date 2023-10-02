@@ -11,8 +11,11 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Log\NullLogger;
 use Slim\Psr7\Response;
+use Stripe\Exception\CardException;
+use Stripe\Exception\UnknownApiErrorException;
 use Stripe\Service\PaymentIntentService;
 use Stripe\Service\PaymentMethodService;
 use Stripe\StripeClient;
@@ -32,63 +35,140 @@ class ConfirmTest extends TestCase
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
             paymentMethodId: 'PAYMENT_METHOD_ID',
             updatedIntentData: [
-            'status' => 'final_intent_status',
-            'client_secret' => 'some_client_secret',
+                'status' => 'requires_action',
+                'client_secret' => 'some_client_secret',
             ],
             paymentIntentId: 'PAYMENT_INTENT_ID',
             expectedMetadataUpdate: [
-            "metadata" => [
-                "stripeFeeRechargeGross" => $newCharityFee,
-                "stripeFeeRechargeNet" => $newCharityFee,
-                "stripeFeeRechargeVat" => "0.00",
+                "metadata" => [
+                    "stripeFeeRechargeGross" => $newCharityFee,
+                    "stripeFeeRechargeNet" => $newCharityFee,
+                    "stripeFeeRechargeVat" => "0.00",
+                ],
+                "application_fee_amount" => $newApplicationFeeAmount,
             ],
-            "application_fee_amount" => $newApplicationFeeAmount,
-            ]
-        );
-
-        $donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
-
-        $donation = Donation::fromApiModel(
-            new DonationCreate(currencyCode: 'GBP', donationAmount: '63.0', projectId: 'doesnt-matter', psp: 'stripe'),
-            $this->getMinimalCampaign(),
-        );
-        $donation->setTransactionId('PAYMENT_INTENT_ID');
-
-        $donationRepositoryProphecy->deriveFees($donation, 'discover', 'some-country')
-            ->will(
-                fn() => $donation->setCharityFee($newCharityFee)
-            );
-
-        $donationRepositoryProphecy->findAndLockOneBy(['uuid' => 'DONATION_ID'])->willReturn(
-            $donation
+            confirmFailsWithCardError: false,
+            confirmFailsWithApiError: false,
         );
 
         $sut = new Confirm(
             new NullLogger(),
-            $donationRepositoryProphecy->reveal(),
+            $this->getDonationRepository($newCharityFee),
             $stripeClientProphecy->reveal(),
             $this->prophesize(EntityManagerInterface::class)->reveal()
         );
 
         // act
-
-        $response = $sut(
-            $this->createRequest(
-                method: 'POST',
-                path: 'doesnt-matter-for-test',
-                bodyString: \json_encode([
-                    'stripePaymentMethodId' => 'PAYMENT_METHOD_ID',
-                ])
-            ),
-            new Response(),
-            ['donationId' => 'DONATION_ID']
-        );
+        $response = $this->callConfirm($sut);
 
         // assert
 
         $this->assertSame(200, $response->getStatusCode());
         $this->assertSame(
-            ['paymentIntent' => ['status' => 'final_intent_status', 'client_secret' => 'some_client_secret']],
+            ['paymentIntent' => ['status' => 'requires_action', 'client_secret' => 'some_client_secret']],
+            \json_decode($response->getBody()->getContents(), true)
+        );
+    }
+
+    public function testItReturns402OnDecline(): void
+    {
+        // arrange
+
+        // in reality the fee would be calculated according to details of the card etc. The Calculator class is
+        //tested separately. This is just a dummy value.
+        $newCharityFee = "42.00";
+        $newApplicationFeeAmount = 4200;
+
+        $stripeClientProphecy = $this->fakeStripeClient(
+            cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
+            paymentMethodId: 'PAYMENT_METHOD_ID',
+            updatedIntentData: [
+                'status' => 'requires_payment_method',
+                'client_secret' => 'some_client_secret',
+            ],
+            paymentIntentId: 'PAYMENT_INTENT_ID',
+            expectedMetadataUpdate: [
+                "metadata" => [
+                    "stripeFeeRechargeGross" => $newCharityFee,
+                    "stripeFeeRechargeNet" => $newCharityFee,
+                    "stripeFeeRechargeVat" => "0.00",
+                ],
+                "application_fee_amount" => $newApplicationFeeAmount,
+            ],
+            confirmFailsWithCardError: true,
+            confirmFailsWithApiError: false,
+        );
+
+        $sut = new Confirm(
+            new NullLogger(),
+            $this->getDonationRepository($newCharityFee),
+            $stripeClientProphecy->reveal(),
+            $this->prophesize(EntityManagerInterface::class)->reveal()
+        );
+
+        // act
+        $response = $this->callConfirm($sut);
+
+        // assert
+
+        $this->assertSame(402, $response->getStatusCode()); // 'Payment required'.
+        $this->assertSame(
+            ['error' => [
+                'message' => 'Your card was declined',
+                'code' => 'card_declined',
+                'decline_code' => 'generic_decline',
+            ]],
+            \json_decode($response->getBody()->getContents(), true)
+        );
+    }
+
+    public function testItReturns500OnApiError(): void
+    {
+        // arrange
+
+        // in reality the fee would be calculated according to details of the card etc. The Calculator class is
+        //tested separately. This is just a dummy value.
+        $newCharityFee = "42.00";
+        $newApplicationFeeAmount = 4200;
+
+        $stripeClientProphecy = $this->fakeStripeClient(
+            cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
+            paymentMethodId: 'PAYMENT_METHOD_ID',
+            updatedIntentData: [
+                'status' => 'requires_payment_method',
+                'client_secret' => 'some_client_secret',
+            ],
+            paymentIntentId: 'PAYMENT_INTENT_ID',
+            expectedMetadataUpdate: [
+                "metadata" => [
+                    "stripeFeeRechargeGross" => $newCharityFee,
+                    "stripeFeeRechargeNet" => $newCharityFee,
+                    "stripeFeeRechargeVat" => "0.00",
+                ],
+                "application_fee_amount" => $newApplicationFeeAmount,
+            ],
+            confirmFailsWithCardError: false,
+            confirmFailsWithApiError: true,
+        );
+
+        $sut = new Confirm(
+            new NullLogger(),
+            $this->getDonationRepository($newCharityFee),
+            $stripeClientProphecy->reveal(),
+            $this->prophesize(EntityManagerInterface::class)->reveal()
+        );
+
+        // act
+        $response = $this->callConfirm($sut);
+
+        // assert
+
+        $this->assertSame(500, $response->getStatusCode());
+        $this->assertSame(
+            ['error' => [
+                'message' => 'Stripe is down!',
+                'code' => 'some_stripe_anomaly',
+            ]],
             \json_decode($response->getBody()->getContents(), true)
         );
     }
@@ -96,12 +176,14 @@ class ConfirmTest extends TestCase
     /**
      * @return ObjectProphecy<StripeClient>
      */
-    public function fakeStripeClient(
+    private function fakeStripeClient(
         array $cardDetails,
         string $paymentMethodId,
         array $updatedIntentData,
         string $paymentIntentId,
-        array $expectedMetadataUpdate
+        array $expectedMetadataUpdate,
+        bool $confirmFailsWithCardError,
+        bool $confirmFailsWithApiError,
     ): ObjectProphecy {
         $paymentMethod = (object)[
             'type' => 'card',
@@ -125,9 +207,70 @@ class ConfirmTest extends TestCase
             $expectedMetadataUpdate
         )->shouldBeCalled();
 
-        $stripePaymentIntentsProphecy->confirm($paymentIntentId, ["payment_method" => $paymentMethodId])
-            ->shouldBeCalled();
+        $confirmation = $stripePaymentIntentsProphecy->confirm($paymentIntentId, ["payment_method" => $paymentMethodId]);
+
+        if ($confirmFailsWithCardError) {
+            $exception = CardException::factory(
+                message: 'Your card was declined',
+                httpStatus: 402,
+                stripeCode: 'card_declined',
+                declineCode: 'generic_decline',
+            );
+            $confirmation->willThrow($exception);
+        }
+
+        if ($confirmFailsWithApiError) {
+            $exception = UnknownApiErrorException::factory(
+                'Stripe is down!',
+                httpStatus: 500,
+                stripeCode: 'some_stripe_anomaly'
+            );
+            $confirmation->willThrow($exception);
+        }
+
+        $confirmation->shouldBeCalled();
 
         return $stripeClientProphecy;
+    }
+
+    /**
+     * @return DonationRepository Really an ObjectProphecy<DonationRepository>, but psalm
+     *                            complains about that.
+     */
+    private function getDonationRepository(string $newCharityFee): DonationRepository
+    {
+        $donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
+
+        $donation = Donation::fromApiModel(
+            new DonationCreate(currencyCode: 'GBP', donationAmount: '63.0', projectId: 'doesnt-matter', psp: 'stripe'),
+            $this->getMinimalCampaign(),
+        );
+        $donation->setTransactionId('PAYMENT_INTENT_ID');
+
+        $donationRepositoryProphecy->deriveFees($donation, 'discover', 'some-country')
+            ->will(
+                fn() => $donation->setCharityFee($newCharityFee)
+            );
+
+        $donationRepositoryProphecy->findAndLockOneBy(['uuid' => 'DONATION_ID'])->willReturn(
+            $donation
+        );
+
+        return $donationRepositoryProphecy->reveal();
+    }
+
+    private function callConfirm(Confirm $sut): ResponseInterface
+    {
+        return $sut(
+            $this->createRequest(
+                method: 'POST',
+                path: 'doesnt-matter-for-test',
+                bodyString: \json_encode([
+                    'stripePaymentMethodId' => 'PAYMENT_METHOD_ID',
+                ])
+            ),
+            new Response(),
+            ['donationId' => 'DONATION_ID']
+        );
     }
 }
