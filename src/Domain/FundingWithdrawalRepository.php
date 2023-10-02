@@ -6,6 +6,9 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityRepository;
 
+/**
+ * @extends EntityRepository<FundingWithdrawal>
+ */
 class FundingWithdrawalRepository extends EntityRepository
 {
     /**

@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityRepository;
  * Not a SalesforceReadyProxyRepository for now, because we only need to pull charity data
  * as part of Campaign updates, and don't get it from a dedicated Charity/Account API.
  *
+ * @extends EntityRepository<Charity>
  * @see CampaignRepository
  */
 class CharityRepository extends EntityRepository
