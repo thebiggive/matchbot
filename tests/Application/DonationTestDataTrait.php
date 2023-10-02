@@ -34,8 +34,7 @@ trait DonationTestDataTrait
         $charity->setName('Test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
-        $campaign = new Campaign(charity: null);
-        $campaign->setCharity($charity);
+        $campaign = new Campaign(charity: $charity);
         $campaign->setIsMatched(true);
         $campaign->setName('Test campaign');
         $campaign->setSalesforceId('456ProjectId');
@@ -76,8 +75,7 @@ trait DonationTestDataTrait
         $charity->setSalesforceId('123CharityId');
         $charity->setName('Test charity');
 
-        $campaign = new Campaign(charity: null);
-        $campaign->setCharity($charity);
+        $campaign = new Campaign(charity: $charity);
         $campaign->setIsMatched(true);
         $campaign->setName('Test campaign');
         $campaign->setSalesforceId('456ProjectId');
