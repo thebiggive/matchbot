@@ -8,7 +8,7 @@ use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 
 /**
- * @template T of object
+ * @template T of SalesforceReadProxy
  * @template-extends SalesforceProxyRepository<T>
  */
 abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
@@ -17,13 +17,17 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
      * Get live data for the object (which might be empty apart from the Salesforce ID) and return a full object.
      * No need to `setSalesforceLastPull()`, or EM `persist()` - just populate the fields specific to the object.
      *
-     * @param SalesforceReadProxy $proxy
-     * @return SalesforceReadProxy
+     * @psalm-param T $proxy
+     * @psalm-return T
      * @throws UniqueConstraintViolationException occasionally if 2 requests try to create the same
      *                                            Salesforce object in parallel.
      */
     abstract protected function doPull(SalesforceReadProxy $proxy): SalesforceReadProxy;
 
+    /**
+     * @psalm-param T $proxy
+     * @psalm-return T
+     */
     public function pull(SalesforceReadProxy $proxy, $autoSave = true): SalesforceReadProxy
     {
         // Make sure we update existing object if passed in a partial copy and we already have that Salesforce object
