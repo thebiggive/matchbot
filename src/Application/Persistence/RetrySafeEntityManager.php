@@ -37,8 +37,13 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         parent::__construct($this->entityManager);
     }
 
+    /**
+     * @template T
+     * @psalm-param callable(): T $func
+     * @psalm-return T
+     */
     #[Pure]
-    public function transactional($func)
+    public function transactional($func): mixed
     {
         $retries = 0;
         do {

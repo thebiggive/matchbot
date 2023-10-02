@@ -435,14 +435,6 @@
       <code><![CDATA[$this->getName()]]></code>
     </PossiblyNullOperand>
   </file>
-  <file src="src/Application/Commands/ResetMatching.php">
-    <MixedArgument>
-      <code>$funding</code>
-    </MixedArgument>
-    <MixedAssignment>
-      <code>$funding</code>
-    </MixedAssignment>
-  </file>
   <file src="src/Application/Commands/RetrospectivelyMatch.php">
     <ArgumentTypeCoercion>
       <code>$amountAllocated</code>
@@ -693,14 +685,10 @@
     </LessSpecificReturnStatement>
     <MethodSignatureMustProvideReturnType>
       <code>getRepository</code>
-      <code>transactional</code>
     </MethodSignatureMustProvideReturnType>
     <MixedArgumentTypeCoercion>
       <code><![CDATA[$this->connectionSettings]]></code>
     </MixedArgumentTypeCoercion>
-    <MixedAssignment>
-      <code>$ret</code>
-    </MixedAssignment>
     <MoreSpecificReturnType>
       <code>getRepository</code>
     </MoreSpecificReturnType>
@@ -830,23 +818,24 @@
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Domain/CampaignFundingRepository.php">
-    <MissingTemplateParam>
-      <code>CampaignFundingRepository</code>
-    </MissingTemplateParam>
+    <InvalidNullableReturnType>
+      <code>CampaignFunding</code>
+    </InvalidNullableReturnType>
     <MixedInferredReturnType>
       <code>?CampaignFunding</code>
       <code>?CampaignFunding</code>
-      <code>CampaignFunding</code>
     </MixedInferredReturnType>
     <MixedReturnStatement>
       <code><![CDATA[$query->getOneOrNullResult()]]></code>
       <code><![CDATA[$query->getOneOrNullResult()]]></code>
-      <code><![CDATA[$this->find($campaignFunding->getId(), LockMode::PESSIMISTIC_WRITE)]]></code>
     </MixedReturnStatement>
     <MixedReturnTypeCoercion>
       <code><![CDATA[$query->getResult()]]></code>
       <code>CampaignFunding[]</code>
     </MixedReturnTypeCoercion>
+    <NullableReturnStatement>
+      <code><![CDATA[$this->find($campaignFunding->getId(), LockMode::PESSIMISTIC_WRITE)]]></code>
+    </NullableReturnStatement>
     <PossiblyUnusedMethod>
       <code>getAvailableFundings</code>
       <code>getOneWithWriteLock</code>
@@ -917,11 +906,6 @@
       <code>$name</code>
     </MissingConstructor>
   </file>
-  <file src="src/Domain/CharityRepository.php">
-    <MissingTemplateParam>
-      <code>CharityRepository</code>
-    </MissingTemplateParam>
-  </file>
   <file src="src/Domain/CommandLockKeys.php">
     <MissingConstructor>
       <code>$key_expiration</code>
@@ -945,9 +929,6 @@
       <code><![CDATA[$this->getTipAmount()]]></code>
       <code><![CDATA[$this->getTipAmount()]]></code>
     </ArgumentTypeCoercion>
-    <MethodSignatureMustProvideReturnType>
-      <code>__toString</code>
-    </MethodSignatureMustProvideReturnType>
     <MixedArgument>
       <code><![CDATA[$data['emailAddress']]]></code>
       <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
@@ -1194,11 +1175,6 @@
     <PossiblyUnusedProperty>
       <code>$donation</code>
     </PossiblyUnusedProperty>
-  </file>
-  <file src="src/Domain/FundingWithdrawalRepository.php">
-    <MissingTemplateParam>
-      <code>FundingWithdrawalRepository</code>
-    </MissingTemplateParam>
   </file>
   <file src="src/Domain/SalesforceProxyRepository.php">
     <MissingConstructor>
