@@ -35,11 +35,7 @@ class Donation extends SalesforceWriteProxy
     public const MAXIMUM_CARD_DONATION = 25_000;
 
     public const MAXIMUM_CUSTOMER_BALANCE_DONATION = 200_000;
-    /**
-     * @var int
-     * @see Donation::$currencyCode
-     */
-    private int $minimumAmount = 1;
+    public const MINUMUM_AMOUNT = 1;
 
     private array $possiblePSPs = ['stripe'];
 
@@ -317,12 +313,12 @@ class Donation extends SalesforceWriteProxy
         $maximumAmount = self::maximumAmount($paymentMethodType);
 
         if (
-            bccomp($amount, (string)$this->minimumAmount, 2) === -1 ||
+            bccomp($amount, (string)self::MINUMUM_AMOUNT, 2) === -1 ||
             bccomp($amount, (string)$maximumAmount, 2) === 1
         ) {
             throw new \UnexpectedValueException(sprintf(
                 'Amount must be %d-%d %s',
-                $this->minimumAmount,
+                self::MINUMUM_AMOUNT,
                 $maximumAmount,
                 $this->currencyCode,
             ));
