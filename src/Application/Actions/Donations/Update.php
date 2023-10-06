@@ -274,11 +274,9 @@ class Update extends Action
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setDonorBillingAddress($donationData->billingPostalAddress);
 
-        $this->donationRepository->deriveFees(
-            $donation,
-            $donationData->cardBrand,
-            $donationData->cardCountry
-        );
+        // currently this can't change the fee from what it was when donation entity was created, but
+        // we call deriveFees here for consistency with the Create action, in case the derivation logic changes to depend on something we do mutate in the donation. But if this is a card payment it will be called again in the `confirm` action.
+        $this->donationRepository->deriveFees($donation, null, null);
 
         if ($donation->getPsp() === 'stripe') {
             try {

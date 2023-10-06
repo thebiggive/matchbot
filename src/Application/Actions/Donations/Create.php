@@ -16,6 +16,7 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\DonationRepository;
@@ -130,7 +131,9 @@ class Create extends Action
         if ($donation->getPsp() === 'stripe') {
             if (empty($donation->getCampaign()->getCharity()->getStripeAccountId())) {
                 // Try re-pulling in case charity has very recently onboarded with for Stripe.
-                $campaign = $this->entityManager->getRepository(Campaign::class)
+                $repository = $this->entityManager->getRepository(Campaign::class);
+                \assert($repository instanceof CampaignRepository);
+                $campaign = $repository
                     ->pull($donation->getCampaign());
 
                 // If still empty, error out
@@ -210,14 +213,13 @@ class Create extends Action
                     $exception->getStripeCode() ?? 'unknown',
                     get_class($exception),
                     $message,
-                    $donation->getCampaign()->getCharity()->getName(),
+                    $donation->getCampaign()->getCharity()->getName() ?? 'unknown',
                     $donation->getCampaign()->getCharity()->getStripeAccountId() ?? 'unknown',
                 ));
                 $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (B)');
                 return $this->respond($response, new ActionPayload(500, null, $error));
             }
 
-            $donation->setClientSecret($intent->client_secret);
             $donation->setTransactionId($intent->id);
 
             $this->entityManager->persist($donation);
@@ -239,6 +241,9 @@ class Create extends Action
         $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
         $prefix = 'Big Give ';
 
+        /**
+         * @psalm-suppress PossiblyNullArgument We don't expect to get here with no charity » let it crash for now.
+         */
         return $prefix . mb_substr(
             $this->removeSpecialChars($charity->getName()),
             0,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
@@ -62,16 +63,10 @@ class Donation extends SalesforceWriteProxy
     protected string $psp;
 
     /**
-     * @ORM\Column(type="datetime", nullable=true)
-     * @var ?DateTime    When the donation first moved to status Collected, i.e. the donor finished paying.
+     * @ORM\Column(type="datetime_immutable", nullable=true)
+     * @var ?DateTimeImmutable  When the donation first moved to status Collected, i.e. the donor finished paying.
      */
-    protected ?DateTime $collectedAt = null;
-
-    /**
-     * @ORM\Column(type="string", nullable=true)
-     * @var string  Token for the client to complete payment, set by PSPs like Stripe for Payment Intents.
-     */
-    protected ?string $clientSecret = null;
+    protected ?DateTimeImmutable $collectedAt = null;
 
     /**
      * @ORM\Column(type="string", unique=true, nullable=true)
@@ -322,16 +317,24 @@ class Donation extends SalesforceWriteProxy
 
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
     {
-
         $psp = $donationData->psp;
         assert($psp === 'stripe');
 
-        $donation = new self($donationData->donationAmount, $donationData->currencyCode, $donationData->paymentMethodType);
+        $donation = new self(
+            $donationData->donationAmount,
+            $donationData->currencyCode,
+            $donationData->paymentMethodType,
+        );
 
         $donation->setPsp($psp);
         $donation->setUuid(Uuid::uuid4());
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
+
         $donation->setGiftAid($donationData->giftAid);
+        // `DonationCreate` doesn't support a distinct property yet & we only ask once about GA.
+        $donation->setTipGiftAid($donationData->giftAid);
+        $donation->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
+
         $donation->setCharityComms($donationData->optInCharityEmail);
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setPspCustomerId($donationData->pspCustomerId);
@@ -363,9 +366,10 @@ class Donation extends SalesforceWriteProxy
         };
     }
 
-    public function __toString()
+    public function __toString(): string
     {
-        return "Donation {$this->getUuid()} to {$this->getCampaign()->getCharity()->getName()}";
+        $charityName = $this->getCampaign()->getCharity()->getName() ?? '[pending charity]';
+        return "Donation {$this->getUuid()} to $charityName";
     }
 
     /**
@@ -411,7 +415,6 @@ class Donation extends SalesforceWriteProxy
         $data['refundedTime'] = $this->refundedAt?->format(DateTimeInterface::ATOM);
 
         unset(
-            $data['clientSecret'],
             $data['charityName'],
             $data['donationId'],
             $data['matchReservedAmount'],
@@ -427,7 +430,6 @@ class Donation extends SalesforceWriteProxy
     {
         $data = [
             'billingPostalAddress' => $this->getDonorBillingAddress(),
-            'clientSecret' => $this->getClientSecret(),
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
             'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
@@ -486,12 +488,12 @@ class Donation extends SalesforceWriteProxy
         $this->donationStatus = $donationStatus;
     }
 
-    public function getCollectedAt(): ?DateTime
+    public function getCollectedAt(): ?DateTimeImmutable
     {
         return $this->collectedAt;
     }
 
-    public function setCollectedAt(?DateTime $collectedAt): void
+    public function setCollectedAt(?DateTimeImmutable $collectedAt): void
     {
         $this->collectedAt = $collectedAt;
     }
@@ -823,22 +825,6 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->psp = $psp;
-    }
-
-    /**
-     * @return string
-     */
-    public function getClientSecret(): ?string
-    {
-        return $this->clientSecret;
-    }
-
-    /**
-     * @param string $clientSecret
-     */
-    public function setClientSecret(string $clientSecret): void
-    {
-        $this->clientSecret = $clientSecret;
     }
 
     /**

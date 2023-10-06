@@ -8,6 +8,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityRepository;
 
+/**
+ * @extends EntityRepository<CampaignFunding>
+ */
 class CampaignFundingRepository extends EntityRepository
 {
     /**

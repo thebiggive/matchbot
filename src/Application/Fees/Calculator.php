@@ -23,7 +23,7 @@ class Calculator
     /**
      * From https://stripe.com/docs/api/errors#errors-payment_method-card-brand
      */
-    private const STRIPE_CARD_BRANDS = [
+    public const STRIPE_CARD_BRANDS = [
         'amex', 'diners', 'discover', 'eftpos_au', 'jcb', 'mastercard', 'unionpay', 'visa', 'unknown'
     ];
 

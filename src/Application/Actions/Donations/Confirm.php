@@ -3,16 +3,17 @@
 namespace MatchBot\Application\Actions\Donations;
 
 use Doctrine\ORM\EntityManagerInterface;
-use http\Exception\BadMethodCallException;
-use Laminas\Diactoros\Response\EmptyResponse;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Fees\Calculator;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
+use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\CardException;
 use Stripe\StripeClient;
 
 class Confirm extends Action
@@ -68,6 +69,9 @@ class Confirm extends Action
         // two letter upper string, e.g. 'GB', 'US'.
         $cardCountry = $paymentMethod->card->country;
         \assert(is_string($cardCountry));
+        if (! in_array($cardBrand, Calculator::STRIPE_CARD_BRANDS, true)) {
+            throw new HttpBadRequestException($request, "Unrecognised card brand");
+        }
 
         // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
@@ -88,9 +92,45 @@ class Confirm extends Action
             // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
         ]);
 
-        $this->stripeClient->paymentIntents->confirm($paymentIntentId, [
-            'payment_method' => $pamentMethodId,
-        ]);
+        try {
+            $this->stripeClient->paymentIntents->confirm($paymentIntentId, [
+                'payment_method' => $pamentMethodId,
+            ]);
+        } catch (CardException $exception) {
+            $this->logger->info(sprintf(
+                'Stripe CardException on Confirm for donation %s (%s): %s',
+                $donation->getUuid(),
+                $paymentIntentId,
+                $exception->getMessage(),
+            ));
+
+            $this->entityManager->rollback();
+
+            return new JsonResponse([
+                'error' => [
+                    'message' => $exception->getMessage(),
+                    'code' => $exception->getStripeCode(),
+                    'decline_code' => $exception->getDeclineCode(),
+                ],
+            ], 402);
+        } catch (ApiErrorException $exception) {
+            $this->logger->error(sprintf(
+                'Stripe %s on Confirm for donation %s (%s): %s',
+                get_class($exception),
+                $donation->getUuid(),
+                $paymentIntentId,
+                $exception->getMessage(),
+            ));
+
+            $this->entityManager->rollback();
+
+            return new JsonResponse([
+                'error' => [
+                    'message' => $exception->getMessage(),
+                    'code' => $exception->getStripeCode(),
+                ],
+            ], 500);
+        }
 
         $updatedIntent = $this->stripeClient->paymentIntents->retrieve($paymentIntentId);
 
@@ -99,7 +139,9 @@ class Confirm extends Action
         return new JsonResponse([
                 'paymentIntent' => [
                     'status' => $updatedIntent->status,
-                    'client_secret' => $updatedIntent->client_secret
+                    'client_secret' => $updatedIntent->status === 'requires_action'
+                        ?  $updatedIntent->client_secret
+                        : null,
                 ]]
         );
     }

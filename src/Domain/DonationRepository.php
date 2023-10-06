@@ -136,7 +136,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         if (!$campaign) {
             // Fetch data for as-yet-unknown campaigns on-demand
             $this->logInfo("Loading unknown campaign ID {$donationData->projectId} on-demand");
-            $campaign = new Campaign();
+            $campaign = new Campaign(charity: null);
             $campaign->setSalesforceId($donationData->projectId);
             try {
                 $campaign = $this->campaignRepository->pull($campaign);
@@ -165,7 +165,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         $donation = Donation::fromApiModel($donationData, $campaign);
-        $this->deriveFees($donation);
+        $this->deriveFees($donation, null, null);
 
         return $donation;
     }
@@ -407,7 +407,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // than 14 *full* days before they're paid. This led to discrepancies with when we could expect Gift Aid to be
         // sent for any donation collected between ~9am and midnight Mondays. To reduce future confusion, we now only
         // require a minimum 13 days from collection. Note that this condition has always been checked in concert with
-        // the hard requirement that Stripe tell us the donation is Paid.
+        // the hard requirement that Stripe tell us the donation is Paid. Additionally, we wait for HMRC to tell
+        // us we're approved as Agent – for charities new to us claiming Gift Aid, this is likely to be a couple
+        // of months as of 2023.
         $cutoff = (new DateTime('now'))->sub(new \DateInterval('P13D'));
 
         $qb = $this->getEntityManager()->createQueryBuilder()
@@ -418,6 +420,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->where('d.donationStatus = :claimGiftAidWithStatus')
             ->andWhere('d.giftAid = TRUE')
             ->andWhere('d.tbgShouldProcessGiftAid = TRUE')
+            ->andWhere('charity.tbgApprovedToClaimGiftAid = TRUE')
             ->andWhere('charity.hmrcReferenceNumber IS NOT NULL')
             ->andWhere('d.collectedAt < :claimGiftAidForDonationsBefore')
             ->orderBy('charity.id', 'ASC') // group donations for the same charity together in batches
@@ -544,7 +547,15 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return count($donations);
     }
 
-    public function deriveFees(Donation $donation, ?string $cardBrand = null, ?string $cardCountry = null): void
+    /**
+     * Updates a donation to set the appropriate fees. If card details are null then we assume for now that a card with
+     * the lowest possible fees will be used, and this should be called again with the details of the selected card
+     * when confirming the payment.
+     *
+     * @psalm-param value-of<Calculator::STRIPE_CARD_BRANDS>|null $cardBrand
+     * @param string|null $cardCountry ISO two letter uppercase code
+     */
+    public function deriveFees(Donation $donation, ?string $cardBrand, ?string $cardCountry): void
     {
         $incursGiftAidFee = $donation->hasGiftAid() && $donation->hasTbgShouldProcessGiftAid();
 

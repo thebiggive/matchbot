@@ -60,7 +60,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Pending);
 
-        $this->donationRepositoryProphecy->deriveFees($donation, 'some-card-brand', 'some-country')->shouldBeCalled();
+        $this->donationRepositoryProphecy->deriveFees($donation, null, null)->shouldBeCalled();
 
         $updateAction = new Update(
             $this->donationRepositoryProphecy->reveal(),
@@ -122,9 +122,8 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $charity->setSalesforceId('DONATE_LINK_ID');
         $charity->setName('Charity name');
 
-        $campaign = new Campaign();
+        $campaign = new Campaign(charity: $charity);
         $campaign->setIsMatched(true);
-        $campaign->setCharity($charity);
 
         $donation = Donation::emptyTestDonation('1');
         $donation->createdNow();
@@ -147,8 +146,6 @@ class UpdateHandlesLockExceptionTest extends TestCase
         {
           "autoConfirmFromCashBalance": false,
           "billingPostalAddress": null,
-          "cardBrand": "some-card-brand",
-          "cardCountry": "some-country",
           "countryCode": null,
           "creationRecaptchaCode": null,
           "currencyCode": null,

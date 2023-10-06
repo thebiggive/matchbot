@@ -14,6 +14,7 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -29,7 +30,6 @@ use ReflectionClass;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
-use Symfony\Component\Serializer\Serializer;
 
 class DonationRepositoryTest extends TestCase
 {
@@ -142,7 +142,7 @@ class DonationRepositoryTest extends TestCase
 
     public function testBuildFromApiRequestSuccess(): void
     {
-        $dummyCampaign = new Campaign();
+        $dummyCampaign = new Campaign(charity: new Charity());
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -171,7 +171,7 @@ class DonationRepositoryTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Currency CAD is invalid for campaign');
 
-        $dummyCampaign = new Campaign();
+        $dummyCampaign = new Campaign(charity: null);
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -212,7 +212,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $this->getRepo()->deriveFees($donation, 'amex');
+        $this->getRepo()->deriveFees($donation, 'amex', null);
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -256,7 +256,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setPsp('stripe');
         $donation->setFeeCoverAmount('44.44'); // 4.5% fee, inc. any VAT.
         $donation->getCampaign()->setFeePercentage(4.5);
-        $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation, null, null);
 
         // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
         // Fixed fee        = £  0.00
@@ -278,7 +278,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation, null, null);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -300,7 +300,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setTipAmount('10.00');
 
         // Get repo with 20% VAT enabled from now setting override.
-        $this->getRepo(null, true)->deriveFees($donation);
+        $this->getRepo(null, true)->deriveFees($donation, null, null);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -321,7 +321,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
-        $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation, null, null);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -339,7 +339,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
-        $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation, null, null);
 
         // £987.65 *  1.5%  = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -357,7 +357,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
         $donation->setCurrencyCode('GBP');
-        $this->getRepo()->deriveFees($donation);
+        $this->getRepo()->deriveFees($donation, null, null);
 
         // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)
         // Fixed fee    = £ 0.20
@@ -494,9 +494,6 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals(1, $repo->abandonOldCancelled());
     }
 
-    /**
-     * Pilot env var default value is set in `phpunit.xml`.
-     */
     public function testFindReadyToClaimGiftAid(): void
     {
         // This needs a local var so it can be used both to set up the `Query::getResult()` prophecy
@@ -523,16 +520,16 @@ class DonationRepositoryTest extends TestCase
         $queryBuilderProphecy->where('d.donationStatus = :claimGiftAidWithStatus')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
 
-        // 5 `andWhere()`s in all, excluding the first `where()` but including the one
+        // 6 `andWhere()`s in all, excluding the first `where()` but including the one
         // NOT for `$withResends` calls.
         $queryBuilderProphecy->andWhere(Argument::type('string'))
-            ->shouldBeCalledTimes(5)->willReturn($queryBuilderProphecy->reveal());
+            ->shouldBeCalledTimes(6)->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->orderBy('charity.id', 'ASC')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->addOrderBy('d.collectedAt', 'ASC') ->shouldBeCalledOnce()
             ->willReturn($queryBuilderProphecy->reveal());
 
-        // 2 param sets, including the one for `$pilotCharitiesOnly`.
+        // 2 param sets.
         $queryBuilderProphecy->setParameter('claimGiftAidWithStatus', 'Paid')
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->setParameter('claimGiftAidForDonationsBefore', Argument::type(\DateTime::class))

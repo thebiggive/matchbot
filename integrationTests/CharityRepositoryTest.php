@@ -5,13 +5,13 @@ namespace MatchBot\IntegrationTests;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityRepository;
-use PHPUnit\Framework\TestCase;
 
 /**
  * CharityRepository probably doesn't really need testing since it has no code of its own, but this
  * is a proof of concept integration test + serves to check that the database connection and ORM are configured
  * correctly and migrations have been run.
- */class CharityRepositoryTest extends IntegrationTest
+ */
+class CharityRepositoryTest extends IntegrationTest
 {
     public function testItDoesNotFindCharityThatDoesNotExist(): void
     {
