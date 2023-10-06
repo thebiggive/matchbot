@@ -100,7 +100,7 @@ class Donation extends SalesforceWriteProxy
     protected readonly string $currencyCode;
 
     /**
-     * Core donation amount excluding any tip.
+     * Core donation amount in major currency units (i.e. Pounds) excluding any tip.
      *
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
