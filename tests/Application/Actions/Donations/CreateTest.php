@@ -1079,7 +1079,7 @@ class CreateTest extends TestCase
         bool $campaignMatched,
         bool $minimalSetupData = false
     ): Donation {
-        $charity = new Charity();
+        $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('567CharitySFID');
         $charity->setName('Create test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');

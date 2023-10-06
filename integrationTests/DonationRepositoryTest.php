@@ -43,7 +43,7 @@ class DonationRepositoryTest extends IntegrationTest
 
     private function prepareOnboardedCharity(bool $withAgentApproval): Charity
     {
-        $charity = new Charity();
+        $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setName('Charity Name');
         $charity->setHmrcReferenceNumber('any-ref');
         $charity->setTbgClaimingGiftAid(true);

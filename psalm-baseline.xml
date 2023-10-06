@@ -894,17 +894,9 @@
     <ParamNameMismatch>
       <code>$campaign</code>
     </ParamNameMismatch>
-    <PossiblyNullArgument>
-      <code>$regulator</code>
-    </PossiblyNullArgument>
     <UndefinedMethod>
       <code>getById</code>
     </UndefinedMethod>
-  </file>
-  <file src="src/Domain/Charity.php">
-    <MissingConstructor>
-      <code>$name</code>
-    </MissingConstructor>
   </file>
   <file src="src/Domain/CommandLockKeys.php">
     <MissingConstructor>
@@ -973,12 +965,6 @@
       <code>Donation</code>
       <code>Donation</code>
     </PropertyNotSetInConstructor>
-    <RedundantCondition>
-      <code><![CDATA[$this->getCampaign()->getCharity()->getName()]]></code>
-    </RedundantCondition>
-    <TypeDoesNotContainNull>
-      <code><![CDATA['']]></code>
-    </TypeDoesNotContainNull>
   </file>
   <file src="src/Domain/DonationRepository.php">
     <ArgumentTypeCoercion>

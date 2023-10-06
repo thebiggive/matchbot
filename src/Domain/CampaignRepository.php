@@ -91,26 +91,33 @@ class CampaignRepository extends SalesforceReadProxyRepository
         ?string $stripeAccountId,
         ?string $giftAidOnboardingStatus,
         ?string $hmrcReferenceNumber,
-        ?string $regulator,
+        string $regulator,
         ?string $regulatorNumber,
     ): Charity {
         $charity = $this->getEntityManager()
             ->getRepository(Charity::class)
             ->findOneBy(['salesforceId' => $salesforceCharityId]);
         if (!$charity) {
-            $charity = new Charity();
-            $charity->setSalesforceId($salesforceCharityId);
+            $charity = new Charity(
+                charityName: $charityName,
+                stripeAccountId: $stripeAccountId,
+                hmrcReferenceNumber: $hmrcReferenceNumber,
+                giftAidOnboardingStatus: $giftAidOnboardingStatus,
+                regulator: $this->getRegulatorHMRCIdentifier($regulator),
+                regulatorNumber: $regulatorNumber,
+                time: new \DateTime('now'),
+            );
+        } else {
+            $charity->updateFromSfPull(
+                charityName: $charityName,
+                stripeAccountId: $stripeAccountId,
+                hmrcReferenceNumber: $hmrcReferenceNumber,
+                giftAidOnboardingStatus: $giftAidOnboardingStatus,
+                regulator: $this->getRegulatorHMRCIdentifier($regulator),
+                regulatorNumber: $regulatorNumber,
+                time: new \DateTime('now'),
+            );
         }
-
-        $charity->updateFromSfPull(
-            charityName: $charityName,
-            stripeAccountId: $stripeAccountId,
-            hmrcReferenceNumber: $hmrcReferenceNumber,
-            giftAidOnboardingStatus: $giftAidOnboardingStatus,
-            regulator: $this->getRegulatorHMRCIdentifier($regulator),
-            regulatorNumber: $regulatorNumber,
-            time: new \DateTime('now'),
-        );
 
         $this->getEntityManager()->persist($charity);
 

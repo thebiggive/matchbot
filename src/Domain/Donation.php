@@ -368,7 +368,7 @@ class Donation extends SalesforceWriteProxy
 
     public function __toString(): string
     {
-        $charityName = $this->getCampaign()->getCharity()->getName() ?? '[pending charity]';
+        $charityName = $this->getCampaign()->getCharity()->getName();
         return "Donation {$this->getUuid()} to $charityName";
     }
 
@@ -1251,7 +1251,7 @@ class Donation extends SalesforceWriteProxy
         $donationMessage->amount = (float) $this->amount;
 
         $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber() ?? '';
-        $donationMessage->org_name = $this->getCampaign()->getCharity()->getName() ?? '';
+        $donationMessage->org_name = $this->getCampaign()->getCharity()->getName();
         $donationMessage->org_regulator = $this->getCampaign()->getCharity()->getRegulator();
         $donationMessage->org_regulator_number = $this->getCampaign()->getCharity()->getRegulatorNumber();
 

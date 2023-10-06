@@ -38,9 +38,9 @@ class Charity extends SalesforceReadProxy
 
     /**
      * @ORM\Column(type="string")
-     * @var string|null
+     * @var string
      */
-    protected ?string $name = null;
+    protected string $name;
 
     /**
      * @ORM\Column(type="string", length=255, unique=true, nullable=true)
@@ -87,6 +87,31 @@ class Charity extends SalesforceReadProxy
      */
     private bool $tbgApprovedToClaimGiftAid = false;
 
+    public function __construct(
+        string $charityName,
+        ?string $stripeAccountId,
+        ?string $hmrcReferenceNumber,
+        ?string $giftAidOnboardingStatus,
+        ?string $regulator,
+        ?string $regulatorNumber,
+        DateTime $time,
+    )
+    {
+        $this->updatedAt = $time;
+        $this->createdAt = $time;
+
+        // every charity originates as pulled from SF.
+        $this->updateFromSfPull(
+            charityName: $charityName,
+            stripeAccountId: $stripeAccountId,
+            hmrcReferenceNumber: $hmrcReferenceNumber,
+            giftAidOnboardingStatus: $giftAidOnboardingStatus,
+            regulator: $regulator,
+            regulatorNumber: $regulatorNumber,
+            time: new \DateTime('now'),
+        );
+    }
+
     /**
      * @param string $name
      */
@@ -95,7 +120,7 @@ class Charity extends SalesforceReadProxy
         $this->name = $name;
     }
 
-    public function getName(): ?string
+    public function getName(): string
     {
         return $this->name;
     }
