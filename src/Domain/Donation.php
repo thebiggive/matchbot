@@ -368,7 +368,8 @@ class Donation extends SalesforceWriteProxy
 
     public function __toString(): string
     {
-        return "Donation {$this->getUuid()} to {$this->getCampaign()->getCharity()->getName()}";
+        $charityName = $this->getCampaign()->getCharity()->getName() ?? '[pending charity]';
+        return "Donation {$this->getUuid()} to $charityName";
     }
 
     /**

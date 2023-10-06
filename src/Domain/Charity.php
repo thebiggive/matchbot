@@ -38,9 +38,9 @@ class Charity extends SalesforceReadProxy
 
     /**
      * @ORM\Column(type="string")
-     * @var string
+     * @var string|null
      */
-    protected string $name;
+    protected ?string $name = null;
 
     /**
      * @ORM\Column(type="string", length=255, unique=true, nullable=true)
@@ -95,10 +95,7 @@ class Charity extends SalesforceReadProxy
         $this->name = $name;
     }
 
-    /**
-     * @return string
-     */
-    public function getName(): string
+    public function getName(): ?string
     {
         return $this->name;
     }
