@@ -213,7 +213,7 @@ class Create extends Action
                     $exception->getStripeCode() ?? 'unknown',
                     get_class($exception),
                     $message,
-                    $donation->getCampaign()->getCharity()->getName(),
+                    $donation->getCampaign()->getCharity()->getName() ?? 'unknown',
                     $donation->getCampaign()->getCharity()->getStripeAccountId() ?? 'unknown',
                 ));
                 $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (B)');
@@ -238,13 +238,19 @@ class Create extends Action
 
     private function getStatementDescriptor(Charity $charity): string
     {
-        $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
-        $prefix = 'Big Give ';
+        $prefix = 'Big Give';
+        $prefixIncSpace = "$prefix ";
 
-        return $prefix . mb_substr(
+        if ($charity->getName() === null) {
+            return $prefix;
+        }
+
+        $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
+
+        return $prefixIncSpace . mb_substr(
             $this->removeSpecialChars($charity->getName()),
             0,
-            $maximumLength - mb_strlen($prefix),
+            $maximumLength - mb_strlen($prefixIncSpace),
         );
     }
 
