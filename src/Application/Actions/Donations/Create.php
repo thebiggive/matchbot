@@ -238,21 +238,16 @@ class Create extends Action
 
     private function getStatementDescriptor(Charity $charity): string
     {
-        $prefix = 'Big Give';
-        $prefixIncSpace = "$prefix ";
-
-        $charityName = $charity->getName();
-
-        if ($charityName === null) {
-            return $prefix;
-        }
-
         $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
+        $prefix = 'Big Give ';
 
-        return $prefixIncSpace . mb_substr(
-            $this->removeSpecialChars($charityName),
+        /**
+         * @psalm-suppress PossiblyNullArgument We don't expect to get here with no charity » let it crash for now.
+         */
+        return $prefix . mb_substr(
+            $this->removeSpecialChars($charity->getName()),
             0,
-            $maximumLength - mb_strlen($prefixIncSpace),
+            $maximumLength - mb_strlen($prefix),
         );
     }
 
