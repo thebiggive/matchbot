@@ -15,6 +15,8 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use function bccomp;
+use function sprintf;
 
 /**
  * @ORM\Entity(repositoryClass="DonationRepository")
@@ -95,7 +97,7 @@ class Donation extends SalesforceWriteProxy
      * @ORM\Column(type="string", length=3)
      * @var string  ISO 4217 code for the currency in which all monetary values are denominated, e.g. 'GBP'.
      */
-    protected string $currencyCode;
+    protected readonly string $currencyCode;
 
     /**
      * Core donation amount excluding any tip.
@@ -104,7 +106,7 @@ class Donation extends SalesforceWriteProxy
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
      */
-    protected string $amount;
+    protected readonly string $amount;
 
     /**
      * Fee the charity takes on, in £. Excludes any tax if applicable.
@@ -303,16 +305,31 @@ class Donation extends SalesforceWriteProxy
      * @deprecated but retained for now as used in old test classes. Not recommend for continued use - either use
      * fromApiModel or create a new named constructor that takes required data for your use case.
      */
-    public static function emptyTestDonation(string $amount, PaymentMethodType $paymentMethodType = PaymentMethodType::Card): self
+    public static function emptyTestDonation(string $amount, PaymentMethodType $paymentMethodType = PaymentMethodType::Card, string $currencyCode = 'GBP'): self
     {
-        return new self($amount, 'GBP', $paymentMethodType);
+        return new self($amount, $currencyCode, $paymentMethodType);
     }
 
     private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
     {
         $this->fundingWithdrawals = new ArrayCollection();
-        $this->setCurrencyCode($currencyCode);
-        $this->setAmountAndMethod($amount, $paymentMethodType);
+        $this->currencyCode = $currencyCode;
+        $maximumAmount = self::maximumAmount($paymentMethodType);
+
+        if (
+            bccomp($amount, (string)$this->minimumAmount, 2) === -1 ||
+            bccomp($amount, (string)$maximumAmount, 2) === 1
+        ) {
+            throw new \UnexpectedValueException(sprintf(
+                'Amount must be %d-%d %s',
+                $this->minimumAmount,
+                $maximumAmount,
+                $this->currencyCode,
+            ));
+        }
+
+        $this->amount = $amount;
+        $this->paymentMethodType = $paymentMethodType;
     }
 
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
@@ -634,29 +651,6 @@ class Donation extends SalesforceWriteProxy
     #[Pure] public function getCharityFeeGross(): string
     {
         return bcadd($this->getCharityFee(), $this->getCharityFeeVat(), 2);
-    }
-
-    /**
-     * @param string $amount    Core donation amount, excluding any tip, in full pounds GBP.
-     */
-    private function setAmountAndMethod(string $amount, PaymentMethodType $paymentMethodType): void
-    {
-        $maximumAmount = self::maximumAmount($paymentMethodType);
-
-        if (
-            bccomp($amount, (string) $this->minimumAmount, 2) === -1 ||
-            bccomp($amount, (string)$maximumAmount, 2) === 1
-        ) {
-            throw new \UnexpectedValueException(sprintf(
-                'Amount must be %d-%d %s',
-                $this->minimumAmount,
-                $maximumAmount,
-                $this->currencyCode,
-            ));
-        }
-
-        $this->amount = $amount;
-        $this->paymentMethodType = $paymentMethodType;
     }
 
     public function setCharityFee(string $charityFee): void
@@ -1019,11 +1013,6 @@ class Donation extends SalesforceWriteProxy
     public function getCurrencyCode(): string
     {
         return $this->currencyCode;
-    }
-
-    public function setCurrencyCode(string $currencyCode): void
-    {
-        $this->currencyCode = $currencyCode;
     }
 
     /**
