@@ -241,14 +241,16 @@ class Create extends Action
         $prefix = 'Big Give';
         $prefixIncSpace = "$prefix ";
 
-        if ($charity->getName() === null) {
+        $charityName = $charity->getName();
+
+        if ($charityName === null) {
             return $prefix;
         }
 
         $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
 
         return $prefixIncSpace . mb_substr(
-            $this->removeSpecialChars($charity->getName()),
+            $this->removeSpecialChars($charityName),
             0,
             $maximumLength - mb_strlen($prefixIncSpace),
         );
