@@ -14,6 +14,7 @@ use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\StripeClient;
 
 class Confirm extends Action
@@ -114,6 +115,28 @@ class Confirm extends Action
                 ],
             ], 402);
         } catch (ApiErrorException $exception) {
+            $paymentMethodReuseAttempted = (
+                $exception instanceof InvalidRequestException &&
+                str_contains($exception->getMessage(), 'The provided PaymentMethod was previously used')
+            );
+            if ($paymentMethodReuseAttempted) {
+                $this->logger->warning(sprintf(
+                    'Stripe InvalidRequestException on Confirm for donation %s (%s): %s',
+                    $donation->getUuid(),
+                    $paymentIntentId,
+                    $exception->getMessage(),
+                ));
+
+                $this->entityManager->rollback();
+
+                return new JsonResponse([
+                    'error' => [
+                        'message' => 'Payment method cannot be used again',
+                        'code' => $exception->getStripeCode(),
+                    ],
+                ], 402);
+            }
+
             $this->logger->error(sprintf(
                 'Stripe %s on Confirm for donation %s (%s): %s',
                 get_class($exception),
