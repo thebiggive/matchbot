@@ -182,6 +182,7 @@ class TestCase extends PHPUnitTestCase
     public static function someCharity(): Charity
     {
         return new Charity(
+            salesforceId: '12CharityId_' .  self::randomHex(3),
             charityName: "Charity Name",
             stripeAccountId: "stripe-account-id-" . self::randomHex(),
             hmrcReferenceNumber: 'H' . self::randomHex(3),

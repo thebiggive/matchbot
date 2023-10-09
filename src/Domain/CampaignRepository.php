@@ -99,6 +99,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             ->findOneBy(['salesforceId' => $salesforceCharityId]);
         if (!$charity) {
             $charity = new Charity(
+                salesforceId: $salesforceCharityId,
                 charityName: $charityName,
                 stripeAccountId: $stripeAccountId,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
