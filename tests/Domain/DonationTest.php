@@ -51,7 +51,6 @@ class DonationTest extends TestCase
     public function testValidDataPersisted(): void
     {
         $donation = Donation::emptyTestDonation('100.00');
-        $donation->setCurrencyCode('GBP');
         $donation->setTipAmount('1.13');
 
         $this->assertEquals('100.00', $donation->getAmount());
@@ -65,8 +64,7 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
-        $donation = Donation::emptyTestDonation('0.99');
-        $donation->setCurrencyCode('GBP');
+        Donation::emptyTestDonation('0.99');
     }
 
     public function testAmountTooHighNotPersisted(): void
@@ -74,8 +72,7 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
-        $donation = Donation::emptyTestDonation('25000.01');
-        $donation->setCurrencyCode('GBP');
+        Donation::emptyTestDonation('25000.01');
     }
 
     public function test25k1CardIsTooHigh(): void
@@ -122,7 +119,6 @@ class DonationTest extends TestCase
     public function testTipAmountTooHighNotPersisted(): void
     {
         $donation = Donation::emptyTestDonation('1');
-        $donation->setCurrencyCode('GBP');
 
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Tip amount must not exceed 25000 GBP');
@@ -299,7 +295,6 @@ class DonationTest extends TestCase
     public function testGetStripePIHelpersWithCustomerBalanceGbp(): void
     {
         $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
-        $donation->setCurrencyCode('GBP');
 
         $expectedPaymentMethodProperties = [
             'payment_method_types' => ['customer_balance'],
@@ -326,8 +321,7 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Customer balance payments only supported for GBP');
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
-        $donation->setCurrencyCode('USD');
+        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0', currencyCode: 'SEK');
 
         $donation->getStripeMethodProperties(); // Throws in this getter for now.
     }
