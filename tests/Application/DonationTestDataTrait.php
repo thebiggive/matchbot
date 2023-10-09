@@ -27,6 +27,7 @@ trait DonationTestDataTrait
         string $amount = '123.45',
         PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
         string $tipAmount = '1.00',
+        string $currencyCode = 'GBP',
     ): Donation
     {
         $charity = new Charity();
@@ -39,13 +40,12 @@ trait DonationTestDataTrait
         $campaign->setName('Test campaign');
         $campaign->setSalesforceId('456ProjectId');
 
-        $donation = Donation::emptyTestDonation($amount, $paymentMethodType);
+        $donation = Donation::emptyTestDonation(amount: $amount, paymentMethodType: $paymentMethodType, currencyCode: $currencyCode);
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCharityFee('2.05');
         $donation->setCampaign($campaign);
         $donation->setCharityComms(true);
         $donation->setChampionComms(false);
-        $donation->setCurrencyCode('GBP');
         $donation->setDonationStatus(DonationStatus::Collected);
         $donation->setCollectedAt(new \DateTimeImmutable());
         $donation->setDonorCountryCode('GB');
@@ -84,7 +84,6 @@ trait DonationTestDataTrait
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCharityFee('2.57');
         $donation->setCampaign($campaign);
-        $donation->setCurrencyCode('GBP');
         $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setPsp('stripe');
         $donation->setTransactionId('pi_stripe_pending_123');
