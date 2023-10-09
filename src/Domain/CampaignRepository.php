@@ -94,7 +94,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         string $regulator,
         ?string $regulatorNumber,
     ): Charity {
-        $this->logger->info("Searching for charity by sf ID: $salesforceCharityId");
         $charity = $this->getEntityManager()
             ->getRepository(Charity::class)
             ->findOneBy(['salesforceId' => $salesforceCharityId]);
