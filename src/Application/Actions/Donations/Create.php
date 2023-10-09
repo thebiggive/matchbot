@@ -157,7 +157,7 @@ class Create extends Action
                 // See https://stripe.com/docs/api/payment_intents/object
                 'amount' => $donation->getAmountFractionalIncTip(),
                 'currency' => strtolower($donation->getCurrencyCode()),
-                'description' => $donation->__toString(),
+                'description' => $donation->getDescription(),
                 'metadata' => [
                     /**
                      * Keys like comms opt ins are set only later. See the counterpart
