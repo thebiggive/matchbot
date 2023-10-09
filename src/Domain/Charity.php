@@ -88,6 +88,7 @@ class Charity extends SalesforceReadProxy
     private bool $tbgApprovedToClaimGiftAid = false;
 
     public function __construct(
+        string $salesforceId,
         string $charityName,
         ?string $stripeAccountId,
         ?string $hmrcReferenceNumber,
@@ -99,6 +100,7 @@ class Charity extends SalesforceReadProxy
     {
         $this->updatedAt = $time;
         $this->createdAt = $time;
+        $this->setSalesforceId($salesforceId);
 
         // every charity originates as pulled from SF.
         $this->updateFromSfPull(
