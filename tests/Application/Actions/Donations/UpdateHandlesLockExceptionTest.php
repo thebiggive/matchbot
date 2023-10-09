@@ -118,7 +118,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
     private function getDonation(): Donation
     {
-        $charity = new Charity();
+        $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('DONATE_LINK_ID');
         $charity->setName('Charity name');
 

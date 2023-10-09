@@ -30,7 +30,7 @@ trait DonationTestDataTrait
         string $currencyCode = 'GBP',
     ): Donation
     {
-        $charity = new Charity();
+        $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
         $charity->setName('Test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
@@ -71,7 +71,7 @@ trait DonationTestDataTrait
 
     protected function getAnonymousPendingTestDonation(): Donation
     {
-        $charity = new Charity();
+        $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
         $charity->setName('Test charity');
 

@@ -142,7 +142,7 @@ class DonationRepositoryTest extends TestCase
 
     public function testBuildFromApiRequestSuccess(): void
     {
-        $dummyCampaign = new Campaign(charity: new Charity());
+        $dummyCampaign = new Campaign(charity: \MatchBot\Tests\TestCase::someCharity());
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.

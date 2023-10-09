@@ -381,7 +381,25 @@ class Donation extends SalesforceWriteProxy
 
     public function __toString(): string
     {
-        $charityName = $this->getCampaign()->getCharity()->getName() ?? '[pending charity]';
+        // if we're in __toString then probably something has already gone wrong, and we don't want to allow
+        // any more crashes during the logging process.
+        try {
+            $charityName = $this->getCampaign()->getCharity()->getName();
+        } catch (\Throwable $t) {
+            // perhaps the charity was never pulled from Salesforce into our database, in which case we might
+            // have a TypeError trying to get a string name from it.
+            $charityName = "[pending charity threw " . get_class($t) . "]";
+        }
+        return "Donation {$this->getUuid()} to $charityName";
+    }
+
+    /*
+     * In contrast to __toString, this is used when creating a payment intent. If we can't find the charity name
+     * then we should let the process of making the intent and registering the donation crash.
+     */
+    public function getDescription(): string
+    {
+        $charityName = $this->getCampaign()->getCharity()->getName();
         return "Donation {$this->getUuid()} to $charityName";
     }
 
@@ -1236,7 +1254,7 @@ class Donation extends SalesforceWriteProxy
         $donationMessage->amount = (float) $this->amount;
 
         $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber() ?? '';
-        $donationMessage->org_name = $this->getCampaign()->getCharity()->getName() ?? '';
+        $donationMessage->org_name = $this->getCampaign()->getCharity()->getName();
         $donationMessage->org_regulator = $this->getCampaign()->getCharity()->getRegulator();
         $donationMessage->org_regulator_number = $this->getCampaign()->getCharity()->getRegulatorNumber();
 

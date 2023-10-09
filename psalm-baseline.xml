@@ -894,9 +894,6 @@
     <ParamNameMismatch>
       <code>$campaign</code>
     </ParamNameMismatch>
-    <PossiblyNullArgument>
-      <code>$regulator</code>
-    </PossiblyNullArgument>
     <UndefinedMethod>
       <code>getById</code>
     </UndefinedMethod>
