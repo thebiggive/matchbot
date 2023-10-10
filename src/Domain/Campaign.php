@@ -24,6 +24,7 @@ class Campaign extends SalesforceReadProxy
 
     /**
      * @ORM\ManyToOne(targetEntity="Charity", cascade={"persist"})
+     * @ORM\JoinColumn(name="charity_id", referencedColumnName="id", nullable=false)
      * @var Charity
      */
     protected Charity $charity;
