@@ -60,7 +60,6 @@ use Psr\Log\NullLogger;
 
     public function setClient(Client\Common $client): void
     {
-//        var_dump('set client: '. get_class($this). ', this_spl_id: ' . spl_object_id($this));
         $this->client = $client;
     }
 
@@ -71,7 +70,6 @@ use Psr\Log\NullLogger;
 
     protected function getClient(): Client\Common
     {
-//        var_dump('get client:  '. get_class($this). ', this_spl_id: ' . spl_object_id($this));
         if (!$this->client) {
             throw new \LogicException('Set a Client in DI config for this Repository to sync data');
         }

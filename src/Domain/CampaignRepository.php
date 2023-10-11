@@ -17,7 +17,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
 {
     public function __construct(EntityManagerInterface $em, ClassMetadata $class)
     {
-//        var_dump(['constructing Campaign Repository because' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)]);
         parent::__construct($em, $class);
     }
 
@@ -54,7 +53,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
     protected function doPull(SalesforceReadProxy $campaign): SalesforceReadProxy
     {
         $client = $this->getClient();
-        var_dump(['class' => get_class($client)]);
         $campaignData = $client->getById($campaign->getSalesforceId());
 
         if ($campaign->hasBeenPersisted() && $campaign->getCurrencyCode() !== $campaignData['currencyCode']) {

@@ -112,7 +112,6 @@ class CreateDonationToSeePersistErrorTest extends IntegrationTest
         /** @var array{donation: array<string, string>} $decoded */
         $decoded = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
-        var_dump($decoded);
         $this->assertSame(201, $response->getStatusCode());
         $this->assertSame('Some Charity', $decoded['donation']['charityName']);
         $this->assertNotEmpty($decoded['donation']['transactionId']);

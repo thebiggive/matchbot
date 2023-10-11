@@ -10,12 +10,6 @@ use Psr\Log\LoggerInterface;
 class Campaign extends Common
 {
 
-    public function __construct(array $settings, LoggerInterface $logger)
-    {
-        throw new \Exception("Dont use real campaign client");
-        parent::__construct($settings, $logger);
-    }
-
     /**
      * @param string $id
      * @return array Single Campaign response object as associative array

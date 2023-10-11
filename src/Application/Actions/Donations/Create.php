@@ -77,8 +77,6 @@ class Create extends Action
         try {
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
         } catch (\UnexpectedValueException $exception) {
-            echo $exception;
-            die();
             $this->logger->info("Donation Create model load failure payload was: $body");
 
             $message = 'Donation Create data initial model load';
