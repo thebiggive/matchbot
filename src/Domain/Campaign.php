@@ -96,8 +96,9 @@ class Campaign extends SalesforceReadProxy
             // all typed properties should be initialised by end of constructor so we shouldn't need to check.
             // https://externals.io/message/114607
             //
-            // I previously tried enforcing this at the DB level but that migration wouldn't run in staging or reg envrionments, see
-            // previous commit message removing Migration Version20231010105436.
+            // I previously tried enforcing this at the DB level but that migration wouldn't run in staging or reg
+            // envrionments
+
             $_charity = $this->charity;
         } catch (\Error $e) {
             throw new \Exception("Error on attempt to persist campaign #{$this->id}, sfID {$this->salesforceId}: \n{$e}");
