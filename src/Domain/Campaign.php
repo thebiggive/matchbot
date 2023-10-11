@@ -78,6 +78,14 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
+     * Implemented only so this can be cast to string if required for logging etc - not for use in any business process.
+     */
+    public function __toString(): string
+    {
+        return "Campaign ID #{$this->id}, SFId: {$this->salesforceId}";
+    }
+
+    /**
      * @ORM\PrePersist()
      * @psalm-suppress PossiblyUnusedMethod
      */
