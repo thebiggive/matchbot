@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -73,6 +74,34 @@ class Campaign extends SalesforceReadProxy
     {
         if ($charity) {
             $this->charity = $charity;
+        }
+    }
+
+    /**
+     * Implemented only so this can be cast to string if required for logging etc - not for use in any business process.
+     */
+    public function __toString(): string
+    {
+        return "Campaign ID #{$this->id}, SFId: {$this->salesforceId}";
+    }
+
+    /**
+     * @ORM\PrePersist()
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function prePersistCheck(PrePersistEventArgs $_args): void
+    {
+        try {
+            // PHP doesn't have a much nicer way to check if a property is initialised because the maintainers think
+            // all typed properties should be initialised by end of constructor so we shouldn't need to check.
+            // https://externals.io/message/114607
+            //
+            // I previously tried enforcing this at the DB level but that migration wouldn't run in staging or reg
+            // envrionments
+
+            $_charity = $this->charity;
+        } catch (\Error $e) {
+            throw new \Exception("Error on attempt to persist campaign #{$this->id}, sfID {$this->salesforceId}: \n{$e}");
         }
     }
 
