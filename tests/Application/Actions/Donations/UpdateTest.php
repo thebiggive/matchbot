@@ -929,9 +929,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1023,9 +1022,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1120,9 +1118,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1226,9 +1223,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1326,9 +1322,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1430,9 +1425,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1531,9 +1525,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);

@@ -185,8 +185,7 @@ class CreateTest extends TestCase
 
     public function testCurrencyMismatch(): void
     {
-        $donation = $this->getTestDonation(true, false, true);
-        $donation->setCurrencyCode('CAD');
+        $donation = $this->getTestDonation(true, false, true, 'CAD');
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -1077,9 +1076,10 @@ class CreateTest extends TestCase
     private function getTestDonation(
         bool $campaignOpen,
         bool $campaignMatched,
-        bool $minimalSetupData = false
+        bool $minimalSetupData = false,
+        string $currencyCode = 'GBP',
     ): Donation {
-        $charity = new Charity();
+        $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('567CharitySFID');
         $charity->setName('Create test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
@@ -1095,9 +1095,8 @@ class CreateTest extends TestCase
             $campaign->setEndDate((new \DateTime())->sub(new \DateInterval('P1D')));
         }
 
-        $donation = Donation::emptyTestDonation('12.00');
+        $donation = Donation::emptyTestDonation(amount: '12.00', currencyCode: $currencyCode);
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
-        $donation->setCurrencyCode('GBP');
         $donation->setCampaign($campaign);
         $donation->setPsp('stripe');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
