@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use MatchBot\Client;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
@@ -13,6 +15,11 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
+    public function __construct(EntityManagerInterface $em, ClassMetadata $class)
+    {
+//        var_dump(['constructing Campaign Repository because' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)]);
+        parent::__construct($em, $class);
+    }
 
     /**
      * Gets those campaigns which are live now or recently closed (in the last week),
@@ -47,6 +54,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     protected function doPull(SalesforceReadProxy $campaign): SalesforceReadProxy
     {
         $client = $this->getClient();
+        var_dump(['class' => get_class($client)]);
         $campaignData = $client->getById($campaign->getSalesforceId());
 
         if ($campaign->hasBeenPersisted() && $campaign->getCurrencyCode() !== $campaignData['currencyCode']) {

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use MatchBot\Client;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * @template T of SalesforceProxy
@@ -15,6 +18,12 @@ use Psr\Log\LoggerInterface;
 {
     protected Client\Common $client;
     protected LoggerInterface $logger;
+
+    public function __construct(EntityManagerInterface $em, ClassMetadata $class)
+    {
+        $this->logger = new NullLogger();
+        parent::__construct($em, $class);
+    }
 
     protected function logError(string $message): void
     {
@@ -51,6 +60,7 @@ use Psr\Log\LoggerInterface;
 
     public function setClient(Client\Common $client): void
     {
+//        var_dump('set client: '. get_class($this). ', this_spl_id: ' . spl_object_id($this));
         $this->client = $client;
     }
 
@@ -61,6 +71,7 @@ use Psr\Log\LoggerInterface;
 
     protected function getClient(): Client\Common
     {
+//        var_dump('get client:  '. get_class($this). ', this_spl_id: ' . spl_object_id($this));
         if (!$this->client) {
             throw new \LogicException('Set a Client in DI config for this Repository to sync data');
         }

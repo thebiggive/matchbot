@@ -132,16 +132,26 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId]);
+        var_dump([
+            'campaign ID' => $campaign?->getId(),
+            'campaign name' => $campaign?->getCampaignName(),
+            'salesforceId' => $donationData?->projectId
+        ]);
 
         if (!$campaign) {
             // Fetch data for as-yet-unknown campaigns on-demand
             $this->logInfo("Loading unknown campaign ID {$donationData->projectId} on-demand");
             $campaign = new Campaign(charity: null);
             $campaign->setSalesforceId($donationData->projectId);
+            var_dump('146');
             try {
                 $campaign = $this->campaignRepository->pull($campaign);
+                var_dump('149');
+                var_dump(['pulledcampaignid' => $campaign->getId()]);
             } catch (ClientException $exception) {
-                $this->logError("Pull error for campaign ID {$donationData->projectId}: {$exception->getMessage()}");
+                $message = "Pull error for campaign ID {$donationData->projectId}: {$exception->getMessage()}";
+                var_dump($message);
+                $this->logError($message);
                 throw new \UnexpectedValueException('Campaign does not exist');
             }
             $this->fundRepository->pullForCampaign($campaign);
@@ -157,6 +167,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $cacheDriver->deleteAll();
         }
 
+        var_dump([$donationData->currencyCode, $campaign->getCurrencyCode()]);
         if ($donationData->currencyCode !== $campaign->getCurrencyCode()) {
             throw new \UnexpectedValueException(sprintf(
                 'Currency %s is invalid for campaign',
@@ -223,6 +234,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     $amountNewlyMatched = $this->getEntityManager()->transactional(
                         function () use ($newWithdrawals, $donation, $amountNewlyMatched) {
                             foreach ($newWithdrawals as $newWithdrawal) {
+                                throw new \Exception("and we want to hit this");
                                 $this->getEntityManager()->persist($newWithdrawal);
                                 $donation->addFundingWithdrawal($newWithdrawal);
                                 $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawal->getAmount(), 2);
@@ -617,6 +629,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     private function safelyAllocateFunds(Donation $donation, array $fundings, string $amountMatchedAtStart): array
     {
+//        var_dump(compact(['fundings']));
+//        die();
         $amountLeftToMatch = bcsub($donation->getAmount(), $amountMatchedAtStart, 2);
         $currentFundingIndex = 0;
         /** @var FundingWithdrawal[] $newWithdrawals Track these to persist outside the lock window, to keep it short */
@@ -661,6 +675,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         $this->queueForPersist($donation);
+
+        var_dump($newWithdrawals);
+//        throw new \Exception("Would like $ newWithdrawals to be not empty.");
 
         return $newWithdrawals;
     }

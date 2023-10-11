@@ -71,6 +71,7 @@ abstract class Action
         ?string $publicMessage = null,
         bool $reduceSeverity = false
     ): Response {
+        var_dump(compact(['logMessage']));
         if ($reduceSeverity) {
             $this->logger->info($logMessage);
         } else {
