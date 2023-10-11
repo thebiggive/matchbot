@@ -73,6 +73,11 @@ class CampaignFunding extends Model
         $this->campaigns = new ArrayCollection();
     }
 
+    public function __toString(): string
+    {
+        return "CampaignFunding, ID #{$this->id}, created {$this->createdAt->format('c')} of fund SF ID {$this->fund->getSalesforceId()}";
+    }
+
     public function isShared(): bool
     {
         return (count($this->campaigns) > 1);

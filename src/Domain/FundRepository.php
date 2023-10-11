@@ -106,6 +106,7 @@ class FundRepository extends SalesforceReadProxyRepository
             } else {
                 // Not a previously existing campaign -> create one and set balances without checking for existing ones.
                 $campaignFunding = new CampaignFunding();
+                $campaignFunding->createdNow();
                 $campaignFunding->setFund($fund);
                 $campaignFunding->setCurrencyCode($fund->getCurrencyCode());
                 $campaignFunding->setAmountAvailable($amountForCampaign);
