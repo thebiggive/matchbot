@@ -141,8 +141,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             try {
                 $campaign = $this->campaignRepository->pull($campaign);
             } catch (ClientException $exception) {
-                $message = "Pull error for campaign ID {$donationData->projectId}: {$exception->getMessage()}";
-                $this->logError($message);
+                $this->logError("Pull error for campaign ID {$donationData->projectId}: {$exception->getMessage()}");
                 throw new \UnexpectedValueException('Campaign does not exist');
             }
             $this->fundRepository->pullForCampaign($campaign);
@@ -224,7 +223,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
                     $amountNewlyMatched = $this->getEntityManager()->transactional(
                         function () use ($newWithdrawals, $donation, $amountNewlyMatched) {
                             foreach ($newWithdrawals as $newWithdrawal) {
-                                throw new \Exception("and we want to hit this");
                                 $this->getEntityManager()->persist($newWithdrawal);
                                 $donation->addFundingWithdrawal($newWithdrawal);
                                 $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawal->getAmount(), 2);
@@ -663,7 +661,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         $this->queueForPersist($donation);
-
 
         return $newWithdrawals;
     }

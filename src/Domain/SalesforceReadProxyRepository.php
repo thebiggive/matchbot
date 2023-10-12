@@ -42,9 +42,6 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
             $this->logInfo('Creating ' . get_class($proxy) . ' ' . $proxy->getSalesforceId());
         }
 
-        $class = get_class($this);
-        $clientClass = get_class($this->getClient());
-//        throw new \Exception("calling real dopull from $class with $clientClass, don't do that.");
         $proxy = $this->doPull($proxy);
         $proxy->setSalesforceLastPull(new DateTime('now'));
         $this->getEntityManager()->persist($proxy);

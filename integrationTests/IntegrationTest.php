@@ -88,7 +88,7 @@ abstract class IntegrationTest extends TestCase
         $this->db()->executeStatement('DELETE FROM Charity');
     }
 
-    public function addCampaignAndCharityToDB(string $campaignId, bool $matchedCampaign = false): void
+    public function addCampaignAndCharityToDB(string $campaignId): void
     {
         $charityId = random_int(1000, 100000);
         $charitySfID = $this->randomString();
@@ -99,20 +99,14 @@ abstract class IntegrationTest extends TestCase
             VALUES ($charityId, 'Some Charity', '$charitySfID', '2023-01-01', '2023-01-01', '2093-01-01', '$charityStripeId', null, 0, 0, null, null)
             EOF
         );
-        $isMatchedValueInt = $matchedCampaign ? 1 : 0;
+
+        $matched =  0;
 
         $this->db()->executeStatement(<<<EOF
             INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull, createdAt, updatedAt, currencyCode, feePercentage) 
-            VALUES ('$charityId', 'some charity', '2023-01-01', '2093-01-01', '$isMatchedValueInt', '$campaignId', '2023-01-01', '2023-01-01', '2023-01-01', 'GBP', 0)
+            VALUES ('$charityId', 'some charity', '2023-01-01', '2093-01-01', '$matched', '$campaignId', '2023-01-01', '2023-01-01', '2023-01-01', 'GBP', 0)
             EOF
         );
-
-        if ($matchedCampaign) {
-            $this->db()->executeStatement(<<<EOF
-            INSERT INTO CampaignFunding (fund_id, amount, amountAvailable, allocationOrder, createdAt, updatedAt, currencyCode) VALUES ();
-            EOF
-            );
-        }
     }
 
     /**

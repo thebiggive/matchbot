@@ -32,7 +32,7 @@ class Fund extends Common
         $response = $this->getHttpClient()->get("{$this->getSetting('campaign', 'baseUri')}/$campaignId/funds");
 
         if ($response->getStatusCode() !== 200) {
-            throw new NotFoundException('Campaign not found by fund client');
+            throw new NotFoundException('Campaign not found');
         }
 
         return json_decode((string) $response->getBody(), true);
