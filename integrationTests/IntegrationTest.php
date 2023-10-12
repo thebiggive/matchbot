@@ -2,6 +2,7 @@
 
 namespace MatchBot\IntegrationTests;
 
+use ArrayAccess;
 use GuzzleHttp\Psr7\ServerRequest;
 use LosMiddleware\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
@@ -47,6 +48,12 @@ abstract class IntegrationTest extends TestCase
         $container->set(RateLimitMiddleware::class, $noOpMiddleware);
         $container->set(\Psr\Log\LoggerInterface::class, new \Psr\Log\NullLogger());
 
+        $settings = $container->get('settings');
+        \assert(is_array($settings));
+        $settings['apiClient'] = $this->fakeApiClientSettingsThatAlwaysThrow();
+        $container->set('settings', $settings);
+
+
         AppFactory::setContainer($container);
         $app = AppFactory::create();
 
@@ -64,6 +71,31 @@ abstract class IntegrationTest extends TestCase
     public static function setApp(App $app): void
     {
         self::$app = $app;
+    }
+
+    private function fakeApiClientSettingsThatAlwaysThrow(): array
+    {
+        return ['global' => new /** @implements ArrayAccess<string, never> */ class implements ArrayAccess {
+            public function offsetExists(mixed $offset): bool
+            {
+                return true;
+            }
+
+            public function offsetGet(mixed $offset): never
+            {
+                throw new \Exception("Do not use real API client in tests");
+            }
+
+            public function offsetSet(mixed $offset, mixed $value): never
+            {
+                throw new \Exception("Do not use real API client in tests");
+            }
+
+            public function offsetUnset(mixed $offset): never
+            {
+                throw new \Exception("Do not use real API client in tests");
+            }
+        }];
     }
 
     protected function getContainer(): ContainerInterface
