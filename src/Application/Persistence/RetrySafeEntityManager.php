@@ -10,7 +10,6 @@ use Doctrine\ORM;
 use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Exception\EntityManagerClosed;
-use JetBrains\PhpStorm\Pure;
 use MatchBot\Domain\Model;
 use Psr\Log\LoggerInterface;
 
@@ -42,7 +41,6 @@ class RetrySafeEntityManager extends EntityManagerDecorator
      * @psalm-param callable(): T $func
      * @psalm-return T
      */
-    #[Pure]
     public function transactional($func): mixed
     {
         $retries = 0;
@@ -60,7 +58,10 @@ class RetrySafeEntityManager extends EntityManagerDecorator
                 $this->rollback();
                 $this->close();
 
-                $this->logger->warning('RetrySafeEntityManager rolling back from ' . get_class($ex));
+                $this->logger->error(
+                    'EM closed. RetrySafeEntityManager::transactional rolling back from ' . get_class($ex) .
+                    $ex->__tostring()
+                );
                 usleep(random_int(0, 200000)); // Wait between 0 and 0.2 seconds before retrying
 
                 $this->resetManager();
@@ -92,7 +93,10 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         try {
             $this->entityManager->persist($object);
         } catch (EntityManagerClosed $closedException) {
-            $this->logger->warning('EM closed. RetrySafeEntityManager::persist() trying with a new instance');
+            $this->logger->error(
+                'EM closed. RetrySafeEntityManager::persist() trying with a new instance,' .
+                $closedException->__tostring()
+            );
             $this->resetManager();
             $this->entityManager->persist($object);
         }
@@ -109,7 +113,10 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         try {
             $this->entityManager->refresh($object, $lockMode);
         } catch (EntityManagerClosed $closedException) {
-            $this->logger->warning('EM closed. RetrySafeEntityManager::refresh() trying with a new instance');
+            $this->logger->error(
+                'EM closed. RetrySafeEntityManager::refresh() trying with a new instance,' .
+                $closedException->__tostring()
+            );
             $this->resetManager();
             $this->entityManager->refresh($object, $lockMode);
         }
@@ -128,7 +135,10 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         try {
             $this->entityManager->flush($entity);
         } catch (EntityManagerClosed $closedException) {
-            $this->logger->warning('EM closed. RetrySafeEntityManager::flush() trying with a new instance');
+            $this->logger->error(
+                'EM closed. RetrySafeEntityManager::flush() trying with a new instance,' .
+                $closedException->__tostring()
+            );
             $this->resetManager();
             $this->entityManager->flush($entity);
         }
