@@ -97,13 +97,7 @@ class Confirm extends Action
             $this->stripeClient->paymentIntents->confirm($paymentIntentId, [
                 'payment_method' => $pamentMethodId,
             ]);
-        } catch (CardException|InvalidRequestException $exception) {
-            if (
-                $exception instanceof InvalidRequestException && 
-                ! str_contains('The provided PaymentMethod has failed authentication', $exception->getMessage())
-                ) {
-                    throw $exception;
-                }
+        } catch (CardException $exception) {
 
             $exceptionClass = get_class($exception);
             $this->logger->info(sprintf(
@@ -123,6 +117,30 @@ class Confirm extends Action
                     'decline_code' => $exception->getDeclineCode(),
                 ],
             ], 402);
+        } 
+        catch (InvalidRequestException $exception) {
+            if (! str_contains($exception->getMessage(), 'The provided PaymentMethod has failed authentication')) {
+                    throw $exception;
+            }
+
+            $exceptionClass = get_class($exception);
+            $this->logger->info(sprintf(
+                'Stripe %s on Confirm for donation %s (%s): %s',
+                $exceptionClass,
+                $donation->getUuid(),
+                $paymentIntentId,
+                $exception->getMessage(),
+            ));
+
+            $this->entityManager->rollback();
+
+            return new JsonResponse([
+                'error' => [
+                    'message' => $exception->getMessage(),
+                    'code' => $exception->getStripeCode()
+                ],
+            ], 402);
+
         } catch (ApiErrorException $exception) {
             $this->logger->error(sprintf(
                 'Stripe %s on Confirm for donation %s (%s): %s',
