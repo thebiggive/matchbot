@@ -139,7 +139,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $campaign = new Campaign(charity: null);
             $campaign->setSalesforceId($donationData->projectId);
             try {
-                $campaign = $this->campaignRepository->pull($campaign);
+                // Campaign must not be auto saved here, as then if the EM closed and got replaced we would have a duplicate.
+                $campaign = $this->campaignRepository->pull($campaign, autoSave: false);
             } catch (ClientException $exception) {
                 $this->logError("Pull error for campaign ID {$donationData->projectId}: {$exception->getMessage()}");
                 throw new \UnexpectedValueException('Campaign does not exist');

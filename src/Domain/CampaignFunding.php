@@ -19,7 +19,7 @@ class CampaignFunding extends Model
     use TimestampsTrait;
 
     /**
-     * @ORM\ManyToMany(targetEntity="Campaign")
+     * @ORM\ManyToMany(targetEntity="Campaign", cascade={"persist"})
      * @ORM\JoinTable(
      *  name="Campaign_CampaignFunding",
      *  joinColumns={
@@ -27,7 +27,7 @@ class CampaignFunding extends Model
      *  },
      *  inverseJoinColumns={
      *      @ORM\JoinColumn(name="campaign_id", referencedColumnName="id")
-     *  }
+     *  },
      * )
      * @var Campaign[]
      */

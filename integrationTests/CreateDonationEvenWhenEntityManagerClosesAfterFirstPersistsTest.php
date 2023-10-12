@@ -2,15 +2,19 @@
 
 namespace integrationTests;
 
+use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Exception\EntityManagerClosed;
 use Doctrine\ORM\ORMInvalidArgumentException;
+use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\IntegrationTests\IntegrationTest;
 use Prophecy\Argument;
+use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 
 
@@ -33,25 +37,28 @@ use Ramsey\Uuid\Uuid;
  * Either explicitly call EntityManager#persist() on this unknown entity or configure cascade persist this association
  * in the mapping for example @ManyToOne(..,cascade={"persist"}).
  */
-class CreateDonationWithPersistErrorTest extends IntegrationTest
+class CreateDonationEvenWhenEntityManagerClosesAfterFirstPersistsTest extends IntegrationTest
 {
+    private int $entityManagerWillCloseAfterNPersists = 3;
+    private $campaignSfID;
+
     public function setUp(): void
     {
         parent::setUp();
 
-        $fundsReturnedFromSfAPI = [
-            [
-                'id' => 'fnsfid',
-                'type' => 'pledge',
-                'totalAmount' => '1000',
-                'isShared' => false,
-                'currencyCode' => 'GBP',
-                'amountForCampaign' => '1000',
-            ],
-        ];
+        $this->setInContainer(RetrySafeEntityManager::class, new RetrySafeEntityManager(
+            $this->getContainer()->get(\Doctrine\ORM\Configuration::class),
+            $this->getContainer()->get('settings')['doctrine']['connection'],
+            $this->getContainer()->get(LoggerInterface::class),
+            function ()  {
+                return $this->thisMakeBaseEntityManager();
+            }
+        ));
+
+        $this->campaignSfID = 'sfID' . random_int(1_000, 9_999);
 
         $campaignReturnedFromSfAPI = [
-            'id' => '1',
+            'id' => $this->campaignSfID,
             'currencyCode' => 'GBP',
             'endDate' => '2023-11-11T17:21:50+00:00',
             'startDate' => '2023-09-11T17:21:50+00:00',
@@ -59,11 +66,11 @@ class CreateDonationWithPersistErrorTest extends IntegrationTest
             'isMatched' => true,
             'title' => 'Save the PHP Developers',
             'charity' => [
-                'id' => '',
+                'id' => '' . random_int(100, 999),
                 'name' => 'Some Charity',
-                'stripeAccountId' => 'stripe-acc-id',
+                'stripeAccountId' => 'stripe-acc-id_' . random_int(1_000, 9_999),
                 'giftAidOnboardingStatus' => 'Onboarded',
-                'hmrcReferenceNumber' => '',
+                'hmrcReferenceNumber' => (string)random_int(1_000, 9_999),
                 'regulatorRegion' => '',
                 'regulatorNumber' => '',
             ],
@@ -74,30 +81,21 @@ class CreateDonationWithPersistErrorTest extends IntegrationTest
 
         $fundClientProphecy = $this->prophesize(\MatchBot\Client\Fund::class);
 
-        $fundClientProphecy->getForCampaign(Argument::type('string'))->willReturn($fundsReturnedFromSfAPI);
+        $fundClientProphecy->getForCampaign(Argument::type('string'))->will(fn () => [
+            [
+                'id' => 'fnd' . random_int(100, 999),
+                'type' => 'pledge',
+                'totalAmount' => '1000',
+                'isShared' => false,
+                'currencyCode' => 'GBP',
+                'amountForCampaign' => '1000',
+            ],
+        ]);
 
         $campaignClientProphecy = $this->prophesize(\MatchBot\Client\Campaign::class);
         $campaignClientProphecy->getById(Argument::type('string'))->willReturn(
             $campaignReturnedFromSfAPI
         );
-
-        /**
-         * the error is only thrown if this line is here. Query could we somehow have two different entity managers
-         * at once in prod and could that be causing the problem? Our RetrySafeEntityManager and the standard doctrine
-         * one as below?
-         *
-         * @psalm-suppress DeprecatedMethod
-         * @psalm-suppress MixedArrayAccess
-         * @psalm-suppress MixedArgument
-         * We're using EntityManager::create already inside RetrySafeEntityManager - while we have it there we may as
-         * well have it in this test. Also probably not worthwhile fixing the Mixed issues here before they're
-         * fixed in the similar prod code.
-         */
-        $this->setInContainer(EntityManagerInterface::class, EntityManager::create(
-            // for this test we don't need the RetrySafeEntityManager - using the standard EM makes things simpler.
-            $this->getContainer()->get('settings')['doctrine']['connection'],
-            $this->getContainer()->get(\Doctrine\ORM\Configuration::class),
-        ));
 
         $this->setInContainer(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
         $this->setInContainer(\MatchBot\Client\Campaign::class, $campaignClientProphecy->reveal());
@@ -118,16 +116,16 @@ class CreateDonationWithPersistErrorTest extends IntegrationTest
      * When the bug is fixed this will fail and can be reversed in sense to make it pass again, or deleted if not
      * needed.
      */
-    public function testItCrashesWithAPersistErrorWhenCreatingNewDonationWithNewFundEtc(): void
+    public function testItCanCreateAnDonationUsingMultipleUnderlyingEntityManagers(): void
     {
         // This test should be using fake stripe and salesforce clients, but things within our app,
         // from the HTTP router to the DB is using our real prod code.
 
-        $this->expectException(ORMInvalidArgumentException::class);
-        $this->expectExceptionMessage(
-            "A new entity was found through the relationship 'MatchBot\Domain\CampaignFunding#campaigns' that was not" .
-            " configured to cascade persist operations for entity"
-        );
+//        $this->expectException(ORMInvalidArgumentException::class);
+//        $this->expectExceptionMessage(
+//            "A new entity was found through the relationship 'MatchBot\Domain\CampaignFunding#campaigns' that was not" .
+//            " configured to cascade persist operations for entity"
+//        );
 
         // full message:
         // Doctrine\ORM\ORMInvalidArgumentException: A new entity was found through the relationship
@@ -137,5 +135,45 @@ class CreateDonationWithPersistErrorTest extends IntegrationTest
         //for example @ManyToOne(..,cascade={"persist"}).
 
         $this->createDonation(withPremadeCampaign: false);
+        $donationFetchedFromDB = $this->db()->fetchAssociative(
+            "SELECT * from Donation
+                   JOIN Campaign on Donation.campaign_id = Campaign.id
+         where Campaign.salesforceId = '{$this->campaignSfID}';"
+        );
+
+        $this->assertSame([], $donationFetchedFromDB);
+    }
+
+    /**
+     * @return EntityManager
+     * @throws \Doctrine\ORM\Exception\ORMException
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
+     */
+    function thisMakeBaseEntityManager(): EntityManagerInterface
+    {
+        $em = EntityManager::create(
+        // for this test we don't need the RetrySafeEntityManager - using the standard EM makes things simpler.
+            $this->getContainer()->get('settings')['doctrine']['connection'],
+            $this->getContainer()->get(\Doctrine\ORM\Configuration::class),
+        );
+
+         return new class($em, $this->entityManagerWillCloseAfterNPersists) extends EntityManagerDecorator {
+
+                public function __construct(EntityManagerInterface $wrapped, private int $persistsLeftBeforeClosingTime)
+                {
+                    parent::__construct($wrapped);
+                }
+
+                public function flush($entity = null)
+                {
+                    $this->persistsLeftBeforeClosingTime--;
+                    if ($this->persistsLeftBeforeClosingTime <= 0) {
+                        throw new EntityManagerClosed();
+                    }
+
+                    parent::flush();
+                }
+            };
     }
 }

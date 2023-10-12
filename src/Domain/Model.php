@@ -36,4 +36,9 @@ abstract class Model
     {
         return $this->id !== null;
     }
+
+    public function __toString(): string
+    {
+        return "Instance of " . get_class($this);
+    }
 }
