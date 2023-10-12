@@ -78,6 +78,18 @@ class CreateDonationToSeePersistErrorTest extends IntegrationTest
             ]
         );
 
+        /**
+         * the error is only thrown if this line is here. Query could we somehow have two different entity managers
+         * at once in prod and could that be causing the problem? Our RetrySafeEntityManager and the standard doctrine
+         * one as below?
+         *
+         * @psalm-suppress DeprecatedMethod
+         * @psalm-suppress MixedArrayAccess
+         * @psalm-suppress MixedArgument
+         * We're using EntityManager::create already inside RetrySafeEntityManager - while we have it there we may as
+         * well have it in this test. Also probably not worthwhile fixing the Mixed issues here before they're
+         * fixed in the similar prod code.
+         */
         $container->set(EntityManagerInterface::class, EntityManager::create(
             // for this test we don't need the RetrySafeEntityManager - using the standard EM makes things simpler.
             $container->get('settings')['doctrine']['connection'],
