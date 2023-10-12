@@ -4,6 +4,7 @@ namespace integrationTests;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\ORMInvalidArgumentException;
 use MatchBot\Client\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -32,20 +33,13 @@ use Ramsey\Uuid\Uuid;
  * Either explicitly call EntityManager#persist() on this unknown entity or configure cascade persist this association
  * in the mapping for example @ManyToOne(..,cascade={"persist"}).
  */
-class CreateDonationToSeePersistErrorTest extends IntegrationTest
+class CreateDonationWithPersistErrorTest extends IntegrationTest
 {
     public function setUp(): void
     {
         parent::setUp();
 
-        /** @var \DI\Container $container */
-        $container = $this->getContainer();
-
-        $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
-
-        $fundClientProphecy = $this->prophesize(\MatchBot\Client\Fund::class);
-        $fundClientProphecy->getForCampaign(Argument::type('string'))->willReturn([
+        $fundsReturnedFromSfAPI = [
             [
                 'id' => 'fnsfid',
                 'type' => 'pledge',
@@ -54,28 +48,37 @@ class CreateDonationToSeePersistErrorTest extends IntegrationTest
                 'currencyCode' => 'GBP',
                 'amountForCampaign' => '1000',
             ],
-        ]);
+        ];
+
+        $campaignReturnedFromSfAPI = [
+            'id' => '1',
+            'currencyCode' => 'GBP',
+            'endDate' => '2023-11-11T17:21:50+00:00',
+            'startDate' => '2023-09-11T17:21:50+00:00',
+            'feePercentage' => 1.0,
+            'isMatched' => true,
+            'title' => 'Save the PHP Developers',
+            'charity' => [
+                'id' => '',
+                'name' => 'Some Charity',
+                'stripeAccountId' => 'stripe-acc-id',
+                'giftAidOnboardingStatus' => 'Onboarded',
+                'hmrcReferenceNumber' => '',
+                'regulatorRegion' => '',
+                'regulatorNumber' => '',
+            ],
+        ];
+
+        $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
+        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
+
+        $fundClientProphecy = $this->prophesize(\MatchBot\Client\Fund::class);
+
+        $fundClientProphecy->getForCampaign(Argument::type('string'))->willReturn($fundsReturnedFromSfAPI);
 
         $campaignClientProphecy = $this->prophesize(\MatchBot\Client\Campaign::class);
         $campaignClientProphecy->getById(Argument::type('string'))->willReturn(
-            [
-                'id' => '1',
-                'currencyCode' => 'GBP',
-                'endDate' => '2023-11-11T17:21:50+00:00',
-                'startDate' => '2023-09-11T17:21:50+00:00',
-                'feePercentage' => 1.0,
-                'isMatched' => true,
-                'title' => 'Save the PHP Developers',
-                'charity' => [
-                    'id' => '',
-                    'name' => 'Some Charity',
-                    'stripeAccountId' => 'stripe-acc-id',
-                    'giftAidOnboardingStatus' => 'Onboarded',
-                    'hmrcReferenceNumber' => '',
-                    'regulatorRegion' => '',
-                    'regulatorNumber' => '',
-                ],
-            ]
+            $campaignReturnedFromSfAPI
         );
 
         /**
@@ -90,48 +93,49 @@ class CreateDonationToSeePersistErrorTest extends IntegrationTest
          * well have it in this test. Also probably not worthwhile fixing the Mixed issues here before they're
          * fixed in the similar prod code.
          */
-        $container->set(EntityManagerInterface::class, EntityManager::create(
+        $this->setInContainer(EntityManagerInterface::class, EntityManager::create(
             // for this test we don't need the RetrySafeEntityManager - using the standard EM makes things simpler.
-            $container->get('settings')['doctrine']['connection'],
-            $container->get(\Doctrine\ORM\Configuration::class),
+            $this->getContainer()->get('settings')['doctrine']['connection'],
+            $this->getContainer()->get(\Doctrine\ORM\Configuration::class),
         ));
 
-        $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
-        $container->set(\MatchBot\Client\Campaign::class, $campaignClientProphecy->reveal());
-        $container->set(\MatchBot\Client\Fund::class, $fundClientProphecy->reveal());
+        $this->setInContainer(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
+        $this->setInContainer(\MatchBot\Client\Campaign::class, $campaignClientProphecy->reveal());
+        $this->setInContainer(\MatchBot\Client\Fund::class, $fundClientProphecy->reveal());
 
-        $campaignRepo = $container->get(CampaignRepository::class);
+        $campaignRepo = $this->getContainer()->get(CampaignRepository::class);
         assert($campaignRepo instanceof CampaignRepository);
         $campaignRepo->setClient($campaignClientProphecy->reveal());
 
-        $donationRepo = $container->get(DonationRepository::class);
+        $donationRepo = $this->getContainer()->get(DonationRepository::class);
         assert($donationRepo instanceof DonationRepository);
         $donationRepo->setClient($donationClientProphecy->reveal());
-
-
     }
 
-    public function testItCreatesADonationWithoutAPersistError(): void
+    /**
+     * This test is the reverse of a normal test - we assert that a bug exists, instead of that the app works properly.
+     *
+     * When the bug is fixed this will fail and can be reversed in sense to make it pass again, or deleted if not
+     * needed.
+     */
+    public function testItCrashesWithAPersistErrorWhenCreatingNewDonationWithNewFundEtc(): void
     {
         // This test should be using fake stripe and salesforce clients, but things within our app,
         // from the HTTP router to the DB is using our real prod code.
 
-        // act
-        $response = $this->createDonation(withPremadeCampaign: false);
+        $this->expectException(ORMInvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            "A new entity was found through the relationship 'MatchBot\Domain\CampaignFunding#campaigns' that was not" .
+            " configured to cascade persist operations for entity"
+        );
 
-        // assert
+        // full message:
+        // Doctrine\ORM\ORMInvalidArgumentException: A new entity was found through the relationship
+        // 'MatchBot\Domain\CampaignFunding#campaigns' that was not configured to cascade persist operations for entity:
+        //Campaign ID #342, SFId: 43241206-573e-4976. To solve this issue: Either explicitly call
+        // EntityManager#persist() on this unknown entity or configure cascade persist this association in the mapping
+        //for example @ManyToOne(..,cascade={"persist"}).
 
-        /** @var array{donation: array<string, string>} $decoded */
-        $decoded = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
-
-        $this->assertSame(201, $response->getStatusCode());
-        $this->assertSame('Some Charity', $decoded['donation']['charityName']);
-        $this->assertNotEmpty($decoded['donation']['transactionId']);
-        $uuid = $decoded['donation']['donationId'];
-        $this->assertTrue(Uuid::isValid($uuid));
-
-        $donationFetchedFromDB = $this->db()->fetchAssociative("SELECT * from Donation where Donation.uuid = '$uuid';");
-        assert(is_array($donationFetchedFromDB));
-        $this->assertSame('100.00', $donationFetchedFromDB['amount']);
+        $this->createDonation(withPremadeCampaign: false);
     }
 }

@@ -74,6 +74,17 @@ abstract class IntegrationTest extends TestCase
         return self::$integrationTestContainer;
     }
 
+    /**
+     * @param class-string $name
+     */
+    protected function setInContainer(string $name, mixed $value): void
+    {
+        $container = $this->getContainer();
+        \assert($container instanceof \DI\Container);
+
+        $container->set($name, $value);
+    }
+
     public function db(): \Doctrine\DBAL\Connection
     {
         return $this->getService(\Doctrine\ORM\EntityManagerInterface::class)->getConnection();
