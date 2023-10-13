@@ -43,6 +43,13 @@ return function (App $app) {
         })
             ->add(DonationPublicAuthMiddleware::class);
 
+        $versionGroup->group('/donor-account/', function (RouteCollectorProxy $group) {
+            $group->post('', Donations\Confirm::class);
+        })
+            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
+
         $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
             ->add(PersonManagementAuthMiddleware::class)
             ->add($ipMiddleware)
