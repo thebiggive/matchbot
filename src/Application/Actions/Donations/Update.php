@@ -263,7 +263,7 @@ class Update extends Action
         // method every time they `addData()`.
         $donation->setGiftAid($donationData->giftAid);
         $donation->setTipGiftAid($donationData->tipGiftAid ?? $donationData->giftAid);
-        $donation->setTbgShouldProcessGiftAid($donation->getCampaign()->getCharity()->isTbgClaimingGiftAid());
+        $donation->setTbgShouldProcessGiftAid($donation->getCampaignId()->getCharity()->isTbgClaimingGiftAid());
         $donation->setDonorHomeAddressLine1($donationData->homeAddress);
         $donation->setDonorHomePostcode($donationData->homePostcode);
         $donation->setDonorFirstName($donationData->firstName);
@@ -380,7 +380,7 @@ class Update extends Action
         // Save & flush early to reduce chance of lock conflicts.
         $this->save($donation);
 
-        if ($donation->getCampaign()->isMatched()) {
+        if ($donation->getCampaignId()->isMatched()) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
 

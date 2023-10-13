@@ -25,7 +25,7 @@ class Donation extends Common
         try {
             $response = $this->getHttpClient()->post(
                 $this->getSetting('donation', 'baseUri'),
-                ['json' => $donation->toApiModel()]
+                ['json' => $donation->toApiModel($this->campaignRepository)]
             );
         } catch (RequestException $ex) {
             // Sandboxes that 404 on POST may be trying to sync up donations for non-existent campaigns and

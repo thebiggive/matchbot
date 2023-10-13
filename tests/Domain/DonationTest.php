@@ -228,10 +228,10 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
 
-        $donation->getCampaign()->getCharity()->setTbgClaimingGiftAid(true);
-        $donation->getCampaign()->getCharity()->setHmrcReferenceNumber('AB12345');
-        $donation->getCampaign()->getCharity()->setRegulator('CCEW');
-        $donation->getCampaign()->getCharity()->setRegulatorNumber('12229');
+        $donation->getCampaignId()->getCharity()->setTbgClaimingGiftAid(true);
+        $donation->getCampaignId()->getCharity()->setHmrcReferenceNumber('AB12345');
+        $donation->getCampaignId()->getCharity()->setRegulator('CCEW');
+        $donation->getCampaignId()->getCharity()->setRegulatorNumber('12229');
         $donation->setTbgShouldProcessGiftAid(true);
 
         $claimBotMessage = $donation->toClaimBotModel();
@@ -257,10 +257,10 @@ class DonationTest extends TestCase
         $donation = $this->getTestDonation();
 
         $donation->setDonorHomePostcode('OVERSEAS');
-        $donation->getCampaign()->getCharity()->setTbgClaimingGiftAid(true);
-        $donation->getCampaign()->getCharity()->setHmrcReferenceNumber('AB12345');
-        $donation->getCampaign()->getCharity()->setRegulator(null); // e.g. Exempt.
-        $donation->getCampaign()->getCharity()->setRegulatorNumber('12222');
+        $donation->getCampaignId()->getCharity()->setTbgClaimingGiftAid(true);
+        $donation->getCampaignId()->getCharity()->setHmrcReferenceNumber('AB12345');
+        $donation->getCampaignId()->getCharity()->setRegulator(null); // e.g. Exempt.
+        $donation->getCampaignId()->getCharity()->setRegulatorNumber('12222');
         $donation->setTbgShouldProcessGiftAid(true);
 
         $claimBotMessage = $donation->toClaimBotModel();

@@ -43,7 +43,7 @@ trait DonationTestDataTrait
         $donation = Donation::emptyTestDonation(amount: $amount, paymentMethodType: $paymentMethodType, currencyCode: $currencyCode);
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCharityFee('2.05');
-        $donation->setCampaign($campaign);
+        $donation->setCampaignId($campaign->getId());
         $donation->setCharityComms(true);
         $donation->setChampionComms(false);
         $donation->setDonationStatus(DonationStatus::Collected);
@@ -83,7 +83,7 @@ trait DonationTestDataTrait
         $donation = Donation::emptyTestDonation('124.56');
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCharityFee('2.57');
-        $donation->setCampaign($campaign);
+        $donation->setCampaignId($campaign->getId());
         $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setPsp('stripe');
         $donation->setTransactionId('pi_stripe_pending_123');

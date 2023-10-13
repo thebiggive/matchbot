@@ -38,6 +38,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
         return $qb->getQuery()->getResult();
     }
 
+    public function findOrThrow(int $campaignId): Campaign
+    {
+        return $this->find($campaignId) ?? throw new \Exception('Could not find campaign #' . $campaignId);
+    }
+
     /**
      * @param Campaign $campaign
      * @return Campaign

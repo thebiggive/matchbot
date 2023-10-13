@@ -128,7 +128,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $donation = Donation::emptyTestDonation('1');
         $donation->createdNow();
         $donation->setDonationStatus(DonationStatus::Pending);
-        $donation->setCampaign($campaign);
+        $donation->setCampaignId($campaign->getId());
         $donation->setPsp('stripe');
         $donation->setUuid(Uuid::uuid4());
         $donation->setDonorFirstName('Donor first name');

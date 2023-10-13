@@ -130,7 +130,7 @@ class CreateTest extends TestCase
     {
         $donation = $this->getTestDonation(true, true);
         $donation->setPsp('stripe');
-        $donation->getCampaign()->getCharity()->setStripeAccountId(null);
+        $donation->getCampaignId()->getCharity()->setStripeAccountId(null);
 
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
@@ -148,7 +148,7 @@ class CreateTest extends TestCase
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
         $campaignRepoProphecy->pull(Argument::type(Campaign::class))
-            ->willReturn($donation->getCampaign())
+            ->willReturn($donation->getCampaignId())
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -261,7 +261,7 @@ class CreateTest extends TestCase
         $donation = $this->getTestDonation(true, true);
         $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
-        $donation->getCampaign()->getCharity()->setStripeAccountId(null);
+        $donation->getCampaignId()->getCharity()->setStripeAccountId(null);
 
         $fundingWithdrawalForMatch = new FundingWithdrawal();
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
@@ -284,10 +284,10 @@ class CreateTest extends TestCase
         // Cloning & use of new objects is necessary here, so we don't set
         // the Stripe value on the copy of the object which is meant to be
         // missing it for the test to follow that logic branch.
-        $charityWhichNowHasStripeAccountID = clone $donation->getCampaign()->getCharity();
+        $charityWhichNowHasStripeAccountID = clone $donation->getCampaignId()->getCharity();
         $charityWhichNowHasStripeAccountID
             ->setStripeAccountId('unitTest_newStripeAccount_456');
-        $campaignWithCharityWhichNowHasStripeAccountID = clone  $donation->getCampaign();
+        $campaignWithCharityWhichNowHasStripeAccountID = clone  $donation->getCampaignId();
         $campaignWithCharityWhichNowHasStripeAccountID->setCharity($charityWhichNowHasStripeAccountID);
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
@@ -1097,7 +1097,7 @@ class CreateTest extends TestCase
 
         $donation = Donation::emptyTestDonation(amount: '12.00', currencyCode: $currencyCode);
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
-        $donation->setCampaign($campaign);
+        $donation->setCampaignId($campaign->getId());
         $donation->setPsp('stripe');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
         $donation->setDonorCountryCode('GB');

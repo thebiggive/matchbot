@@ -195,7 +195,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 // Get these without a lock initially
                 $likelyAvailableFunds = $this->getEntityManager()
                     ->getRepository(CampaignFunding::class)
-                    ->getAvailableFundings($donation->getCampaign());
+                    ->getAvailableFundings($donation->getCampaignId());
 
                 foreach ($likelyAvailableFunds as $funding) {
                     if ($funding->getCurrencyCode() !== $donation->getCurrencyCode()) {
@@ -567,7 +567,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $donation->getAmount(),
             $donation->getCurrencyCode(),
             $incursGiftAidFee,
-            $donation->getCampaign()->getFeePercentage(),
+            $this->campaignRepository->findOrThrow($donation->getCampaignId())->getFeePercentage(),
         );
         $donation->setCharityFee($structure->getCoreFee());
         $donation->setCharityFeeVat($structure->getFeeVat());

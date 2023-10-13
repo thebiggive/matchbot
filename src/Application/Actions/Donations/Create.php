@@ -31,9 +31,11 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class Create extends Action
 {
+
     #[Pure]
     public function __construct(
         private DonationRepository $donationRepository,
+        private CampaignRepository $campaignRepository,
         private EntityManagerInterface $entityManager,
         private SerializerInterface $serializer,
         private StripeClient $stripeClient,
@@ -115,10 +117,10 @@ class Create extends Action
             ));
         }
 
-        if (!$donation->getCampaign()->isOpen()) {
+        if (!$donation->getCampaignId()->isOpen()) {
             return $this->validationError(
                 $response,
-                "Campaign {$donation->getCampaign()->getSalesforceId()} is not open",
+                "Campaign {$donation->getCampaignId()->getSalesforceId()} is not open",
                 null,
                 true, // Reduce to info log as some instances expected on campaign close
             );
@@ -128,7 +130,7 @@ class Create extends Action
         $this->entityManager->persist($donation);
         $this->entityManager->flush();
 
-        if ($donation->getCampaign()->isMatched()) {
+        if ($donation->getCampaignId()->isMatched()) {
             try {
                 $this->donationRepository->allocateMatchFunds($donation);
             } catch (DomainLockContentionException $exception) {
@@ -139,25 +141,26 @@ class Create extends Action
         }
 
         if ($donation->getPsp() === 'stripe') {
-            if (empty($donation->getCampaign()->getCharity()->getStripeAccountId())) {
+            if (empty($donation->getCampaignId()->getCharity()->getStripeAccountId())) {
                 // Try re-pulling in case charity has very recently onboarded with for Stripe.
                 $repository = $this->entityManager->getRepository(Campaign::class);
                 \assert($repository instanceof CampaignRepository);
+                $campaignId = $donation->getCampaignId();
                 $campaign = $repository
-                    ->pull($donation->getCampaign());
+                    ->pull($repository->find($campaignId));
 
                 // If still empty, error out
                 if (empty($campaign->getCharity()->getStripeAccountId())) {
                     $this->logger->error(sprintf(
                         'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
-                        $donation->getCampaign()->getCharity()->getSalesforceId(),
+                        $donation->getCampaignId()->getCharity()->getSalesforceId(),
                     ));
                     $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (A)');
                     return $this->respond($response, new ActionPayload(500, null, $error));
                 }
 
                 // Else we found new Stripe info and can proceed
-                $donation->setCampaign($campaign);
+                $donation->setCampaignId($campaign->getId());
             }
 
             $createPayload = [
@@ -173,10 +176,10 @@ class Create extends Action
                      * Keys like comms opt ins are set only later. See the counterpart
                      * in {@see Update::addData()} too.
                      */
-                    'campaignId' => $donation->getCampaign()->getSalesforceId(),
-                    'campaignName' => $donation->getCampaign()->getCampaignName(),
-                    'charityId' => $donation->getCampaign()->getCharity()->getSalesforceId(),
-                    'charityName' => $donation->getCampaign()->getCharity()->getName(),
+                    'campaignId' => $donation->getCampaignId()->getSalesforceId(),
+                    'campaignName' => $donation->getCampaignId()->getCampaignName(),
+                    'charityId' => $donation->getCampaignId()->getCharity()->getSalesforceId(),
+                    'charityName' => $donation->getCampaignId()->getCharity()->getName(),
                     'donationId' => $donation->getUuid(),
                     'environment' => getenv('APP_ENV'),
                     'feeCoverAmount' => $donation->getFeeCoverAmount(),
@@ -186,11 +189,11 @@ class Create extends Action
                     'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
                     'tipAmount' => $donation->getTipAmount(),
                 ],
-                'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
+                'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaignId()->getCharity()),
                 // See https://stripe.com/docs/connect/destination-charges#application-fee
                 'application_fee_amount' => $donation->getAmountToDeductFractional(),
                 'transfer_data' => [
-                    'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
+                    'destination' => $donation->getCampaignId()->getCharity()->getStripeAccountId(),
                 ],
             ];
 
@@ -223,8 +226,8 @@ class Create extends Action
                     $exception->getStripeCode() ?? 'unknown',
                     get_class($exception),
                     $message,
-                    $donation->getCampaign()->getCharity()->getName(),
-                    $donation->getCampaign()->getCharity()->getStripeAccountId() ?? 'unknown',
+                    $donation->getCampaignId()->getCharity()->getName(),
+                    $donation->getCampaignId()->getCharity()->getStripeAccountId() ?? 'unknown',
                 ));
                 $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (B)');
                 return $this->respond($response, new ActionPayload(500, null, $error));
@@ -237,7 +240,7 @@ class Create extends Action
         }
 
         $data = new DonationCreatedResponse();
-        $data->donation = $donation->toApiModel();
+        $data->donation = $donation->toApiModel($this->campaignRepository);
         $data->jwt = DonationToken::create($donation->getUuid());
 
         // Attempt immediate sync. Buffered for a future batch sync if the SF call fails.

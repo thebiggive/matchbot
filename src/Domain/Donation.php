@@ -49,10 +49,9 @@ class Donation extends SalesforceWriteProxy
     protected ?UuidInterface $uuid = null;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Campaign")
-     * @var Campaign
+     * @ORM\Column(type="integer", options={"unsigned": true})
      */
-    protected Campaign $campaign;
+    protected int $campaignId;
 
     /**
      * @ORM\Column(type="string", length=20)
@@ -306,7 +305,7 @@ class Donation extends SalesforceWriteProxy
         return new self($amount, $currencyCode, $paymentMethodType);
     }
 
-    private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
+    private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType, int $campaignId)
     {
         $this->fundingWithdrawals = new ArrayCollection();
         $this->currencyCode = $currencyCode;
@@ -326,6 +325,7 @@ class Donation extends SalesforceWriteProxy
 
         $this->amount = $amount;
         $this->paymentMethodType = $paymentMethodType;
+        $this->campaignId = $campaignId;
     }
 
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
@@ -337,11 +337,11 @@ class Donation extends SalesforceWriteProxy
             $donationData->donationAmount,
             $donationData->currencyCode,
             $donationData->paymentMethodType,
+            $campaign->getId() ?? throw new \Exception("Campaign has no id"),
         );
 
         $donation->setPsp($psp);
         $donation->setUuid(Uuid::uuid4());
-        $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
 
         $donation->setGiftAid($donationData->giftAid);
         // `DonationCreate` doesn't support a distinct property yet & we only ask once about GA.
@@ -384,7 +384,7 @@ class Donation extends SalesforceWriteProxy
         // if we're in __toString then probably something has already gone wrong, and we don't want to allow
         // any more crashes during the logging process.
         try {
-            $charityName = $this->getCampaign()->getCharity()->getName();
+            $charityName = $this->getCampaignId()->getCharity()->getName();
         } catch (\Throwable $t) {
             // perhaps the charity was never pulled from Salesforce into our database, in which case we might
             // have a TypeError trying to get a string name from it.
@@ -399,7 +399,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function getDescription(): string
     {
-        $charityName = $this->getCampaign()->getCharity()->getName();
+        $charityName = $this->getCampaignId()->getCharity()->getName();
         return "Donation {$this->getUuid()} to $charityName";
     }
 
@@ -430,9 +430,9 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return array A json encode-ready array representation of the donation, for sending to Salesforce.
      */
-    public function toHookModel(): array
+    public function toHookModel(CampaignRepository$campaignRepository): array
     {
-        $data = $this->toApiModel();
+        $data = $this->toApiModel($campaignRepository);
 
         // MAT-234 - remove dubious patterns from email for now so records can save in SF.
         if ($data['emailAddress'] !== null && str_contains($data['emailAddress'], ';;')) {
@@ -457,21 +457,26 @@ class Donation extends SalesforceWriteProxy
         return $data;
     }
 
-    public function toApiModel(): array
+    public function toApiModel(CampaignRepository $campaignRepository): array
     {
+        $campaign = $campaignRepository->find($this->getCampaignId());
+        if ($campaign === null) {
+            throw new \Exception("Missing Campaign");
+        }
+
         $data = [
             'billingPostalAddress' => $this->getDonorBillingAddress(),
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
-            'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
-            'charityName' => $this->getCampaign()->getCharity()->getName(),
+            'charityId' => $campaign->getCharity()->getSalesforceId(),
+            'charityName' => $campaign->getCharity()->getName(),
             'countryCode' => $this->getDonorCountryCode(),
             'collectedTime' => $this->getCollectedAt()?->format(DateTimeInterface::ATOM),
             'createdTime' => $this->getCreatedDate()->format(DateTimeInterface::ATOM),
             'currencyCode' => $this->getCurrencyCode(),
             'donationAmount' => (float) $this->getAmount(),
             'donationId' => $this->getUuid(),
-            'donationMatched' => $this->getCampaign()->isMatched(),
+            'donationMatched' => $campaign->isMatched(),
             'emailAddress' => $this->getDonorEmailAddress(),
             'feeCoverAmount' => (float) $this->getFeeCoverAmount(),
             'firstName' => $this->getDonorFirstName(true),
@@ -484,7 +489,7 @@ class Donation extends SalesforceWriteProxy
             'optInCharityEmail' => $this->getCharityComms(),
             'optInChampionEmail' => $this->getChampionComms(),
             'optInTbgEmail' => $this->getTbgComms(),
-            'projectId' => $this->getCampaign()->getSalesforceId(),
+            'projectId' => $campaign->getSalesforceId(),
             'psp' => $this->getPsp(),
             'pspCustomerId' => $this->getPspCustomerId(),
             'pspMethodType' => $this->getPaymentMethodType()?->value,
@@ -529,20 +534,14 @@ class Donation extends SalesforceWriteProxy
         $this->collectedAt = $collectedAt;
     }
 
-    /**
-     * @return Campaign
-     */
-    public function getCampaign(): Campaign
+    public function getCampaignId(): int
     {
-        return $this->campaign;
+        return $this->campaignId;
     }
 
-    /**
-     * @param Campaign $campaign
-     */
-    public function setCampaign(Campaign $campaign): void
+    public function setCampaignId(int $campaignId): void
     {
-        $this->campaign = $campaign;
+        $this->campaignId = $campaignId;
     }
 
     public function getDonorEmailAddress(): ?string
@@ -1199,7 +1198,7 @@ class Donation extends SalesforceWriteProxy
     public function getStripeOnBehalfOfProperties(): array
     {
         if ($this->paymentMethodType === PaymentMethodType::Card) {
-            return ['on_behalf_of' => $this->getCampaign()->getCharity()->getStripeAccountId()];
+            return ['on_behalf_of' => $this->getCampaignId()->getCharity()->getStripeAccountId()];
         }
 
         return [];
@@ -1220,7 +1219,7 @@ class Donation extends SalesforceWriteProxy
         return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
     }
 
-    public function toClaimBotModel(): Messages\Donation
+    public function toClaimBotModel(CampaignRepository $campaignRepository): Messages\Donation
     {
         $donationMessage = new Messages\Donation();
         $donationMessage->id = $this->uuid->toString();
@@ -1253,10 +1252,15 @@ class Donation extends SalesforceWriteProxy
 
         $donationMessage->amount = (float) $this->amount;
 
-        $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber() ?? '';
-        $donationMessage->org_name = $this->getCampaign()->getCharity()->getName();
-        $donationMessage->org_regulator = $this->getCampaign()->getCharity()->getRegulator();
-        $donationMessage->org_regulator_number = $this->getCampaign()->getCharity()->getRegulatorNumber();
+        $campaignId = $this->getCampaignId();
+        $campaign = $campaignRepository->find($campaignId);
+        if ($campaign === null) {
+            throw new \Exception("Missing campaign");
+        }
+        $donationMessage->org_hmrc_ref = $campaign->getCharity()->getHmrcReferenceNumber() ?? '';
+        $donationMessage->org_name = $campaign->getCharity()->getName();
+        $donationMessage->org_regulator = $campaign->getCharity()->getRegulator();
+        $donationMessage->org_regulator_number = $campaign->getCharity()->getRegulatorNumber();
 
         return $donationMessage;
     }

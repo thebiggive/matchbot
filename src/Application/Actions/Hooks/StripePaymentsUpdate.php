@@ -443,7 +443,7 @@ class StripePaymentsUpdate extends Stripe
         if (
             $isCoreDonationReversed &&
             $donation->getDonationStatus()->isReversed() &&
-            $donation->getCampaign()->isMatched()
+            $donation->getCampaignId()->isMatched()
         ) {
             $this->donationRepository->releaseMatchFunds($donation);
         }

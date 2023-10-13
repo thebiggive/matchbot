@@ -78,8 +78,8 @@ class RetrospectivelyMatch extends LockingCommand
                 $numWithMatchingAllocated++;
                 $totalNewMatching = bcadd($totalNewMatching, $amountAllocated, 2);
 
-                if (!in_array($donation->getCampaign()->getId(), $distinctCampaignIds, true)) {
-                    $distinctCampaignIds[] = $donation->getCampaign()->getId();
+                if (!in_array($donation->getCampaignId()->getId(), $distinctCampaignIds, true)) {
+                    $distinctCampaignIds[] = $donation->getCampaignId()->getId();
                 }
             }
         }
