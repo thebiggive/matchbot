@@ -60,7 +60,17 @@ class Create extends Action
         try {
             /** @var DonationCreate $donationData */
             $donationData = $this->serializer->deserialize($body, DonationCreate::class, 'json');
-        } catch (UnexpectedValueException $exception) { // This is the Serializer one, not the global one
+        } catch (\TypeError | UnexpectedValueException $exception) { // UnexpectedValueException is the Serializer one,
+            // not the global one
+
+            // Ideally rather than catching type error we would configure the seralizer use
+            // the Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor and then it would throw a
+            // NotNormalizableValueException instead of calling the constructor and having that throw a TypeError.
+            //
+            // But that requires more changes than I want to make right now to either Donation http model used for
+            // updates, as well as the DonationCreate model used here or the tests that sometimes pass strings where
+            // numbers are specified or vice versa.
+
             $this->logger->info("Donation Create non-serialisable payload was: $body");
 
             $message = 'Donation Create data deserialise error';
