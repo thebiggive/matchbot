@@ -19,10 +19,14 @@ use MatchBot\Application\Assertion;
  * in Doctrine 3 - but we have the ORM configured to read Annotations, and sadly it doesn't seem possible to simply set
  * it to read both, so using annotations for now. See https://stackoverflow.com/a/69284041/2526181
  *
+ * @ORM\HasLifecycleCallbacks
  * @ORM\Entity(repositoryClass="DonorAccountRepository")
+ * @ORM\Table
  */
 class DonorAccount extends Model
 {
+    use TimestampsTrait;
+
     /**
      * @ORM\Embedded(class="EmailAddress", columnPrefix=false)
      * */
@@ -35,6 +39,7 @@ class DonorAccount extends Model
 
     public function __construct(EmailAddress $emailAddress, StripeCustomerId $stripeCustomerId)
     {
+        $this->createdNow();
         $this->emailAddress = $emailAddress;
         $this->stripeCustomerId = $stripeCustomerId;
     }
