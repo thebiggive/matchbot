@@ -6,7 +6,10 @@ use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Embeddable;
 use MatchBot\Application\Assertion;
 
-/** @Embeddable */
+/**
+ * @psalm-immutable
+ * @Embeddable
+ */
 class StripeCustomerId
 {
     /** @Column(type = "string") */
