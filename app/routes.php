@@ -44,7 +44,7 @@ return function (App $app) {
             ->add(DonationPublicAuthMiddleware::class);
 
         $versionGroup->group('/donor-account/', function (RouteCollectorProxy $group) {
-            $group->post('', Donations\Confirm::class);
+            $group->post('', \MatchBot\Application\Actions\DonorAccount\Create::class);
         })
             ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
             ->add($ipMiddleware)
