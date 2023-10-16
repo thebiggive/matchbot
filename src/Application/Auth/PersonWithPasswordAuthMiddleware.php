@@ -13,8 +13,6 @@ use Psr\Http\Message\ServerRequestInterface;
  * Permits only true "complete" value in token claims. Use this for anything that should
  * be returned only to those who've set a password and so expect e.g. their saved payment
  * methods to be available longer term.
- *
- * // note use this for making donation funds account.
  */
 class PersonWithPasswordAuthMiddleware extends PersonManagementAuthMiddleware
 {

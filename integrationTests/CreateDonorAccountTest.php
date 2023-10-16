@@ -36,14 +36,14 @@ class CreateDonorAccountTest extends IntegrationTest
         $this->assertSame(201, $response->getStatusCode());
 
         $donationFetchedFromDB = $this->db()->fetchAssociative(
-            "SELECT emailAddress, stripeCustomerId from DonorAccount WHERE stripeCustomerID = ?",
+            "SELECT email, stripeCustomerId from DonorAccount WHERE stripeCustomerID = ?",
             [$stripeID]
         );
         assert(is_array($donationFetchedFromDB));
 
         $this->assertSame(
             [
-                'emailAddress' => $emailAddress,
+                'email' => $emailAddress,
                 'stripeCustomerId' => $stripeID,
             ],
             $donationFetchedFromDB

@@ -2,6 +2,7 @@
 
 namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping as ORM;
+use MatchBot\Application\Assertion;
 
 /**
  * This is new, about to be brought into use.
@@ -23,16 +24,16 @@ use Doctrine\ORM\Mapping as ORM;
 class DonorAccount extends Model
 {
     /**
-     * @ORM\Column(type="string", length=256)
-     */
-    public readonly string $emailAddress;
+     * @ORM\Embedded(class="EmailAddress", columnPrefix=false)
+     * */
+    public readonly EmailAddress $emailAddress;
 
     /**
-     * @ORM\Column(type="string", length=50)
+     * @ORM\Embedded(class="StripeCustomerId", columnPrefix=false)
      */
-    public readonly string $stripeCustomerId;
+    public readonly StripeCustomerId $stripeCustomerId;
 
-    public function __construct(string $emailAddress, string $stripeCustomerId)
+    public function __construct(EmailAddress $emailAddress, StripeCustomerId $stripeCustomerId)
     {
         $this->emailAddress = $emailAddress;
         $this->stripeCustomerId = $stripeCustomerId;
