@@ -8,6 +8,7 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\StripeCustomerId;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -49,9 +50,13 @@ class Create extends Action
         $emailAddress = $requestBody['emailAddress'];
         \assert(is_string($emailAddress) && is_string($stripeCustomerId));
 
+        /** @var array{first: string, last: string} $donorName */
+        $donorName = $requestBody['donorName'];
+
         $donorAccount = new DonorAccount(
             EmailAddress::of($emailAddress),
-            StripeCustomerId::of($stripeCustomerId)
+            DonorName::of($donorName['first'], $donorName['last']),
+            StripeCustomerId::of($stripeCustomerId),
         );
 
         $this->donorAccountRepository->save($donorAccount);
