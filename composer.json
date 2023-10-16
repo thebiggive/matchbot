@@ -21,6 +21,7 @@
         "ext-pdo": "*",
         "ext-pdo_mysql": "*",
         "ext-redis": "*",
+        "beberlei/assert": "^3.3",
         "doctrine/annotations": "^1.13",
         "doctrine/cache": "^1.11.3",
         "doctrine/migrations": "^3.3",
