@@ -14,6 +14,8 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonorAccount;
+use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundingWithdrawalRepository;
@@ -65,6 +67,14 @@ return static function (ContainerBuilder $containerBuilder) {
 
         FundingWithdrawalRepository::class => static function (ContainerInterface $c): FundingWithdrawalRepository {
             return $c->get(EntityManagerInterface::class)->getRepository(FundingWithdrawal::class);
-        }
+        },
+
+        DonorAccountRepository::class => static function (ContainerInterface $c): DonorAccountRepository {
+            $em = $c->get(EntityManagerInterface::class);
+            \assert($em instanceof EntityManagerInterface);
+            $repo = $em->getRepository(DonorAccount::class);
+            \assert($repo instanceof DonorAccountRepository);
+            return $repo;
+        },
     ]);
 };
