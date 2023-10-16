@@ -44,7 +44,7 @@ return function (App $app) {
         })
             ->add(DonationPublicAuthMiddleware::class);
 
-        $versionGroup->post('/donor-account', DonorAccount\Create::class)
+        $versionGroup->post('/{personId:[a-z0-9-]{36}}/donor-account', DonorAccount\Create::class)
             ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
