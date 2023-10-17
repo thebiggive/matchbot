@@ -50,7 +50,7 @@ class Create extends Action
         $emailAddress = $requestBody['emailAddress'];
         \assert(is_string($emailAddress) && is_string($stripeCustomerId));
 
-        /** @var array{first: string, last: string} $donorName */
+        /** @var array{firstName: string, lastName: string} $donorName */
         $donorName = $requestBody['donorName'];
 
         $donorAccount = new DonorAccount(
