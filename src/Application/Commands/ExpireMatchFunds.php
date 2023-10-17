@@ -31,7 +31,7 @@ class ExpireMatchFunds extends LockingCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $toRelease = $this->donationRepository->findWithExpiredMatching(new \DateTime('now'));
+        $toRelease = $this->donationRepository->findWithExpiredMatching(new \DateTimeImmutable('now'));
 
         foreach ($toRelease as $donation) {
             $this->donationRepository->releaseMatchFunds($donation);

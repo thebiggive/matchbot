@@ -102,7 +102,7 @@ class DonationRepositoryTest extends IntegrationTest
         $this->makeDonation($randomEmailAddress, $campaign, DonationStatus::Cancelled);
 
         $sut = $this->getService(DonationRepository::class);
-        $thirtyThreeMinsInFuture = (new \DateTime('now'))->modify('+33 minute');
+        $thirtyThreeMinsInFuture = (new \DateTimeImmutable('now'))->modify('+33 minute');
 
         // act
         $expiredDonations = $sut->findWithExpiredMatching($thirtyThreeMinsInFuture);

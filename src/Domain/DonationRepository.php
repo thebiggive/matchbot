@@ -371,10 +371,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * @return Donation[]
      */
-    public function findWithExpiredMatching(DateTime $now): array
+    public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
-        $cloneOfNow = clone $now;
-        $cutoff = $cloneOfNow->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
+        $cutoff = $now->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
 
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')

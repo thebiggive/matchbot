@@ -19,7 +19,7 @@ class ExpireMatchFundsTest extends TestCase
     public function testNoExpiries(): void
     {
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->findWithExpiredMatching(new \DateTime('now'))
+        $donationRepoProphecy->findWithExpiredMatching(Argument::type(\DateTimeImmutable::class))
             ->willReturn([])
             ->shouldBeCalledOnce();
         $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -39,7 +39,7 @@ class ExpireMatchFundsTest extends TestCase
     public function testTwoExpiries(): void
     {
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->findWithExpiredMatching(new \DateTime('now'))->willReturn([
+        $donationRepoProphecy->findWithExpiredMatching(Argument::type(\DateTimeImmutable::class))->willReturn([
             Donation::emptyTestDonation('1'),
             Donation::emptyTestDonation('1')
         ]);
