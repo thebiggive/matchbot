@@ -30,8 +30,8 @@ class CreateDonorAccountTest extends IntegrationTest
             body: json_encode([
                 'emailAddress' => $emailAddress,
                 'donorName' => [
-                    'first' => 'Joe',
-                    'last' => 'Bloggs',
+                    'firstName' => 'Joe',
+                    'lastName' => 'Bloggs',
                     ],
                 ]),
             stripeID: $stripeID
