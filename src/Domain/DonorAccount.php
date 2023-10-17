@@ -33,14 +33,20 @@ class DonorAccount extends Model
     public readonly EmailAddress $emailAddress;
 
     /**
+     * @ORM\Embedded(class="DonorName")
+     * */
+    public readonly DonorName $donorName;
+
+    /**
      * @ORM\Embedded(class="StripeCustomerId", columnPrefix=false)
      */
     public readonly StripeCustomerId $stripeCustomerId;
 
-    public function __construct(EmailAddress $emailAddress, StripeCustomerId $stripeCustomerId)
+    public function __construct(EmailAddress $emailAddress, DonorName $donorName, StripeCustomerId $stripeCustomerId)
     {
         $this->createdNow();
         $this->emailAddress = $emailAddress;
         $this->stripeCustomerId = $stripeCustomerId;
+        $this->donorName = $donorName;
     }
 }

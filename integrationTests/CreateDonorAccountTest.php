@@ -29,6 +29,10 @@ class CreateDonorAccountTest extends IntegrationTest
         $response = $this->requestFromController(
             body: json_encode([
                 'emailAddress' => $emailAddress,
+                'donorName' => [
+                    'first' => 'Joe',
+                    'last' => 'Bloggs',
+                    ],
                 ]),
             stripeID: $stripeID
         );
