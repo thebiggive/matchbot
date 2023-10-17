@@ -176,6 +176,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      *
      * @param Donation $donation
      * @return string Total amount of matching *newly* allocated
+     *  return value is only used in retrospective mathcing command - Donation::create does not take return value.
      * @see CampaignFundingRepository::getAvailableFundings() for lock acquisition detail
      */
     public function allocateMatchFunds(Donation $donation): string
@@ -370,19 +371,22 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * @return Donation[]
      */
-    public function findWithExpiredMatching(): array
+    public function findWithExpiredMatching(DateTime $now): array
     {
-        $cutoff = (new DateTime('now'))->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
+        $cloneOfNow = clone $now;
+        $cutoff = $cloneOfNow->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
+
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
             // Only select donations with 1+ FWs. We don't need any further info about the FWs.
             ->innerJoin('d.fundingWithdrawals', 'fw')
-            ->where('d.donationStatus = :expireWithStatus')
+            ->where('d.donationStatus IN (:expireWithStatuses)')
             ->andWhere('d.createdAt < :expireBefore')
             ->groupBy('d.id')
-            ->setParameter('expireWithStatus', 'Pending')
-            ->setParameter('expireBefore', $cutoff);
+            ->setParameter('expireWithStatuses', ['Pending', 'Cancelled'])
+            ->setParameter('expireBefore', $cutoff)
+        ;
 
         // As this is used by the only regular task working with donations,
         // `ExpireMatchFunds`, it makes more sense to opt it out of result caching
