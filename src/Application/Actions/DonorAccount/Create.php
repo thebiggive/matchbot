@@ -55,7 +55,7 @@ class Create extends Action
 
         $donorAccount = new DonorAccount(
             EmailAddress::of($emailAddress),
-            DonorName::of($donorName['first'], $donorName['last']),
+            DonorName::of($donorName['firstName'], $donorName['lastName']),
             StripeCustomerId::of($stripeCustomerId),
         );
 
