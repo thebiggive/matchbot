@@ -13,5 +13,5 @@ use Assert\Assert as BaseAssert;
  */
 class Assert extends BaseAssert
 {
-    protected static $lazyAssertionExceptionClass = LazyAssertionExceptionAlias::class;
+    protected static $lazyAssertionExceptionClass = LazyAssertionException::class;
 }
