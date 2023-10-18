@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\DonorAccount;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
@@ -73,7 +74,14 @@ class Create extends Action
             $stripeCustomerId,
         );
 
-        $this->donorAccountRepository->save($donorAccount);
+        try {
+            $this->donorAccountRepository->save($donorAccount);
+        } catch (UniqueConstraintViolationException $e) {
+            return $this->validationError(
+                $response,
+                "Donor Account already exists for stripe account " . $donorAccount->stripeCustomerId->stripeCustomerId,
+            );
+        }
 
         return new \Slim\Psr7\Response(201);
     }
