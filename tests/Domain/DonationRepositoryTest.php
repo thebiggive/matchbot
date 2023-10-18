@@ -523,7 +523,7 @@ class DonationRepositoryTest extends TestCase
             ->willReturn($queryBuilderProphecy->reveal());
 
         // 2 param sets.
-        $queryBuilderProphecy->setParameter('claimGiftAidWithStatus', 'Paid')
+        $queryBuilderProphecy->setParameter('claimGiftAidWithStatus', DonationStatus::Paid->value)
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->setParameter('claimGiftAidForDonationsBefore', Argument::type(\DateTime::class))
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());

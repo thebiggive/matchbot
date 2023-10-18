@@ -18,6 +18,8 @@ enum DonationStatus: string
 
     /**
      * @link https://thebiggive.slack.com/archives/GGQRV08BZ/p1576070168066200?thread_ts=1575655432.161800&cid=GGQRV08BZ
+     * @psalm-suppress DeprecatedConstant - self::Chargedback is never set but we do still need to check it here for now
+     * in case we're looking at an old donation.
      */
     public function isReversed(): bool
     {
@@ -83,6 +85,7 @@ enum DonationStatus: string
      * Exists in database entries from 2020 only. There is now no code that can set this status.
      * We may want to see if eventually these can be archived and moved out of the live DB, and then this case can be
      * removed.
+     * @deprecated
      */
     case Chargedback = 'Chargedback';
 }

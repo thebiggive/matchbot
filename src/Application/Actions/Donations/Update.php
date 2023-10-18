@@ -106,7 +106,7 @@ class Update extends Action
                     throw new DomainRecordNotFoundException('Donation not found');
                 }
 
-                if ($donationData->status !== 'Cancelled' && $donationData->status !== $donation->getDonationStatus()->value) {
+                if ($donationData->status !== DonationStatus::Cancelled->value && $donationData->status !== $donation->getDonationStatus()->value) {
                     $this->entityManager->rollback();
 
                     return $this->validationError($response,
@@ -130,7 +130,7 @@ class Update extends Action
                     );
                 }
 
-                if ($donationData->status === 'Cancelled') {
+                if ($donationData->status === DonationStatus::Cancelled->value) {
                     return $this->cancel($donation, $response, $args);
                 }
 

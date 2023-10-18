@@ -383,7 +383,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->where('d.donationStatus IN (:expireWithStatuses)')
             ->andWhere('d.createdAt < :expireBefore')
             ->groupBy('d.id')
-            ->setParameter('expireWithStatuses', ['Pending', 'Cancelled'])
+            ->setParameter('expireWithStatuses', [DonationStatus::Pending->value, DonationStatus::Cancelled->value])
             ->setParameter('expireBefore', $cutoff)
         ;
 
@@ -428,7 +428,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->andWhere('d.collectedAt < :claimGiftAidForDonationsBefore')
             ->orderBy('charity.id', 'ASC') // group donations for the same charity together in batches
             ->addOrderBy('d.collectedAt', 'ASC')
-            ->setParameter('claimGiftAidWithStatus', 'Paid')
+            ->setParameter('claimGiftAidWithStatus', DonationStatus::Paid->value)
             ->setParameter('claimGiftAidForDonationsBefore', $cutoff);
 
         if (!$withResends) {
@@ -532,7 +532,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->andWhere('d.salesforcePushStatus IN (:pendingSFPushStatuses)')
             ->andWhere('d.createdAt < :twentyMinsAgo')
             ->orderBy('d.createdAt', 'ASC')
-            ->setParameter('cancelledStatus', 'Cancelled')
+            ->setParameter('cancelledStatus', DonationStatus::Cancelled->value)
             ->setParameter('pendingSFPushStatuses', $pendingSFPushStatuses)
             ->setParameter('twentyMinsAgo', $twentyMinsAgo);
 
