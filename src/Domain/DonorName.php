@@ -5,7 +5,6 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Embeddable;
 use MatchBot\Application\Assert;
-use MatchBot\Application\LazyAssertionException;
 
 /**
  * @psalm-immutable
@@ -20,10 +19,11 @@ class DonorName
     private string $last;
 
     /**
+     * @param string $first
+     * @param string $last
      * @psalm-suppress ImpureMethodCall - \Assert\Assert::lazy etc could probably be marked as pure but is not.
-     * @throws LazyAssertionException
      */
-    private function __construct(string $first, string $last)
+    public function __construct(string $first, string $last)
     {
         Assert::lazy()
             ->that($first, 'first')->betweenLength(1, 255)
@@ -34,9 +34,6 @@ class DonorName
         $this->last = $last;
     }
 
-    /**
-     * @throws LazyAssertionException
-     */
     public static function of(string $first, string $last): self
     {
         return new self($first, $last);

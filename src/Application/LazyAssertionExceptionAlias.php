@@ -4,7 +4,7 @@ namespace MatchBot\Application;
 
 use Assert\LazyAssertionException as BaseLazyAssertionExceptionAlias;
 
-class LazyAssertionException extends BaseLazyAssertionExceptionAlias
+class LazyAssertionExceptionAlias extends BaseLazyAssertionExceptionAlias
 {
 
 }

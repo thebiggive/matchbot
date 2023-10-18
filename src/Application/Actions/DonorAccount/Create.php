@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions\DonorAccount;
 
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
-use MatchBot\Application\LazyAssertionException;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
@@ -47,30 +45,18 @@ class Create extends Action
         }
         \assert(is_array($requestBody));
 
-        $stripeCustomerIdString = $request->getAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME);
-        \assert(is_string($stripeCustomerIdString));
+        $stripeCustomerId = $request->getAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME);
 
-        $emailAddressString = $requestBody['emailAddress'] ?? throw new HttpBadRequestException($request, 'Expected emailAddress');
-        \assert(is_string($emailAddressString));
+        $emailAddress = $requestBody['emailAddress'];
+        \assert(is_string($emailAddress) && is_string($stripeCustomerId));
 
-        /** @var array{firstName: string, lastName: string} $donorNameArray */
-        $donorNameArray = $requestBody['donorName'] ?? throw new HttpBadRequestException($request, 'Expected donorName');
-
-        try {
-            $emailAddress = EmailAddress::of($emailAddressString);
-            $donorName = DonorName::of($donorNameArray['firstName'], $donorNameArray['lastName']);
-            $stripeCustomerId = StripeCustomerId::of($stripeCustomerIdString);
-        } catch (AssertionFailedException | LazyAssertionException $e) {
-            return $this->validationError(
-                $response,
-                $e->getMessage(),
-            );
-        }
+        /** @var array{firstName: string, lastName: string} $donorName */
+        $donorName = $requestBody['donorName'];
 
         $donorAccount = new DonorAccount(
-            $emailAddress,
-            $donorName,
-            $stripeCustomerId,
+            EmailAddress::of($emailAddress),
+            DonorName::of($donorName['firstName'], $donorName['lastName']),
+            StripeCustomerId::of($stripeCustomerId),
         );
 
         $this->donorAccountRepository->save($donorAccount);
