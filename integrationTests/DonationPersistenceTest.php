@@ -63,7 +63,7 @@ class DonationPersistenceTest extends IntegrationTest
             'uuid' => Uuid::uuid4(),
             'transactionId' => NULL,
             'amount' => '1.00',
-            'donationStatus' => 'Refunded',
+            'donationStatus' => DonationStatus::Refunded->value,
             'charityComms' => NULL,
             'giftAid' => NULL,
             'tbgComms' => NULL,

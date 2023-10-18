@@ -3,6 +3,7 @@
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use MatchBot\IntegrationTests\IntegrationTest;
 use MatchBot\Tests\Application\Actions\Hooks\StripeTest;
 use Prophecy\Argument;
@@ -29,7 +30,7 @@ class StripeCancelsDonationTest extends IntegrationTest
 
         $this->sendCancellationWebhookFromStripe($donation['transactionId']);
 
-        $this->assertSame('Cancelled', $this->db()->fetchOne('SELECT donationStatus from Donation where uuid = ?', [$donation['donationId']]));
+        $this->assertSame(DonationStatus::Cancelled->value, $this->db()->fetchOne('SELECT donationStatus from Donation where uuid = ?', [$donation['donationId']]));
     }
 
     private function sendCancellationWebhookFromStripe(string $transactionId): void
