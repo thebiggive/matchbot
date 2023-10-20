@@ -13,6 +13,7 @@
         <directory name="app"/>
         <directory name="public"/>
         <directory name="src"/>
+        <file name="matchbot-cli.php"/>
         <directory name="tests"/>
         <directory name="integrationTests"/>
         <ignoreFiles>
