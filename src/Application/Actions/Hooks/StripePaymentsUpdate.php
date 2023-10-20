@@ -70,18 +70,20 @@ class StripePaymentsUpdate extends Stripe
             return $validationErrorResponse;
         }
 
-        $type = $this->event->type;
+        $event = $this->event ?? throw new \RuntimeException("Stripe Event not set");
+
+        $type = $event->type;
         $this->logger->info(sprintf('Received Stripe account event type "%s"', $type));
 
         switch ($type) {
             case Event::CHARGE_DISPUTE_CLOSED:
-                return $this->handleChargeDisputeClosed($this->event, $response);
+                return $this->handleChargeDisputeClosed($event, $response);
             case Event::CHARGE_REFUNDED:
-                return $this->handleChargeRefunded($this->event, $response);
+                return $this->handleChargeRefunded($event, $response);
             case Event::CHARGE_SUCCEEDED:
-                return $this->handleChargeSucceeded($this->event, $response);
+                return $this->handleChargeSucceeded($event, $response);
             case Event::PAYMENT_INTENT_CANCELED:
-                return $this->handlePaymentIntentCancelled($this->event, $response);
+                return $this->handlePaymentIntentCancelled($event, $response);
             default:
                 $this->logger->warning(sprintf('Unsupported event type "%s"', $type));
                 return $this->respond($response, new ActionPayload(204));
@@ -225,7 +227,7 @@ class StripePaymentsUpdate extends Stripe
             $intentId,
         ));
 
-        $refundDate = DateTimeImmutable::createFromFormat('U', (string)$this->event->created);
+        $refundDate = DateTimeImmutable::createFromFormat('U', (string)$event->created);
         assert($refundDate instanceof DateTimeImmutable);
         $donation->recordRefundAt($refundDate);
         $this->doPostMarkRefundedUpdates($donation, true);
@@ -275,7 +277,7 @@ class StripePaymentsUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
-            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$this->event->created);
+            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$event->created);
             assert($refundDate instanceof DateTimeImmutable);
             $donation->setPartialRefundDate($refundDate);
             $donation->setTipAmount('0.00');
@@ -285,7 +287,7 @@ class StripePaymentsUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
-            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$this->event->created);
+            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$event->created);
             assert($refundDate instanceof DateTimeImmutable);
             $donation->recordRefundAt($refundDate);
         } elseif ($isOverRefund) {
@@ -301,7 +303,7 @@ class StripePaymentsUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
-            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$this->event->created);
+            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$event->created);
             assert($refundDate instanceof DateTimeImmutable);
             $donation->recordRefundAt($refundDate);
         } else {
