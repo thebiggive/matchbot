@@ -12,7 +12,6 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
-use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
@@ -118,7 +117,7 @@ class Confirm extends Action
                     'decline_code' => $exception->getDeclineCode(),
                 ],
             ], 402);
-        } 
+        }
         catch (InvalidRequestException $exception) {
             if (! str_contains($exception->getMessage(), 'The provided PaymentMethod has failed authentication')) {
                     throw $exception;
