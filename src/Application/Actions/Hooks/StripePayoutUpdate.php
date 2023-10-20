@@ -61,21 +61,25 @@ class StripePayoutUpdate extends Stripe
             return $validationErrorResponse;
         }
 
+        $event = $this->event ?? throw new \RuntimeException("Stripe event not set");
+
         $this->logger->info(sprintf(
             'Received Stripe Connect app event type "%s" on account %s',
-            $this->event->type,
-            $this->event->account,
+            $event->type,
+            $event->account,
         ));
 
 
-        switch ($this->event->type) {
+        switch ($event->type) {
             case Event::PAYOUT_PAID:
-                return $this->handlePayoutPaid($request, $this->event, $response);
+                return $this->handlePayoutPaid($request, $event, $response);
             case Event::PAYOUT_FAILED:
+                $id = $event->data->object->id;
+                \assert(is_string($id));
                 $failureMessage = sprintf(
                     'payout.failed for ID %s, account %s',
-                    $this->event->data->object->id,
-                    $this->event->account,
+                    $id,
+                    $event->account,
                 );
 
                 $this->logger->warning($failureMessage);
@@ -90,16 +94,18 @@ class StripePayoutUpdate extends Stripe
 
                 return $this->respond($response, new ActionPayload(200));
             default:
-                $this->logger->warning(sprintf('Unsupported event type "%s"', $this->event->type));
+                $this->logger->warning(sprintf('Unsupported event type "%s"', $event->type));
                 return $this->respond($response, new ActionPayload(204));
         }
     }
 
     private function handlePayoutPaid(Request $request, Event $event, Response $response): Response
     {
-        $payoutId = $event->data->object->id;
+        /** @var object{id: string} $object */
+        $object = $event->data->object;
+        $payoutId = $object->id;
 
-        if (!$event->data->object->automatic) {
+        if (!$object->automatic) {
             // If we try to use the `payout` filter attribute in the `balanceTransactions` call
             // in the manual payout case, Stripe errors out with "Balance transaction history
             // can only be filtered on automatic transfers, not manual".
@@ -128,6 +134,6 @@ class StripePayoutUpdate extends Stripe
             return $this->respond($response, new ActionPayload(500));
         }
 
-        return $this->respondWithData($response, $event->data->object);
+        return $this->respondWithData($response, $object);
     }
 }
