@@ -39,7 +39,7 @@ class StripeCashBalanceUpdate extends Stripe
     {
         $validationErrorResponse = $this->prepareEvent(
             $request,
-            $this->stripeSettings['connectAppWebhookSecret'],
+            $this->stripeSettings['accountWebhookSecret'],
             true,
             $response,
         );
