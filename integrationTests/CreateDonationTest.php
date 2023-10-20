@@ -67,4 +67,30 @@ class CreateDonationTest extends IntegrationTest
         $this->assertSame(400, $response->getStatusCode());
     }
 
+    public function testITReturns400OnRequestToDonateNullAmount(): void
+    {
+        $campaignId = $this->setupNewCampaign();
+
+        $response = $this->getApp()->handle(
+            new ServerRequest(
+                'POST',
+                '/v1/donations',
+                // The Symfony Serializer will throw an exception if the JSON document doesn't include all the required
+                // constructor params of DonationCreate
+                body: <<<EOF
+                {
+                    "currencyCode": "GBP",
+                    "donationAmount": null,
+                    "projectId": "$campaignId",
+                    "psp": "stripe",
+                    "tipAmount": "0"
+                }
+            EOF,
+                serverParams: ['REMOTE_ADDR' => '127.0.0.1']
+            )
+        );
+
+        $this->assertSame(400, $response->getStatusCode());
+    }
+
 }

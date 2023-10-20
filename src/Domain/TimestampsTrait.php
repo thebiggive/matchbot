@@ -25,6 +25,7 @@ trait TimestampsTrait
     protected DateTime $updatedAt;
 
     /**
+     * @psalm-suppress PossiblyUnusedMethod
      * @ORM\PrePersist Set created + updated timestamps
      */
     public function createdNow(): void
@@ -34,6 +35,7 @@ trait TimestampsTrait
     }
 
     /**
+     * @psalm-suppress PossiblyUnusedMethod
      * @ORM\PreUpdate Set updated timestamp
      */
     public function updatedNow(): void

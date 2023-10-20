@@ -14,7 +14,7 @@ class CharityTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Regulator N/A not known');
 
-        $charity = new Charity();
+        $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setRegulator('N/A');
     }
 
@@ -23,13 +23,13 @@ class CharityTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Regulator  not known');
 
-        $charity = new Charity();
+        $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setRegulator('');
     }
 
     public function testNullRegulatorIsAllowed(): void
     {
-        $charity = new Charity();
+        $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setRegulator(null);
 
         $this->assertNull($charity->getRegulator());

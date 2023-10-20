@@ -63,7 +63,7 @@ class DonationPersistenceTest extends IntegrationTest
             'uuid' => Uuid::uuid4(),
             'transactionId' => NULL,
             'amount' => '1.00',
-            'donationStatus' => 'Refunded',
+            'donationStatus' => DonationStatus::Refunded->value,
             'charityComms' => NULL,
             'giftAid' => NULL,
             'tbgComms' => NULL,
@@ -112,7 +112,6 @@ class DonationPersistenceTest extends IntegrationTest
         $donation = Donation::emptyTestDonation('1');
         $donation->setUuid(Uuid::uuid4());
         $donation->setPsp('stripe');
-        $donation->setCurrencyCode('GBP');
         $donation->setDonationStatus(DonationStatus::Collected);
 
         return $donation;

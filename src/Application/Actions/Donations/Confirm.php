@@ -12,6 +12,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
@@ -98,8 +99,11 @@ class Confirm extends Action
                 'payment_method' => $pamentMethodId,
             ]);
         } catch (CardException $exception) {
+
+            $exceptionClass = get_class($exception);
             $this->logger->info(sprintf(
-                'Stripe CardException on Confirm for donation %s (%s): %s',
+                'Stripe %s on Confirm for donation %s (%s): %s',
+                $exceptionClass,
                 $donation->getUuid(),
                 $paymentIntentId,
                 $exception->getMessage(),
@@ -114,6 +118,30 @@ class Confirm extends Action
                     'decline_code' => $exception->getDeclineCode(),
                 ],
             ], 402);
+        } 
+        catch (InvalidRequestException $exception) {
+            if (! str_contains($exception->getMessage(), 'The provided PaymentMethod has failed authentication')) {
+                    throw $exception;
+            }
+
+            $exceptionClass = get_class($exception);
+            $this->logger->info(sprintf(
+                'Stripe %s on Confirm for donation %s (%s): %s',
+                $exceptionClass,
+                $donation->getUuid(),
+                $paymentIntentId,
+                $exception->getMessage(),
+            ));
+
+            $this->entityManager->rollback();
+
+            return new JsonResponse([
+                'error' => [
+                    'message' => $exception->getMessage(),
+                    'code' => $exception->getStripeCode()
+                ],
+            ], 402);
+
         } catch (ApiErrorException $exception) {
             // We've seen card test bots, and no humans, try to reuse payment methods like this as of Oct '23. For now
             // we want to log it as a warning, so we can see frequency on a dashboard but don't get alarms.

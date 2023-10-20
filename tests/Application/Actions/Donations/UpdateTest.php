@@ -369,7 +369,7 @@ class UpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
-        $this->assertEquals('Cancelled', $payloadArray['status']);
+        $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
         $this->assertEquals('1 Main St, London N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
         $this->assertTrue($payloadArray['optInCharityEmail']);
@@ -444,7 +444,7 @@ class UpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
-        $this->assertEquals('Cancelled', $payloadArray['status']);
+        $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
         $this->assertEquals('1 Main St, London N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
         $this->assertTrue($payloadArray['optInCharityEmail']);
@@ -594,7 +594,7 @@ class UpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
-        $this->assertEquals('Cancelled', $payloadArray['status']);
+        $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
     }
 
     public function testCancelSuccessWithChangeFromPendingAnonymousDonation(): void
@@ -654,7 +654,7 @@ class UpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
-        $this->assertEquals('Cancelled', $payloadArray['status']);
+        $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
         $this->assertNull($payloadArray['giftAid']);
         $this->assertEquals(124.56, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertEquals(0, $payloadArray['matchedAmount']);
@@ -929,9 +929,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1023,9 +1022,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1120,9 +1118,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1226,9 +1223,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1326,9 +1322,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1430,9 +1425,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1531,9 +1525,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1613,7 +1606,7 @@ class UpdateTest extends TestCase
 
         // These two values are unchanged but still returned.
         $this->assertEquals(123.45, $payloadArray['donationAmount']);
-        $this->assertEquals('Collected', $payloadArray['status']);
+        $this->assertEquals(DonationStatus::Collected->value, $payloadArray['status']);
 
         // Remaining properties should be updated.
         $this->assertEquals('US', $payloadArray['countryCode']);
@@ -1698,7 +1691,7 @@ class UpdateTest extends TestCase
         // These values are unchanged but still returned. Confirming alone doesn't change the
         // response payload.
         $this->assertEquals(123.45, $payloadArray['donationAmount']);
-        $this->assertEquals('Collected', $payloadArray['status']);
+        $this->assertEquals(DonationStatus::Collected->value, $payloadArray['status']);
     }
 
     public function testAddDataRejectsAutoconfirmWithCardMethod(): void

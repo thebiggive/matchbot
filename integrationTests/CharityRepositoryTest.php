@@ -27,7 +27,7 @@ class CharityRepositoryTest extends IntegrationTest
         // arrange
         $sut = $this->getService(CharityRepository::class);
 
-        $charity = new Charity();
+        $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setName("Charity Name");
 
         $em = $this->getService(EntityManagerInterface::class);

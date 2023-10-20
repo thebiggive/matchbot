@@ -15,6 +15,8 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use function bccomp;
+use function sprintf;
 
 /**
  * @ORM\Entity(repositoryClass="DonationRepository")
@@ -33,11 +35,7 @@ class Donation extends SalesforceWriteProxy
     public const MAXIMUM_CARD_DONATION = 25_000;
 
     public const MAXIMUM_CUSTOMER_BALANCE_DONATION = 200_000;
-    /**
-     * @var int
-     * @see Donation::$currencyCode
-     */
-    private int $minimumAmount = 1;
+    public const MINUMUM_AMOUNT = 1;
 
     private array $possiblePSPs = ['stripe'];
 
@@ -95,16 +93,16 @@ class Donation extends SalesforceWriteProxy
      * @ORM\Column(type="string", length=3)
      * @var string  ISO 4217 code for the currency in which all monetary values are denominated, e.g. 'GBP'.
      */
-    protected string $currencyCode;
+    protected readonly string $currencyCode;
 
     /**
-     * Core donation amount excluding any tip.
+     * Core donation amount in major currency units (i.e. Pounds) excluding any tip.
      *
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
      */
-    protected string $amount;
+    protected readonly string $amount;
 
     /**
      * Fee the charity takes on, in £. Excludes any tax if applicable.
@@ -303,16 +301,31 @@ class Donation extends SalesforceWriteProxy
      * @deprecated but retained for now as used in old test classes. Not recommend for continued use - either use
      * fromApiModel or create a new named constructor that takes required data for your use case.
      */
-    public static function emptyTestDonation(string $amount, PaymentMethodType $paymentMethodType = PaymentMethodType::Card): self
+    public static function emptyTestDonation(string $amount, PaymentMethodType $paymentMethodType = PaymentMethodType::Card, string $currencyCode = 'GBP'): self
     {
-        return new self($amount, 'GBP', $paymentMethodType);
+        return new self($amount, $currencyCode, $paymentMethodType);
     }
 
     private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
     {
         $this->fundingWithdrawals = new ArrayCollection();
-        $this->setCurrencyCode($currencyCode);
-        $this->setAmountAndMethod($amount, $paymentMethodType);
+        $this->currencyCode = $currencyCode;
+        $maximumAmount = self::maximumAmount($paymentMethodType);
+
+        if (
+            bccomp($amount, (string)self::MINUMUM_AMOUNT, 2) === -1 ||
+            bccomp($amount, (string)$maximumAmount, 2) === 1
+        ) {
+            throw new \UnexpectedValueException(sprintf(
+                'Amount must be %d-%d %s',
+                self::MINUMUM_AMOUNT,
+                $maximumAmount,
+                $this->currencyCode,
+            ));
+        }
+
+        $this->amount = $amount;
+        $this->paymentMethodType = $paymentMethodType;
     }
 
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
@@ -368,7 +381,25 @@ class Donation extends SalesforceWriteProxy
 
     public function __toString(): string
     {
-        $charityName = $this->getCampaign()->getCharity()->getName() ?? '[pending charity]';
+        // if we're in __toString then probably something has already gone wrong, and we don't want to allow
+        // any more crashes during the logging process.
+        try {
+            $charityName = $this->getCampaign()->getCharity()->getName();
+        } catch (\Throwable $t) {
+            // perhaps the charity was never pulled from Salesforce into our database, in which case we might
+            // have a TypeError trying to get a string name from it.
+            $charityName = "[pending charity threw " . get_class($t) . "]";
+        }
+        return "Donation {$this->getUuid()} to $charityName";
+    }
+
+    /*
+     * In contrast to __toString, this is used when creating a payment intent. If we can't find the charity name
+     * then we should let the process of making the intent and registering the donation crash.
+     */
+    public function getDescription(): string
+    {
+        $charityName = $this->getCampaign()->getCharity()->getName();
         return "Donation {$this->getUuid()} to $charityName";
     }
 
@@ -634,29 +665,6 @@ class Donation extends SalesforceWriteProxy
     #[Pure] public function getCharityFeeGross(): string
     {
         return bcadd($this->getCharityFee(), $this->getCharityFeeVat(), 2);
-    }
-
-    /**
-     * @param string $amount    Core donation amount, excluding any tip, in full pounds GBP.
-     */
-    private function setAmountAndMethod(string $amount, PaymentMethodType $paymentMethodType): void
-    {
-        $maximumAmount = self::maximumAmount($paymentMethodType);
-
-        if (
-            bccomp($amount, (string) $this->minimumAmount, 2) === -1 ||
-            bccomp($amount, (string)$maximumAmount, 2) === 1
-        ) {
-            throw new \UnexpectedValueException(sprintf(
-                'Amount must be %d-%d %s',
-                $this->minimumAmount,
-                $maximumAmount,
-                $this->currencyCode,
-            ));
-        }
-
-        $this->amount = $amount;
-        $this->paymentMethodType = $paymentMethodType;
     }
 
     public function setCharityFee(string $charityFee): void
@@ -1021,11 +1029,6 @@ class Donation extends SalesforceWriteProxy
         return $this->currencyCode;
     }
 
-    public function setCurrencyCode(string $currencyCode): void
-    {
-        $this->currencyCode = $currencyCode;
-    }
-
     /**
      * @return bool
      */
@@ -1251,7 +1254,7 @@ class Donation extends SalesforceWriteProxy
         $donationMessage->amount = (float) $this->amount;
 
         $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber() ?? '';
-        $donationMessage->org_name = $this->getCampaign()->getCharity()->getName() ?? '';
+        $donationMessage->org_name = $this->getCampaign()->getCharity()->getName();
         $donationMessage->org_regulator = $this->getCampaign()->getCharity()->getRegulator();
         $donationMessage->org_regulator_number = $this->getCampaign()->getCharity()->getRegulatorNumber();
 

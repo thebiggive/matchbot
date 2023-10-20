@@ -172,6 +172,32 @@ class TestCase extends PHPUnitTestCase
 
     protected function getMinimalCampaign(): Campaign
     {
-        return new Campaign(new Charity());
+        return new Campaign(\MatchBot\Tests\TestCase::someCharity());
+    }
+
+    /**
+     * Returns some random charity - use if you don't care about the details or will replace them with setters later.
+     * Introduced to replace many old calls to instantiate Charity with zero arguments.
+     */
+    public static function someCharity(): Charity
+    {
+        return new Charity(
+            salesforceId: '12CharityId_' .  self::randomHex(3),
+            charityName: "Charity Name",
+            stripeAccountId: "stripe-account-id-" . self::randomHex(),
+            hmrcReferenceNumber: 'H' . self::randomHex(3),
+            giftAidOnboardingStatus: 'Onboarded',
+            regulator: 'CCEW',
+            regulatorNumber: 'Reg-no',
+            time: new \DateTime('2023-10-06T18:51:27'),
+        );
+    }
+
+    /**
+     * @param positive-int $num_bytes
+     */
+    private static function randomHex(int $num_bytes=8): string
+    {
+        return bin2hex(random_bytes($num_bytes));
     }
 }

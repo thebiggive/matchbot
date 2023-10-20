@@ -142,7 +142,7 @@ class DonationRepositoryTest extends TestCase
 
     public function testBuildFromApiRequestSuccess(): void
     {
-        $dummyCampaign = new Campaign(charity: new Charity());
+        $dummyCampaign = new Campaign(charity: \MatchBot\Tests\TestCase::someCharity());
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -209,7 +209,6 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');;
-        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
         $this->getRepo()->deriveFees($donation, 'amex', null);
@@ -229,7 +228,6 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');;
-        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
         $this->getRepo()->deriveFees($donation, 'visa', 'US');
@@ -275,7 +273,6 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');;
-        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
         $this->getRepo()->deriveFees($donation, null, null);
@@ -295,7 +292,6 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');;
-        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
 
@@ -318,7 +314,6 @@ class DonationRepositoryTest extends TestCase
     public function testStripeAmountForCharityWithoutTip(): void
     {
         $donation = $this->getTestDonation('987.65');;
-        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
         $this->getRepo()->deriveFees($donation, null, null);
@@ -336,7 +331,6 @@ class DonationRepositoryTest extends TestCase
     {
         $donation = $this->getTestDonation('987.65');
         $donation->setTbgShouldProcessGiftAid(true);
-        $donation->setCurrencyCode('GBP');
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
         $this->getRepo()->deriveFees($donation, null, null);
@@ -356,7 +350,6 @@ class DonationRepositoryTest extends TestCase
         $donation = $this->getTestDonation('6.25');
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
-        $donation->setCurrencyCode('GBP');
         $this->getRepo()->deriveFees($donation, null, null);
 
         // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)
@@ -530,7 +523,7 @@ class DonationRepositoryTest extends TestCase
             ->willReturn($queryBuilderProphecy->reveal());
 
         // 2 param sets.
-        $queryBuilderProphecy->setParameter('claimGiftAidWithStatus', 'Paid')
+        $queryBuilderProphecy->setParameter('claimGiftAidWithStatus', DonationStatus::Paid->value)
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
         $queryBuilderProphecy->setParameter('claimGiftAidForDonationsBefore', Argument::type(\DateTime::class))
             ->shouldBeCalledOnce()->willReturn($queryBuilderProphecy->reveal());
