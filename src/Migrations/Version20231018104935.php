@@ -21,8 +21,9 @@ final class Version20231018104935 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
+        // we have a duplicate already in staging, but we don't care much about any of the data in this table yet.
+        $this->addSql('DELETE FROM DonorAccount WHERE ID > 0');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_STRIPE_ID ON DonorAccount(stripeCustomerId) ');
-
     }
 
     public function down(Schema $schema): void
