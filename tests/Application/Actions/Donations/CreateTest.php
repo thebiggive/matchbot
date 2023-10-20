@@ -383,7 +383,7 @@ class CreateTest extends TestCase
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
         $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
-        $this->assertEquals('Pending', $payloadArray['donation']['status']);
+        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
         $this->assertEquals('pi_dummyIntent456_id', $payloadArray['donation']['transactionId']);
     }
@@ -497,7 +497,7 @@ class CreateTest extends TestCase
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
         $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
-        $this->assertEquals('Pending', $payloadArray['donation']['status']);
+        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
         $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
     }
@@ -615,7 +615,7 @@ class CreateTest extends TestCase
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
         $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
         $this->assertEquals('cus_aaaaaaaaaaaa11', $payloadArray['donation']['pspCustomerId']);
-        $this->assertEquals('Pending', $payloadArray['donation']['status']);
+        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
         $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
     }
@@ -838,7 +838,7 @@ class CreateTest extends TestCase
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
         $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
-        $this->assertEquals('Pending', $payloadArray['donation']['status']);
+        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
         $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
     }
