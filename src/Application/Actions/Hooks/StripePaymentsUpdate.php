@@ -84,6 +84,9 @@ class StripePaymentsUpdate extends Stripe
                 return $this->handleChargeSucceeded($event, $response);
             case Event::PAYMENT_INTENT_CANCELED:
                 return $this->handlePaymentIntentCancelled($event, $response);
+            case Event::CASH_BALANCE_FUNDS_AVAILABLE:
+            case Event::CUSTOMER_CASH_BALANCE_TRANSACTION_CREATED:
+                return $this->handleCashBalanceUpdate($event, $response);
             default:
                 $this->logger->warning(sprintf('Unsupported event type "%s"', $type));
                 return $this->respond($response, new ActionPayload(204));
@@ -451,5 +454,19 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
+    }
+
+    private function handleCashBalanceUpdate(Event $event, Response $response): Response
+    {
+        if (getenv('APP_ENV') === 'production') {
+            return $this->respond($response, new ActionPayload(200));
+        } else {
+            // for now, and outside of production, just send the webhook to slack so we can see if we like it.
+            $this->chatter->send(new ChatMessage(
+                "StripeCashBalanceUpdate in development - recieved webhook from stripe: \n\n" .
+                $event->toJSON()
+            ));
+            return $this->respond($response, new ActionPayload(200));
+        }
     }
 }
