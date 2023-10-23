@@ -12,10 +12,9 @@ use GuzzleHttp\Exception\RequestException;
 class Mailer extends Common
 {
     /**
-     * @psalm-suppress PossiblyUnusedMethod - unsuppress before merging
      * @psalm-param array{templateKey: string, recipientEmailAddress: string, params: array, ...} $requestBody
      */
-    public function sendEmail(array $requestBody): bool
+    public function sendEmail(array $requestBody): void
     {
         try {
             $baseUri = $this->getSetting('mailer', 'baseUri');
@@ -31,7 +30,7 @@ class Mailer extends Common
             );
 
             if ($response->getStatusCode() === 200) {
-                return true;
+                return;
             } else {
                 $this->logger->warning(sprintf(
                     '%s email callout didn\'t return 200. It returned code: %s. Request body: %s. Response body: %s.',
@@ -40,7 +39,7 @@ class Mailer extends Common
                     json_encode($requestBody),
                     $response->getBody()->getContents(),
                 ));
-                return false;
+                return;
             }
         } catch (RequestException $ex) {
             $response = $ex->getResponse();
@@ -53,7 +52,7 @@ class Mailer extends Common
                 $ex->getMessage(),
                 $response ? $response->getBody()->getContents() : 'N/A',
             ));
-            return false;
+            return;
         } catch (GuzzleException $ex) {
             $this->logger->error(sprintf(
                 '%s email exception %s with error code %s: %s. Body: %s',
@@ -63,7 +62,7 @@ class Mailer extends Common
                 $ex->getMessage(),
                 'N/A',
             ));
-            return false;
+            return;
         }
     }
 

@@ -14,7 +14,7 @@ use MatchBot\Application\LazyAssertionException;
 class DonorName
 {
     /** @Column(type = "string") */
-    private string $first;
+    public string $first;
 
     /** @Column(type = "string") */
     private string $last;
