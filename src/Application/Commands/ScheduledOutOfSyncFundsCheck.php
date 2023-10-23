@@ -47,20 +47,21 @@ class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
 
         $chatMessage = new ChatMessage('Out of sync funds check');
         $message = 'Out of sync funds check completed' . ($this->outOfSyncFundFound ? " OUT OF SYNC FUNDS DETECTED" : " no out of sync funds detected");
-        $output->writeln($message . "see Slack for details");
+        $output->writeln($message);
+        if ($this->outOfSyncFundFound) {
+            $env = getenv('APP_ENV');
+            \assert(is_string($env));
+            $options = (new SlackOptions())
+                ->block((new SlackHeaderBlock(sprintf(
+                    '[%s] %s',
+                    $env,
+                    $message,
+                ))))
+                ->block((new SlackSectionBlock())->text($bufferedOutput->fetch()));
+            $chatMessage->options($options);
 
-        $env = getenv('APP_ENV');
-        \assert(is_string($env));
-        $options = (new SlackOptions())
-            ->block((new SlackHeaderBlock(sprintf(
-                '[%s] %s',
-                $env,
-                $message,
-            ))))
-            ->block((new SlackSectionBlock())->text($bufferedOutput->fetch()));
-        $chatMessage->options($options);
-
-        $this->chatter->send($chatMessage);
+            $this->chatter->send($chatMessage);
+        }
 
         return 0;
     }
