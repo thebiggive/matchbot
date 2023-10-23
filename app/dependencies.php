@@ -150,6 +150,13 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\Mailer($settings, $c->get(LoggerInterface::class));
         },
 
+        \MatchBot\Domain\DonationFundsNotifier::class => function (ContainerInterface $c): \MatchBot\Domain\DonationFundsNotifier {
+            $mailer = $c->get(Client\Mailer::class);
+            \assert($mailer instanceof Client\Mailer);
+
+            return new \MatchBot\Domain\DonationFundsNotifier($mailer);
+        },
+
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
             return $c->get(RetrySafeEntityManager::class);
         },

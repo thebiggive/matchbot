@@ -4,13 +4,19 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Hooks;
 
+use Assert\Assertion;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Notifier\StripeChatterInterface;
+use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\Money;
+use MatchBot\Domain\StripeCustomerId;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -38,8 +44,10 @@ class StripePaymentsUpdate extends Stripe
 
     public function __construct(
         protected DonationRepository $donationRepository,
+        private DonorAccountRepository $donorAccountRepository,
         protected EntityManagerInterface $entityManager,
         protected StripeClient $stripeClient,
+        private DonationFundsNotifier $donationFundsNotifier,
         ContainerInterface $container,
         LoggerInterface $logger,
     ) {
@@ -84,7 +92,6 @@ class StripePaymentsUpdate extends Stripe
                 return $this->handleChargeSucceeded($event, $response);
             case Event::PAYMENT_INTENT_CANCELED:
                 return $this->handlePaymentIntentCancelled($event, $response);
-            case Event::CASH_BALANCE_FUNDS_AVAILABLE:
             case Event::CUSTOMER_CASH_BALANCE_TRANSACTION_CREATED:
                 return $this->handleCashBalanceUpdate($event, $response);
             default:
@@ -458,15 +465,36 @@ class StripePaymentsUpdate extends Stripe
 
     private function handleCashBalanceUpdate(Event $event, Response $response): Response
     {
-        if (getenv('APP_ENV') === 'production') {
+        Assertion::eq('customer_cash_balance_transaction.created', $event->type);
+
+        /** @var array{customer: string, currency: string, net_amount: int, ending_balance: int, type: string} $webhookObject */
+        $webhookObject = $event->data->toArray()['object'];
+
+        $stripeAccountId = StripeCustomerId::of($webhookObject['customer']);
+
+        $this->chatter->send(new ChatMessage(
+            "Cash Balance update received for account " . $stripeAccountId->stripeCustomerId .
+            ", type: " . $webhookObject['type']
+        ));
+
+        if ($webhookObject['type'] !== 'funded') {
             return $this->respond($response, new ActionPayload(200));
-        } else {
-            // for now, and outside of production, just send the webhook to slack so we can see if we like it.
+        }
+
+        $donorAccount = $this->donorAccountRepository->findByStripeIdOrNull($stripeAccountId);
+        $currency = Currency::fromIsoCode($webhookObject['currency']);
+        $transferAmount = Money::fromPence($webhookObject['net_amount'], $currency);
+        $endingBalance = Money::fromPence($webhookObject['ending_balance'], $currency);
+
+        if ($donorAccount === null) {
             $this->chatter->send(new ChatMessage(
-                "StripeCashBalanceUpdate in development - recieved webhook from stripe: \n\n" .
-                $event->toJSON()
+                "Cash Balance update received for unknown account" . $stripeAccountId->stripeCustomerId
             ));
             return $this->respond($response, new ActionPayload(200));
         }
+
+        $this->donationFundsNotifier->notifyRecieptOfAccountFunds($donorAccount, $transferAmount, $endingBalance);
+
+        return $this->respond($response, new ActionPayload(200));
     }
 }
