@@ -476,11 +476,6 @@ class StripePaymentsUpdate extends Stripe
             return $this->respond($response, new ActionPayload(200));
         }
 
-        $this->chatter->send(new ChatMessage(
-            "Cash Balance update received for account " . $stripeAccountId->stripeCustomerId .
-            ", type: " . $webhookObject['type']
-        ));
-
         $donorAccount = $this->donorAccountRepository->findByStripeIdOrNull($stripeAccountId);
         $currency = Currency::fromIsoCode($webhookObject['currency']);
         $transferAmount = Money::fromPence($webhookObject['net_amount'], $currency);
