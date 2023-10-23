@@ -73,10 +73,7 @@ $commands = [
         $psr11App->get(EntityManagerInterface::class),
         $psr11App->get(FundRepository::class),
         $psr11App->get(LoggerInterface::class),
-    ),
-    new \MatchBot\Application\Commands\SendEmail(
-            $psr11App->get(\MatchBot\Client\Mailer::class),
-    ),
+    )
 ];
 
 foreach ($commands as $command) {
