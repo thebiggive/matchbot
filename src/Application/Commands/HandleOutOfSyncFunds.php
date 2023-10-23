@@ -33,6 +33,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class HandleOutOfSyncFunds extends LockingCommand
 {
+    protected bool $outOfSyncFundFound = false;
     protected static $defaultName = 'matchbot:handle-out-of-sync-funds';
 
     public function __construct(
@@ -53,6 +54,10 @@ class HandleOutOfSyncFunds extends LockingCommand
         );
     }
 
+    /**
+     * @psalm-suppress PossiblyUnusedReturnValue - return value is used by
+     * \MatchBot\Application\Commands\Command::execute . Not sure why Psalm thinks its unused.
+     */
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $mode = $input->getArgument('mode');
@@ -128,6 +133,10 @@ class HandleOutOfSyncFunds extends LockingCommand
             "Checked $numFundings fundings. Found $numFundingsCorrect with correct allocations, " .
             "$numFundingsOvermatched over-matched and $numFundingsUndermatched under-matched"
         );
+
+        if ($numFundingsOvermatched > 0 || $numFundingsUndermatched > 0) {
+            $this->outOfSyncFundFound = true;
+        }
 
         return 0;
     }
