@@ -121,6 +121,10 @@
           "Composer\\Config::disableProcessTimeout",
           "php matchbot-cli.php matchbot:handle-out-of-sync-funds check"
         ],
+        "matchbot:scheduled-out-of-sync-funds-check": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:scheduled-out-of-sync-funds-check"
+        ],
         "matchbot:fix-out-of-sync-funds": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:handle-out-of-sync-funds fix"
