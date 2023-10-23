@@ -11,6 +11,7 @@ use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\DonorAccountRepository;
 use Prophecy\Argument;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\StripeClient;
@@ -25,7 +26,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         // Payout Object events, return a 204 No Content no-op for now.
         $body = $this->getStripeHookMock('po_created');
@@ -47,7 +48,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         $body = $this->getStripeHookMock('ch_succeeded_invalid_id');
         $webhookSecret = $this->getValidWebhookSecret($container);
@@ -76,7 +77,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         $body = $this->getStripeHookMock('ch_succeeded');
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -106,7 +107,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         $body = $this->getStripeHookMock('ch_succeeded');
         $donation = $this->getTestDonation();
@@ -154,7 +155,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         $body = $this->getStripeHookMock('ch_succeeded_sek');
         $donation = $this->getTestDonation('6000.00', currencyCode: 'SEK');
@@ -203,7 +204,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         $body = $this->getStripeHookMock('ch_dispute_closed_lost');
         $donation = $this->getTestDonation();
@@ -245,7 +246,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         $body = $this->getStripeHookMock('ch_dispute_closed_won');
         $donation = $this->getTestDonation();
@@ -290,7 +291,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         $body = $this->getStripeHookMock('ch_dispute_closed_lost_unknown_pi');
         $webhookSecret = $this->getValidWebhookSecret($container);
@@ -320,7 +321,7 @@ class StripePaymentsUpdateTest extends StripeTest
         // arrange (plus assert some donation repo & chatter method call counts)
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         $body = $this->getStripeHookMock('ch_dispute_closed_lost_higher_amount');
         $donation = $this->getTestDonation();
@@ -374,7 +375,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         $body = $this->getStripeHookMock('ch_dispute_closed_lost_unexpected_amount');
         $donation = $this->getTestDonation();
@@ -419,7 +420,7 @@ class StripePaymentsUpdateTest extends StripeTest
         // arrange (plus assert a couple of donation repo method call counts)
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         $body = $this->getStripeHookMock('ch_refunded');
         $donation = $this->getTestDonation();
@@ -477,7 +478,7 @@ class StripePaymentsUpdateTest extends StripeTest
         // arrange
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         $body = $this->getStripeHookMock('ch_over_refunded');
         $donation = $this->getTestDonation();
@@ -535,7 +536,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
         $webhookSecret = $this->getValidWebhookSecret($container);
 
         $body = $this->getStripeHookMock('ch_tip_refunded');
@@ -582,7 +583,7 @@ class StripePaymentsUpdateTest extends StripeTest
         // arrange
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         $body = $this->getStripeHookMock('ch_refunded_but_original_failed');
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -617,7 +618,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->getContainer($app);
 
         $body = $this->getStripeHookMock('ch_unsupported_partial_refund');
         $donation = $this->getTestDonation();
@@ -668,5 +669,14 @@ class StripePaymentsUpdateTest extends StripeTest
          */
         $settings = $container->get('settings');
         return $settings['stripe']['accountWebhookSecret'];
+    }
+
+    public function getContainer(\Slim\App $app): ?\Psr\Container\ContainerInterface
+    {
+        $container = $app->getContainer();
+        \assert($container instanceof Container);
+        $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
+
+        return $container;
     }
 }

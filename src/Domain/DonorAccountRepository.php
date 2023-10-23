@@ -18,4 +18,9 @@ class DonorAccountRepository extends EntityRepository
         $this->getEntityManager()->persist($donorAccount);
         $this->getEntityManager()->flush();
     }
+
+    public function findByStripeIdOrNull(StripeCustomerId $stripeAccountId): ?DonorAccount
+    {
+        return $this->findOneBy(['stripeCustomerId' => $stripeAccountId->stripeCustomerId]);
+    }
 }
