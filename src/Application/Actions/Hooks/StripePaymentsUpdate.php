@@ -472,14 +472,14 @@ class StripePaymentsUpdate extends Stripe
 
         $stripeAccountId = StripeCustomerId::of($webhookObject['customer']);
 
+        if ($webhookObject['type'] !== 'funded') {
+            return $this->respond($response, new ActionPayload(200));
+        }
+
         $this->chatter->send(new ChatMessage(
             "Cash Balance update received for account " . $stripeAccountId->stripeCustomerId .
             ", type: " . $webhookObject['type']
         ));
-
-        if ($webhookObject['type'] !== 'funded') {
-            return $this->respond($response, new ActionPayload(200));
-        }
 
         $donorAccount = $this->donorAccountRepository->findByStripeIdOrNull($stripeAccountId);
         $currency = Currency::fromIsoCode($webhookObject['currency']);
@@ -494,6 +494,15 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->donationFundsNotifier->notifyRecieptOfAccountFunds($donorAccount, $transferAmount, $endingBalance);
+
+        $donorAccountId = $donorAccount->getId();
+        \assert(is_int($donorAccountId)); // must be an int since it was persisted before.
+        $this->logger->info(
+            'Sent notification of receipt of account funds for Stripe Account: ' . $stripeAccountId->stripeCustomerId .
+            ", transfer Amount" . $transferAmount->format() .
+            ", new balance" . $endingBalance->format() .
+            ", DonorAccount #" . $donorAccountId
+        );
 
         return $this->respond($response, new ActionPayload(200));
     }
