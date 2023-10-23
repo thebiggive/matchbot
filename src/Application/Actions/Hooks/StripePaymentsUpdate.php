@@ -384,7 +384,7 @@ class StripePaymentsUpdate extends Stripe
             'Over-refund detected for donation %s based on %s hook. Donation inc. tip was %s %s and refund or dispute was %s %s',
             $donation->getUuid(),
             $eventType,
-            bcdiv((string) $donation->getAmountFractionalIncTip(),  '100', 2),
+            bcdiv((string) $donation->getAmountFractionalIncTip(), '100', 2),
             $donation->getCurrencyCode(),
             bcdiv((string) $refundedOrDisputedAmount, '100', 2),
             strtoupper($refundedOrDisputedCurrencyCode),
@@ -481,10 +481,17 @@ class StripePaymentsUpdate extends Stripe
         $transferAmount = Money::fromPence($webhookObject['net_amount'], $currency);
         $endingBalance = Money::fromPence($webhookObject['ending_balance'], $currency);
 
+        $app_env = getenv('APP_ENV');
         if ($donorAccount === null) {
-            $this->chatter->send(new ChatMessage(
-                "Cash Balance update received for unknown account" . $stripeAccountId->stripeCustomerId
-            ));
+            \assert(is_string($app_env));
+            if ($app_env !== "regression" && $app_env !== "staging") {
+                // We expect the regression and staging environments to generate irrelevent webhooks to each other,
+                // so we don't need to notify Slack about the unexpected webhooks there.
+                $this->chatter->send(new ChatMessage(
+                    "$app_env: Cash Balance update received for unknown account: " . $stripeAccountId->stripeCustomerId
+                ));
+            }
+
             return $this->respond($response, new ActionPayload(200));
         }
 

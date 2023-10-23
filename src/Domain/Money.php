@@ -11,7 +11,7 @@ class Money
 {
     /**
      * @param int $amountInPence - Amount of money in minor units, i.e. pence, assumed to be worth 1/100 of the major
-     * unit. Must be between 1 and the maxiumum customer balance donation, currently 200_000_00 pence.
+     * unit. Has upper limit set above what we expect to ever deal with on a single account.
      * @param Currency $currency
      */
     private function __construct(
@@ -21,7 +21,7 @@ class Money
         Assertion::between(
             $this->amountInPence,
             1,
-            Donation::MAXIMUM_CUSTOMER_BALANCE_DONATION * 100
+            20_000_000_00 // this is nearly PHP_INT_MAX on 32 bit systems.
         );
     }
 
