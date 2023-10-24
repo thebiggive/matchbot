@@ -121,6 +121,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         }
 
         $this->getEntityManager()->persist($charity);
+
         return $charity;
     }
 

@@ -27,14 +27,14 @@ class CampaignFunding extends Model
      *  },
      *  inverseJoinColumns={
      *      @ORM\JoinColumn(name="campaign_id", referencedColumnName="id")
-     *  },
+     *  }
      * )
      * @var Campaign[]
      */
     protected $campaigns;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Fund")
+     * @ORM\ManyToOne(targetEntity="Fund", cascade={"persist"})
      * @var Fund
      */
     protected Fund $fund;
