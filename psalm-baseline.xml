@@ -196,6 +196,29 @@
       <code>$response</code>
     </UnusedClosureParam>
   </file>
+  <file src="integrationTests/CreateDonationEvenWhenEntityManagerClosesAfterFirstPersistsTest.php">
+    <DeprecatedMethod>
+      <code><![CDATA[EntityManager::create(
+        // for this test we don't need the RetrySafeEntityManager - using the standard EM makes things simpler.
+            $this->getContainer()->get('settings')['doctrine']['connection'],
+            $this->getContainer()->get(\Doctrine\ORM\Configuration::class),
+        )]]></code>
+    </DeprecatedMethod>
+    <MethodSignatureMismatch>
+      <code>$entity</code>
+    </MethodSignatureMismatch>
+    <MixedArgument>
+      <code><![CDATA[$this->getContainer()->get('settings')['doctrine']['connection']]]></code>
+      <code><![CDATA[$this->getContainer()->get('settings')['doctrine']['connection']]]></code>
+      <code><![CDATA[$this->getContainer()->get(LoggerInterface::class)]]></code>
+      <code><![CDATA[$this->getContainer()->get(\Doctrine\ORM\Configuration::class)]]></code>
+      <code><![CDATA[$this->getContainer()->get(\Doctrine\ORM\Configuration::class)]]></code>
+    </MixedArgument>
+    <MixedArrayAccess>
+      <code><![CDATA[$this->getContainer()->get('settings')['doctrine']]]></code>
+      <code><![CDATA[$this->getContainer()->get('settings')['doctrine']]]></code>
+    </MixedArrayAccess>
+  </file>
   <file src="integrationTests/DonationPersistenceTest.php">
     <DeprecatedMethod>
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
@@ -203,18 +226,6 @@
   </file>
   <file src="matchbot-cli.php">
     <MixedArgument>
-      <code><![CDATA[$psr11App->get(CampaignFundingRepository::class)]]></code>
-      <code><![CDATA[$psr11App->get(CampaignFundingRepository::class)]]></code>
-      <code><![CDATA[$psr11App->get(CampaignRepository::class)]]></code>
-      <code><![CDATA[$psr11App->get(ChatterInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(DonationRepository::class)]]></code>
-      <code><![CDATA[$psr11App->get(DonationRepository::class)]]></code>
-      <code><![CDATA[$psr11App->get(DonationRepository::class)]]></code>
-      <code><![CDATA[$psr11App->get(DonationRepository::class)]]></code>
-      <code><![CDATA[$psr11App->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(FundRepository::class)]]></code>
-      <code><![CDATA[$psr11App->get(FundingWithdrawalRepository::class)]]></code>
       <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
       <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
       <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
@@ -231,14 +242,6 @@
       <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
       <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
       <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(Matching\Adapter::class)]]></code>
-      <code><![CDATA[$psr11App->get(Matching\Adapter::class)]]></code>
-      <code><![CDATA[$psr11App->get(RoutableMessageBus::class)]]></code>
-      <code><![CDATA[$psr11App->get(RoutableMessageBus::class)]]></code>
-      <code><![CDATA[$psr11App->get(StripeClient::class)]]></code>
     </MixedArgument>
   </file>
   <file src="public/index.php">
@@ -679,7 +682,7 @@
   </file>
   <file src="src/Application/Persistence/RetrySafeEntityManager.php">
     <DeprecatedMethod>
-      <code><![CDATA[EntityManager::create($this->connectionSettings, $this->ormConfig)]]></code>
+      <code><![CDATA[EntityManager::create($connectionSettings, $this->ormConfig)]]></code>
     </DeprecatedMethod>
     <LessSpecificReturnStatement>
       <code><![CDATA[$this->ormConfig->getRepositoryFactory()->getRepository($this, $className)]]></code>
@@ -687,12 +690,15 @@
     <MethodSignatureMustProvideReturnType>
       <code>getRepository</code>
     </MethodSignatureMustProvideReturnType>
-    <MixedArgumentTypeCoercion>
-      <code><![CDATA[$this->connectionSettings]]></code>
-    </MixedArgumentTypeCoercion>
     <MoreSpecificReturnType>
       <code>getRepository</code>
     </MoreSpecificReturnType>
+    <TooManyArguments>
+      <code>flush</code>
+      <code>flush</code>
+      <code>refresh</code>
+      <code>refresh</code>
+    </TooManyArguments>
   </file>
   <file src="src/Client/Campaign.php">
     <MixedArrayAccess>
