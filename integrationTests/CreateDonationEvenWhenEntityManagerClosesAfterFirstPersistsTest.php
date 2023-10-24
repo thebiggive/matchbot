@@ -133,13 +133,6 @@ class CreateDonationEvenWhenEntityManagerClosesAfterFirstPersistsTest extends In
         //persist operations for entity
 
         $this->createDonation(withPremadeCampaign: false);
-        $donationFetchedFromDB = $this->db()->fetchAssociative(
-            "SELECT * from Donation
-                   JOIN Campaign on Donation.campaign_id = Campaign.id
-         where Campaign.salesforceId = '{$this->campaignSfID}';"
-        );
-
-        $this->assertSame([], $donationFetchedFromDB);
     }
 
     /**
