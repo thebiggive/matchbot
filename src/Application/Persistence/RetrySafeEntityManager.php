@@ -127,10 +127,6 @@ class RetrySafeEntityManager extends EntityManagerDecorator
      */
     public function persist($object): void
     {
-        echo "\npersisting $object\n";
-        if ($object instanceof SalesforceReadProxy) {
-       //     throw new \Exception("persisted procky $object explicitly");
-        }
         $this->persistedEntitiesNotYetFlushed[] = $object;
         try {
             $this->entityManager->persist($object);
@@ -230,7 +226,6 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         return;
         echo "\n\n";
         foreach ($this->persistedEntitiesNotYetFlushed as $entity) {
-            echo "re-persisting entity: $entity\n";
             if ($entity instanceof CampaignFunding) {
                 debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
             }
