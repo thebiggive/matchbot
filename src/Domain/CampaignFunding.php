@@ -19,7 +19,7 @@ class CampaignFunding extends Model
     use TimestampsTrait;
 
     /**
-     * @ORM\ManyToMany(targetEntity="Campaign", cascade={"persist"})
+     * @ORM\ManyToMany(targetEntity="Campaign")
      * @ORM\JoinTable(
      *  name="Campaign_CampaignFunding",
      *  joinColumns={
@@ -34,7 +34,7 @@ class CampaignFunding extends Model
     protected $campaigns;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Fund", cascade={"persist"})
+     * @ORM\ManyToOne(targetEntity="Fund")
      * @var Fund
      */
     protected Fund $fund;
