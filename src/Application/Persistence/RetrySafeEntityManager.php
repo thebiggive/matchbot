@@ -114,6 +114,7 @@ class RetrySafeEntityManager extends EntityManagerDecorator
                 $closedException->__tostring()
             );
             $this->resetManager();
+            $this->entityManager->persist($object);
         }
     }
 
