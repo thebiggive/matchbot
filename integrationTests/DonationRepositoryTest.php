@@ -4,12 +4,15 @@ namespace MatchBot\IntegrationTests;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Client\Fund;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Tests\TestCase;
 
 class DonationRepositoryTest extends IntegrationTest
 {
@@ -87,5 +90,75 @@ class DonationRepositoryTest extends IntegrationTest
         $em->flush(); // Cascade persists campaign and charity.
 
         return $donation;
+    }
+
+    public function testItFindsExpiredDonations(): void
+    {
+        // arrange
+        $campaign = $this->makeCampaign();
+        $randomEmailAddress = 'email' . random_int(1000, 99999) . '@example.com';
+
+        $this->makeDonation($randomEmailAddress, $campaign, DonationStatus::Pending);
+        $this->makeDonation($randomEmailAddress, $campaign, DonationStatus::Cancelled);
+
+        $sut = $this->getService(DonationRepository::class);
+        $thirtyThreeMinsInFuture = (new \DateTimeImmutable('now'))->modify('+33 minute');
+
+        // act
+        $expiredDonations = $sut->findWithExpiredMatching($thirtyThreeMinsInFuture);
+
+        // assert
+        $expiredDonationStatuses = array_map(
+            fn(Donation $donation) => $donation->getDonationStatus(),
+            array_filter($expiredDonations, fn(Donation $dn) => $dn->getDonorEmailAddress() === $randomEmailAddress)
+        );
+
+        $this->assertEqualsCanonicalizing(
+            [DonationStatus::Pending, DonationStatus::Cancelled],
+            $expiredDonationStatuses
+        );
+    }
+
+
+    public function makeCampaign(): Campaign
+    {
+        $campaign = new Campaign(TestCase::someCharity());
+        $campaign->setCurrencyCode('GBP');
+        $campaign->setStartDate(new \DateTime());
+        $campaign->setEndDate(new \DateTime());
+        $campaign->setIsMatched(true);
+
+        $campaign->setName('Campaign Name');
+        return $campaign;
+    }
+
+    public function makeDonation(string $randomEmailAddress, Campaign $campaign, DonationStatus $donationStatus): void
+    {
+        $oldPendingDonation = Donation::fromApiModel(
+            donationData: new DonationCreate(
+                currencyCode: 'GBP',
+                donationAmount: '1',
+                projectId: 'projectID',
+                psp: 'stripe',
+                emailAddress: $randomEmailAddress,
+            ), campaign: $campaign
+        );
+        if ($donationStatus === DonationStatus::Cancelled) {
+            $oldPendingDonation->cancel();
+        } else {
+            $oldPendingDonation->setDonationStatus($donationStatus);
+        }
+        $fundingWithdrawal = new FundingWithdrawal();
+        $oldPendingDonation->addFundingWithdrawal($fundingWithdrawal);
+        $fundingWithdrawal->setAmount('1');
+        $fundingWithdrawal->setDonation($oldPendingDonation);
+
+        $em = $this->getService(EntityManagerInterface::class);
+        $em->persist($fundingWithdrawal);
+        $em->persist($oldPendingDonation->getCampaign());
+        $em->persist($oldPendingDonation->getCampaign()->getCharity());
+        $em->persist($oldPendingDonation);
+
+        $em->flush();
     }
 }

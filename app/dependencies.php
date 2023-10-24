@@ -144,6 +144,19 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\Fund($c->get('settings'), $c->get(LoggerInterface::class));
         },
 
+        Client\Mailer::class => function (ContainerInterface $c): Client\Mailer {
+            $settings = $c->get('settings');
+            \assert(is_array($settings));
+            return new Client\Mailer($settings, $c->get(LoggerInterface::class));
+        },
+
+        \MatchBot\Domain\DonationFundsNotifier::class => function (ContainerInterface $c): \MatchBot\Domain\DonationFundsNotifier {
+            $mailer = $c->get(Client\Mailer::class);
+            \assert($mailer instanceof Client\Mailer);
+
+            return new \MatchBot\Domain\DonationFundsNotifier($mailer);
+        },
+
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
             return $c->get(RetrySafeEntityManager::class);
         },
@@ -303,10 +316,13 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         RetrySafeEntityManager::class => static function (ContainerInterface $c): RetrySafeEntityManager {
+            $logger = $c->get(LoggerInterface::class);
+            \assert($logger instanceof LoggerInterface);
+
             return new RetrySafeEntityManager(
                 $c->get(ORM\Configuration::class),
                 $c->get('settings')['doctrine']['connection'],
-                $c->get(LoggerInterface::class),
+                $logger,
             );
         },
 

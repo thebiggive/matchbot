@@ -4,13 +4,19 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Hooks;
 
+use Assert\Assertion;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Notifier\StripeChatterInterface;
+use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\Money;
+use MatchBot\Domain\StripeCustomerId;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -38,8 +44,10 @@ class StripePaymentsUpdate extends Stripe
 
     public function __construct(
         protected DonationRepository $donationRepository,
+        private DonorAccountRepository $donorAccountRepository,
         protected EntityManagerInterface $entityManager,
         protected StripeClient $stripeClient,
+        private DonationFundsNotifier $donationFundsNotifier,
         ContainerInterface $container,
         LoggerInterface $logger,
     ) {
@@ -70,18 +78,22 @@ class StripePaymentsUpdate extends Stripe
             return $validationErrorResponse;
         }
 
-        $type = $this->event->type;
+        $event = $this->event ?? throw new \RuntimeException("Stripe Event not set");
+
+        $type = $event->type;
         $this->logger->info(sprintf('Received Stripe account event type "%s"', $type));
 
         switch ($type) {
             case Event::CHARGE_DISPUTE_CLOSED:
-                return $this->handleChargeDisputeClosed($this->event, $response);
+                return $this->handleChargeDisputeClosed($event, $response);
             case Event::CHARGE_REFUNDED:
-                return $this->handleChargeRefunded($this->event, $response);
+                return $this->handleChargeRefunded($event, $response);
             case Event::CHARGE_SUCCEEDED:
-                return $this->handleChargeSucceeded($this->event, $response);
+                return $this->handleChargeSucceeded($event, $response);
             case Event::PAYMENT_INTENT_CANCELED:
-                return $this->handlePaymentIntentCancelled($this->event, $response);
+                return $this->handlePaymentIntentCancelled($event, $response);
+            case Event::CUSTOMER_CASH_BALANCE_TRANSACTION_CREATED:
+                return $this->handleCashBalanceUpdate($event, $response);
             default:
                 $this->logger->warning(sprintf('Unsupported event type "%s"', $type));
                 return $this->respond($response, new ActionPayload(204));
@@ -225,7 +237,7 @@ class StripePaymentsUpdate extends Stripe
             $intentId,
         ));
 
-        $refundDate = DateTimeImmutable::createFromFormat('U', (string)$this->event->created);
+        $refundDate = DateTimeImmutable::createFromFormat('U', (string)$event->created);
         assert($refundDate instanceof DateTimeImmutable);
         $donation->recordRefundAt($refundDate);
         $this->doPostMarkRefundedUpdates($donation, true);
@@ -275,7 +287,7 @@ class StripePaymentsUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
-            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$this->event->created);
+            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$event->created);
             assert($refundDate instanceof DateTimeImmutable);
             $donation->setPartialRefundDate($refundDate);
             $donation->setTipAmount('0.00');
@@ -285,7 +297,7 @@ class StripePaymentsUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
-            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$this->event->created);
+            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$event->created);
             assert($refundDate instanceof DateTimeImmutable);
             $donation->recordRefundAt($refundDate);
         } elseif ($isOverRefund) {
@@ -301,7 +313,7 @@ class StripePaymentsUpdate extends Stripe
                 $donation->getUuid(),
                 $charge->id,
             ));
-            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$this->event->created);
+            $refundDate = DateTimeImmutable::createFromFormat('U', (string)$event->created);
             assert($refundDate instanceof DateTimeImmutable);
             $donation->recordRefundAt($refundDate);
         } else {
@@ -372,7 +384,7 @@ class StripePaymentsUpdate extends Stripe
             'Over-refund detected for donation %s based on %s hook. Donation inc. tip was %s %s and refund or dispute was %s %s',
             $donation->getUuid(),
             $eventType,
-            bcdiv((string) $donation->getAmountFractionalIncTip(),  '100', 2),
+            bcdiv((string) $donation->getAmountFractionalIncTip(), '100', 2),
             $donation->getCurrencyCode(),
             bcdiv((string) $refundedOrDisputedAmount, '100', 2),
             strtoupper($refundedOrDisputedCurrencyCode),
@@ -449,5 +461,51 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
+    }
+
+    private function handleCashBalanceUpdate(Event $event, Response $response): Response
+    {
+        Assertion::eq('customer_cash_balance_transaction.created', $event->type);
+
+        /** @var array{customer: string, currency: string, net_amount: int, ending_balance: int, type: string} $webhookObject */
+        $webhookObject = $event->data->toArray()['object'];
+
+        $stripeAccountId = StripeCustomerId::of($webhookObject['customer']);
+
+        if ($webhookObject['type'] !== 'funded') {
+            return $this->respond($response, new ActionPayload(200));
+        }
+
+        $donorAccount = $this->donorAccountRepository->findByStripeIdOrNull($stripeAccountId);
+        $currency = Currency::fromIsoCode($webhookObject['currency']);
+        $transferAmount = Money::fromPence($webhookObject['net_amount'], $currency);
+        $endingBalance = Money::fromPence($webhookObject['ending_balance'], $currency);
+
+        $app_env = getenv('APP_ENV');
+        if ($donorAccount === null) {
+            \assert(is_string($app_env));
+            if ($app_env !== "regression" && $app_env !== "staging") {
+                // We expect the regression and staging environments to generate irrelevent webhooks to each other,
+                // so we don't need to notify Slack about the unexpected webhooks there.
+                $this->chatter->send(new ChatMessage(
+                    "$app_env: Cash Balance update received for unknown account: " . $stripeAccountId->stripeCustomerId
+                ));
+            }
+
+            return $this->respond($response, new ActionPayload(200));
+        }
+
+        $this->donationFundsNotifier->notifyRecieptOfAccountFunds($donorAccount, $transferAmount, $endingBalance);
+
+        $donorAccountId = $donorAccount->getId();
+        \assert(is_int($donorAccountId)); // must be an int since it was persisted before.
+        $this->logger->info(
+            'Sent notification of receipt of account funds for Stripe Account: ' . $stripeAccountId->stripeCustomerId .
+            ", transfer Amount" . $transferAmount->format() .
+            ", new balance" . $endingBalance->format() .
+            ", DonorAccount #" . $donorAccountId
+        );
+
+        return $this->respond($response, new ActionPayload(200));
     }
 }

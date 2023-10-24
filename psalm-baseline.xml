@@ -201,6 +201,46 @@
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
     </DeprecatedMethod>
   </file>
+  <file src="matchbot-cli.php">
+    <MixedArgument>
+      <code><![CDATA[$psr11App->get(CampaignFundingRepository::class)]]></code>
+      <code><![CDATA[$psr11App->get(CampaignFundingRepository::class)]]></code>
+      <code><![CDATA[$psr11App->get(CampaignRepository::class)]]></code>
+      <code><![CDATA[$psr11App->get(ChatterInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(DonationRepository::class)]]></code>
+      <code><![CDATA[$psr11App->get(DonationRepository::class)]]></code>
+      <code><![CDATA[$psr11App->get(DonationRepository::class)]]></code>
+      <code><![CDATA[$psr11App->get(DonationRepository::class)]]></code>
+      <code><![CDATA[$psr11App->get(EntityManagerInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(EntityManagerInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(FundRepository::class)]]></code>
+      <code><![CDATA[$psr11App->get(FundingWithdrawalRepository::class)]]></code>
+      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
+      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
+      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
+      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
+      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
+      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
+      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
+      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
+      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
+      <code><![CDATA[$psr11App->get(Matching\Adapter::class)]]></code>
+      <code><![CDATA[$psr11App->get(Matching\Adapter::class)]]></code>
+      <code><![CDATA[$psr11App->get(RoutableMessageBus::class)]]></code>
+      <code><![CDATA[$psr11App->get(RoutableMessageBus::class)]]></code>
+      <code><![CDATA[$psr11App->get(StripeClient::class)]]></code>
+    </MixedArgument>
+  </file>
   <file src="public/index.php">
     <MixedArgument>
       <code><![CDATA[$app->getContainer()->get(LoggerInterface::class)]]></code>
@@ -263,9 +303,6 @@
     <MixedAssignment>
       <code><![CDATA[$this->stripeSettings]]></code>
     </MixedAssignment>
-    <PropertyNotSetInConstructor>
-      <code>$event</code>
-    </PropertyNotSetInConstructor>
   </file>
   <file src="src/Application/Actions/Hooks/StripePaymentsUpdate.php">
     <DocblockTypeContradiction>
@@ -285,7 +322,6 @@
     </ImplicitToStringCast>
     <MixedArgument>
       <code><![CDATA[$event->data->object]]></code>
-      <code><![CDATA[$this->stripeSettings['accountWebhookSecret']]]></code>
       <code><![CDATA[$txn->fee_details[0]->currency]]></code>
       <code><![CDATA[$txn->fee_details[0]->type]]></code>
     </MixedArgument>
@@ -300,29 +336,11 @@
       <code>$intentId</code>
       <code>$intentId</code>
     </PossiblyNullArgument>
-    <PropertyNotSetInConstructor>
-      <code>StripePaymentsUpdate</code>
-    </PropertyNotSetInConstructor>
   </file>
   <file src="src/Application/Actions/Hooks/StripePayoutUpdate.php">
-    <MixedArgument>
-      <code><![CDATA[$event->data->object]]></code>
-      <code>$payoutId</code>
-      <code>$payoutId</code>
-      <code><![CDATA[$this->event->data->object->id]]></code>
-      <code><![CDATA[$this->stripeSettings['connectAppWebhookSecret']]]></code>
-    </MixedArgument>
-    <MixedAssignment>
-      <code>$payoutId</code>
-    </MixedAssignment>
     <MixedPropertyFetch>
-      <code><![CDATA[$event->data->object->automatic]]></code>
       <code><![CDATA[$event->data->object->id]]></code>
-      <code><![CDATA[$this->event->data->object->id]]></code>
     </MixedPropertyFetch>
-    <PropertyNotSetInConstructor>
-      <code>StripePayoutUpdate</code>
-    </PropertyNotSetInConstructor>
   </file>
   <file src="src/Application/Actions/Status.php">
     <InternalMethod>
@@ -663,23 +681,6 @@
     <DeprecatedMethod>
       <code><![CDATA[EntityManager::create($this->connectionSettings, $this->ormConfig)]]></code>
     </DeprecatedMethod>
-    <ImpureFunctionCall>
-      <code>$func()</code>
-      <code>random_int</code>
-      <code>usleep</code>
-    </ImpureFunctionCall>
-    <ImpureMethodCall>
-      <code>beginTransaction</code>
-      <code>close</code>
-      <code>commit</code>
-      <code>error</code>
-      <code>error</code>
-      <code>flush</code>
-      <code>resetManager</code>
-      <code>rollback</code>
-      <code>rollback</code>
-      <code>warning</code>
-    </ImpureMethodCall>
     <LessSpecificReturnStatement>
       <code><![CDATA[$this->ormConfig->getRepositoryFactory()->getRepository($this, $className)]]></code>
     </LessSpecificReturnStatement>
@@ -1215,20 +1216,10 @@
       <code>$createdAt</code>
       <code>$createdAt</code>
       <code>$createdAt</code>
-      <code>$createdAt</code>
-      <code>$updatedAt</code>
       <code>$updatedAt</code>
       <code>$updatedAt</code>
       <code>$updatedAt</code>
     </MissingConstructor>
-    <PossiblyUnusedMethod>
-      <code>updatedNow</code>
-      <code>updatedNow</code>
-      <code>updatedNow</code>
-      <code>updatedNow</code>
-      <code>updatedNow</code>
-      <code>updatedNow</code>
-    </PossiblyUnusedMethod>
   </file>
   <file src="src/Migrations/Version20191109151808.php">
     <DeprecatedMethod>

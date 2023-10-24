@@ -6,6 +6,7 @@ use LosMiddleware\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Actions\DeletePaymentMethod;
 use MatchBot\Application\Actions\UpdatePaymentMethod;
 use MatchBot\Application\Actions\Donations;
+use MatchBot\Application\Actions\DonorAccount;
 use MatchBot\Application\Actions\GetPaymentMethods;
 use MatchBot\Application\Actions\Hooks;
 use MatchBot\Application\Actions\Status;
@@ -42,6 +43,11 @@ return function (App $app) {
             $group->post('/confirm', Donations\Confirm::class);
         })
             ->add(DonationPublicAuthMiddleware::class);
+
+        $versionGroup->post('/{personId:[a-z0-9-]{36}}/donor-account', DonorAccount\Create::class)
+            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
 
         $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
             ->add(PersonManagementAuthMiddleware::class)

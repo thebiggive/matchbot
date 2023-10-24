@@ -131,6 +131,38 @@ abstract class IntegrationTest extends TestCase
         $this->db()->executeStatement('DELETE FROM Charity');
     }
 
+    /**
+     * @return string Campaign ID
+     */
+    public function setupNewCampaign(): string
+    {
+        $campaignId = $this->randomString();
+        $paymentIntentId = $this->randomString();
+
+        $this->addCampaignAndCharityToDB($campaignId);
+
+        $stripePaymentIntent = new PaymentIntent($paymentIntentId);
+        $stripePaymentIntent->client_secret = 'any string, doesnt affect test';
+        $stripePaymentIntentsProphecy = $this->setUpFakeStripeClient();
+
+        $stripePaymentIntentsProphecy->create(Argument::type('array'))
+            ->willReturn($stripePaymentIntent);
+
+        /** @var \DI\Container $container */
+        $container = $this->getContainer();
+
+        $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
+        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
+        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+
+        $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
+
+        $donationRepo = $container->get(DonationRepository::class);
+        assert($donationRepo instanceof DonationRepository);
+        $donationRepo->setClient($donationClientProphecy->reveal());
+        return $campaignId;
+    }
+
     public function addCampaignAndCharityToDB(string $campaignId): void
     {
         $charityId = random_int(1000, 100000);

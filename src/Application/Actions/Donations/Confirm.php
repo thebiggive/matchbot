@@ -14,6 +14,7 @@ use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\StripeClient;
 
 class Confirm extends Action
@@ -97,8 +98,10 @@ class Confirm extends Action
                 'payment_method' => $pamentMethodId,
             ]);
         } catch (CardException $exception) {
+            $exceptionClass = get_class($exception);
             $this->logger->info(sprintf(
-                'Stripe CardException on Confirm for donation %s (%s): %s',
+                'Stripe %s on Confirm for donation %s (%s): %s',
+                $exceptionClass,
                 $donation->getUuid(),
                 $paymentIntentId,
                 $exception->getMessage(),
@@ -111,6 +114,55 @@ class Confirm extends Action
                     'message' => $exception->getMessage(),
                     'code' => $exception->getStripeCode(),
                     'decline_code' => $exception->getDeclineCode(),
+                ],
+            ], 402);
+        } catch (InvalidRequestException $exception) {
+            // We've seen card test bots, and no humans, try to reuse payment methods like this as of Oct '23. For now
+            // we want to log it as a warning, so we can see frequency on a dashboard but don't get alarms.
+            // The full Stripe message ($exception->getMessage()) we've seen is e.g.:
+            // "The provided PaymentMethod was previously used with a PaymentIntent without Customer attachment,
+            // shared with a connected account without Customer attachment, or was detached from a Customer. It may
+            // not be used again. To use a PaymentMethod multiple times, you must attach it to a Customer first."
+            $paymentMethodReuseAttempted = (
+                str_contains($exception->getMessage(), 'The provided PaymentMethod was previously used')
+            );
+            if ($paymentMethodReuseAttempted) {
+                $this->logger->warning(sprintf(
+                    'Stripe InvalidRequestException on Confirm for donation %s (%s): %s',
+                    $donation->getUuid(),
+                    $paymentIntentId,
+                    $exception->getMessage(),
+                ));
+
+                $this->entityManager->rollback();
+
+                return new JsonResponse([
+                    'error' => [
+                        'message' => 'Payment method cannot be used again',
+                        'code' => $exception->getStripeCode(),
+                    ],
+                ], 402);
+            }
+
+            if (! str_contains($exception->getMessage(), 'The provided PaymentMethod has failed authentication')) {
+                throw $exception;
+            }
+
+            $exceptionClass = get_class($exception);
+            $this->logger->info(sprintf(
+                'Stripe %s on Confirm for donation %s (%s): %s',
+                $exceptionClass,
+                $donation->getUuid(),
+                $paymentIntentId,
+                $exception->getMessage(),
+            ));
+
+            $this->entityManager->rollback();
+
+            return new JsonResponse([
+                'error' => [
+                    'message' => $exception->getMessage(),
+                    'code' => $exception->getStripeCode()
                 ],
             ], 402);
         } catch (ApiErrorException $exception) {
@@ -137,12 +189,12 @@ class Confirm extends Action
         $this->entityManager->flush();
 
         return new JsonResponse([
-                'paymentIntent' => [
-                    'status' => $updatedIntent->status,
-                    'client_secret' => $updatedIntent->status === 'requires_action'
-                        ?  $updatedIntent->client_secret
-                        : null,
-                ]]
-        );
+            'paymentIntent' => [
+                'status' => $updatedIntent->status,
+                'client_secret' => $updatedIntent->status === 'requires_action'
+                    ?  $updatedIntent->client_secret
+                    : null,
+            ],
+        ]);
     }
 }
