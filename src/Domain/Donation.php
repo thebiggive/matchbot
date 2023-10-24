@@ -49,11 +49,7 @@ class Donation extends SalesforceWriteProxy
     protected ?UuidInterface $uuid = null;
 
     /**
-     * We have to use cascade={"persist"} because our RetrySafeEntityManager can switch out the underlying Doctrine
-     * Entity Manager in between flushing the campaign and flushing the Donation. I tried keeping a list of all the
-     * entities inside RetrySafeEntityManager but that just causes a duplicate constraint violation error.
-     *
-     * @ORM\ManyToOne(targetEntity="Campaign", cascade={"persist"})
+     * @ORM\ManyToOne(targetEntity="Campaign")
      * @var Campaign
      */
     protected Campaign $campaign;
