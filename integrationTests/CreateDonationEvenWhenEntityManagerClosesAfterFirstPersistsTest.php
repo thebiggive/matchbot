@@ -116,23 +116,21 @@ class CreateDonationEvenWhenEntityManagerClosesAfterFirstPersistsTest extends In
      * When the bug is fixed this will fail and can be reversed in sense to make it pass again, or deleted if not
      * needed.
      */
-    public function testItCanCreateAnDonationUsingMultipleUnderlyingEntityManagers(): void
+    public function testItThrowsORMInvalidArgumentExceptionWhenUnderlyingEMClosesAndIsReplaced(): void
     {
         // This test should be using fake stripe and salesforce clients, but things within our app,
         // from the HTTP router to the DB is using our real prod code.
 
-//        $this->expectException(ORMInvalidArgumentException::class);
-//        $this->expectExceptionMessage(
-//            "A new entity was found through the relationship 'MatchBot\Domain\CampaignFunding#campaigns' that was not" .
-//            " configured to cascade persist operations for entity"
-//        );
+        $this->expectException(ORMInvalidArgumentException::class);
+        $this->expectExceptionMessage("A new entity was found through the relationship");
 
-        // full message:
-        // Doctrine\ORM\ORMInvalidArgumentException: A new entity was found through the relationship
-        // 'MatchBot\Domain\CampaignFunding#campaigns' that was not configured to cascade persist operations for entity:
-        //Campaign ID #342, SFId: 43241206-573e-4976. To solve this issue: Either explicitly call
-        // EntityManager#persist() on this unknown entity or configure cascade persist this association in the mapping
-        //for example @ManyToOne(..,cascade={"persist"}).
+        // full message is e.g.:
+        // A new entity was found through the relationship 'MatchBot\Domain\Donation#campaign' that was not configured
+        // to cascade persist operations for entity: Campaign ID #38, SFId: dc44e67e-e663-4db2. To solve this issue:
+        // Either explicitly call EntityManager#persist() on this unknown entity or configure cascade persist this
+        // association in the mapping for example @ManyToOne(..,cascade={"persist"}).' contains 'A new entity was found
+        //through the relationship 'MatchBot\Domain\CampaignFunding#campaigns' that was not configured to cascade
+        //persist operations for entity
 
         $this->createDonation(withPremadeCampaign: false);
         $donationFetchedFromDB = $this->db()->fetchAssociative(
