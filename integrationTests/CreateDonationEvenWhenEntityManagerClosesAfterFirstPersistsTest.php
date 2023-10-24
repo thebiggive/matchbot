@@ -40,7 +40,7 @@ use Ramsey\Uuid\Uuid;
 class CreateDonationEvenWhenEntityManagerClosesAfterFirstPersistsTest extends IntegrationTest
 {
     private int $entityManagerWillCloseAfterNPersists = 3;
-    private $campaignSfID;
+    private string $campaignSfID;
 
     public function setUp(): void
     {
@@ -145,7 +145,6 @@ class CreateDonationEvenWhenEntityManagerClosesAfterFirstPersistsTest extends In
     }
 
     /**
-     * @return EntityManager
      * @throws \Doctrine\ORM\Exception\ORMException
      * @throws \Psr\Container\ContainerExceptionInterface
      * @throws \Psr\Container\NotFoundExceptionInterface
@@ -165,7 +164,7 @@ class CreateDonationEvenWhenEntityManagerClosesAfterFirstPersistsTest extends In
                     parent::__construct($wrapped);
                 }
 
-                public function flush($entity = null)
+                public function flush(mixed $entity = null): void
                 {
                     $this->persistsLeftBeforeClosingTime--;
                     if ($this->persistsLeftBeforeClosingTime <= 0) {

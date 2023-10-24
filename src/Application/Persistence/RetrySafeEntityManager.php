@@ -10,6 +10,7 @@ use Doctrine\DBAL\LockMode;
 use Doctrine\ORM;
 use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\EntityManagerClosed;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\SalesforceReadProxy;
@@ -30,47 +31,25 @@ class RetrySafeEntityManager extends EntityManagerDecorator
     private int $maxLockRetries = 3;
 
     /**
-     * Whenever an entity is persisted we keep a reference here in addition to letting the underlying EM
-     * track it until flushed. If the underlying EM is closed and we need a new one we will persist all
-     * entities via the new EM.
-     *
-     * Otherwise we would have some entities persisted into one EM, some in another, and the new EM then complains
-     * about finding a new entity via a relationship.
-     *
-     * @var list<object>
-     */
-    private array $persistedEntitiesNotYetFlushed = [];
-
-    /**
-     * @var Closure():EntityManager
+     * @var Closure():EntityManagerInterface
      */
     private closure $entityManagerFactory;
 
+    /**
+     * @param Closure():\Doctrine\ORM\EntityManagerInterface $entityManagerFactory
+     * @param array<string, mixed> $connectionSettings
+     */
     public function __construct(
         private ORM\Configuration $ormConfig,
-        private array $connectionSettings,
+        array $connectionSettings,
         private LoggerInterface $logger,
-        closure $entityManagerFactory = null,
+        \Closure $entityManagerFactory = null,
     ) {
         $this->entityManagerFactory = $entityManagerFactory ??
-            fn (): EntityManager => EntityManager::create($this->connectionSettings, $this->ormConfig);
+            fn (): EntityManager => EntityManager::create($connectionSettings, $this->ormConfig);
 
         $this->entityManager = $this->buildEntityManager();
         parent::__construct($this->entityManager);
-    }
-
-    /**
-     * Used only in tests to let us control the behaviour of the underlying EM.
-     * @param closure():ORM\EntityManagerInterface $entityManagerFactory
-     * @param ORM\Configuration $ormConfig
-     * @return self
-     */
-    public static function fromEntitymanagerInterface(closure $entityManagerFactory, \Doctrine\ORM\Configuration $ormConfig, LoggerInterface $logger): self
-    {
-        $that = new self($ormConfig, [], $logger);
-        $that->entityManagerFactory = $entityManagerFactory;
-
-        return $that;
     }
 
     /**
@@ -127,7 +106,6 @@ class RetrySafeEntityManager extends EntityManagerDecorator
      */
     public function persist($object): void
     {
-        $this->persistedEntitiesNotYetFlushed[] = $object;
         try {
             $this->entityManager->persist($object);
         } catch (EntityManagerClosed $closedException) {
@@ -169,13 +147,8 @@ class RetrySafeEntityManager extends EntityManagerDecorator
      */
     public function flush($entity = null): void
     {
-//        throw new \Exception("flushing");
-        if ($entity) {
-            $this->persistedEntitiesNotYetFlushed[] = $entity;
-        }
         try {
             $this->entityManager->flush($entity);
-            $this->persistedEntitiesNotYetFlushed = [];
         } catch (EntityManagerClosed $closedException) {
             $this->logger->error(
                 'EM closed. RetrySafeEntityManager::flush() trying with a new instance,' .
@@ -183,14 +156,12 @@ class RetrySafeEntityManager extends EntityManagerDecorator
             );
             $this->resetManager();
             $this->entityManager->flush($entity);
-            $this->persistedEntitiesNotYetFlushed = [];
         }
     }
 
     public function resetManager(): void
     {
         $this->entityManager = $this->buildEntityManager();
-        $this->rePersistAllEntititesToInternalEM();
     }
 
     /**
@@ -215,22 +186,5 @@ class RetrySafeEntityManager extends EntityManagerDecorator
     {
         $factory = $this->entityManagerFactory;
         return $factory();
-    }
-
-    /**
-     * @return void
-     * @throws ORM\Exception\ORMException
-     */
-    public function rePersistAllEntititesToInternalEM(): void
-    {
-        return;
-        echo "\n\n";
-        foreach ($this->persistedEntitiesNotYetFlushed as $entity) {
-            if ($entity instanceof CampaignFunding) {
-                debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-            }
-       //     $this->entityManager->persist($entity);
-        }
-        echo "\n\n";
     }
 }
