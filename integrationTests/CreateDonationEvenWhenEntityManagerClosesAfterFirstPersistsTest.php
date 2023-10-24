@@ -51,7 +51,7 @@ class CreateDonationEvenWhenEntityManagerClosesAfterFirstPersistsTest extends In
             $this->getContainer()->get('settings')['doctrine']['connection'],
             $this->getContainer()->get(LoggerInterface::class),
             function ()  {
-                return $this->thisMakeBaseEntityManager();
+                return $this->thisMakeBaseEntityManagerThatWillThrowOnRepeatedUsage();
             }
         ));
 
@@ -147,7 +147,7 @@ class CreateDonationEvenWhenEntityManagerClosesAfterFirstPersistsTest extends In
      * @throws \Psr\Container\ContainerExceptionInterface
      * @throws \Psr\Container\NotFoundExceptionInterface
      */
-    function thisMakeBaseEntityManager(): EntityManagerInterface
+    function thisMakeBaseEntityManagerThatWillThrowOnRepeatedUsage(): EntityManagerInterface
     {
         $em = EntityManager::create(
         // for this test we don't need the RetrySafeEntityManager - using the standard EM makes things simpler.
