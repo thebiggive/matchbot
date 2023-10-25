@@ -50,9 +50,7 @@ class CreateDonationEvenWhenEntityManagerClosesAfterFirstPersistsTest extends In
             $this->getContainer()->get(\Doctrine\ORM\Configuration::class),
             $this->getContainer()->get('settings')['doctrine']['connection'],
             $this->getContainer()->get(LoggerInterface::class),
-            function ()  {
-                return $this->thisMakeBaseEntityManagerThatWillThrowOnRepeatedUsage();
-            }
+            $this->thisMakeBaseEntityManagerThatWillThrowOnRepeatedUsage(...)
         ));
 
         $this->campaignSfID = 'sfID' . random_int(1_000, 9_999);
