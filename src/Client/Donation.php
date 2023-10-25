@@ -69,7 +69,7 @@ class Donation extends Common
      * @param DonationModel $donation
      * @return bool
      */
-    public function put(DonationModel $donation): bool
+    public function put(DonationModel $donation, \MatchBot\Domain\Campaign $campaign): bool
     {
         if (getenv('DISABLE_CLIENT_PUSH')) {
             $this->logger->info("Client push off: Skipping update of donation {$donation->getUuid()}");

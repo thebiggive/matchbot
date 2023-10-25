@@ -82,6 +82,10 @@ class Campaign extends SalesforceReadProxy
      */
     public function getCampaignId(): Id
     {
+        if ($this->id === null) {
+            throw new \Exception('Must be flushed to DB to aqquire ID');
+        }
+
         return new Id($this->id, self::class);
     }
 

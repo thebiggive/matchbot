@@ -154,7 +154,7 @@ abstract class IntegrationTest extends TestCase
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
         $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+        $donationClientProphecy->put(Argument::type(Donation::class), Argument::type(Campaign::class))->willReturn(true);
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
@@ -276,7 +276,7 @@ abstract class IntegrationTest extends TestCase
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
         $donationClientProphecy->create(Argument::type(Donation::class), Argument::type(\MatchBot\Domain\Campaign::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+        $donationClientProphecy->put(Argument::type(Donation::class), Argument::type(Campaign::class))->willReturn(true);
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 

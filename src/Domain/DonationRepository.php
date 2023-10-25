@@ -105,7 +105,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 return true;
             }
 
-            $result = $this->getClient()->put($donation);
+            $campaign = $this->campaignRepository->find($donation->getCampaignId()->value);
+            \assert($campaign !== null);
+            $result = $this->getClient()->put($donation, $campaign);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push the removed donation.
             $this->logInfo(

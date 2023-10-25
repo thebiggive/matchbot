@@ -40,7 +40,7 @@ class DonationRepositoryTest extends TestCase
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->put(Argument::type(Donation::class))
+            ->put(Argument::type(Donation::class), Argument::type(Campaign::class))
             ->shouldBeCalledOnce()
             ->willReturn(true);
 
@@ -53,7 +53,7 @@ class DonationRepositoryTest extends TestCase
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->put(Argument::type(Donation::class))
+            ->put(Argument::type(Donation::class), Argument::type(Campaign::class))
             ->shouldNotBeCalled();
 
         ['donation' => $pendingDonation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
@@ -81,7 +81,7 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn(true);
         $donationClientProphecy
-            ->put(Argument::type(Donation::class))
+            ->put(Argument::type(Donation::class), Argument::type(Campaign::class))
             ->shouldBeCalledOnce()
             ->willReturn(true);
 
@@ -112,7 +112,7 @@ class DonationRepositoryTest extends TestCase
             ->create(Argument::type(Donation::class))
             ->shouldNotBeCalled();
         $donationClientProphecy
-            ->put(Argument::type(Donation::class))
+            ->put(Argument::type(Donation::class), Argument::type(Campaign::class))
             ->shouldNotBeCalled();
 
         ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
@@ -134,7 +134,7 @@ class DonationRepositoryTest extends TestCase
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->put(Argument::type(Donation::class))
+            ->put(Argument::type(Donation::class), Argument::type(Campaign::class))
             ->shouldBeCalledOnce()
             ->willThrow(Client\NotFoundException::class);
 
@@ -200,7 +200,7 @@ class DonationRepositoryTest extends TestCase
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->put(Argument::type(Donation::class))
+            ->put(Argument::type(Donation::class), Argument::type(Campaign::class))
             ->shouldBeCalledOnce()
             ->willReturn(false);
 

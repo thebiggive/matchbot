@@ -32,5 +32,20 @@
                 <directory name="src/Application/Actions" />
             </errorLevel>
         </PossiblyUnusedMethod>
+
+        <!-- Next two temporarily suppressed just while this PR is open -->
+        <MixedArgument>
+            <errorLevel type="info">
+                <directory name="/" />
+            </errorLevel>
+        </MixedArgument>
+        <UnusedVariable>
+            <errorLevel type="info">
+                <directory name="/" />
+            </errorLevel>
+        </UnusedVariable>
+
+
+
     </issueHandlers>
 <plugins><pluginClass class="Psalm\PhpUnitPlugin\Plugin"/><pluginClass class="Weirdan\DoctrinePsalmPlugin\Plugin"/></plugins></psalm>

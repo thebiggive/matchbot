@@ -154,7 +154,7 @@ class Create extends Action
                 if (empty($campaign->getCharity()->getStripeAccountId())) {
                     $this->logger->error(sprintf(
                         'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
-                        $campaign->getCharity()->getSalesforceId(),
+                        $campaign->getCharity()->getSalesforceId() ?? 'missing SF ID',
                     ));
                     $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (A)');
                     return $this->respond($response, new ActionPayload(500, null, $error));

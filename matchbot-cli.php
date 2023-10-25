@@ -49,6 +49,7 @@ assert($chatter instanceof ChatterInterface);
 $commands = [
     new ClaimGiftAid(
         $psr11App->get(DonationRepository::class),
+        $psr11App->get(CampaignRepository::class),
         $psr11App->get(EntityManagerInterface::class),
         $psr11App->get(RoutableMessageBus::class),
     ),
