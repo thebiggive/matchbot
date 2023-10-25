@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Commands;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Commands\ClaimGiftAid;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
@@ -27,6 +28,7 @@ class ClaimGiftAidTest extends TestCase
     public function testNothingToSend(): void
     {
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $donationRepoProphecy->findReadyToClaimGiftAid(false)
             ->willReturn([])
             ->shouldBeCalledOnce();
@@ -37,15 +39,15 @@ class ClaimGiftAidTest extends TestCase
 
         $bus = $this->prophesize(RoutableMessageBus::class);
 
-        $testDonation = $this->getTestDonation();
+        ['donation' => $testDonation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $testDonation->setTbgShouldProcessGiftAid(true);
         $envelope = new Envelope(
-            $testDonation->toClaimBotModel(),
+            $testDonation->toClaimbotModel($campaign),
             $this->getExpectedStamps($testDonation->getUuid()),
         );
         $bus->dispatch($envelope)->shouldNotBeCalled();
 
-        $commandTester = new CommandTester($this->getCommand($donationRepoProphecy, $em, $bus));
+        $commandTester = new CommandTester($this->getCommand($donationRepoProphecy,$campaignRepoProphecy, $em, $bus));
         $commandTester->execute([]);
 
         $expectedOutputLines = [
@@ -59,13 +61,15 @@ class ClaimGiftAidTest extends TestCase
 
     public function testSend(): void
     {
-        $testDonation = $this->getTestDonation();
+        ['donation' => $testDonation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $testDonation->setTbgShouldProcessGiftAid(true);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findReadyToClaimGiftAid(false)
             ->shouldBeCalledOnce()
             ->willReturn([$testDonation]);
+        $capaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $capaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
 
         $em = $this->prophesize(EntityManagerInterface::class);
         $em->persist($testDonation)->shouldBeCalledOnce();
@@ -74,14 +78,14 @@ class ClaimGiftAidTest extends TestCase
         $bus = $this->prophesize(RoutableMessageBus::class);
 
         $envelope = new Envelope(
-            $testDonation->toClaimBotModel(),
+            $testDonation->toClaimbotModel($campaign),
             $this->getExpectedStamps($testDonation->getUuid()),
         );
         $bus->dispatch($envelope)
             ->shouldBeCalledOnce()
             ->willReturn($envelope);
 
-        $commandTester = new CommandTester($this->getCommand($donationRepoProphecy, $em, $bus));
+        $commandTester = new CommandTester($this->getCommand($donationRepoProphecy, $capaignRepoProphecy, $em, $bus));
         $commandTester->execute([]);
 
         $expectedOutputLines = [
@@ -95,7 +99,7 @@ class ClaimGiftAidTest extends TestCase
 
     public function testSendWithResends(): void
     {
-        $testDonation = $this->getTestDonation();
+        ['donation' => $testDonation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $testDonation->setTbgShouldProcessGiftAid(true);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -103,6 +107,8 @@ class ClaimGiftAidTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn([$testDonation]);
 
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
         $em = $this->prophesize(EntityManagerInterface::class);
         $em->persist($testDonation)->shouldBeCalledOnce();
         $em->flush()->shouldBeCalledOnce();
@@ -110,14 +116,14 @@ class ClaimGiftAidTest extends TestCase
         $bus = $this->prophesize(RoutableMessageBus::class);
 
         $envelope = new Envelope(
-            $testDonation->toClaimBotModel(),
+            $testDonation->toClaimbotModel($campaign),
             $this->getExpectedStamps($testDonation->getUuid()),
         );
         $bus->dispatch($envelope)
             ->shouldBeCalledOnce()
             ->willReturn($envelope);
 
-        $commandTester = new CommandTester($this->getCommand($donationRepoProphecy, $em, $bus));
+        $commandTester = new CommandTester($this->getCommand($donationRepoProphecy, $campaignRepoProphecy, $em, $bus));
         $commandTester->execute([
             '--with-resends' => null,
         ]);
@@ -133,11 +139,13 @@ class ClaimGiftAidTest extends TestCase
 
     private function getCommand(
         ObjectProphecy $donationRepoProphecy,
+        ObjectProphecy $campaignRepoProphecy,
         ObjectProphecy $entityManagerProphecy,
         ObjectProphecy $routableBusProphecy,
     ): ClaimGiftAid {
         $command = new ClaimGiftAid(
             $donationRepoProphecy->reveal(),
+            $campaignRepoProphecy->reveal(),
             $entityManagerProphecy->reveal(),
             $routableBusProphecy->reveal(),
         );

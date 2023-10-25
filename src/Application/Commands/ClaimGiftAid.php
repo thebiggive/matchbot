@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -23,6 +24,7 @@ class ClaimGiftAid extends LockingCommand
 
     public function __construct(
         private DonationRepository $donationRepository,
+        private CampaignRepository $campaignRepository,
         private EntityManagerInterface $entityManager,
         private RoutableMessageBus $bus,
     ) {
@@ -48,11 +50,13 @@ class ClaimGiftAid extends LockingCommand
 
         if (count($toClaim) > 0) {
             foreach ($toClaim as $donation) {
+                $campaign = $this->campaignRepository->find($donation->getCampaignId()->value);
+                \assert($campaign !== null);
                 $stamps = [
                     new BusNameStamp('claimbot.donation.claim'),
                     new TransportMessageIdStamp("claimbot.donation.claim.{$donation->getUuid()}"),
                 ];
-                $this->bus->dispatch(new Envelope($donation->toClaimBotModel(), $stamps));
+                $this->bus->dispatch(new Envelope($donation->toClaimbotModel($campaign), $stamps));
 
                 $donation->setTbgGiftAidRequestQueuedAt(new \DateTime());
                 $this->entityManager->persist($donation);

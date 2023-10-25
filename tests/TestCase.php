@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests;
 
+use DI\Container;
 use DI\ContainerBuilder;
 use Exception;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
@@ -27,12 +29,29 @@ class TestCase extends PHPUnitTestCase
 {
     use ProphecyTrait;
 
+    private ?App $app = null;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
+    }
+
     /**
      * @return App
      * @throws Exception
      */
     protected function getAppInstance(bool $withRealRedis = false): App
     {
+        if ($this->app !== null && !$withRealRedis) {
+            return $this->app;
+        }
+
         // Instantiate PHP-DI ContainerBuilder
         $containerBuilder = new ContainerBuilder();
 
@@ -92,6 +111,10 @@ class TestCase extends PHPUnitTestCase
         $routes($app);
 
         $app->addRoutingMiddleware();
+
+        if (!$withRealRedis) {
+            $this->app = $app;
+        }
 
         return $app;
     }
@@ -172,7 +195,9 @@ class TestCase extends PHPUnitTestCase
 
     protected function getMinimalCampaign(): Campaign
     {
-        return new Campaign(\MatchBot\Tests\TestCase::someCharity());
+        $campaign = new Campaign(\MatchBot\Tests\TestCase::someCharity());
+        $campaign->setId(1);
+        return $campaign;
     }
 
     /**

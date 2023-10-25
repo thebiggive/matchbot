@@ -11,6 +11,8 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels;
+use MatchBot\Client\Campaign;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -40,6 +42,7 @@ class Update extends Action
     #[Pure]
     public function __construct(
         private DonationRepository $donationRepository,
+        private CampaignRepository $campaignRepository,
         private EntityManagerInterface $entityManager,
         private SerializerInterface $serializer,
         private StripeClient $stripeClient,
@@ -131,7 +134,9 @@ class Update extends Action
                 }
 
                 if ($donationData->status === DonationStatus::Cancelled->value) {
-                    return $this->cancel($donation, $response, $args);
+                    $campaign = $this->campaignRepository->find($donation->getCampaignId()->value);
+                    \assert($campaign !== null);
+                    return $this->cancel($donation, $response, $args, $campaign);
                 }
 
                 return $this->addData($donation, $donationData, $args, $response);
@@ -259,11 +264,14 @@ class Update extends Action
             }
         }
 
+        $campaign = $this->campaignRepository->find($donation->getCampaignId()->value);
+        \assert($campaign !== null);
+
         // All calls using the new two-step approach should set all the remaining values in this
         // method every time they `addData()`.
         $donation->setGiftAid($donationData->giftAid);
         $donation->setTipGiftAid($donationData->tipGiftAid ?? $donationData->giftAid);
-        $donation->setTbgShouldProcessGiftAid($donation->getCampaign()->getCharity()->isTbgClaimingGiftAid());
+        $donation->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
         $donation->setDonorHomeAddressLine1($donationData->homeAddress);
         $donation->setDonorHomePostcode($donationData->homePostcode);
         $donation->setDonorFirstName($donationData->firstName);
@@ -350,16 +358,16 @@ class Update extends Action
 
         $this->save($donation);
 
-        return $this->respondWithData($response, $donation->toApiModel());
+        return $this->respondWithData($response, $donation->toApiModel($campaign));
     }
 
-    private function cancel(Donation $donation, Response $response, array $args): Response
+    private function cancel(Donation $donation, Response $response, array $args, \MatchBot\Domain\Campaign $campaign): Response
     {
         if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
             $this->logger->info("Donation ID {$args['donationId']} was already Cancelled");
             $this->entityManager->rollback();
 
-            return $this->respondWithData($response, $donation->toApiModel());
+            return $this->respondWithData($response, $donation->toApiModel($campaign));
         }
 
         if ($donation->getDonationStatus()->isSuccessful()) {
@@ -380,7 +388,7 @@ class Update extends Action
         // Save & flush early to reduce chance of lock conflicts.
         $this->save($donation);
 
-        if ($donation->getCampaign()->isMatched()) {
+        if ($campaign->isMatched()) {
             $this->donationRepository->releaseMatchFunds($donation);
         }
 
@@ -418,7 +426,7 @@ class Update extends Action
             }
         }
 
-        return $this->respondWithData($response, $donation->toApiModel());
+        return $this->respondWithData($response, $donation->toApiModel($campaign));
     }
 
     /**

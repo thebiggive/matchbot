@@ -8,6 +8,7 @@ use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -154,10 +155,11 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
+        ['donation' => $donation, 'campaign' => $campaign] = $this->getTestDonation();
         $request = $this->createRequest(
             method: 'PUT',
             path: '/v1/donations/87654321-1234-1234-1234-ba0987654321',
-            bodyString: json_encode($this->getTestDonation()->toApiModel()),
+            bodyString: json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('87654321-1234-1234-1234-ba0987654321'));
         $route = $this->getRouteWithDonationId('put', '87654321-1234-1234-1234-ba0987654321');
@@ -174,13 +176,13 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $donation->setDonationStatus(DonationStatus::Failed);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation()) // Get a new mock object so it's 'Collected'.
+            ->willReturn($this->getTestDonation()['donation']) // Get a new mock object so it's 'Collected'.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -199,7 +201,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -223,7 +225,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $donation->setDonationStatus(DonationStatus::Pending);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -243,7 +245,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $donationData = $donation->toApiModel();
+        $donationData = $donation->toApiModel($campaign);
         unset($donationData['status']); // Simulate an API client omitting the status JSON field
 
         $request = $this->createRequest(
@@ -273,10 +275,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donationResponse = $this->getTestDonation();
+        ['donation' => $donationResponse, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $donationResponse->setDonationStatus(DonationStatus::Collected);
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $donation->cancel();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -291,6 +293,10 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
+
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
@@ -301,7 +307,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -325,13 +331,13 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation('999.99');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation('999.99');
         $donation->cancel();
         // Check this is ignored and only status patched. N.B. this is currently a bit circular as we simulate both
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
 
-        $responseDonation = $this->getTestDonation();
+        ['donation' => $responseDonation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $responseDonation->cancel();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -347,6 +353,10 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
+
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
@@ -357,7 +367,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -387,13 +397,13 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation('999.99');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation('999.99');
         $donation->cancel();
         // Check this is ignored and only status patched. N.B. this is currently a bit circular as we simulate both
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
 
-        $responseDonation = $this->getTestDonation();
+        ['donation' => $responseDonation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
         // mock donation.
         $responseDonation->setDonationStatus(DonationStatus::Pending);
@@ -411,6 +421,10 @@ class UpdateTest extends TestCase
             ->willReturn(true)
             // Cancel was a new change and names set -> expect a push to SF.
             ->shouldBeCalledOnce();
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -432,7 +446,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -466,10 +480,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $donation->cancel();
 
-        $responseDonation = $this->getTestDonation();
+        ['donation' => $responseDonation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
         // mock donation.
         $responseDonation->setDonationStatus(DonationStatus::Pending);
@@ -487,6 +501,10 @@ class UpdateTest extends TestCase
             ->willReturn(true)
             // Cancel was a new change and names set -> expect a push to SF.
             ->shouldBeCalledOnce();
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -513,7 +531,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -535,10 +553,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $donation->cancel();
 
-        $responseDonation = $this->getTestDonation();
+        ['donation' => $responseDonation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
         // mock donation.
         $responseDonation->setDonationStatus(DonationStatus::Pending);
@@ -556,6 +574,10 @@ class UpdateTest extends TestCase
             ->willReturn(true)
             // Cancel was a new change and names set -> expect a push to SF.
             ->shouldBeCalledOnce();
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -582,7 +604,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -603,10 +625,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getAnonymousPendingTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign] = $this->getAnonymousPendingTestDonation();
         $donation->cancel();
 
-        $responseDonation = $this->getAnonymousPendingTestDonation();
+        ['donation' => $responseDonation, 'campaign' => $responseCampaign]  = $this->getAnonymousPendingTestDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -621,6 +643,10 @@ class UpdateTest extends TestCase
             // Cancel was a new change BUT donation never had enough
             // data -> DO NOT expect a push to SF.
             ->shouldNotBeCalled();
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -642,7 +668,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ac',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ac'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ac');
@@ -669,9 +695,9 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donationInRequest = $this->getTestDonation('99.99');
+        $donationInRequest = $this->getTestDonation('99.99')['donation'];
 
-        $donationInRepo = $this->getTestDonation(); //  // Get a new mock object so it's £123.45.
+        ['donation' => $donationInRepo, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation(); //  // Get a new mock object so it's £123.45.
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
 
         $donationRepoProphecy
@@ -695,7 +721,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donationInRequest->toApiModel()),
+            json_encode($donationInRequest->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -719,7 +745,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -741,7 +767,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         // Remove giftAid after converting to array, as it makes the internal HTTP model invalid.
-        $donationData = $donation->toApiModel();
+        $donationData = $donation->toApiModel($campaign);
         unset($donationData['optInCharityEmail']);
 
         $request = $this->createRequest(
@@ -774,7 +800,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -793,7 +819,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $bodyArray = $donation->toHookModel();
+        $bodyArray = $donation->toHookModel($campaign);
         $bodyArray['homeAddress'] = ['123', 'Main St']; // Invalid array type.
 
         $body = json_encode($bodyArray);
@@ -825,7 +851,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -847,7 +873,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         // Remove giftAid after converting to array, as it makes the internal HTTP model invalid.
-        $donationData = $donation->toApiModel();
+        $donationData = $donation->toApiModel($campaign);
         unset($donationData['giftAid']);
 
         $request = $this->createRequest(
@@ -879,10 +905,10 @@ class UpdateTest extends TestCase
 
         // We'll patch the simulated PUT JSON manually because `setTipAmount()` disallows
         // values over the max donation amount.
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so it's £123.45.
+        ['donation' => $donationInRepo, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();  // Get a new mock object so it's £123.45.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationInRepo)
@@ -898,7 +924,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $putArray = $donation->toApiModel();
+        $putArray = $donation->toApiModel($campaign);
         $putArray['tipAmount'] = '25000.01';
         $putJSON = json_encode($putArray);
 
@@ -929,7 +955,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
@@ -958,6 +984,10 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -996,7 +1026,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1022,7 +1052,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
@@ -1048,6 +1078,10 @@ class UpdateTest extends TestCase
         $donationRepoProphecy // here
             ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
 
         // Persist as normal.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1097,7 +1131,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1118,7 +1152,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
@@ -1147,6 +1181,10 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
 
         // Internal persist still goes ahead.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1194,7 +1232,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1223,7 +1261,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
@@ -1294,10 +1332,14 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
+
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1322,7 +1364,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
@@ -1393,10 +1435,14 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
+
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1425,7 +1471,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
@@ -1498,10 +1544,14 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
+
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1525,7 +1575,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
@@ -1554,6 +1604,10 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -1591,7 +1645,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toApiModel($campaign)),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1633,10 +1687,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
+        ['donation' => $donationInRepo] = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
@@ -1651,6 +1705,10 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -1670,7 +1728,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
-        $requestPayload = $donation->toApiModel();
+        $requestPayload = $donation->toApiModel($campaign);
         $requestPayload['autoConfirmFromCashBalance'] = true;
         $request = $this->createRequest(
             'PUT',
@@ -1701,10 +1759,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::Card);  // Get a new mock object so DB has old values.
+        ['donation' => $donationInRepo] = $this->getTestDonation(paymentMethodType: PaymentMethodType::Card);  // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
 
@@ -1735,7 +1793,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
-        $requestPayload = $donation->toApiModel();
+        $requestPayload = $donation->toApiModel($campaign);
         $requestPayload['autoConfirmFromCashBalance'] = true;
         $request = $this->createRequest(
             'PUT',
@@ -1770,10 +1828,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::Card);
+        ['donation' => $donationInRepo] = $this->getTestDonation(paymentMethodType: PaymentMethodType::Card);
         // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
@@ -1803,7 +1861,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
-        $requestPayload = $donation->toApiModel();
+        $requestPayload = $donation->toApiModel($campaign);
         $requestPayload['autoConfirmFromCashBalance'] = true;
         $request = $this->createRequest(
             'PUT',
@@ -1838,10 +1896,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
+        ['donation' => $donationInRepo] = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
 
@@ -1855,6 +1913,10 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled(); // Updates pushed to Salesforce
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -1876,7 +1938,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
-        $requestPayload = $donation->toApiModel();
+        $requestPayload = $donation->toApiModel($campaign);
         $requestPayload['autoConfirmFromCashBalance'] = true;
         $request = $this->createRequest(
             'PUT',

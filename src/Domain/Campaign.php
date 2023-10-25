@@ -78,6 +78,14 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
+     * @return Id<self>
+     */
+    public function getCampaignId(): Id
+    {
+        return new Id($this->id, self::class);
+    }
+
+    /**
      * Implemented only so this can be cast to string if required for logging etc - not for use in any business process.
      */
     public function __toString(): string

@@ -9,6 +9,7 @@ use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Notifier\StripeChatterInterface;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationFundsNotifier;
@@ -45,6 +46,7 @@ class StripePaymentsUpdate extends Stripe
     public function __construct(
         protected DonationRepository $donationRepository,
         private DonorAccountRepository $donorAccountRepository,
+        private CampaignRepository $campaignRepository,
         protected EntityManagerInterface $entityManager,
         protected StripeClient $stripeClient,
         private DonationFundsNotifier $donationFundsNotifier,
@@ -452,10 +454,13 @@ class StripePaymentsUpdate extends Stripe
 
         // Release match funds only if the donation was matched and
         // the refunded amount is equal to the local txn amount.
+        $campaign = $this->campaignRepository->find($donation->getCampaignId()->value);
+        \assert($campaign !== null);
+
         if (
             $isCoreDonationReversed &&
             $donation->getDonationStatus()->isReversed() &&
-            $donation->getCampaign()->isMatched()
+            $campaign->isMatched()
         ) {
             $this->donationRepository->releaseMatchFunds($donation);
         }

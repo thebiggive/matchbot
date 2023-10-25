@@ -11,6 +11,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\HttpModels\DonationCreate;
 use Messages;
 use Ramsey\Uuid\Uuid;
@@ -49,10 +50,9 @@ class Donation extends SalesforceWriteProxy
     protected ?UuidInterface $uuid = null;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Campaign")
-     * @var Campaign
+     * @ORM\Column(name="campaign_id")
      */
-    protected Campaign $campaign;
+    protected int $campaign_id;
 
     /**
      * @ORM\Column(type="string", length=20)
@@ -303,11 +303,12 @@ class Donation extends SalesforceWriteProxy
      */
     public static function emptyTestDonation(string $amount, PaymentMethodType $paymentMethodType = PaymentMethodType::Card, string $currencyCode = 'GBP'): self
     {
-        return new self($amount, $currencyCode, $paymentMethodType);
+        return new self($amount, $currencyCode, $paymentMethodType, 1);
     }
 
-    private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
+    private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType, int $campaign_id)
     {
+        $this->campaign_id = $campaign_id;
         $this->fundingWithdrawals = new ArrayCollection();
         $this->currencyCode = $currencyCode;
         $maximumAmount = self::maximumAmount($paymentMethodType);
@@ -337,11 +338,12 @@ class Donation extends SalesforceWriteProxy
             $donationData->donationAmount,
             $donationData->currencyCode,
             $donationData->paymentMethodType,
+            $campaign->getCampaignId()->value,
         );
 
         $donation->setPsp($psp);
         $donation->setUuid(Uuid::uuid4());
-        $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
+        $donation->setCampaignId($campaign->getCampaignId()); // Charity & match expectation determined implicitly from this
 
         $donation->setGiftAid($donationData->giftAid);
         // `DonationCreate` doesn't support a distinct property yet & we only ask once about GA.
@@ -381,26 +383,7 @@ class Donation extends SalesforceWriteProxy
 
     public function __toString(): string
     {
-        // if we're in __toString then probably something has already gone wrong, and we don't want to allow
-        // any more crashes during the logging process.
-        try {
-            $charityName = $this->getCampaign()->getCharity()->getName();
-        } catch (\Throwable $t) {
-            // perhaps the charity was never pulled from Salesforce into our database, in which case we might
-            // have a TypeError trying to get a string name from it.
-            $charityName = "[pending charity threw " . get_class($t) . "]";
-        }
-        return "Donation {$this->getUuid()} to $charityName";
-    }
-
-    /*
-     * In contrast to __toString, this is used when creating a payment intent. If we can't find the charity name
-     * then we should let the process of making the intent and registering the donation crash.
-     */
-    public function getDescription(): string
-    {
-        $charityName = $this->getCampaign()->getCharity()->getName();
-        return "Donation {$this->getUuid()} to $charityName";
+        return "Donation {$this->getUuid()} to Campaign #" . $this->campaign_id;
     }
 
     /**
@@ -430,9 +413,9 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return array A json encode-ready array representation of the donation, for sending to Salesforce.
      */
-    public function toHookModel(): array
+    public function toHookModel(Campaign $campaign): array
     {
-        $data = $this->toApiModel();
+        $data = $this->toApiModel($campaign);
 
         // MAT-234 - remove dubious patterns from email for now so records can save in SF.
         if ($data['emailAddress'] !== null && str_contains($data['emailAddress'], ';;')) {
@@ -457,21 +440,21 @@ class Donation extends SalesforceWriteProxy
         return $data;
     }
 
-    public function toApiModel(): array
+    public function toApiModel(Campaign $campaign): array
     {
         $data = [
             'billingPostalAddress' => $this->getDonorBillingAddress(),
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
-            'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
-            'charityName' => $this->getCampaign()->getCharity()->getName(),
+            'charityId' => $campaign->getCharity()->getSalesforceId(),
+            'charityName' => $campaign->getCharity()->getName(),
             'countryCode' => $this->getDonorCountryCode(),
             'collectedTime' => $this->getCollectedAt()?->format(DateTimeInterface::ATOM),
             'createdTime' => $this->getCreatedDate()->format(DateTimeInterface::ATOM),
             'currencyCode' => $this->getCurrencyCode(),
             'donationAmount' => (float) $this->getAmount(),
             'donationId' => $this->getUuid(),
-            'donationMatched' => $this->getCampaign()->isMatched(),
+            'donationMatched' => $campaign->isMatched(),
             'emailAddress' => $this->getDonorEmailAddress(),
             'feeCoverAmount' => (float) $this->getFeeCoverAmount(),
             'firstName' => $this->getDonorFirstName(true),
@@ -484,7 +467,7 @@ class Donation extends SalesforceWriteProxy
             'optInCharityEmail' => $this->getCharityComms(),
             'optInChampionEmail' => $this->getChampionComms(),
             'optInTbgEmail' => $this->getTbgComms(),
-            'projectId' => $this->getCampaign()->getSalesforceId(),
+            'projectId' => $campaign->getSalesforceId(),
             'psp' => $this->getPsp(),
             'pspCustomerId' => $this->getPspCustomerId(),
             'pspMethodType' => $this->getPaymentMethodType()?->value,
@@ -530,19 +513,19 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return Campaign
+     * @return Id<Campaign>
      */
-    public function getCampaign(): Campaign
+    public function getCampaignId(): Id
     {
-        return $this->campaign;
+        return new Id($this->campaign_id, Campaign::class);
     }
 
     /**
-     * @param Campaign $campaign
+     * @param Id<Campaign> $cmapaignId
      */
-    public function setCampaign(Campaign $campaign): void
+    public function setCampaignId(Id $cmapaignId): void
     {
-        $this->campaign = $campaign;
+        $this->campaign_id = $cmapaignId->value;
     }
 
     public function getDonorEmailAddress(): ?string
@@ -1196,10 +1179,10 @@ class Donation extends SalesforceWriteProxy
      * @link https://stripe.com/docs/payments/connected-accounts
      * @link https://stripe.com/docs/connect/destination-charges#settlement-merchant
      */
-    public function getStripeOnBehalfOfProperties(): array
+    public function getStripeOnBehalfOfProperties(Campaign $campaign): array
     {
         if ($this->paymentMethodType === PaymentMethodType::Card) {
-            return ['on_behalf_of' => $this->getCampaign()->getCharity()->getStripeAccountId()];
+            return ['on_behalf_of' => $campaign->getCharity()->getStripeAccountId()];
         }
 
         return [];
@@ -1220,7 +1203,7 @@ class Donation extends SalesforceWriteProxy
         return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
     }
 
-    public function toClaimBotModel(): Messages\Donation
+    public function toClaimBotModel(Campaign $campaign): Messages\Donation
     {
         $donationMessage = new Messages\Donation();
         $donationMessage->id = $this->uuid->toString();
@@ -1253,10 +1236,10 @@ class Donation extends SalesforceWriteProxy
 
         $donationMessage->amount = (float) $this->amount;
 
-        $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber() ?? '';
-        $donationMessage->org_name = $this->getCampaign()->getCharity()->getName();
-        $donationMessage->org_regulator = $this->getCampaign()->getCharity()->getRegulator();
-        $donationMessage->org_regulator_number = $this->getCampaign()->getCharity()->getRegulatorNumber();
+        $donationMessage->org_hmrc_ref = $campaign->getCharity()->getHmrcReferenceNumber() ?? '';
+        $donationMessage->org_name = $campaign->getCharity()->getName();
+        $donationMessage->org_regulator = $campaign->getCharity()->getRegulator();
+        $donationMessage->org_regulator_number = $campaign->getCharity()->getRegulatorNumber();
 
         return $donationMessage;
     }

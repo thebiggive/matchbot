@@ -15,7 +15,7 @@ class Donation extends Common
      * @return string Salesforce donation ID
      * @throws BadRequestException
      */
-    public function create(DonationModel $donation): string
+    public function create(DonationModel $donation, \MatchBot\Domain\Campaign $campaign): string
     {
         if (getenv('DISABLE_CLIENT_PUSH')) {
             $this->logger->info("Client push off: Skipping create of donation {$donation->getUuid()}");
@@ -25,7 +25,7 @@ class Donation extends Common
         try {
             $response = $this->getHttpClient()->post(
                 $this->getSetting('donation', 'baseUri'),
-                ['json' => $donation->toApiModel()]
+                ['json' => $donation->toApiModel($campaign)]
             );
         } catch (RequestException $ex) {
             // Sandboxes that 404 on POST may be trying to sync up donations for non-existent campaigns and
@@ -78,7 +78,7 @@ class Donation extends Common
         }
 
         try {
-            $requestBody = $donation->toHookModel();
+            $requestBody = $donation->toHookModel($campaign);
 
             $response = $this->getHttpClient()->put(
                 $this->getSetting('webhook', 'baseUri') . "/donation/{$donation->getSalesforceId()}",

@@ -23,12 +23,13 @@ trait DonationTestDataTrait
         return file_get_contents($fullPath);
     }
 
+    /** @return array{donation: Donation, campaign: Campaign, charity: Charity} */
     protected function getTestDonation(
         string $amount = '123.45',
         PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
         string $tipAmount = '1.00',
         string $currencyCode = 'GBP',
-    ): Donation
+    ): array
     {
         $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
@@ -39,11 +40,12 @@ trait DonationTestDataTrait
         $campaign->setIsMatched(true);
         $campaign->setName('Test campaign');
         $campaign->setSalesforceId('456ProjectId');
+        $campaign->setId(1);
 
         $donation = Donation::emptyTestDonation(amount: $amount, paymentMethodType: $paymentMethodType, currencyCode: $currencyCode);
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCharityFee('2.05');
-        $donation->setCampaign($campaign);
+        $donation->setCampaignId($campaign->getCampaignId());
         $donation->setCharityComms(true);
         $donation->setChampionComms(false);
         $donation->setDonationStatus(DonationStatus::Collected);
@@ -66,10 +68,11 @@ trait DonationTestDataTrait
         $donation->setChargeId('ch_externalId_123');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
 
-        return $donation;
+        return compact('donation', 'campaign', 'charity');
     }
 
-    protected function getAnonymousPendingTestDonation(): Donation
+    /** @return array{donation: Donation, charity: Charity, campaign: Campaign} */
+    protected function getAnonymousPendingTestDonation(): array
     {
         $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
@@ -79,17 +82,18 @@ trait DonationTestDataTrait
         $campaign->setIsMatched(true);
         $campaign->setName('Test campaign');
         $campaign->setSalesforceId('456ProjectId');
+        $campaign->setId(1);
 
         $donation = Donation::emptyTestDonation('124.56');
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCharityFee('2.57');
-        $donation->setCampaign($campaign);
+        $donation->setCampaignId($campaign->getCampaignId());
         $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setPsp('stripe');
         $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setTipAmount('2.00');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ac'));
 
-        return $donation;
+        return compact('donation', 'charity', 'campaign');
     }
 }

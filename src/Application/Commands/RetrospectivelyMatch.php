@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use DateTime;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -78,8 +79,8 @@ class RetrospectivelyMatch extends LockingCommand
                 $numWithMatchingAllocated++;
                 $totalNewMatching = bcadd($totalNewMatching, $amountAllocated, 2);
 
-                if (!in_array($donation->getCampaign()->getId(), $distinctCampaignIds, true)) {
-                    $distinctCampaignIds[] = $donation->getCampaign()->getId();
+                if (!in_array($donation->getCampaignId()->value, $distinctCampaignIds, true)) {
+                    $distinctCampaignIds[] = $donation->getCampaignId()->value;
                 }
             }
         }

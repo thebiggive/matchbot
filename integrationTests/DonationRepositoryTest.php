@@ -74,6 +74,7 @@ class DonationRepositoryTest extends IntegrationTest
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($campaign);
+        $em->flush();
 
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
@@ -127,8 +128,14 @@ class DonationRepositoryTest extends IntegrationTest
         $campaign->setStartDate(new \DateTime());
         $campaign->setEndDate(new \DateTime());
         $campaign->setIsMatched(true);
+        $campaign->setId(1);
 
         $campaign->setName('Campaign Name');
+
+        $em = $this->getService(EntityManagerInterface::class);
+        $em->persist($campaign);
+        $em->flush();
+
         return $campaign;
     }
 
@@ -155,8 +162,8 @@ class DonationRepositoryTest extends IntegrationTest
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($fundingWithdrawal);
-        $em->persist($oldPendingDonation->getCampaign());
-        $em->persist($oldPendingDonation->getCampaign()->getCharity());
+        $em->persist($campaign);
+        $em->persist($campaign->getCharity());
         $em->persist($oldPendingDonation);
 
         $em->flush();

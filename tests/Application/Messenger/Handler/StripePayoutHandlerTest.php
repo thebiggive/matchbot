@@ -65,7 +65,7 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($chargeResponse));
 
-        $donationWithInvalidChargeId = clone $this->getTestDonation();
+        $donationWithInvalidChargeId = clone $this->getTestDonation()['donation'];
         $donationWithInvalidChargeId->setChargeId('ch_invalidId_123');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -131,7 +131,7 @@ class StripePayoutHandlerTest extends TestCase
 
         $balanceTxnsResponse = $this->getStripeHookMock('ApiResponse/bt_list_success');
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
 
         $donation->setDonationStatus(DonationStatus::Failed);
 
@@ -207,7 +207,7 @@ class StripePayoutHandlerTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $balanceTxnsResponse = $this->getStripeHookMock('ApiResponse/bt_list_success');
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
 

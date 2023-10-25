@@ -13,8 +13,18 @@ class DonationPersistenceTest extends IntegrationTest
     {
         // arrange
         $em = $this->getService(EntityManagerInterface::class);
+        $campaign = new \MatchBot\Domain\Campaign(\MatchBot\Tests\TestCase::someCharity());
+        $campaign->setCurrencyCode('GBP');
+        $campaign->setName('Campaign name');
+        $campaign->setStartDate(new \DateTime());
+        $campaign->setEndDate(new \DateTime());
+        $campaign->setIsMatched(true);
+        $em->persist($campaign);
+        $em->flush();
+
         $connection = $em->getConnection();
-        $donation = $this->makeDonationObject();
+        $donation = $this->makeDonationObject($campaign);
+
         $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 10:00:00'));
 
         // act
@@ -26,7 +36,7 @@ class DonationPersistenceTest extends IntegrationTest
         $donationRow = $connection->fetchAssociative("SELECT * from Donation where Donation.id = ?", [$donationId]);
 
         $this->assertNotFalse($donationRow);
-        $this->assertRowsSimilar($this->donationRow(), $donationRow);
+        $this->assertRowsSimilar($this->donationRow($campaign->getCampaignId()->value), $donationRow);
     }
 
 
@@ -34,7 +44,7 @@ class DonationPersistenceTest extends IntegrationTest
     {
         $connection = $this->getService(EntityManagerInterface::class)->getConnection();
         $donationRepo = $this->getService(DonationRepository::class);
-        $donationRow = $this->donationRow();
+        $donationRow = $this->donationRow(42);
         $connection->insert('Donation', $donationRow);
 
         $donation = $donationRepo->findOneBy(['uuid' => $donationRow['uuid']]);
@@ -56,10 +66,10 @@ class DonationPersistenceTest extends IntegrationTest
     /**
      * @return array<string, mixed>
      */
-    private function donationRow(): array
+    private function donationRow(int $campaignId): array
     {
         return [
-            'campaign_id' => NULL,
+            'campaign_id' => $campaignId,
             'uuid' => Uuid::uuid4(),
             'transactionId' => NULL,
             'amount' => '1.00',
@@ -107,12 +117,13 @@ class DonationPersistenceTest extends IntegrationTest
     /**
      * @return Donation
      */
-    public function makeDonationObject(): Donation
+    public function makeDonationObject(\MatchBot\Domain\Campaign $campaign): Donation
     {
         $donation = Donation::emptyTestDonation('1');
         $donation->setUuid(Uuid::uuid4());
         $donation->setPsp('stripe');
         $donation->setDonationStatus(DonationStatus::Collected);
+        $donation->setCampaignId($campaign->getCampaignId());
 
         return $donation;
     }

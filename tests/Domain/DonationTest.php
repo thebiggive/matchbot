@@ -171,10 +171,10 @@ class DonationTest extends TestCase
     {
         $fundingWithdrawal = new FundingWithdrawal();
         $fundingWithdrawal->setAmount('1.23');
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $donation->addFundingWithdrawal($fundingWithdrawal);
 
-        $donationData = $donation->toApiModel();
+        $donationData = $donation->toApiModel($campaign);
 
         $this->assertEquals('john.doe@example.com', $donationData['emailAddress']);
         $this->assertEquals('1.23', $donationData['matchedAmount']);
@@ -183,19 +183,19 @@ class DonationTest extends TestCase
 
     public function testToApiModelTemporaryHackHasNoImpact(): void
     {
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $donation->setDonorEmailAddress('noel;;@thebiggive.org.uk');
 
-        $donationData = $donation->toApiModel();
+        $donationData = $donation->toApiModel($campaign);
 
         $this->assertEquals('noel;;@thebiggive.org.uk', $donationData['emailAddress']);
     }
 
     public function testToHookModel(): void
     {
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
 
-        $donationData = $donation->toHookModel();
+        $donationData = $donation->toHookModel($campaign);
 
         $this->assertEquals('john.doe@example.com', $donationData['emailAddress']);
         $this->assertIsString($donationData['collectedTime']);
@@ -205,10 +205,10 @@ class DonationTest extends TestCase
 
     public function testToHookModelWhenRefunded(): void
     {
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $donation->recordRefundAt(new \DateTimeImmutable());
 
-        $donationData = $donation->toHookModel();
+        $donationData = $donation->toHookModel($campaign);
 
         $this->assertIsString($donationData['collectedTime']);
         $this->assertIsString($donationData['refundedTime']);
@@ -216,25 +216,25 @@ class DonationTest extends TestCase
 
     public function testToHookModelTemporaryHack(): void
     {
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $donation->setDonorEmailAddress('noel;;@thebiggive.org.uk');
 
-        $donationData = $donation->toHookModel();
+        $donationData = $donation->toHookModel($campaign);
 
         $this->assertEquals('noel@thebiggive.org.uk', $donationData['emailAddress']);
     }
 
     public function testToClaimBotModelUK(): void
     {
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign] = $this->getTestDonation();
 
-        $donation->getCampaign()->getCharity()->setTbgClaimingGiftAid(true);
-        $donation->getCampaign()->getCharity()->setHmrcReferenceNumber('AB12345');
-        $donation->getCampaign()->getCharity()->setRegulator('CCEW');
-        $donation->getCampaign()->getCharity()->setRegulatorNumber('12229');
+        $campaign->getCharity()->setTbgClaimingGiftAid(true);
+        $campaign->getCharity()->setHmrcReferenceNumber('AB12345');
+        $campaign->getCharity()->setRegulator('CCEW');
+        $campaign->getCharity()->setRegulatorNumber('12229');
         $donation->setTbgShouldProcessGiftAid(true);
 
-        $claimBotMessage = $donation->toClaimBotModel();
+        $claimBotMessage = $donation->toClaimbotModel($campaign);
 
         $nowInYmd = date('Y-m-d');
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $claimBotMessage->id); // UUID
@@ -254,16 +254,16 @@ class DonationTest extends TestCase
 
     public function testToClaimBotModelOverseas(): void
     {
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
 
         $donation->setDonorHomePostcode('OVERSEAS');
-        $donation->getCampaign()->getCharity()->setTbgClaimingGiftAid(true);
-        $donation->getCampaign()->getCharity()->setHmrcReferenceNumber('AB12345');
-        $donation->getCampaign()->getCharity()->setRegulator(null); // e.g. Exempt.
-        $donation->getCampaign()->getCharity()->setRegulatorNumber('12222');
+        $campaign->getCharity()->setTbgClaimingGiftAid(true);
+        $campaign->getCharity()->setHmrcReferenceNumber('AB12345');
+        $campaign->getCharity()->setRegulator(null); // e.g. Exempt.
+        $campaign->getCharity()->setRegulatorNumber('12222');
         $donation->setTbgShouldProcessGiftAid(true);
 
-        $claimBotMessage = $donation->toClaimBotModel();
+        $claimBotMessage = $donation->toClaimbotModel($campaign);
 
         $this->assertEquals('1 Main St, London', $claimBotMessage->house_no);
         $this->assertEquals('', $claimBotMessage->postcode);
@@ -274,7 +274,7 @@ class DonationTest extends TestCase
 
     public function testGetStripePIHelpersWithCard(): void
     {
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
 
         $expectedPaymentMethodProperties = [
             'automatic_payment_methods' => [
@@ -288,13 +288,13 @@ class DonationTest extends TestCase
         ];
 
         $this->assertEquals($expectedPaymentMethodProperties, $donation->getStripeMethodProperties());
-        $this->assertEquals($expectedOnBehalfOfProperties, $donation->getStripeOnBehalfOfProperties());
+        $this->assertEquals($expectedOnBehalfOfProperties, $donation->getStripeOnBehalfOfProperties($campaign));
         $this->assertTrue($donation->supportsSavingPaymentMethod());
     }
 
     public function testGetStripePIHelpersWithCustomerBalanceGbp(): void
     {
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $expectedPaymentMethodProperties = [
             'payment_method_types' => ['customer_balance'],
@@ -312,7 +312,7 @@ class DonationTest extends TestCase
         ];
 
         $this->assertEquals($expectedPaymentMethodProperties, $donation->getStripeMethodProperties());
-        $this->assertEquals([], $donation->getStripeOnBehalfOfProperties());
+        $this->assertEquals([], $donation->getStripeOnBehalfOfProperties($campaign));
         $this->assertFalse($donation->supportsSavingPaymentMethod());
     }
 
@@ -321,18 +321,18 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Customer balance payments only supported for GBP');
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0', currencyCode: 'SEK');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0', currencyCode: 'SEK');
 
         $donation->getStripeMethodProperties(); // Throws in this getter for now.
     }
 
     public function testDonationRefundDateTimeIsIncludedInSfHookModel(): void
     {
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
 
         $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 15:00'));
 
-        $toHookModel = $donation->toHookModel();
+        $toHookModel = $donation->toHookModel($campaign);
 
         $this->assertSame(DonationStatus::Refunded, $toHookModel['status']);
         $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
@@ -340,12 +340,12 @@ class DonationTest extends TestCase
 
     public function testMarkingRefundTwiceOnSameDonationDoesNotUpdateRefundTime(): void
     {
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
 
         $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 15:00'));
         $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 16:00'));
 
-        $toHookModel = $donation->toHookModel();
+        $toHookModel = $donation->toHookModel($campaign);
 
         $this->assertSame(DonationStatus::Refunded, $toHookModel['status']);
         $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);

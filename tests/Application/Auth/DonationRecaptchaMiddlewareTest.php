@@ -23,8 +23,8 @@ class DonationRecaptchaMiddlewareTest extends TestCase
 
     public function testFailure(): void
     {
-        $donationObject = $this->getTestDonation();
-        $donation = $donationObject->toApiModel();
+        ['donation' => $donationObject, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
+        $donation = $donationObject->toApiModel($campaign);
         $donation['creationRecaptchaCode'] = 'bad response';
         $body = json_encode($donation);
 
@@ -42,8 +42,8 @@ class DonationRecaptchaMiddlewareTest extends TestCase
 
     public function testSuccess(): void
     {
-        $donationObject = $this->getTestDonation();
-        $donation = $donationObject->toApiModel();
+        ['donation' => $donationObject, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
+        $donation = $donationObject->toApiModel($campaign);
         $donation['creationRecaptchaCode'] = 'good response';
         $body = json_encode($donation);
 

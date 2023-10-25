@@ -32,7 +32,7 @@ class GiftAidResultHandlerTest extends TestCase
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
-        $testDonationPassedToProphecy = $this->getTestDonation();
+        ['donation' => $testDonationPassedToProphecy, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -52,7 +52,7 @@ class GiftAidResultHandlerTest extends TestCase
             $container->get(LoggerInterface::class),
         );
 
-        $donationMessage = $this->getTestDonation()->toClaimBotModel();
+        $donationMessage = $this->getTestDonation()['donation']->toClaimbotModel($campaign);
         $giftAidErrorHandler($donationMessage);
 
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
@@ -71,7 +71,7 @@ class GiftAidResultHandlerTest extends TestCase
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
-        $testDonationPassedToProphecy = $this->getTestDonation();
+        ['donation' => $testDonationPassedToProphecy, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -91,7 +91,7 @@ class GiftAidResultHandlerTest extends TestCase
             $container->get(LoggerInterface::class),
         );
 
-        $donationMessage = $this->getTestDonation()->toClaimBotModel();
+        $donationMessage = $this->getTestDonation()['donation']->toClaimbotModel($campaign);
         $donationMessage->submission_correlation_id = 'failingCorrId';
         $donationMessage->response_success = false;
         $donationMessage->response_detail = 'Donation error deets';
@@ -114,7 +114,7 @@ class GiftAidResultHandlerTest extends TestCase
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
-        $testDonationPassedToProphecy = $this->getTestDonation();
+        ['donation' => $testDonationPassedToProphecy, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -134,7 +134,7 @@ class GiftAidResultHandlerTest extends TestCase
             $container->get(LoggerInterface::class),
         );
 
-        $donationMessage = $this->getTestDonation()->toClaimBotModel();
+        $donationMessage = $this->getTestDonation()['donation']->toClaimbotModel($campaign);
         $donationMessage->submission_correlation_id = 'goodCorrId';
         $donationMessage->response_success = true;
         $donationMessage->response_detail = 'Thx for ur submission';

@@ -44,7 +44,7 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn(true);
 
-        $success = $this->getRepo($donationClientProphecy)->push($this->getTestDonation(), false);
+        $success = $this->getRepo($donationClientProphecy)->push($this->getTestDonation()['donation'], false);
 
         $this->assertTrue($success);
     }
@@ -56,7 +56,7 @@ class DonationRepositoryTest extends TestCase
             ->put(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $pendingDonation = $this->getTestDonation();
+        ['donation' => $pendingDonation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $pendingDonation->setDonationStatus(DonationStatus::Pending);
         $success = $this->getRepo($donationClientProphecy)->push($pendingDonation, false);
 
@@ -77,7 +77,7 @@ class DonationRepositoryTest extends TestCase
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->create(Argument::type(Donation::class))
+            ->create(Argument::type(Donation::class), Argument::type(Campaign::class))
             ->shouldBeCalledOnce()
             ->willReturn(true);
         $donationClientProphecy
@@ -85,7 +85,10 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn(true);
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+
         $donationReflected = new ReflectionClass($donation);
 
         $createdAtProperty = $donationReflected->getProperty('createdAt');
@@ -95,7 +98,7 @@ class DonationRepositoryTest extends TestCase
         $sfIdProperty->setValue($donation, null); // Allowed property type but not allowed in public setter.
 
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
-        $success = $this->getRepo($donationClientProphecy)->push($donation, false);
+        $success = $this->getRepo($donationClientProphecy, false, $campaignRepoProphecy)->push($donation, false);
 
         // We let push() handle both steps for older-than-30s donations, without waiting for a new process.
         $this->assertTrue($success);
@@ -112,7 +115,7 @@ class DonationRepositoryTest extends TestCase
             ->put(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $donationReflected = new ReflectionClass($donation);
 
         $sfIdProperty = $donationReflected->getProperty('salesforceId');
@@ -135,7 +138,7 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()
             ->willThrow(Client\NotFoundException::class);
 
-        $success = $this->getRepo($donationClientProphecy)->push($this->getTestDonation(), false);
+        $success = $this->getRepo($donationClientProphecy)->push($this->getTestDonation()['donation'], false);
 
         $this->assertTrue($success);
     }
@@ -144,7 +147,9 @@ class DonationRepositoryTest extends TestCase
     {
         $dummyCampaign = new Campaign(charity: \MatchBot\Tests\TestCase::someCharity());
         $dummyCampaign->setCurrencyCode('USD');
+        $dummyCampaign->setId(1);
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($dummyCampaign);
         // No change – campaign still has a charity without a Stripe Account ID.
         $campaignRepoProphecy->findOneBy(Argument::type('array'))
             ->willReturn($dummyCampaign)
@@ -199,7 +204,7 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn(false);
 
-        $success = $this->getRepo($donationClientProphecy)->push($this->getTestDonation(), false);
+        $success = $this->getRepo($donationClientProphecy)->push($this->getTestDonation()['donation'], false);
 
         $this->assertFalse($success);
     }
@@ -208,10 +213,13 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation('987.65');;
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $this->getRepo()->deriveFees($donation, 'amex', null);
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $this->getRepo(campaignRepoProphecy: $campaignRepoProphecy)->deriveFees($donation, 'amex', null);
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -227,10 +235,12 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation('987.65');;
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $this->getRepo()->deriveFees($donation, 'visa', 'US');
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $this->getRepo(campaignRepoProphecy: $campaignRepoProphecy)->deriveFees($donation, 'visa', 'US');
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -249,12 +259,14 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        ['donation' => $donation, 'campaign' => $campaign] = $this->getTestDonation('987.65');;
         $donation->setTipAmount('0.00');
         $donation->setPsp('stripe');
         $donation->setFeeCoverAmount('44.44'); // 4.5% fee, inc. any VAT.
-        $donation->getCampaign()->setFeePercentage(4.5);
-        $this->getRepo()->deriveFees($donation, null, null);
+        $campaign->setFeePercentage(4.5);
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $this->getRepo(campaignRepoProphecy: $campaignRepoProphecy)->deriveFees($donation, null, null);
 
         // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
         // Fixed fee        = £  0.00
@@ -272,10 +284,12 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation('987.65');;
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $this->getRepo()->deriveFees($donation, null, null);
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $this->getRepo(campaignRepoProphecy: $campaignRepoProphecy)->deriveFees($donation, null, null);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -291,12 +305,14 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation('987.65');;
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
 
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
         // Get repo with 20% VAT enabled from now setting override.
-        $this->getRepo(null, true)->deriveFees($donation, null, null);
+        $this->getRepo(null, true, campaignRepoProphecy: $campaignRepoProphecy)->deriveFees($donation, null, null);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -313,10 +329,12 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTip(): void
     {
-        $donation = $this->getTestDonation('987.65');;
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation('987.65');;
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
-        $this->getRepo()->deriveFees($donation, null, null);
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $this->getRepo(campaignRepoProphecy: $campaignRepoProphecy)->deriveFees($donation, null, null);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -329,11 +347,13 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTipWhenTbgClaimingGiftAid(): void
     {
-        $donation = $this->getTestDonation('987.65');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation('987.65');
         $donation->setTbgShouldProcessGiftAid(true);
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
-        $this->getRepo()->deriveFees($donation, null, null);
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $this->getRepo(campaignRepoProphecy: $campaignRepoProphecy)->deriveFees($donation, null, null);
 
         // £987.65 *  1.5%  = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -347,10 +367,12 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
     {
-        $donation = $this->getTestDonation('6.25');
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation('6.25');
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
-        $this->getRepo()->deriveFees($donation, null, null);
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $this->getRepo(campaignRepoProphecy: $campaignRepoProphecy)->deriveFees($donation, null, null);
 
         // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)
         // Fixed fee    = £ 0.20
@@ -384,7 +406,7 @@ class DonationRepositoryTest extends TestCase
             $lockFactoryProphecy,
         );
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $repo->releaseMatchFunds($donation);
     }
 
@@ -411,7 +433,7 @@ class DonationRepositoryTest extends TestCase
             $lockFactoryProphecy,
         );
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $repo->releaseMatchFunds($donation);
     }
 
@@ -440,7 +462,7 @@ class DonationRepositoryTest extends TestCase
             $lockFactoryProphecy,
         );
 
-        $donation = $this->getTestDonation();
+        ['donation' => $donation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
         $repo->releaseMatchFunds($donation);
     }
 
@@ -454,7 +476,7 @@ class DonationRepositoryTest extends TestCase
         // Our test donation doesn't actually meet the conditions but as we're
         // mocking out the Doctrine bits anyway that doesn't matter; we just want
         // to check an update call is made when the result set is non-empty.
-        $query->getResult()->willReturn([$this->getTestDonation()])
+        $query->getResult()->willReturn([$this->getTestDonation()['donation']])
             ->shouldBeCalledOnce();
 
         $queryBuilderProphecy = $this->prophesize(QueryBuilder::class);
@@ -492,7 +514,7 @@ class DonationRepositoryTest extends TestCase
         // This needs a local var so it can be used both to set up the `Query::getResult()` prophecy
         // and for verifying the `findReadyToClaimGiftAid()` return value, without e.g. creation
         // timestamp varying.
-        $testDonation = $this->getTestDonation();
+        ['donation' => $testDonation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
 
         $query = $this->prophesize(AbstractQuery::class);
         // Our test donation doesn't actually meet the conditions but as we're
@@ -551,7 +573,7 @@ class DonationRepositoryTest extends TestCase
         // This needs a local var so it can be used both to set up the `Query::getResult()` prophecy
         // and for verifying the `findWithTransferIdInArray()` return value, without e.g. creation
         // timestamp varying.
-        $testDonation = $this->getTestDonation();
+        ['donation' => $testDonation, 'campaign' => $campaign, 'charity' => $charity] = $this->getTestDonation();
 
         $query = $this->prophesize(AbstractQuery::class);
         // Our test donation doesn't actually meet the conditions but as we're
@@ -619,9 +641,11 @@ class DonationRepositoryTest extends TestCase
         $repo->setLogger(new NullLogger());
         $repo->setSettings($settings);
 
-        if ($campaignRepoProphecy) {
-            $repo->setCampaignRepository($campaignRepoProphecy->reveal());
+        if (!$campaignRepoProphecy) {
+            $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         }
+        $repo->setCampaignRepository($campaignRepoProphecy->reveal());
+
 
         if ($matchingAdapterProphecy) {
             $repo->setMatchingAdapter($matchingAdapterProphecy->reveal());

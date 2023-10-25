@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -35,6 +36,9 @@ class UpdateHandlesLockExceptionTest extends TestCase
     /** @var ObjectProphecy<DonationRepository>  */
     private ObjectProphecy $donationRepositoryProphecy;
 
+    /** @var ObjectProphecy<CampaignRepository>  */
+    private ObjectProphecy $campaignRepositoryProphecy;
+
     /** @var ObjectProphecy<EntityManagerInterface>  */
     private ObjectProphecy $entityManagerProphecy;
 
@@ -46,6 +50,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
+        $this->campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $this->stripeIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $this->fakeStripeClient = $this->fakeStripeClient($this->stripeIntentsProphecy);
@@ -56,14 +61,15 @@ class UpdateHandlesLockExceptionTest extends TestCase
         // arrange
         $donationId = 'donation_id';
 
-        $donation = $this->getDonation();
+        ['donation' => $donation, 'campaign' => $campaign] = $this->getDonation();
 
-        $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Pending);
+        $this->setExpectationsForPersistAfterRetry($donationId, $donation, $campaign, DonationStatus::Pending);
 
         $this->donationRepositoryProphecy->deriveFees($donation, null, null)->shouldBeCalled();
 
         $updateAction = new Update(
             $this->donationRepositoryProphecy->reveal(),
+            $this->campaignRepositoryProphecy->reveal(),
             $this->entityManagerProphecy->reveal(),
             new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
             $this->fakeStripeClient,
@@ -84,15 +90,16 @@ class UpdateHandlesLockExceptionTest extends TestCase
         // arrange
         $donationId = 'donation_id';
 
-        $donation = $this->getDonation();
+        ['donation' => $donation, 'campaign' => $campaign] = $this->getDonation();
 
-        $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Cancelled);
+        $this->setExpectationsForPersistAfterRetry($donationId, $donation, $campaign, DonationStatus::Cancelled);
 
         $this->donationRepositoryProphecy->push($donation, false)->shouldBeCalled()->willReturn(true);
         $this->donationRepositoryProphecy->releaseMatchFunds($donation)->shouldBeCalled();
 
         $updateAction = new Update(
             $this->donationRepositoryProphecy->reveal(),
+            $this->campaignRepositoryProphecy->reveal(),
             $this->entityManagerProphecy->reveal(),
             new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
             $this->fakeStripeClient,
@@ -116,26 +123,27 @@ class UpdateHandlesLockExceptionTest extends TestCase
         return $stripeClientProphecy->reveal();
     }
 
-    private function getDonation(): Donation
+    private function getDonation(): array
     {
         $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('DONATE_LINK_ID');
         $charity->setName('Charity name');
 
         $campaign = new Campaign(charity: $charity);
+        $campaign->setId(1);
         $campaign->setIsMatched(true);
 
         $donation = Donation::emptyTestDonation('1');
         $donation->createdNow();
         $donation->setDonationStatus(DonationStatus::Pending);
-        $donation->setCampaign($campaign);
+        $donation->setCampaignId($campaign->getCampaignId());
         $donation->setPsp('stripe');
         $donation->setUuid(Uuid::uuid4());
         $donation->setDonorFirstName('Donor first name');
         $donation->setDonorLastName('Donor last name');
         $donation->setTransactionId('pi_dummyIntent_id');
 
-        return $donation;
+        return compact(['donation', 'campaign', 'charity']);
     }
 
     private function putRequestBody(string $newStatus): string
@@ -170,6 +178,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
     public function setExpectationsForPersistAfterRetry(
         string $donationId,
         Donation $donation,
+        Campaign $campaign,
         DonationStatus $newStatus,
     ): void {
         $this->donationRepositoryProphecy->findAndLockOneBy(['uuid' => $donationId])
@@ -178,6 +187,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
                 return $donation;
             });
+        $this->campaignRepositoryProphecy->find(Argument::type('int'))->willReturn($campaign);
 
         $testCase = $this; // prophecy rebinds $this to point to the test double in the closure
         $this->entityManagerProphecy->flush()->will(function () use ($donation, $newStatus, $testCase) {

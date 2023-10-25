@@ -1,6 +1,7 @@
 <?php
 
 use GuzzleHttp\Psr7\ServerRequest;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\IntegrationTests\IntegrationTest;
@@ -23,7 +24,7 @@ class CreateDonationTest extends IntegrationTest
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
+        $donationClientProphecy->create(Argument::type(Donation::class), Argument::type(Campaign::class))->willReturn($this->randomString());
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 

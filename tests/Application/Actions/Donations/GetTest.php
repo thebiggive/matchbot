@@ -7,9 +7,11 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 use DI\Container;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Exception\HttpUnauthorizedException;
 
@@ -132,12 +134,17 @@ class GetTest extends TestCase
         $container = $app->getContainer();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        ['donation' => $donation, 'campaign' => $campaign] = $this->getTestDonation();
         $donationRepoProphecy
             ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation())
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $campaignRepoProphecy->find(Argument::type('int'))->willReturn($campaign);
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
 
         $request = $this->createRequest('GET', '/v1/donations/12345678-1234-1234-1234-1234567890ab')
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));

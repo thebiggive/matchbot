@@ -8,6 +8,7 @@ use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
+use Doctrine\ORM\Query\Expr\Join;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -54,8 +55,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function doCreate(SalesforceWriteProxy $donation): bool
     {
+        $campaign = $this->campaignRepository->find($donation->getCampaignId()->value);
+        \assert($campaign !== null);
         try {
-            $salesforceDonationId = $this->getClient()->create($donation);
+            $salesforceDonationId = $this->getClient()->create($donation, $campaign);
             $donation->setSalesforceId($salesforceDonationId);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
@@ -194,9 +197,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 // as possible, so get the prelimary list without a lock, before the transaction.
 
                 // Get these without a lock initially
+                $campaign = $this->campaignRepository->find($donation->getCampaignId()->value);
+                \assert($campaign !== null);
+
                 $likelyAvailableFunds = $this->getEntityManager()
                     ->getRepository(CampaignFunding::class)
-                    ->getAvailableFundings($donation->getCampaign());
+                    ->getAvailableFundings($campaign);
 
                 foreach ($likelyAvailableFunds as $funding) {
                     if ($funding->getCurrencyCode() !== $donation->getCurrencyCode()) {
@@ -418,7 +424,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
-            ->innerJoin('d.campaign', 'campaign')
+            ->join(Campaign::class, 'campaign', Join::WITH, 'd.campaign_id = campaign.id')
             ->innerJoin('campaign.charity', 'charity')
             ->where('d.donationStatus = :claimGiftAidWithStatus')
             ->andWhere('d.giftAid = TRUE')
@@ -562,6 +568,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
     {
         $incursGiftAidFee = $donation->hasGiftAid() && $donation->hasTbgShouldProcessGiftAid();
 
+        $campaign = $this->campaignRepository->find($donation->getCampaignId()->value);
+        \assert($campaign !== null);
+
         $structure = new Calculator(
             $this->settings,
             $donation->getPsp(),
@@ -570,7 +579,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $donation->getAmount(),
             $donation->getCurrencyCode(),
             $incursGiftAidFee,
-            $donation->getCampaign()->getFeePercentage(),
+            $campaign->getFeePercentage(),
         );
         $donation->setCharityFee($structure->getCoreFee());
         $donation->setCharityFeeVat($structure->getFeeVat());

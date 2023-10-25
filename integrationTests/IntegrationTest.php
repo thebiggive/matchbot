@@ -6,6 +6,7 @@ use ArrayAccess;
 use GuzzleHttp\Psr7\ServerRequest;
 use LosMiddleware\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
+use MatchBot\Client\Campaign;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use PHPUnit\Framework\TestCase;
@@ -274,7 +275,7 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
+        $donationClientProphecy->create(Argument::type(Donation::class), Argument::type(\MatchBot\Domain\Campaign::class))->willReturn($this->randomString());
         $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
