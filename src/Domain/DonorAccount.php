@@ -22,7 +22,6 @@ use MatchBot\Application\Assertion;
  * @ORM\HasLifecycleCallbacks
  * @ORM\Entity(repositoryClass="DonorAccountRepository")
  * @ORM\Table(
- *     indexes={@ORM\Index(name="UNIQ_STRIPE_ID", fields={"stripeCustomerId"})},
  *     uniqueConstraints={@ORM\UniqueConstraint(name="UNIQ_STRIPE_ID", columns={"stripeCustomerId"})}
  *     )
  */
