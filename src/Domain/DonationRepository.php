@@ -206,9 +206,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
                 $lockStartTime = microtime(true);
                 $newWithdrawals = $this->matchingAdapter->runTransactionally(
-                    function () use ($donation, $likelyAvailableFunds, $amountMatchedAtStart) {
-                        return $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart);
-                    }
+                    fn() => $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart)
                 );
                 $lockEndTime = microtime(true);
 
@@ -336,11 +334,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $releaseDone = true;
 
                 try {
-                    $this->getEntityManager()->transactional(function () use ($donation) {
-                        foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-                            $this->getEntityManager()->remove($fundingWithdrawal);
-                        }
-                    });
+                    $this->removeAllFundingWithdrawalsForDonation($donation);
                 } catch (DBALException $exception) {
                     $this->logError('Doctrine could not remove withdrawals after maximum tries');
                 }
@@ -701,5 +695,19 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->getEntityManager()->refresh($donation, LockMode::PESSIMISTIC_WRITE);
 
         return $donation;
+    }
+
+    /**
+     * Normally called just as part of releaseMatchFunds which also releases the funds in Redis. But
+     * used separately in case of a crash when we would need to release the funds in Redis whether or not
+     * we have any FundingWithdrawals in MySQL.
+     */
+    public function removeAllFundingWithdrawalsForDonation(Donation $donation): void
+    {
+        $this->getEntityManager()->transactional(function () use ($donation) {
+            foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+                $this->getEntityManager()->remove($fundingWithdrawal);
+            }
+        });
     }
 }

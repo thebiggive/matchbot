@@ -7,6 +7,7 @@ namespace MatchBot\Application\Matching;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Domain\CampaignFunding;
+use Psr\Log\LoggerInterface;
 use Redis;
 
 /**
@@ -32,9 +33,15 @@ class OptimisticRedisAdapter extends Adapter
      */
     private static int $storageDurationSeconds = 86_400; // 1 day
 
+    /**
+     * @var list<array{campaignFunding: CampaignFunding, amount:string}>
+     */
+    private array $amountsSubtractedInCurrentProcess = [];
+
     public function __construct(
         private Redis $redis,
         private EntityManagerInterface $entityManager,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -63,7 +70,6 @@ class OptimisticRedisAdapter extends Adapter
         return $this->toCurrencyWholeUnit((int) $redisFundBalanceFractional);
     }
 
-    #[Pure]
     protected function doSubtractAmount(CampaignFunding $funding, string $amount): string
     {
         $decrementFractional = $this->toCurrencyFractionalUnit($amount);
@@ -121,6 +127,8 @@ class OptimisticRedisAdapter extends Adapter
                 $this->toCurrencyWholeUnit($fundBalanceFractional)
             );
         }
+
+        $this->amountsSubtractedInCurrentProcess[] = ['campaignFunding' => $funding, 'amount' => $amount];
 
         $fundBalance = $this->toCurrencyWholeUnit($fundBalanceFractional);
         $this->setFundingValue($funding, $fundBalance);
@@ -202,6 +210,22 @@ class OptimisticRedisAdapter extends Adapter
         $funding->setAmountAvailable($newValue);
         if (!in_array($funding, $this->fundingsToPersist, true)) {
             $this->fundingsToPersist[] = $funding;
+        }
+    }
+
+    /**
+     * For use only in case of errors, to release allocated funds in redis that would otherwise be out of sync with
+     * what we have in MySQL.
+     */
+    public function releaseNewlyAllocatedFunds(): void
+    {
+        foreach ($this->amountsSubtractedInCurrentProcess as $fundingAndAmount) {
+            $amount = $fundingAndAmount['amount'];
+            $funding = $fundingAndAmount['campaignFunding'];
+
+            $this->logger->warning("Released newly allocated funds of $amount for funding# {$funding->getId()}");
+
+            $this->addAmount($funding, $amount);
         }
     }
 }

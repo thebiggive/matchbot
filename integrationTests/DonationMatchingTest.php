@@ -2,9 +2,12 @@
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\OptimisticRedisAdapter;
+use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
+use Psr\Log\LoggerInterface;
 
 class DonationMatchingTest extends \MatchBot\IntegrationTests\IntegrationTest
 {
@@ -75,9 +78,7 @@ class DonationMatchingTest extends \MatchBot\IntegrationTests\IntegrationTest
         // assert
         $amountAvailable = $this->matchingAdapater->getAmountAvailable($campaignFunding);
 
-        $this->assertEquals(90, $amountAvailable); // reduced
-        // @todo delete above line, fix code and insert following:
-        // $this->assertEquals(100, $amountAvailable); // not reduced
+        $this->assertEquals(100, $amountAvailable); // not reduced
     }
 
     private function makeAdapterThatThrowsAfterSubtractingFunds(Adapter $matchingAdapater): Adapter
@@ -114,6 +115,28 @@ class DonationMatchingTest extends \MatchBot\IntegrationTests\IntegrationTest
 
                 throw new \Exception("Throwing after subtracting funds to test how our system handles the crash");
             }
+
+            public function releaseNewlyAllocatedFunds(): void
+            {
+                $this->wrappedAdapter->releaseNewlyAllocatedFunds();
+            }
         };
+    }
+
+    /** @psalm-suppress MixedArgument */
+    public function tearDown(): void
+    {
+        parent::tearDown();
+        $c = $this->getContainer();
+
+        $redis = $c->get(Redis::class);
+        $entityManager = $c->get(RetrySafeEntityManager::class);
+        $logger = $c->get(LoggerInterface::class);
+
+        \assert($redis instanceof Redis);
+        \assert($entityManager instanceof RetrySafeEntityManager);
+        \assert($logger instanceof LoggerInterface);
+
+        $this->setInContainer(Adapter::class, new OptimisticRedisAdapter($redis, $entityManager, $logger));
     }
 }
