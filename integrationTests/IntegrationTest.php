@@ -3,8 +3,10 @@
 namespace MatchBot\IntegrationTests;
 
 use ArrayAccess;
+use CreateDonationTest;
 use GuzzleHttp\Psr7\ServerRequest;
 use LosMiddleware\RateLimit\RateLimitMiddleware;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -98,6 +100,27 @@ abstract class IntegrationTest extends TestCase
         }];
     }
 
+    /**
+     * @return void
+     * @throws \DI\DependencyException
+     * @throws \DI\NotFoundException
+     * @throws \MatchBot\Client\BadRequestException
+     */
+    public function setupFakeDonationClient(): void
+    {
+        /** @var \DI\Container $container */
+        $container = $this->getContainer();
+
+        $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
+        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
+
+        $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
+
+        $donationRepo = $container->get(DonationRepository::class);
+        assert($donationRepo instanceof DonationRepository);
+        $donationRepo->setClient($donationClientProphecy->reveal());
+    }
+
     protected function getContainer(): ContainerInterface
     {
         if (self::$integrationTestContainer === null) {
@@ -163,7 +186,15 @@ abstract class IntegrationTest extends TestCase
         return $campaignId;
     }
 
-    public function addCampaignAndCharityToDB(string $campaignId): void
+    /**
+     * @param string $campaignSfId
+     * @return array{charityId: int, campaignId: int, fundId: int, campaignFundingID: int}
+     * @throws \Doctrine\DBAL\Exception
+     *
+     * @psalm-suppress MoreSpecificReturnType
+     * @psalm-suppress LessSpecificReturnStatement
+     */
+    public function addCampaignAndCharityToDB(string $campaignSfId, int $fundWithAmountInPounds = 100_000): array
     {
         $charityId = random_int(1000, 100000);
         $charitySfID = $this->randomString();
@@ -181,15 +212,17 @@ abstract class IntegrationTest extends TestCase
             EOF
         );
 
+        $charityId = (int)$db->lastInsertId();
+
         $matched =  1;
 
         $db->executeStatement(<<<EOF
             INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull, createdAt, updatedAt, currencyCode, feePercentage) 
-            VALUES ('$charityId', 'some charity', '$nyd', '$futureDate', '$matched', '$campaignId', '$nyd', '$nyd', '$nyd', 'GBP', 0)
+            VALUES ('$charityId', 'some charity', '$nyd', '$futureDate', '$matched', '$campaignSfId', '$nyd', '$nyd', '$nyd', 'GBP', 0)
             EOF
         );
 
-        $campaignId = $db->lastInsertId();
+        $campaignId = (int)$db->lastInsertId();
 
         $db->executeStatement(<<<SQL
             INSERT INTO Fund (amount, name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType, currencyCode) VALUES 
@@ -197,20 +230,24 @@ abstract class IntegrationTest extends TestCase
         SQL
         );
 
-        $fundId = $db->lastInsertId();
+        $fundId = (int)$db->lastInsertId();
 
         $db->executeStatement(<<<SQL
             INSERT INTO CampaignFunding (fund_id, amount, amountAvailable, allocationOrder, createdAt, updatedAt, currencyCode) VALUES 
-                    ($fundId, 100000, 100000, 1, '$nyd', '$nyd', 'GBP')                                                                                                                                
+                    ($fundId, $fundWithAmountInPounds, $fundWithAmountInPounds, 1, '$nyd', '$nyd', 'GBP')                                                                                                                                
         SQL
         );
 
-        $campaignFundingID = $db->lastInsertId();
+        $campaignFundingID = (int)$db->lastInsertId();
 
         $db->executeStatement(<<<SQL
          INSERT INTO Campaign_CampaignFunding (campaignfunding_id, campaign_id) VALUES ($campaignFundingID, $campaignId);
         SQL
 );
+
+        $compacted = compact(['charityId', 'campaignId', 'fundId', 'campaignFundingID']);
+        Assertion::allInteger($compacted);
+        return $compacted;
     }
 
     /**
@@ -283,9 +320,9 @@ abstract class IntegrationTest extends TestCase
         return $fakeStripeClient;
     }
 
-    protected function createDonation(int $tipAmount = 0, bool $withPremadeCampaign = true): \Psr\Http\Message\ResponseInterface
+    protected function createDonation(int $tipAmount = 0, bool $withPremadeCampaign = true, ?string $campaignSfID = null, int $amountInPounds = 100): \Psr\Http\Message\ResponseInterface
     {
-        $campaignId = $this->randomString();
+        $campaignId = $campaignSfID ?? $this->randomString();
         $paymentIntentId = $this->randomString();
 
         if ($withPremadeCampaign) {
@@ -321,7 +358,7 @@ abstract class IntegrationTest extends TestCase
                 body: <<<EOF
                 {
                     "currencyCode": "GBP",
-                    "donationAmount": "100",
+                    "donationAmount": "{$amountInPounds}",
                     "projectId": "$campaignId",
                     "psp": "stripe",
                     "tipAmount": $tipAmount
