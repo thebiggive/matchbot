@@ -168,20 +168,49 @@ abstract class IntegrationTest extends TestCase
         $charityId = random_int(1000, 100000);
         $charitySfID = $this->randomString();
         $charityStripeId = $this->randomString();
+        $fundSfID = $this->randomString();
 
-        $this->db()->executeStatement(<<<EOF
+        $db = $this->db();
+        
+        $nyd = '2023-01-01'; // specific date doesn't matter.
+        $futureDate = '2093-01-01';
+
+        $db->executeStatement(<<<EOF
             INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId, hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber) 
-            VALUES ($charityId, 'Some Charity', '$charitySfID', '2023-01-01', '2023-01-01', '2093-01-01', '$charityStripeId', null, 0, 0, null, null)
+            VALUES ($charityId, 'Some Charity', '$charitySfID', '$nyd', '$nyd', '$nyd', '$charityStripeId', null, 0, 0, null, null)
             EOF
         );
 
-        $matched =  0;
+        $matched =  1;
 
-        $this->db()->executeStatement(<<<EOF
+        $db->executeStatement(<<<EOF
             INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull, createdAt, updatedAt, currencyCode, feePercentage) 
-            VALUES ('$charityId', 'some charity', '2023-01-01', '2093-01-01', '$matched', '$campaignId', '2023-01-01', '2023-01-01', '2023-01-01', 'GBP', 0)
+            VALUES ('$charityId', 'some charity', '$nyd', '$futureDate', '$matched', '$campaignId', '$nyd', '$nyd', '$nyd', 'GBP', 0)
             EOF
         );
+
+        $campaignId = $db->lastInsertId();
+
+        $db->executeStatement(<<<SQL
+            INSERT INTO Fund (amount, name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType, currencyCode) VALUES 
+                (100000, 'Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', 'pledge', 'GBP')
+        SQL
+        );
+
+        $fundId = $db->lastInsertId();
+
+        $db->executeStatement(<<<SQL
+            INSERT INTO CampaignFunding (fund_id, amount, amountAvailable, allocationOrder, createdAt, updatedAt, currencyCode) VALUES 
+                    ($fundId, 100000, 100000, 1, '$nyd', '$nyd', 'GBP')                                                                                                                                
+        SQL
+        );
+
+        $campaignFundingID = $db->lastInsertId();
+
+        $db->executeStatement(<<<SQL
+         INSERT INTO Campaign_CampaignFunding (campaignfunding_id, campaign_id) VALUES ($campaignFundingID, $campaignId);
+        SQL
+);
     }
 
     /**
