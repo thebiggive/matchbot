@@ -247,6 +247,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->logInfo('ID ' . $donation->getUuid() . ' allocated new match funds totalling ' . $amountNewlyMatched);
         $this->logInfo('Allocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
 
+        $this->getEntityManager()->flush();
+
         return $amountNewlyMatched;
     }
 
