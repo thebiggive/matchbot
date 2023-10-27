@@ -2,13 +2,8 @@
 
 namespace MatchBot\Monolog\Handler;
 
-use MatchBot\Application\SlackChannelChatterFactory;
 use Monolog\Handler\HandlerInterface;
 use Monolog\Logger;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
-use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
-use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
@@ -36,7 +31,7 @@ class SlackHandler implements HandlerInterface
     /**
      * @psalm-suppress PossiblyUnusedReturnValue - used by Monolog.
      */
-    public function handle(array $record): bool
+    public function handle(array|\ArrayAccess $record): bool
     {
         if ($record['level'] < Logger::ERROR) {
             return false; // allows another handle to handle this.
