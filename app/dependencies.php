@@ -26,6 +26,7 @@ use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
+use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
 use Monolog\Handler\StreamHandler;
@@ -175,6 +176,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         LoggerInterface::class => function (ContainerInterface $c): Logger {
+
             $settings = $c->get('settings');
 
             $loggerSettings = $settings['logger'];
@@ -191,6 +193,22 @@ return function (ContainerBuilder $containerBuilder) {
 
             $handler = new StreamHandler($loggerSettings['path'], $loggerSettings['level']);
             $logger->pushHandler($handler);
+
+            $alarmChannelName = match (getenv('APP_ENV')) {
+                'production' => 'production-alarms',
+                'staging' => 'staging-alarms',
+                'regression' => 'regression-alarms',
+                default => null,
+            };
+
+            if ($alarmChannelName) {
+                $slackChannelChatterFactory = $c->get(SlackChannelChatterFactory::class);
+                \assert($slackChannelChatterFactory instanceof SlackChannelChatterFactory);
+
+                $logger->pushHandler(
+                    new SlackHandler($slackChannelChatterFactory->makeChatter($alarmChannelName))
+                );
+            }
 
             return $logger;
         },

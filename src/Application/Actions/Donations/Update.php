@@ -77,15 +77,22 @@ class Update extends Action
             $message = 'Donation Update data deserialise error';
             $exceptionType = get_class($exception);
 
-            return $this->validationError($response,
+            return $this->validationError(
+                $response,
                 "$message: $exceptionType - {$exception->getMessage()}",
                 $message,
                 empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
             );
         }
 
+        if (getenv('APP_ENV') !== 'production' && str_starts_with($donationData->firstName ?? '', 'Please throw')) {
+            $this->logger->critical("Testing a critical log message for BG2-2297");
+            throw new \Exception("$donationData->firstName requested an exception for test purposes");
+        }
+
         if (!isset($donationData->status)) {
-            return $this->validationError($response,
+            return $this->validationError(
+                $response,
                 "Donation ID {$args['donationId']} could not be updated with missing status",
                 'New status is required'
             );
@@ -109,7 +116,8 @@ class Update extends Action
                 if ($donationData->status !== DonationStatus::Cancelled->value && $donationData->status !== $donation->getDonationStatus()->value) {
                     $this->entityManager->rollback();
 
-                    return $this->validationError($response,
+                    return $this->validationError(
+                        $response,
                         "Donation ID {$args['donationId']} could not be set to status {$donationData->status}",
                         'Status update is only supported for cancellation'
                     );
@@ -124,7 +132,8 @@ class Update extends Action
                         "Donation ID {$args['donationId']} auto-confirm attempted with '$methodSummary' payment method",
                     );
 
-                    return $this->validationError($response,
+                    return $this->validationError(
+                        $response,
                         "Donation ID {$args['donationId']} could not be auto-confirmed",
                         'Processing incomplete. Please refresh and check your donation funds balance'
                     );
@@ -148,8 +157,7 @@ class Update extends Action
                 $retryCount++;
 
                 $this->entityManager->rollback();
-            }
-            catch (InvalidRequestException $invalidRequestException) {
+            } catch (InvalidRequestException $invalidRequestException) {
                 if (
                     str_starts_with(
                         haystack: $invalidRequestException->getMessage(),
@@ -177,7 +185,6 @@ class Update extends Action
 
                 throw $invalidRequestException;
             }
-
         }
 
         throw new \Exception(
@@ -197,7 +204,8 @@ class Update extends Action
         if (bccomp($donation->getAmount(), (string) $donationData->donationAmount) !== 0) {
             $this->entityManager->rollback();
 
-            return $this->validationError($response,
+            return $this->validationError(
+                $response,
                 "Donation ID {$args['donationId']} amount did not match",
                 'Amount updates are not supported'
             );
@@ -251,7 +259,8 @@ class Update extends Action
             } catch (\UnexpectedValueException $exception) {
                 $this->entityManager->rollback();
 
-                return $this->validationError($response,
+                return $this->validationError(
+                    $response,
                     sprintf("Invalid tipAmount '%s'", $donationData->tipAmount),
                     $exception->getMessage(),
                     false,
@@ -367,7 +376,8 @@ class Update extends Action
             // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
             $this->entityManager->rollback();
 
-            return $this->validationError($response,
+            return $this->validationError(
+                $response,
                 "Donation ID {$args['donationId']} could not be cancelled as {$donation->getDonationStatus()->value}",
                 'Donation already finalised'
             );
