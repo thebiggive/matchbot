@@ -176,7 +176,7 @@ class Confirm extends Action
             }
 
             $exceptionClass = get_class($exception);
-            $this->logger->info(sprintf(
+            $this->logger->warning(sprintf(
                 'Stripe %s on Confirm for donation %s (%s): %s',
                 $exceptionClass,
                 $donation->getUuid(),
