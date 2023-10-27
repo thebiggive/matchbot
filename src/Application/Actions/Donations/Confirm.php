@@ -19,6 +19,15 @@ use Stripe\StripeClient;
 
 class Confirm extends Action
 {
+    /**
+     * Message excerpts that we expect to see sometimes from stripe on InvalidRequestExceptions. An exception
+     * containing any of these strings should not generate an alarm.
+     */
+    public const EXPECTED_STRIPE_INVALID_REQUEST_MESSAGES = [
+        'The provided PaymentMethod has failed authentication',
+        'You must collect the security code (CVC) for this card from the cardholder before you can use it',
+    ];
+
     public function __construct(
         LoggerInterface $logger,
         private DonationRepository $donationRepository,
@@ -26,6 +35,24 @@ class Confirm extends Action
         private EntityManagerInterface $entityManager,
     ) {
         parent::__construct($logger);
+    }
+
+    /**
+     * InvalidRequestException can have various possible messages. If it's one we've seen before that we don't believe
+     * indicates a bug or failure in matchbot then we just send an error message to the client. If it's something we
+     * haven't seen before or didn't expect then we will also generate an alarm for Big Give devs to deal with.
+     */
+    private function errorMessageFromStripeIsExpected(InvalidRequestException $exception): bool
+    {
+        $exceptionMessage = $exception->getMessage();
+
+        foreach (self::EXPECTED_STRIPE_INVALID_REQUEST_MESSAGES as $expectedMessage) {
+            if (str_contains($exceptionMessage, $expectedMessage)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -144,12 +171,12 @@ class Confirm extends Action
                 ], 402);
             }
 
-            if (! str_contains($exception->getMessage(), 'The provided PaymentMethod has failed authentication')) {
+            if (!$this->errorMessageFromStripeIsExpected($exception)) {
                 throw $exception;
             }
 
             $exceptionClass = get_class($exception);
-            $this->logger->info(sprintf(
+            $this->logger->warning(sprintf(
                 'Stripe %s on Confirm for donation %s (%s): %s',
                 $exceptionClass,
                 $donation->getUuid(),
