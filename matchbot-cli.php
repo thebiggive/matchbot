@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 
 declare(strict_types=1);
@@ -37,6 +38,14 @@ $messengerReceiverKey = 'receiver';
 $messengerReceiverLocator = new Container();
 $messengerReceiverLocator->set($messengerReceiverKey, $psr11App->get(TransportInterface::class));
 
+$chatter = $psr11App->get(ChatterInterface::class);
+assert($chatter instanceof ChatterInterface);
+
+/**
+ * @psalm-suppress MixedArgument - too many of these to fix here. At some point we could fix on mass
+ * by using a stub psr11 with generics. It's also not very important to fix for this statement as it is called inside
+ * any loop or conditional. If it's broken we'll know about it.
+ */
 $commands = [
     new ClaimGiftAid(
         $psr11App->get(DonationRepository::class),
@@ -61,18 +70,24 @@ $commands = [
         $psr11App->get(FundingWithdrawalRepository::class),
         $psr11App->get(Matching\Adapter::class)
     ),
+    new \MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck(
+        $psr11App->get(CampaignFundingRepository::class),
+        $psr11App->get(FundingWithdrawalRepository::class),
+        $psr11App->get(Matching\Adapter::class),
+        $chatter,
+    ),
     new PushDonations($psr11App->get(DonationRepository::class)),
     new ResetMatching($psr11App->get(CampaignFundingRepository::class), $psr11App->get(Matching\Adapter::class)),
     new RetrospectivelyMatch(
         $psr11App->get(DonationRepository::class),
-        $psr11App->get(ChatterInterface::class),
+        $chatter,
     ),
     new UpdateCampaigns(
         $psr11App->get(CampaignRepository::class),
         $psr11App->get(EntityManagerInterface::class),
         $psr11App->get(FundRepository::class),
         $psr11App->get(LoggerInterface::class),
-    ),
+    )
 ];
 
 foreach ($commands as $command) {

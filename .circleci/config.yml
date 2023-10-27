@@ -58,6 +58,8 @@ jobs:
 
       - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose
 
+      - run: vendor/bin/doctrine-migrations diff --allow-empty-diff # check that this works
+
       - run: composer run integration-test
 
       - codecov/upload:

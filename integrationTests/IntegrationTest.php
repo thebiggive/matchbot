@@ -2,6 +2,7 @@
 
 namespace MatchBot\IntegrationTests;
 
+use ArrayAccess;
 use GuzzleHttp\Psr7\ServerRequest;
 use LosMiddleware\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
@@ -47,6 +48,12 @@ abstract class IntegrationTest extends TestCase
         $container->set(RateLimitMiddleware::class, $noOpMiddleware);
         $container->set(\Psr\Log\LoggerInterface::class, new \Psr\Log\NullLogger());
 
+        $settings = $container->get('settings');
+        \assert(is_array($settings));
+        $settings['apiClient'] = $this->fakeApiClientSettingsThatAlwaysThrow();
+        $container->set('settings', $settings);
+
+
         AppFactory::setContainer($container);
         $app = AppFactory::create();
 
@@ -66,12 +73,48 @@ abstract class IntegrationTest extends TestCase
         self::$app = $app;
     }
 
+    private function fakeApiClientSettingsThatAlwaysThrow(): array
+    {
+        return ['global' => new /** @implements ArrayAccess<string, never> */ class implements ArrayAccess {
+            public function offsetExists(mixed $offset): bool
+            {
+                return true;
+            }
+
+            public function offsetGet(mixed $offset): never
+            {
+                throw new \Exception("Do not use real API client in tests");
+            }
+
+            public function offsetSet(mixed $offset, mixed $value): never
+            {
+                throw new \Exception("Do not use real API client in tests");
+            }
+
+            public function offsetUnset(mixed $offset): never
+            {
+                throw new \Exception("Do not use real API client in tests");
+            }
+        }];
+    }
+
     protected function getContainer(): ContainerInterface
     {
         if (self::$integrationTestContainer === null) {
             throw new \Exception("Test container not set");
         }
         return self::$integrationTestContainer;
+    }
+
+    /**
+     * @param class-string $name
+     */
+    protected function setInContainer(string $name, mixed $value): void
+    {
+        $container = $this->getContainer();
+        \assert($container instanceof \DI\Container);
+
+        $container->set($name, $value);
     }
 
     public function db(): \Doctrine\DBAL\Connection
@@ -131,9 +174,12 @@ abstract class IntegrationTest extends TestCase
             VALUES ($charityId, 'Some Charity', '$charitySfID', '2023-01-01', '2023-01-01', '2093-01-01', '$charityStripeId', null, 0, 0, null, null)
             EOF
         );
+
+        $matched =  0;
+
         $this->db()->executeStatement(<<<EOF
             INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull, createdAt, updatedAt, currencyCode, feePercentage) 
-            VALUES ('$charityId', 'some charity', '2023-01-01', '2093-01-01', 0, '$campaignId', '2023-01-01', '2023-01-01', '2023-01-01', 'GBP', 0)
+            VALUES ('$charityId', 'some charity', '2023-01-01', '2093-01-01', '$matched', '$campaignId', '2023-01-01', '2023-01-01', '2023-01-01', 'GBP', 0)
             EOF
         );
     }
@@ -208,9 +254,34 @@ abstract class IntegrationTest extends TestCase
         return $fakeStripeClient;
     }
 
-    protected function createDonation(int $tipAmount = 0): \Psr\Http\Message\ResponseInterface
+    protected function createDonation(int $tipAmount = 0, bool $withPremadeCampaign = true): \Psr\Http\Message\ResponseInterface
     {
-        $campaignId = $this->setupNewCampaign();
+        $campaignId = $this->randomString();
+        $paymentIntentId = $this->randomString();
+
+        if ($withPremadeCampaign) {
+            $this->addCampaignAndCharityToDB($campaignId);
+        } // else application will attempt to pull campaign and charity from SF.
+
+        $stripePaymentIntent = new PaymentIntent($paymentIntentId);
+        $stripePaymentIntent->client_secret = 'any string, doesnt affect test';
+        $stripePaymentIntentsProphecy = $this->setUpFakeStripeClient();
+
+        $stripePaymentIntentsProphecy->create(Argument::type('array'))
+            ->willReturn($stripePaymentIntent);
+
+        /** @var \DI\Container $container */
+        $container = $this->getContainer();
+
+        $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
+        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
+        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+
+        $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
+
+        $donationRepo = $container->get(DonationRepository::class);
+        assert($donationRepo instanceof DonationRepository);
+        $donationRepo->setClient($donationClientProphecy->reveal());
 
         return $this->getApp()->handle(
             new ServerRequest(

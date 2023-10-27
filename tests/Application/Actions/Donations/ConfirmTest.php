@@ -15,6 +15,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Log\NullLogger;
 use Slim\Psr7\Response;
 use Stripe\Exception\CardException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\Service\PaymentIntentService;
 use Stripe\Service\PaymentMethodService;
@@ -49,6 +50,7 @@ class ConfirmTest extends TestCase
             ],
             confirmFailsWithCardError: false,
             confirmFailsWithApiError: false,
+            confirmFailsWithPaymentMethodUsedError: false,
         );
 
         $sut = new Confirm(
@@ -97,6 +99,7 @@ class ConfirmTest extends TestCase
             ],
             confirmFailsWithCardError: true,
             confirmFailsWithApiError: false,
+            confirmFailsWithPaymentMethodUsedError: false,
         );
 
         $sut = new Confirm(
@@ -117,6 +120,62 @@ class ConfirmTest extends TestCase
                 'message' => 'Your card was declined',
                 'code' => 'card_declined',
                 'decline_code' => 'generic_decline',
+            ]],
+            \json_decode($response->getBody()->getContents(), true)
+        );
+    }
+
+    /**
+     * We've seen card test bots, and no humans, try to do this as of Oct '23. For now we want to log it
+     * as a warning, so we can see frequency on a dashboard but don't get alarms.
+     */
+    public function testItReturns402OnStalePaymentMethodReuse(): void
+    {
+        // arrange
+
+        // in reality the fee would be calculated according to details of the card etc. The Calculator class is
+        //tested separately. This is just a dummy value.
+        $newCharityFee = "42.00";
+        $newApplicationFeeAmount = 4200;
+
+        $stripeClientProphecy = $this->fakeStripeClient(
+            cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
+            paymentMethodId: 'PAYMENT_METHOD_ID',
+            updatedIntentData: [
+                'status' => 'requires_payment_method',
+                'client_secret' => 'some_client_secret',
+            ],
+            paymentIntentId: 'PAYMENT_INTENT_ID',
+            expectedMetadataUpdate: [
+                "metadata" => [
+                    "stripeFeeRechargeGross" => $newCharityFee,
+                    "stripeFeeRechargeNet" => $newCharityFee,
+                    "stripeFeeRechargeVat" => "0.00",
+                ],
+                "application_fee_amount" => $newApplicationFeeAmount,
+            ],
+            confirmFailsWithCardError: false,
+            confirmFailsWithApiError: false,
+            confirmFailsWithPaymentMethodUsedError: true,
+        );
+
+        $sut = new Confirm(
+            new NullLogger(),
+            $this->getDonationRepository($newCharityFee),
+            $stripeClientProphecy->reveal(),
+            $this->prophesize(EntityManagerInterface::class)->reveal()
+        );
+
+        // act
+        $response = $this->callConfirm($sut);
+
+        // assert
+
+        $this->assertSame(402, $response->getStatusCode()); // 'Payment required'.
+        $this->assertSame(
+            ['error' => [
+                'message' => 'Payment method cannot be used again',
+                'code' => 'invalid_request_error',
             ]],
             \json_decode($response->getBody()->getContents(), true)
         );
@@ -149,6 +208,7 @@ class ConfirmTest extends TestCase
             ],
             confirmFailsWithCardError: false,
             confirmFailsWithApiError: true,
+            confirmFailsWithPaymentMethodUsedError: false,
         );
 
         $sut = new Confirm(
@@ -184,6 +244,7 @@ class ConfirmTest extends TestCase
         array $expectedMetadataUpdate,
         bool $confirmFailsWithCardError,
         bool $confirmFailsWithApiError,
+        bool $confirmFailsWithPaymentMethodUsedError,
     ): ObjectProphecy {
         $paymentMethod = (object)[
             'type' => 'card',
@@ -215,6 +276,15 @@ class ConfirmTest extends TestCase
                 httpStatus: 402,
                 stripeCode: 'card_declined',
                 declineCode: 'generic_decline',
+            );
+            $confirmation->willThrow($exception);
+        }
+
+        if ($confirmFailsWithPaymentMethodUsedError) {
+            $exception = InvalidRequestException::factory(
+                'The provided PaymentMethod was previously used with a PaymentIntent without Customer attachment...',
+                httpStatus: 402,
+                stripeCode: 'invalid_request_error',
             );
             $confirmation->willThrow($exception);
         }

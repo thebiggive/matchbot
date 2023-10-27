@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Persistence;
 
+use closure;
 use Doctrine\DBAL\Exception\RetryableException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM;
 use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\EntityManagerClosed;
-use MatchBot\Domain\Model;
+use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\SalesforceReadProxy;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -19,7 +22,7 @@ use Psr\Log\LoggerInterface;
  */
 class RetrySafeEntityManager extends EntityManagerDecorator
 {
-    private EntityManager $entityManager;
+    private ORM\EntityManagerInterface $entityManager;
 
     /**
      * @var int For non-matching updates that always use Doctrine, maximum number of times to try again when
@@ -27,11 +30,24 @@ class RetrySafeEntityManager extends EntityManagerDecorator
      */
     private int $maxLockRetries = 3;
 
+    /**
+     * @var Closure():EntityManagerInterface
+     */
+    private closure $entityManagerFactory;
+
+    /**
+     * @param Closure():\Doctrine\ORM\EntityManagerInterface $entityManagerFactory
+     * @param array<string, mixed> $connectionSettings
+     */
     public function __construct(
         private ORM\Configuration $ormConfig,
-        private array $connectionSettings,
+        array $connectionSettings,
         private LoggerInterface $logger,
+        \Closure $entityManagerFactory = null,
     ) {
+        $this->entityManagerFactory = $entityManagerFactory ??
+            fn (): EntityManager => EntityManager::create($connectionSettings, $this->ormConfig);
+
         $this->entityManager = $this->buildEntityManager();
         parent::__construct($this->entityManager);
     }
@@ -85,7 +101,7 @@ class RetrySafeEntityManager extends EntityManagerDecorator
      * Attempt a persist the normal way, and if the underlying EM is closed, make a new one
      * and try a second time. We were forced to take this approach because the properties
      * tracking a closed EM are annotated private.
-     *
+     * @param object $object
      * {@inheritDoc}
      */
     public function persist($object): void
@@ -167,8 +183,9 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         $this->entityManager = $entityManager;
     }
 
-    private function buildEntityManager(): EntityManager
+    private function buildEntityManager(): ORM\EntityManagerInterface
     {
-        return EntityManager::create($this->connectionSettings, $this->ormConfig);
+        $factory = $this->entityManagerFactory;
+        return $factory();
     }
 }
