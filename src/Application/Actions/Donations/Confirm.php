@@ -44,8 +44,10 @@ class Confirm extends Action
      */
     private function errorMessageFromStripeIsExpected(InvalidRequestException $exception): bool
     {
+        $exceptionMessage = $exception->getMessage();
+
         foreach (self::EXPECTED_STRIPE_INVALID_REQUEST_MESSAGES as $expectedMessage) {
-            if (str_contains($exception->getMessage(), $expectedMessage)) {
+            if (str_contains($exceptionMessage, $expectedMessage)) {
                 return true;
             }
         }
