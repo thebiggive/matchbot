@@ -188,6 +188,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // is most often empty (for new donations) so this will frequently be 0.00.
         $amountMatchedAtStart = $donation->getFundingWithdrawalTotal();
 
+        /** @var FundingWithdrawal[] $newWithdrawals */
+        $newWithdrawals = [];
+
         while (!$allocationDone && $allocationTries < $this->maxLockTries) {
             try {
                 // We need write-ready locks for `CampaignFunding`s but also to keep the time we have them as short
@@ -212,27 +215,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
                 $allocationDone = true;
                 $this->persistQueuedDonations();
-
-                // We end the transaction prior to inserting the funding withdrawal records, to keep the lock time
-                // short. These are new entities, so except in a system crash the withdrawal totals will almost
-                // immediately match the amount deducted from the fund.
-                $amountNewlyMatched = '0.0';
-
-                try {
-                    $amountNewlyMatched = $this->getEntityManager()->transactional(
-                        function () use ($newWithdrawals, $donation, $amountNewlyMatched) {
-                            foreach ($newWithdrawals as $newWithdrawal) {
-                                $this->getEntityManager()->persist($newWithdrawal);
-                                $donation->addFundingWithdrawal($newWithdrawal);
-                                $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawal->getAmount(), 2);
-                            }
-
-                            return $amountNewlyMatched;
-                        }
-                    );
-                } catch (DBALException $exception) {
-                    $this->logError('Doctrine could not update donation/withdrawals after maximum tries');
-                }
             } catch (Matching\TerminalLockException $exception) { // Includes non-retryable `DBALException`s
                 $waitTime = round(microtime(true) - $lockStartTime, 6);
                 $this->logError(
@@ -251,9 +233,18 @@ class DonationRepository extends SalesforceWriteProxyRepository
             throw new DomainLockContentionException();
         }
 
-        $this->logInfo('ID ' . $donation->getUuid() . ' allocated new match funds totalling ' . $amountNewlyMatched);
+        // We release the allocation lock prior to inserting the funding withdrawal records, to keep the lock
+        // time short. These are new entities, so except in a system crash the withdrawal totals will almost
+        // immediately match the amount deducted from the fund.
+        $amountNewlyMatched = '0.0';
 
-        // Monitor allocation times so we can get a sense of how risky the locking behaviour is with different DB sizes
+        foreach ($newWithdrawals as $newWithdrawal) {
+            $this->getEntityManager()->persist($newWithdrawal);
+            $donation->addFundingWithdrawal($newWithdrawal);
+            $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawal->getAmount(), 2);
+        }
+
+        $this->logInfo('ID ' . $donation->getUuid() . ' allocated new match funds totalling ' . $amountNewlyMatched);
         $this->logInfo('Allocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
 
         return $amountNewlyMatched;
