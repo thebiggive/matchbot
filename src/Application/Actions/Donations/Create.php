@@ -15,6 +15,7 @@ use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
+use MatchBot\Application\Matching\Adapter;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
@@ -37,6 +38,7 @@ class Create extends Action
         private EntityManagerInterface $entityManager,
         private SerializerInterface $serializer,
         private StripeClient $stripeClient,
+        private Adapter $matchingAdapter,
         LoggerInterface $logger
     ) {
         parent::__construct($logger);
@@ -135,6 +137,12 @@ class Create extends Action
                 $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
 
                 return $this->respond($response, new ActionPayload(503, null, $error));
+            } catch (\Throwable $t) {
+                $this->matchingAdapter->releaseNewlyAllocatedFunds();
+                // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount would be reduced again when the donation expires.
+                $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
+
+                throw $t;
             }
         }
 

@@ -18,18 +18,7 @@ class CreateDonationTest extends IntegrationTest
     {
         parent::setUp();
         $this->addCampaignAndCharityToDB($this->randomString());
-
-        /** @var \DI\Container $container */
-        $container = $this->getContainer();
-
-        $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
-
-        $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
-
-        $donationRepo = $container->get(DonationRepository::class);
-        assert($donationRepo instanceof DonationRepository);
-        $donationRepo->setClient($donationClientProphecy->reveal());
+        $this->setupFakeDonationClient();
     }
 
     public function testItCreatesADonation(): void
@@ -38,7 +27,7 @@ class CreateDonationTest extends IntegrationTest
         // from the HTTP router to the DB is using our real prod code.
 
         // act
-        $response = $this->createDonation();
+        $response = $this->createDonation(100);
 
         // assert
 

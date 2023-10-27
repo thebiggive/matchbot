@@ -23,7 +23,7 @@ class StripeCancelsDonationTest extends IntegrationTest
          * @var array<string,string> $donation
          */
         $donation = json_decode(
-            (string)$this->createDonation()->getBody(),
+            (string)$this->createDonation(100)->getBody(),
             true,
             flags: JSON_THROW_ON_ERROR
         )['donation'];

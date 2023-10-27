@@ -196,7 +196,15 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
-            return new Matching\OptimisticRedisAdapter($c->get(Redis::class), $c->get(RetrySafeEntityManager::class));
+            $redis = $c->get(Redis::class);
+            $entityManager = $c->get(RetrySafeEntityManager::class);
+            $logger = $c->get(LoggerInterface::class);
+
+            \assert($redis instanceof Redis);
+            \assert($entityManager instanceof RetrySafeEntityManager);
+            \assert($logger instanceof LoggerInterface);
+
+            return new Matching\OptimisticRedisAdapter($redis, $entityManager, $logger);
         },
 
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {
