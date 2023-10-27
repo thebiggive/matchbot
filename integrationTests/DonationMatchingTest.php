@@ -1,5 +1,7 @@
 <?php
 
+namespace MatchBot\IntegrationTests;
+
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\OptimisticRedisAdapter;
