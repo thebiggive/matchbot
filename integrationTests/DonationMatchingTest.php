@@ -10,6 +10,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use Psr\Log\LoggerInterface;
+use Redis;
 
 class DonationMatchingTest extends \MatchBot\IntegrationTests\IntegrationTest
 {
