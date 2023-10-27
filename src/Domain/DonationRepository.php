@@ -15,8 +15,6 @@ use MatchBot\Application\Matching;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
-use Ramsey\Uuid\Doctrine\UuidGenerator;
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 
@@ -193,10 +191,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         while (!$allocationDone && $allocationTries < $this->maxLockTries) {
             try {
-                // We need write-ready locks for `CampaignFunding`s but also to keep the time we have them as short
-                // as possible, so get the prelimary list without a lock, before the transaction.
-
-                // Get these without a lock initially
                 $likelyAvailableFunds = $this->getEntityManager()
                     ->getRepository(CampaignFunding::class)
                     ->getAvailableFundings($donation->getCampaign());

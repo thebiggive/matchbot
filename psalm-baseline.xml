@@ -843,7 +843,6 @@
     </NullableReturnStatement>
     <PossiblyUnusedMethod>
       <code>getAvailableFundings</code>
-      <code>getOneWithWriteLock</code>
     </PossiblyUnusedMethod>
   </file>
   <file src="src/Domain/CampaignRepository.php">
