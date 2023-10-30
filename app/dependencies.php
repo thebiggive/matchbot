@@ -151,11 +151,38 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\Mailer($settings, $c->get(LoggerInterface::class));
         },
 
+        \Symfony\Component\Clock\ClockInterface::class =>
+            function (ContainerInterface $_c): \Symfony\Component\Clock\ClockInterface {
+                return new \Symfony\Component\Clock\Clock();
+                },
+
+        Client\Stripe::class => function (ContainerInterface $c): Client\Stripe {
+            $offTheShelfStripeClient = $c->get(StripeClient::class);
+
+            \assert($offTheShelfStripeClient instanceof StripeClient);
+
+            return new Client\Stripe($offTheShelfStripeClient);
+        },
+
         \MatchBot\Domain\DonationFundsNotifier::class => function (ContainerInterface $c): \MatchBot\Domain\DonationFundsNotifier {
             $mailer = $c->get(Client\Mailer::class);
             \assert($mailer instanceof Client\Mailer);
 
-            return new \MatchBot\Domain\DonationFundsNotifier($mailer);
+            $stripeClient = $c->get(Client\Stripe::class);
+            \assert($stripeClient instanceof Client\Stripe);
+
+            $clock = $c->get(\Symfony\Component\Clock\ClockInterface::class);
+            \assert($clock instanceof \Symfony\Component\Clock\ClockInterface);
+
+            $logger = $c->get(LoggerInterface::class);
+            \assert($logger instanceof LoggerInterface);
+
+            return new \MatchBot\Domain\DonationFundsNotifier(
+                $mailer,
+                $stripeClient,
+                $clock,
+                $logger,
+            );
         },
 
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
