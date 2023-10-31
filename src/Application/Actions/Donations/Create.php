@@ -16,7 +16,6 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Application\Matching\Adapter;
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
@@ -35,6 +34,7 @@ class Create extends Action
     #[Pure]
     public function __construct(
         private DonationRepository $donationRepository,
+        private CampaignRepository $campaignRepository,
         private EntityManagerInterface $entityManager,
         private SerializerInterface $serializer,
         private StripeClient $stripeClient,
@@ -149,9 +149,7 @@ class Create extends Action
         if ($donation->getPsp() === 'stripe') {
             if (empty($donation->getCampaign()->getCharity()->getStripeAccountId())) {
                 // Try re-pulling in case charity has very recently onboarded with for Stripe.
-                $repository = $this->entityManager->getRepository(Campaign::class);
-                \assert($repository instanceof CampaignRepository);
-                $campaign = $repository
+                $campaign = $this->campaignRepository
                     ->pull($donation->getCampaign());
 
                 // If still empty, error out
