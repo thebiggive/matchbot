@@ -28,6 +28,19 @@ use UnexpectedValueException;
 
 class CreateTest extends TestCase
 {
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        $app = $this->getAppInstance();
+
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
+        $container->set(CampaignRepository::class, $campaignRepositoryProphecy->reveal());
+    }
+
     /**
      * While we don't test it separately, we now expect invalid `paymentMethodType` to be caught by the
      * same condition, as the property is now an enum.
@@ -152,9 +165,8 @@ class CreateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->getRepository(Campaign::class)
-            ->willReturn($campaignRepoProphecy->reveal())
-            ->shouldBeCalledOnce();
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
+
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
@@ -296,9 +308,7 @@ class CreateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->getRepository(Campaign::class)
-            ->willReturn($campaignRepoProphecy->reveal())
-            ->shouldBeCalledOnce();
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
         // These are called once after initial ID setup and once after Stripe fields added.
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);

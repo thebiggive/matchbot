@@ -18,35 +18,17 @@ use Psr\Log\LoggerInterface;
 
     protected function logError(string $message): void
     {
-        if ($log = $this->getLogger()) {
-            $log->error($message);
-            return;
-        }
-
-        // Fallback if logger not configured
-        echo "ERROR: $message";
+        $this->logger->error($message);
     }
 
     protected function logWarning(string $message): void
     {
-        if ($log = $this->getLogger()) {
-            $log->warning($message);
-            return;
-        }
-
-        // Fallback if logged not configured
-        echo "WARNING: $message";
+        $this->logger->warning($message);
     }
 
     protected function logInfo(string $message): void
     {
-        if ($log = $this->getLogger()) {
-            $log->info($message);
-            return;
-        }
-
-        // Fallback if logger not configured
-        echo "INFO: $message";
+        $this->logger->info($message);
     }
 
     public function setClient(Client\Common $client): void
@@ -66,10 +48,5 @@ use Psr\Log\LoggerInterface;
         }
 
         return $this->client;
-    }
-
-    protected function getLogger(): ?LoggerInterface
-    {
-        return $this->logger;
     }
 }
