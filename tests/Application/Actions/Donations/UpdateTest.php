@@ -6,7 +6,7 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
-use FastRoute\Route;
+use Slim\Routing\Route;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Domain\Donation;
@@ -1660,7 +1660,7 @@ class UpdateTest extends TestCase
 
     public function testAddDataFailsWithCashBalanceAutoconfirmForDonorWithInsufficentFunds(): void
     {
-        ['app' => $app, 'request' => $request, 'route' => $route] =
+        ['app' => $app, 'request' => $request, 'route' => $route, 'stripePaymentIntentsProphecy' => $paymentIntentsProphecy, 'entityManagerProphecy' => $entityManagerProphecy] =
             $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(newPayemtnIntentStatus: PaymentIntent::STATUS_PROCESSING);
         try {
             $app->handle($request->withAttribute('route', $route));
@@ -1668,6 +1668,9 @@ class UpdateTest extends TestCase
         } catch (HttpBadRequestException $exception) {
             $this->assertStringContainsString("Status was processing, expected succeeded", $exception->getMessage());
         }
+
+        $paymentIntentsProphecy->cancel('pi_externalId_123')->shouldBeCalled();
+        $entityManagerProphecy->flush()->shouldBeCalled(); // flushes cancelled donation to DB.
     }
 
     public function testAddDataRejectsAutoconfirmWithCardMethod(): void
@@ -1880,6 +1883,7 @@ class UpdateTest extends TestCase
      * route: Route,
      * donationRepoProphecy: ObjectProphecy<DonationRepository>,
      * entityManagerProphecy: ObjectProphecy<EntityManagerInterface>,
+     * stripePaymentIntentsProphecy: ObjectProphecy<PaymentIntentService>
      * }
      *
      * @throws \Doctrine\DBAL\Exception\LockWaitTimeoutException
@@ -1917,7 +1921,7 @@ class UpdateTest extends TestCase
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
         $stripePaymentIntentsProphecy->update('pi_externalId_123', Argument::type('array'))
             ->shouldBeCalledOnce();
-        $updatedPaymentIntent = new PaymentIntent();
+        $updatedPaymentIntent = new PaymentIntent('pi_externalId_123');
         $updatedPaymentIntent->status = $newPayemtnIntentStatus;
         $stripePaymentIntentsProphecy->confirm('pi_externalId_123')
             ->shouldBeCalledOnce()
@@ -1945,7 +1949,8 @@ class UpdateTest extends TestCase
             'request' => $request,
             'route' => $route,
             'donationRepoProphecy' => $donationRepoProphecy,
-            'entityManagerProphecy' => $entityManagerProphecy
+            'entityManagerProphecy' => $entityManagerProphecy,
+            'stripePaymentIntentsProphecy' => $stripePaymentIntentsProphecy,
         ];
     }
 }

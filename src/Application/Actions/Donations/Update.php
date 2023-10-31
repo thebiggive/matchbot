@@ -335,7 +335,7 @@ class Update extends Action
             if ($donationData->autoConfirmFromCashBalance) {
                 try {
                     $confirmedPaymentIntent = $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
-                    $this->ensurePaymentIntentIsGood($confirmedPaymentIntent, $request);
+                    $this->ensurePaymentIntentIsGoodOrCancelAndThrow($donation, $confirmedPaymentIntent, $request);
                 } catch (InvalidRequestException $exception) {
                     // Currently a typical Update call which auto-confirms is being made for just
                     // that purpose. So our safest options are to return a 500 and roll back any
@@ -554,12 +554,22 @@ class Update extends Action
         return null;
     }
 
-    private function ensurePaymentIntentIsGood(PaymentIntent $confirmedPaymentIntent, Request $request): void
+    private function ensurePaymentIntentIsGoodOrCancelAndThrow(Donation $donation, PaymentIntent $confirmedPaymentIntent, Request $request): void
     {
-        if ($confirmedPaymentIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
+        $status = $confirmedPaymentIntent->status;
+        if ($status !== PaymentIntent::STATUS_SUCCEEDED) {
+
+            // $confirmedPaymentIntent->cancel() would be more concise but harder to test.
+            $this->stripeClient->paymentIntents->cancel($confirmedPaymentIntent->id);
+            $donation->cancel();
+            $this->entityManager->flush();
+
+            $this->logger->warning(
+                "Cancelled funded donation #{$donation->getId()} due to non-success on confirmation attempt status {$status}. May be insufficent funds in donor account.");
+
             throw new HttpBadRequestException(
                 $request,
-                "Status was {$confirmedPaymentIntent->status}, expected " . PaymentIntent::STATUS_SUCCEEDED
+                "Status was {$status}, expected " . PaymentIntent::STATUS_SUCCEEDED
             );
         }
     }
