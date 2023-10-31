@@ -20,7 +20,7 @@ class Money
     ) {
         Assertion::between(
             $this->amountInPence,
-            1,
+            0,
             20_000_000_00 // this is nearly PHP_INT_MAX on 32 bit systems.
         );
     }
