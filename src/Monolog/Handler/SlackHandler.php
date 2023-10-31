@@ -4,6 +4,9 @@ namespace MatchBot\Monolog\Handler;
 
 use Monolog\Handler\HandlerInterface;
 use Monolog\Logger;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
+use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
@@ -40,9 +43,20 @@ class SlackHandler implements HandlerInterface
         $message = $record['message'];
         $levelName = $record['level_name'];
 
-        $this->slackConnction->send(new ChatMessage(
-            "Matchbot $levelName: $message"
-        ));
+        $lines = explode(PHP_EOL, $message);
+
+        $messageFirstLine = $lines[0] ?? '';
+        $messageFirstSeveralLines = implode(\PHP_EOL, array_slice($lines,0,9)) . \PHP_EOL;
+
+        $heading = "Matchbot $levelName: $messageFirstLine";
+
+        $chatMessage = new ChatMessage($heading);
+        $options = (new SlackOptions())
+            ->block((new SlackHeaderBlock($heading)))
+            ->block((new SlackSectionBlock())->text($messageFirstSeveralLines));
+        $chatMessage->options($options);
+
+        $this->slackConnction->send($chatMessage);
 
         return false; // record will go to other handlers in addition to being sent to slack.
     }
