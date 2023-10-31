@@ -19,9 +19,11 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Slim\Exception\HttpBadRequestException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
+use Stripe\PaymentIntent;
 use Stripe\StripeClient;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -143,7 +145,7 @@ class Update extends Action
                     return $this->cancel($donation, $response, $args);
                 }
 
-                return $this->addData($donation, $donationData, $args, $response);
+                return $this->addData($donation, $donationData, $args, $response, $request);
             } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
                 $this->logger->warning(sprintf(
                     'Caught LockWaitTimeoutException in Update for donation %s, retry count %d',
@@ -197,7 +199,7 @@ class Update extends Action
      * @throws InvalidRequestException
      * @throws ApiErrorException if confirm() fails other than because of a missing payment method.
      */
-    private function addData(Donation $donation, HttpModels\Donation $donationData, array $args, Response $response): Response
+    private function addData(Donation $donation, HttpModels\Donation $donationData, array $args, Response $response, Request $request): Response
     {
         // If the app tries to PUT with a different amount, something has gone very wrong and we should
         // explicitly fail instead of ignoring that field.
@@ -332,7 +334,8 @@ class Update extends Action
 
             if ($donationData->autoConfirmFromCashBalance) {
                 try {
-                    $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
+                    $confirmedPaymentIntent = $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
+                    $this->ensurePaymentIntentIsGood($confirmedPaymentIntent, $request);
                 } catch (InvalidRequestException $exception) {
                     // Currently a typical Update call which auto-confirms is being made for just
                     // that purpose. So our safest options are to return a 500 and roll back any
@@ -549,5 +552,15 @@ class Update extends Action
         }
 
         return null;
+    }
+
+    private function ensurePaymentIntentIsGood(PaymentIntent $confirmedPaymentIntent, Request $request): void
+    {
+        if ($confirmedPaymentIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
+            throw new HttpBadRequestException(
+                $request,
+                "Status was {$confirmedPaymentIntent->status}, expected " . PaymentIntent::STATUS_SUCCEEDED
+            );
+        }
     }
 }
