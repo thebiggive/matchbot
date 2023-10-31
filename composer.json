@@ -39,7 +39,6 @@
         "stripe/stripe-php": "^9.1.0",
         "symfony/amazon-sqs-messenger": "^6.0",
         "symfony/cache": "^6.0",
-        "symfony/clock": "^6.3",
         "symfony/console": "^6.0",
         "symfony/event-dispatcher": "^6.0",
         "symfony/lock": "^6.0",

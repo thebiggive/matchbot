@@ -27,13 +27,4 @@ enum Currency
             self::GBP => '£',
         };
     }
-
-    /**
-     * @return string 3 Letter upper case ISO code, e.g. 'GBP'
-     */
-    public function isoCode(): string{
-        return match ($this) {
-            self::GBP => 'GBP',
-        };
-    }
 }

@@ -479,6 +479,7 @@ class StripePaymentsUpdate extends Stripe
         $donorAccount = $this->donorAccountRepository->findByStripeIdOrNull($stripeAccountId);
         $currency = Currency::fromIsoCode($webhookObject['currency']);
         $transferAmount = Money::fromPence($webhookObject['net_amount'], $currency);
+        $endingBalance = Money::fromPence($webhookObject['ending_balance'], $currency);
 
         $app_env = getenv('APP_ENV');
         if ($donorAccount === null) {
@@ -494,7 +495,16 @@ class StripePaymentsUpdate extends Stripe
             return $this->respond($response, new ActionPayload(200));
         }
 
-        $this->donationFundsNotifier->notifyRecieptOfAccountFunds($donorAccount, $transferAmount);
+        $this->donationFundsNotifier->notifyRecieptOfAccountFunds($donorAccount, $transferAmount, $endingBalance);
+
+        $donorAccountId = $donorAccount->getId();
+        \assert(is_int($donorAccountId)); // must be an int since it was persisted before.
+        $this->logger->info(
+            'Sent notification of receipt of account funds for Stripe Account: ' . $stripeAccountId->stripeCustomerId .
+            ", transfer Amount" . $transferAmount->format() .
+            ", new balance" . $endingBalance->format() .
+            ", DonorAccount #" . $donorAccountId
+        );
 
         return $this->respond($response, new ActionPayload(200));
     }

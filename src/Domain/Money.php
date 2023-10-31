@@ -16,7 +16,7 @@ class Money
      */
     private function __construct(
         private readonly int $amountInPence,
-        public readonly Currency $currency
+        private readonly Currency $currency
     ) {
         Assertion::between(
             $this->amountInPence,
