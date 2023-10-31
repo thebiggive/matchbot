@@ -52,7 +52,9 @@ class SlackHandler implements HandlerInterface
 
         $chatMessage = new ChatMessage($heading);
         $options = (new SlackOptions())
-            ->block((new SlackHeaderBlock($heading)))
+            // For now, do a simple truncate at the max, 150 chars, since most messages are shorter and the next line
+            // has the full text anyway.
+            ->block((new SlackHeaderBlock(substr($heading, 0, 150))))
             ->block((new SlackSectionBlock())->text($messageFirstSeveralLines));
         $chatMessage->options($options);
 
