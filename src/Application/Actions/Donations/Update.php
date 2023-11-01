@@ -334,8 +334,17 @@ class Update extends Action
 
             if ($donationData->autoConfirmFromCashBalance) {
                 try {
-                    $confirmedPaymentIntent = $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
-                    $this->ensurePaymentIntentIsGoodOrCancelAndThrow($donation, $confirmedPaymentIntent, $request);
+                    $confirmedIntent = $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
+                    if ($confirmedIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
+                        // As this is autoConfirmFromCashBalance and we only expect people to make such donations if they
+                        // have a sufficient balance we expect PI to succeed synchronosly. If it didn't we don't want to
+                        // leave the PI around to succeed later when the donor might not be expecting it.
+                        $this->cancelDonationAndPaymentIntent($donation, $confirmedIntent);
+                        throw new HttpBadRequestException(
+                            $request,
+                            "Status was {$confirmedIntent->status}, expected " . PaymentIntent::STATUS_SUCCEEDED
+                        );
+                    }
                 } catch (InvalidRequestException $exception) {
                     // Currently a typical Update call which auto-confirms is being made for just
                     // that purpose. So our safest options are to return a 500 and roll back any
@@ -554,23 +563,15 @@ class Update extends Action
         return null;
     }
 
-    private function ensurePaymentIntentIsGoodOrCancelAndThrow(Donation $donation, PaymentIntent $confirmedPaymentIntent, Request $request): void
+    private function cancelDonationAndPaymentIntent(Donation $donation, PaymentIntent $confirmedPaymentIntent): void
     {
-        $status = $confirmedPaymentIntent->status;
-        if ($status !== PaymentIntent::STATUS_SUCCEEDED) {
-
             // $confirmedPaymentIntent->cancel() would be more concise but harder to test.
             $this->stripeClient->paymentIntents->cancel($confirmedPaymentIntent->id);
             $donation->cancel();
             $this->entityManager->flush();
 
             $this->logger->warning(
-                "Cancelled funded donation #{$donation->getId()} due to non-success on confirmation attempt status {$status}. May be insufficent funds in donor account.");
+                "Cancelled funded donation #{$donation->getId()} due to non-success on confirmation attempt status {$confirmedPaymentIntent->status}. May be insufficent funds in donor account.");
 
-            throw new HttpBadRequestException(
-                $request,
-                "Status was {$status}, expected " . PaymentIntent::STATUS_SUCCEEDED
-            );
-        }
     }
 }
