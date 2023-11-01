@@ -1890,6 +1890,8 @@ class UpdateTest extends TestCase
      * @throws \MatchBot\Application\Matching\TerminalLockException
      * @throws \MatchBot\Domain\DomainException\DomainLockContentionException
      * @throws \Stripe\Exception\ApiErrorException
+     *
+     * @psalm-param PaymentIntent::STATUS_* $newPaymentIntentStatus
      */
     public function setupTestDoublesForConfirmingPaymentFromDonationFunds(string $newPaymentIntentStatus): array
     {
