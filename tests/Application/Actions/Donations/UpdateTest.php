@@ -1635,7 +1635,7 @@ class UpdateTest extends TestCase
     public function testAddDataSuccessWithCashBalanceAutoconfirm(): void
     {
         ['app' => $app, 'request' => $request, 'route' => $route, 'donationRepoProphecy' => $donationRepoProphecy, 'entityManagerProphecy' => $entityManagerProphecy] =
-            $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(newPayemtnIntentStatus: PaymentIntent::STATUS_SUCCEEDED);
+            $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(newPaymentIntentStatus: PaymentIntent::STATUS_SUCCEEDED);
 
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
@@ -1661,7 +1661,7 @@ class UpdateTest extends TestCase
     public function testAddDataFailsWithCashBalanceAutoconfirmForDonorWithInsufficentFunds(): void
     {
         ['app' => $app, 'request' => $request, 'route' => $route, 'stripePaymentIntentsProphecy' => $paymentIntentsProphecy, 'entityManagerProphecy' => $entityManagerProphecy] =
-            $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(newPayemtnIntentStatus: PaymentIntent::STATUS_PROCESSING);
+            $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(newPaymentIntentStatus: PaymentIntent::STATUS_PROCESSING);
         try {
             $app->handle($request->withAttribute('route', $route));
             $this->fail("attempt to confirm donation with insufficent funds should have thrown");
@@ -1891,7 +1891,7 @@ class UpdateTest extends TestCase
      * @throws \MatchBot\Domain\DomainException\DomainLockContentionException
      * @throws \Stripe\Exception\ApiErrorException
      */
-    public function setupTestDoublesForConfirmingPaymentFromDonationFunds(string $newPayemtnIntentStatus): array
+    public function setupTestDoublesForConfirmingPaymentFromDonationFunds(string $newPaymentIntentStatus): array
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -1922,7 +1922,7 @@ class UpdateTest extends TestCase
         $stripePaymentIntentsProphecy->update('pi_externalId_123', Argument::type('array'))
             ->shouldBeCalledOnce();
         $updatedPaymentIntent = new PaymentIntent('pi_externalId_123');
-        $updatedPaymentIntent->status = $newPayemtnIntentStatus;
+        $updatedPaymentIntent->status = $newPaymentIntentStatus;
         $stripePaymentIntentsProphecy->confirm('pi_externalId_123')
             ->shouldBeCalledOnce()
             ->willReturn($updatedPaymentIntent);
