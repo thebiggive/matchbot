@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for /var/www/html/src/Domain</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../_css/bootstrap.min.css?v=9.2.27" rel="stylesheet" type="text/css">
+  <link href="../_css/nv.d3.min.css?v=9.2.27" rel="stylesheet" type="text/css">
+  <link href="../_css/style.css?v=9.2.27" rel="stylesheet" type="text/css">
+  <link href="../_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="../index.html">/var/www/html/src</a></li>
+         <li class="breadcrumb-item"><a href="index.html">Domain</a></li>
+         <li class="breadcrumb-item active">(Dashboard)</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="FundingWithdrawalRepository.php.html#12">MatchBot\Domain\FundingWithdrawalRepository</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Currency.php.html#7">MatchBot\Domain\Currency</a></td><td class="text-right">33%</td></tr>
+       <tr><td><a href="SalesforceReadProxy.php.html#15">MatchBot\Domain\SalesforceReadProxy</a></td><td class="text-right">50%</td></tr>
+       <tr><td><a href="SalesforceWriteProxyRepository.php.html#14">MatchBot\Domain\SalesforceWriteProxyRepository</a></td><td class="text-right">54%</td></tr>
+       <tr><td><a href="CampaignRepository.php.html#14">MatchBot\Domain\CampaignRepository</a></td><td class="text-right">64%</td></tr>
+       <tr><td><a href="CampaignFundingRepository.php.html#14">MatchBot\Domain\CampaignFundingRepository</a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="DonorAccountRepository.php.html#11">MatchBot\Domain\DonorAccountRepository</a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="DonationRepository.php.html#24">MatchBot\Domain\DonationRepository</a></td><td class="text-right">68%</td></tr>
+       <tr><td><a href="CampaignFunding.php.html#17">MatchBot\Domain\CampaignFunding</a></td><td class="text-right">73%</td></tr>
+       <tr><td><a href="Model.php.html#9">MatchBot\Domain\Model</a></td><td class="text-right">75%</td></tr>
+       <tr><td><a href="SalesforceReadProxyRepository.php.html#14">MatchBot\Domain\SalesforceReadProxyRepository</a></td><td class="text-right">75%</td></tr>
+       <tr><td><a href="FundingWithdrawal.php.html#14">MatchBot\Domain\FundingWithdrawal</a></td><td class="text-right">80%</td></tr>
+       <tr><td><a href="FundRepository.php.html#16">MatchBot\Domain\FundRepository</a></td><td class="text-right">83%</td></tr>
+       <tr><td><a href="Campaign.php.html#22">MatchBot\Domain\Campaign</a></td><td class="text-right">85%</td></tr>
+       <tr><td><a href="DonorName.php.html#14">MatchBot\Domain\DonorName</a></td><td class="text-right">87%</td></tr>
+       <tr><td><a href="SalesforceProxyRepository.php.html#14">MatchBot\Domain\SalesforceProxyRepository</a></td><td class="text-right">87%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="DonationRepository.php.html#24">MatchBot\Domain\DonationRepository</a></td><td class="text-right">178</td></tr>
+       <tr><td><a href="SalesforceWriteProxyRepository.php.html#14">MatchBot\Domain\SalesforceWriteProxyRepository</a></td><td class="text-right">79</td></tr>
+       <tr><td><a href="FundRepository.php.html#16">MatchBot\Domain\FundRepository</a></td><td class="text-right">23</td></tr>
+       <tr><td><a href="Campaign.php.html#22">MatchBot\Domain\Campaign</a></td><td class="text-right">21</td></tr>
+       <tr><td><a href="CampaignFunding.php.html#17">MatchBot\Domain\CampaignFunding</a></td><td class="text-right">17</td></tr>
+       <tr><td><a href="CampaignRepository.php.html#14">MatchBot\Domain\CampaignRepository</a></td><td class="text-right">9</td></tr>
+       <tr><td><a href="SalesforceProxyRepository.php.html#14">MatchBot\Domain\SalesforceProxyRepository</a></td><td class="text-right">7</td></tr>
+       <tr><td><a href="FundingWithdrawalRepository.php.html#12">MatchBot\Domain\FundingWithdrawalRepository</a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="SalesforceReadProxyRepository.php.html#14">MatchBot\Domain\SalesforceReadProxyRepository</a></td><td class="text-right">4</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Campaign.php.html#200"><abbr title="MatchBot\Domain\Campaign::getEndDate">getEndDate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="CampaignFunding.php.html#76"><abbr title="MatchBot\Domain\CampaignFunding::__toString">__toString</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="CampaignFunding.php.html#81"><abbr title="MatchBot\Domain\CampaignFunding::isShared">isShared</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="CampaignFunding.php.html#151"><abbr title="MatchBot\Domain\CampaignFunding::getFund">getFund</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="CampaignFundingRepository.php.html#45"><abbr title="MatchBot\Domain\CampaignFundingRepository::getFunding">getFunding</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="CampaignRepository.php.html#28"><abbr title="MatchBot\Domain\CampaignRepository::findRecentAndLive">findRecentAndLive</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Charity.php.html#117"><abbr title="MatchBot\Domain\Charity::__toString">__toString</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Donation.php.html#382"><abbr title="MatchBot\Domain\Donation::__toString">__toString</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Donation.php.html#422"><abbr title="MatchBot\Domain\Donation::replaceNullPaymentMethodTypeWithCard">replaceNullPaymentMethodTypeWithCard</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Donation.php.html#1051"><abbr title="MatchBot\Domain\Donation::getTbgGiftAidRequestQueuedAt">getTbgGiftAidRequestQueuedAt</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DonationRepository.php.html#425"><abbr title="MatchBot\Domain\DonationRepository::findNotFullyMatchedToCampaignsWhichClosedSince">findNotFullyMatchedToCampaignsWhichClosedSince</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DonationRepository.php.html#453"><abbr title="MatchBot\Domain\DonationRepository::findRecentNotFullyMatchedToMatchCampaigns">findRecentNotFullyMatchedToMatchCampaigns</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DonationRepository.php.html#672"><abbr title="MatchBot\Domain\DonationRepository::findAndLockOneBy">findAndLockOneBy</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DonorAccountRepository.php.html#22"><abbr title="MatchBot\Domain\DonorAccountRepository::findByStripeIdOrNull">findByStripeIdOrNull</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DonorName.php.html#48"><abbr title="MatchBot\Domain\DonorName::fullName">fullName</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="FundingWithdrawal.php.html#68"><abbr title="MatchBot\Domain\FundingWithdrawal::getCampaignFunding">getCampaignFunding</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="FundingWithdrawalRepository.php.html#18"><abbr title="MatchBot\Domain\FundingWithdrawalRepository::getWithdrawalsTotal">getWithdrawalsTotal</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Model.php.html#40"><abbr title="MatchBot\Domain\Model::__toString">__toString</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SalesforceReadProxy.php.html#25"><abbr title="MatchBot\Domain\SalesforceReadProxy::getSalesforceLastPull">getSalesforceLastPull</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SalesforceWriteProxyRepository.php.html#109"><abbr title="MatchBot\Domain\SalesforceWriteProxyRepository::pushSalesforcePending">pushSalesforcePending</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Currency.php.html#11"><abbr title="MatchBot\Domain\Currency::fromIsoCode">fromIsoCode</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DonationRepository.php.html#53"><abbr title="MatchBot\Domain\DonationRepository::doCreate">doCreate</abbr></a></td><td class="text-right">25%</td></tr>
+       <tr><td><a href="Campaign.php.html#92"><abbr title="MatchBot\Domain\Campaign::prePersistCheck">prePersistCheck</abbr></a></td><td class="text-right">33%</td></tr>
+       <tr><td><a href="SalesforceWriteProxyRepository.php.html#143"><abbr title="MatchBot\Domain\SalesforceWriteProxyRepository::postPush">postPush</abbr></a></td><td class="text-right">41%</td></tr>
+       <tr><td><a href="Donation.php.html#411"><abbr title="MatchBot\Domain\Donation::preUpdate">preUpdate</abbr></a></td><td class="text-right">50%</td></tr>
+       <tr><td><a href="Donation.php.html#509"><abbr title="MatchBot\Domain\Donation::setDonationStatus">setDonationStatus</abbr></a></td><td class="text-right">60%</td></tr>
+       <tr><td><a href="DonationRepository.php.html#260"><abbr title="MatchBot\Domain\DonationRepository::releaseMatchFunds">releaseMatchFunds</abbr></a></td><td class="text-right">60%</td></tr>
+       <tr><td><a href="CampaignRepository.php.html#88"><abbr title="MatchBot\Domain\CampaignRepository::pullCharity">pullCharity</abbr></a></td><td class="text-right">64%</td></tr>
+       <tr><td><a href="CampaignFunding.php.html#131"><abbr title="MatchBot\Domain\CampaignFunding::addCampaign">addCampaign</abbr></a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="Donation.php.html#766"><abbr title="MatchBot\Domain\Donation::getTransactionId">getTransactionId</abbr></a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="SalesforceProxyRepository.php.html#44"><abbr title="MatchBot\Domain\SalesforceProxyRepository::getClient">getClient</abbr></a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="Donation.php.html#722"><abbr title="MatchBot\Domain\Donation::getConfirmedChampionWithdrawalTotal">getConfirmedChampionWithdrawalTotal</abbr></a></td><td class="text-right">71%</td></tr>
+       <tr><td><a href="Donation.php.html#742"><abbr title="MatchBot\Domain\Donation::getConfirmedPledgeWithdrawalTotal">getConfirmedPledgeWithdrawalTotal</abbr></a></td><td class="text-right">71%</td></tr>
+       <tr><td><a href="DonationRepository.php.html#180"><abbr title="MatchBot\Domain\DonationRepository::allocateMatchFunds">allocateMatchFunds</abbr></a></td><td class="text-right">71%</td></tr>
+       <tr><td><a href="DonationRepository.php.html#123"><abbr title="MatchBot\Domain\DonationRepository::buildFromApiRequest">buildFromApiRequest</abbr></a></td><td class="text-right">73%</td></tr>
+       <tr><td><a href="DonationRepository.php.html#657"><abbr title="MatchBot\Domain\DonationRepository::persistQueuedDonations">persistQueuedDonations</abbr></a></td><td class="text-right">75%</td></tr>
+       <tr><td><a href="DonationRepository.php.html#692"><abbr title="MatchBot\Domain\DonationRepository::removeAllFundingWithdrawalsForDonation">removeAllFundingWithdrawalsForDonation</abbr></a></td><td class="text-right">75%</td></tr>
+       <tr><td><a href="SalesforceReadProxyRepository.php.html#31"><abbr title="MatchBot\Domain\SalesforceReadProxyRepository::pull">pull</abbr></a></td><td class="text-right">75%</td></tr>
+       <tr><td><a href="CampaignRepository.php.html#47"><abbr title="MatchBot\Domain\CampaignRepository::doPull">doPull</abbr></a></td><td class="text-right">76%</td></tr>
+       <tr><td><a href="FundRepository.php.html#38"><abbr title="MatchBot\Domain\FundRepository::pullForCampaign">pullForCampaign</abbr></a></td><td class="text-right">76%</td></tr>
+       <tr><td><a href="DonationRepository.php.html#602"><abbr title="MatchBot\Domain\DonationRepository::safelyAllocateFunds">safelyAllocateFunds</abbr></a></td><td class="text-right">79%</td></tr>
+       <tr><td><a href="FundRepository.php.html#159"><abbr title="MatchBot\Domain\FundRepository::getNewFund">getNewFund</abbr></a></td><td class="text-right">85%</td></tr>
+       <tr><td><a href="SalesforceWriteProxyRepository.php.html#19"><abbr title="MatchBot\Domain\SalesforceWriteProxyRepository::push">push</abbr></a></td><td class="text-right">87%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="SalesforceWriteProxyRepository.php.html#143"><abbr title="MatchBot\Domain\SalesforceWriteProxyRepository::postPush">postPush</abbr></a></td><td class="text-right">21</td></tr>
+       <tr><td><a href="DonationRepository.php.html#260"><abbr title="MatchBot\Domain\DonationRepository::releaseMatchFunds">releaseMatchFunds</abbr></a></td><td class="text-right">13</td></tr>
+       <tr><td><a href="FundRepository.php.html#38"><abbr title="MatchBot\Domain\FundRepository::pullForCampaign">pullForCampaign</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="SalesforceWriteProxyRepository.php.html#109"><abbr title="MatchBot\Domain\SalesforceWriteProxyRepository::pushSalesforcePending">pushSalesforcePending</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="DonationRepository.php.html#180"><abbr title="MatchBot\Domain\DonationRepository::allocateMatchFunds">allocateMatchFunds</abbr></a></td><td class="text-right">9</td></tr>
+       <tr><td><a href="SalesforceWriteProxyRepository.php.html#19"><abbr title="MatchBot\Domain\SalesforceWriteProxyRepository::push">push</abbr></a></td><td class="text-right">9</td></tr>
+       <tr><td><a href="DonationRepository.php.html#53"><abbr title="MatchBot\Domain\DonationRepository::doCreate">doCreate</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DonationRepository.php.html#602"><abbr title="MatchBot\Domain\DonationRepository::safelyAllocateFunds">safelyAllocateFunds</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Donation.php.html#382"><abbr title="MatchBot\Domain\Donation::__toString">__toString</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Donation.php.html#422"><abbr title="MatchBot\Domain\Donation::replaceNullPaymentMethodTypeWithCard">replaceNullPaymentMethodTypeWithCard</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DonationRepository.php.html#672"><abbr title="MatchBot\Domain\DonationRepository::findAndLockOneBy">findAndLockOneBy</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="FundingWithdrawalRepository.php.html#18"><abbr title="MatchBot\Domain\FundingWithdrawalRepository::getWithdrawalsTotal">getWithdrawalsTotal</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DonationRepository.php.html#123"><abbr title="MatchBot\Domain\DonationRepository::buildFromApiRequest">buildFromApiRequest</abbr></a></td><td class="text-right">5</td></tr>
+       <tr><td><a href="Donation.php.html#722"><abbr title="MatchBot\Domain\Donation::getConfirmedChampionWithdrawalTotal">getConfirmedChampionWithdrawalTotal</abbr></a></td><td class="text-right">4</td></tr>
+       <tr><td><a href="Donation.php.html#742"><abbr title="MatchBot\Domain\Donation::getConfirmedPledgeWithdrawalTotal">getConfirmedPledgeWithdrawalTotal</abbr></a></td><td class="text-right">4</td></tr>
+       <tr><td><a href="SalesforceReadProxyRepository.php.html#31"><abbr title="MatchBot\Domain\SalesforceReadProxyRepository::pull">pull</abbr></a></td><td class="text-right">4</td></tr>
+       <tr><td><a href="Donation.php.html#411"><abbr title="MatchBot\Domain\Donation::preUpdate">preUpdate</abbr></a></td><td class="text-right">4</td></tr>
+       <tr><td><a href="Donation.php.html#509"><abbr title="MatchBot\Domain\Donation::setDonationStatus">setDonationStatus</abbr></a></td><td class="text-right">3</td></tr>
+       <tr><td><a href="Campaign.php.html#92"><abbr title="MatchBot\Domain\Campaign::prePersistCheck">prePersistCheck</abbr></a></td><td class="text-right">3</td></tr>
+       <tr><td><a href="DonationRepository.php.html#657"><abbr title="MatchBot\Domain\DonationRepository::persistQueuedDonations">persistQueuedDonations</abbr></a></td><td class="text-right">3</td></tr>
+       <tr><td><a href="CampaignRepository.php.html#47"><abbr title="MatchBot\Domain\CampaignRepository::doPull">doPull</abbr></a></td><td class="text-right">3</td></tr>
+       <tr><td><a href="FundRepository.php.html#159"><abbr title="MatchBot\Domain\FundRepository::getNewFund">getNewFund</abbr></a></td><td class="text-right">3</td></tr>
+       <tr><td><a href="CampaignRepository.php.html#88"><abbr title="MatchBot\Domain\CampaignRepository::pullCharity">pullCharity</abbr></a></td><td class="text-right">2</td></tr>
+       <tr><td><a href="CampaignFunding.php.html#131"><abbr title="MatchBot\Domain\CampaignFunding::addCampaign">addCampaign</abbr></a></td><td class="text-right">2</td></tr>
+       <tr><td><a href="Donation.php.html#766"><abbr title="MatchBot\Domain\Donation::getTransactionId">getTransactionId</abbr></a></td><td class="text-right">2</td></tr>
+       <tr><td><a href="SalesforceProxyRepository.php.html#44"><abbr title="MatchBot\Domain\SalesforceProxyRepository::getClient">getClient</abbr></a></td><td class="text-right">2</td></tr>
+       <tr><td><a href="DonationRepository.php.html#692"><abbr title="MatchBot\Domain\DonationRepository::removeAllFundingWithdrawalsForDonation">removeAllFundingWithdrawalsForDonation</abbr></a></td><td class="text-right">2</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 9.2.27</a> using <a href="https://secure.php.net/" target="_top">PHP 8.1.12</a> and <a href="https://phpunit.de/">PHPUnit 9.6.10</a> at Thu Nov 2 0:24:45 UTC 2023.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="../_js/jquery.min.js?v=9.2.27" type="text/javascript"></script>
+  <script src="../_js/d3.min.js?v=9.2.27" type="text/javascript"></script>
+  <script src="../_js/nv.d3.min.js?v=9.2.27" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([1,0,0,0,1,0,2,4,3,5,2,18], "Class Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([21,0,0,1,1,1,1,6,10,2,4,196], "Method Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
+
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[85,20,"<a href=\"Campaign.php.html#22\">MatchBot\\Domain\\Campaign<\/a>"],[73.33333333333333,14,"<a href=\"CampaignFunding.php.html#17\">MatchBot\\Domain\\CampaignFunding<\/a>"],[66.66666666666666,3,"<a href=\"CampaignFundingRepository.php.html#14\">MatchBot\\Domain\\CampaignFundingRepository<\/a>"],[64.61538461538461,7,"<a href=\"CampaignRepository.php.html#14\">MatchBot\\Domain\\CampaignRepository<\/a>"],[100,0,"<a href=\"ChampionFund.php.html#12\">MatchBot\\Domain\\ChampionFund<\/a>"],[95.65217391304348,22,"<a href=\"Charity.php.html#19\">MatchBot\\Domain\\Charity<\/a>"],[100,0,"<a href=\"CharityRepository.php.html#16\">MatchBot\\Domain\\CharityRepository<\/a>"],[100,0,"<a href=\"CommandLockKeys.php.html#13\">MatchBot\\Domain\\CommandLockKeys<\/a>"],[100,0,"<a href=\"DomainException\/DomainCurrencyMustNotChangeException.php.html#7\">MatchBot\\Domain\\DomainException\\DomainCurrencyMustNotChangeException<\/a>"],[100,0,"<a href=\"DomainException\/DomainException.php.html#9\">MatchBot\\Domain\\DomainException\\DomainException<\/a>"],[100,0,"<a href=\"DomainException\/DomainLockContentionException.php.html#7\">MatchBot\\Domain\\DomainException\\DomainLockContentionException<\/a>"],[100,0,"<a href=\"DomainException\/DomainRecordNotFoundException.php.html#7\">MatchBot\\Domain\\DomainException\\DomainRecordNotFoundException<\/a>"],[94.30379746835443,142,"<a href=\"Donation.php.html#30\">MatchBot\\Domain\\Donation<\/a>"],[100,2,"<a href=\"DonationFundsNotifier.php.html#7\">MatchBot\\Domain\\DonationFundsNotifier<\/a>"],[68.38709677419355,61,"<a href=\"DonationRepository.php.html#24\">MatchBot\\Domain\\DonationRepository<\/a>"],[100,1,"<a href=\"DonorAccount.php.html#28\">MatchBot\\Domain\\DonorAccount<\/a>"],[66.66666666666666,2,"<a href=\"DonorAccountRepository.php.html#11\">MatchBot\\Domain\\DonorAccountRepository<\/a>"],[87.5,3,"<a href=\"DonorName.php.html#14\">MatchBot\\Domain\\DonorName<\/a>"],[100,2,"<a href=\"EmailAddress.php.html#14\">MatchBot\\Domain\\EmailAddress<\/a>"],[100,6,"<a href=\"Fund.php.html#17\">MatchBot\\Domain\\Fund<\/a>"],[83.11688311688312,21,"<a href=\"FundRepository.php.html#16\">MatchBot\\Domain\\FundRepository<\/a>"],[80,5,"<a href=\"FundingWithdrawal.php.html#14\">MatchBot\\Domain\\FundingWithdrawal<\/a>"],[0,2,"<a href=\"FundingWithdrawalRepository.php.html#12\">MatchBot\\Domain\\FundingWithdrawalRepository<\/a>"],[75,4,"<a href=\"Model.php.html#9\">MatchBot\\Domain\\Model<\/a>"],[100,3,"<a href=\"Money.php.html#10\">MatchBot\\Domain\\Money<\/a>"],[100,0,"<a href=\"Pledge.php.html#12\">MatchBot\\Domain\\Pledge<\/a>"],[100,2,"<a href=\"SalesforceProxy.php.html#13\">MatchBot\\Domain\\SalesforceProxy<\/a>"],[87.5,7,"<a href=\"SalesforceProxyRepository.php.html#14\">MatchBot\\Domain\\SalesforceProxyRepository<\/a>"],[50,2,"<a href=\"SalesforceReadProxy.php.html#15\">MatchBot\\Domain\\SalesforceReadProxy<\/a>"],[75,4,"<a href=\"SalesforceReadProxyRepository.php.html#14\">MatchBot\\Domain\\SalesforceReadProxyRepository<\/a>"],[100,6,"<a href=\"SalesforceWriteProxy.php.html#15\">MatchBot\\Domain\\SalesforceWriteProxy<\/a>"],[54.11764705882353,24,"<a href=\"SalesforceWriteProxyRepository.php.html#14\">MatchBot\\Domain\\SalesforceWriteProxyRepository<\/a>"],[100,2,"<a href=\"StripeCustomerId.php.html#13\">MatchBot\\Domain\\StripeCustomerId<\/a>"],[33.33333333333333,2,"<a href=\"Currency.php.html#7\">MatchBot\\Domain\\Currency<\/a>"],[100,2,"<a href=\"DonationStatus.php.html#5\">MatchBot\\Domain\\DonationStatus<\/a>"],[100,4,"<a href=\"TimestampsTrait.php.html#13\">MatchBot\\Domain\\TimestampsTrait<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[100,2,"<a href=\"Campaign.php.html#73\">MatchBot\\Domain\\Campaign::__construct<\/a>"],[100,1,"<a href=\"Campaign.php.html#83\">MatchBot\\Domain\\Campaign::__toString<\/a>"],[33.33333333333333,2,"<a href=\"Campaign.php.html#92\">MatchBot\\Domain\\Campaign::prePersistCheck<\/a>"],[100,1,"<a href=\"Campaign.php.html#111\">MatchBot\\Domain\\Campaign::isMatched<\/a>"],[100,1,"<a href=\"Campaign.php.html#119\">MatchBot\\Domain\\Campaign::setCharity<\/a>"],[100,1,"<a href=\"Campaign.php.html#127\">MatchBot\\Domain\\Campaign::setIsMatched<\/a>"],[100,1,"<a href=\"Campaign.php.html#135\">MatchBot\\Domain\\Campaign::setName<\/a>"],[100,1,"<a href=\"Campaign.php.html#143\">MatchBot\\Domain\\Campaign::setStartDate<\/a>"],[100,1,"<a href=\"Campaign.php.html#151\">MatchBot\\Domain\\Campaign::setEndDate<\/a>"],[100,1,"<a href=\"Campaign.php.html#159\">MatchBot\\Domain\\Campaign::getCharity<\/a>"],[100,1,"<a href=\"Campaign.php.html#167\">MatchBot\\Domain\\Campaign::getCampaignName<\/a>"],[100,2,"<a href=\"Campaign.php.html#172\">MatchBot\\Domain\\Campaign::isOpen<\/a>"],[100,1,"<a href=\"Campaign.php.html#177\">MatchBot\\Domain\\Campaign::getCurrencyCode<\/a>"],[100,1,"<a href=\"Campaign.php.html#182\">MatchBot\\Domain\\Campaign::setCurrencyCode<\/a>"],[100,1,"<a href=\"Campaign.php.html#187\">MatchBot\\Domain\\Campaign::getFeePercentage<\/a>"],[100,1,"<a href=\"Campaign.php.html#192\">MatchBot\\Domain\\Campaign::setFeePercentage<\/a>"],[0,1,"<a href=\"Campaign.php.html#200\">MatchBot\\Domain\\Campaign::getEndDate<\/a>"],[100,1,"<a href=\"CampaignFunding.php.html#71\">MatchBot\\Domain\\CampaignFunding::__construct<\/a>"],[0,1,"<a href=\"CampaignFunding.php.html#76\">MatchBot\\Domain\\CampaignFunding::__toString<\/a>"],[0,1,"<a href=\"CampaignFunding.php.html#81\">MatchBot\\Domain\\CampaignFunding::isShared<\/a>"],[100,1,"<a href=\"CampaignFunding.php.html#89\">MatchBot\\Domain\\CampaignFunding::getAmount<\/a>"],[100,1,"<a href=\"CampaignFunding.php.html#97\">MatchBot\\Domain\\CampaignFunding::setAmount<\/a>"],[100,1,"<a href=\"CampaignFunding.php.html#105\">MatchBot\\Domain\\CampaignFunding::getAmountAvailable<\/a>"],[100,1,"<a href=\"CampaignFunding.php.html#113\">MatchBot\\Domain\\CampaignFunding::setAmountAvailable<\/a>"],[100,1,"<a href=\"CampaignFunding.php.html#121\">MatchBot\\Domain\\CampaignFunding::setFund<\/a>"],[66.66666666666666,2,"<a href=\"CampaignFunding.php.html#131\">MatchBot\\Domain\\CampaignFunding::addCampaign<\/a>"],[100,1,"<a href=\"CampaignFunding.php.html#143\">MatchBot\\Domain\\CampaignFunding::setAllocationOrder<\/a>"],[0,1,"<a href=\"CampaignFunding.php.html#151\">MatchBot\\Domain\\CampaignFunding::getFund<\/a>"],[100,1,"<a href=\"CampaignFunding.php.html#156\">MatchBot\\Domain\\CampaignFunding::getCurrencyCode<\/a>"],[100,1,"<a href=\"CampaignFunding.php.html#161\">MatchBot\\Domain\\CampaignFunding::setCurrencyCode<\/a>"],[100,1,"<a href=\"CampaignFundingRepository.php.html#32\">MatchBot\\Domain\\CampaignFundingRepository::getAvailableFundings<\/a>"],[0,1,"<a href=\"CampaignFundingRepository.php.html#45\">MatchBot\\Domain\\CampaignFundingRepository::getFunding<\/a>"],[100,1,"<a href=\"CampaignFundingRepository.php.html#57\">MatchBot\\Domain\\CampaignFundingRepository::getFundingForCampaign<\/a>"],[0,1,"<a href=\"CampaignRepository.php.html#28\">MatchBot\\Domain\\CampaignRepository::findRecentAndLive<\/a>"],[76.92307692307693,3,"<a href=\"CampaignRepository.php.html#47\">MatchBot\\Domain\\CampaignRepository::doPull<\/a>"],[64,2,"<a href=\"CampaignRepository.php.html#88\">MatchBot\\Domain\\CampaignRepository::pullCharity<\/a>"],[100,1,"<a href=\"CampaignRepository.php.html#128\">MatchBot\\Domain\\CampaignRepository::getRegulatorHMRCIdentifier<\/a>"],[100,1,"<a href=\"Charity.php.html#90\">MatchBot\\Domain\\Charity::__construct<\/a>"],[0,1,"<a href=\"Charity.php.html#117\">MatchBot\\Domain\\Charity::__toString<\/a>"],[100,1,"<a href=\"Charity.php.html#125\">MatchBot\\Domain\\Charity::setName<\/a>"],[100,1,"<a href=\"Charity.php.html#130\">MatchBot\\Domain\\Charity::getName<\/a>"],[100,1,"<a href=\"Charity.php.html#138\">MatchBot\\Domain\\Charity::getStripeAccountId<\/a>"],[100,1,"<a href=\"Charity.php.html#146\">MatchBot\\Domain\\Charity::setStripeAccountId<\/a>"],[100,1,"<a href=\"Charity.php.html#151\">MatchBot\\Domain\\Charity::isTbgClaimingGiftAid<\/a>"],[100,1,"<a href=\"Charity.php.html#156\">MatchBot\\Domain\\Charity::setTbgClaimingGiftAid<\/a>"],[100,1,"<a href=\"Charity.php.html#164\">MatchBot\\Domain\\Charity::getHmrcReferenceNumber<\/a>"],[100,1,"<a href=\"Charity.php.html#172\">MatchBot\\Domain\\Charity::setHmrcReferenceNumber<\/a>"],[100,1,"<a href=\"Charity.php.html#177\">MatchBot\\Domain\\Charity::getRegulator<\/a>"],[100,3,"<a href=\"Charity.php.html#182\">MatchBot\\Domain\\Charity::setRegulator<\/a>"],[100,1,"<a href=\"Charity.php.html#191\">MatchBot\\Domain\\Charity::getRegulatorNumber<\/a>"],[100,1,"<a href=\"Charity.php.html#196\">MatchBot\\Domain\\Charity::setRegulatorNumber<\/a>"],[100,1,"<a href=\"Charity.php.html#201\">MatchBot\\Domain\\Charity::setTbgApprovedToClaimGiftAid<\/a>"],[94.44444444444444,5,"<a href=\"Charity.php.html#209\">MatchBot\\Domain\\Charity::updateFromSfPull<\/a>"],[100,1,"<a href=\"Donation.php.html#304\">MatchBot\\Domain\\Donation::emptyTestDonation<\/a>"],[100,3,"<a href=\"Donation.php.html#309\">MatchBot\\Domain\\Donation::__construct<\/a>"],[96.29629629629629,4,"<a href=\"Donation.php.html#331\">MatchBot\\Domain\\Donation::fromApiModel<\/a>"],[100,1,"<a href=\"Donation.php.html#374\">MatchBot\\Domain\\Donation::maximumAmount<\/a>"],[0,2,"<a href=\"Donation.php.html#382\">MatchBot\\Domain\\Donation::__toString<\/a>"],[100,1,"<a href=\"Donation.php.html#400\">MatchBot\\Domain\\Donation::getDescription<\/a>"],[50,3,"<a href=\"Donation.php.html#411\">MatchBot\\Domain\\Donation::preUpdate<\/a>"],[0,2,"<a href=\"Donation.php.html#422\">MatchBot\\Domain\\Donation::replaceNullPaymentMethodTypeWithCard<\/a>"],[100,3,"<a href=\"Donation.php.html#433\">MatchBot\\Domain\\Donation::toHookModel<\/a>"],[100,3,"<a href=\"Donation.php.html#460\">MatchBot\\Domain\\Donation::toApiModel<\/a>"],[100,1,"<a href=\"Donation.php.html#504\">MatchBot\\Domain\\Donation::getDonationStatus<\/a>"],[60,3,"<a href=\"Donation.php.html#509\">MatchBot\\Domain\\Donation::setDonationStatus<\/a>"],[100,1,"<a href=\"Donation.php.html#522\">MatchBot\\Domain\\Donation::getCollectedAt<\/a>"],[100,1,"<a href=\"Donation.php.html#527\">MatchBot\\Domain\\Donation::setCollectedAt<\/a>"],[100,1,"<a href=\"Donation.php.html#535\">MatchBot\\Domain\\Donation::getCampaign<\/a>"],[100,1,"<a href=\"Donation.php.html#543\">MatchBot\\Domain\\Donation::setCampaign<\/a>"],[100,1,"<a href=\"Donation.php.html#548\">MatchBot\\Domain\\Donation::getDonorEmailAddress<\/a>"],[100,1,"<a href=\"Donation.php.html#553\">MatchBot\\Domain\\Donation::setDonorEmailAddress<\/a>"],[100,1,"<a href=\"Donation.php.html#558\">MatchBot\\Domain\\Donation::getCharityComms<\/a>"],[100,1,"<a href=\"Donation.php.html#563\">MatchBot\\Domain\\Donation::setCharityComms<\/a>"],[100,1,"<a href=\"Donation.php.html#568\">MatchBot\\Domain\\Donation::getChampionComms<\/a>"],[100,1,"<a href=\"Donation.php.html#573\">MatchBot\\Domain\\Donation::setChampionComms<\/a>"],[100,2,"<a href=\"Donation.php.html#578\">MatchBot\\Domain\\Donation::getDonorFirstName<\/a>"],[100,1,"<a href=\"Donation.php.html#589\">MatchBot\\Domain\\Donation::setDonorFirstName<\/a>"],[100,2,"<a href=\"Donation.php.html#594\">MatchBot\\Domain\\Donation::getDonorLastName<\/a>"],[100,1,"<a href=\"Donation.php.html#605\">MatchBot\\Domain\\Donation::setDonorLastName<\/a>"],[100,1,"<a href=\"Donation.php.html#610\">MatchBot\\Domain\\Donation::getDonorBillingAddress<\/a>"],[100,1,"<a href=\"Donation.php.html#615\">MatchBot\\Domain\\Donation::setDonorBillingAddress<\/a>"],[100,1,"<a href=\"Donation.php.html#620\">MatchBot\\Domain\\Donation::hasGiftAid<\/a>"],[100,2,"<a href=\"Donation.php.html#625\">MatchBot\\Domain\\Donation::setGiftAid<\/a>"],[100,1,"<a href=\"Donation.php.html#637\">MatchBot\\Domain\\Donation::getTbgComms<\/a>"],[100,1,"<a href=\"Donation.php.html#642\">MatchBot\\Domain\\Donation::setTbgComms<\/a>"],[100,1,"<a href=\"Donation.php.html#652\">MatchBot\\Domain\\Donation::getAmount<\/a>"],[100,1,"<a href=\"Donation.php.html#660\">MatchBot\\Domain\\Donation::getCharityFee<\/a>"],[100,1,"<a href=\"Donation.php.html#665\">MatchBot\\Domain\\Donation::getCharityFeeGross<\/a>"],[100,1,"<a href=\"Donation.php.html#670\">MatchBot\\Domain\\Donation::setCharityFee<\/a>"],[100,1,"<a href=\"Donation.php.html#675\">MatchBot\\Domain\\Donation::setTransactionId<\/a>"],[100,1,"<a href=\"Donation.php.html#680\">MatchBot\\Domain\\Donation::setChargeId<\/a>"],[100,1,"<a href=\"Donation.php.html#688\">MatchBot\\Domain\\Donation::getTransferId<\/a>"],[100,1,"<a href=\"Donation.php.html#696\">MatchBot\\Domain\\Donation::setTransferId<\/a>"],[100,1,"<a href=\"Donation.php.html#701\">MatchBot\\Domain\\Donation::getDonorCountryCode<\/a>"],[100,2,"<a href=\"Donation.php.html#709\">MatchBot\\Domain\\Donation::getFundingWithdrawalTotal<\/a>"],[71.42857142857143,4,"<a href=\"Donation.php.html#722\">MatchBot\\Domain\\Donation::getConfirmedChampionWithdrawalTotal<\/a>"],[71.42857142857143,4,"<a href=\"Donation.php.html#742\">MatchBot\\Domain\\Donation::getConfirmedPledgeWithdrawalTotal<\/a>"],[66.66666666666666,2,"<a href=\"Donation.php.html#766\">MatchBot\\Domain\\Donation::getTransactionId<\/a>"],[100,1,"<a href=\"Donation.php.html#775\">MatchBot\\Domain\\Donation::getChargeId<\/a>"],[100,1,"<a href=\"Donation.php.html#783\">MatchBot\\Domain\\Donation::getUuid<\/a>"],[100,1,"<a href=\"Donation.php.html#791\">MatchBot\\Domain\\Donation::setUuid<\/a>"],[100,1,"<a href=\"Donation.php.html#796\">MatchBot\\Domain\\Donation::addFundingWithdrawal<\/a>"],[100,1,"<a href=\"Donation.php.html#804\">MatchBot\\Domain\\Donation::getFundingWithdrawals<\/a>"],[100,1,"<a href=\"Donation.php.html#812\">MatchBot\\Domain\\Donation::setDonorCountryCode<\/a>"],[100,1,"<a href=\"Donation.php.html#820\">MatchBot\\Domain\\Donation::getPsp<\/a>"],[100,2,"<a href=\"Donation.php.html#829\">MatchBot\\Domain\\Donation::setPsp<\/a>"],[100,1,"<a href=\"Donation.php.html#841\">MatchBot\\Domain\\Donation::getFeeCoverAmount<\/a>"],[100,1,"<a href=\"Donation.php.html#849\">MatchBot\\Domain\\Donation::setFeeCoverAmount<\/a>"],[100,1,"<a href=\"Donation.php.html#857\">MatchBot\\Domain\\Donation::getTipAmount<\/a>"],[100,5,"<a href=\"Donation.php.html#862\">MatchBot\\Domain\\Donation::setTipAmount<\/a>"],[100,1,"<a href=\"Donation.php.html#891\">MatchBot\\Domain\\Donation::hasTipGiftAid<\/a>"],[100,1,"<a href=\"Donation.php.html#896\">MatchBot\\Domain\\Donation::setTipGiftAid<\/a>"],[100,1,"<a href=\"Donation.php.html#901\">MatchBot\\Domain\\Donation::getDonorHomeAddressLine1<\/a>"],[100,1,"<a href=\"Donation.php.html#906\">MatchBot\\Domain\\Donation::setDonorHomeAddressLine1<\/a>"],[100,1,"<a href=\"Donation.php.html#911\">MatchBot\\Domain\\Donation::getDonorHomePostcode<\/a>"],[100,1,"<a href=\"Donation.php.html#916\">MatchBot\\Domain\\Donation::setDonorHomePostcode<\/a>"],[100,1,"<a href=\"Donation.php.html#924\">MatchBot\\Domain\\Donation::getCharityFeeVat<\/a>"],[100,1,"<a href=\"Donation.php.html#932\">MatchBot\\Domain\\Donation::setCharityFeeVat<\/a>"],[100,1,"<a href=\"Donation.php.html#941\">MatchBot\\Domain\\Donation::hasPostCreateUpdates<\/a>"],[100,1,"<a href=\"Donation.php.html#955\">MatchBot\\Domain\\Donation::getAmountToDeductFractional<\/a>"],[100,1,"<a href=\"Donation.php.html#976\">MatchBot\\Domain\\Donation::getAmountForCharityFractional<\/a>"],[100,1,"<a href=\"Donation.php.html#988\">MatchBot\\Domain\\Donation::getAmountFractionalIncTip<\/a>"],[100,1,"<a href=\"Donation.php.html#1001\">MatchBot\\Domain\\Donation::getFeeCoverAmountFractional<\/a>"],[100,1,"<a href=\"Donation.php.html#1009\">MatchBot\\Domain\\Donation::getTipAmountFractional<\/a>"],[100,1,"<a href=\"Donation.php.html#1017\">MatchBot\\Domain\\Donation::getOriginalPspFee<\/a>"],[100,1,"<a href=\"Donation.php.html#1022\">MatchBot\\Domain\\Donation::setOriginalPspFeeFractional<\/a>"],[100,1,"<a href=\"Donation.php.html#1027\">MatchBot\\Domain\\Donation::getCurrencyCode<\/a>"],[100,1,"<a href=\"Donation.php.html#1035\">MatchBot\\Domain\\Donation::hasTbgShouldProcessGiftAid<\/a>"],[100,1,"<a href=\"Donation.php.html#1043\">MatchBot\\Domain\\Donation::setTbgShouldProcessGiftAid<\/a>"],[0,1,"<a href=\"Donation.php.html#1051\">MatchBot\\Domain\\Donation::getTbgGiftAidRequestQueuedAt<\/a>"],[100,1,"<a href=\"Donation.php.html#1059\">MatchBot\\Domain\\Donation::setTbgGiftAidRequestQueuedAt<\/a>"],[100,1,"<a href=\"Donation.php.html#1067\">MatchBot\\Domain\\Donation::getTbgGiftAidRequestFailedAt<\/a>"],[100,1,"<a href=\"Donation.php.html#1075\">MatchBot\\Domain\\Donation::setTbgGiftAidRequestFailedAt<\/a>"],[100,1,"<a href=\"Donation.php.html#1080\">MatchBot\\Domain\\Donation::getTbgGiftAidRequestConfirmedCompleteAt<\/a>"],[100,1,"<a href=\"Donation.php.html#1088\">MatchBot\\Domain\\Donation::setTbgGiftAidRequestConfirmedCompleteAt<\/a>"],[100,1,"<a href=\"Donation.php.html#1093\">MatchBot\\Domain\\Donation::getTbgGiftAidRequestCorrelationId<\/a>"],[100,1,"<a href=\"Donation.php.html#1101\">MatchBot\\Domain\\Donation::setTbgGiftAidRequestCorrelationId<\/a>"],[100,1,"<a href=\"Donation.php.html#1106\">MatchBot\\Domain\\Donation::getTbgGiftAidResponseDetail<\/a>"],[100,1,"<a href=\"Donation.php.html#1114\">MatchBot\\Domain\\Donation::setTbgGiftAidResponseDetail<\/a>"],[100,1,"<a href=\"Donation.php.html#1119\">MatchBot\\Domain\\Donation::getPspCustomerId<\/a>"],[100,1,"<a href=\"Donation.php.html#1124\">MatchBot\\Domain\\Donation::setPspCustomerId<\/a>"],[100,1,"<a href=\"Donation.php.html#1129\">MatchBot\\Domain\\Donation::getPaymentMethodType<\/a>"],[100,3,"<a href=\"Donation.php.html#1145\">MatchBot\\Domain\\Donation::getStripeMethodProperties<\/a>"],[100,2,"<a href=\"Donation.php.html#1199\">MatchBot\\Domain\\Donation::getStripeOnBehalfOfProperties<\/a>"],[100,1,"<a href=\"Donation.php.html#1213\">MatchBot\\Domain\\Donation::supportsSavingPaymentMethod<\/a>"],[100,2,"<a href=\"Donation.php.html#1218\">MatchBot\\Domain\\Donation::hasEnoughDataForSalesforce<\/a>"],[100,5,"<a href=\"Donation.php.html#1223\">MatchBot\\Domain\\Donation::toClaimBotModel<\/a>"],[100,4,"<a href=\"Donation.php.html#1271\">MatchBot\\Domain\\Donation::makeSalesforceSafe<\/a>"],[100,2,"<a href=\"Donation.php.html#1284\">MatchBot\\Domain\\Donation::recordRefundAt<\/a>"],[100,1,"<a href=\"Donation.php.html#1297\">MatchBot\\Domain\\Donation::setPartialRefundDate<\/a>"],[100,2,"<a href=\"Donation.php.html#1302\">MatchBot\\Domain\\Donation::cancel<\/a>"],[100,1,"<a href=\"DonationFundsNotifier.php.html#9\">MatchBot\\Domain\\DonationFundsNotifier::__construct<\/a>"],[100,1,"<a href=\"DonationFundsNotifier.php.html#13\">MatchBot\\Domain\\DonationFundsNotifier::notifyRecieptOfAccountFunds<\/a>"],[100,1,"<a href=\"DonationRepository.php.html#44\">MatchBot\\Domain\\DonationRepository::setMatchingAdapter<\/a>"],[25,3,"<a href=\"DonationRepository.php.html#53\">MatchBot\\Domain\\DonationRepository::doCreate<\/a>"],[90,4,"<a href=\"DonationRepository.php.html#78\">MatchBot\\Domain\\DonationRepository::doUpdate<\/a>"],[73.07692307692307,5,"<a href=\"DonationRepository.php.html#123\">MatchBot\\Domain\\DonationRepository::buildFromApiRequest<\/a>"],[71.7948717948718,8,"<a href=\"DonationRepository.php.html#180\">MatchBot\\Domain\\DonationRepository::allocateMatchFunds<\/a>"],[60.78431372549019,9,"<a href=\"DonationRepository.php.html#260\">MatchBot\\Domain\\DonationRepository::releaseMatchFunds<\/a>"],[100,1,"<a href=\"DonationRepository.php.html#355\">MatchBot\\Domain\\DonationRepository::findWithExpiredMatching<\/a>"],[95.23809523809523,4,"<a href=\"DonationRepository.php.html#383\">MatchBot\\Domain\\DonationRepository::findReadyToClaimGiftAid<\/a>"],[0,1,"<a href=\"DonationRepository.php.html#425\">MatchBot\\Domain\\DonationRepository::findNotFullyMatchedToCampaignsWhichClosedSince<\/a>"],[0,1,"<a href=\"DonationRepository.php.html#453\">MatchBot\\Domain\\DonationRepository::findRecentNotFullyMatchedToMatchCampaigns<\/a>"],[100,1,"<a href=\"DonationRepository.php.html#481\">MatchBot\\Domain\\DonationRepository::findWithTransferIdInArray<\/a>"],[100,3,"<a href=\"DonationRepository.php.html#499\">MatchBot\\Domain\\DonationRepository::abandonOldCancelled<\/a>"],[100,2,"<a href=\"DonationRepository.php.html#542\">MatchBot\\Domain\\DonationRepository::deriveFees<\/a>"],[100,1,"<a href=\"DonationRepository.php.html#563\">MatchBot\\Domain\\DonationRepository::setCampaignRepository<\/a>"],[100,1,"<a href=\"DonationRepository.php.html#571\">MatchBot\\Domain\\DonationRepository::setFundRepository<\/a>"],[100,1,"<a href=\"DonationRepository.php.html#579\">MatchBot\\Domain\\DonationRepository::setLockFactory<\/a>"],[100,1,"<a href=\"DonationRepository.php.html#587\">MatchBot\\Domain\\DonationRepository::setSettings<\/a>"],[79.3103448275862,6,"<a href=\"DonationRepository.php.html#602\">MatchBot\\Domain\\DonationRepository::safelyAllocateFunds<\/a>"],[100,1,"<a href=\"DonationRepository.php.html#652\">MatchBot\\Domain\\DonationRepository::queueForPersist<\/a>"],[75,3,"<a href=\"DonationRepository.php.html#657\">MatchBot\\Domain\\DonationRepository::persistQueuedDonations<\/a>"],[0,2,"<a href=\"DonationRepository.php.html#672\">MatchBot\\Domain\\DonationRepository::findAndLockOneBy<\/a>"],[75,2,"<a href=\"DonationRepository.php.html#692\">MatchBot\\Domain\\DonationRepository::removeAllFundingWithdrawalsForDonation<\/a>"],[100,1,"<a href=\"DonorAccount.php.html#47\">MatchBot\\Domain\\DonorAccount::__construct<\/a>"],[100,1,"<a href=\"DonorAccountRepository.php.html#16\">MatchBot\\Domain\\DonorAccountRepository::save<\/a>"],[0,1,"<a href=\"DonorAccountRepository.php.html#22\">MatchBot\\Domain\\DonorAccountRepository::findByStripeIdOrNull<\/a>"],[100,1,"<a href=\"DonorName.php.html#26\">MatchBot\\Domain\\DonorName::__construct<\/a>"],[100,1,"<a href=\"DonorName.php.html#40\">MatchBot\\Domain\\DonorName::of<\/a>"],[0,1,"<a href=\"DonorName.php.html#48\">MatchBot\\Domain\\DonorName::fullName<\/a>"],[100,1,"<a href=\"EmailAddress.php.html#22\">MatchBot\\Domain\\EmailAddress::__construct<\/a>"],[100,1,"<a href=\"EmailAddress.php.html#33\">MatchBot\\Domain\\EmailAddress::of<\/a>"],[100,1,"<a href=\"Fund.php.html#43\">MatchBot\\Domain\\Fund::setAmount<\/a>"],[100,1,"<a href=\"Fund.php.html#51\">MatchBot\\Domain\\Fund::setName<\/a>"],[100,1,"<a href=\"Fund.php.html#59\">MatchBot\\Domain\\Fund::getName<\/a>"],[100,1,"<a href=\"Fund.php.html#67\">MatchBot\\Domain\\Fund::getAmount<\/a>"],[100,1,"<a href=\"Fund.php.html#72\">MatchBot\\Domain\\Fund::setCurrencyCode<\/a>"],[100,1,"<a href=\"Fund.php.html#77\">MatchBot\\Domain\\Fund::getCurrencyCode<\/a>"],[100,1,"<a href=\"FundRepository.php.html#21\">MatchBot\\Domain\\FundRepository::setCampaignFundingRepository<\/a>"],[100,1,"<a href=\"FundRepository.php.html#29\">MatchBot\\Domain\\FundRepository::setMatchingAdapter<\/a>"],[76.92307692307693,11,"<a href=\"FundRepository.php.html#38\">MatchBot\\Domain\\FundRepository::pullForCampaign<\/a>"],[100,4,"<a href=\"FundRepository.php.html#139\">MatchBot\\Domain\\FundRepository::setAnyFundData<\/a>"],[85.71428571428571,3,"<a href=\"FundRepository.php.html#159\">MatchBot\\Domain\\FundRepository::getNewFund<\/a>"],[100,1,"<a href=\"FundRepository.php.html#180\">MatchBot\\Domain\\FundRepository::doPull<\/a>"],[100,1,"<a href=\"FundingWithdrawal.php.html#39\">MatchBot\\Domain\\FundingWithdrawal::setDonation<\/a>"],[100,1,"<a href=\"FundingWithdrawal.php.html#47\">MatchBot\\Domain\\FundingWithdrawal::setAmount<\/a>"],[100,1,"<a href=\"FundingWithdrawal.php.html#55\">MatchBot\\Domain\\FundingWithdrawal::getAmount<\/a>"],[100,1,"<a href=\"FundingWithdrawal.php.html#63\">MatchBot\\Domain\\FundingWithdrawal::setCampaignFunding<\/a>"],[0,1,"<a href=\"FundingWithdrawal.php.html#68\">MatchBot\\Domain\\FundingWithdrawal::getCampaignFunding<\/a>"],[0,2,"<a href=\"FundingWithdrawalRepository.php.html#18\">MatchBot\\Domain\\FundingWithdrawalRepository::getWithdrawalsTotal<\/a>"],[100,1,"<a href=\"Model.php.html#22\">MatchBot\\Domain\\Model::getId<\/a>"],[100,1,"<a href=\"Model.php.html#30\">MatchBot\\Domain\\Model::setId<\/a>"],[100,1,"<a href=\"Model.php.html#35\">MatchBot\\Domain\\Model::hasBeenPersisted<\/a>"],[0,1,"<a href=\"Model.php.html#40\">MatchBot\\Domain\\Model::__toString<\/a>"],[100,1,"<a href=\"Money.php.html#17\">MatchBot\\Domain\\Money::__construct<\/a>"],[100,1,"<a href=\"Money.php.html#28\">MatchBot\\Domain\\Money::fromPence<\/a>"],[100,1,"<a href=\"Money.php.html#36\">MatchBot\\Domain\\Money::format<\/a>"],[100,1,"<a href=\"SalesforceProxy.php.html#24\">MatchBot\\Domain\\SalesforceProxy::getSalesforceId<\/a>"],[100,1,"<a href=\"SalesforceProxy.php.html#32\">MatchBot\\Domain\\SalesforceProxy::setSalesforceId<\/a>"],[100,1,"<a href=\"SalesforceProxyRepository.php.html#19\">MatchBot\\Domain\\SalesforceProxyRepository::logError<\/a>"],[100,1,"<a href=\"SalesforceProxyRepository.php.html#24\">MatchBot\\Domain\\SalesforceProxyRepository::logWarning<\/a>"],[100,1,"<a href=\"SalesforceProxyRepository.php.html#29\">MatchBot\\Domain\\SalesforceProxyRepository::logInfo<\/a>"],[100,1,"<a href=\"SalesforceProxyRepository.php.html#34\">MatchBot\\Domain\\SalesforceProxyRepository::setClient<\/a>"],[100,1,"<a href=\"SalesforceProxyRepository.php.html#39\">MatchBot\\Domain\\SalesforceProxyRepository::setLogger<\/a>"],[66.66666666666666,2,"<a href=\"SalesforceProxyRepository.php.html#44\">MatchBot\\Domain\\SalesforceProxyRepository::getClient<\/a>"],[0,1,"<a href=\"SalesforceReadProxy.php.html#25\">MatchBot\\Domain\\SalesforceReadProxy::getSalesforceLastPull<\/a>"],[100,1,"<a href=\"SalesforceReadProxy.php.html#33\">MatchBot\\Domain\\SalesforceReadProxy::setSalesforceLastPull<\/a>"],[100,0,"<a href=\"SalesforceReadProxyRepository.php.html#25\">MatchBot\\Domain\\SalesforceReadProxyRepository::doPull<\/a>"],[75,4,"<a href=\"SalesforceReadProxyRepository.php.html#31\">MatchBot\\Domain\\SalesforceReadProxyRepository::pull<\/a>"],[100,0,"<a href=\"SalesforceWriteProxy.php.html#52\">MatchBot\\Domain\\SalesforceWriteProxy::hasPostCreateUpdates<\/a>"],[100,1,"<a href=\"SalesforceWriteProxy.php.html#71\">MatchBot\\Domain\\SalesforceWriteProxy::getSalesforceLastPush<\/a>"],[100,1,"<a href=\"SalesforceWriteProxy.php.html#79\">MatchBot\\Domain\\SalesforceWriteProxy::setSalesforceLastPush<\/a>"],[100,1,"<a href=\"SalesforceWriteProxy.php.html#87\">MatchBot\\Domain\\SalesforceWriteProxy::getSalesforcePushStatus<\/a>"],[100,1,"<a href=\"SalesforceWriteProxy.php.html#96\">MatchBot\\Domain\\SalesforceWriteProxy::setSalesforcePushStatus<\/a>"],[100,2,"<a href=\"SalesforceWriteProxy.php.html#108\">MatchBot\\Domain\\SalesforceWriteProxy::isStable<\/a>"],[100,0,"<a href=\"SalesforceWriteProxyRepository.php.html#16\">MatchBot\\Domain\\SalesforceWriteProxyRepository::doCreate<\/a>"],[100,0,"<a href=\"SalesforceWriteProxyRepository.php.html#17\">MatchBot\\Domain\\SalesforceWriteProxyRepository::doUpdate<\/a>"],[87.09677419354838,9,"<a href=\"SalesforceWriteProxyRepository.php.html#19\">MatchBot\\Domain\\SalesforceWriteProxyRepository::push<\/a>"],[0,3,"<a href=\"SalesforceWriteProxyRepository.php.html#109\">MatchBot\\Domain\\SalesforceWriteProxyRepository::pushSalesforcePending<\/a>"],[100,3,"<a href=\"SalesforceWriteProxyRepository.php.html#134\">MatchBot\\Domain\\SalesforceWriteProxyRepository::prePush<\/a>"],[41.17647058823529,8,"<a href=\"SalesforceWriteProxyRepository.php.html#143\">MatchBot\\Domain\\SalesforceWriteProxyRepository::postPush<\/a>"],[100,1,"<a href=\"SalesforceWriteProxyRepository.php.html#194\">MatchBot\\Domain\\SalesforceWriteProxyRepository::save<\/a>"],[100,1,"<a href=\"StripeCustomerId.php.html#18\">MatchBot\\Domain\\StripeCustomerId::__construct<\/a>"],[100,1,"<a href=\"StripeCustomerId.php.html#30\">MatchBot\\Domain\\StripeCustomerId::of<\/a>"],[0,1,"<a href=\"Currency.php.html#11\">MatchBot\\Domain\\Currency::fromIsoCode<\/a>"],[100,1,"<a href=\"Currency.php.html#24\">MatchBot\\Domain\\Currency::symbol<\/a>"],[100,1,"<a href=\"DonationStatus.php.html#14\">MatchBot\\Domain\\DonationStatus::isSuccessful<\/a>"],[100,1,"<a href=\"DonationStatus.php.html#24\">MatchBot\\Domain\\DonationStatus::isReversed<\/a>"],[100,1,"<a href=\"TimestampsTrait.php.html#31\">MatchBot\\Domain\\TimestampsTrait::createdNow<\/a>"],[100,1,"<a href=\"TimestampsTrait.php.html#41\">MatchBot\\Domain\\TimestampsTrait::updatedNow<\/a>"],[100,1,"<a href=\"TimestampsTrait.php.html#49\">MatchBot\\Domain\\TimestampsTrait::getCreatedDate<\/a>"],[100,1,"<a href=\"TimestampsTrait.php.html#57\">MatchBot\\Domain\\TimestampsTrait::getUpdatedDate<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
+</html>

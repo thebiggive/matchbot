@@ -121,9 +121,13 @@ class Confirm extends Action
         ]);
 
         try {
-            $this->stripeClient->paymentIntents->confirm($paymentIntentId, [
+            $this->logger->info("old PI status: " . ($this->stripeClient->paymentIntents->retrieve($paymentIntentId)->status));
+            $pi = $this->stripeClient->paymentIntents->confirm($paymentIntentId, [
                 'payment_method' => $pamentMethodId,
             ]);
+
+            $this->logger->info("new PI status: " . $pi->status);
+            $charge = $pi->charges->all();
         } catch (CardException $exception) {
             $exceptionClass = get_class($exception);
             $this->logger->info(sprintf(

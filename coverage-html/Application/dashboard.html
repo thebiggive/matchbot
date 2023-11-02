@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for /var/www/html/src/Application</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../_css/bootstrap.min.css?v=9.2.27" rel="stylesheet" type="text/css">
+  <link href="../_css/nv.d3.min.css?v=9.2.27" rel="stylesheet" type="text/css">
+  <link href="../_css/style.css?v=9.2.27" rel="stylesheet" type="text/css">
+  <link href="../_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="../index.html">/var/www/html/src</a></li>
+         <li class="breadcrumb-item"><a href="index.html">Application</a></li>
+         <li class="breadcrumb-item active">(Dashboard)</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Commands/ScheduledOutOfSyncFundsCheck.php.html#20">MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Handlers/HttpErrorHandler.php.html#21">MatchBot\Application\Handlers\HttpErrorHandler</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Handlers/ShutdownHandler.php.html#12">MatchBot\Application\Handlers\ShutdownHandler</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Matching/LessThanRequestedAllocatedException.php.html#9">MatchBot\Application\Matching\LessThanRequestedAllocatedException</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Commands/Command.php.html#11">MatchBot\Application\Commands\Command</a></td><td class="text-right">33%</td></tr>
+       <tr><td><a href="Actions/ActionError.php.html#11">MatchBot\Application\Actions\ActionError</a></td><td class="text-right">45%</td></tr>
+       <tr><td><a href="Actions/UpdatePaymentMethod.php.html#15">MatchBot\Application\Actions\UpdatePaymentMethod</a></td><td class="text-right">50%</td></tr>
+       <tr><td><a href="Actions/DonorAccount/Create.php.html#26">MatchBot\Application\Actions\DonorAccount\Create</a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="Persistence/RetrySafeEntityManager.php.html#23">MatchBot\Application\Persistence\RetrySafeEntityManager</a></td><td class="text-right">67%</td></tr>
+       <tr><td><a href="Matching/OptimisticRedisAdapter.php.html#22">MatchBot\Application\Matching\OptimisticRedisAdapter</a></td><td class="text-right">68%</td></tr>
+       <tr><td><a href="Actions/Hooks/Stripe.php.html#16">MatchBot\Application\Actions\Hooks\Stripe</a></td><td class="text-right">73%</td></tr>
+       <tr><td><a href="Actions/Donations/Confirm.php.html#20">MatchBot\Application\Actions\Donations\Confirm</a></td><td class="text-right">76%</td></tr>
+       <tr><td><a href="Commands/UpdateCampaigns.php.html#21">MatchBot\Application\Commands\UpdateCampaigns</a></td><td class="text-right">77%</td></tr>
+       <tr><td><a href="Actions/Hooks/StripePaymentsUpdate.php.html#41">MatchBot\Application\Actions\Hooks\StripePaymentsUpdate</a></td><td class="text-right">78%</td></tr>
+       <tr><td><a href="Commands/LockingCommand.php.html#17">MatchBot\Application\Commands\LockingCommand</a></td><td class="text-right">78%</td></tr>
+       <tr><td><a href="Actions/ActionPayload.php.html#10">MatchBot\Application\Actions\ActionPayload</a></td><td class="text-right">80%</td></tr>
+       <tr><td><a href="Actions/DeletePaymentMethod.php.html#18">MatchBot\Application\Actions\DeletePaymentMethod</a></td><td class="text-right">80%</td></tr>
+       <tr><td><a href="Matching/Adapter.php.html#9">MatchBot\Application\Matching\Adapter</a></td><td class="text-right">80%</td></tr>
+       <tr><td><a href="Messenger/Handler/StripePayoutHandler.php.html#25">MatchBot\Application\Messenger\Handler\StripePayoutHandler</a></td><td class="text-right">82%</td></tr>
+       <tr><td><a href="Actions/Action.php.html#14">MatchBot\Application\Actions\Action</a></td><td class="text-right">84%</td></tr>
+       <tr><td><a href="Actions/Donations/Get.php.html#16">MatchBot\Application\Actions\Donations\Get</a></td><td class="text-right">85%</td></tr>
+       <tr><td><a href="Actions/Donations/Create.php.html#32">MatchBot\Application\Actions\Donations\Create</a></td><td class="text-right">85%</td></tr>
+       <tr><td><a href="Auth/DonationRecaptchaMiddleware.php.html#19">MatchBot\Application\Auth\DonationRecaptchaMiddleware</a></td><td class="text-right">87%</td></tr>
+       <tr><td><a href="Actions/Status.php.html#23">MatchBot\Application\Actions\Status</a></td><td class="text-right">88%</td></tr>
+       <tr><td><a href="Actions/Donations/Update.php.html#38">MatchBot\Application\Actions\Donations\Update</a></td><td class="text-right">89%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Handlers/HttpErrorHandler.php.html#21">MatchBot\Application\Handlers\HttpErrorHandler</a></td><td class="text-right">182</td></tr>
+       <tr><td><a href="Handlers/ShutdownHandler.php.html#12">MatchBot\Application\Handlers\ShutdownHandler</a></td><td class="text-right">132</td></tr>
+       <tr><td><a href="Actions/Hooks/StripePaymentsUpdate.php.html#41">MatchBot\Application\Actions\Hooks\StripePaymentsUpdate</a></td><td class="text-right">66</td></tr>
+       <tr><td><a href="Actions/Donations/Update.php.html#38">MatchBot\Application\Actions\Donations\Update</a></td><td class="text-right">60</td></tr>
+       <tr><td><a href="Matching/OptimisticRedisAdapter.php.html#22">MatchBot\Application\Matching\OptimisticRedisAdapter</a></td><td class="text-right">32</td></tr>
+       <tr><td><a href="Commands/ScheduledOutOfSyncFundsCheck.php.html#20">MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck</a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Persistence/RetrySafeEntityManager.php.html#23">MatchBot\Application\Persistence\RetrySafeEntityManager</a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Actions/Donations/Create.php.html#32">MatchBot\Application\Actions\Donations\Create</a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Messenger/Handler/StripePayoutHandler.php.html#25">MatchBot\Application\Messenger\Handler\StripePayoutHandler</a></td><td class="text-right">18</td></tr>
+       <tr><td><a href="Actions/Donations/Confirm.php.html#20">MatchBot\Application\Actions\Donations\Confirm</a></td><td class="text-right">17</td></tr>
+       <tr><td><a href="Commands/UpdateCampaigns.php.html#21">MatchBot\Application\Commands\UpdateCampaigns</a></td><td class="text-right">13</td></tr>
+       <tr><td><a href="Actions/Status.php.html#23">MatchBot\Application\Actions\Status</a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Actions/Action.php.html#14">MatchBot\Application\Actions\Action</a></td><td class="text-right">9</td></tr>
+       <tr><td><a href="Actions/Hooks/Stripe.php.html#16">MatchBot\Application\Actions\Hooks\Stripe</a></td><td class="text-right">9</td></tr>
+       <tr><td><a href="Auth/DonationRecaptchaMiddleware.php.html#19">MatchBot\Application\Auth\DonationRecaptchaMiddleware</a></td><td class="text-right">8</td></tr>
+       <tr><td><a href="Actions/UpdatePaymentMethod.php.html#15">MatchBot\Application\Actions\UpdatePaymentMethod</a></td><td class="text-right">8</td></tr>
+       <tr><td><a href="Actions/ActionPayload.php.html#10">MatchBot\Application\Actions\ActionPayload</a></td><td class="text-right">7</td></tr>
+       <tr><td><a href="Commands/LockingCommand.php.html#17">MatchBot\Application\Commands\LockingCommand</a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Actions/DonorAccount/Create.php.html#26">MatchBot\Application\Actions\DonorAccount\Create</a></td><td class="text-right">5</td></tr>
+       <tr><td><a href="Actions/DeletePaymentMethod.php.html#18">MatchBot\Application\Actions\DeletePaymentMethod</a></td><td class="text-right">4</td></tr>
+       <tr><td><a href="Actions/Donations/Get.php.html#16">MatchBot\Application\Actions\Donations\Get</a></td><td class="text-right">4</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Actions/Action.php.html#52"><abbr title="MatchBot\Application\Actions\Action::resolveArg">resolveArg</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Actions/ActionError.php.html#33"><abbr title="MatchBot\Application\Actions\ActionError::getType">getType</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Actions/ActionError.php.html#43"><abbr title="MatchBot\Application\Actions\ActionError::setType">setType</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Actions/ActionError.php.html#52"><abbr title="MatchBot\Application\Actions\ActionError::getDescription">getDescription</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Actions/ActionError.php.html#62"><abbr title="MatchBot\Application\Actions\ActionError::setDescription">setDescription</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Actions/ActionPayload.php.html#32"><abbr title="MatchBot\Application\Actions\ActionPayload::getData">getData</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Actions/ActionPayload.php.html#41"><abbr title="MatchBot\Application\Actions\ActionPayload::getError">getError</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Actions/Donations/Confirm.php.html#45"><abbr title="MatchBot\Application\Actions\Donations\Confirm::errorMessageFromStripeIsExpected">errorMessageFromStripeIsExpected</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Actions/Hooks/StripePaymentsUpdate.php.html#466"><abbr title="MatchBot\Application\Actions\Hooks\StripePaymentsUpdate::handleCashBalanceUpdate">handleCashBalanceUpdate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Commands/Command.php.html#15"><abbr title="MatchBot\Application\Commands\Command::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Commands/ScheduledOutOfSyncFundsCheck.php.html#22"><abbr title="MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Commands/ScheduledOutOfSyncFundsCheck.php.html#35"><abbr title="MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck::configure">configure</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Commands/ScheduledOutOfSyncFundsCheck.php.html#40"><abbr title="MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck::doExecute">doExecute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Handlers/HttpErrorHandler.php.html#26"><abbr title="MatchBot\Application\Handlers\HttpErrorHandler::respond">respond</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Handlers/ShutdownHandler.php.html#14"><abbr title="MatchBot\Application\Handlers\ShutdownHandler::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Handlers/ShutdownHandler.php.html#22"><abbr title="MatchBot\Application\Handlers\ShutdownHandler::__invoke">__invoke</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Matching/LessThanRequestedAllocatedException.php.html#19"><abbr title="MatchBot\Application\Matching\LessThanRequestedAllocatedException::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Matching/LessThanRequestedAllocatedException.php.html#27"><abbr title="MatchBot\Application\Matching\LessThanRequestedAllocatedException::getAmountAllocated">getAmountAllocated</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Matching/OptimisticRedisAdapter.php.html#160"><abbr title="MatchBot\Application\Matching\OptimisticRedisAdapter::delete">delete</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Persistence/RetrySafeEntityManager.php.html#60"><abbr title="MatchBot\Application\Persistence\RetrySafeEntityManager::transactional">transactional</abbr></a></td><td class="text-right">24%</td></tr>
+       <tr><td><a href="Actions/Hooks/StripePaymentsUpdate.php.html#408"><abbr title="MatchBot\Application\Actions\Hooks\StripePaymentsUpdate::getOriginalFeeFractional">getOriginalFeeFractional</abbr></a></td><td class="text-right">27%</td></tr>
+       <tr><td><a href="Matching/OptimisticRedisAdapter.php.html#73"><abbr title="MatchBot\Application\Matching\OptimisticRedisAdapter::doSubtractAmount">doSubtractAmount</abbr></a></td><td class="text-right">43%</td></tr>
+       <tr><td><a href="Actions/UpdatePaymentMethod.php.html#26"><abbr title="MatchBot\Application\Actions\UpdatePaymentMethod::action">action</abbr></a></td><td class="text-right">48%</td></tr>
+       <tr><td><a href="Auth/IdentityToken.php.html#87"><abbr title="MatchBot\Application\Auth\IdentityToken::isComplete">isComplete</abbr></a></td><td class="text-right">50%</td></tr>
+       <tr><td><a href="Commands/LockingCommand.php.html#33"><abbr title="MatchBot\Application\Commands\LockingCommand::execute">execute</abbr></a></td><td class="text-right">60%</td></tr>
+       <tr><td><a href="Actions/DonorAccount/Create.php.html#35"><abbr title="MatchBot\Application\Actions\DonorAccount\Create::action">action</abbr></a></td><td class="text-right">65%</td></tr>
+       <tr><td><a href="Fees/Calculator.php.html#32"><abbr title="MatchBot\Application\Fees\Calculator::__construct">__construct</abbr></a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="Matching/Adapter.php.html#70"><abbr title="MatchBot\Application\Matching\Adapter::addAmount">addAmount</abbr></a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="Matching/Adapter.php.html#84"><abbr title="MatchBot\Application\Matching\Adapter::subtractAmount">subtractAmount</abbr></a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="Actions/Hooks/StripePaymentsUpdate.php.html#335"><abbr title="MatchBot\Application\Actions\Hooks\StripePaymentsUpdate::handlePaymentIntentCancelled">handlePaymentIntentCancelled</abbr></a></td><td class="text-right">70%</td></tr>
+       <tr><td><a href="Actions/Hooks/Stripe.php.html#37"><abbr title="MatchBot\Application\Actions\Hooks\Stripe::prepareEvent">prepareEvent</abbr></a></td><td class="text-right">70%</td></tr>
+       <tr><td><a href="Commands/UpdateCampaigns.php.html#46"><abbr title="MatchBot\Application\Commands\UpdateCampaigns::doExecute">doExecute</abbr></a></td><td class="text-right">72%</td></tr>
+       <tr><td><a href="Matching/OptimisticRedisAdapter.php.html#58"><abbr title="MatchBot\Application\Matching\OptimisticRedisAdapter::getAmountAvailable">getAmountAvailable</abbr></a></td><td class="text-right">75%</td></tr>
+       <tr><td><a href="Actions/Status.php.html#37"><abbr title="MatchBot\Application\Actions\Status::action">action</abbr></a></td><td class="text-right">76%</td></tr>
+       <tr><td><a href="Messenger/Handler/StripePayoutHandler.php.html#35"><abbr title="MatchBot\Application\Messenger\Handler\StripePayoutHandler::__invoke">__invoke</abbr></a></td><td class="text-right">76%</td></tr>
+       <tr><td><a href="Actions/Donations/Update.php.html#59"><abbr title="MatchBot\Application\Actions\Donations\Update::action">action</abbr></a></td><td class="text-right">76%</td></tr>
+       <tr><td><a href="Actions/Hooks/StripePaymentsUpdate.php.html#103"><abbr title="MatchBot\Application\Actions\Hooks\StripePaymentsUpdate::handleChargeSucceeded">handleChargeSucceeded</abbr></a></td><td class="text-right">77%</td></tr>
+       <tr><td><a href="Actions/DeletePaymentMethod.php.html#32"><abbr title="MatchBot\Application\Actions\DeletePaymentMethod::action">action</abbr></a></td><td class="text-right">79%</td></tr>
+       <tr><td><a href="Actions/Donations/Confirm.php.html#63"><abbr title="MatchBot\Application\Actions\Donations\Confirm::action">action</abbr></a></td><td class="text-right">80%</td></tr>
+       <tr><td><a href="Actions/Donations/Get.php.html#30"><abbr title="MatchBot\Application\Actions\Donations\Get::action">action</abbr></a></td><td class="text-right">83%</td></tr>
+       <tr><td><a href="Auth/DonationToken.php.html#49"><abbr title="MatchBot\Application\Auth\DonationToken::check">check</abbr></a></td><td class="text-right">84%</td></tr>
+       <tr><td><a href="Actions/Donations/Create.php.html#52"><abbr title="MatchBot\Application\Actions\Donations\Create::action">action</abbr></a></td><td class="text-right">84%</td></tr>
+       <tr><td><a href="Auth/DonationRecaptchaMiddleware.php.html#34"><abbr title="MatchBot\Application\Auth\DonationRecaptchaMiddleware::process">process</abbr></a></td><td class="text-right">86%</td></tr>
+       <tr><td><a href="Actions/Donations/Update.php.html#202"><abbr title="MatchBot\Application\Actions\Donations\Update::addData">addData</abbr></a></td><td class="text-right">89%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Handlers/HttpErrorHandler.php.html#26"><abbr title="MatchBot\Application\Handlers\HttpErrorHandler::respond">respond</abbr></a></td><td class="text-right">182</td></tr>
+       <tr><td><a href="Handlers/ShutdownHandler.php.html#22"><abbr title="MatchBot\Application\Handlers\ShutdownHandler::__invoke">__invoke</abbr></a></td><td class="text-right">110</td></tr>
+       <tr><td><a href="Actions/Hooks/StripePaymentsUpdate.php.html#466"><abbr title="MatchBot\Application\Actions\Hooks\StripePaymentsUpdate::handleCashBalanceUpdate">handleCashBalanceUpdate</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Actions/Donations/Update.php.html#202"><abbr title="MatchBot\Application\Actions\Donations\Update::addData">addData</abbr></a></td><td class="text-right">23</td></tr>
+       <tr><td><a href="Actions/Donations/Update.php.html#59"><abbr title="MatchBot\Application\Actions\Donations\Update::action">action</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Actions/Donations/Create.php.html#52"><abbr title="MatchBot\Application\Actions\Donations\Create::action">action</abbr></a></td><td class="text-right">16</td></tr>
+       <tr><td><a href="Actions/Donations/Confirm.php.html#45"><abbr title="MatchBot\Application\Actions\Donations\Confirm::errorMessageFromStripeIsExpected">errorMessageFromStripeIsExpected</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Commands/ScheduledOutOfSyncFundsCheck.php.html#40"><abbr title="MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck::doExecute">doExecute</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Actions/Donations/Confirm.php.html#63"><abbr title="MatchBot\Application\Actions\Donations\Confirm::action">action</abbr></a></td><td class="text-right">11</td></tr>
+       <tr><td><a href="Messenger/Handler/StripePayoutHandler.php.html#35"><abbr title="MatchBot\Application\Messenger\Handler\StripePayoutHandler::__invoke">__invoke</abbr></a></td><td class="text-right">11</td></tr>
+       <tr><td><a href="Commands/UpdateCampaigns.php.html#46"><abbr title="MatchBot\Application\Commands\UpdateCampaigns::doExecute">doExecute</abbr></a></td><td class="text-right">10</td></tr>
+       <tr><td><a href="Actions/Hooks/StripePaymentsUpdate.php.html#408"><abbr title="MatchBot\Application\Actions\Hooks\StripePaymentsUpdate::getOriginalFeeFractional">getOriginalFeeFractional</abbr></a></td><td class="text-right">10</td></tr>
+       <tr><td><a href="Matching/OptimisticRedisAdapter.php.html#73"><abbr title="MatchBot\Application\Matching\OptimisticRedisAdapter::doSubtractAmount">doSubtractAmount</abbr></a></td><td class="text-right">9</td></tr>
+       <tr><td><a href="Actions/Status.php.html#37"><abbr title="MatchBot\Application\Actions\Status::action">action</abbr></a></td><td class="text-right">8</td></tr>
+       <tr><td><a href="Actions/Hooks/Stripe.php.html#37"><abbr title="MatchBot\Application\Actions\Hooks\Stripe::prepareEvent">prepareEvent</abbr></a></td><td class="text-right">8</td></tr>
+       <tr><td><a href="Auth/DonationRecaptchaMiddleware.php.html#34"><abbr title="MatchBot\Application\Auth\DonationRecaptchaMiddleware::process">process</abbr></a></td><td class="text-right">7</td></tr>
+       <tr><td><a href="Persistence/RetrySafeEntityManager.php.html#60"><abbr title="MatchBot\Application\Persistence\RetrySafeEntityManager::transactional">transactional</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Actions/UpdatePaymentMethod.php.html#26"><abbr title="MatchBot\Application\Actions\UpdatePaymentMethod::action">action</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Actions/Action.php.html#52"><abbr title="MatchBot\Application\Actions\Action::resolveArg">resolveArg</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Actions/Hooks/StripePaymentsUpdate.php.html#335"><abbr title="MatchBot\Application\Actions\Hooks\StripePaymentsUpdate::handlePaymentIntentCancelled">handlePaymentIntentCancelled</abbr></a></td><td class="text-right">5</td></tr>
+       <tr><td><a href="Actions/DonorAccount/Create.php.html#35"><abbr title="MatchBot\Application\Actions\DonorAccount\Create::action">action</abbr></a></td><td class="text-right">4</td></tr>
+       <tr><td><a href="Actions/Hooks/StripePaymentsUpdate.php.html#103"><abbr title="MatchBot\Application\Actions\Hooks\StripePaymentsUpdate::handleChargeSucceeded">handleChargeSucceeded</abbr></a></td><td class="text-right">4</td></tr>
+       <tr><td><a href="Auth/DonationToken.php.html#49"><abbr title="MatchBot\Application\Auth\DonationToken::check">check</abbr></a></td><td class="text-right">4</td></tr>
+       <tr><td><a href="Actions/DeletePaymentMethod.php.html#32"><abbr title="MatchBot\Application\Actions\DeletePaymentMethod::action">action</abbr></a></td><td class="text-right">3</td></tr>
+       <tr><td><a href="Actions/Donations/Get.php.html#30"><abbr title="MatchBot\Application\Actions\Donations\Get::action">action</abbr></a></td><td class="text-right">3</td></tr>
+       <tr><td><a href="Auth/IdentityToken.php.html#87"><abbr title="MatchBot\Application\Auth\IdentityToken::isComplete">isComplete</abbr></a></td><td class="text-right">2</td></tr>
+       <tr><td><a href="Commands/LockingCommand.php.html#33"><abbr title="MatchBot\Application\Commands\LockingCommand::execute">execute</abbr></a></td><td class="text-right">2</td></tr>
+       <tr><td><a href="Fees/Calculator.php.html#32"><abbr title="MatchBot\Application\Fees\Calculator::__construct">__construct</abbr></a></td><td class="text-right">2</td></tr>
+       <tr><td><a href="Matching/Adapter.php.html#70"><abbr title="MatchBot\Application\Matching\Adapter::addAmount">addAmount</abbr></a></td><td class="text-right">2</td></tr>
+       <tr><td><a href="Matching/Adapter.php.html#84"><abbr title="MatchBot\Application\Matching\Adapter::subtractAmount">subtractAmount</abbr></a></td><td class="text-right">2</td></tr>
+       <tr><td><a href="Matching/OptimisticRedisAdapter.php.html#58"><abbr title="MatchBot\Application\Matching\OptimisticRedisAdapter::getAmountAvailable">getAmountAvailable</abbr></a></td><td class="text-right">2</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 9.2.27</a> using <a href="https://secure.php.net/" target="_top">PHP 8.1.12</a> and <a href="https://phpunit.de/">PHPUnit 9.6.10</a> at Thu Nov 2 0:24:45 UTC 2023.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="../_js/jquery.min.js?v=9.2.27" type="text/javascript"></script>
+  <script src="../_js/d3.min.js?v=9.2.27" type="text/javascript"></script>
+  <script src="../_js/nv.d3.min.js?v=9.2.27" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([4,0,0,0,1,1,1,3,5,10,7,22], "Class Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([19,0,0,2,0,2,1,5,9,6,7,118], "Method Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
+
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[84.21052631578947,9,"<a href=\"Actions\/Action.php.html#14\">MatchBot\\Application\\Actions\\Action<\/a>"],[45.45454545454545,6,"<a href=\"Actions\/ActionError.php.html#11\">MatchBot\\Application\\Actions\\ActionError<\/a>"],[80,7,"<a href=\"Actions\/ActionPayload.php.html#10\">MatchBot\\Application\\Actions\\ActionPayload<\/a>"],[80,4,"<a href=\"Actions\/DeletePaymentMethod.php.html#18\">MatchBot\\Application\\Actions\\DeletePaymentMethod<\/a>"],[76.92307692307693,15,"<a href=\"Actions\/Donations\/Confirm.php.html#20\">MatchBot\\Application\\Actions\\Donations\\Confirm<\/a>"],[85.8267716535433,19,"<a href=\"Actions\/Donations\/Create.php.html#32\">MatchBot\\Application\\Actions\\Donations\\Create<\/a>"],[85.71428571428571,4,"<a href=\"Actions\/Donations\/Get.php.html#16\">MatchBot\\Application\\Actions\\Donations\\Get<\/a>"],[89.3470790378007,57,"<a href=\"Actions\/Donations\/Update.php.html#38\">MatchBot\\Application\\Actions\\Donations\\Update<\/a>"],[66.66666666666666,5,"<a href=\"Actions\/DonorAccount\/Create.php.html#26\">MatchBot\\Application\\Actions\\DonorAccount\\Create<\/a>"],[100,2,"<a href=\"Actions\/GetPaymentMethods.php.html#15\">MatchBot\\Application\\Actions\\GetPaymentMethods<\/a>"],[73.68421052631578,8,"<a href=\"Actions\/Hooks\/Stripe.php.html#16\">MatchBot\\Application\\Actions\\Hooks\\Stripe<\/a>"],[78.07692307692308,45,"<a href=\"Actions\/Hooks\/StripePaymentsUpdate.php.html#41\">MatchBot\\Application\\Actions\\Hooks\\StripePaymentsUpdate<\/a>"],[96.66666666666667,9,"<a href=\"Actions\/Hooks\/StripePayoutUpdate.php.html#28\">MatchBot\\Application\\Actions\\Hooks\\StripePayoutUpdate<\/a>"],[88.23529411764706,12,"<a href=\"Actions\/Status.php.html#23\">MatchBot\\Application\\Actions\\Status<\/a>"],[50,5,"<a href=\"Actions\/UpdatePaymentMethod.php.html#15\">MatchBot\\Application\\Actions\\UpdatePaymentMethod<\/a>"],[100,0,"<a href=\"Assert.php.html#14\">MatchBot\\Application\\Assert<\/a>"],[100,0,"<a href=\"Assertion.php.html#14\">MatchBot\\Application\\Assertion<\/a>"],[100,0,"<a href=\"AssertionFailedException.php.html#7\">MatchBot\\Application\\AssertionFailedException<\/a>"],[100,4,"<a href=\"Auth\/DonationPublicAuthMiddleware.php.html#15\">MatchBot\\Application\\Auth\\DonationPublicAuthMiddleware<\/a>"],[87.09677419354838,8,"<a href=\"Auth\/DonationRecaptchaMiddleware.php.html#19\">MatchBot\\Application\\Auth\\DonationRecaptchaMiddleware<\/a>"],[91.30434782608695,6,"<a href=\"Auth\/DonationToken.php.html#12\">MatchBot\\Application\\Auth\\DonationToken<\/a>"],[91.30434782608695,11,"<a href=\"Auth\/IdentityToken.php.html#12\">MatchBot\\Application\\Auth\\IdentityToken<\/a>"],[100,6,"<a href=\"Auth\/PersonManagementAuthMiddleware.php.html#23\">MatchBot\\Application\\Auth\\PersonManagementAuthMiddleware<\/a>"],[100,2,"<a href=\"Auth\/PersonWithPasswordAuthMiddleware.php.html#17\">MatchBot\\Application\\Auth\\PersonWithPasswordAuthMiddleware<\/a>"],[100,5,"<a href=\"Commands\/ClaimGiftAid.php.html#20\">MatchBot\\Application\\Commands\\ClaimGiftAid<\/a>"],[33.33333333333333,3,"<a href=\"Commands\/Command.php.html#11\">MatchBot\\Application\\Commands\\Command<\/a>"],[97.2972972972973,6,"<a href=\"Commands\/DeleteStalePaymentDetails.php.html#18\">MatchBot\\Application\\Commands\\DeleteStalePaymentDetails<\/a>"],[100,4,"<a href=\"Commands\/ExpireMatchFunds.php.html#17\">MatchBot\\Application\\Commands\\ExpireMatchFunds<\/a>"],[96.22641509433963,12,"<a href=\"Commands\/HandleOutOfSyncFunds.php.html#34\">MatchBot\\Application\\Commands\\HandleOutOfSyncFunds<\/a>"],[78.94736842105263,6,"<a href=\"Commands\/LockingCommand.php.html#17\">MatchBot\\Application\\Commands\\LockingCommand<\/a>"],[100,4,"<a href=\"Commands\/PushDonations.php.html#11\">MatchBot\\Application\\Commands\\PushDonations<\/a>"],[91.66666666666666,6,"<a href=\"Commands\/ResetMatching.php.html#17\">MatchBot\\Application\\Commands\\ResetMatching<\/a>"],[100,8,"<a href=\"Commands\/RetrospectivelyMatch.php.html#25\">MatchBot\\Application\\Commands\\RetrospectivelyMatch<\/a>"],[0,5,"<a href=\"Commands\/ScheduledOutOfSyncFundsCheck.php.html#20\">MatchBot\\Application\\Commands\\ScheduledOutOfSyncFundsCheck<\/a>"],[77.77777777777779,12,"<a href=\"Commands\/UpdateCampaigns.php.html#21\">MatchBot\\Application\\Commands\\UpdateCampaigns<\/a>"],[96.15384615384616,18,"<a href=\"Fees\/Calculator.php.html#12\">MatchBot\\Application\\Fees\\Calculator<\/a>"],[0,13,"<a href=\"Handlers\/HttpErrorHandler.php.html#21\">MatchBot\\Application\\Handlers\\HttpErrorHandler<\/a>"],[0,11,"<a href=\"Handlers\/ShutdownHandler.php.html#12\">MatchBot\\Application\\Handlers\\ShutdownHandler<\/a>"],[100,0,"<a href=\"HttpModels\/Donation.php.html#10\">MatchBot\\Application\\HttpModels\\Donation<\/a>"],[100,1,"<a href=\"HttpModels\/DonationCreate.php.html#13\">MatchBot\\Application\\HttpModels\\DonationCreate<\/a>"],[100,0,"<a href=\"HttpModels\/DonationCreatedResponse.php.html#10\">MatchBot\\Application\\HttpModels\\DonationCreatedResponse<\/a>"],[100,0,"<a href=\"LazyAssertionException.php.html#7\">MatchBot\\Application\\LazyAssertionException<\/a>"],[80,5,"<a href=\"Matching\/Adapter.php.html#9\">MatchBot\\Application\\Matching\\Adapter<\/a>"],[0,2,"<a href=\"Matching\/LessThanRequestedAllocatedException.php.html#9\">MatchBot\\Application\\Matching\\LessThanRequestedAllocatedException<\/a>"],[100,0,"<a href=\"Matching\/LockException.php.html#7\">MatchBot\\Application\\Matching\\LockException<\/a>"],[68.91891891891892,20,"<a href=\"Matching\/OptimisticRedisAdapter.php.html#22\">MatchBot\\Application\\Matching\\OptimisticRedisAdapter<\/a>"],[100,0,"<a href=\"Matching\/TerminalLockException.php.html#7\">MatchBot\\Application\\Matching\\TerminalLockException<\/a>"],[100,6,"<a href=\"Messenger\/Handler\/GiftAidResultHandler.php.html#11\">MatchBot\\Application\\Messenger\\Handler\\GiftAidResultHandler<\/a>"],[82.05128205128204,17,"<a href=\"Messenger\/Handler\/StripePayoutHandler.php.html#25\">MatchBot\\Application\\Messenger\\Handler\\StripePayoutHandler<\/a>"],[100,4,"<a href=\"Messenger\/StripePayout.php.html#8\">MatchBot\\Application\\Messenger\\StripePayout<\/a>"],[100,0,"<a href=\"Messenger\/Transport\/ClaimBotTransport.php.html#12\">MatchBot\\Application\\Messenger\\Transport\\ClaimBotTransport<\/a>"],[67.24137931034483,14,"<a href=\"Persistence\/RetrySafeEntityManager.php.html#23\">MatchBot\\Application\\Persistence\\RetrySafeEntityManager<\/a>"],[100,2,"<a href=\"SlackChannelChatterFactory.php.html#9\">MatchBot\\Application\\SlackChannelChatterFactory<\/a>"],[100,2,"<a href=\"Auth\/ErrorTrait.php.html#14\">MatchBot\\Application\\Auth\\ErrorTrait<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[100,1,"<a href=\"Actions\/Action.php.html#19\">MatchBot\\Application\\Actions\\Action::__construct<\/a>"],[100,2,"<a href=\"Actions\/Action.php.html#31\">MatchBot\\Application\\Actions\\Action::__invoke<\/a>"],[100,0,"<a href=\"Actions\/Action.php.html#45\">MatchBot\\Application\\Actions\\Action::action<\/a>"],[0,2,"<a href=\"Actions\/Action.php.html#52\">MatchBot\\Application\\Actions\\Action::resolveArg<\/a>"],[100,2,"<a href=\"Actions\/Action.php.html#68\">MatchBot\\Application\\Actions\\Action::validationError<\/a>"],[100,1,"<a href=\"Actions\/Action.php.html#88\">MatchBot\\Application\\Actions\\Action::respondWithData<\/a>"],[100,1,"<a href=\"Actions\/Action.php.html#98\">MatchBot\\Application\\Actions\\Action::respond<\/a>"],[100,1,"<a href=\"Actions\/ActionError.php.html#23\">MatchBot\\Application\\Actions\\ActionError::__construct<\/a>"],[0,1,"<a href=\"Actions\/ActionError.php.html#33\">MatchBot\\Application\\Actions\\ActionError::getType<\/a>"],[0,1,"<a href=\"Actions\/ActionError.php.html#43\">MatchBot\\Application\\Actions\\ActionError::setType<\/a>"],[0,1,"<a href=\"Actions\/ActionError.php.html#52\">MatchBot\\Application\\Actions\\ActionError::getDescription<\/a>"],[0,1,"<a href=\"Actions\/ActionError.php.html#62\">MatchBot\\Application\\Actions\\ActionError::setDescription<\/a>"],[100,1,"<a href=\"Actions\/ActionError.php.html#71\">MatchBot\\Application\\Actions\\ActionError::jsonSerialize<\/a>"],[100,1,"<a href=\"Actions\/ActionPayload.php.html#12\">MatchBot\\Application\\Actions\\ActionPayload::__construct<\/a>"],[100,1,"<a href=\"Actions\/ActionPayload.php.html#23\">MatchBot\\Application\\Actions\\ActionPayload::getStatusCode<\/a>"],[0,1,"<a href=\"Actions\/ActionPayload.php.html#32\">MatchBot\\Application\\Actions\\ActionPayload::getData<\/a>"],[0,1,"<a href=\"Actions\/ActionPayload.php.html#41\">MatchBot\\Application\\Actions\\ActionPayload::getError<\/a>"],[100,3,"<a href=\"Actions\/ActionPayload.php.html#50\">MatchBot\\Application\\Actions\\ActionPayload::jsonSerialize<\/a>"],[100,1,"<a href=\"Actions\/DeletePaymentMethod.php.html#20\">MatchBot\\Application\\Actions\\DeletePaymentMethod::__construct<\/a>"],[79.3103448275862,3,"<a href=\"Actions\/DeletePaymentMethod.php.html#32\">MatchBot\\Application\\Actions\\DeletePaymentMethod::action<\/a>"],[100,1,"<a href=\"Actions\/Donations\/Confirm.php.html#31\">MatchBot\\Application\\Actions\\Donations\\Confirm::__construct<\/a>"],[0,3,"<a href=\"Actions\/Donations\/Confirm.php.html#45\">MatchBot\\Application\\Actions\\Donations\\Confirm::errorMessageFromStripeIsExpected<\/a>"],[80.18018018018019,11,"<a href=\"Actions\/Donations\/Confirm.php.html#63\">MatchBot\\Application\\Actions\\Donations\\Confirm::action<\/a>"],[100,1,"<a href=\"Actions\/Donations\/Create.php.html#34\">MatchBot\\Application\\Actions\\Donations\\Create::__construct<\/a>"],[84.7457627118644,16,"<a href=\"Actions\/Donations\/Create.php.html#52\">MatchBot\\Application\\Actions\\Donations\\Create::action<\/a>"],[100,1,"<a href=\"Actions\/Donations\/Create.php.html#255\">MatchBot\\Application\\Actions\\Donations\\Create::getStatementDescriptor<\/a>"],[100,1,"<a href=\"Actions\/Donations\/Create.php.html#268\">MatchBot\\Application\\Actions\\Donations\\Create::removeSpecialChars<\/a>"],[100,1,"<a href=\"Actions\/Donations\/Get.php.html#18\">MatchBot\\Application\\Actions\\Donations\\Get::__construct<\/a>"],[83.33333333333334,3,"<a href=\"Actions\/Donations\/Get.php.html#30\">MatchBot\\Application\\Actions\\Donations\\Get::action<\/a>"],[100,1,"<a href=\"Actions\/Donations\/Update.php.html#42\">MatchBot\\Application\\Actions\\Donations\\Update::__construct<\/a>"],[76.66666666666667,17,"<a href=\"Actions\/Donations\/Update.php.html#59\">MatchBot\\Application\\Actions\\Donations\\Update::action<\/a>"],[89.69072164948454,23,"<a href=\"Actions\/Donations\/Update.php.html#202\">MatchBot\\Application\\Actions\\Donations\\Update::addData<\/a>"],[100,8,"<a href=\"Actions\/Donations\/Update.php.html#377\">MatchBot\\Application\\Actions\\Donations\\Update::cancel<\/a>"],[100,2,"<a href=\"Actions\/Donations\/Update.php.html#454\">MatchBot\\Application\\Actions\\Donations\\Update::save<\/a>"],[100,1,"<a href=\"Actions\/Donations\/Update.php.html#476\">MatchBot\\Application\\Actions\\Donations\\Update::updatePaymentIntent<\/a>"],[100,4,"<a href=\"Actions\/Donations\/Update.php.html#509\">MatchBot\\Application\\Actions\\Donations\\Update::handleGeneralStripeError<\/a>"],[100,1,"<a href=\"Actions\/Donations\/Update.php.html#566\">MatchBot\\Application\\Actions\\Donations\\Update::cancelDonationAndPaymentIntent<\/a>"],[100,1,"<a href=\"Actions\/DonorAccount\/Create.php.html#28\">MatchBot\\Application\\Actions\\DonorAccount\\Create::__construct<\/a>"],[65.71428571428571,4,"<a href=\"Actions\/DonorAccount\/Create.php.html#35\">MatchBot\\Application\\Actions\\DonorAccount\\Create::action<\/a>"],[100,1,"<a href=\"Actions\/GetPaymentMethods.php.html#17\">MatchBot\\Application\\Actions\\GetPaymentMethods::__construct<\/a>"],[100,1,"<a href=\"Actions\/GetPaymentMethods.php.html#28\">MatchBot\\Application\\Actions\\GetPaymentMethods::action<\/a>"],[100,1,"<a href=\"Actions\/Hooks\/Stripe.php.html#23\">MatchBot\\Application\\Actions\\Hooks\\Stripe::__construct<\/a>"],[70.58823529411765,7,"<a href=\"Actions\/Hooks\/Stripe.php.html#37\">MatchBot\\Application\\Actions\\Hooks\\Stripe::prepareEvent<\/a>"],[100,1,"<a href=\"Actions\/Hooks\/StripePaymentsUpdate.php.html#45\">MatchBot\\Application\\Actions\\Hooks\\StripePaymentsUpdate::__construct<\/a>"],[100,8,"<a href=\"Actions\/Hooks\/StripePaymentsUpdate.php.html#68\">MatchBot\\Application\\Actions\\Hooks\\StripePaymentsUpdate::action<\/a>"],[77.77777777777779,4,"<a href=\"Actions\/Hooks\/StripePaymentsUpdate.php.html#103\">MatchBot\\Application\\Actions\\Hooks\\StripePaymentsUpdate::handleChargeSucceeded<\/a>"],[100,5,"<a href=\"Actions\/Hooks\/StripePaymentsUpdate.php.html#177\">MatchBot\\Application\\Actions\\Hooks\\StripePaymentsUpdate::handleChargeDisputeClosed<\/a>"],[95,8,"<a href=\"Actions\/Hooks\/StripePaymentsUpdate.php.html#248\">MatchBot\\Application\\Actions\\Hooks\\StripePaymentsUpdate::handleChargeRefunded<\/a>"],[70,5,"<a href=\"Actions\/Hooks\/StripePaymentsUpdate.php.html#335\">MatchBot\\Application\\Actions\\Hooks\\StripePaymentsUpdate::handlePaymentIntentCancelled<\/a>"],[100,1,"<a href=\"Actions\/Hooks\/StripePaymentsUpdate.php.html#377\">MatchBot\\Application\\Actions\\Hooks\\StripePaymentsUpdate::warnAboutOverRefund<\/a>"],[27.77777777777778,4,"<a href=\"Actions\/Hooks\/StripePaymentsUpdate.php.html#408\">MatchBot\\Application\\Actions\\Hooks\\StripePaymentsUpdate::getOriginalFeeFractional<\/a>"],[100,4,"<a href=\"Actions\/Hooks\/StripePaymentsUpdate.php.html#447\">MatchBot\\Application\\Actions\\Hooks\\StripePaymentsUpdate::doPostMarkRefundedUpdates<\/a>"],[0,5,"<a href=\"Actions\/Hooks\/StripePaymentsUpdate.php.html#466\">MatchBot\\Application\\Actions\\Hooks\\StripePaymentsUpdate::handleCashBalanceUpdate<\/a>"],[100,1,"<a href=\"Actions\/Hooks\/StripePayoutUpdate.php.html#32\">MatchBot\\Application\\Actions\\Hooks\\StripePayoutUpdate::__construct<\/a>"],[100,5,"<a href=\"Actions\/Hooks\/StripePayoutUpdate.php.html#51\">MatchBot\\Application\\Actions\\Hooks\\StripePayoutUpdate::action<\/a>"],[90.47619047619048,3,"<a href=\"Actions\/Hooks\/StripePayoutUpdate.php.html#102\">MatchBot\\Application\\Actions\\Hooks\\StripePayoutUpdate::handlePayoutPaid<\/a>"],[100,1,"<a href=\"Actions\/Status.php.html#25\">MatchBot\\Application\\Actions\\Status::__construct<\/a>"],[76.47058823529412,8,"<a href=\"Actions\/Status.php.html#37\">MatchBot\\Application\\Actions\\Status::action<\/a>"],[100,3,"<a href=\"Actions\/Status.php.html#74\">MatchBot\\Application\\Actions\\Status::checkCriticalModelDoctrineProxies<\/a>"],[100,1,"<a href=\"Actions\/UpdatePaymentMethod.php.html#17\">MatchBot\\Application\\Actions\\UpdatePaymentMethod::__construct<\/a>"],[48.57142857142857,4,"<a href=\"Actions\/UpdatePaymentMethod.php.html#26\">MatchBot\\Application\\Actions\\UpdatePaymentMethod::action<\/a>"],[100,1,"<a href=\"Auth\/DonationPublicAuthMiddleware.php.html#19\">MatchBot\\Application\\Auth\\DonationPublicAuthMiddleware::__construct<\/a>"],[100,3,"<a href=\"Auth\/DonationPublicAuthMiddleware.php.html#25\">MatchBot\\Application\\Auth\\DonationPublicAuthMiddleware::process<\/a>"],[100,1,"<a href=\"Auth\/DonationRecaptchaMiddleware.php.html#23\">MatchBot\\Application\\Auth\\DonationRecaptchaMiddleware::__construct<\/a>"],[86.66666666666667,7,"<a href=\"Auth\/DonationRecaptchaMiddleware.php.html#34\">MatchBot\\Application\\Auth\\DonationRecaptchaMiddleware::process<\/a>"],[100,1,"<a href=\"Auth\/DonationToken.php.html#25\">MatchBot\\Application\\Auth\\DonationToken::create<\/a>"],[84.61538461538461,4,"<a href=\"Auth\/DonationToken.php.html#49\">MatchBot\\Application\\Auth\\DonationToken::check<\/a>"],[100,1,"<a href=\"Auth\/DonationToken.php.html#82\">MatchBot\\Application\\Auth\\DonationToken::getSecret<\/a>"],[100,1,"<a href=\"Auth\/IdentityToken.php.html#14\">MatchBot\\Application\\Auth\\IdentityToken::__construct<\/a>"],[100,4,"<a href=\"Auth\/IdentityToken.php.html#34\">MatchBot\\Application\\Auth\\IdentityToken::check<\/a>"],[100,2,"<a href=\"Auth\/IdentityToken.php.html#64\">MatchBot\\Application\\Auth\\IdentityToken::getPspId<\/a>"],[100,1,"<a href=\"Auth\/IdentityToken.php.html#76\">MatchBot\\Application\\Auth\\IdentityToken::getKey<\/a>"],[100,1,"<a href=\"Auth\/IdentityToken.php.html#81\">MatchBot\\Application\\Auth\\IdentityToken::getSecret<\/a>"],[50,2,"<a href=\"Auth\/IdentityToken.php.html#87\">MatchBot\\Application\\Auth\\IdentityToken::isComplete<\/a>"],[100,1,"<a href=\"Auth\/PersonManagementAuthMiddleware.php.html#30\">MatchBot\\Application\\Auth\\PersonManagementAuthMiddleware::__construct<\/a>"],[100,4,"<a href=\"Auth\/PersonManagementAuthMiddleware.php.html#37\">MatchBot\\Application\\Auth\\PersonManagementAuthMiddleware::process<\/a>"],[100,1,"<a href=\"Auth\/PersonManagementAuthMiddleware.php.html#64\">MatchBot\\Application\\Auth\\PersonManagementAuthMiddleware::checkCompleteness<\/a>"],[100,2,"<a href=\"Auth\/PersonWithPasswordAuthMiddleware.php.html#19\">MatchBot\\Application\\Auth\\PersonWithPasswordAuthMiddleware::checkCompleteness<\/a>"],[100,1,"<a href=\"Commands\/ClaimGiftAid.php.html#24\">MatchBot\\Application\\Commands\\ClaimGiftAid::__construct<\/a>"],[100,1,"<a href=\"Commands\/ClaimGiftAid.php.html#32\">MatchBot\\Application\\Commands\\ClaimGiftAid::configure<\/a>"],[100,3,"<a href=\"Commands\/ClaimGiftAid.php.html#43\">MatchBot\\Application\\Commands\\ClaimGiftAid::doExecute<\/a>"],[100,0,"<a href=\"Commands\/Command.php.html#13\">MatchBot\\Application\\Commands\\Command::doExecute<\/a>"],[0,1,"<a href=\"Commands\/Command.php.html#15\">MatchBot\\Application\\Commands\\Command::execute<\/a>"],[100,1,"<a href=\"Commands\/Command.php.html#24\">MatchBot\\Application\\Commands\\Command::start<\/a>"],[100,1,"<a href=\"Commands\/Command.php.html#29\">MatchBot\\Application\\Commands\\Command::finish<\/a>"],[100,1,"<a href=\"Commands\/DeleteStalePaymentDetails.php.html#26\">MatchBot\\Application\\Commands\\DeleteStalePaymentDetails::__construct<\/a>"],[100,1,"<a href=\"Commands\/DeleteStalePaymentDetails.php.html#34\">MatchBot\\Application\\Commands\\DeleteStalePaymentDetails::configure<\/a>"],[97.14285714285714,4,"<a href=\"Commands\/DeleteStalePaymentDetails.php.html#39\">MatchBot\\Application\\Commands\\DeleteStalePaymentDetails::doExecute<\/a>"],[100,1,"<a href=\"Commands\/ExpireMatchFunds.php.html#21\">MatchBot\\Application\\Commands\\ExpireMatchFunds::__construct<\/a>"],[100,1,"<a href=\"Commands\/ExpireMatchFunds.php.html#27\">MatchBot\\Application\\Commands\\ExpireMatchFunds::configure<\/a>"],[100,2,"<a href=\"Commands\/ExpireMatchFunds.php.html#32\">MatchBot\\Application\\Commands\\ExpireMatchFunds::doExecute<\/a>"],[100,1,"<a href=\"Commands\/HandleOutOfSyncFunds.php.html#39\">MatchBot\\Application\\Commands\\HandleOutOfSyncFunds::__construct<\/a>"],[100,1,"<a href=\"Commands\/HandleOutOfSyncFunds.php.html#47\">MatchBot\\Application\\Commands\\HandleOutOfSyncFunds::configure<\/a>"],[95.65217391304348,10,"<a href=\"Commands\/HandleOutOfSyncFunds.php.html#61\">MatchBot\\Application\\Commands\\HandleOutOfSyncFunds::doExecute<\/a>"],[100,1,"<a href=\"Commands\/LockingCommand.php.html#23\">MatchBot\\Application\\Commands\\LockingCommand::setLockFactory<\/a>"],[100,1,"<a href=\"Commands\/LockingCommand.php.html#28\">MatchBot\\Application\\Commands\\LockingCommand::setLogger<\/a>"],[60,2,"<a href=\"Commands\/LockingCommand.php.html#33\">MatchBot\\Application\\Commands\\LockingCommand::execute<\/a>"],[100,1,"<a href=\"Commands\/LockingCommand.php.html#50\">MatchBot\\Application\\Commands\\LockingCommand::getLock<\/a>"],[100,1,"<a href=\"Commands\/LockingCommand.php.html#61\">MatchBot\\Application\\Commands\\LockingCommand::releaseLock<\/a>"],[100,1,"<a href=\"Commands\/PushDonations.php.html#15\">MatchBot\\Application\\Commands\\PushDonations::__construct<\/a>"],[100,1,"<a href=\"Commands\/PushDonations.php.html#21\">MatchBot\\Application\\Commands\\PushDonations::configure<\/a>"],[100,2,"<a href=\"Commands\/PushDonations.php.html#26\">MatchBot\\Application\\Commands\\PushDonations::doExecute<\/a>"],[100,1,"<a href=\"Commands\/ResetMatching.php.html#21\">MatchBot\\Application\\Commands\\ResetMatching::__construct<\/a>"],[100,1,"<a href=\"Commands\/ResetMatching.php.html#28\">MatchBot\\Application\\Commands\\ResetMatching::configure<\/a>"],[90,4,"<a href=\"Commands\/ResetMatching.php.html#33\">MatchBot\\Application\\Commands\\ResetMatching::doExecute<\/a>"],[100,1,"<a href=\"Commands\/RetrospectivelyMatch.php.html#29\">MatchBot\\Application\\Commands\\RetrospectivelyMatch::__construct<\/a>"],[100,1,"<a href=\"Commands\/RetrospectivelyMatch.php.html#36\">MatchBot\\Application\\Commands\\RetrospectivelyMatch::configure<\/a>"],[100,6,"<a href=\"Commands\/RetrospectivelyMatch.php.html#49\">MatchBot\\Application\\Commands\\RetrospectivelyMatch::doExecute<\/a>"],[0,1,"<a href=\"Commands\/ScheduledOutOfSyncFundsCheck.php.html#22\">MatchBot\\Application\\Commands\\ScheduledOutOfSyncFundsCheck::__construct<\/a>"],[0,1,"<a href=\"Commands\/ScheduledOutOfSyncFundsCheck.php.html#35\">MatchBot\\Application\\Commands\\ScheduledOutOfSyncFundsCheck::configure<\/a>"],[0,3,"<a href=\"Commands\/ScheduledOutOfSyncFundsCheck.php.html#40\">MatchBot\\Application\\Commands\\ScheduledOutOfSyncFundsCheck::doExecute<\/a>"],[100,1,"<a href=\"Commands\/UpdateCampaigns.php.html#25\">MatchBot\\Application\\Commands\\UpdateCampaigns::__construct<\/a>"],[100,1,"<a href=\"Commands\/UpdateCampaigns.php.html#35\">MatchBot\\Application\\Commands\\UpdateCampaigns::configure<\/a>"],[72.97297297297297,9,"<a href=\"Commands\/UpdateCampaigns.php.html#46\">MatchBot\\Application\\Commands\\UpdateCampaigns::doExecute<\/a>"],[100,1,"<a href=\"Commands\/UpdateCampaigns.php.html#111\">MatchBot\\Application\\Commands\\UpdateCampaigns::pull<\/a>"],[66.66666666666666,2,"<a href=\"Fees\/Calculator.php.html#32\">MatchBot\\Application\\Fees\\Calculator::__construct<\/a>"],[100,7,"<a href=\"Fees\/Calculator.php.html#48\">MatchBot\\Application\\Fees\\Calculator::getCoreFee<\/a>"],[100,2,"<a href=\"Fees\/Calculator.php.html#108\">MatchBot\\Application\\Fees\\Calculator::getFeeVat<\/a>"],[90,4,"<a href=\"Fees\/Calculator.php.html#127\">MatchBot\\Application\\Fees\\Calculator::getFeeVatPercentage<\/a>"],[100,1,"<a href=\"Fees\/Calculator.php.html#155\">MatchBot\\Application\\Fees\\Calculator::roundAmount<\/a>"],[100,2,"<a href=\"Fees\/Calculator.php.html#166\">MatchBot\\Application\\Fees\\Calculator::isEU<\/a>"],[0,13,"<a href=\"Handlers\/HttpErrorHandler.php.html#26\">MatchBot\\Application\\Handlers\\HttpErrorHandler::respond<\/a>"],[0,1,"<a href=\"Handlers\/ShutdownHandler.php.html#14\">MatchBot\\Application\\Handlers\\ShutdownHandler::__construct<\/a>"],[0,10,"<a href=\"Handlers\/ShutdownHandler.php.html#22\">MatchBot\\Application\\Handlers\\ShutdownHandler::__invoke<\/a>"],[100,1,"<a href=\"HttpModels\/DonationCreate.php.html#21\">MatchBot\\Application\\HttpModels\\DonationCreate::__construct<\/a>"],[100,0,"<a href=\"Matching\/Adapter.php.html#23\">MatchBot\\Application\\Matching\\Adapter::getAmountAvailable<\/a>"],[100,0,"<a href=\"Matching\/Adapter.php.html#25\">MatchBot\\Application\\Matching\\Adapter::delete<\/a>"],[100,0,"<a href=\"Matching\/Adapter.php.html#31\">MatchBot\\Application\\Matching\\Adapter::doRunTransactionally<\/a>"],[100,0,"<a href=\"Matching\/Adapter.php.html#40\">MatchBot\\Application\\Matching\\Adapter::doAddAmount<\/a>"],[100,0,"<a href=\"Matching\/Adapter.php.html#50\">MatchBot\\Application\\Matching\\Adapter::doSubtractAmount<\/a>"],[100,1,"<a href=\"Matching\/Adapter.php.html#56\">MatchBot\\Application\\Matching\\Adapter::runTransactionally<\/a>"],[66.66666666666666,2,"<a href=\"Matching\/Adapter.php.html#70\">MatchBot\\Application\\Matching\\Adapter::addAmount<\/a>"],[66.66666666666666,2,"<a href=\"Matching\/Adapter.php.html#84\">MatchBot\\Application\\Matching\\Adapter::subtractAmount<\/a>"],[100,0,"<a href=\"Matching\/Adapter.php.html#97\">MatchBot\\Application\\Matching\\Adapter::releaseNewlyAllocatedFunds<\/a>"],[0,1,"<a href=\"Matching\/LessThanRequestedAllocatedException.php.html#19\">MatchBot\\Application\\Matching\\LessThanRequestedAllocatedException::__construct<\/a>"],[0,1,"<a href=\"Matching\/LessThanRequestedAllocatedException.php.html#27\">MatchBot\\Application\\Matching\\LessThanRequestedAllocatedException::getAmountAllocated<\/a>"],[100,1,"<a href=\"Matching\/OptimisticRedisAdapter.php.html#41\">MatchBot\\Application\\Matching\\OptimisticRedisAdapter::__construct<\/a>"],[100,1,"<a href=\"Matching\/OptimisticRedisAdapter.php.html#48\">MatchBot\\Application\\Matching\\OptimisticRedisAdapter::doRunTransactionally<\/a>"],[75,2,"<a href=\"Matching\/OptimisticRedisAdapter.php.html#58\">MatchBot\\Application\\Matching\\OptimisticRedisAdapter::getAmountAvailable<\/a>"],[43.24324324324324,5,"<a href=\"Matching\/OptimisticRedisAdapter.php.html#73\">MatchBot\\Application\\Matching\\OptimisticRedisAdapter::doSubtractAmount<\/a>"],[100,1,"<a href=\"Matching\/OptimisticRedisAdapter.php.html#139\">MatchBot\\Application\\Matching\\OptimisticRedisAdapter::doAddAmount<\/a>"],[0,1,"<a href=\"Matching\/OptimisticRedisAdapter.php.html#160\">MatchBot\\Application\\Matching\\OptimisticRedisAdapter::delete<\/a>"],[100,1,"<a href=\"Matching\/OptimisticRedisAdapter.php.html#172\">MatchBot\\Application\\Matching\\OptimisticRedisAdapter::toCurrencyFractionalUnit<\/a>"],[100,1,"<a href=\"Matching\/OptimisticRedisAdapter.php.html#184\">MatchBot\\Application\\Matching\\OptimisticRedisAdapter::toCurrencyWholeUnit<\/a>"],[100,1,"<a href=\"Matching\/OptimisticRedisAdapter.php.html#189\">MatchBot\\Application\\Matching\\OptimisticRedisAdapter::buildKey<\/a>"],[100,2,"<a href=\"Matching\/OptimisticRedisAdapter.php.html#199\">MatchBot\\Application\\Matching\\OptimisticRedisAdapter::saveFundingsToDatabase<\/a>"],[100,2,"<a href=\"Matching\/OptimisticRedisAdapter.php.html#208\">MatchBot\\Application\\Matching\\OptimisticRedisAdapter::setFundingValue<\/a>"],[100,2,"<a href=\"Matching\/OptimisticRedisAdapter.php.html#220\">MatchBot\\Application\\Matching\\OptimisticRedisAdapter::releaseNewlyAllocatedFunds<\/a>"],[100,1,"<a href=\"Messenger\/Handler\/GiftAidResultHandler.php.html#13\">MatchBot\\Application\\Messenger\\Handler\\GiftAidResultHandler::__construct<\/a>"],[100,5,"<a href=\"Messenger\/Handler\/GiftAidResultHandler.php.html#20\">MatchBot\\Application\\Messenger\\Handler\\GiftAidResultHandler::__invoke<\/a>"],[100,1,"<a href=\"Messenger\/Handler\/StripePayoutHandler.php.html#27\">MatchBot\\Application\\Messenger\\Handler\\StripePayoutHandler::__construct<\/a>"],[76.5432098765432,10,"<a href=\"Messenger\/Handler\/StripePayoutHandler.php.html#35\">MatchBot\\Application\\Messenger\\Handler\\StripePayoutHandler::__invoke<\/a>"],[94.28571428571428,6,"<a href=\"Messenger\/Handler\/StripePayoutHandler.php.html#174\">MatchBot\\Application\\Messenger\\Handler\\StripePayoutHandler::getOriginalDonationChargeIds<\/a>"],[100,1,"<a href=\"Messenger\/StripePayout.php.html#13\">MatchBot\\Application\\Messenger\\StripePayout::getConnectAccountId<\/a>"],[100,1,"<a href=\"Messenger\/StripePayout.php.html#18\">MatchBot\\Application\\Messenger\\StripePayout::setConnectAccountId<\/a>"],[100,1,"<a href=\"Messenger\/StripePayout.php.html#25\">MatchBot\\Application\\Messenger\\StripePayout::getPayoutId<\/a>"],[100,1,"<a href=\"Messenger\/StripePayout.php.html#30\">MatchBot\\Application\\Messenger\\StripePayout::setPayoutId<\/a>"],[100,1,"<a href=\"Persistence\/RetrySafeEntityManager.php.html#42\">MatchBot\\Application\\Persistence\\RetrySafeEntityManager::__construct<\/a>"],[24,3,"<a href=\"Persistence\/RetrySafeEntityManager.php.html#60\">MatchBot\\Application\\Persistence\\RetrySafeEntityManager::transactional<\/a>"],[100,2,"<a href=\"Persistence\/RetrySafeEntityManager.php.html#107\">MatchBot\\Application\\Persistence\\RetrySafeEntityManager::persist<\/a>"],[100,2,"<a href=\"Persistence\/RetrySafeEntityManager.php.html#127\">MatchBot\\Application\\Persistence\\RetrySafeEntityManager::refresh<\/a>"],[100,2,"<a href=\"Persistence\/RetrySafeEntityManager.php.html#149\">MatchBot\\Application\\Persistence\\RetrySafeEntityManager::flush<\/a>"],[100,1,"<a href=\"Persistence\/RetrySafeEntityManager.php.html#163\">MatchBot\\Application\\Persistence\\RetrySafeEntityManager::resetManager<\/a>"],[100,1,"<a href=\"Persistence\/RetrySafeEntityManager.php.html#172\">MatchBot\\Application\\Persistence\\RetrySafeEntityManager::getRepository<\/a>"],[100,1,"<a href=\"Persistence\/RetrySafeEntityManager.php.html#181\">MatchBot\\Application\\Persistence\\RetrySafeEntityManager::setEntityManager<\/a>"],[100,1,"<a href=\"Persistence\/RetrySafeEntityManager.php.html#186\">MatchBot\\Application\\Persistence\\RetrySafeEntityManager::buildEntityManager<\/a>"],[100,1,"<a href=\"SlackChannelChatterFactory.php.html#13\">MatchBot\\Application\\SlackChannelChatterFactory::__construct<\/a>"],[100,1,"<a href=\"SlackChannelChatterFactory.php.html#18\">MatchBot\\Application\\SlackChannelChatterFactory::makeChatter<\/a>"],[100,2,"<a href=\"Auth\/ErrorTrait.php.html#16\">MatchBot\\Application\\Auth\\ErrorTrait::unauthorised<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
+</html>

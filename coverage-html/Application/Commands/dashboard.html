@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for /var/www/html/src/Application/Commands</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../../_css/bootstrap.min.css?v=9.2.27" rel="stylesheet" type="text/css">
+  <link href="../../_css/nv.d3.min.css?v=9.2.27" rel="stylesheet" type="text/css">
+  <link href="../../_css/style.css?v=9.2.27" rel="stylesheet" type="text/css">
+  <link href="../../_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="../../index.html">/var/www/html/src</a></li>
+         <li class="breadcrumb-item"><a href="../index.html">Application</a></li>
+         <li class="breadcrumb-item"><a href="index.html">Commands</a></li>
+         <li class="breadcrumb-item active">(Dashboard)</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="ScheduledOutOfSyncFundsCheck.php.html#20">MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Command.php.html#11">MatchBot\Application\Commands\Command</a></td><td class="text-right">33%</td></tr>
+       <tr><td><a href="UpdateCampaigns.php.html#21">MatchBot\Application\Commands\UpdateCampaigns</a></td><td class="text-right">77%</td></tr>
+       <tr><td><a href="LockingCommand.php.html#17">MatchBot\Application\Commands\LockingCommand</a></td><td class="text-right">78%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="ScheduledOutOfSyncFundsCheck.php.html#20">MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck</a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="UpdateCampaigns.php.html#21">MatchBot\Application\Commands\UpdateCampaigns</a></td><td class="text-right">13</td></tr>
+       <tr><td><a href="LockingCommand.php.html#17">MatchBot\Application\Commands\LockingCommand</a></td><td class="text-right">6</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Command.php.html#15"><abbr title="MatchBot\Application\Commands\Command::execute">execute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ScheduledOutOfSyncFundsCheck.php.html#22"><abbr title="MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ScheduledOutOfSyncFundsCheck.php.html#35"><abbr title="MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck::configure">configure</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="ScheduledOutOfSyncFundsCheck.php.html#40"><abbr title="MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck::doExecute">doExecute</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="LockingCommand.php.html#33"><abbr title="MatchBot\Application\Commands\LockingCommand::execute">execute</abbr></a></td><td class="text-right">60%</td></tr>
+       <tr><td><a href="UpdateCampaigns.php.html#46"><abbr title="MatchBot\Application\Commands\UpdateCampaigns::doExecute">doExecute</abbr></a></td><td class="text-right">72%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="ScheduledOutOfSyncFundsCheck.php.html#40"><abbr title="MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck::doExecute">doExecute</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="UpdateCampaigns.php.html#46"><abbr title="MatchBot\Application\Commands\UpdateCampaigns::doExecute">doExecute</abbr></a></td><td class="text-right">10</td></tr>
+       <tr><td><a href="LockingCommand.php.html#33"><abbr title="MatchBot\Application\Commands\LockingCommand::execute">execute</abbr></a></td><td class="text-right">2</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 9.2.27</a> using <a href="https://secure.php.net/" target="_top">PHP 8.1.12</a> and <a href="https://phpunit.de/">PHPUnit 9.6.10</a> at Thu Nov 2 0:24:45 UTC 2023.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="../../_js/jquery.min.js?v=9.2.27" type="text/javascript"></script>
+  <script src="../../_js/d3.min.js?v=9.2.27" type="text/javascript"></script>
+  <script src="../../_js/nv.d3.min.js?v=9.2.27" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([1,0,0,0,1,0,0,0,2,0,3,4], "Class Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([4,0,0,0,0,0,0,1,1,0,3,28], "Method Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
+
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[100,5,"<a href=\"ClaimGiftAid.php.html#20\">MatchBot\\Application\\Commands\\ClaimGiftAid<\/a>"],[33.33333333333333,3,"<a href=\"Command.php.html#11\">MatchBot\\Application\\Commands\\Command<\/a>"],[97.2972972972973,6,"<a href=\"DeleteStalePaymentDetails.php.html#18\">MatchBot\\Application\\Commands\\DeleteStalePaymentDetails<\/a>"],[100,4,"<a href=\"ExpireMatchFunds.php.html#17\">MatchBot\\Application\\Commands\\ExpireMatchFunds<\/a>"],[96.22641509433963,12,"<a href=\"HandleOutOfSyncFunds.php.html#34\">MatchBot\\Application\\Commands\\HandleOutOfSyncFunds<\/a>"],[78.94736842105263,6,"<a href=\"LockingCommand.php.html#17\">MatchBot\\Application\\Commands\\LockingCommand<\/a>"],[100,4,"<a href=\"PushDonations.php.html#11\">MatchBot\\Application\\Commands\\PushDonations<\/a>"],[91.66666666666666,6,"<a href=\"ResetMatching.php.html#17\">MatchBot\\Application\\Commands\\ResetMatching<\/a>"],[100,8,"<a href=\"RetrospectivelyMatch.php.html#25\">MatchBot\\Application\\Commands\\RetrospectivelyMatch<\/a>"],[0,5,"<a href=\"ScheduledOutOfSyncFundsCheck.php.html#20\">MatchBot\\Application\\Commands\\ScheduledOutOfSyncFundsCheck<\/a>"],[77.77777777777779,12,"<a href=\"UpdateCampaigns.php.html#21\">MatchBot\\Application\\Commands\\UpdateCampaigns<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[100,1,"<a href=\"ClaimGiftAid.php.html#24\">MatchBot\\Application\\Commands\\ClaimGiftAid::__construct<\/a>"],[100,1,"<a href=\"ClaimGiftAid.php.html#32\">MatchBot\\Application\\Commands\\ClaimGiftAid::configure<\/a>"],[100,3,"<a href=\"ClaimGiftAid.php.html#43\">MatchBot\\Application\\Commands\\ClaimGiftAid::doExecute<\/a>"],[100,0,"<a href=\"Command.php.html#13\">MatchBot\\Application\\Commands\\Command::doExecute<\/a>"],[0,1,"<a href=\"Command.php.html#15\">MatchBot\\Application\\Commands\\Command::execute<\/a>"],[100,1,"<a href=\"Command.php.html#24\">MatchBot\\Application\\Commands\\Command::start<\/a>"],[100,1,"<a href=\"Command.php.html#29\">MatchBot\\Application\\Commands\\Command::finish<\/a>"],[100,1,"<a href=\"DeleteStalePaymentDetails.php.html#26\">MatchBot\\Application\\Commands\\DeleteStalePaymentDetails::__construct<\/a>"],[100,1,"<a href=\"DeleteStalePaymentDetails.php.html#34\">MatchBot\\Application\\Commands\\DeleteStalePaymentDetails::configure<\/a>"],[97.14285714285714,4,"<a href=\"DeleteStalePaymentDetails.php.html#39\">MatchBot\\Application\\Commands\\DeleteStalePaymentDetails::doExecute<\/a>"],[100,1,"<a href=\"ExpireMatchFunds.php.html#21\">MatchBot\\Application\\Commands\\ExpireMatchFunds::__construct<\/a>"],[100,1,"<a href=\"ExpireMatchFunds.php.html#27\">MatchBot\\Application\\Commands\\ExpireMatchFunds::configure<\/a>"],[100,2,"<a href=\"ExpireMatchFunds.php.html#32\">MatchBot\\Application\\Commands\\ExpireMatchFunds::doExecute<\/a>"],[100,1,"<a href=\"HandleOutOfSyncFunds.php.html#39\">MatchBot\\Application\\Commands\\HandleOutOfSyncFunds::__construct<\/a>"],[100,1,"<a href=\"HandleOutOfSyncFunds.php.html#47\">MatchBot\\Application\\Commands\\HandleOutOfSyncFunds::configure<\/a>"],[95.65217391304348,10,"<a href=\"HandleOutOfSyncFunds.php.html#61\">MatchBot\\Application\\Commands\\HandleOutOfSyncFunds::doExecute<\/a>"],[100,1,"<a href=\"LockingCommand.php.html#23\">MatchBot\\Application\\Commands\\LockingCommand::setLockFactory<\/a>"],[100,1,"<a href=\"LockingCommand.php.html#28\">MatchBot\\Application\\Commands\\LockingCommand::setLogger<\/a>"],[60,2,"<a href=\"LockingCommand.php.html#33\">MatchBot\\Application\\Commands\\LockingCommand::execute<\/a>"],[100,1,"<a href=\"LockingCommand.php.html#50\">MatchBot\\Application\\Commands\\LockingCommand::getLock<\/a>"],[100,1,"<a href=\"LockingCommand.php.html#61\">MatchBot\\Application\\Commands\\LockingCommand::releaseLock<\/a>"],[100,1,"<a href=\"PushDonations.php.html#15\">MatchBot\\Application\\Commands\\PushDonations::__construct<\/a>"],[100,1,"<a href=\"PushDonations.php.html#21\">MatchBot\\Application\\Commands\\PushDonations::configure<\/a>"],[100,2,"<a href=\"PushDonations.php.html#26\">MatchBot\\Application\\Commands\\PushDonations::doExecute<\/a>"],[100,1,"<a href=\"ResetMatching.php.html#21\">MatchBot\\Application\\Commands\\ResetMatching::__construct<\/a>"],[100,1,"<a href=\"ResetMatching.php.html#28\">MatchBot\\Application\\Commands\\ResetMatching::configure<\/a>"],[90,4,"<a href=\"ResetMatching.php.html#33\">MatchBot\\Application\\Commands\\ResetMatching::doExecute<\/a>"],[100,1,"<a href=\"RetrospectivelyMatch.php.html#29\">MatchBot\\Application\\Commands\\RetrospectivelyMatch::__construct<\/a>"],[100,1,"<a href=\"RetrospectivelyMatch.php.html#36\">MatchBot\\Application\\Commands\\RetrospectivelyMatch::configure<\/a>"],[100,6,"<a href=\"RetrospectivelyMatch.php.html#49\">MatchBot\\Application\\Commands\\RetrospectivelyMatch::doExecute<\/a>"],[0,1,"<a href=\"ScheduledOutOfSyncFundsCheck.php.html#22\">MatchBot\\Application\\Commands\\ScheduledOutOfSyncFundsCheck::__construct<\/a>"],[0,1,"<a href=\"ScheduledOutOfSyncFundsCheck.php.html#35\">MatchBot\\Application\\Commands\\ScheduledOutOfSyncFundsCheck::configure<\/a>"],[0,3,"<a href=\"ScheduledOutOfSyncFundsCheck.php.html#40\">MatchBot\\Application\\Commands\\ScheduledOutOfSyncFundsCheck::doExecute<\/a>"],[100,1,"<a href=\"UpdateCampaigns.php.html#25\">MatchBot\\Application\\Commands\\UpdateCampaigns::__construct<\/a>"],[100,1,"<a href=\"UpdateCampaigns.php.html#35\">MatchBot\\Application\\Commands\\UpdateCampaigns::configure<\/a>"],[72.97297297297297,9,"<a href=\"UpdateCampaigns.php.html#46\">MatchBot\\Application\\Commands\\UpdateCampaigns::doExecute<\/a>"],[100,1,"<a href=\"UpdateCampaigns.php.html#111\">MatchBot\\Application\\Commands\\UpdateCampaigns::pull<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
+</html>
