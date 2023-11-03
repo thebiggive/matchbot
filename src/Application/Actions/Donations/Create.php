@@ -16,6 +16,7 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\PSPStubber;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
@@ -25,12 +26,15 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ApiErrorException;
+use Stripe\PaymentIntent;
 use Stripe\StripeClient;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class Create extends Action
 {
+    private bool $bypassStripe = false;
+
     #[Pure]
     public function __construct(
         private DonationRepository $donationRepository,
@@ -42,6 +46,7 @@ class Create extends Action
         LoggerInterface $logger
     ) {
         parent::__construct($logger);
+        $this->bypassStripe = PSPStubber::byPassStripe();
     }
 
     /**
@@ -212,7 +217,12 @@ class Create extends Action
             }
 
             try {
-                $intent = $this->stripeClient->paymentIntents->create($createPayload);
+                if ($this->bypassStripe) {
+                    PSPStubber::pause();
+                    $intent = new PaymentIntent('ST' . PSPStubber::randomString());
+                } else {
+                    $intent = $this->stripeClient->paymentIntents->create($createPayload);
+                }
             } catch (ApiErrorException $exception) {
                 $message = $exception->getMessage();
 

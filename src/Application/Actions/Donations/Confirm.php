@@ -6,15 +6,18 @@ use Doctrine\ORM\EntityManagerInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Fees\Calculator;
+use MatchBot\Application\PSPStubber;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
+use Stripe\PaymentMethod;
 use Stripe\StripeClient;
 
 class Confirm extends Action
@@ -28,6 +31,8 @@ class Confirm extends Action
         'You must collect the security code (CVC) for this card from the cardholder before you can use it',
     ];
 
+    private bool $stubOutStripe = false;
+
     public function __construct(
         LoggerInterface $logger,
         private DonationRepository $donationRepository,
@@ -35,6 +40,7 @@ class Confirm extends Action
         private EntityManagerInterface $entityManager,
     ) {
         parent::__construct($logger);
+        $this->stubOutStripe = PSPStubber::byPassStripe();
     }
 
     /**
@@ -82,7 +88,15 @@ class Confirm extends Action
         }
 
         $paymentIntentId = $donation->getTransactionId();
-        $paymentMethod = $this->stripeClient->paymentMethods->retrieve($pamentMethodId);
+        if ($this->stubOutStripe) {
+            usleep(500_000);  // half second
+            $paymentMethod = new PaymentMethod('ST' . $this->randomString());
+            $paymentMethod->type = 'card';
+            /** @psalm-suppress PropertyTypeCoercion card */
+            $paymentMethod->card = (object)['brand' => 'visa', 'country' => 'GB'];
+        } else {
+            $paymentMethod = $this->stripeClient->paymentMethods->retrieve($pamentMethodId);
+        }
 
         if ($paymentMethod->type !== 'card') {
             throw new HttpBadRequestException($request, 'Confirm endpoint only supports card payments for now');
@@ -105,6 +119,19 @@ class Confirm extends Action
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
         // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
         $this->donationRepository->deriveFees($donation, $cardBrand, $cardCountry);
+
+        if ($this->stubOutStripe) {
+            usleep(500_000);  // half second
+
+            $this->entityManager->flush();
+
+            return new JsonResponse([
+                'paymentIntent' => [
+                    'status' => 'succeeded',
+                    'client_secret' => 'cs' . $this->randomString(),
+                ],
+            ]);
+        }
 
         $this->stripeClient->paymentIntents->update($paymentIntentId, [
             // only setting things that may need to be updated at this point.
@@ -223,5 +250,10 @@ class Confirm extends Action
                     : null,
             ],
         ]);
+    }
+
+    public function randomString(): string
+    {
+        return substr(Uuid::uuid4()->toString(), 0, 15);
     }
 }
