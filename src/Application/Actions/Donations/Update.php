@@ -571,13 +571,18 @@ class Update extends Action
 
     private function cancelDonationAndPaymentIntent(Donation $donation, PaymentIntent $confirmedPaymentIntent): void
     {
+        if (PSPStubber::byPassStripe()) {
+            PSPStubber::pause();
+        } else {
             // $confirmedPaymentIntent->cancel() would be more concise but harder to test.
             $this->stripeClient->paymentIntents->cancel($confirmedPaymentIntent->id);
-            $donation->cancel();
-            $this->entityManager->flush();
+        }
 
-            $this->logger->warning(
-                "Cancelled funded donation #{$donation->getId()} due to non-success on confirmation attempt status {$confirmedPaymentIntent->status}. May be insufficent funds in donor account.");
+        $donation->cancel();
+        $this->entityManager->flush();
 
+        $this->logger->warning(
+            "Cancelled funded donation #{$donation->getId()} due to non-success on confirmation attempt status {$confirmedPaymentIntent->status}. May be insufficent funds in donor account."
+        );
     }
 }
