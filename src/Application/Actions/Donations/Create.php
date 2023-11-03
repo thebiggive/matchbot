@@ -51,8 +51,6 @@ class Create extends Action
     ) {
         parent::__construct($logger);
         $this->bypassStripe = PSPStubber::byPassStripe();
-
-        \assert($this->entityManager instanceof RetrySafeEntityManager);
     }
 
     /**
@@ -292,6 +290,7 @@ class Create extends Action
      */
     private function persistDonationWithRetry(Donation $donation): void
     {
+        \assert($this->entityManager instanceof RetrySafeEntityManager);
         $retryCount = 0;
         while ($retryCount < self::MAX_CREATE_RETRY_COUNT) {
             try {
