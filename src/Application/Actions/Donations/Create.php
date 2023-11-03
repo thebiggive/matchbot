@@ -17,6 +17,7 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\PSPStubber;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
@@ -50,6 +51,8 @@ class Create extends Action
     ) {
         parent::__construct($logger);
         $this->bypassStripe = PSPStubber::byPassStripe();
+
+        \assert($this->entityManager instanceof RetrySafeEntityManager);
     }
 
     /**
