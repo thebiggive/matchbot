@@ -118,7 +118,7 @@ class CreateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -168,7 +168,7 @@ class CreateTest extends TestCase
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
 
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
@@ -210,7 +210,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -253,7 +253,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -311,7 +311,7 @@ class CreateTest extends TestCase
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
         // These are called once after initial ID setup and once after Stripe fields added.
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
         $expectedPaymentIntentArgs = [
@@ -425,7 +425,7 @@ class CreateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         // These are called once after initial ID setup and once after Stripe fields added.
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
         $expectedPaymentIntentArgs = [
@@ -540,7 +540,7 @@ class CreateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         // These are called once after initial ID setup and once after Stripe fields added.
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
         $expectedPaymentIntentArgs = [
@@ -660,7 +660,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
@@ -705,7 +705,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
         $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
@@ -766,7 +766,7 @@ class CreateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         // These are called once after initial ID setup and once after Stripe fields added.
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
         $expectedPaymentIntentArgs = [
@@ -872,7 +872,7 @@ class CreateTest extends TestCase
 
         // Persist + flush happens twice. See code by comment "Must persist
         // before Stripe work to have ID available."
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
         $expectedPaymentIntentArgs = [
@@ -980,7 +980,7 @@ class CreateTest extends TestCase
 
         // Persist + flush happens twice. See code by comment "Must persist
         // before Stripe work to have ID available."
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
         $expectedPaymentIntentArgs = [

@@ -251,8 +251,7 @@ class Create extends Action
 
             $donation->setTransactionId($intent->id);
 
-            $this->entityManager->persist($donation);
-            $this->entityManager->flush();
+            $this->persistDonationWithRetry($donation);
         }
 
         $data = new DonationCreatedResponse();
