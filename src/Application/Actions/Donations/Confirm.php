@@ -40,7 +40,7 @@ class Confirm extends Action
         private EntityManagerInterface $entityManager,
     ) {
         parent::__construct($logger);
-        $this->stubOutStripe = PSPStubber::ByPassStripe();
+        $this->stubOutStripe = PSPStubber::byPassStripe();
     }
 
     /**
