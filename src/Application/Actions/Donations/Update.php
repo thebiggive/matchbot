@@ -11,6 +11,7 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels;
+use MatchBot\Application\PSPStubber;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -475,6 +476,11 @@ class Update extends Action
      */
     private function updatePaymentIntent(Donation $donation): void
     {
+        if (PSPStubber::byPassStripe()) {
+            PSPStubber::pause();
+            return;
+        }
+
         $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
             'amount' => $donation->getAmountFractionalIncTip(),
             'currency' => strtolower($donation->getCurrencyCode()),
