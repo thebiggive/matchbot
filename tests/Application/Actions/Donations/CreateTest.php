@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use LosMiddleware\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
@@ -116,7 +117,7 @@ class CreateTest extends TestCase
             ->willThrow(DomainLockContentionException::class)
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
@@ -164,7 +165,7 @@ class CreateTest extends TestCase
             ->willReturn($donation->getCampaign())
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
 
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
@@ -208,7 +209,7 @@ class CreateTest extends TestCase
             ->willThrow(new UnexpectedValueException('Currency CAD is invalid for campaign'));
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
@@ -251,7 +252,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
@@ -307,7 +308,7 @@ class CreateTest extends TestCase
             ->willReturn($campaignWithCharityWhichNowHasStripeAccountID)
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
         // These are called once after initial ID setup and once after Stripe fields added.
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
@@ -422,7 +423,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         // These are called once after initial ID setup and once after Stripe fields added.
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
@@ -537,7 +538,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         // These are called once after initial ID setup and once after Stripe fields added.
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
@@ -658,7 +659,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldNotBeCalled();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
@@ -703,7 +704,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldNotBeCalled();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
@@ -763,7 +764,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         // These are called once after initial ID setup and once after Stripe fields added.
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
@@ -867,7 +868,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
 
         // Persist + flush happens twice. See code by comment "Must persist
         // before Stripe work to have ID available."
@@ -975,7 +976,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
 
         // Persist + flush happens twice. See code by comment "Must persist
         // before Stripe work to have ID available."
