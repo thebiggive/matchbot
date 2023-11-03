@@ -409,7 +409,7 @@ class Update extends Action
 
         if ($donation->getPsp() === 'stripe') {
             try {
-                $this->stripeClient->paymentIntents->cancel($donation->getTransactionId());
+                $this->cancelOnStripe($donation);
             } catch (ApiErrorException $exception) {
                 /**
                  * As per the notes in {@see DonationRepository::releaseMatchFunds()}, we
@@ -569,15 +569,18 @@ class Update extends Action
         return null;
     }
 
-    private function cancelDonationAndPaymentIntent(Donation $donation, PaymentIntent $confirmedPaymentIntent): void
+    private function cancelOnStripe(Donation $donation): void
     {
         if (PSPStubber::byPassStripe()) {
             PSPStubber::pause();
         } else {
-            // $confirmedPaymentIntent->cancel() would be more concise but harder to test.
-            $this->stripeClient->paymentIntents->cancel($confirmedPaymentIntent->id);
+            $this->stripeClient->paymentIntents->cancel($donation->getTransactionId());
         }
+    }
 
+    private function cancelDonationAndPaymentIntent(Donation $donation, PaymentIntent $confirmedPaymentIntent): void
+    {
+        $this->cancelOnStripe($donation);
         $donation->cancel();
         $this->entityManager->flush();
 
