@@ -118,6 +118,10 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         }
     }
 
+    public function persistWithoutRetries(object $object): void
+    {
+        $this->entityManager->persist($object);
+    }
 
     /**
      * @param object $object
