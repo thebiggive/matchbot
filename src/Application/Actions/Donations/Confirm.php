@@ -6,19 +6,33 @@ use Doctrine\ORM\EntityManagerInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Fees\Calculator;
+use MatchBot\Application\PSPStubber;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
+use Stripe\PaymentMethod;
 use Stripe\StripeClient;
 
 class Confirm extends Action
 {
+    /**
+     * Message excerpts that we expect to see sometimes from stripe on InvalidRequestExceptions. An exception
+     * containing any of these strings should not generate an alarm.
+     */
+    public const EXPECTED_STRIPE_INVALID_REQUEST_MESSAGES = [
+        'The provided PaymentMethod has failed authentication',
+        'You must collect the security code (CVC) for this card from the cardholder before you can use it',
+    ];
+
+    private bool $stubOutStripe = false;
+
     public function __construct(
         LoggerInterface $logger,
         private DonationRepository $donationRepository,
@@ -26,6 +40,25 @@ class Confirm extends Action
         private EntityManagerInterface $entityManager,
     ) {
         parent::__construct($logger);
+        $this->stubOutStripe = PSPStubber::byPassStripe();
+    }
+
+    /**
+     * InvalidRequestException can have various possible messages. If it's one we've seen before that we don't believe
+     * indicates a bug or failure in matchbot then we just send an error message to the client. If it's something we
+     * haven't seen before or didn't expect then we will also generate an alarm for Big Give devs to deal with.
+     */
+    private function errorMessageFromStripeIsExpected(InvalidRequestException $exception): bool
+    {
+        $exceptionMessage = $exception->getMessage();
+
+        foreach (self::EXPECTED_STRIPE_INVALID_REQUEST_MESSAGES as $expectedMessage) {
+            if (str_contains($exceptionMessage, $expectedMessage)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -55,7 +88,15 @@ class Confirm extends Action
         }
 
         $paymentIntentId = $donation->getTransactionId();
-        $paymentMethod = $this->stripeClient->paymentMethods->retrieve($pamentMethodId);
+        if ($this->stubOutStripe) {
+            usleep(500_000);  // half second
+            $paymentMethod = new PaymentMethod('ST' . $this->randomString());
+            $paymentMethod->type = 'card';
+            /** @psalm-suppress PropertyTypeCoercion card */
+            $paymentMethod->card = (object)['brand' => 'visa', 'country' => 'GB'];
+        } else {
+            $paymentMethod = $this->stripeClient->paymentMethods->retrieve($pamentMethodId);
+        }
 
         if ($paymentMethod->type !== 'card') {
             throw new HttpBadRequestException($request, 'Confirm endpoint only supports card payments for now');
@@ -78,6 +119,19 @@ class Confirm extends Action
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
         // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
         $this->donationRepository->deriveFees($donation, $cardBrand, $cardCountry);
+
+        if ($this->stubOutStripe) {
+            usleep(500_000);  // half second
+
+            $this->entityManager->flush();
+
+            return new JsonResponse([
+                'paymentIntent' => [
+                    'status' => 'succeeded',
+                    'client_secret' => 'cs' . $this->randomString(),
+                ],
+            ]);
+        }
 
         $this->stripeClient->paymentIntents->update($paymentIntentId, [
             // only setting things that may need to be updated at this point.
@@ -144,12 +198,12 @@ class Confirm extends Action
                 ], 402);
             }
 
-            if (! str_contains($exception->getMessage(), 'The provided PaymentMethod has failed authentication')) {
+            if (!$this->errorMessageFromStripeIsExpected($exception)) {
                 throw $exception;
             }
 
             $exceptionClass = get_class($exception);
-            $this->logger->info(sprintf(
+            $this->logger->warning(sprintf(
                 'Stripe %s on Confirm for donation %s (%s): %s',
                 $exceptionClass,
                 $donation->getUuid(),
@@ -196,5 +250,10 @@ class Confirm extends Action
                     : null,
             ],
         ]);
+    }
+
+    public function randomString(): string
+    {
+        return substr(Uuid::uuid4()->toString(), 0, 15);
     }
 }

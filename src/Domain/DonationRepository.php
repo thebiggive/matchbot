@@ -15,8 +15,6 @@ use MatchBot\Application\Matching;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
-use Ramsey\Uuid\Doctrine\UuidGenerator;
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 
@@ -188,12 +186,11 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // is most often empty (for new donations) so this will frequently be 0.00.
         $amountMatchedAtStart = $donation->getFundingWithdrawalTotal();
 
+        /** @var FundingWithdrawal[] $newWithdrawals */
+        $newWithdrawals = [];
+
         while (!$allocationDone && $allocationTries < $this->maxLockTries) {
             try {
-                // We need write-ready locks for `CampaignFunding`s but also to keep the time we have them as short
-                // as possible, so get the prelimary list without a lock, before the transaction.
-
-                // Get these without a lock initially
                 $likelyAvailableFunds = $this->getEntityManager()
                     ->getRepository(CampaignFunding::class)
                     ->getAvailableFundings($donation->getCampaign());
@@ -206,35 +203,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
                 $lockStartTime = microtime(true);
                 $newWithdrawals = $this->matchingAdapter->runTransactionally(
-                    function () use ($donation, $likelyAvailableFunds, $amountMatchedAtStart) {
-                        return $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart);
-                    }
+                    fn() => $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart)
                 );
                 $lockEndTime = microtime(true);
 
                 $allocationDone = true;
                 $this->persistQueuedDonations();
-
-                // We end the transaction prior to inserting the funding withdrawal records, to keep the lock time
-                // short. These are new entities, so except in a system crash the withdrawal totals will almost
-                // immediately match the amount deducted from the fund.
-                $amountNewlyMatched = '0.0';
-
-                try {
-                    $amountNewlyMatched = $this->getEntityManager()->transactional(
-                        function () use ($newWithdrawals, $donation, $amountNewlyMatched) {
-                            foreach ($newWithdrawals as $newWithdrawal) {
-                                $this->getEntityManager()->persist($newWithdrawal);
-                                $donation->addFundingWithdrawal($newWithdrawal);
-                                $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawal->getAmount(), 2);
-                            }
-
-                            return $amountNewlyMatched;
-                        }
-                    );
-                } catch (DBALException $exception) {
-                    $this->logError('Doctrine could not update donation/withdrawals after maximum tries');
-                }
             } catch (Matching\TerminalLockException $exception) { // Includes non-retryable `DBALException`s
                 $waitTime = round(microtime(true) - $lockStartTime, 6);
                 $this->logError(
@@ -253,10 +227,21 @@ class DonationRepository extends SalesforceWriteProxyRepository
             throw new DomainLockContentionException();
         }
 
-        $this->logInfo('ID ' . $donation->getUuid() . ' allocated new match funds totalling ' . $amountNewlyMatched);
+        // We release the allocation lock prior to inserting the funding withdrawal records, to keep the lock
+        // time short. These are new entities, so except in a system crash the withdrawal totals will almost
+        // immediately match the amount deducted from the fund.
+        $amountNewlyMatched = '0.0';
 
-        // Monitor allocation times so we can get a sense of how risky the locking behaviour is with different DB sizes
+        foreach ($newWithdrawals as $newWithdrawal) {
+            $this->getEntityManager()->persist($newWithdrawal);
+            $donation->addFundingWithdrawal($newWithdrawal);
+            $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawal->getAmount(), 2);
+        }
+
+        $this->logInfo('ID ' . $donation->getUuid() . ' allocated new match funds totalling ' . $amountNewlyMatched);
         $this->logInfo('Allocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
+
+        $this->getEntityManager()->flush();
 
         return $amountNewlyMatched;
     }
@@ -336,11 +321,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $releaseDone = true;
 
                 try {
-                    $this->getEntityManager()->transactional(function () use ($donation) {
-                        foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-                            $this->getEntityManager()->remove($fundingWithdrawal);
-                        }
-                    });
+                    $this->removeAllFundingWithdrawalsForDonation($donation);
                 } catch (DBALException $exception) {
                     $this->logError('Doctrine could not remove withdrawals after maximum tries');
                 }
@@ -701,5 +682,19 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->getEntityManager()->refresh($donation, LockMode::PESSIMISTIC_WRITE);
 
         return $donation;
+    }
+
+    /**
+     * Normally called just as part of releaseMatchFunds which also releases the funds in Redis. But
+     * used separately in case of a crash when we would need to release the funds in Redis whether or not
+     * we have any FundingWithdrawals in MySQL.
+     */
+    public function removeAllFundingWithdrawalsForDonation(Donation $donation): void
+    {
+        $this->getEntityManager()->transactional(function () use ($donation) {
+            foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+                $this->getEntityManager()->remove($fundingWithdrawal);
+            }
+        });
     }
 }

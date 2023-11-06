@@ -67,9 +67,10 @@ class HttpErrorHandler extends SlimErrorHandler
 
         if (!($this->exception instanceof HttpException)) {
             $this->logError(sprintf(
-                '%s: %s - %s',
+                "%s: %s \n#\n %s \n %s",
                 get_class($this->exception),
                 $this->exception->getMessage(),
+                $this->exception->getFile() . ":" . $this->exception->getLine(),
                 $this->exception->getTraceAsString(),
             ));
         }

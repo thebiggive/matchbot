@@ -11,6 +11,7 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels;
+use MatchBot\Application\PSPStubber;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -19,9 +20,11 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Slim\Exception\HttpBadRequestException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
+use Stripe\PaymentIntent;
 use Stripe\StripeClient;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -77,15 +80,22 @@ class Update extends Action
             $message = 'Donation Update data deserialise error';
             $exceptionType = get_class($exception);
 
-            return $this->validationError($response,
+            return $this->validationError(
+                $response,
                 "$message: $exceptionType - {$exception->getMessage()}",
                 $message,
                 empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
             );
         }
 
+        if (getenv('APP_ENV') !== 'production' && str_starts_with($donationData->firstName ?? '', 'Please throw')) {
+            $this->logger->critical("Testing a critical log message for BG2-2297");
+            throw new \Exception("$donationData->firstName requested an exception for test purposes");
+        }
+
         if (!isset($donationData->status)) {
-            return $this->validationError($response,
+            return $this->validationError(
+                $response,
                 "Donation ID {$args['donationId']} could not be updated with missing status",
                 'New status is required'
             );
@@ -109,7 +119,8 @@ class Update extends Action
                 if ($donationData->status !== DonationStatus::Cancelled->value && $donationData->status !== $donation->getDonationStatus()->value) {
                     $this->entityManager->rollback();
 
-                    return $this->validationError($response,
+                    return $this->validationError(
+                        $response,
                         "Donation ID {$args['donationId']} could not be set to status {$donationData->status}",
                         'Status update is only supported for cancellation'
                     );
@@ -124,7 +135,8 @@ class Update extends Action
                         "Donation ID {$args['donationId']} auto-confirm attempted with '$methodSummary' payment method",
                     );
 
-                    return $this->validationError($response,
+                    return $this->validationError(
+                        $response,
                         "Donation ID {$args['donationId']} could not be auto-confirmed",
                         'Processing incomplete. Please refresh and check your donation funds balance'
                     );
@@ -134,7 +146,7 @@ class Update extends Action
                     return $this->cancel($donation, $response, $args);
                 }
 
-                return $this->addData($donation, $donationData, $args, $response);
+                return $this->addData($donation, $donationData, $args, $response, $request);
             } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
                 $this->logger->warning(sprintf(
                     'Caught LockWaitTimeoutException in Update for donation %s, retry count %d',
@@ -148,8 +160,7 @@ class Update extends Action
                 $retryCount++;
 
                 $this->entityManager->rollback();
-            }
-            catch (InvalidRequestException $invalidRequestException) {
+            } catch (InvalidRequestException $invalidRequestException) {
                 if (
                     str_starts_with(
                         haystack: $invalidRequestException->getMessage(),
@@ -177,7 +188,6 @@ class Update extends Action
 
                 throw $invalidRequestException;
             }
-
         }
 
         throw new \Exception(
@@ -190,14 +200,15 @@ class Update extends Action
      * @throws InvalidRequestException
      * @throws ApiErrorException if confirm() fails other than because of a missing payment method.
      */
-    private function addData(Donation $donation, HttpModels\Donation $donationData, array $args, Response $response): Response
+    private function addData(Donation $donation, HttpModels\Donation $donationData, array $args, Response $response, Request $request): Response
     {
         // If the app tries to PUT with a different amount, something has gone very wrong and we should
         // explicitly fail instead of ignoring that field.
         if (bccomp($donation->getAmount(), (string) $donationData->donationAmount) !== 0) {
             $this->entityManager->rollback();
 
-            return $this->validationError($response,
+            return $this->validationError(
+                $response,
                 "Donation ID {$args['donationId']} amount did not match",
                 'Amount updates are not supported'
             );
@@ -251,7 +262,8 @@ class Update extends Action
             } catch (\UnexpectedValueException $exception) {
                 $this->entityManager->rollback();
 
-                return $this->validationError($response,
+                return $this->validationError(
+                    $response,
                     sprintf("Invalid tipAmount '%s'", $donationData->tipAmount),
                     $exception->getMessage(),
                     false,
@@ -323,7 +335,17 @@ class Update extends Action
 
             if ($donationData->autoConfirmFromCashBalance) {
                 try {
-                    $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
+                    $confirmedIntent = $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
+                    if ($confirmedIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
+                        // As this is autoConfirmFromCashBalance and we only expect people to make such donations if they
+                        // have a sufficient balance we expect PI to succeed synchronosly. If it didn't we don't want to
+                        // leave the PI around to succeed later when the donor might not be expecting it.
+                        $this->cancelDonationAndPaymentIntent($donation, $confirmedIntent);
+                        throw new HttpBadRequestException(
+                            $request,
+                            "Status was {$confirmedIntent->status}, expected " . PaymentIntent::STATUS_SUCCEEDED
+                        );
+                    }
                 } catch (InvalidRequestException $exception) {
                     // Currently a typical Update call which auto-confirms is being made for just
                     // that purpose. So our safest options are to return a 500 and roll back any
@@ -367,7 +389,8 @@ class Update extends Action
             // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
             $this->entityManager->rollback();
 
-            return $this->validationError($response,
+            return $this->validationError(
+                $response,
                 "Donation ID {$args['donationId']} could not be cancelled as {$donation->getDonationStatus()->value}",
                 'Donation already finalised'
             );
@@ -386,7 +409,7 @@ class Update extends Action
 
         if ($donation->getPsp() === 'stripe') {
             try {
-                $this->stripeClient->paymentIntents->cancel($donation->getTransactionId());
+                $this->cancelOnStripe($donation);
             } catch (ApiErrorException $exception) {
                 /**
                  * As per the notes in {@see DonationRepository::releaseMatchFunds()}, we
@@ -453,6 +476,11 @@ class Update extends Action
      */
     private function updatePaymentIntent(Donation $donation): void
     {
+        if (PSPStubber::byPassStripe()) {
+            PSPStubber::pause();
+            return;
+        }
+
         $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
             'amount' => $donation->getAmountFractionalIncTip(),
             'currency' => strtolower($donation->getCurrencyCode()),
@@ -539,5 +567,25 @@ class Update extends Action
         }
 
         return null;
+    }
+
+    private function cancelOnStripe(Donation $donation): void
+    {
+        if (PSPStubber::byPassStripe()) {
+            PSPStubber::pause();
+        } else {
+            $this->stripeClient->paymentIntents->cancel($donation->getTransactionId());
+        }
+    }
+
+    private function cancelDonationAndPaymentIntent(Donation $donation, PaymentIntent $confirmedPaymentIntent): void
+    {
+        $this->cancelOnStripe($donation);
+        $donation->cancel();
+        $this->entityManager->flush();
+
+        $this->logger->warning(
+            "Cancelled funded donation #{$donation->getId()} due to non-success on confirmation attempt status {$confirmedPaymentIntent->status}. May be insufficent funds in donor account."
+        );
     }
 }

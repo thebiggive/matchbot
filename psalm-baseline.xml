@@ -35,7 +35,6 @@
       <code><![CDATA[$c->get(ProblemDetailsResponseFactory::class)]]></code>
       <code><![CDATA[$c->get(Redis::class)]]></code>
       <code><![CDATA[$c->get(Redis::class)]]></code>
-      <code><![CDATA[$c->get(RetrySafeEntityManager::class)]]></code>
       <code><![CDATA[$em->getConnection()]]></code>
       <code><![CDATA[$loggerSettings['name']]]></code>
       <code><![CDATA[$loggerSettings['path']]]></code>
@@ -585,7 +584,6 @@
       <code>buildKey</code>
       <code>buildKey</code>
       <code>buildKey</code>
-      <code>decrBy</code>
       <code>exec</code>
       <code>exec</code>
       <code>incrBy</code>
@@ -845,7 +843,6 @@
     </NullableReturnStatement>
     <PossiblyUnusedMethod>
       <code>getAvailableFundings</code>
-      <code>getOneWithWriteLock</code>
     </PossiblyUnusedMethod>
   </file>
   <file src="src/Domain/CampaignRepository.php">
@@ -1008,7 +1005,6 @@
       <code>$salesforceDonationId</code>
     </MixedArgument>
     <MixedAssignment>
-      <code>$amountNewlyMatched</code>
       <code>$funding</code>
       <code>$funding</code>
       <code>$fundingWithdrawal</code>
@@ -1023,7 +1019,6 @@
     </MixedAssignment>
     <MixedInferredReturnType>
       <code>bool</code>
-      <code>string</code>
     </MixedInferredReturnType>
     <MixedMethodCall>
       <code>getAmount</code>
@@ -1034,12 +1029,10 @@
       <code>getCurrencyCode</code>
     </MixedMethodCall>
     <MixedOperand>
-      <code>$amountNewlyMatched</code>
       <code>$lockEndTime</code>
       <code>$lockEndTime</code>
     </MixedOperand>
     <MixedReturnStatement>
-      <code>$amountNewlyMatched</code>
       <code>$result</code>
     </MixedReturnStatement>
     <MixedReturnTypeCoercion>
@@ -1074,8 +1067,6 @@
       <code>$funding</code>
     </PossiblyNullArgument>
     <PossiblyUndefinedVariable>
-      <code>$amountNewlyMatched</code>
-      <code>$amountNewlyMatched</code>
       <code>$lockEndTime</code>
       <code>$lockEndTime</code>
       <code>$lockStartTime</code>

@@ -26,6 +26,7 @@ use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
+use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
 use Monolog\Handler\StreamHandler;
@@ -175,6 +176,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         LoggerInterface::class => function (ContainerInterface $c): Logger {
+
             $settings = $c->get('settings');
 
             $loggerSettings = $settings['logger'];
@@ -192,11 +194,35 @@ return function (ContainerBuilder $containerBuilder) {
             $handler = new StreamHandler($loggerSettings['path'], $loggerSettings['level']);
             $logger->pushHandler($handler);
 
+            $alarmChannelName = match (getenv('APP_ENV')) {
+                'production' => 'production-alarms',
+                'staging' => 'staging-alarms',
+                'regression' => 'regression-alarms',
+                default => null,
+            };
+
+            if ($alarmChannelName) {
+                $slackChannelChatterFactory = $c->get(SlackChannelChatterFactory::class);
+                \assert($slackChannelChatterFactory instanceof SlackChannelChatterFactory);
+
+                $logger->pushHandler(
+                    new SlackHandler($slackChannelChatterFactory->makeChatter($alarmChannelName))
+                );
+            }
+
             return $logger;
         },
 
         Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
-            return new Matching\OptimisticRedisAdapter($c->get(Redis::class), $c->get(RetrySafeEntityManager::class));
+            $redis = $c->get(Redis::class);
+            $entityManager = $c->get(RetrySafeEntityManager::class);
+            $logger = $c->get(LoggerInterface::class);
+
+            \assert($redis instanceof Redis);
+            \assert($entityManager instanceof RetrySafeEntityManager);
+            \assert($logger instanceof LoggerInterface);
+
+            return new Matching\OptimisticRedisAdapter($redis, $entityManager, $logger);
         },
 
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {

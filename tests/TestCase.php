@@ -28,11 +28,21 @@ class TestCase extends PHPUnitTestCase
     use ProphecyTrait;
 
     /**
+     * @var array<0|1, ?App> array of app instances with and without real redis. Each one may be initialised up to once per test.
+     */
+    private array $appInstance = [0 => null, 1 => null];
+
+    /**
      * @return App
      * @throws Exception
      */
     protected function getAppInstance(bool $withRealRedis = false): App
     {
+        $memoizedInstance = $this->appInstance[(int)$withRealRedis];
+        if ($memoizedInstance) {
+            return $memoizedInstance;
+        }
+
         // Instantiate PHP-DI ContainerBuilder
         $containerBuilder = new ContainerBuilder();
 
@@ -92,6 +102,7 @@ class TestCase extends PHPUnitTestCase
         $routes($app);
 
         $app->addRoutingMiddleware();
+        $this->appInstance[(int) $withRealRedis] = $app;
 
         return $app;
     }

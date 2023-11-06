@@ -39,8 +39,7 @@ class DonationFundsNotifierTest extends TestCase
             'recipientEmailAddress' => 'foo@example.com',
             'params' => [
                 'donorFirstName' => 'Fred',
-                'transferAmount' => "£52.35",
-                'newBalance' => "£17,000.00",
+                'transferAmount' => "£52.35"
             ],
         ])->shouldBeCalledOnce();
 
