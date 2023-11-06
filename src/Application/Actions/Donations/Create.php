@@ -285,6 +285,12 @@ class Create extends Action
      * It seems like just the *first* persist of a given donation needs to be retry-safe, since there is a small
      * but non-zero minority of Create attempts at the start of a big campaign which get a closed Entity Manager
      * and then don't know about the connected #campaign on persist and crash when RetrySafeEntityManager tries again.
+     *
+     * If the EM "goes away" for any reason but only does so once, `flush()` should still replace the underlying
+     * EM with a new one and then the next persist should succeed.
+     *
+     * If the persist itself fails, we do not replace the underlying entity manager. This means if it's still usable
+     * then we still have any required related new entities in the Unit of Work.
      */
     private function persistDonationWithRetry(Donation $donation): void
     {
