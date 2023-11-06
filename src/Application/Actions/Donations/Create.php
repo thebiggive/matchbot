@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions\Donations;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
@@ -43,7 +42,7 @@ class Create extends Action
     public function __construct(
         private DonationRepository $donationRepository,
         private CampaignRepository $campaignRepository,
-        private EntityManagerInterface $entityManager,
+        private RetrySafeEntityManager $entityManager,
         private SerializerInterface $serializer,
         private StripeClient $stripeClient,
         private Adapter $matchingAdapter,
@@ -289,7 +288,6 @@ class Create extends Action
      */
     private function persistDonationWithRetry(Donation $donation): void
     {
-        \assert($this->entityManager instanceof RetrySafeEntityManager);
         $retryCount = 0;
         while ($retryCount < self::MAX_CREATE_RETRY_COUNT) {
             try {
