@@ -15,7 +15,7 @@ class PSPStubber
      */
     public static function byPassStripe(): bool
     {
-        return getenv('APP_ENV') !== 'production' && getenv('BYPASS_PSP') === 'true';
+        return getenv('APP_ENV') !== 'production' && getenv('BYPASS_PSP');
     }
 
     public static function randomString(): string
