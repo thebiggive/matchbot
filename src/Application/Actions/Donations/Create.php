@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions\Donations;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Exception\ORMException;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
@@ -16,10 +16,12 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\PSPStubber;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Monolog\Logger;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -33,13 +35,14 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class Create extends Action
 {
-    private bool $bypassStripe = false;
+    private const MAX_CREATE_RETRY_COUNT = 4;
+    private bool $bypassStripe;
 
     #[Pure]
     public function __construct(
         private DonationRepository $donationRepository,
         private CampaignRepository $campaignRepository,
-        private EntityManagerInterface $entityManager,
+        private RetrySafeEntityManager $entityManager,
         private SerializerInterface $serializer,
         private StripeClient $stripeClient,
         private Adapter $matchingAdapter,
@@ -132,8 +135,7 @@ class Create extends Action
         }
 
         // Must persist before Stripe work to have ID available.
-        $this->entityManager->persist($donation);
-        $this->entityManager->flush();
+        $this->persistDonationWithRetry($donation);
 
         if ($donation->getCampaign()->isMatched()) {
             try {
@@ -248,8 +250,7 @@ class Create extends Action
 
             $donation->setTransactionId($intent->id);
 
-            $this->entityManager->persist($donation);
-            $this->entityManager->flush();
+            $this->persistDonationWithRetry($donation);
         }
 
         $data = new DonationCreatedResponse();
@@ -278,5 +279,40 @@ class Create extends Action
     private function removeSpecialChars(string $descriptor): string
     {
         return preg_replace('/[^A-Za-z0-9 ]/', '', $descriptor);
+    }
+
+    /**
+     * It seems like just the *first* persist of a given donation needs to be retry-safe, since there is a small
+     * but non-zero minority of Create attempts at the start of a big campaign which get a closed Entity Manager
+     * and then don't know about the connected #campaign on persist and crash when RetrySafeEntityManager tries again.
+     *
+     * If the EM "goes away" for any reason but only does so once, `flush()` should still replace the underlying
+     * EM with a new one and then the next persist should succeed.
+     *
+     * If the persist itself fails, we do not replace the underlying entity manager. This means if it's still usable
+     * then we still have any required related new entities in the Unit of Work.
+     */
+    private function persistDonationWithRetry(Donation $donation): void
+    {
+        $retryCount = 0;
+        while ($retryCount < self::MAX_CREATE_RETRY_COUNT) {
+            try {
+                $this->entityManager->persistWithoutRetries($donation);
+                $this->entityManager->flush();
+                return;
+            } catch (ORMException $exception) {
+                $retryCount++;
+                $this->logger->info(
+                    sprintf(
+                        'Donation Create persist error: %s. Retrying %d of %d.',
+                        $exception->getMessage(),
+                        $retryCount,
+                        self::MAX_CREATE_RETRY_COUNT,
+                    )
+                );
+
+                usleep(random_int(100_000, 1_100_000)); // Wait between 0.1 and 1.1 seconds before retrying
+            }
+        }
     }
 }
