@@ -62,6 +62,8 @@ jobs:
 
       - run: composer run integration-test
 
+      - run: composer run mutation-test
+
       - codecov/upload:
           file: 'coverage.xml'
       - codecov/upload:
