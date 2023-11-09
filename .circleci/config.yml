@@ -64,6 +64,9 @@ jobs:
 
       - run: composer run mutation-test
 
+      - store_artifacts
+          path: reports
+
       - codecov/upload:
           file: 'coverage.xml'
       - codecov/upload:

@@ -160,6 +160,9 @@
         "start": "php -S localhost:8080 -t public",
         "test": "XDEBUG_MODE=coverage phpunit --order-by=random",
         "integration-test": "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random",
-        "mutation-test": "vendor/bin/roave-infection-static-analysis-plugin"
+        "mutation-test": [
+            "Composer\\Config::disableProcessTimeout",
+            "vendor/bin/roave-infection-static-analysis-plugin"
+        ]
     }
 }
