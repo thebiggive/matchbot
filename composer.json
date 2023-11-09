@@ -55,6 +55,7 @@
         "phpspec/prophecy-phpunit": "^2.0",
         "phpunit/phpunit": "^9.5",
         "psalm/plugin-phpunit": "^0.18.4",
+        "roave/infection-static-analysis-plugin": "^1.33",
         "roave/security-advisories": "dev-latest",
         "squizlabs/php_codesniffer": "^3.6",
         "vimeo/psalm": "^5.14.0",
@@ -62,7 +63,8 @@
     },
     "config": {
         "allow-plugins": {
-            "composer/package-versions-deprecated": true
+            "composer/package-versions-deprecated": true,
+            "infection/extension-installer": true
         },
         "optimize-autoloader": true,
         "platform": {
