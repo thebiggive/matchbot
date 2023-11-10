@@ -13,6 +13,11 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
 
     private bool $multiMode = false;
 
+    /**
+     * @var \Closure(string):void|null
+     */
+    private ?\Closure $preIncrCallback = null;
+
     public function __construct()
     {
         $this->storage = [];
@@ -31,6 +36,11 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
 
     public function incrBy(string $key, int $increment): string|false|static
     {
+        if ($this->preIncrCallback !== null) {
+            $callback = $this->preIncrCallback;
+            $callback($key);
+        }
+
         $newValue = (float)($this->storage[$key] ?? 0) + $increment;
         if (! $this->multiMode) {
             return (string)$newValue;
@@ -72,5 +82,16 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
         $this->multiMode = false;
 
         return $return;
+    }
+
+    /**
+     * Sets callback that will be invoked during any call to incrBy
+     * to simulate another thread changing what's in the storage.
+     *
+     * @param \Closure(string):void $callBack
+     */
+    public function setPreIncrCallBack(\Closure $callBack): void
+    {
+        $this->preIncrCallback = $callBack;
     }
 }

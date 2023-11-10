@@ -15,7 +15,7 @@ use Psr\Log\NullLogger;
 
 class OptimisticRedisAdapterTest extends TestCase
 {
-    private RealTimeMatchingStorage $storage;
+    private ArrayMatchingStorage $storage;
     private OptimisticRedisAdapter $sut;
 
     public function setUp(): void
@@ -46,7 +46,7 @@ class OptimisticRedisAdapterTest extends TestCase
             // amount returned in the getAmountAvailable call has to be from the realtime storage.
             $funding->setAmountAvailable('3');
 
-            \assert(50 + 12.53 == 62.53);
+            \assert(50 + 12.53 === 62.53);
             $this->assertSame('62.53', $this->sut->getAmountAvailable($funding));
         });
     }
@@ -85,6 +85,31 @@ class OptimisticRedisAdapterTest extends TestCase
 
                 // this seems like it could be a bug as the amount in storage is negative after the exception was caught?
                 $this->assertSame('-10.00', $this->sut->getAmountAvailable($funding));
+        });
+    }
+
+
+    public function testItBailsOutAndReleasesFundsIfRetryingDoesntWorkDueToConcurrentRequests(): void
+    {
+        // let's assume another thread is causing the funds to reduce by 30 just
+        // after each time we increase it by 30.
+        $this->storage->setPreIncrCallBack(function (string $key) {
+            return $this->storage->decrBy($key, 30);
+        });
+
+        $this->sut->runTransactionally(function () {
+            $funding = new CampaignFunding();
+            $funding->setAmountAvailable('50');
+            $amountToSubtract = "30";
+
+            $this->sut->subtractAmount($funding, $amountToSubtract);
+
+            $this->expectException(TerminalLockException::class);
+            // todo - work out where the -180 figure here comes from. Message below is just pasted in from
+            // result of running the test.
+            $this->expectExceptionMessage("Fund  balance sub-zero after 6 attempts. Releasing final -180 'cents'");
+            $this->sut->subtractAmount($funding, $amountToSubtract);
+
         });
     }
 }
