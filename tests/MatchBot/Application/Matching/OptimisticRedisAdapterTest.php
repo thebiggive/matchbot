@@ -35,6 +35,7 @@ class OptimisticRedisAdapterTest extends TestCase
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $this->entityManagerProphecy->transactional(Argument::type(\Closure::class))->will(function (array $args) {
             $closure = $args[0];
+            \assert($closure instanceof \Closure);
             $closure();
         });
 
@@ -146,5 +147,25 @@ class OptimisticRedisAdapterTest extends TestCase
 
         // if we hadn't deleted then this would return the 6 from the real time storage.
         $this->assertSame('53', $this->sut->getAmountAvailable($funding));
+    }
+
+    public function testItReleasesNewlyAllocatedFunds(): void
+    {
+        $this->sut->runTransactionally(function () {
+            // arrange
+            $funding = new CampaignFunding();
+            $funding->setAmountAvailable('50');
+            $amountToSubtract = "10.10";
+
+            $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
+            $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract);
+
+            // act
+            $this->sut->releaseNewlyAllocatedFunds();
+
+            // assert
+            $this->assertSame('50.00', $this->sut->getAmountAvailable($funding));
+            $this->assertSame('39.90', $fundBalanceReturned);
+        });
     }
 }
