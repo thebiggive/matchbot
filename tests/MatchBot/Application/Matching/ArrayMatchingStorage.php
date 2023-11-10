@@ -11,6 +11,8 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
 
     private array $responses = [];
 
+    private bool $multiMode = false;
+
     public function __construct()
     {
         $this->storage = [];
@@ -23,12 +25,16 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
 
     public function multi(): static
     {
+        $this->multiMode = true;
         return $this;
     }
 
     public function incrBy(string $key, int $increment): string|false|static
     {
         $newValue = $this->storage[$key] ?? 0 + $increment;
+        if (! $this->multiMode) {
+            return $newValue;
+        }
 
         $this->storage[$key] = (string) $newValue;
         $this->responses[] = (string) $newValue;
@@ -63,6 +69,7 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
     {
         $return = $this->responses;
         $this->responses = [];
+        $this->multiMode = false;
 
         return $return;
     }
