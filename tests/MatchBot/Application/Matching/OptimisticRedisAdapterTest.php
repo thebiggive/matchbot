@@ -112,4 +112,19 @@ class OptimisticRedisAdapterTest extends TestCase
 
         });
     }
+
+    public function testItDeletesCampaignFundingData(): void
+    {
+        $funding = new CampaignFunding();
+        $funding->setAmountAvailable('1');
+        $this->sut->runTransactionally(function () use ($funding) {
+            $this->sut->addAmount($funding, '5');
+        });
+
+        $funding->setAmountAvailable('53');
+        $this->sut->delete($funding);
+
+        // if we hadn't deleted then this would return the 6 from the real time storage.
+        $this->assertSame('53', $this->sut->getAmountAvailable($funding));
+    }
 }
