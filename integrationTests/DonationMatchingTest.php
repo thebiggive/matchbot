@@ -6,6 +6,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\OptimisticRedisAdapter;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
@@ -140,6 +141,6 @@ class DonationMatchingTest extends \MatchBot\IntegrationTests\IntegrationTest
         \assert($entityManager instanceof RetrySafeEntityManager);
         \assert($logger instanceof LoggerInterface);
 
-        $this->setInContainer(Adapter::class, new OptimisticRedisAdapter($redis, $entityManager, $logger));
+        $this->setInContainer(Adapter::class, new OptimisticRedisAdapter(new RedisMatchingStorage($redis), $entityManager, $logger));
     }
 }

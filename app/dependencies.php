@@ -24,6 +24,8 @@ use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use MatchBot\Application\RealTimeMatchingStorage;
+use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
 use MatchBot\Monolog\Handler\SlackHandler;
@@ -213,16 +215,23 @@ return function (ContainerBuilder $containerBuilder) {
             return $logger;
         },
 
-        Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
+        RealTimeMatchingStorage::class => static function (ContainerInterface $c): RealTimeMatchingStorage {
             $redis = $c->get(Redis::class);
+            \assert($redis instanceof Redis);
+
+            return new RedisMatchingStorage($redis);
+        },
+
+        Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
+            $storage = $c->get(RealTimeMatchingStorage::class);
             $entityManager = $c->get(RetrySafeEntityManager::class);
             $logger = $c->get(LoggerInterface::class);
 
-            \assert($redis instanceof Redis);
+            \assert($storage instanceof RealTimeMatchingStorage);
             \assert($entityManager instanceof RetrySafeEntityManager);
             \assert($logger instanceof LoggerInterface);
 
-            return new Matching\OptimisticRedisAdapter($redis, $entityManager, $logger);
+            return new Matching\OptimisticRedisAdapter($storage, $entityManager, $logger);
         },
 
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {

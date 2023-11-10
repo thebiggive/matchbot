@@ -6,6 +6,7 @@ namespace MatchBot\Application\Matching;
 
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\RealTimeMatchingStorage;
 use MatchBot\Domain\CampaignFunding;
 use Psr\Log\LoggerInterface;
 use Redis;
@@ -39,9 +40,9 @@ class OptimisticRedisAdapter extends Adapter
     private array $amountsSubtractedInCurrentProcess = [];
 
     public function __construct(
-        private Redis $redis,
-        private EntityManagerInterface $entityManager,
-        private LoggerInterface $logger,
+        private RealTimeMatchingStorage $storage,
+        private EntityManagerInterface  $entityManager,
+        private LoggerInterface         $logger,
     ) {
     }
 
@@ -57,7 +58,7 @@ class OptimisticRedisAdapter extends Adapter
 
     public function getAmountAvailable(CampaignFunding $funding): string
     {
-        $redisFundBalanceFractional = $this->redis->get($this->buildKey($funding));
+        $redisFundBalanceFractional = $this->storage->get($this->buildKey($funding));
         if ($redisFundBalanceFractional === false) {
             // No value in Redis -> may well have expired after 24 hours. Consult the DB for the
             // stable value. This will often happen for old or slower moving campaigns.
@@ -74,7 +75,10 @@ class OptimisticRedisAdapter extends Adapter
     {
         $decrementFractional = $this->toCurrencyFractionalUnit($amount);
 
-        [$initResponse, $fundBalanceFractional] = $this->redis->multi()
+        /**
+         * @psalm-suppress PossiblyFalseReference - in mulit mode decrBy will not return false.
+         */
+        [$initResponse, $fundBalanceFractional] = $this->storage->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),
@@ -103,14 +107,16 @@ class OptimisticRedisAdapter extends Adapter
             while ($retries++ < $this->maxPartialAllocateTries && $fundBalanceFractional < 0) {
                 // Try deallocating just the difference until the fund has exactly zero
                 $overspendFractional = 0 - $fundBalanceFractional;
-                $fundBalanceFractional = (int) $this->redis->incrBy($this->buildKey($funding), $overspendFractional);
+                /** @psalm-suppress InvalidCast - not in Redis Multi Mode */
+                $fundBalanceFractional = (int) $this->storage->incrBy($this->buildKey($funding), $overspendFractional);
                 $amountAllocatedFractional -= $overspendFractional;
             }
 
             if ($fundBalanceFractional < 0) {
                 // We couldn't get the values to work within the maximum number of iterations, so release whatever
                 // we tried to hold back to the match pot and bail out.
-                $fundBalanceFractional = (int) $this->redis->incrBy(
+                /** @psalm-suppress InvalidCast not in multi mode **/
+                $fundBalanceFractional = (int) $this->storage->incrBy(
                     $this->buildKey($funding),
                     $amountAllocatedFractional,
                 );
@@ -141,7 +147,11 @@ class OptimisticRedisAdapter extends Adapter
     {
         $incrementFractional = $this->toCurrencyFractionalUnit($amount);
 
-        [$initResponse, $fundBalanceFractional] = $this->redis->multi()
+        /**
+         * @psalm-suppress PossiblyInvalidArrayAccess
+         * @psalm-suppress PossiblyFalseReference - we know incrBy will retrun an array in multi mode
+         */
+        [$initResponse, $fundBalanceFractional] = $this->storage->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),
@@ -159,7 +169,7 @@ class OptimisticRedisAdapter extends Adapter
 
     public function delete(CampaignFunding $funding): void
     {
-        $this->redis->del($this->buildKey($funding));
+        $this->storage->del($this->buildKey($funding));
     }
 
     /**
