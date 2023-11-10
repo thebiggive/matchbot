@@ -13,7 +13,7 @@
         "html": "reports/infection.html",
         "summary": "reports/summary.log",
         "json": "reports/infection-log.json",
-        "perMutator": "reports/per-mutator.md",
+        "perMutator": "reports/per-mutator.md.txt",
         "stryker": {
             "badge": "/^release-.*$/"
         },
