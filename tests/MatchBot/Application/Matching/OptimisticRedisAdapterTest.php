@@ -11,18 +11,34 @@ use MatchBot\Application\RealTimeMatchingStorage;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Tests\Application\Matching\ArrayMatchingStorage;
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 
 class OptimisticRedisAdapterTest extends TestCase
 {
+    use ProphecyTrait;
+
     private ArrayMatchingStorage $storage;
     private OptimisticRedisAdapter $sut;
+
+    /**
+     * @var ObjectProphecy<EntityManagerInterface>
+     */
+    private ObjectProphecy $entityManagerProphecy;
 
     public function setUp(): void
     {
         $this->storage = new ArrayMatchingStorage();
 
-        $this->sut = new OptimisticRedisAdapter($this->storage, $this->createStub(EntityManagerInterface::class), new NullLogger());
+        $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $this->entityManagerProphecy->transactional(Argument::type(\Closure::class))->will(function (array $args) {
+            $closure = $args[0];
+            $closure();
+        });
+
+        $this->sut = new OptimisticRedisAdapter($this->storage, $this->entityManagerProphecy->reveal(), new NullLogger());
     }
 
     public function testItReturnsAmountAvailableFromAFundingNotInStorage(): void
@@ -41,6 +57,7 @@ class OptimisticRedisAdapterTest extends TestCase
             $funding = new CampaignFunding();
             $funding->setAmountAvailable('50');
             $this->sut->addAmount($funding, '12.53');
+            $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
 
             // set the amount available in the funding to something different so we know the
             // amount returned in the getAmountAvailable call has to be from the realtime storage.
@@ -58,6 +75,7 @@ class OptimisticRedisAdapterTest extends TestCase
             $funding->setAmountAvailable('50');
             $amountToSubtract = "10.10";
 
+            $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
             $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract);
 
             \assert(50 - 10.10 === 39.9);
@@ -73,7 +91,8 @@ class OptimisticRedisAdapterTest extends TestCase
                 $funding->setAmountAvailable('50');
                 $amountToSubtract = "30";
 
-                $this->sut->subtractAmount($funding, $amountToSubtract);
+            $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
+            $this->sut->subtractAmount($funding, $amountToSubtract);
                 try {
                     $this->sut->subtractAmount($funding, $amountToSubtract); // this second subtraction will take the fund negative in redis temporarily, but our Adapter will add back the 30 just subtracted.
                     $this->fail("should have thrown exception on attempt to allocate more than available");
@@ -117,6 +136,7 @@ class OptimisticRedisAdapterTest extends TestCase
     {
         $funding = new CampaignFunding();
         $funding->setAmountAvailable('1');
+        $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
         $this->sut->runTransactionally(function () use ($funding) {
             $this->sut->addAmount($funding, '5');
         });
