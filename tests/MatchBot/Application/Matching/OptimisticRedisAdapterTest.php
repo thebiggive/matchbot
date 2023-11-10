@@ -4,7 +4,7 @@ namespace MatchBot\Application\Matching;
 
 // something wrong with autoloading in test dirs. Mostly we rely on PHPUnit to do loading for us so it hasn't been an
 // issue up to now. Not sure exactly what's wrong with the config in composer.json
-require_once (__DIR__ . '/ArrayMatchingStorage.php');
+require_once(__DIR__ . '/ArrayMatchingStorage.php');
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\RealTimeMatchingStorage;
@@ -15,7 +15,6 @@ use Psr\Log\NullLogger;
 
 class OptimisticRedisAdapterTest extends TestCase
 {
-
     private RealTimeMatchingStorage $storage;
     private OptimisticRedisAdapter $sut;
 
@@ -49,7 +48,20 @@ class OptimisticRedisAdapterTest extends TestCase
 
             $this->assertSame('50.00', $this->sut->getAmountAvailable($funding));
         });
+    }
 
+    public function testItSubtractsAmountForFunding(): void
+    {
+        $this->sut->runTransactionally(function () {
+            $funding = new CampaignFunding();
+            $funding->setAmountAvailable('50');
+            $amountToSubtract = "10.10";
 
+            $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract);
+
+            \assert(50 - 10.10 === 39.9);
+            $this->assertSame('39.90', $this->sut->getAmountAvailable($funding));
+            $this->assertSame('39.90', $fundBalanceReturned);
+        });
     }
 }

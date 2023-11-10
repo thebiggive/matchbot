@@ -38,10 +38,11 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
 
     public function decrBy(string $key, int $decrement): self
     {
-        $newValue = $this->storage[$key] ?? 0 - $decrement;
+        $newValue = ($this->storage[$key] ?? 0) - $decrement;
 
         $this->storage[$key] = (string) $newValue;
         $this->responses[] = (string) $newValue;
+
         return $this;
     }
 
