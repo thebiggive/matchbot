@@ -51,10 +51,6 @@ class StatusTest extends TestCase
 
     public function testRedisErrorWithDummyHostname(): void
     {
-        if (getenv('TEST_TYPE') === 'combined-unit-integration') {
-            $this->markTestSkipped();
-        }
-
         $app = $this->getAppInstance(true); // Use real Redis for this test
 
         $entityManager = $this->getConnectedMockEntityManager();

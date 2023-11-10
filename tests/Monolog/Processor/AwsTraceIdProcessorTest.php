@@ -25,9 +25,6 @@ class AwsTraceIdProcessorTest extends TestCase
      */
     public function testContextAdded(): void
     {
-        if (getenv('TEST_TYPE') === 'combined-unit-integration') {
-            $this->markTestSkipped();
-        }
         // https://medium.com/@samrapaport/unit-testing-log-messages-in-laravel-5-6-a2e737247d3a
 
         $handler = new TestHandler();
@@ -67,10 +64,6 @@ class AwsTraceIdProcessorTest extends TestCase
 
     public function testContextNotAdded(): void
     {
-        if (getenv('TEST_TYPE') === 'combined-unit-integration') {
-            $this->markTestSkipped();
-        }
-
         // Ensure no crashes/ logging issues when a request isn't via the ALB, and that no `extra` key shows up
         // for the trace ID.
         $handler = new TestHandler();
