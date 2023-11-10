@@ -68,7 +68,6 @@ class OptimisticRedisAdapterTest extends TestCase
     public function testItReleasesFundsInCaseOfRaceCondition(): void
     {
         $this->sut->runTransactionally(function () {
-            $this->sut->runTransactionally(function () {
                 $funding = new CampaignFunding();
                 $funding->setAmountAvailable('50');
                 $amountToSubtract = "30";
@@ -86,7 +85,6 @@ class OptimisticRedisAdapterTest extends TestCase
                 \assert(50 - 30 === 20);
                 // this seems like it could be a bug as the amount in storage is negative after the exception was caught?
                 $this->assertSame('-10.00', $this->sut->getAmountAvailable($funding));
-            });
         });
     }
 }
