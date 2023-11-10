@@ -31,7 +31,7 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
 
     public function incrBy(string $key, int $increment): string|false|static
     {
-        $newValue = $this->storage[$key] ?? 0 + $increment;
+        $newValue = ($this->storage[$key] ?? 0) + $increment;
         if (! $this->multiMode) {
             return $newValue;
         }

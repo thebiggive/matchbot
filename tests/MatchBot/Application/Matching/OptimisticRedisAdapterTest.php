@@ -76,13 +76,12 @@ class OptimisticRedisAdapterTest extends TestCase
                 try {
                     $this->sut->subtractAmount($funding, $amountToSubtract); // this second subtraction will take the fund negative in redis temporarily, but our Adapter will add back the 30 just subtracted.
                     $this->fail("should have thrown exception on attempt to allocate more than available");
-                } catch (TerminalLockException $exception){
-                    $this->assertStringContainsString("Releasing final -2000 'cents'", $exception->getMessage());
+                } catch (LessThanRequestedAllocatedException $exception){
+                    $this->assertStringContainsString("Less than requested was allocated", $exception->getMessage());
                 }
 
-                $this->assertSame('-10.00', $funding->getAmountAvailable());
+                $this->assertSame('0.00', $funding->getAmountAvailable());
 
-                \assert(50 - 30 === 20);
                 // this seems like it could be a bug as the amount in storage is negative after the exception was caught?
                 $this->assertSame('-10.00', $this->sut->getAmountAvailable($funding));
         });
