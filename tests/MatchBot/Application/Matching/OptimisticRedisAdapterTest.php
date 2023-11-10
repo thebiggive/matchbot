@@ -46,7 +46,8 @@ class OptimisticRedisAdapterTest extends TestCase
             // amount returned in the getAmountAvailable call has to be from the realtime storage.
             $funding->setAmountAvailable('3');
 
-            $this->assertSame('50.00', $this->sut->getAmountAvailable($funding));
+            \assert(50 + 12.53 == 62.53);
+            $this->assertSame('62.53', $this->sut->getAmountAvailable($funding));
         });
     }
 
