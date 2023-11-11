@@ -1,4 +1,6 @@
 version: "3.7"
+# This file is used only in local dev environments and build servers. It includes services that we
+# do not need in production, like MySQL and the Stripe CLI.
 
 volumes:
   logs:
@@ -35,6 +37,13 @@ services:
     networks:
       - matchbot
 
+  stripe-cli:
+    image: stripe/stripe-cli:latest
+    command: "listen --api-key $${STRIPE_API_KEY} --device-name $${STRIPE_DEVICE_NAME} --forward-to app:80/hooks/stripe"
+    networks:
+      - matchbot
+    env_file:
+      - stripe_cli.env
 networks:
   matchbot:
     driver: bridge

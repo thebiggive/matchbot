@@ -6,3 +6,4 @@
 /logs/*
 !/logs/README.md
 /.phpunit.result.cache
+stripe_cli.env
