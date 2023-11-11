@@ -3,6 +3,7 @@
 namespace MatchBot\IntegrationTests;
 
 use GuzzleHttp\Psr7\ServerRequest;
+use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Prophecy\Argument;
@@ -81,6 +82,7 @@ class ConfirmDonationTest extends IntegrationTest
                     "stripePaymentMethodId": "pm_test_987"
                 }
             EOF,
+                headers: ['x-tbg-auth' => DonationToken::create($donationUuid)],
                 serverParams: ['REMOTE_ADDR' => '127.0.0.1']
             )
         );
