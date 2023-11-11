@@ -202,7 +202,7 @@ abstract class IntegrationTest extends TestCase
         $fundSfID = $this->randomString();
 
         $db = $this->db();
-        
+
         $nyd = '2023-01-01'; // specific date doesn't matter.
         $futureDate = '2093-01-01';
 
@@ -320,8 +320,12 @@ abstract class IntegrationTest extends TestCase
         return $fakeStripeClient;
     }
 
-    protected function createDonation(int $tipAmount = 0, bool $withPremadeCampaign = true, ?string $campaignSfID = null, int $amountInPounds = 100): \Psr\Http\Message\ResponseInterface
-    {
+    protected function createDonation(
+        int $tipAmount = 0,
+        bool $withPremadeCampaign = true,
+        ?string $campaignSfID = null,
+        int $amountInPounds = 100,
+    ): ResponseInterface {
         $campaignId = $campaignSfID ?? $this->randomString();
         $paymentIntentId = $this->randomString();
 

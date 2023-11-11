@@ -119,6 +119,7 @@ class Confirm extends Action
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
         // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
         $this->donationRepository->deriveFees($donation, $cardBrand, $cardCountry);
+        $this->entityManager->persist($donation);
 
         if ($this->stubOutStripe) {
             usleep(500_000);  // half second
@@ -148,7 +149,7 @@ class Confirm extends Action
         ]);
 
         try {
-            $this->stripeClient->paymentIntents->confirm($paymentIntentId, [
+            $updatedIntent = $this->stripeClient->paymentIntents->confirm($paymentIntentId, [
                 'payment_method' => $pamentMethodId,
             ]);
         } catch (CardException $exception) {
@@ -237,8 +238,6 @@ class Confirm extends Action
                 ],
             ], 500);
         }
-
-        $updatedIntent = $this->stripeClient->paymentIntents->retrieve($paymentIntentId);
 
         $this->entityManager->flush();
 
