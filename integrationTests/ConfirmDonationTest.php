@@ -25,6 +25,7 @@ class ConfirmDonationTest extends IntegrationTest
 
         // arrange
         $response = $this->createDonation(100);
+        /** @var array{donation: array<string, string>} $decoded */
         $decoded = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
         $uuid = $decoded['donation']['donationId'];
 
@@ -42,6 +43,7 @@ class ConfirmDonationTest extends IntegrationTest
         $donationFetchedFromDB = $this->db()->fetchAssociative("SELECT * from Donation where Donation.uuid = '$uuid';");
         assert(is_array($donationFetchedFromDB));
         $this->assertSame('100.00', $donationFetchedFromDB['amount']);
+        // TODO assert the actually expected fee. Having trouble running locally so making this fail on purpose in CI.
         $this->assertSame('1.00', $donationFetchedFromDB['charityFee']);
     }
 
