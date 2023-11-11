@@ -268,7 +268,8 @@ class ConfirmTest extends TestCase
             $expectedMetadataUpdate
         )->shouldBeCalled();
 
-        $confirmation = $stripePaymentIntentsProphecy->confirm($paymentIntentId, ["payment_method" => $paymentMethodId]);
+        $confirmation = $stripePaymentIntentsProphecy->confirm($paymentIntentId, ["payment_method" => $paymentMethodId])
+            ->willReturn((object)$updatedIntentData);
 
         if ($confirmFailsWithCardError) {
             $exception = CardException::factory(
