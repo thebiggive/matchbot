@@ -39,6 +39,8 @@ use Ramsey\Uuid\Uuid;
  */
 class CreateDonationEvenWhenEntityManagerClosesAfterFirstPersistsTest extends IntegrationTest
 {
+    // this test passed on the current Develop commit on Circle, why does it fail for us now?
+
     private int $entityManagerWillCloseAfterNPersists = 3;
     private string $campaignSfID;
 
