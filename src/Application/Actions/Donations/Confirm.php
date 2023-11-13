@@ -119,7 +119,6 @@ class Confirm extends Action
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
         // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
         $this->donationRepository->deriveFees($donation, $cardBrand, $cardCountry);
-        $this->entityManager->persist($donation);
 
         if ($this->stubOutStripe) {
             usleep(500_000);  // half second
@@ -239,8 +238,13 @@ class Confirm extends Action
             ], 500);
         }
 
+        // Assuming Stripe calls worked, commit any changes that `deriveFees()` made to the EM-tracked `$donation`.
         $this->entityManager->flush();
         $this->entityManager->commit();
+
+        // Outside the main txn, tell Salesforce about the latest fee too. We log if this fails but don't worry the
+        // client about it. We'll re-try sending the updated status to Salesforce in a future batch sync.
+        $this->donationRepository->push($donation, false);
 
         return new JsonResponse([
             'paymentIntent' => [

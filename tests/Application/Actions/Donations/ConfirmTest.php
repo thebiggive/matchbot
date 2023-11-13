@@ -54,9 +54,9 @@ class ConfirmTest extends TestCase
             confirmFailsWithPaymentMethodUsedError: false,
         );
 
+        // Make sure the latest fees, based on card type, are saved to the database.
         $em = $this->prophesize(EntityManagerInterface::class);
         $em->beginTransaction()->shouldBeCalledOnce();
-        $em->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $em->flush()->shouldBeCalledOnce();
         $em->commit()->shouldBeCalledOnce();
 
@@ -333,6 +333,8 @@ class ConfirmTest extends TestCase
         $donationRepositoryProphecy->findAndLockOneBy(['uuid' => 'DONATION_ID'])->willReturn(
             $donation
         );
+
+        $donationRepositoryProphecy->push($donation, false)->willReturn(true);
 
         return $donationRepositoryProphecy->reveal();
     }
