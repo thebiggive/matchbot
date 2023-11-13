@@ -1,6 +1,6 @@
 <?php
 
-namespace integrationTests;
+namespace MatchBot\IntegrationTests;
 
 use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
@@ -8,15 +8,11 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\EntityManagerClosed;
 use Doctrine\ORM\ORMInvalidArgumentException;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
-use MatchBot\Client\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
-use MatchBot\IntegrationTests\IntegrationTest;
 use Prophecy\Argument;
 use Psr\Log\LoggerInterface;
-use Ramsey\Uuid\Uuid;
-
 
 /**
  * Trying to reproduce and then fix errors such as this just seen in production that presumably lead to people getting

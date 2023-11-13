@@ -1,21 +1,13 @@
 <?php
 
+namespace MatchBot\IntegrationTests;
+
 use GuzzleHttp\Psr7\ServerRequest;
-use MatchBot\Domain\Donation;
-use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
-use MatchBot\IntegrationTests\IntegrationTest;
 use MatchBot\Tests\Application\Actions\Hooks\StripeTest;
-use Prophecy\Argument;
-use Prophecy\Prophecy\ObjectProphecy;
-use Ramsey\Uuid\Uuid;
-use Stripe\PaymentIntent;
-use Stripe\StripeClient;
 
 class StripeCancelsDonationTest extends IntegrationTest
 {
-    use \Prophecy\PhpUnit\ProphecyTrait;
-
     public function testStripeCanCancelDonation(): void
     {
         /**

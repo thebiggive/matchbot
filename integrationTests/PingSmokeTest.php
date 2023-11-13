@@ -1,7 +1,8 @@
 <?php
 
+namespace MatchBot\IntegrationTests;
+
 use GuzzleHttp\Psr7\ServerRequest;
-use MatchBot\IntegrationTests\IntegrationTest;
 
 class PingSmokeTest extends IntegrationTest
 {

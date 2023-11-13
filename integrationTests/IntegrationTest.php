@@ -3,7 +3,6 @@
 namespace MatchBot\IntegrationTests;
 
 use ArrayAccess;
-use CreateDonationTest;
 use GuzzleHttp\Psr7\ServerRequest;
 use LosMiddleware\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
