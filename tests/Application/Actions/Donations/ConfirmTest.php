@@ -10,6 +10,7 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\NullLogger;
@@ -53,11 +54,17 @@ class ConfirmTest extends TestCase
             confirmFailsWithPaymentMethodUsedError: false,
         );
 
+        $em = $this->prophesize(EntityManagerInterface::class);
+        $em->beginTransaction()->shouldBeCalledOnce();
+        $em->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $em->flush()->shouldBeCalledOnce();
+        $em->commit()->shouldBeCalledOnce();
+
         $sut = new Confirm(
             new NullLogger(),
             $this->getDonationRepository($newCharityFee),
             $stripeClientProphecy->reveal(),
-            $this->prophesize(EntityManagerInterface::class)->reveal()
+            $em->reveal(),
         );
 
         // act

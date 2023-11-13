@@ -240,6 +240,7 @@ class Confirm extends Action
         }
 
         $this->entityManager->flush();
+        $this->entityManager->commit();
 
         return new JsonResponse([
             'paymentIntent' => [
