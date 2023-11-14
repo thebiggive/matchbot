@@ -26,8 +26,9 @@ class PatchHistoricNonDefaultFeeDonations extends Command
         $idOfLastDonationPatched = $this->redis->get(self::REDIS_KEY);
 
         if (! $idOfLastDonationPatched) {
-            $idOfLastDonationPatched = 0;
+            $idOfLastDonationPatched = '0';
         }
+        \assert(is_string($idOfLastDonationPatched));
 
         /** @var list<array{id: int, uuid: string, chargeId: string}> $donationDataToPatch */
         $donationDataToPatch = $this->connection->fetchAllAssociative(
@@ -79,7 +80,12 @@ class PatchHistoricNonDefaultFeeDonations extends Command
         if (isset($donation)) {
             \assert(is_array($donation));
             $this->redis->set(self::REDIS_KEY, (string)$donation['id']);
+            $count = count($donationDataToPatch);
+            $output->writeln("Updated data for all $count donations between ID > $idOfLastDonationPatched <= {$donation['id']}");
+        } else {
+            $output->writeln("No donations found to update - if this is prod then this command is ready to be deleted.");
         }
+
 
         return 0;
     }
