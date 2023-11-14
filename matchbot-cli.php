@@ -12,6 +12,7 @@ use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\LockingCommand;
+use MatchBot\Application\Commands\PatchHistoricNonDefaultFeeDonations;
 use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
@@ -40,6 +41,9 @@ $messengerReceiverLocator->set($messengerReceiverKey, $psr11App->get(TransportIn
 
 $chatter = $psr11App->get(ChatterInterface::class);
 assert($chatter instanceof ChatterInterface);
+
+$patchHistoricNonDefaultFeeDonations = $psr11App->get(PatchHistoricNonDefaultFeeDonations::class);
+\assert($patchHistoricNonDefaultFeeDonations instanceof PatchHistoricNonDefaultFeeDonations);
 
 /**
  * @psalm-suppress MixedArgument - too many of these to fix here. At some point we could fix on mass
@@ -87,7 +91,8 @@ $commands = [
         $psr11App->get(EntityManagerInterface::class),
         $psr11App->get(FundRepository::class),
         $psr11App->get(LoggerInterface::class),
-    )
+    ),
+    $patchHistoricNonDefaultFeeDonations,
 ];
 
 foreach ($commands as $command) {
