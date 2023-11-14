@@ -10,6 +10,7 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\NullLogger;
@@ -53,11 +54,17 @@ class ConfirmTest extends TestCase
             confirmFailsWithPaymentMethodUsedError: false,
         );
 
+        // Make sure the latest fees, based on card type, are saved to the database.
+        $em = $this->prophesize(EntityManagerInterface::class);
+        $em->beginTransaction()->shouldBeCalledOnce();
+        $em->flush()->shouldBeCalledOnce();
+        $em->commit()->shouldBeCalledOnce();
+
         $sut = new Confirm(
             new NullLogger(),
             $this->getDonationRepository($newCharityFee),
             $stripeClientProphecy->reveal(),
-            $this->prophesize(EntityManagerInterface::class)->reveal()
+            $em->reveal(),
         );
 
         // act
@@ -268,7 +275,8 @@ class ConfirmTest extends TestCase
             $expectedMetadataUpdate
         )->shouldBeCalled();
 
-        $confirmation = $stripePaymentIntentsProphecy->confirm($paymentIntentId, ["payment_method" => $paymentMethodId]);
+        $confirmation = $stripePaymentIntentsProphecy->confirm($paymentIntentId, ["payment_method" => $paymentMethodId])
+            ->willReturn((object)$updatedIntentData);
 
         if ($confirmFailsWithCardError) {
             $exception = CardException::factory(
@@ -325,6 +333,8 @@ class ConfirmTest extends TestCase
         $donationRepositoryProphecy->findAndLockOneBy(['uuid' => 'DONATION_ID'])->willReturn(
             $donation
         );
+
+        $donationRepositoryProphecy->push($donation, false)->willReturn(true);
 
         return $donationRepositoryProphecy->reveal();
     }

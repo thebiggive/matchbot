@@ -1,10 +1,11 @@
 <?php
 
+namespace MatchBot\IntegrationTests;
+
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
-use MatchBot\IntegrationTests\IntegrationTest;
 use Ramsey\Uuid\Uuid;
 
 class DonationPersistenceTest extends IntegrationTest
