@@ -62,11 +62,66 @@ jobs:
 
       - run: composer run integration-test
 
+      - store_artifacts:
+          path: reports
+
       - codecov/upload:
           file: 'coverage.xml'
       - codecov/upload:
           file: 'coverage-integration.xml'
 
+  mutation_coverage:
+    working_directory: /var/www/html
+    docker:
+      - image: thebiggive/php:dev-8.1
+        auth:
+          username: $DOCKER_HUB_USERNAME
+          password: $DOCKER_HUB_ACCESS_TOKEN
+        environment:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_SCHEMA: matchbot
+          MYSQL_USER: root
+          MYSQL_PASSWORD: tbgCircle123
+
+          REDIS_HOST: 127.0.0.1
+      - image: cimg/mysql:8.0
+        auth:
+          username: $DOCKER_HUB_USERNAME
+          password: $DOCKER_HUB_ACCESS_TOKEN
+        environment:
+          MYSQL_DATABASE: matchbot
+          MYSQL_ROOT_PASSWORD: tbgCircle123
+      - image: redis:6.2
+        auth:
+          username: $DOCKER_HUB_USERNAME
+          password: $DOCKER_HUB_ACCESS_TOKEN
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - composer-v1-{{ checksum "composer.lock" }}
+
+      - run: composer install --no-interaction
+
+      - save_cache:
+          paths:
+            - vendor
+          key: composer-v1-{{ checksum "composer.lock" }}
+
+      - run: composer run lint:check
+
+      - run: composer run sa:check
+
+      - run: composer run test
+
+      - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose
+
+      - run: composer run mutation-test
+
+      - store_artifacts:
+          path: reports
 workflows:
   build:
     jobs:
@@ -81,6 +136,17 @@ workflows:
             - slack/notify:
                 event: fail
                 template: basic_fail_1
+      - mutation_coverage:
+          context:
+            - docker-hub-creds
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - develop
+                - main
+                - MAT-326-automated-test-suite
 
   deploy-regression:
     jobs:
