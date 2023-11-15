@@ -17,6 +17,7 @@ use LosMiddleware\RateLimit\RateLimitMiddleware;
 use LosMiddleware\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
+use MatchBot\Application\Commands\PatchHistoricNonDefaultFeeDonations;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
@@ -391,5 +392,19 @@ return function (ContainerBuilder $containerBuilder) {
                 new PhpSerializer(),
             );
         },
+        Connection::class => static function (ContainerInterface $c): Connection {
+            $em = $c->get(EntityManagerInterface::class);
+            \assert($em instanceof EntityManagerInterface);
+            return $em->getConnection();
+        },
+        PatchHistoricNonDefaultFeeDonations::class => static function (ContainerInterface $c): PatchHistoricNonDefaultFeeDonations {
+            $redis = $c->get(Redis::class);
+            $conn = $c->get(Connection::class);
+            $stripe = $c->get(\Stripe\StripeClient::class);
+
+            \assert($redis instanceof Redis && $conn instanceof Connection && $stripe instanceof StripeClient);
+
+            return new PatchHistoricNonDefaultFeeDonations($redis, $conn, $stripe);
+        }
     ]);
 };

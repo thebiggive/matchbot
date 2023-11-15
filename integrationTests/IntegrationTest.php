@@ -3,6 +3,7 @@
 namespace MatchBot\IntegrationTests;
 
 use ArrayAccess;
+use DI\Container;
 use GuzzleHttp\Psr7\ServerRequest;
 use LosMiddleware\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
@@ -107,7 +108,6 @@ abstract class IntegrationTest extends TestCase
      */
     public function setupFakeDonationClient(): void
     {
-        /** @var \DI\Container $container */
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
@@ -120,11 +120,14 @@ abstract class IntegrationTest extends TestCase
         $donationRepo->setClient($donationClientProphecy->reveal());
     }
 
-    protected function getContainer(): ContainerInterface
+    protected function getContainer(): Container
     {
         if (self::$integrationTestContainer === null) {
             throw new \Exception("Test container not set");
         }
+
+        \assert(self::$integrationTestContainer instanceof \DI\Container);
+
         return self::$integrationTestContainer;
     }
 
@@ -134,7 +137,6 @@ abstract class IntegrationTest extends TestCase
     protected function setInContainer(string $name, mixed $value): void
     {
         $container = $this->getContainer();
-        \assert($container instanceof \DI\Container);
 
         $container->set($name, $value);
     }
@@ -170,7 +172,6 @@ abstract class IntegrationTest extends TestCase
         $stripePaymentIntentsProphecy->create(Argument::type('array'))
             ->willReturn($stripePaymentIntent);
 
-        /** @var \DI\Container $container */
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
@@ -262,7 +263,6 @@ abstract class IntegrationTest extends TestCase
             $stripePaymentIntentsProphecy,
         );
 
-        /** @var \DI\Container $container */
         $container = $this->getContainer();
         $container->set(StripeClient::class, $fakeStripeClient);
         return $stripePaymentIntentsProphecy;
@@ -339,7 +339,6 @@ abstract class IntegrationTest extends TestCase
         $stripePaymentIntentsProphecy->create(Argument::type('array'))
             ->willReturn($stripePaymentIntent);
 
-        /** @var \DI\Container $container */
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
