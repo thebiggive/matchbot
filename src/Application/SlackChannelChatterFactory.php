@@ -24,19 +24,4 @@ class SlackChannelChatterFactory
 
         return new Chatter($transport);
     }
-
-    /**
-     * Copied from https://github.com/Roave/infection-static-analysis-plugin/tree/1.34.x#readme
-     * because I want to see how the plugin is working.
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @template T
-     * @param array<T> $values
-     * @return list<T>
-     */
-    function makeAList(array $values): array
-    {
-        return array_values($values);
-    }
 }

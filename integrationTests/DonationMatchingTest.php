@@ -13,7 +13,7 @@ use MatchBot\Domain\CampaignFundingRepository;
 use Psr\Log\LoggerInterface;
 use Redis;
 
-class DonationMatchingTest extends \MatchBot\IntegrationTests\IntegrationTest
+class DonationMatchingTest extends IntegrationTest
 {
     private int $campaignFundingId;
     private CampaignFundingRepository $campaignFundingRepository;
