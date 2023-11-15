@@ -43,8 +43,10 @@ class PatchFeeTest extends IntegrationTest
         )['donation']['donationId'];
         \assert(is_string($donationUUID));
 
+        $donorFirstName = self::class;
+
         $rowsAffected = $this->db()->executeStatement(
-            "UPDATE Donation set Donation.charityFee=1, Donation.charityFeeVat = 1, donationStatus = 'Paid', chargeId = '$chargeId' 
+            "UPDATE Donation set Donation.charityFee=1, Donation.charityFeeVat = 1, donationStatus = 'Paid', chargeId = '$chargeId', donorFirstName='{$donorFirstName}'
                 WHERE uuid = ?",
             [$donationUUID]
         );
@@ -69,5 +71,15 @@ class PatchFeeTest extends IntegrationTest
         );
 
         $this->assertSame(['charityFee' => $correctedCharityFee, 'charityFeeVat' => $correctedCharityVatFee], $updatedFees);
+    }
+
+    public function tearDown(): void
+    {
+        // ideally, we'd delete them, but foreign key constraints make that harder. Seting status to pending means the
+        // donation won't interfere with the next test run.
+        $donorFirstName = self::class;
+        $this->db()->executeStatement(
+            "UPDATE Donation set Donation.donationStatus = 'Pending' where donorFirstName = '$donorFirstName'"
+        );
     }
 }
