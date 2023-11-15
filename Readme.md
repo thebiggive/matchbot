@@ -22,6 +22,8 @@ when the app is deployed 'for real' and other developers' machines.
 In advance of the first app run:
 
 * [get Docker](https://www.docker.com/get-started)
+* If you use an Apple Silicon system, disable _"Use Rosetta for x86/amd64 emulation on Apple Silicon"_ in Docker Desktop
+  preferences.
 * copy `.env.example` to `.env` and change any values you need to. e.g. if you
   are working with your own Salesforce sandbox you would want to change most of the `SALESFORCE_*`
   variables.
@@ -34,7 +36,7 @@ to pull events from Stripe and forward them to the local HTTP server.
 Visit https://dashboard.stripe.com/test/webhooks and select "Add local listener". Use the "CLI webhook secret" that
 Stripe will give you to replace the value of `STRIPE_WEBHOOK_SIGNING_SECRET` in `.env`. Make sure you also have a good
 value for `STRIPE_SECRET_KEY` set in `.env`. You will also find this in the Stripe dashboard, and in a dev environment 
-it should start with `sk_test_` 
+it should start with `rk_test_` or `sk_test_`.
 
 Copy `stripe_cli.env.example` to `stripe_cli.env`.  
 

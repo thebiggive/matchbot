@@ -6,13 +6,12 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\OptimisticRedisAdapter;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use Psr\Log\LoggerInterface;
 use Redis;
 
-class DonationMatchingTest extends \MatchBot\IntegrationTests\IntegrationTest
+class DonationMatchingTest extends IntegrationTest
 {
     private int $campaignFundingId;
     private CampaignFundingRepository $campaignFundingRepository;

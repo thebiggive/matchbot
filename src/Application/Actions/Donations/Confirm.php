@@ -148,7 +148,7 @@ class Confirm extends Action
         ]);
 
         try {
-            $this->stripeClient->paymentIntents->confirm($paymentIntentId, [
+            $updatedIntent = $this->stripeClient->paymentIntents->confirm($paymentIntentId, [
                 'payment_method' => $pamentMethodId,
             ]);
         } catch (CardException $exception) {
@@ -238,9 +238,13 @@ class Confirm extends Action
             ], 500);
         }
 
-        $updatedIntent = $this->stripeClient->paymentIntents->retrieve($paymentIntentId);
-
+        // Assuming Stripe calls worked, commit any changes that `deriveFees()` made to the EM-tracked `$donation`.
         $this->entityManager->flush();
+        $this->entityManager->commit();
+
+        // Outside the main txn, tell Salesforce about the latest fee too. We log if this fails but don't worry the
+        // client about it. We'll re-try sending the updated status to Salesforce in a future batch sync.
+        $this->donationRepository->push($donation, false);
 
         return new JsonResponse([
             'paymentIntent' => [
