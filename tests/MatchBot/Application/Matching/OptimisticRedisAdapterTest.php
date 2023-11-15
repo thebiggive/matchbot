@@ -104,7 +104,7 @@ class OptimisticRedisAdapterTest extends TestCase
                 $this->assertSame('0.00', $funding->getAmountAvailable());
 
                 // this seems like it could be a bug as the amount in storage is negative after the exception was caught?
-                $this->assertSame('-10.00', $this->sut->getAmountAvailable($funding));
+                $this->assertSame('0.00', $this->sut->getAmountAvailable($funding));
         });
     }
 
@@ -125,9 +125,9 @@ class OptimisticRedisAdapterTest extends TestCase
             $this->sut->subtractAmount($funding, $amountToSubtract);
 
             $this->expectException(TerminalLockException::class);
-            // todo - work out where the -180 figure here comes from. Message below is just pasted in from
+            // todo - work out where the 1880 figure here comes from. Message below is just pasted in from
             // result of running the test.
-            $this->expectExceptionMessage("Fund  balance sub-zero after 6 attempts. Releasing final -180 'cents'");
+            $this->expectExceptionMessage("Fund  balance sub-zero after 6 attempts. Releasing final 1880 'cents'");
             $this->sut->subtractAmount($funding, $amountToSubtract);
 
         });

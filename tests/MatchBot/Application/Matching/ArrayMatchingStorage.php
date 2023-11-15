@@ -42,11 +42,11 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
         }
 
         $newValue = (float)($this->storage[$key] ?? 0) + $increment;
+        $this->storage[$key] = (string) $newValue;
         if (! $this->multiMode) {
             return (string)$newValue;
         }
 
-        $this->storage[$key] = (string) $newValue;
         $this->responses[] = (string) $newValue;
 
         return $this;
