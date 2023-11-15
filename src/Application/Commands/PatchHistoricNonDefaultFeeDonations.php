@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use MatchBot\Application\Actions\Hooks\Stripe;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\SalesforceWriteProxy;
 use Stripe\StripeClient;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -45,7 +46,8 @@ class PatchHistoricNonDefaultFeeDonations extends Command
         foreach ($donationDataToPatch as $donation) {
             $output->writeln("updating donation " . $donation['id']);
 
-            $metadata = $this->stripe->charges->retrieve($donation['chargeId'])->toArray()['metadata'];
+            $chargeId = $donation['chargeId'];
+            $metadata = $this->stripe->charges->retrieve($chargeId)->toArray()['metadata'];
             \assert(is_array($metadata));
             /** @var string $stripeFeeRechargeNet */
             $stripeFeeRechargeNet = $metadata['stripeFeeRechargeNet'];
@@ -57,10 +59,11 @@ class PatchHistoricNonDefaultFeeDonations extends Command
                 'donationUuid' => $donation['uuid'],
                 'charityFee' => $stripeFeeRechargeNet,
                 'charityFeeVat' => $stripeFeeRechargeVat,
+                'salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE,
             ];
             $rowsAffected = $this->connection->executeStatement(
                 <<<'SQL'
-                    UPDATE Donation set charityFee = :charityFee, charityFeeVat = :charityFeeVat
+                    UPDATE Donation set charityFee = :charityFee, charityFeeVat = :charityFeeVat, salesforcePushStatus = :salesforcePushStatus
                                     WHERE uuid = :donationUuid
                                     LIMIT 1
                     SQL
@@ -71,7 +74,7 @@ class PatchHistoricNonDefaultFeeDonations extends Command
             Assertion::inArray($rowsAffected, [0, 1]);
             match ($rowsAffected) {
                 0 => $output->writeln("Donation data already matches stripe, nothing to update"),
-                1 => $output->writeln("Donation data updated:  " . json_encode($updateData)),
+                1 => $output->writeln("Donation data updated: uuid: {$donation['uuid']}, charityFee $stripeFeeRechargeNet, charityFeeVat $stripeFeeRechargeVat"),
             };
 
             $output->writeln('');

@@ -61,16 +61,23 @@ class PatchFeeTest extends IntegrationTest
         // assert
         $display = $commandTester->getDisplay();
 
-        $updatedFees = $this->db()->fetchAssociative(
-            'SELECT charityFee, charityFeeVat FROM Donation WHERE uuid = ?', [$donationUUID]
+        $updatedDonationRecord = $this->db()->fetchAssociative(
+            'SELECT charityFee, charityFeeVat, salesforcePushStatus FROM Donation WHERE uuid = ?', [$donationUUID]
         );
 
         $this->assertStringContainsString(
-            "Donation data updated:  {\"donationUuid\":\"$donationUUID\",\"charityFee\":\"$correctedCharityFee\",\"charityFeeVat\":\"$correctedCharityVatFee\"}",
+            "Donation data updated: uuid: $donationUUID, charityFee $correctedCharityFee, charityFeeVat $correctedCharityVatFee",
             $display
         );
 
-        $this->assertSame(['charityFee' => $correctedCharityFee, 'charityFeeVat' => $correctedCharityVatFee], $updatedFees);
+        $this->assertSame(
+            [
+                'charityFee' => $correctedCharityFee,
+                'charityFeeVat' => $correctedCharityVatFee,
+                'salesforcePushStatus' => 'pending-update'
+            ],
+            $updatedDonationRecord
+        );
     }
 
     public function tearDown(): void
