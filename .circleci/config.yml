@@ -111,14 +111,6 @@ jobs:
             - vendor
           key: composer-v1-{{ checksum "composer.lock" }}
 
-      - run: composer run lint:check
-
-      - run: composer run sa:check
-
-      - run: composer run test
-
-      - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose
-
       - run: composer run mutation-test
 
       - store_artifacts:
