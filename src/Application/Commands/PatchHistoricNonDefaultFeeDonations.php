@@ -38,8 +38,9 @@ class PatchHistoricNonDefaultFeeDonations extends Command
                                  AND paymentMethodType = 'card'
                                  AND createdAt > '2023-09-22' -- commit 5860113 of this date introduced buggy confirm function
                                  AND createdAt < '2023-11-20' -- hopefully the bug will have been fixed before that date.
+                                 AND id > :idOfLastDonationPatched 
                                  ORDER BY id
-                                 AND id > :idOfLastDonationPatched LIMIT 500",
+                                 LIMIT 500",
             ['idOfLastDonationPatched' => $idOfLastDonationPatched]
         );
 
@@ -88,7 +89,6 @@ class PatchHistoricNonDefaultFeeDonations extends Command
         } else {
             $output->writeln("No donations found to update - if this is prod then this command is ready to be deleted.");
         }
-
 
         return 0;
     }
