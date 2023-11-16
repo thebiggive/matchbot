@@ -42,5 +42,9 @@ interface Stripe
      */
     public function createPaymentIntent(array $createPayload): PaymentIntent;
 
+
+    /**
+     * @throws ApiErrorException
+     */
     public function retrievePaymentMethod(string $paymentMethodId): PaymentMethod;
 }
