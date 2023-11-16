@@ -34,4 +34,19 @@ class CharityTest extends TestCase
 
         $this->assertNull($charity->getRegulator());
     }
+
+    public function testItThrowsGivenBadOnboardingStatus(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        new Charity(
+            salesforceId: 'sfID',
+            charityName: "Charity Name",
+            stripeAccountId: "accountid",
+            hmrcReferenceNumber: "hmrcref",
+            giftAidOnboardingStatus: "NOT_A_POSSIBLE_STATUS",
+            regulator: null,
+            regulatorNumber: null,
+            time: new \DateTime()
+        );
+    }
 }
