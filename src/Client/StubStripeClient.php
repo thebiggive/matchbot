@@ -2,7 +2,6 @@
 
 namespace MatchBot\Client;
 
-use phpDocumentor\Reflection\Types\Never_;
 use Stripe\PaymentIntent;
 
 /**
