@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Charity;
 use MatchBot\Tests\TestCase;
+use phpDocumentor\Reflection\Types\Boolean;
 
 class CharityTest extends TestCase
 {
@@ -50,19 +51,37 @@ class CharityTest extends TestCase
         );
     }
 
-    public function testTBGcanClaimGiftAidStatus(): void 
+     /**
+     * @dataProvider pullFromSFProvider
+     */
+    public function testTBGcanClaimGiftAidStatus(
+        string $hmrcReference,
+        string $giftaidOnboardingStatus,
+        bool $expected,
+    ): void 
     {
         $charity = TestCase::someCharity();
         $charity->updateFromSfPull(
             charityName: "Charity Name",
             stripeAccountId: "accountid",
-            hmrcReferenceNumber: "hmrcref",
-            giftAidOnboardingStatus: "Onboarded & Approved",
+            hmrcReferenceNumber: $hmrcReference,
+            giftAidOnboardingStatus: $giftaidOnboardingStatus,
             regulator: null,
             regulatorNumber: null,
             time: new \DateTime(),
         );
 
-        $this->assertTrue($charity->isTbgClaimingGiftAid());
+        $this->assertSame($expected, $charity->isTbgClaimingGiftAid());
+    }
+
+
+    public function pullFromSFProvider(): array
+    {
+        return [
+            ["hmrcref", "Onboarded & Approved", true],
+            ["", "Onboarded & Approved", false],
+            ["hmrcref", "Invited to Onboard", false],
+            ["", "Invited to Onboard", false],
+        ];
     }
 }
