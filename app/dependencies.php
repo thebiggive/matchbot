@@ -152,6 +152,20 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\Mailer($settings, $c->get(LoggerInterface::class));
         },
 
+        Client\Stripe::class => function (ContainerInterface $c): Client\Stripe {
+
+            $useStubStripe = (getenv('APP_ENV') !== 'production' && getenv('BYPASS_PSP'));
+            $offTheShelfStripeClient = $c->get(StripeClient::class);
+
+            \assert($offTheShelfStripeClient instanceof StripeClient);
+
+            if ($useStubStripe) {
+                return new Client\StubStripeClient();
+            }
+
+            return new Client\LiveStripeClient($offTheShelfStripeClient);
+        },
+
         \MatchBot\Domain\DonationFundsNotifier::class => function (ContainerInterface $c): \MatchBot\Domain\DonationFundsNotifier {
             $mailer = $c->get(Client\Mailer::class);
             \assert($mailer instanceof Client\Mailer);
