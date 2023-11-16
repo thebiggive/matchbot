@@ -6,7 +6,6 @@ namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Charity;
 use MatchBot\Tests\TestCase;
-use phpDocumentor\Reflection\Types\Boolean;
 
 class CharityTest extends TestCase
 {

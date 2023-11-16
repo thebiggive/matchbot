@@ -109,7 +109,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 time: new \DateTime('now'),
             );
         } else {
-            $charity->updateFromSfPull( // trying to test this line.
+            $charity->updateFromSfPull(
                 charityName: $charityName,
                 stripeAccountId: $stripeAccountId,
                 hmrcReferenceNumber: $hmrcReferenceNumber,
