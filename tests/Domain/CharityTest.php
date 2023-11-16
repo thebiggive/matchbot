@@ -49,4 +49,20 @@ class CharityTest extends TestCase
             time: new \DateTime()
         );
     }
+
+    public function testTBGcanClaimGiftAidStatus(): void 
+    {
+        $charity = TestCase::someCharity();
+        $charity->updateFromSfPull(
+            charityName: "Charity Name",
+            stripeAccountId: "accountid",
+            hmrcReferenceNumber: "hmrcref",
+            giftAidOnboardingStatus: "Onboarded & Approved",
+            regulator: null,
+            regulatorNumber: null,
+            time: new \DateTime(),
+        );
+
+        $this->assertTrue($charity->isTbgClaimingGiftAid());
+    }
 }
