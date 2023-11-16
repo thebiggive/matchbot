@@ -71,6 +71,7 @@ jobs:
           file: 'coverage-integration.xml'
 
   mutation_coverage:
+    resource_class: large
     working_directory: /var/www/html
     docker:
       - image: thebiggive/php:dev-8.1

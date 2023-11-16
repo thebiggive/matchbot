@@ -162,7 +162,7 @@
         "integration-test": "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random",
         "mutation-test": [
             "Composer\\Config::disableProcessTimeout",
-            "vendor/bin/infection"
+            "vendor/bin/infection --threads=4"
         ]
     }
 }
