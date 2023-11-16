@@ -2,6 +2,7 @@
 
 namespace MatchBot\Client;
 
+use Ramsey\Uuid\Uuid;
 use Stripe\PaymentIntent;
 
 /**
@@ -37,5 +38,16 @@ class StubStripeClient implements Stripe
     public function retrievePaymentIntent(string $paymentIntentId): Never
     {
         throw new \Exception("Retrieve Payment Intent not implemented in stub- not currently used in load tests");
+    }
+
+    public function createPaymentIntent(array $createPayload): PaymentIntent
+    {
+        $this->pause();
+        return new PaymentIntent('ST' . self::randomString());
+    }
+
+    private static function randomString(): string
+    {
+        return substr(Uuid::uuid4()->toString(), 0, 15);
     }
 }

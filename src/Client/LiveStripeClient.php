@@ -37,4 +37,9 @@ class LiveStripeClient implements Stripe
     {
         return $this->stripeClient->paymentIntents->retrieve($paymentIntentId);
     }
+
+    public function createPaymentIntent(array $createPayload): PaymentIntent
+    {
+        return $this->stripeClient->paymentIntents->create($createPayload);
+    }
 }

@@ -18,16 +18,4 @@ class PSPStubber
     {
         return getenv('APP_ENV') !== 'production' && getenv('BYPASS_PSP');
     }
-
-    public static function randomString(): string
-    {
-        return substr(Uuid::uuid4()->toString(), 0, 15);
-    }
-
-    /** Pause to simulate waiting for an HTTP response from Stripe */
-    public static function pause(): void
-    {
-        // half second
-        usleep(500_000);
-    }
 }

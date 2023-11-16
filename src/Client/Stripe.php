@@ -3,6 +3,7 @@
 namespace MatchBot\Client;
 
 
+use Stripe\Exception\ApiErrorException;
 use Stripe\PaymentIntent;
 
 /**
@@ -15,11 +16,28 @@ use Stripe\PaymentIntent;
  */
 interface Stripe
 {
+    /**
+     * @throws ApiErrorException
+     */
     public function cancelPaymentIntent(string $paymentIntentId): void;
 
+    /**
+     * @throws ApiErrorException
+     */
     public function updatePaymentIntent(string $paymentIntentId, array $updateData): void;
 
+    /**
+     * @throws ApiErrorException
+     */
     public function confirmPaymentIntent(string $paymentIntentId): PaymentIntent;
 
+    /**
+     * @throws ApiErrorException
+     */
     public function retrievePaymentIntent(string $paymentIntentId): PaymentIntent;
+
+    /**
+     * @throws ApiErrorException
+     */
+    public function createPaymentIntent(array $createPayload): PaymentIntent;
 }
