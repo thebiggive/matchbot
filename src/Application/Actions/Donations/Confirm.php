@@ -85,8 +85,7 @@ class Confirm extends Action
         $paymentIntentId = $donation->getTransactionId();
         $paymentMethod = $this->stripe->retrievePaymentMethod($pamentMethodId);
 
-        $type = $paymentMethod->type;
-        if ($type !== 'card') {
+        if ($paymentMethod->type !== 'card') {
             throw new HttpBadRequestException($request, 'Confirm endpoint only supports card payments for now');
         }
 
