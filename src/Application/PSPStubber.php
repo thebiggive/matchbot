@@ -5,6 +5,7 @@ namespace MatchBot\Application;
 use Ramsey\Uuid\Uuid;
 
 /**
+ * @deprecated - Will put in a better solution for MAT-327
  * Stripe does not allow high quantity load testing in test mode, so we have to stub it out
  * for the scenarios that we load test, as reccomened at https://stripe.com/docs/rate-limits
  */

@@ -34,7 +34,6 @@
       <code><![CDATA[$c->get(ORM\Configuration::class)]]></code>
       <code><![CDATA[$c->get(ProblemDetailsResponseFactory::class)]]></code>
       <code><![CDATA[$c->get(Redis::class)]]></code>
-      <code><![CDATA[$c->get(Redis::class)]]></code>
       <code><![CDATA[$em->getConnection()]]></code>
       <code><![CDATA[$loggerSettings['name']]]></code>
       <code><![CDATA[$loggerSettings['path']]]></code>
@@ -195,29 +194,6 @@
       <code>$response</code>
     </UnusedClosureParam>
   </file>
-  <file src="integrationTests/CreateDonationEvenWhenEntityManagerClosesAfterFirstPersistsTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[EntityManager::create(
-        // for this test we don't need the RetrySafeEntityManager - using the standard EM makes things simpler.
-            $this->getContainer()->get('settings')['doctrine']['connection'],
-            $this->getContainer()->get(\Doctrine\ORM\Configuration::class),
-        )]]></code>
-    </DeprecatedMethod>
-    <MethodSignatureMismatch>
-      <code>$entity</code>
-    </MethodSignatureMismatch>
-    <MixedArgument>
-      <code><![CDATA[$this->getContainer()->get('settings')['doctrine']['connection']]]></code>
-      <code><![CDATA[$this->getContainer()->get('settings')['doctrine']['connection']]]></code>
-      <code><![CDATA[$this->getContainer()->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$this->getContainer()->get(\Doctrine\ORM\Configuration::class)]]></code>
-      <code><![CDATA[$this->getContainer()->get(\Doctrine\ORM\Configuration::class)]]></code>
-    </MixedArgument>
-    <MixedArrayAccess>
-      <code><![CDATA[$this->getContainer()->get('settings')['doctrine']]]></code>
-      <code><![CDATA[$this->getContainer()->get('settings')['doctrine']]]></code>
-    </MixedArrayAccess>
-  </file>
   <file src="integrationTests/DonationPersistenceTest.php">
     <DeprecatedMethod>
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
@@ -254,7 +230,17 @@
       <code>get</code>
     </PossiblyNullReference>
   </file>
+  <file src="src/Application/Actions/Donations/Confirm.php">
+    <DeprecatedClass>
+      <code>PSPStubber::byPassStripe()</code>
+    </DeprecatedClass>
+  </file>
   <file src="src/Application/Actions/Donations/Create.php">
+    <DeprecatedClass>
+      <code>PSPStubber::byPassStripe()</code>
+      <code>PSPStubber::pause()</code>
+      <code>PSPStubber::randomString()</code>
+    </DeprecatedClass>
     <MixedArgument>
       <code>$customerId</code>
     </MixedArgument>
@@ -580,37 +566,17 @@
     <ImpureMethodCall>
       <code>buildKey</code>
       <code>buildKey</code>
-      <code>buildKey</code>
-      <code>buildKey</code>
-      <code>buildKey</code>
-      <code>buildKey</code>
-      <code>exec</code>
       <code>exec</code>
       <code>incrBy</code>
-      <code>incrBy</code>
-      <code>incrBy</code>
-      <code>multi</code>
       <code>multi</code>
       <code>saveFundingsToDatabase</code>
       <code>set</code>
-      <code>set</code>
-      <code>setFundingValue</code>
-      <code>setFundingValue</code>
-      <code>setFundingValue</code>
       <code>setFundingValue</code>
       <code>toCurrencyFractionalUnit</code>
       <code>toCurrencyFractionalUnit</code>
-      <code>toCurrencyFractionalUnit</code>
-      <code>toCurrencyFractionalUnit</code>
-      <code>toCurrencyWholeUnit</code>
-      <code>toCurrencyWholeUnit</code>
-      <code>toCurrencyWholeUnit</code>
-      <code>toCurrencyWholeUnit</code>
-      <code>toCurrencyWholeUnit</code>
       <code>toCurrencyWholeUnit</code>
     </ImpureMethodCall>
     <ImpureStaticProperty>
-      <code>static::$storageDurationSeconds</code>
       <code>static::$storageDurationSeconds</code>
     </ImpureStaticProperty>
     <InvalidArgument>
@@ -823,9 +789,6 @@
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Domain/CampaignFundingRepository.php">
-    <InvalidNullableReturnType>
-      <code>CampaignFunding</code>
-    </InvalidNullableReturnType>
     <MixedInferredReturnType>
       <code>?CampaignFunding</code>
       <code>?CampaignFunding</code>
@@ -838,9 +801,6 @@
       <code><![CDATA[$query->getResult()]]></code>
       <code>CampaignFunding[]</code>
     </MixedReturnTypeCoercion>
-    <NullableReturnStatement>
-      <code><![CDATA[$this->find($campaignFunding->getId(), LockMode::PESSIMISTIC_WRITE)]]></code>
-    </NullableReturnStatement>
     <PossiblyUnusedMethod>
       <code>getAvailableFundings</code>
     </PossiblyUnusedMethod>
@@ -981,7 +941,6 @@
     </ArgumentTypeCoercion>
     <DeprecatedMethod>
       <code>getResultCacheImpl</code>
-      <code>transactional</code>
       <code>transactional</code>
     </DeprecatedMethod>
     <MissingConstructor>

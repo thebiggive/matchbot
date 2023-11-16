@@ -11,7 +11,7 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels;
-use MatchBot\Application\PSPStubber;
+use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -25,7 +25,6 @@ use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
 use Stripe\PaymentIntent;
-use Stripe\StripeClient;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 use TypeError;
@@ -45,7 +44,7 @@ class Update extends Action
         private DonationRepository $donationRepository,
         private EntityManagerInterface $entityManager,
         private SerializerInterface $serializer,
-        private StripeClient $stripeClient,
+        private Stripe $stripe,
         LoggerInterface $logger
     ) {
         parent::__construct($logger);
@@ -335,7 +334,7 @@ class Update extends Action
 
             if ($donationData->autoConfirmFromCashBalance) {
                 try {
-                    $confirmedIntent = $this->stripeClient->paymentIntents->confirm($donation->getTransactionId());
+                    $confirmedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId());
                     if ($confirmedIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
                         // As this is autoConfirmFromCashBalance and we only expect people to make such donations if they
                         // have a sufficient balance we expect PI to succeed synchronosly. If it didn't we don't want to
@@ -409,7 +408,7 @@ class Update extends Action
 
         if ($donation->getPsp() === 'stripe') {
             try {
-                $this->cancelOnStripe($donation);
+                $this->stripe->cancelPaymentIntent($donation->getTransactionId());
             } catch (ApiErrorException $exception) {
                 /**
                  * As per the notes in {@see DonationRepository::releaseMatchFunds()}, we
@@ -476,12 +475,7 @@ class Update extends Action
      */
     private function updatePaymentIntent(Donation $donation): void
     {
-        if (PSPStubber::byPassStripe()) {
-            PSPStubber::pause();
-            return;
-        }
-
-        $this->stripeClient->paymentIntents->update($donation->getTransactionId(), [
+        $this->stripe->updatePaymentIntent($donation->getTransactionId(), [
             'amount' => $donation->getAmountFractionalIncTip(),
             'currency' => strtolower($donation->getCurrencyCode()),
             'metadata' => [
@@ -520,7 +514,7 @@ class Update extends Action
             $exception instanceof InvalidRequestException &&
             str_starts_with($exception->getMessage(), $alreadyCapturedMsg)
         ) {
-            $latestPI = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
+            $latestPI = $this->stripe->retrievePaymentIntent($donation->getTransactionId());
             if ($latestPI->application_fee_amount === $donation->getAmountToDeductFractional()) {
                 $noFeeChangeMessage = 'Stripe Payment Intent update ignored after capture; no fee ' .
                     'change on %s, %s [%s]: %s';
@@ -569,18 +563,9 @@ class Update extends Action
         return null;
     }
 
-    private function cancelOnStripe(Donation $donation): void
-    {
-        if (PSPStubber::byPassStripe()) {
-            PSPStubber::pause();
-        } else {
-            $this->stripeClient->paymentIntents->cancel($donation->getTransactionId());
-        }
-    }
-
     private function cancelDonationAndPaymentIntent(Donation $donation, PaymentIntent $confirmedPaymentIntent): void
     {
-        $this->cancelOnStripe($donation);
+        $this->stripe->cancelPaymentIntent($donation->getTransactionId());
         $donation->cancel();
         $this->entityManager->flush();
 
