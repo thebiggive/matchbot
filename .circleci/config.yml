@@ -135,13 +135,6 @@ workflows:
             - docker-hub-creds
           requires:
             - test
-          filters:
-            branches:
-              only:
-                - develop
-                - main
-                - MAT-326-automated-test-suite
-                - MAT-326-no-plugin
 
   deploy-regression:
     jobs:
