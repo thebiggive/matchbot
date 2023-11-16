@@ -147,6 +147,7 @@ workflows:
                 - develop
                 - main
                 - MAT-326-automated-test-suite
+                - MAT-326-no-plugin
 
   deploy-regression:
     jobs:
