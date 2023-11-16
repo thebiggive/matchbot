@@ -75,6 +75,9 @@ class CharityTest extends TestCase
     }
 
 
+    /**
+     * @return array<array{0:string,1:string,2:bool}>
+     */
     public function pullFromSFProvider(): array
     {
         return [
