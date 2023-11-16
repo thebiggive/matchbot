@@ -5,6 +5,7 @@ namespace MatchBot\Client;
 
 use Stripe\Exception\ApiErrorException;
 use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
 
 /**
  * Abstraction for talking to stripe, either with a real HTTP connection or an imaginary version of stripe for use in
@@ -29,7 +30,7 @@ interface Stripe
     /**
      * @throws ApiErrorException
      */
-    public function confirmPaymentIntent(string $paymentIntentId): PaymentIntent;
+    public function confirmPaymentIntent(string $paymentIntentId, array $params = []): PaymentIntent;
 
     /**
      * @throws ApiErrorException
@@ -40,4 +41,6 @@ interface Stripe
      * @throws ApiErrorException
      */
     public function createPaymentIntent(array $createPayload): PaymentIntent;
+
+    public function retrievePaymentMethod(string $paymentMethodId): PaymentMethod;
 }

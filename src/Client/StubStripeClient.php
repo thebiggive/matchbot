@@ -4,6 +4,7 @@ namespace MatchBot\Client;
 
 use Ramsey\Uuid\Uuid;
 use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
 
 /**
  * Does not connect to stripe. For use in load testing to allow testing Matchbot with high traffic levels
@@ -30,7 +31,7 @@ class StubStripeClient implements Stripe
         $this->pause();
     }
 
-    public function confirmPaymentIntent(string $paymentIntentId): Never
+    public function confirmPaymentIntent(string $paymentIntentId, array $params = []): Never
     {
         throw new \Exception("Confirm Payment Intent not implemented in stub - not currently used in load tests");
     }
@@ -49,5 +50,17 @@ class StubStripeClient implements Stripe
     private static function randomString(): string
     {
         return substr(Uuid::uuid4()->toString(), 0, 15);
+    }
+
+    public function retrievePaymentMethod(string $paymentMethodId): PaymentMethod
+    {
+        $this->pause();
+
+        $paymentMethod = new PaymentMethod('ST' . $this->randomString());
+        $paymentMethod->type = 'card';
+        /** @psalm-suppress PropertyTypeCoercion card */
+        $paymentMethod->card = (object)['brand' => 'visa', 'country' => 'GB'];
+
+        return $paymentMethod;
     }
 }

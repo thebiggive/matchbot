@@ -6,6 +6,7 @@ use MatchBot\Domain\Currency;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\StripeCustomerId;
 use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
 use Stripe\StripeClient;
 
 /**
@@ -28,9 +29,9 @@ class LiveStripeClient implements Stripe
         $this->stripeClient->paymentIntents->update($paymentIntentId, $updateData);
     }
 
-    public function confirmPaymentIntent(string $paymentIntentId): PaymentIntent
+    public function confirmPaymentIntent(string $paymentIntentId, array $params = []): PaymentIntent
     {
-        return $this->stripeClient->paymentIntents->confirm($paymentIntentId);
+        return $this->stripeClient->paymentIntents->confirm($paymentIntentId, $params);
     }
 
     public function retrievePaymentIntent(string $paymentIntentId): PaymentIntent
@@ -41,5 +42,10 @@ class LiveStripeClient implements Stripe
     public function createPaymentIntent(array $createPayload): PaymentIntent
     {
         return $this->stripeClient->paymentIntents->create($createPayload);
+    }
+
+    public function retrievePaymentMethod(string $paymentMethodId): PaymentMethod
+    {
+        return $this->stripeClient->paymentMethods->retrieve($paymentMethodId);
     }
 }
