@@ -51,11 +51,11 @@
         "thebiggive/messages": "^3.0"
     },
     "require-dev": {
+        "infection/infection": "^0.27.8",
         "jetbrains/phpstorm-attributes": "^1.0",
         "phpspec/prophecy-phpunit": "^2.0",
         "phpunit/phpunit": "^9.5",
         "psalm/plugin-phpunit": "^0.18.4",
-        "roave/infection-static-analysis-plugin": "^1.33",
         "roave/security-advisories": "dev-latest",
         "squizlabs/php_codesniffer": "^3.6",
         "vimeo/psalm": "^5.14.0",
@@ -99,7 +99,7 @@
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
         "doctrine:migrate:generate": "doctrine-migrations generate",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
-        "sa:check": "vendor/bin/psalm",
+        "sa:check": "vendor/bin/psalm --threads=4",
         "sa:check-with-new-cache": "vendor/bin/psalm --clear-cache; vendor/bin/psalm",
         "lint:check": "phpcs --standard=phpcs.xml -s .",
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",
@@ -162,7 +162,7 @@
         "integration-test": "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random",
         "mutation-test": [
             "Composer\\Config::disableProcessTimeout",
-            "vendor/bin/roave-infection-static-analysis-plugin --psalm-config psalm.xml"
+            "vendor/bin/infection --threads=4"
         ]
     }
 }
