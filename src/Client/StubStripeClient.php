@@ -31,9 +31,14 @@ class StubStripeClient implements Stripe
         $this->pause();
     }
 
-    public function confirmPaymentIntent(string $paymentIntentId, array $params = []): Never
+    public function confirmPaymentIntent(string $paymentIntentId, array $params = []): PaymentIntent
     {
-        throw new \Exception("Confirm Payment Intent not implemented in stub - not currently used in load tests");
+        $this->pause();
+
+        $pi = new PaymentIntent($paymentIntentId);
+        $pi->status = PaymentIntent::STATUS_SUCCEEDED;
+
+        return $pi;
     }
 
     public function retrievePaymentIntent(string $paymentIntentId): Never
