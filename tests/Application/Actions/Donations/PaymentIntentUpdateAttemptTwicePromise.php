@@ -25,11 +25,10 @@ class PaymentIntentUpdateAttemptTwicePromise implements PromiseInterface
     public function __construct(
         private bool $succeedSecondTry,
         private bool $throwAlreadyCapturedSecondTry,
-        private PaymentIntent $paymentIntent,
     ) {
     }
 
-    public function execute(array $args, ObjectProphecy $object, MethodProphecy $method)
+    public function execute(array $args, ObjectProphecy $object, MethodProphecy $method): void
     {
         if ($this->callsCount === 0 || (!$this->succeedSecondTry && !$this->throwAlreadyCapturedSecondTry)) {
             $this->callsCount++;
@@ -44,8 +43,6 @@ class PaymentIntentUpdateAttemptTwicePromise implements PromiseInterface
             $throwPromise = new ThrowPromise($this->getStripeAlreadyCapturedException());
             $throwPromise->execute($args, $object, $method);
         }
-
-        return $this->paymentIntent;
     }
 
     private function getStripeObjectLockException(): RateLimitException

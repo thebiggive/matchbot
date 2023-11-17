@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Donations\Confirm;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
@@ -18,6 +19,8 @@ use Slim\Psr7\Response;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
+use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
 use Stripe\Service\PaymentIntentService;
 use Stripe\Service\PaymentMethodService;
 use Stripe\StripeClient;
@@ -241,7 +244,7 @@ class ConfirmTest extends TestCase
     }
 
     /**
-     * @return ObjectProphecy<StripeClient>
+     * @return ObjectProphecy<Stripe>
      */
     private function fakeStripeClient(
         array $cardDetails,
@@ -253,30 +256,29 @@ class ConfirmTest extends TestCase
         bool $confirmFailsWithApiError,
         bool $confirmFailsWithPaymentMethodUsedError,
     ): ObjectProphecy {
-        $paymentMethod = (object)[
-            'type' => 'card',
-            'card' => (object)$cardDetails,
-        ];
-        $stripePaymentMethodsProphecy = $this->prophesize(PaymentMethodService::class);
-        $stripePaymentMethodsProphecy->retrieve($paymentMethodId)
+        $paymentMethod = new PaymentMethod(['id' => 'id-doesnt-matter-for-test']);
+        $paymentMethod->type = 'card';
+
+        /** @psalm-suppress InvalidPropertyAssignmentValue */
+        $paymentMethod->card = $cardDetails;
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->retrievePaymentMethod($paymentMethodId)
             ->willReturn($paymentMethod);
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+        $updatedPaymentIntent = new PaymentIntent(['id' => 'id-doesnt-matter-for-test', ...$updatedIntentData]);
+        $updatedPaymentIntent->status = $updatedIntentData['status'];
+        $updatedPaymentIntent->client_secret = $updatedIntentData['client_secret']; // here
 
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentMethods = $stripePaymentMethodsProphecy;
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy;
+        $stripeProphecy->retrievePaymentIntent($paymentIntentId)
+            ->willReturn($updatedPaymentIntent);
 
-        $stripePaymentIntentsProphecy->retrieve($paymentIntentId)
-            ->willReturn((object)$updatedIntentData);
-
-        $stripePaymentIntentsProphecy->update(
+        $stripeProphecy->updatePaymentIntent(
             $paymentIntentId,
             $expectedMetadataUpdate
         )->shouldBeCalled();
 
-        $confirmation = $stripePaymentIntentsProphecy->confirm($paymentIntentId, ["payment_method" => $paymentMethodId])
-            ->willReturn((object)$updatedIntentData);
+        $confirmation = $stripeProphecy->confirmPaymentIntent($paymentIntentId, ["payment_method" => $paymentMethodId])
+            ->willReturn($updatedPaymentIntent);
 
         if ($confirmFailsWithCardError) {
             $exception = CardException::factory(
@@ -308,7 +310,7 @@ class ConfirmTest extends TestCase
 
         $confirmation->shouldBeCalled();
 
-        return $stripeClientProphecy;
+        return $stripeProphecy;
     }
 
     /**

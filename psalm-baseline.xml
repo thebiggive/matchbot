@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<files psalm-version="5.14.0@b2942cefed8443002bd3f245c4cd0a54193716d8">
+<files psalm-version="5.15.0@5c774aca4746caf3d239d9c8cadb9f882ca29352">
   <file src="app/dependencies.php">
     <DeprecatedClass>
       <code><![CDATA[Setup::createAnnotationMetadataConfiguration(
@@ -33,7 +33,6 @@
       <code><![CDATA[$c->get(LoggerInterface::class)]]></code>
       <code><![CDATA[$c->get(ORM\Configuration::class)]]></code>
       <code><![CDATA[$c->get(ProblemDetailsResponseFactory::class)]]></code>
-      <code><![CDATA[$c->get(Redis::class)]]></code>
       <code><![CDATA[$c->get(Redis::class)]]></code>
       <code><![CDATA[$em->getConnection()]]></code>
       <code><![CDATA[$loggerSettings['name']]]></code>
@@ -194,29 +193,6 @@
       <code>$args</code>
       <code>$response</code>
     </UnusedClosureParam>
-  </file>
-  <file src="integrationTests/CreateDonationEvenWhenEntityManagerClosesAfterFirstPersistsTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[EntityManager::create(
-        // for this test we don't need the RetrySafeEntityManager - using the standard EM makes things simpler.
-            $this->getContainer()->get('settings')['doctrine']['connection'],
-            $this->getContainer()->get(\Doctrine\ORM\Configuration::class),
-        )]]></code>
-    </DeprecatedMethod>
-    <MethodSignatureMismatch>
-      <code>$entity</code>
-    </MethodSignatureMismatch>
-    <MixedArgument>
-      <code><![CDATA[$this->getContainer()->get('settings')['doctrine']['connection']]]></code>
-      <code><![CDATA[$this->getContainer()->get('settings')['doctrine']['connection']]]></code>
-      <code><![CDATA[$this->getContainer()->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$this->getContainer()->get(\Doctrine\ORM\Configuration::class)]]></code>
-      <code><![CDATA[$this->getContainer()->get(\Doctrine\ORM\Configuration::class)]]></code>
-    </MixedArgument>
-    <MixedArrayAccess>
-      <code><![CDATA[$this->getContainer()->get('settings')['doctrine']]]></code>
-      <code><![CDATA[$this->getContainer()->get('settings')['doctrine']]]></code>
-    </MixedArrayAccess>
   </file>
   <file src="integrationTests/DonationPersistenceTest.php">
     <DeprecatedMethod>
@@ -580,37 +556,17 @@
     <ImpureMethodCall>
       <code>buildKey</code>
       <code>buildKey</code>
-      <code>buildKey</code>
-      <code>buildKey</code>
-      <code>buildKey</code>
-      <code>buildKey</code>
-      <code>exec</code>
       <code>exec</code>
       <code>incrBy</code>
-      <code>incrBy</code>
-      <code>incrBy</code>
-      <code>multi</code>
       <code>multi</code>
       <code>saveFundingsToDatabase</code>
       <code>set</code>
-      <code>set</code>
-      <code>setFundingValue</code>
-      <code>setFundingValue</code>
-      <code>setFundingValue</code>
       <code>setFundingValue</code>
       <code>toCurrencyFractionalUnit</code>
       <code>toCurrencyFractionalUnit</code>
-      <code>toCurrencyFractionalUnit</code>
-      <code>toCurrencyFractionalUnit</code>
-      <code>toCurrencyWholeUnit</code>
-      <code>toCurrencyWholeUnit</code>
-      <code>toCurrencyWholeUnit</code>
-      <code>toCurrencyWholeUnit</code>
-      <code>toCurrencyWholeUnit</code>
       <code>toCurrencyWholeUnit</code>
     </ImpureMethodCall>
     <ImpureStaticProperty>
-      <code>static::$storageDurationSeconds</code>
       <code>static::$storageDurationSeconds</code>
     </ImpureStaticProperty>
     <InvalidArgument>
@@ -823,9 +779,6 @@
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Domain/CampaignFundingRepository.php">
-    <InvalidNullableReturnType>
-      <code>CampaignFunding</code>
-    </InvalidNullableReturnType>
     <MixedInferredReturnType>
       <code>?CampaignFunding</code>
       <code>?CampaignFunding</code>
@@ -838,9 +791,6 @@
       <code><![CDATA[$query->getResult()]]></code>
       <code>CampaignFunding[]</code>
     </MixedReturnTypeCoercion>
-    <NullableReturnStatement>
-      <code><![CDATA[$this->find($campaignFunding->getId(), LockMode::PESSIMISTIC_WRITE)]]></code>
-    </NullableReturnStatement>
     <PossiblyUnusedMethod>
       <code>getAvailableFundings</code>
     </PossiblyUnusedMethod>
@@ -981,7 +931,6 @@
     </ArgumentTypeCoercion>
     <DeprecatedMethod>
       <code>getResultCacheImpl</code>
-      <code>transactional</code>
       <code>transactional</code>
     </DeprecatedMethod>
     <MissingConstructor>

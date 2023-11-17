@@ -17,7 +17,7 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
-use MatchBot\Application\PSPStubber;
+use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
@@ -28,15 +28,12 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ApiErrorException;
-use Stripe\PaymentIntent;
-use Stripe\StripeClient;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class Create extends Action
 {
     private const MAX_CREATE_RETRY_COUNT = 4;
-    private bool $bypassStripe;
 
     #[Pure]
     public function __construct(
@@ -44,12 +41,11 @@ class Create extends Action
         private CampaignRepository $campaignRepository,
         private RetrySafeEntityManager $entityManager,
         private SerializerInterface $serializer,
-        private StripeClient $stripeClient,
+        private Stripe $stripe,
         private Adapter $matchingAdapter,
         LoggerInterface $logger
     ) {
         parent::__construct($logger);
-        $this->bypassStripe = PSPStubber::byPassStripe();
     }
 
     /**
@@ -219,12 +215,7 @@ class Create extends Action
             }
 
             try {
-                if ($this->bypassStripe) {
-                    PSPStubber::pause();
-                    $intent = new PaymentIntent('ST' . PSPStubber::randomString());
-                } else {
-                    $intent = $this->stripeClient->paymentIntents->create($createPayload);
-                }
+                $intent = $this->stripe->createPaymentIntent($createPayload);
             } catch (ApiErrorException $exception) {
                 $message = $exception->getMessage();
 
