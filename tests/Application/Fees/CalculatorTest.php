@@ -188,8 +188,9 @@ class CalculatorTest extends TestCase
         $settingsFunction = require __DIR__ . '/../../../app/settings.php';
         $settingsFunction($builder);
 
-        $container = $builder->build();
+        $settings = $builder->build()->get('settings');
+        \assert(is_array($settings));
 
-        return $container->get('settings');
+        return $settings;
     }
 }
