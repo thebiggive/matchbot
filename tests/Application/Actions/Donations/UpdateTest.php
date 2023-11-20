@@ -500,7 +500,7 @@ class UpdateTest extends TestCase
             'requires_payment_method, requires_capture, requires_confirmation, requires_action, ' .
             'processing.';
         $stripeApiException = new InvalidRequestException($stripeErrorMessage);
-        
+
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->cancelPaymentIntent('pi_externalId_123')
             ->shouldBeCalledOnce()
@@ -1054,7 +1054,7 @@ class UpdateTest extends TestCase
         $stripeErrorMessage = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
             'after a capture has already been made.';
         $stripeApiException = new InvalidRequestException($stripeErrorMessage);
-        
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 526;
@@ -1150,7 +1150,7 @@ class UpdateTest extends TestCase
         $stripeErrorMessage = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
             'after a capture has already been made.';
         $stripeApiException = new InvalidRequestException($stripeErrorMessage);
-        
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 527; // Different from what we'll derive to be right.
@@ -1250,7 +1250,7 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
-        
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 526;
@@ -1348,7 +1348,7 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
-        
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 526;
@@ -1448,7 +1448,7 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
-        
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 526;
@@ -1663,7 +1663,7 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::Card);  // Get a new mock object so DB has old values.
+        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::Card);  // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
 
@@ -1727,10 +1727,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::Card);
+        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::Card);
         // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
@@ -1793,10 +1793,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
+        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
 
@@ -1873,10 +1873,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
+        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
