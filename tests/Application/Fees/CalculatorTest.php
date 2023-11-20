@@ -4,34 +4,13 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Fees;
 
+use DI\ContainerBuilder;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Tests\Application\VatTrait;
 use MatchBot\Tests\TestCase;
 
 class CalculatorTest extends TestCase
 {
-    use VatTrait;
-
-    /**
-     * At time of writing this matches the settings in app/settings.php . Copied here to make the test self-contained
-     * and to make it clear which settings are relevant to the calculator and to these tests.
-     */
-    private const SETTINGS_WITHOUT_VAT = [
-        'stripe' => [
-            'fee' => [
-                'fixed' => [
-                    'SEK' => '1.8',
-                    // ... other currencies, EUR, USD etc etc. Not tested here.
-                    'FICTIONAL_CURRENCY_FEE_IGNORED' => '42',
-                    'default' => '0.2'
-                ],
-                'main_percentage_standard' => '1.5',
-                'main_percentage_amex_or_non_uk_eu' => '3.2',
-                'gift_aid_percentage' => '0.75', // 3% of Gift Aid amount.
-            ]
-        ],
-    ];
-
     public function testStripeUKCardGBPDonation(): void
     {
         $calculator = new Calculator(
@@ -88,7 +67,7 @@ class CalculatorTest extends TestCase
     public function testStripeUSCardGBPDonation(): void
     {
         $calculator = new Calculator(
-            self::SETTINGS_WITHOUT_VAT,
+            $this->settingsWithoutVAT(),
             'stripe',
             'visa',
             'US',
@@ -104,7 +83,7 @@ class CalculatorTest extends TestCase
     public function testStripeUSCardGBPDonationWithTbgClaimingGiftAid(): void
     {
         $calculator = new Calculator(
-            self::SETTINGS_WITHOUT_VAT,
+            $this->settingsWithoutVAT(),
             'stripe',
             'visa',
             'US',
@@ -120,7 +99,7 @@ class CalculatorTest extends TestCase
     public function testStripeUKCardSEKDonation(): void
     {
         $calculator = new Calculator(
-            self::SETTINGS_WITHOUT_VAT,
+            $this->settingsWithoutVAT(),
             'stripe',
             'visa',
             'GB',
@@ -136,7 +115,7 @@ class CalculatorTest extends TestCase
     public function testStripeUSCardSEKDonation(): void
     {
         $calculator = new Calculator(
-            self::SETTINGS_WITHOUT_VAT,
+            $this->settingsWithoutVAT(),
             'stripe',
             'visa',
             'US',
@@ -190,10 +169,27 @@ class CalculatorTest extends TestCase
         $this->assertEquals('0.00', $calculator->getFeeVat());
     }
 
-    public function settingsWithVAT(): array
+    private function settingsWithVAT(): array
     {
-        return $this->getUKLikeVATSettings(
-            self::SETTINGS_WITHOUT_VAT
-        );
+        putenv('VAT_PERCENTAGE_LIVE=20');
+        putenv('VAT_LIVE_DATE=2020-01-01');
+
+        $settings = $this->settingsWithoutVAT();
+
+        putenv('VAT_PERCENTAGE_LIVE=');
+        putenv('VAT_LIVE_DATE=');
+
+        return $settings;
+    }
+
+    private function settingsWithoutVAT(): array
+    {
+        $builder = new ContainerBuilder();
+        $settingsFunction = require __DIR__ . '/../../../app/settings.php';
+        $settingsFunction($builder);
+
+        $container = $builder->build();
+
+        return $container->get('settings');
     }
 }
