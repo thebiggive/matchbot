@@ -103,8 +103,6 @@ class OptimisticRedisAdapterTest extends TestCase
                 }
 
                 $this->assertSame('0.00', $funding->getAmountAvailable());
-
-                // this seems like it could be a bug as the amount in storage is negative after the exception was caught?
                 $this->assertSame('0.00', $this->sut->getAmountAvailable($funding));
         });
     }
