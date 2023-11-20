@@ -37,7 +37,7 @@ class PatchHistoricNonDefaultFeeDonations extends Command
                              WHERE donationStatus in ('Paid', 'Collected')
                                  AND paymentMethodType = 'card'
                                  AND createdAt > '2023-09-22' -- commit 5860113 of this date introduced buggy confirm function
-                                 AND createdAt < '2023-11-20' -- hopefully the bug will have been fixed before that date.
+                                 AND createdAt < '2023-11-23' -- hopefully the bug will have been fixed before that date.
                                  AND id > :idOfLastDonationPatched 
                                  ORDER BY id
                                  LIMIT 500",
@@ -60,11 +60,10 @@ class PatchHistoricNonDefaultFeeDonations extends Command
                 'donationUuid' => $donation['uuid'],
                 'charityFee' => $stripeFeeRechargeNet,
                 'charityFeeVat' => $stripeFeeRechargeVat,
-                'salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE,
             ];
             $rowsAffected = $this->connection->executeStatement(
                 <<<'SQL'
-                    UPDATE Donation set charityFee = :charityFee, charityFeeVat = :charityFeeVat, salesforcePushStatus = :salesforcePushStatus
+                    UPDATE Donation set charityFee = :charityFee, charityFeeVat = :charityFeeVat
                                     WHERE uuid = :donationUuid
                                     LIMIT 1
                     SQL
@@ -77,6 +76,21 @@ class PatchHistoricNonDefaultFeeDonations extends Command
                 0 => $output->writeln("Donation data already matches stripe, nothing to update"),
                 1 => $output->writeln("Donation data updated: uuid: {$donation['uuid']}, charityFee $stripeFeeRechargeNet, charityFeeVat $stripeFeeRechargeVat"),
             };
+
+            if ($rowsAffected === 1) {
+                $this->connection->executeStatement(
+                    <<<'SQL'
+                    UPDATE Donation set salesforcePushStatus = :salesforcePushStatus
+                                    WHERE uuid = :donationUuid
+                                    LIMIT 1
+                    SQL
+                    ,
+                    [
+                        'donationUuid' => $donation['uuid'],
+                        'salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE
+                    ]
+                );
+            }
 
             $output->writeln('');
         }
