@@ -37,7 +37,7 @@ class PatchHistoricNonDefaultFeeDonations extends Command
                              WHERE donationStatus in ('Paid', 'Collected')
                                  AND paymentMethodType = 'card'
                                  AND createdAt > '2023-09-22' -- commit 5860113 of this date introduced buggy confirm function
-                                 AND createdAt < '2023-11-20' -- hopefully the bug will have been fixed before that date.
+                                 AND createdAt < '2023-11-23' -- hopefully the bug will have been fixed before that date.
                                  AND id > :idOfLastDonationPatched 
                                  ORDER BY id
                                  LIMIT 500",
