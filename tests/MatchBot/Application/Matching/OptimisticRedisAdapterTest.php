@@ -110,10 +110,10 @@ class OptimisticRedisAdapterTest extends TestCase
 
     public function testItBailsOutAndReleasesFundsIfRetryingDoesntWorkDueToConcurrentRequests(): void
     {
-        // let's assume another thread is causing the funds to reduce by 30 just
-        // after each time we increase it by 30.
+        // let's assume another thread is causing the funds to reduce by 30 pounds just
+        // after each time we increase it by 30 pounds.
         $this->storage->setPreIncrCallBack(function (string $key) {
-            return $this->storage->decrBy($key, 30);
+            return $this->storage->decrBy($key, 30_00);
         });
 
         $this->sut->runTransactionally(function () {
@@ -125,9 +125,9 @@ class OptimisticRedisAdapterTest extends TestCase
             $this->sut->subtractAmount($funding, $amountToSubtract);
 
             $this->expectException(TerminalLockException::class);
-            // todo - work out where the 1880 figure here comes from. Message below is just pasted in from
+            // todo - work out where the -100_00 figure here comes from. Message below is just pasted in from
             // result of running the test.
-            $this->expectExceptionMessage("Fund 53 balance sub-zero after 6 attempts. Releasing final 1880 'cents'");
+            $this->expectExceptionMessage("Fund 53 balance sub-zero after 6 attempts. Releasing final -10000 'cents'");
             $this->sut->subtractAmount($funding, $amountToSubtract);
 
         });
