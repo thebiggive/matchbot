@@ -57,7 +57,7 @@ class CalculatorTest extends TestCase
             'visa',
             'GB',
             '123',
-            'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
+            'GbP', // Case doesn't matter for calculator
             false,
             5, // 5% fee inc. 20% VAT.
         );
@@ -107,7 +107,7 @@ class CalculatorTest extends TestCase
             'visa',
             'GB',
             '123',
-            'SEK', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
+            'sek',
             false,
         );
 
