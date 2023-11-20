@@ -14,16 +14,13 @@ class DonationCreate
 {
     /**
      * @param string $donationAmount In full currency unit, e.g. whole pounds GBP, whole dollars USD
-     * @param PaymentMethodType $paymentMethodType
-     * @param string $projectId
-     * @param string $psp
      */
     public function __construct(
         public string $currencyCode,
         public string $donationAmount,
         public string $projectId,
         public string $psp,
-        public PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
+        public PaymentMethodType $pspMethodType = PaymentMethodType::Card,
         public ?string $countryCode = null,
         public ?string $feeCoverAmount = '0.00',
         public ?bool $giftAid = null,

@@ -336,7 +336,7 @@ class Donation extends SalesforceWriteProxy
         $donation = new self(
             $donationData->donationAmount,
             $donationData->currencyCode,
-            $donationData->paymentMethodType,
+            $donationData->pspMethodType,
         );
 
         $donation->setPsp($psp);

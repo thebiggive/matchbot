@@ -25,11 +25,10 @@ trait DonationTestDataTrait
 
     protected function getTestDonation(
         string $amount = '123.45',
-        PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
+        PaymentMethodType $pspMethodType = PaymentMethodType::Card,
         string $tipAmount = '1.00',
         string $currencyCode = 'GBP',
-    ): Donation
-    {
+    ): Donation {
         $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
         $charity->setName('Test charity');
@@ -40,7 +39,8 @@ trait DonationTestDataTrait
         $campaign->setName('Test campaign');
         $campaign->setSalesforceId('456ProjectId');
 
-        $donation = Donation::emptyTestDonation(amount: $amount, paymentMethodType: $paymentMethodType, currencyCode: $currencyCode);
+        /** @psalm-suppress DeprecatedMethod **/
+        $donation = Donation::emptyTestDonation(amount: $amount, paymentMethodType: $pspMethodType, currencyCode: $currencyCode);
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCharityFee('2.05');
         $donation->setCampaign($campaign);

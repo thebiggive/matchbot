@@ -85,7 +85,7 @@ class DonationTest extends TestCase
             donationAmount: '25001',
             projectId: "any project",
             psp:'stripe',
-            paymentMethodType: PaymentMethodType::Card
+            pspMethodType: PaymentMethodType::Card
         ), $this->getMinimalCampaign());
     }
 
@@ -96,7 +96,7 @@ class DonationTest extends TestCase
             donationAmount: '200000',
             projectId: "any project",
             psp:'stripe',
-            paymentMethodType: PaymentMethodType::CustomerBalance
+            pspMethodType: PaymentMethodType::CustomerBalance
         ), $this->getMinimalCampaign());
 
         $this->assertSame('200000', $donation->getAmount());
@@ -112,7 +112,7 @@ class DonationTest extends TestCase
             donationAmount: '200001',
             projectId: "any project",
             psp:'stripe',
-            paymentMethodType: PaymentMethodType::CustomerBalance
+            pspMethodType: PaymentMethodType::CustomerBalance
         ), $this->getMinimalCampaign());
     }
 
@@ -136,7 +136,7 @@ class DonationTest extends TestCase
             donationAmount: '1',
             projectId: "any project",
             psp:'stripe',
-            paymentMethodType: PaymentMethodType::CustomerBalance,
+            pspMethodType: PaymentMethodType::CustomerBalance,
             tipAmount: '0.01',
         ), $this->getMinimalCampaign());
     }
@@ -294,7 +294,7 @@ class DonationTest extends TestCase
 
     public function testGetStripePIHelpersWithCustomerBalanceGbp(): void
     {
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $expectedPaymentMethodProperties = [
             'payment_method_types' => ['customer_balance'],
@@ -321,7 +321,7 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Customer balance payments only supported for GBP');
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0', currencyCode: 'SEK');
+        $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0', currencyCode: 'SEK');
 
         $donation->getStripeMethodProperties(); // Throws in this getter for now.
     }
@@ -361,7 +361,7 @@ class DonationTest extends TestCase
             donationAmount: '200000',
             projectId: "any project",
             psp:'stripe',
-            paymentMethodType: PaymentMethodType::CustomerBalance
+            pspMethodType: PaymentMethodType::CustomerBalance
         ), $this->getMinimalCampaign());
 
         $this->assertSame('Test First Name', $donation->getDonorFirstName(true));

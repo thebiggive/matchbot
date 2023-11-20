@@ -80,7 +80,7 @@ class DonationRepositoryTest extends IntegrationTest
             giftAid: true,
             projectId: 'ccampaign123',
             psp: 'stripe',
-            paymentMethodType: PaymentMethodType::CustomerBalance
+            pspMethodType: PaymentMethodType::CustomerBalance
         ), $campaign);
         $donation->setDonationStatus(DonationStatus::Paid);
         $donation->setCollectedAt((new \DateTimeImmutable())->sub(new \DateInterval('P14D')));

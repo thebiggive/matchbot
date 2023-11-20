@@ -153,7 +153,7 @@ class DonationRepositoryTest extends TestCase
         $createPayload = new DonationCreate(
             currencyCode: 'USD',
             donationAmount: '123.32',
-            paymentMethodType: PaymentMethodType::Card,
+            pspMethodType: PaymentMethodType::Card,
             projectId: 'testProject123',
             psp: 'stripe',
         );
@@ -182,7 +182,7 @@ class DonationRepositoryTest extends TestCase
         $createPayload = new DonationCreate(
             currencyCode: 'CAD',
             donationAmount: '144.44',
-            paymentMethodType: PaymentMethodType::Card,
+            pspMethodType: PaymentMethodType::Card,
             projectId: 'testProject123',
             psp: 'stripe',
         );
