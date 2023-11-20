@@ -2,12 +2,12 @@ openapi: 3.0.0
 servers:
   # Added by API Auto Mocking Plugin
   - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/Noel/TBG-Donations/1.0.8
+    url: https://virtserver.swaggerhub.com/Noel/TBG-Donations/1.0.10
   - description: "MatchBot staging"
     url: https://matchbot-staging.thebiggivetest.org.uk/v1
 info:
   description: The Big Give Donations public API
-  version: 1.0.9
+  version: 1.0.10
   title: Donations
   contact:
     email: tech@thebiggive.org.uk
@@ -121,12 +121,12 @@ paths:
     get:
       summary: Get stored payment methods (i.e. payment cards) for a person
       responses:
-          '200':
-            description: List of payment methods as returned to Matchbot by the Stripe API
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/PaymentMethodsResponse'
+        '200':
+          description: List of payment methods as returned to Matchbot by the Stripe API
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethodsResponse'
 
 
 components:
@@ -270,7 +270,7 @@ components:
           description: |
             Identifier used client-side by some PSPs
             to complete an initialised payment
-        paymentMethodType:
+        pspMethodType:
           type: string
           enum: ["card", "customer_balance"]
           default: "card"
