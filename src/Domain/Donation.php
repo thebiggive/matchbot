@@ -739,7 +739,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return string Total amount *finalised*, matched by `Fund`s of type "pledge"
      */
-    public function getConfirmedPledgeWithdrawalTotal(): string
+    private function getConfirmedPledgeWithdrawalTotal(): string
     {
         if (!$this->getDonationStatus()->isSuccessful()) {
             return '0.0';
