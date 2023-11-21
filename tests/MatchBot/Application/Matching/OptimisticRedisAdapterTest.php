@@ -126,6 +126,7 @@ class OptimisticRedisAdapterTest extends TestCase
 
             $this->expectException(TerminalLockException::class);
             // todo - work out where the -100_00 figure here comes from. Message below is just pasted in from
+            // see ticket MAT-332
             // result of running the test.
             $this->expectExceptionMessage("Fund 53 balance sub-zero after 6 attempts. Releasing final -10000 'cents'");
             $this->sut->subtractAmount($funding, $amountToSubtract);
