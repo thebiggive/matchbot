@@ -23,8 +23,14 @@ class DonationTest extends TestCase
 
     public function testBasicsAsExpectedOnInstantion(): void
     {
-        $donation = $this->getMiminalDonation();
-
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '1',
+            projectId: "any project",
+            psp:'stripe',
+            pspMethodType: PaymentMethodType::Card
+        ), $this->getMinimalCampaign());
+        
         $this->assertFalse($donation->getDonationStatus()->isSuccessful());
         $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
         $this->assertNull($donation->getSalesforceLastPush());
@@ -36,7 +42,7 @@ class DonationTest extends TestCase
 
     public function testPendingDonationDoesNotHavePostCreateUpdates(): void
     {
-        $donation = $this->getMiminalDonation();
+        $donation = $this->getTestDonation();
         $donation->setDonationStatus(DonationStatus::Pending);
 
         $this->assertFalse($donation->hasPostCreateUpdates());
@@ -44,7 +50,7 @@ class DonationTest extends TestCase
 
     public function testPaidDonationHasPostCreateUpdates(): void
     {
-        $donation = $this->getMiminalDonation();
+        $donation = $this->getTestDonation();
         $donation->setDonationStatus(DonationStatus::Paid);
 
         $this->assertTrue($donation->hasPostCreateUpdates());
@@ -52,7 +58,7 @@ class DonationTest extends TestCase
 
     public function testValidDataPersisted(): void
     {
-        $donation = Donation::emptyTestDonation('100.00');
+        $donation = $this->getTestDonation('100.00');
         $donation->setTipAmount('1.13');
 
         $this->assertEquals('100.00', $donation->getAmount());
@@ -66,7 +72,7 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
-        Donation::emptyTestDonation('0.99');
+        $this->getTestDonation('0.99');
     }
 
     public function testAmountTooHighNotPersisted(): void
@@ -74,7 +80,7 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
-        Donation::emptyTestDonation('25000.01');
+        $this->getTestDonation('25000.01');
     }
 
     public function test25k1CardIsTooHigh(): void
@@ -120,7 +126,7 @@ class DonationTest extends TestCase
 
     public function testTipAmountTooHighNotPersisted(): void
     {
-        $donation = $this->getMiminalDonation();
+        $donation = $this->getTestDonation();
 
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Tip amount must not exceed 25000 GBP');
@@ -148,14 +154,14 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage("Unexpected PSP 'paypal'");
 
-        $donation = $this->getMiminalDonation();
+        $donation = $this->getTestDonation();
         /** @psalm-suppress InvalidArgument */
         $donation->setPsp('paypal');
     }
 
     public function testValidPspAccepted(): void
     {
-        $donation = $this->getMiminalDonation();
+        $donation = $this->getTestDonation();
         $donation->setPsp('stripe');
 
         $this->addToAssertionCount(1); // Just check setPsp() doesn't hit an exception
@@ -163,7 +169,7 @@ class DonationTest extends TestCase
 
     public function testSetAndGetOriginalFee(): void
     {
-        $donation = $this->getMiminalDonation();
+        $donation = $this->getTestDonation();
         $donation->setOriginalPspFeeFractional(123);
 
         $this->assertEquals('1.23', $donation->getOriginalPspFee());
@@ -397,7 +403,7 @@ class DonationTest extends TestCase
      */
     public function testItMakesDonorNameSafeForSalesforce(?string $originalName, string $expecteSafeName): void
     {
-        $donation = $this->getMiminalDonation();
+        $donation = $this->getTestDonation();
         $donation->setDonorLastName($originalName);
 
         $this->assertSame($expecteSafeName, $donation->getDonorLastName(true));
@@ -497,19 +503,11 @@ class DonationTest extends TestCase
 
     public function testItThrowsIfAmountUpdatedByORM(): void
     {
-        $donation = $this->getMiminalDonation();
+        $donation = $this->getTestDonation();
         $this->expectExceptionMessage('Amount may not be changed after a donation is created');
         $changeset = [
             'amount' => ["1", "2"],
         ];
         $donation->preUpdate(new PreUpdateEventArgs($donation, $this->createStub(EntityManagerInterface::class), $changeset));
-    }
-
-    /**
-     * @return Donation
-     */
-    public function getMiminalDonation(): Donation
-    {
-        return Donation::emptyTestDonation('1');
     }
 }
