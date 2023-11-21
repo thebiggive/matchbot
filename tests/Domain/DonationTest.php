@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Domain;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
@@ -21,7 +23,7 @@ class DonationTest extends TestCase
 
     public function testBasicsAsExpectedOnInstantion(): void
     {
-        $donation = Donation::emptyTestDonation('1');
+        $donation = $this->getMiminalDonation();
 
         $this->assertFalse($donation->getDonationStatus()->isSuccessful());
         $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
@@ -34,7 +36,7 @@ class DonationTest extends TestCase
 
     public function testPendingDonationDoesNotHavePostCreateUpdates(): void
     {
-        $donation = Donation::emptyTestDonation('1');
+        $donation = $this->getMiminalDonation();
         $donation->setDonationStatus(DonationStatus::Pending);
 
         $this->assertFalse($donation->hasPostCreateUpdates());
@@ -42,7 +44,7 @@ class DonationTest extends TestCase
 
     public function testPaidDonationHasPostCreateUpdates(): void
     {
-        $donation = Donation::emptyTestDonation('1');
+        $donation = $this->getMiminalDonation();
         $donation->setDonationStatus(DonationStatus::Paid);
 
         $this->assertTrue($donation->hasPostCreateUpdates());
@@ -118,7 +120,7 @@ class DonationTest extends TestCase
 
     public function testTipAmountTooHighNotPersisted(): void
     {
-        $donation = Donation::emptyTestDonation('1');
+        $donation = $this->getMiminalDonation();
 
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Tip amount must not exceed 25000 GBP');
@@ -146,14 +148,14 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage("Unexpected PSP 'paypal'");
 
-        $donation = Donation::emptyTestDonation('1');
+        $donation = $this->getMiminalDonation();
         /** @psalm-suppress InvalidArgument */
         $donation->setPsp('paypal');
     }
 
     public function testValidPspAccepted(): void
     {
-        $donation = Donation::emptyTestDonation('1');
+        $donation = $this->getMiminalDonation();
         $donation->setPsp('stripe');
 
         $this->addToAssertionCount(1); // Just check setPsp() doesn't hit an exception
@@ -161,7 +163,7 @@ class DonationTest extends TestCase
 
     public function testSetAndGetOriginalFee(): void
     {
-        $donation = Donation::emptyTestDonation('1');
+        $donation = $this->getMiminalDonation();
         $donation->setOriginalPspFeeFractional(123);
 
         $this->assertEquals('1.23', $donation->getOriginalPspFee());
@@ -459,5 +461,23 @@ class DonationTest extends TestCase
             ['3.123', '3.123'],
             ['non-numeric string', 'non-numeric string'],
         ];
+    }
+
+    public function testItThrowsIfAmountUpdatedByORM(): void
+    {
+        $donation = $this->getMiminalDonation();
+        $this->expectExceptionMessage('Amount may not be changed after a donation is created');
+        $changeset = [
+            'amount' => ["1", "2"],
+        ];
+        $donation->preUpdate(new PreUpdateEventArgs($donation, $this->createStub(EntityManagerInterface::class), $changeset));
+    }
+
+    /**
+     * @return Donation
+     */
+    public function getMiminalDonation(): Donation
+    {
+        return Donation::emptyTestDonation('1');
     }
 }
