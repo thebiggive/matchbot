@@ -911,7 +911,6 @@
     </PossiblyNullReference>
     <PossiblyUnusedMethod>
       <code>getTbgGiftAidRequestQueuedAt</code>
-      <code>preUpdate</code>
     </PossiblyUnusedMethod>
     <PropertyNotSetInConstructor>
       <code>$campaign</code>
@@ -1680,7 +1679,6 @@
   <file src="tests/Application/DonationTestDataTrait.php">
     <DeprecatedMethod>
       <code><![CDATA[Donation::emptyTestDonation('124.56')]]></code>
-      <code>Donation::emptyTestDonation(amount: $amount, paymentMethodType: $paymentMethodType, currencyCode: $currencyCode)</code>
     </DeprecatedMethod>
   </file>
   <file src="tests/Application/Messenger/Handler/GiftAidResultHandlerTest.php">
@@ -1800,18 +1798,6 @@
     </PossiblyNullReference>
   </file>
   <file src="tests/Domain/DonationTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[Donation::emptyTestDonation('0.99')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('100.00')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('25000.01')]]></code>
-    </DeprecatedMethod>
     <InternalMethod>
       <code>addToAssertionCount</code>
     </InternalMethod>
