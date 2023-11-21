@@ -76,7 +76,7 @@ class OptimisticRedisAdapter extends Adapter
         $decrementFractional = $this->toCurrencyFractionalUnit($amount);
 
         /**
-         * @psalm-suppress PossiblyFalseReference - in multi mode decrBy will not return false.
+         * @psalm-suppress PossiblyFalseReference - in mulit mode decrBy will not return false.
          */
         [$initResponse, $fundBalanceFractional] = $this->storage->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
@@ -113,22 +113,8 @@ class OptimisticRedisAdapter extends Adapter
 
                 echo '$overspendFractional: ' . $overspendFractional . PHP_EOL;
 
-                // If nothing else has changed the fund balance, this assignment is to 0 which
-                // means we're done with this loop and can throw a semi-successful
-                // LessThanRequestedAllocatedException later.
                 /** @psalm-suppress InvalidCast - not in Redis Multi Mode */
                 $fundBalanceFractional = (int) $this->storage->incrBy($this->buildKey($funding), $overspendFractional);
-
-                // If incrBy leaves us with a NEGATIVE balance still, we know we have returned
-                // our own allocation to the pot and that another thread is probably about to
-                // do a similar tidying up. And most likely match funds are really exhausted,
-                // and we have no sensible way to retry within this fn so we throw `TerminalLockException`
-                if ($fundBalanceFractional < 0) {
-                    throw new TerminalLockException(
-                        "Fund {$funding->getId()} balance sub-zero immediately after a balance restore; bailing as match funds probably gone"
-                    );
-                }
-
                 $amountAllocatedFractional -= $overspendFractional;
 
                 echo '$amountAllocatedFractional: ' . $amountAllocatedFractional . PHP_EOL;
