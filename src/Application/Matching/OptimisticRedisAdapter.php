@@ -105,19 +105,11 @@ class OptimisticRedisAdapter extends Adapter
             $retries = 0;
             $amountAllocatedFractional = $decrementFractional;
             while ($retries++ < $this->maxPartialAllocateTries && $fundBalanceFractional < 0) {
-
-                echo '$fundBalanceFractional: ' . $fundBalanceFractional . PHP_EOL;
-
                 // Try deallocating just the difference until the fund has exactly zero
                 $overspendFractional = 0 - $fundBalanceFractional;
-
-                echo '$overspendFractional: ' . $overspendFractional . PHP_EOL;
-
                 /** @psalm-suppress InvalidCast - not in Redis Multi Mode */
                 $fundBalanceFractional = (int) $this->storage->incrBy($this->buildKey($funding), $overspendFractional);
                 $amountAllocatedFractional -= $overspendFractional;
-
-                echo '$amountAllocatedFractional: ' . $amountAllocatedFractional . PHP_EOL;
             }
 
             if ($fundBalanceFractional < 0) {
