@@ -371,6 +371,38 @@ class DonationTest extends TestCase
         $this->assertSame('donor@email.test', $donation->getDonorEmailAddress());
     }
 
+    /**
+     * @return array<array{0: ?string, 1: string}>
+     */
+    public function namesAndSFSafeNames()
+    {
+        return [
+            ['Flintstone', 'Flintstone'],
+            [null, 'N/A'],
+            ['', 'N/A'],
+            [' ', 'N/A'],
+            ['王', '王'], // most common Chinese surname
+            [str_repeat('王', 41), str_repeat('王', 40)],
+            [str_repeat('a', 41), str_repeat('a', 40)],
+            ['👍', '👍'],
+            [str_repeat('👍', 41), str_repeat('👍', 40)],
+            [str_repeat('👩‍👩‍👧‍👧', 10), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
+            [str_repeat('👩‍👩‍👧‍👧', 41), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
+            [str_repeat('👩‍👩‍👧‍👧', 401), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
+        ];
+    }
+
+    /**
+     * @dataProvider namesAndSFSafeNames
+     */
+    public function testItMakesDonorNameSafeForSalesforce(?string $originalName, string $expecteSafeName): void
+    {
+        $donation = $this->getMiminalDonation();
+        $donation->setDonorLastName($originalName);
+
+        $this->assertSame($expecteSafeName, $donation->getDonorLastName(true));
+    }
+
     public function testCanCancelPendingDonation(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate('GBP', '1.00', 'project-id', 'stripe'), $this->getMinimalCampaign());
