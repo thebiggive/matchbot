@@ -398,4 +398,34 @@ class DonationTest extends TestCase
             tipAmount: '-0.01'
         ), $this->getMinimalCampaign());
     }
+
+    /**
+     * @dataProvider APICountryCodeToModelCountryCode
+     */
+    public function testItTakesCountryCodeFromApiModel(?string $apiCountryCode, ?string $expected): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            countryCode: $apiCountryCode,
+            currencyCode: 'GBP',
+            donationAmount: '1.0',
+            projectId: 'project_id',
+            psp: 'stripe',
+        ), new Campaign(TestCase::someCharity()));
+
+        $this->assertSame($expected, $donation->getDonorCountryCode());
+    }
+
+    /**
+     * @return array<array{0: ?string, 1: ?string}>
+     */
+    public function APICountryCodeToModelCountryCode(): array
+    {
+        return [
+            ['', null],
+            ['0', null],
+            [null, null],
+            ['BE', 'BE'],
+            ['be', 'be']
+        ];
+    }
 }
