@@ -898,7 +898,7 @@ class Donation extends SalesforceWriteProxy
         $this->tipGiftAid = $tipGiftAid;
     }
 
-    public function getDonorHomeAddressLine1(): ?string
+    private function getDonorHomeAddressLine1(): ?string
     {
         return $this->donorHomeAddressLine1;
     }
@@ -908,7 +908,7 @@ class Donation extends SalesforceWriteProxy
         $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
     }
 
-    public function getDonorHomePostcode(): ?string
+    private function getDonorHomePostcode(): ?string
     {
         return $this->donorHomePostcode;
     }
