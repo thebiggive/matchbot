@@ -28,6 +28,7 @@ trait DonationTestDataTrait
         PaymentMethodType $pspMethodType = PaymentMethodType::Card,
         string $tipAmount = '1.00',
         string $currencyCode = 'GBP',
+        DonationStatus $status = DonationStatus::Collected,
     ): Donation {
         $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
@@ -46,7 +47,7 @@ trait DonationTestDataTrait
         $donation->setCampaign($campaign);
         $donation->setCharityComms(true);
         $donation->setChampionComms(false);
-        $donation->setDonationStatus(DonationStatus::Collected);
+        $donation->setDonationStatus($status);
         $donation->setCollectedAt(new \DateTimeImmutable());
         $donation->setDonorCountryCode('GB');
         $donation->setDonorEmailAddress('john.doe@example.com');
