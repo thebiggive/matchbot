@@ -15,6 +15,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\Pledge;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use UnexpectedValueException;
@@ -217,9 +218,9 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation(status: DonationStatus::Pending);
 
-        $amountMatchedByPledges = $donation->toHookModel()['amountMatchedByChampionFunds'];
+        $amountMatchedByChampionFunds = $donation->toHookModel()['amountMatchedByChampionFunds'];
 
-        $this->assertSame(0.0, $amountMatchedByPledges);
+        $this->assertSame(0.0, $amountMatchedByChampionFunds);
     }
 
     public function testItSumsNoChampionFundsToZero(): void
@@ -252,6 +253,31 @@ class DonationTest extends TestCase
 
         \assert(1 + 2 === 3);
         $this->assertSame(3.0, $amountMatchedByPledges);
+    }
+
+    public function testItSumsAmountsMatchedByAllFunds(): void
+    {
+        $donation = $this->getTestDonation(status: DonationStatus::Collected);
+        $campaignFunding0 = new CampaignFunding();
+        $campaignFunding0->setFund(new ChampionFund());
+
+        $withdrawal0 = new FundingWithdrawal();
+        $withdrawal0->setCampaignFunding($campaignFunding0);
+        $withdrawal0->setAmount('1');
+
+        $campaignFunding1 = new CampaignFunding();
+        $campaignFunding1->setFund(new Pledge());
+        $withdrawal1 = new FundingWithdrawal();
+        $withdrawal1->setAmount('2');
+        $withdrawal1->setCampaignFunding($campaignFunding1);
+
+        $donation->addFundingWithdrawal($withdrawal0);
+        $donation->addFundingWithdrawal($withdrawal1);
+
+        $amountMatchedByPledges = $donation->getFundingWithdrawalTotal();
+
+        \assert(1 + 2 === 3);
+        $this->assertSame('3.00', $amountMatchedByPledges);
     }
 
     public function testToHookModelWhenRefunded(): void
