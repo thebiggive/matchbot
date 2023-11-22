@@ -19,7 +19,7 @@ class PersonWithPasswordAuthMiddleware extends PersonManagementAuthMiddleware
     protected function checkCompleteness(ServerRequestInterface $request): void
     {
         if (!$this->token->isComplete($this->jws)) {
-            $this->logger->error('JWT error: not complete');
+            $this->logger->error('JWT error: not complete - request URI:' . $request->getUri()  . " referer:" . $request->getServerParams()['HTTP_REFERER'] ?? 'no_referror');
             $this->unauthorised($this->logger, false, $request);
         }
     }
