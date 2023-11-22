@@ -612,4 +612,29 @@ class DonationTest extends TestCase
         ];
         $donation->preUpdate(new PreUpdateEventArgs($donation, $this->createStub(EntityManagerInterface::class), $changeset));
     }
+
+    /**
+     * @dataProvider namesEnoughForSalesForce
+     */
+    public function testItHasEnoughDataForSalesforceOnlyIffBothNamesAreNonEmpty(string $firstName, string $lastName, bool $isEnoughForSalesforce): void
+    {
+        $donation = $this->getTestDonation();
+        $donation->setDonorFirstName($firstName);
+        $donation->setDonorLastName($lastName);
+        $this->assertSame($isEnoughForSalesforce, $donation->hasEnoughDataForSalesforce());
+    }
+
+    /**
+     * @return list<array{0: string, 1: string, 2: bool}>
+     */
+    public function namesEnoughForSalesForce(): array
+    {
+        return [
+            // first name, last name, is it enough for SF?
+            ['', '', false],
+            ['', 'nonempty', false],
+            ['nonempty', '', false],
+            ['nonempty', 'nonempty', true],
+        ];
+    }
 }
