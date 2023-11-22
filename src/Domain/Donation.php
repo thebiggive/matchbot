@@ -719,7 +719,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return string Total amount *finalised*, matched by `Fund`s of type "championFund"
      */
-    public function getConfirmedChampionWithdrawalTotal(): string
+    private function getConfirmedChampionWithdrawalTotal(): string
     {
         if (!$this->getDonationStatus()->isSuccessful()) {
             return '0.0';
@@ -739,7 +739,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return string Total amount *finalised*, matched by `Fund`s of type "pledge"
      */
-    public function getConfirmedPledgeWithdrawalTotal(): string
+    private function getConfirmedPledgeWithdrawalTotal(): string
     {
         if (!$this->getDonationStatus()->isSuccessful()) {
             return '0.0';
@@ -898,7 +898,7 @@ class Donation extends SalesforceWriteProxy
         $this->tipGiftAid = $tipGiftAid;
     }
 
-    public function getDonorHomeAddressLine1(): ?string
+    private function getDonorHomeAddressLine1(): ?string
     {
         return $this->donorHomeAddressLine1;
     }
@@ -908,7 +908,7 @@ class Donation extends SalesforceWriteProxy
         $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
     }
 
-    public function getDonorHomePostcode(): ?string
+    private function getDonorHomePostcode(): ?string
     {
         return $this->donorHomePostcode;
     }

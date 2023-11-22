@@ -8,6 +8,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
@@ -209,6 +211,47 @@ class DonationTest extends TestCase
         $this->assertIsString($donationData['collectedTime']);
         $this->assertNull($donationData['refundedTime']);
         $this->assertEquals('card', $donationData['pspMethodType']);
+    }
+
+    public function testAmountMatchedByChampionDefaultsToZero(): void
+    {
+        $donation = $this->getTestDonation(status: DonationStatus::Pending);
+
+        $amountMatchedByPledges = $donation->toHookModel()['amountMatchedByChampionFunds'];
+
+        $this->assertSame(0.0, $amountMatchedByPledges);
+    }
+
+    public function testItSumsNoChampionFundsToZero(): void
+    {
+        $donation = $this->getTestDonation(status: DonationStatus::Collected);
+
+        $amountMatchedByPledges = $donation->toHookModel()['amountMatchedByChampionFunds'];
+
+        $this->assertSame(0.0, $amountMatchedByPledges);
+    }
+
+    public function testItSumsAmountsMatchedByChampionFunds(): void
+    {
+        $donation = $this->getTestDonation(status: DonationStatus::Collected);
+
+        $withdrawal0 = new FundingWithdrawal();
+        $campaignFunding = new CampaignFunding();
+        $campaignFunding->setFund(new ChampionFund());
+        $withdrawal0->setCampaignFunding($campaignFunding);
+        $withdrawal0->setAmount('1');
+
+        $withdrawal1 = clone $withdrawal0;
+        $withdrawal1->setAmount('2');
+
+
+        $donation->addFundingWithdrawal($withdrawal0);
+        $donation->addFundingWithdrawal($withdrawal1);
+
+        $amountMatchedByPledges = $donation->toHookModel()['amountMatchedByChampionFunds'];
+
+        \assert(1 + 2 === 3);
+        $this->assertSame(3.0, $amountMatchedByPledges);
     }
 
     public function testToHookModelWhenRefunded(): void
