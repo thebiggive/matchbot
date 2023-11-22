@@ -78,6 +78,17 @@ class DonationTest extends TestCase
         $this->getTestDonation('0.99');
     }
 
+    public function testAmountVerySlightlyTooLowNotPersisted(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Amount must be 1-25000 GBP');
+
+        // PHP floating point math doesn't distinguish between this and 1, but as we use BC Math we can reject it as too small:
+        // See https://3v4l.org/#live
+        $justLessThanOne = '0.99999999999999999';
+        $this->getTestDonation($justLessThanOne);
+    }
+
     public function testAmountTooHighNotPersisted(): void
     {
         $this->expectException(\UnexpectedValueException::class);
