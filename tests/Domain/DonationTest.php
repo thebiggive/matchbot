@@ -423,7 +423,7 @@ class DonationTest extends TestCase
     /**
      * @return array<array{0: ?string, 1: string}>
      */
-    public function namesAndSFSafeNames()
+    public function namesAndSFSafeLastNames()
     {
         return [
             ['Flintstone', 'Flintstone'],
@@ -442,14 +442,47 @@ class DonationTest extends TestCase
     }
 
     /**
-     * @dataProvider namesAndSFSafeNames
+     * @return array<array{0: ?string, 1: ?string}>
      */
-    public function testItMakesDonorNameSafeForSalesforce(?string $originalName, string $expecteSafeName): void
+    public function namesAndSFSafeFirstNames()
+    {
+        return [
+            // same as last name except we have null not 'N/A'.
+            ['Flintstone', 'Flintstone'],
+            [null, null],
+            ['', null],
+            [' ', null],
+            ['王', '王'], // most common Chinese surname
+            [str_repeat('王', 41), str_repeat('王', 40)],
+            [str_repeat('a', 41), str_repeat('a', 40)],
+            ['👍', '👍'],
+            [str_repeat('👍', 41), str_repeat('👍', 40)],
+            [str_repeat('👩‍👩‍👧‍👧', 10), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
+            [str_repeat('👩‍👩‍👧‍👧', 41), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
+            [str_repeat('👩‍👩‍👧‍👧', 401), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
+        ];
+    }
+
+    /**
+     * @dataProvider namesAndSFSafeLastNames
+     */
+    public function testItMakesDonorLastNameSafeForSalesforce(?string $originalName, string $expecteSafeName): void
     {
         $donation = $this->getTestDonation();
         $donation->setDonorLastName($originalName);
 
         $this->assertSame($expecteSafeName, $donation->getDonorLastName(true));
+    }
+
+    /**
+     * @dataProvider namesAndSFSafeFirstNames
+     */
+    public function testItMakesDonorFirstNameSafeForSalesforce(?string $originalName, ?string $expecteSafeName): void
+    {
+        $donation = $this->getTestDonation();
+        $donation->setDonorFirstName($originalName);
+
+        $this->assertSame($expecteSafeName, $donation->getDonorFirstName(true));
     }
 
     public function testCanCancelPendingDonation(): void
