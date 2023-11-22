@@ -1,4 +1,6 @@
 version: "3.7"
+# This file is used only in local dev environments and build servers. It includes services that we
+# do not need in production, like MySQL and the Stripe CLI.
 
 volumes:
   logs:
@@ -7,6 +9,7 @@ volumes:
 services:
   app:
     image: thebiggive/php:dev-8.1
+    platform: linux/amd64
     ports:
       - "30030:80"
     volumes:
@@ -21,6 +24,7 @@ services:
 
   db:
     image: mysql:8.0
+    platform: linux/amd64
     command: --default-authentication-plugin=mysql_native_password
     ports:
       - "30031:3306"
@@ -31,10 +35,18 @@ services:
       - matchbot
 
   redis:
-    image: redis:6.2
+    image: redis:7.0
+    platform: linux/amd64
     networks:
       - matchbot
 
+  stripe-cli:
+    image: stripe/stripe-cli:latest
+    command: "listen --api-key $${STRIPE_API_KEY} --device-name $${STRIPE_DEVICE_NAME} --forward-to app:80/hooks/stripe"
+    networks:
+      - matchbot
+    env_file:
+      - stripe_cli.env
 networks:
   matchbot:
     driver: bridge

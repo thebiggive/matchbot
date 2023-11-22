@@ -17,6 +17,7 @@ use LosMiddleware\RateLimit\RateLimitMiddleware;
 use LosMiddleware\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
+use MatchBot\Application\Commands\PatchHistoricNonDefaultFeeDonations;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
@@ -24,6 +25,8 @@ use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use MatchBot\Application\RealTimeMatchingStorage;
+use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
 use MatchBot\Monolog\Handler\SlackHandler;
@@ -151,6 +154,20 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\Mailer($settings, $c->get(LoggerInterface::class));
         },
 
+        Client\Stripe::class => function (ContainerInterface $c): Client\Stripe {
+
+            $useStubStripe = (getenv('APP_ENV') !== 'production' && getenv('BYPASS_PSP'));
+            $offTheShelfStripeClient = $c->get(StripeClient::class);
+
+            \assert($offTheShelfStripeClient instanceof StripeClient);
+
+            if ($useStubStripe) {
+                return new Client\StubStripeClient();
+            }
+
+            return new Client\LiveStripeClient($offTheShelfStripeClient);
+        },
+
         \MatchBot\Domain\DonationFundsNotifier::class => function (ContainerInterface $c): \MatchBot\Domain\DonationFundsNotifier {
             $mailer = $c->get(Client\Mailer::class);
             \assert($mailer instanceof Client\Mailer);
@@ -213,16 +230,23 @@ return function (ContainerBuilder $containerBuilder) {
             return $logger;
         },
 
-        Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
+        RealTimeMatchingStorage::class => static function (ContainerInterface $c): RealTimeMatchingStorage {
             $redis = $c->get(Redis::class);
+            \assert($redis instanceof Redis);
+
+            return new RedisMatchingStorage($redis);
+        },
+
+        Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
+            $storage = $c->get(RealTimeMatchingStorage::class);
             $entityManager = $c->get(RetrySafeEntityManager::class);
             $logger = $c->get(LoggerInterface::class);
 
-            \assert($redis instanceof Redis);
+            \assert($storage instanceof RealTimeMatchingStorage);
             \assert($entityManager instanceof RetrySafeEntityManager);
             \assert($logger instanceof LoggerInterface);
 
-            return new Matching\OptimisticRedisAdapter($redis, $entityManager, $logger);
+            return new Matching\OptimisticRedisAdapter($storage, $entityManager, $logger);
         },
 
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {
@@ -391,5 +415,19 @@ return function (ContainerBuilder $containerBuilder) {
                 new PhpSerializer(),
             );
         },
+        Connection::class => static function (ContainerInterface $c): Connection {
+            $em = $c->get(EntityManagerInterface::class);
+            \assert($em instanceof EntityManagerInterface);
+            return $em->getConnection();
+        },
+        PatchHistoricNonDefaultFeeDonations::class => static function (ContainerInterface $c): PatchHistoricNonDefaultFeeDonations {
+            $redis = $c->get(Redis::class);
+            $conn = $c->get(Connection::class);
+            $stripe = $c->get(\Stripe\StripeClient::class);
+
+            \assert($redis instanceof Redis && $conn instanceof Connection && $stripe instanceof StripeClient);
+
+            return new PatchHistoricNonDefaultFeeDonations($redis, $conn, $stripe);
+        }
     ]);
 };

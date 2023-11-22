@@ -9,6 +9,7 @@ use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\Donations\Update;
+use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
@@ -38,17 +39,10 @@ class UpdateHandlesLockExceptionTest extends TestCase
     /** @var ObjectProphecy<EntityManagerInterface>  */
     private ObjectProphecy $entityManagerProphecy;
 
-    /** @var ObjectProphecy<PaymentIntentService>  */
-    private ObjectProphecy $stripeIntentsProphecy;
-
-    private StripeClient $fakeStripeClient;
-
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $this->stripeIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $this->fakeStripeClient = $this->fakeStripeClient($this->stripeIntentsProphecy);
     }
 
     public function testRetriesOnUpdateStillPendingLockException(): void
@@ -66,7 +60,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
             $this->donationRepositoryProphecy->reveal(),
             $this->entityManagerProphecy->reveal(),
             new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
-            $this->fakeStripeClient,
+            $this->createStub(Stripe::class),
             new NullLogger()
         );
 
@@ -95,7 +89,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
             $this->donationRepositoryProphecy->reveal(),
             $this->entityManagerProphecy->reveal(),
             new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
-            $this->fakeStripeClient,
+            $this->createStub(Stripe::class),
             new NullLogger()
         );
 
@@ -106,14 +100,6 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         // assert
         $this->assertSame(200, $response->getStatusCode());
-    }
-
-    public function fakeStripeClient(ObjectProphecy $intentsProphecy): StripeClient
-    {
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $intentsProphecy->reveal();
-
-        return $stripeClientProphecy->reveal();
     }
 
     private function getDonation(): Donation

@@ -4,7 +4,6 @@ namespace MatchBot\IntegrationTests;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Client\Fund;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
@@ -81,7 +80,7 @@ class DonationRepositoryTest extends IntegrationTest
             giftAid: true,
             projectId: 'ccampaign123',
             psp: 'stripe',
-            paymentMethodType: PaymentMethodType::CustomerBalance
+            pspMethodType: PaymentMethodType::CustomerBalance
         ), $campaign);
         $donation->setDonationStatus(DonationStatus::Paid);
         $donation->setCollectedAt((new \DateTimeImmutable())->sub(new \DateInterval('P14D')));

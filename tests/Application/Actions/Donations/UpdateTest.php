@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Client\Stripe;
 use Slim\Routing\Route;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
@@ -25,8 +26,6 @@ use Slim\Exception\HttpUnauthorizedException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
-use Stripe\Service\PaymentIntentService;
-use Stripe\StripeClient;
 
 class UpdateTest extends TestCase
 {
@@ -423,16 +422,13 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->cancel('pi_externalId_123')
-            ->shouldBeCalledOnce()
-            ->willReturn($this->prophesize(PaymentIntent::class));
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')
+            ->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -504,16 +500,15 @@ class UpdateTest extends TestCase
             'requires_payment_method, requires_capture, requires_confirmation, requires_action, ' .
             'processing.';
         $stripeApiException = new InvalidRequestException($stripeErrorMessage);
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->cancel('pi_externalId_123')
+
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')
             ->shouldBeCalledOnce()
             ->willThrow($stripeApiException);
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -573,16 +568,16 @@ class UpdateTest extends TestCase
             'requires_payment_method, requires_capture, requires_confirmation, requires_action, ' .
             'processing.';
         $stripeApiException = new InvalidRequestException($stripeErrorMessage);
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->cancel('pi_externalId_123')
+
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')
             ->shouldBeCalledOnce()
             ->willThrow($stripeApiException);
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -633,16 +628,13 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->cancel('pi_stripe_pending_123')
-            ->shouldBeCalledOnce()
-            ->willReturn($this->prophesize(PaymentIntent::class));
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->cancelPaymentIntent('pi_stripe_pending_123')
+            ->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -970,8 +962,8 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldNotBeCalled();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -991,12 +983,10 @@ class UpdateTest extends TestCase
         ])
             ->shouldBeCalledOnce()
             ->willThrow(UnknownApiErrorException::class);
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1064,15 +1054,16 @@ class UpdateTest extends TestCase
         $stripeErrorMessage = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
             'after a capture has already been made.';
         $stripeApiException = new InvalidRequestException($stripeErrorMessage);
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 526;
 
-        $stripePaymentIntentsProphecy->retrieve('pi_externalId_123')
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->retrievePaymentIntent('pi_externalId_123')
             ->willReturn($mockPI)
             ->shouldBeCalledOnce();
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -1092,12 +1083,10 @@ class UpdateTest extends TestCase
         ])
             ->shouldBeCalledOnce()
             ->willThrow($stripeApiException);
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1161,15 +1150,16 @@ class UpdateTest extends TestCase
         $stripeErrorMessage = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
             'after a capture has already been made.';
         $stripeApiException = new InvalidRequestException($stripeErrorMessage);
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 527; // Different from what we'll derive to be right.
 
-        $stripePaymentIntentsProphecy->retrieve('pi_externalId_123')
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->retrievePaymentIntent('pi_externalId_123')
             ->willReturn($mockPI)
             ->shouldBeCalledOnce();
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -1189,12 +1179,10 @@ class UpdateTest extends TestCase
         ])
             ->shouldBeCalledOnce()
             ->willThrow($stripeApiException);
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1262,12 +1250,13 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 526;
 
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -1288,16 +1277,13 @@ class UpdateTest extends TestCase
             ->shouldBeCalledTimes(2)
             ->will(new PaymentIntentUpdateAttemptTwicePromise(
                 true,
-                false,
-                $this->prophesize(PaymentIntent::class)->reveal(),
+                false
             ));
 
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1362,12 +1348,13 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 526;
 
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -1389,14 +1376,11 @@ class UpdateTest extends TestCase
             ->will(new PaymentIntentUpdateAttemptTwicePromise(
                 false,
                 false,
-                $this->prophesize(PaymentIntent::class)->reveal(),
             ));
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1464,15 +1448,16 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 526;
 
-        $stripePaymentIntentsProphecy->retrieve('pi_externalId_123')
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->retrievePaymentIntent('pi_externalId_123')
             ->willReturn($mockPI)
             ->shouldBeCalledOnce();
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -1494,14 +1479,11 @@ class UpdateTest extends TestCase
             ->will(new PaymentIntentUpdateAttemptTwicePromise(
                 false,
                 true,
-                $this->prophesize(PaymentIntent::class)->reveal(),
             ));
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1566,8 +1548,8 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -1586,12 +1568,10 @@ class UpdateTest extends TestCase
             'application_fee_amount' => 526,
         ])
             ->shouldBeCalledOnce();
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1660,7 +1640,7 @@ class UpdateTest extends TestCase
 
     public function testAddDataFailsWithCashBalanceAutoconfirmForDonorWithInsufficentFunds(): void
     {
-        ['app' => $app, 'request' => $request, 'route' => $route, 'stripePaymentIntentsProphecy' => $paymentIntentsProphecy, 'entityManagerProphecy' => $entityManagerProphecy] =
+        ['app' => $app, 'request' => $request, 'route' => $route, 'stripeProphecy' => $stripeProphecy, 'entityManagerProphecy' => $entityManagerProphecy] =
             $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(newPaymentIntentStatus: PaymentIntent::STATUS_PROCESSING);
         try {
             $app->handle($request->withAttribute('route', $route));
@@ -1669,7 +1649,7 @@ class UpdateTest extends TestCase
             $this->assertStringContainsString("Status was processing, expected succeeded", $exception->getMessage());
         }
 
-        $paymentIntentsProphecy->cancel('pi_externalId_123')->shouldBeCalled();
+        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldBeCalled();
         $entityManagerProphecy->flush()->shouldBeCalled(); // flushes cancelled donation to DB.
     }
 
@@ -1683,7 +1663,7 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::Card);  // Get a new mock object so DB has old values.
+        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::Card);  // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
 
@@ -1702,17 +1682,15 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldNotBeCalled();
         $entityManagerProphecy->commit()->shouldNotBeCalled();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->update(Argument::cetera())
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent(Argument::cetera())
             ->shouldNotBeCalled();
-        $stripePaymentIntentsProphecy->confirm('pi_externalId_123')
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
             ->shouldNotBeCalled();
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $requestPayload = $donation->toApiModel();
         $requestPayload['autoConfirmFromCashBalance'] = true;
@@ -1749,10 +1727,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::Card);
+        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::Card);
         // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
@@ -1772,15 +1750,13 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldNotBeCalled();
         $entityManagerProphecy->commit()->shouldNotBeCalled();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->update(Argument::cetera())
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent(Argument::cetera())
             ->shouldNotBeCalled();
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $requestPayload = $donation->toApiModel();
         $requestPayload['autoConfirmFromCashBalance'] = true;
@@ -1817,10 +1793,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
+        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
         // for auto-confirms) "card".
 
@@ -1842,18 +1818,16 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldNotBeCalled();
         $entityManagerProphecy->commit()->shouldNotBeCalled();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', Argument::type('array'))
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', Argument::type('array'))
             ->shouldBeCalledOnce();
-        $stripePaymentIntentsProphecy->confirm('pi_externalId_123')
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
             ->willThrow(new InvalidRequestException('Not the one we know!'))
             ->shouldBeCalledOnce();
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $requestPayload = $donation->toApiModel();
         $requestPayload['autoConfirmFromCashBalance'] = true;
@@ -1883,7 +1857,7 @@ class UpdateTest extends TestCase
      * route: Route,
      * donationRepoProphecy: ObjectProphecy<DonationRepository>,
      * entityManagerProphecy: ObjectProphecy<EntityManagerInterface>,
-     * stripePaymentIntentsProphecy: ObjectProphecy<PaymentIntentService>
+     * stripeProphecy: ObjectProphecy<Stripe>
      * }
      *
      * @throws \Doctrine\DBAL\Exception\LockWaitTimeoutException
@@ -1899,10 +1873,10 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(paymentMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
+        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
@@ -1920,21 +1894,19 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
 
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', Argument::type('array'))
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', Argument::type('array'))
             ->shouldBeCalledOnce();
         $updatedPaymentIntent = new PaymentIntent('pi_externalId_123');
         $updatedPaymentIntent->status = $newPaymentIntentStatus;
-        $stripePaymentIntentsProphecy->confirm('pi_externalId_123')
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
             ->shouldBeCalledOnce()
             ->willReturn($updatedPaymentIntent);
 
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $requestPayload = $donation->toApiModel();
         $requestPayload['autoConfirmFromCashBalance'] = true;
@@ -1952,7 +1924,7 @@ class UpdateTest extends TestCase
             'route' => $route,
             'donationRepoProphecy' => $donationRepoProphecy,
             'entityManagerProphecy' => $entityManagerProphecy,
-            'stripePaymentIntentsProphecy' => $stripePaymentIntentsProphecy,
+            'stripeProphecy' => $stripeProphecy,
         ];
     }
 }

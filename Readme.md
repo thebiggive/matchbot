@@ -22,22 +22,50 @@ when the app is deployed 'for real' and other developers' machines.
 In advance of the first app run:
 
 * [get Docker](https://www.docker.com/get-started)
+* If you use an Apple Silicon system, disable _"Use Rosetta for x86/amd64 emulation on Apple Silicon"_ in Docker Desktop
+  preferences.
 * copy `.env.example` to `.env` and change any values you need to. e.g. if you
   are working with your own Salesforce sandbox you would want to change most of the `SALESFORCE_*`
   variables.
+
+### Set up a connection to the Stripe test environment
+
+In dev environments, we use [Stripe CLI](https://stripe.com/docs/stripe-cli?locale=en-GB) in its own docker container
+to pull events from Stripe and forward them to the local HTTP server.
+
+Visit https://dashboard.stripe.com/test/webhooks and select "Add local listener". Use the "CLI webhook secret" that
+Stripe will give you to replace the value of `STRIPE_WEBHOOK_SIGNING_SECRET` in `.env`. Make sure you also have a good
+value for `STRIPE_SECRET_KEY` set in `.env`. You will also find this in the Stripe dashboard, and in a dev environment 
+it should start with `rk_test_` or `sk_test_`.
+
+Copy `stripe_cli.env.example` to `stripe_cli.env`.  
+
+Inside `stripe_cli.env` set STRIPE_API_KEY to the same value as `STRIPE_SECRET_KEY` in `.env`, and replace "some-developer"
+with your name in `STRIPE_DEVICE_NAME = some-developer-dev`.
+
+As there is only one stripe test environment, your copy of matchbot will receive events relating to tests done by others
+in dev, staging and regression test environments as well as yourself, but other than causing errors to be logged, these 
+should be harmless if you are not touching the same records in stripe. Receiving webhooks enables things like setting
+donations to a completed status which means we can display the "thanks" page, and passing on the message to `mailer` when
+a donation funds user transfers cash into their account.
 
 ### Start the app
 
 To start the app and its dependencies (`db` and `redis`) locally:
 
+```shell
     docker-compose up -d app
+```
+
 
 ### First run
 
 To get PHP dependencies and an initial data in structure in place, you'll need to run these once:
 
+```shell
     docker-compose exec app composer install
     docker-compose exec app composer doctrine:delete-and-recreate
+```
 
 If dependencies change you may occasionally need to re-run the `composer install`.
 
@@ -47,21 +75,27 @@ If you have already run local tests with fund balances being updated in Redis,
 you will need to flush Redis data to start afresh. You can remove and re-create the
 Docker container, or just flush the data store:
 
+```shell
     docker-compose exec redis redis-cli FLUSHALL
+```
 
 ## Run unit tests
 
 Once you have the app running, you can test with: 
 
+```shell
     docker-compose exec app composer run test
     docker-compose exec app composer run integration-test
+```
 
 When run with a coverage driver (e.g. Xdebug enabled by using `thebiggive/php:dev-8.1`),
 this will save coverage data to `./coverage.xml` and `./coverage-integration.xml`.
 
 Linting is run with
 
+```shell
     docker-compose exec app composer run lint:check
+```
 
 To understand how these commands are run in CI, see [the CircleCI config file](./.circleci/config.yml).
 
@@ -114,7 +148,9 @@ The headline for each script's purpose is defined in its description in the PHP 
 `matchbot:list-commands` which calls `list` to read these. So with an already-running Docker `app` container, you can
 run
 
+```shell
     docker-compose exec app composer matchbot:list-commands
+```
 
 for an overview of how all [`Commands`](./src/Application/Commands) in the app describe themselves.
 
@@ -122,7 +158,9 @@ for an overview of how all [`Commands`](./src/Application/Commands) in the app d
 
 To run a script in an already-running Docker `app` container, use:
 
+```shell
     docker-compose exec app composer {name:of:script:from:composer.json}
+```
 
 ### How tasks run on staging & production
 

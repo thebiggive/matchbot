@@ -9,6 +9,7 @@ use LosMiddleware\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\DomainLockContentionException;
@@ -21,8 +22,7 @@ use Prophecy\Argument;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpUnauthorizedException;
-use Stripe\Service\PaymentIntentService;
-use Stripe\StripeClient;
+use Stripe\PaymentIntent;
 use UnexpectedValueException;
 
 class CreateTest extends TestCase
@@ -169,15 +169,12 @@ class CreateTest extends TestCase
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->create(Argument::any())->shouldNotBeCalled();
-
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
-
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->createPaymentIntent(Argument::any())->shouldNotBeCalled();
+        
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
@@ -343,26 +340,23 @@ class CreateTest extends TestCase
         ];
         // Most properites we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
-        $paymentIntentMockResult = (object) [
+        $paymentIntentMockResult = new PaymentIntent([
             'id' => 'pi_dummyIntent456_id',
             'object' => 'payment_intent',
             'amount' => 1311,
             'client_secret' => 'pi_dummySecret_456',
             'confirmation_method' => 'automatic',
             'currency' => 'gbp',
-        ];
+        ]);
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->create($expectedPaymentIntentArgs)
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
 
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
-
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
@@ -457,26 +451,23 @@ class CreateTest extends TestCase
         ];
         // Most properites we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
-        $paymentIntentMockResult = (object) [
+        $paymentIntentMockResult = new PaymentIntent([
             'id' => 'pi_dummyIntent_id',
             'object' => 'payment_intent',
             'amount' => 1311,
             'client_secret' => 'pi_dummySecret_123',
             'confirmation_method' => 'automatic',
             'currency' => 'gbp',
-        ];
+        ]);
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->create($expectedPaymentIntentArgs)
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
 
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
-
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
@@ -574,26 +565,23 @@ class CreateTest extends TestCase
         ];
         // Most properites we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
-        $paymentIntentMockResult = (object) [
+        $paymentIntentMockResult = new PaymentIntent([
             'id' => 'pi_dummyIntent_id',
             'object' => 'payment_intent',
             'amount' => 1311,
             'client_secret' => 'pi_dummySecret_123',
             'confirmation_method' => 'automatic',
             'currency' => 'gbp',
-        ];
+        ]);
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->create($expectedPaymentIntentArgs)
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
-
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
-
+        
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
         $request = $this->createRequest('POST', '/v1/people/12345678-1234-1234-1234-1234567890ab/donations', $data);
@@ -661,16 +649,13 @@ class CreateTest extends TestCase
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->create(Argument::type('array'))
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
-
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
-
+        
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
         $request = $this->createRequest('POST', '/v1/people/99999999-1234-1234-1234-1234567890zz/donations', $data);
@@ -706,16 +691,13 @@ class CreateTest extends TestCase
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->create(Argument::type('array'))
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
-
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
-
+        
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
         $request = $this->createRequest('POST', '/v1/people/12345678-1234-1234-1234-1234567890ab/donations', $data);
@@ -798,26 +780,23 @@ class CreateTest extends TestCase
         ];
         // Most properites we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
-        $paymentIntentMockResult = (object) [
+        $paymentIntentMockResult = new PaymentIntent([
             'id' => 'pi_dummyIntent_id',
             'object' => 'payment_intent',
             'amount' => 1311,
             'client_secret' => 'pi_dummySecret_123',
             'confirmation_method' => 'automatic',
             'currency' => 'gbp',
-        ];
+        ]);
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->create($expectedPaymentIntentArgs)
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
-
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
-
+        
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
@@ -905,26 +884,23 @@ class CreateTest extends TestCase
 
         // Most properites we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
-        $paymentIntentMockResult = (object) [
+        $paymentIntentMockResult = new PaymentIntent([
             'id' => 'pi_dummyIntent_id',
             'object' => 'payment_intent',
             'amount' => 1311,
             'client_secret' => 'pi_dummySecret_123',
             'confirmation_method' => 'automatic',
             'currency' => 'gbp',
-        ];
+        ]);
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->create($expectedPaymentIntentArgs)
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
 
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
-
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
@@ -1013,26 +989,24 @@ class CreateTest extends TestCase
 
         // Most properites we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
-        $paymentIntentMockResult = (object) [
+        $paymentIntentMockResult = new PaymentIntent([
             'id' => 'pi_dummyIntent_id',
             'object' => 'payment_intent',
             'amount' => 1311,
             'client_secret' => 'pi_dummySecret_123',
             'confirmation_method' => 'automatic',
             'currency' => 'gbp',
-        ];
+        ]);
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->create($expectedPaymentIntentArgs)
+
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
-
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
-
+        
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encodeWithDummyCaptcha($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
