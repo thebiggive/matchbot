@@ -2,10 +2,12 @@
 
 namespace Domain;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use MatchBot\Application\Matching\OptimisticRedisAdapter;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
@@ -14,6 +16,7 @@ use MatchBot\Tests\Application\Matching\ArrayMatchingStorage;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 
 /**
@@ -23,31 +26,45 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
 {
     use ProphecyTrait;
 
-    public function testItAllocatesZeroWhenNoMatchFundsAvailable(): void
+    /** @var ObjectProphecy<CampaignFundingRepository>  */
+    private ObjectProphecy $campaignFundingsRepositoryProphecy;
+
+    private Campaign $campaign;
+
+    /** @var ObjectProphecy<EntityManagerInterface> */
+    private ObjectProphecy $emProphecy;
+
+    private DonationRepository $sut;
+
+    public function setUp(): void
     {
-        // arrange
-        $campaignFundingsRepositoryProphecy = $this->prophesize(\MatchBot\Domain\CampaignFundingRepository::class);
+        parent::setUp();
 
-        $emProphecy = $this->prophesize(\Doctrine\ORM\EntityManagerInterface::class);
-        $emProphecy->getRepository(CampaignFunding::class)->willReturn($campaignFundingsRepositoryProphecy->reveal());
+        $this->campaignFundingsRepositoryProphecy = $this->prophesize(CampaignFundingRepository::class);
 
-        $emProphecy->transactional(Argument::type(\Closure::class))->will(/**
+        $this->emProphecy = $this->prophesize(\Doctrine\ORM\EntityManagerInterface::class);
+        $this->emProphecy->getRepository(CampaignFunding::class)->willReturn($this->campaignFundingsRepositoryProphecy->reveal());
+
+        $this->emProphecy->transactional(Argument::type(\Closure::class))->will(/**
          * @param list<\Closure> $args
          * @return mixed
          */ fn(array $args) => $args[0]());
-        $matchingAdapter = new OptimisticRedisAdapter(new ArrayMatchingStorage(), $emProphecy->reveal(), new NullLogger());
+        $matchingAdapter = new OptimisticRedisAdapter(new ArrayMatchingStorage(), $this->emProphecy->reveal(), new NullLogger());
 
-        $sut = new DonationRepository(
-            $emProphecy->reveal(),
+        $this->sut = new DonationRepository(
+            $this->emProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
-        $sut->setMatchingAdapter($matchingAdapter);
-        $sut->setLogger(new NullLogger());
+        $this->sut->setMatchingAdapter($matchingAdapter);
+        $this->sut->setLogger(new NullLogger());
 
-        $campaign = new Campaign(\MatchBot\Tests\TestCase::someCharity());
+        $this->campaign = new Campaign(\MatchBot\Tests\TestCase::someCharity());
+    }
 
-        $availableFundings = [];
-        $campaignFundingsRepositoryProphecy->getAvailableFundings($campaign)->willReturn($availableFundings);
+    public function testItAllocatesZeroWhenNoMatchFundsAvailable(): void
+    {
+        // arrange
+        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([]);
 
         $donation = Donation::fromApiModel(
             new \MatchBot\Application\HttpModels\DonationCreate(
@@ -57,14 +74,14 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
                 psp: 'stripe',
                 pspMethodType: PaymentMethodType::Card
             ),
-            $campaign,
+            $this->campaign,
         );
 
-        $emProphecy->persist($donation)->shouldBeCalled();
-        $emProphecy->flush()->shouldBeCalled();
+        $this->emProphecy->persist($donation)->shouldBeCalled();
+        $this->emProphecy->flush()->shouldBeCalled();
 
         // act
-        $amountMatched = $sut->allocateMatchFunds($donation);
+        $amountMatched = $this->sut->allocateMatchFunds($donation);
 
         // assert
         $this->assertSame('0.0', $amountMatched);
@@ -75,37 +92,15 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
      */
     public function testItAllocates1From1For1(): void
     {
-        // arrange
-        $campaignFundingsRepositoryProphecy = $this->prophesize(\MatchBot\Domain\CampaignFundingRepository::class);
-
-        $emProphecy = $this->prophesize(\Doctrine\ORM\EntityManagerInterface::class);
-        $emProphecy->getRepository(CampaignFunding::class)->willReturn($campaignFundingsRepositoryProphecy->reveal());
-
-        $emProphecy->transactional(Argument::type(\Closure::class))->will(/**
-         * @param list<\Closure> $args
-         * @return mixed
-         */ fn(array $args) => $args[0]());
-        $matchingAdapter = new OptimisticRedisAdapter(new ArrayMatchingStorage(), $emProphecy->reveal(), new NullLogger());
-
-        $sut = new DonationRepository(
-            $emProphecy->reveal(),
-            new ClassMetadata(Donation::class),
-        );
-        $sut->setMatchingAdapter($matchingAdapter);
-        $sut->setLogger(new NullLogger());
-
-        $campaign = new Campaign(\MatchBot\Tests\TestCase::someCharity());
-
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setCurrencyCode('GBP');
         $campaignFunding->setAmountAvailable('1.0');
 
-        $availableFundings = [
+        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
             $campaignFunding
-        ];
-        $campaignFundingsRepositoryProphecy->getAvailableFundings($campaign)->willReturn($availableFundings);
-        $emProphecy->persist($campaignFunding)->shouldBeCalled();
-        $emProphecy->persist(Argument::type(FundingWithdrawal::class))->shouldBeCalled();
+        ]);
+        $this->emProphecy->persist($campaignFunding)->shouldBeCalled();
+        $this->emProphecy->persist(Argument::type(FundingWithdrawal::class))->shouldBeCalled();
 
         $donation = Donation::fromApiModel(
             new \MatchBot\Application\HttpModels\DonationCreate(
@@ -115,14 +110,14 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
                 psp: 'stripe',
                 pspMethodType: PaymentMethodType::Card
             ),
-            $campaign,
+            $this->campaign,
         );
 
-        $emProphecy->persist($donation)->shouldBeCalled();
-        $emProphecy->flush()->shouldBeCalled();
+        $this->emProphecy->persist($donation)->shouldBeCalled();
+        $this->emProphecy->flush()->shouldBeCalled();
 
         // act
-        $amountMatched = $sut->allocateMatchFunds($donation);
+        $amountMatched = $this->sut->allocateMatchFunds($donation);
 
         // assert
         $this->assertSame('1.00', $amountMatched);
