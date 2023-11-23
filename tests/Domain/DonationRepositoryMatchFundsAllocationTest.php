@@ -4,6 +4,7 @@ namespace Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use http\Exception\UnexpectedValueException;
 use MatchBot\Application\Matching\OptimisticRedisAdapter;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
@@ -13,6 +14,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Tests\Application\Matching\ArrayMatchingStorage;
+use PhpParser\Node\Arg;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -121,5 +123,34 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
 
         // assert
         $this->assertSame('1.00', $amountMatched);
+    }
+
+    public function testItRejectsFundingInWrongCurrency(): void
+    {
+        $campaignFunding = new CampaignFunding();
+        $campaignFunding->setCurrencyCode('USD');
+        $campaignFunding->setAmountAvailable('1.0');
+
+        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
+            $campaignFunding
+        ]);
+        $donation = Donation::fromApiModel(
+            new \MatchBot\Application\HttpModels\DonationCreate(
+                currencyCode: 'GBP',
+                donationAmount: '1',
+                projectId: "any project",
+                psp: 'stripe',
+                pspMethodType: PaymentMethodType::Card
+            ),
+            $this->campaign,
+        );
+
+        $this->emProphecy->flush()->shouldNotBeCalled();
+
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Currency mismatch');
+
+        // act
+        $this->sut->allocateMatchFunds($donation);
     }
 }
