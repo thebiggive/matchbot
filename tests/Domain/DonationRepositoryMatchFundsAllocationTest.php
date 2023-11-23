@@ -15,8 +15,6 @@ use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Log\NullLogger;
 
-require_once(__DIR__ . '/../MatchBot/Application/Matching/ArrayMatchingStorage.php');
-
 /**
  * Focused test class just for the part match fund allocation part of DonationRepository.
  */

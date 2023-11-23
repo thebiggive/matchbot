@@ -2,10 +2,6 @@
 
 namespace MatchBot\Tests\Application\Matching;
 
-// something wrong with autoloading in test dirs. Mostly we rely on PHPUnit to do loading for us so it hasn't been an
-// issue up to now. Not sure exactly what's wrong with the config in composer.json
-require_once(__DIR__ . '/ArrayMatchingStorage.php');
-
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Matching\LessThanRequestedAllocatedException;
 use MatchBot\Application\Matching\OptimisticRedisAdapter;
