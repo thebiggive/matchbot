@@ -4,7 +4,6 @@ namespace Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use http\Exception\UnexpectedValueException;
 use MatchBot\Application\Matching\OptimisticRedisAdapter;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
@@ -14,7 +13,6 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Tests\Application\Matching\ArrayMatchingStorage;
-use PhpParser\Node\Arg;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
