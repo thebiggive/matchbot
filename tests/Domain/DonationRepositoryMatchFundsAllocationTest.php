@@ -137,7 +137,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
     public function AllocationFromTwoFundingsCases(): array
     {
         return [
-            // f0 available, f1 available, donation amount, amount matched, withdrawal0, withdrawal2,
+            // f0 available, f1 available, donation amount, amount matched, withdrawal0, withdrawal1,
             ['6.00', '1000000', '10', '10.00', '6.00', '4.00'],
             ['6.00', '1.00', '10', '7.00', '6.00', '1.00'],
             ['1.00', '6.00', '10', '7.00', '1.00', '6.00'],
