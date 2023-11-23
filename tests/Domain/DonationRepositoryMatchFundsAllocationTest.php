@@ -123,6 +123,11 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
 
         // assert
         $this->assertSame('1.00', $amountMatched);
+        $fundingWithdrawals = $donation->getFundingWithdrawals();
+
+        $withdrawl = $fundingWithdrawals[0];
+        $this->assertNotNull($withdrawl);
+        $this->assertSame('1.00', $withdrawl->getAmount());
     }
 
     public function testItRejectsFundingInWrongCurrency(): void
