@@ -42,9 +42,6 @@ $messengerReceiverLocator->set($messengerReceiverKey, $psr11App->get(TransportIn
 $chatter = $psr11App->get(ChatterInterface::class);
 assert($chatter instanceof ChatterInterface);
 
-$patchHistoricNonDefaultFeeDonations = $psr11App->get(PatchHistoricNonDefaultFeeDonations::class);
-\assert($patchHistoricNonDefaultFeeDonations instanceof PatchHistoricNonDefaultFeeDonations);
-
 /**
  * @psalm-suppress MixedArgument - too many of these to fix here. At some point we could fix on mass
  * by using a stub psr11 with generics. It's also not very important to fix for this statement as it is called inside
@@ -92,7 +89,6 @@ $commands = [
         $psr11App->get(FundRepository::class),
         $psr11App->get(LoggerInterface::class),
     ),
-    $patchHistoricNonDefaultFeeDonations,
 ];
 
 foreach ($commands as $command) {
