@@ -34,8 +34,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * @link https://github.com/thebiggive/donate-frontend/blob/8e689db34fb747d0b2fd15378543649a5c34074e/src/environments/environment.production.ts
      */
     private const EXPIRY_SECONDS = 32 * 60; // 32 minutes: 30 min official timed window plus 2 mins grace.
-    /** @var int When using a locking matching adapter, maximum number of tries for real-time operations */
-    private int $maxLockTries = 5;
+
     private Matching\Adapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
     private array $queuedForPersist;
@@ -202,7 +201,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $lockEndTime = microtime(true);
 
             $this->persistQueuedDonations();
-        } catch (Matching\TerminalLockException $exception) { // Includes non-retryable `DBALException`s
+        } catch (Matching\TerminalLockException $exception) {
             $waitTime = round(microtime(true) - $lockStartTime, 6);
             $this->logError(
                 "Match allocate error: ID {$donation->getUuid()} got " . get_class($exception) .
@@ -281,50 +280,36 @@ class DonationRepository extends SalesforceWriteProxyRepository
             return;
         }
 
-        $releaseTries = 0;
-        $releaseDone = false;
-
-        while (!$releaseDone && $releaseTries < $this->maxLockTries) {
-            $totalAmountReleased = '0.00';
-            try {
-                $lockStartTime = microtime(true);
-                $totalAmountReleased = $this->matchingAdapter->runTransactionally(
-                    function () use ($donation, $totalAmountReleased) {
-                        foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-                            $funding = $fundingWithdrawal->getCampaignFunding();
-                            $newTotal = $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
-                            $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
-                            $this->logInfo("Released {$fundingWithdrawal->getAmount()} to funding {$funding->getId()}");
-                            $this->logInfo("New fund total for {$funding->getId()}: $newTotal");
-                        }
-
-                        return $totalAmountReleased;
+        $totalAmountReleased = '0.00';
+        try {
+            $lockStartTime = microtime(true);
+            $totalAmountReleased = $this->matchingAdapter->runTransactionally(
+                function () use ($donation, $totalAmountReleased) {
+                    foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+                        $funding = $fundingWithdrawal->getCampaignFunding();
+                        $newTotal = $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
+                        $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
+                        $this->logInfo("Released {$fundingWithdrawal->getAmount()} to funding {$funding->getId()}");
+                        $this->logInfo("New fund total for {$funding->getId()}: $newTotal");
                     }
-                );
-                $lockEndTime = microtime(true);
-                $releaseDone = true;
 
-                try {
-                    $this->removeAllFundingWithdrawalsForDonation($donation);
-                } catch (DBALException $exception) {
-                    $this->logError('Doctrine could not remove withdrawals after maximum tries');
+                    return $totalAmountReleased;
                 }
-            } catch (Matching\TerminalLockException $exception) {
-                $waitTime = round(microtime(true) - $lockStartTime, 6);
-                $this->logError(
-                    'Match release FINAL error: ID ' . $donation->getUuid() . ' got ' . get_class($exception) .
-                    " after {$waitTime}s on try #$releaseTries: {$exception->getMessage()}"
-                );
-                throw $exception; // Re-throw exception after logging the details if not recoverable
-            }
-        }
-
-        if (!$releaseDone) {
-            $this->logger->error(
-                "Match release FINAL error: ID {$donation->getUuid()} failed releasing after $releaseTries tries"
             );
+            $lockEndTime = microtime(true);
 
-            throw new DomainLockContentionException();
+            try {
+                $this->removeAllFundingWithdrawalsForDonation($donation);
+            } catch (DBALException $exception) {
+                $this->logError('Doctrine could not remove withdrawals after maximum tries');
+            }
+        } catch (Matching\TerminalLockException $exception) {
+            $waitTime = round(microtime(true) - $lockStartTime, 6);
+            $this->logError(
+                'Match release FINAL error: ID ' . $donation->getUuid() . ' got ' . get_class($exception) .
+                " after {$waitTime}s: {$exception->getMessage()}"
+            );
+            throw $exception; // Re-throw exception after logging the details if not recoverable
         }
 
         $this->logInfo("Taking from ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
