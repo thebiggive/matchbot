@@ -8,6 +8,7 @@ use Assert\Assertion;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
@@ -21,6 +22,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Stripe\Card;
 use Stripe\Charge;
 use Stripe\Dispute;
 use Stripe\Event;
@@ -124,6 +126,16 @@ class StripePaymentsUpdate extends Stripe
         if ($charge->status === 'succeeded') {
             $donation->setChargeId($charge->id);
             $donation->setTransferId($charge->transfer);
+
+            /**
+             * @var Card|null $card
+             */
+            $card = $charge->payment_method_details?->card;
+            if ($card) {
+                /** @psalm-var value-of<Calculator::STRIPE_CARD_BRANDS> $brand */
+                $brand = $card->brand;
+                $this->donationRepository->deriveFees($donation, $brand, $card->country);
+            }
 
             $donation->setDonationStatus(DonationStatus::Collected);
             $donation->setCollectedAt(new \DateTimeImmutable("@{$charge->created}"));
