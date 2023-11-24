@@ -107,6 +107,7 @@ class FundRepositoryTest extends TestCase
         $this->assertInstanceOf(CampaignFunding::class, $campaignFunding);
         $this->assertInstanceOf(\DateTime::class, $campaignFunding->getCreatedDate());
         $this->assertSame('1500', $campaignFunding->getAmount());
+        $this->assertSame('GBP', $campaignFunding->getCurrencyCode());
         $this->assertSame('1500', $campaignFunding->getAmountAvailable());
 
         $fund = $campaignFunding->getFund();
