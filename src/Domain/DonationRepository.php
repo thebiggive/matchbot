@@ -179,52 +179,36 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function allocateMatchFunds(Donation $donation): string
     {
-        $allocationDone = false;
-        $allocationTries = 0;
         // We look up matching withdrawals to allow for the case where retrospective matching was required
         // and the donation is not new, and *some* (or full) matching already occurred. The collection of withdrawals
         // is most often empty (for new donations) so this will frequently be 0.00.
         $amountMatchedAtStart = $donation->getFundingWithdrawalTotal();
 
-        /** @var FundingWithdrawal[] $newWithdrawals */
-        $newWithdrawals = [];
+        try {
+            $likelyAvailableFunds = $this->getEntityManager()
+                ->getRepository(CampaignFunding::class)
+                ->getAvailableFundings($donation->getCampaign());
 
-        while (!$allocationDone && $allocationTries < $this->maxLockTries) {
-            try {
-                $likelyAvailableFunds = $this->getEntityManager()
-                    ->getRepository(CampaignFunding::class)
-                    ->getAvailableFundings($donation->getCampaign());
-
-                foreach ($likelyAvailableFunds as $funding) {
-                    if ($funding->getCurrencyCode() !== $donation->getCurrencyCode()) {
-                        throw new \UnexpectedValueException('Currency mismatch');
-                    }
+            foreach ($likelyAvailableFunds as $funding) {
+                if ($funding->getCurrencyCode() !== $donation->getCurrencyCode()) {
+                    throw new \UnexpectedValueException('Currency mismatch');
                 }
-
-                $lockStartTime = microtime(true);
-                $newWithdrawals = $this->matchingAdapter->runTransactionally(
-                    fn() => $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart)
-                );
-                $lockEndTime = microtime(true);
-
-                $allocationDone = true;
-                $this->persistQueuedDonations();
-            } catch (Matching\TerminalLockException $exception) { // Includes non-retryable `DBALException`s
-                $waitTime = round(microtime(true) - $lockStartTime, 6);
-                $this->logError(
-                    "Match allocate FINAL error: ID {$donation->getUuid()} got " . get_class($exception) .
-                    " after {$waitTime}s on try #$allocationTries: {$exception->getMessage()}"
-                );
-                throw $exception; // Re-throw exception after logging the details if not recoverable
             }
-        }
 
-        if (!$allocationDone) {
-            $this->logger->error(
-                "Match allocate FINAL error: ID {$donation->getUuid()} failed matching after $allocationTries tries"
+            $lockStartTime = microtime(true);
+            $newWithdrawals = $this->matchingAdapter->runTransactionally(
+                fn() => $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart)
             );
+            $lockEndTime = microtime(true);
 
-            throw new DomainLockContentionException();
+            $this->persistQueuedDonations();
+        } catch (Matching\TerminalLockException $exception) { // Includes non-retryable `DBALException`s
+            $waitTime = round(microtime(true) - $lockStartTime, 6);
+            $this->logError(
+                "Match allocate error: ID {$donation->getUuid()} got " . get_class($exception) .
+                " after {$waitTime}s: {$exception->getMessage()}"
+            );
+            throw $exception; // Re-throw exception after logging the details if not recoverable
         }
 
         // We release the allocation lock prior to inserting the funding withdrawal records, to keep the lock
