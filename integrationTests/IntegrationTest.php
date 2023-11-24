@@ -1,4 +1,5 @@
 <?php
+
 namespace MatchBot\IntegrationTests;
 
 use ArrayAccess;
@@ -18,7 +19,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-
 use Ramsey\Uuid\Uuid;
 use Slim\App;
 use Slim\Factory\AppFactory;
@@ -242,7 +242,7 @@ abstract class IntegrationTest extends TestCase
         $db->executeStatement(<<<SQL
          INSERT INTO Campaign_CampaignFunding (campaignfunding_id, campaign_id) VALUES ($campaignFundingID, $campaignId);
         SQL
-);
+        );
 
         $compacted = compact(['charityId', 'campaignId', 'fundId', 'campaignFundingID']);
         Assertion::allInteger($compacted);
@@ -290,73 +290,73 @@ abstract class IntegrationTest extends TestCase
         $this->assertInstanceOf($name, $service);
 
         return $service;
-    }
+}
 
     /**
      * Used in the past, maybe useful again, so
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function getServiceByName(string $name): mixed
-    {
-        return $this->getContainer()->get($name);
-    }
+public function getServiceByName(string $name): mixed
+{
+    return $this->getContainer()->get($name);
+}
 
     /**
      * @psalm-suppress UndefinedPropertyAssignment - StripeClient does declare the properties via docblock, not sure
      * Psalm doesn't see them as defined.
      */
-    public function fakeStripeClient(
-        ObjectProphecy $stripePaymentMethodServiceProphecy,
-        ObjectProphecy $stripeCustomerServiceProphecy,
-        ObjectProphecy $stripePaymentIntents,
-    ): StripeClient {
-        $fakeStripeClient = $this->createStub(StripeClient::class);
-        $fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
-        $fakeStripeClient->customers = $stripeCustomerServiceProphecy->reveal();
-        $fakeStripeClient->paymentIntents =$stripePaymentIntents->reveal();
+public function fakeStripeClient(
+    ObjectProphecy $stripePaymentMethodServiceProphecy,
+    ObjectProphecy $stripeCustomerServiceProphecy,
+    ObjectProphecy $stripePaymentIntents,
+): StripeClient {
+    $fakeStripeClient = $this->createStub(StripeClient::class);
+    $fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
+    $fakeStripeClient->customers = $stripeCustomerServiceProphecy->reveal();
+    $fakeStripeClient->paymentIntents = $stripePaymentIntents->reveal();
 
-        return $fakeStripeClient;
-    }
+    return $fakeStripeClient;
+}
 
-    protected function createDonation(
-        int $tipAmount = 0,
-        bool $withPremadeCampaign = true,
-        ?string $campaignSfID = null,
-        int $amountInPounds = 100,
-    ): ResponseInterface {
-        $campaignId = $campaignSfID ?? $this->randomString();
-        $paymentIntentId = $this->randomString();
+protected function createDonation(
+    int $tipAmount = 0,
+    bool $withPremadeCampaign = true,
+    ?string $campaignSfID = null,
+    int $amountInPounds = 100,
+): ResponseInterface {
+    $campaignId = $campaignSfID ?? $this->randomString();
+    $paymentIntentId = $this->randomString();
 
-        if ($withPremadeCampaign) {
-            $this->addCampaignAndCharityToDB($campaignId);
-        } // else application will attempt to pull campaign and charity from SF.
+    if ($withPremadeCampaign) {
+        $this->addCampaignAndCharityToDB($campaignId);
+    } // else application will attempt to pull campaign and charity from SF.
 
-        $stripePaymentIntent = new PaymentIntent($paymentIntentId);
-        $stripePaymentIntent->client_secret = 'any string, doesnt affect test';
-        $stripePaymentIntentsProphecy = $this->setUpFakeStripeClient();
+    $stripePaymentIntent = new PaymentIntent($paymentIntentId);
+    $stripePaymentIntent->client_secret = 'any string, doesnt affect test';
+    $stripePaymentIntentsProphecy = $this->setUpFakeStripeClient();
 
-        $stripePaymentIntentsProphecy->create(Argument::type('array'))
-            ->willReturn($stripePaymentIntent);
+    $stripePaymentIntentsProphecy->create(Argument::type('array'))
+        ->willReturn($stripePaymentIntent);
 
-        $container = $this->getContainer();
+    $container = $this->getContainer();
 
-        $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+    $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
+    $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
+    $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
 
-        $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
+    $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
-        $donationRepo = $container->get(DonationRepository::class);
-        assert($donationRepo instanceof DonationRepository);
-        $donationRepo->setClient($donationClientProphecy->reveal());
+    $donationRepo = $container->get(DonationRepository::class);
+    assert($donationRepo instanceof DonationRepository);
+    $donationRepo->setClient($donationClientProphecy->reveal());
 
-        return $this->getApp()->handle(
-            new ServerRequest(
-                'POST',
-                '/v1/donations',
-                // The Symfony Serializer will throw an exception if the JSON document doesn't include all the required
-                // constructor params of DonationCreate
-                body: <<<EOF
+    return $this->getApp()->handle(
+        new ServerRequest(
+            'POST',
+            '/v1/donations',
+            // The Symfony Serializer will throw an exception if the JSON document doesn't include all the required
+            // constructor params of DonationCreate
+            body: <<<EOF
                 {
                     "currencyCode": "GBP",
                     "donationAmount": "{$amountInPounds}",
@@ -365,8 +365,8 @@ abstract class IntegrationTest extends TestCase
                     "tipAmount": $tipAmount
                 }
             EOF,
-                serverParams: ['REMOTE_ADDR' => '127.0.0.1']
-            )
-        );
-    }
+            serverParams: ['REMOTE_ADDR' => '127.0.0.1']
+        )
+    );
+}
 }
