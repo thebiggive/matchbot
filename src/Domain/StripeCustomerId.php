@@ -17,7 +17,7 @@ class StripeCustomerId
 
     private function __construct(
         string $stripeCustomerId
-    ){
+    ) {
         $this->stripeCustomerId = $stripeCustomerId;
         Assertion::notEmpty($this->stripeCustomerId);
         Assertion::maxLength($this->stripeCustomerId, 255);

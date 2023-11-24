@@ -171,7 +171,7 @@ class CreateTest extends TestCase
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::any())->shouldNotBeCalled();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -578,7 +578,7 @@ class CreateTest extends TestCase
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -652,7 +652,7 @@ class CreateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -694,7 +694,7 @@ class CreateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -793,7 +793,7 @@ class CreateTest extends TestCase
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -1003,7 +1003,7 @@ class CreateTest extends TestCase
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());

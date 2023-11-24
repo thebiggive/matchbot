@@ -2,7 +2,6 @@
 
 namespace MatchBot\Client;
 
-
 use Stripe\Exception\ApiErrorException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;

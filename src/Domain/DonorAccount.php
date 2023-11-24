@@ -1,6 +1,7 @@
 <?php
 
 namespace MatchBot\Domain;
+
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 

@@ -23,7 +23,6 @@ class SlackHandler implements HandlerInterface
 {
     public function __construct(private ChatterInterface $slackConnction)
     {
-
     }
 
     public function isHandling(array $record): bool
@@ -38,7 +37,7 @@ class SlackHandler implements HandlerInterface
     {
         if ($record['level'] < Logger::ERROR) {
             return false; // allows another handle to handle this.
-         }
+        }
 
         $message = $record['message'];
         $levelName = $record['level_name'];
@@ -46,7 +45,7 @@ class SlackHandler implements HandlerInterface
         $lines = explode(PHP_EOL, $message);
 
         $messageFirstLine = $lines[0] ?? '';
-        $messageFirstSeveralLines = implode(\PHP_EOL, array_slice($lines,0,9)) . \PHP_EOL;
+        $messageFirstSeveralLines = implode(\PHP_EOL, array_slice($lines, 0, 9)) . \PHP_EOL;
 
         $heading = "Matchbot $levelName: $messageFirstLine";
 

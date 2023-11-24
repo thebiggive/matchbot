@@ -20,7 +20,6 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 
 class StripePayoutUpdateTest extends StripeTest
 {
-
     public function testUnsupportedAction(): void
     {
         $app = $this->getAppInstance();

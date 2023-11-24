@@ -49,7 +49,8 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $this->emProphecy->transactional(Argument::type(\Closure::class))->will(/**
          * @param list<\Closure> $args
          * @return mixed
-         */ fn(array $args) => $args[0]());
+         */            fn(array $args) => $args[0]()
+        );
         $matchingAdapter = new OptimisticRedisAdapter(new ArrayMatchingStorage(), $this->emProphecy->reveal(), new NullLogger());
 
         $this->sut = new DonationRepository(
@@ -157,8 +158,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         string $amountMatchedExpected,
         string $withdrawal0AmountExpected,
         string $withdrawl1AmountExpected
-    ): void
-    {
+    ): void {
         $campaignFunding0 = new CampaignFunding();
         $campaignFunding0->setCurrencyCode('GBP');
         $campaignFunding0->setAmountAvailable($funding0Available);
@@ -202,7 +202,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $this->assertSame($campaignFunding0, $fundingWithdrawals[0]->getCampaignFunding());
 
         $this->assertInstanceOf(FundingWithdrawal::class, $fundingWithdrawals[1]);
-        \assert(10-6 == 4);
+        \assert(10 - 6 == 4);
         $this->assertSame($withdrawl1AmountExpected, $fundingWithdrawals[1]->getAmount());
         $this->assertSame($campaignFunding1, $fundingWithdrawals[1]->getCampaignFunding());
     }

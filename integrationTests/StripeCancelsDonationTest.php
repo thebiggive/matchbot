@@ -50,11 +50,10 @@ class StripeCancelsDonationTest extends IntegrationTest
 
 
         $this->getApp()->handle(new ServerRequest(
-                method: 'POST',
-                uri: '/hooks/stripe',
-                headers: ['stripe-signature' => StripeTest::generateSignature((string)time(), $requestBody, $webhookSecret)],
-                body: $requestBody
-            )
-        );
+            method: 'POST',
+            uri: '/hooks/stripe',
+            headers: ['stripe-signature' => StripeTest::generateSignature((string)time(), $requestBody, $webhookSecret)],
+            body: $requestBody
+        ));
     }
 }

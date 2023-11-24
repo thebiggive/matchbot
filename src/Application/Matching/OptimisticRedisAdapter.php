@@ -41,8 +41,8 @@ class OptimisticRedisAdapter extends Adapter
 
     public function __construct(
         private RealTimeMatchingStorage $storage,
-        private EntityManagerInterface  $entityManager,
-        private LoggerInterface         $logger,
+        private EntityManagerInterface $entityManager,
+        private LoggerInterface $logger,
     ) {
     }
 

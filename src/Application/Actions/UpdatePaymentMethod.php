@@ -17,9 +17,8 @@ class UpdatePaymentMethod extends Action
     #[Pure]
     public function __construct(
         private StripeClient $stripeClient,
-        LoggerInterface      $logger
-    )
-    {
+        LoggerInterface $logger
+    ) {
         parent::__construct($logger);
     }
 

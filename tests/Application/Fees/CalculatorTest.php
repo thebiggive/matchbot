@@ -208,5 +208,4 @@ class CalculatorTest extends TestCase
             false,
         );
     }
-
 }

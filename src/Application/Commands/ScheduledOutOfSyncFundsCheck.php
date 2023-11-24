@@ -24,9 +24,7 @@ class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
         FundingWithdrawalRepository $fundingWithdrawalRepository,
         Matching\Adapter $matchingAdapter,
         private ChatterInterface $chatter,
-
-    )
-    {
+    ) {
         parent::__construct($campaignFundingRepository, $fundingWithdrawalRepository, $matchingAdapter);
     }
 

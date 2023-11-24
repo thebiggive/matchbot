@@ -1,5 +1,4 @@
 <?php
-
 namespace MatchBot\IntegrationTests;
 
 use ArrayAccess;

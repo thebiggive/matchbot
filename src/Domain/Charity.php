@@ -96,8 +96,7 @@ class Charity extends SalesforceReadProxy
         ?string $regulator,
         ?string $regulatorNumber,
         DateTime $time,
-    )
-    {
+    ) {
         $this->updatedAt = $time;
         $this->createdAt = $time;
         $this->setSalesforceId($salesforceId);

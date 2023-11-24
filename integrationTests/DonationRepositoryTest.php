@@ -140,7 +140,8 @@ class DonationRepositoryTest extends IntegrationTest
                 projectId: 'projectID',
                 psp: 'stripe',
                 emailAddress: $randomEmailAddress,
-            ), campaign: $campaign
+            ),
+            campaign: $campaign
         );
         if ($donationStatus === DonationStatus::Cancelled) {
             $oldPendingDonation->cancel();
