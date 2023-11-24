@@ -857,6 +857,9 @@
     <ArgumentTypeCoercion>
       <code>$amount</code>
       <code>$amount</code>
+      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
+      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
+      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
       <code><![CDATA[$this->getAmount()]]></code>
       <code><![CDATA[$this->getAmount()]]></code>
       <code><![CDATA[$this->getCharityFee()]]></code>
@@ -868,27 +871,7 @@
     </ArgumentTypeCoercion>
     <MixedArgument>
       <code><![CDATA[$data['emailAddress']]]></code>
-      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
-      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
-      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
     </MixedArgument>
-    <MixedAssignment>
-      <code>$fundingWithdrawal</code>
-      <code>$fundingWithdrawal</code>
-      <code>$fundingWithdrawal</code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code>getAmount</code>
-      <code>getAmount</code>
-      <code>getAmount</code>
-      <code>getCampaignFunding</code>
-      <code>getCampaignFunding</code>
-      <code>getFund</code>
-      <code>getFund</code>
-    </MixedMethodCall>
-    <PossiblyInvalidMethodCall>
-      <code>add</code>
-    </PossiblyInvalidMethodCall>
     <PossiblyNullPropertyAssignmentValue>
       <code><![CDATA[$this->donorFirstName]]></code>
       <code><![CDATA[$this->donorLastName]]></code>
@@ -917,6 +900,7 @@
       <code>$amountMatchedAtStart</code>
       <code><![CDATA[$donation->getAmount()]]></code>
       <code><![CDATA[$funding->getAmountAvailable()]]></code>
+      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
       <code>$newWithdrawal</code>
     </ArgumentTypeCoercion>
     <DeprecatedMethod>
@@ -932,10 +916,6 @@
       <code>$settings</code>
     </MissingConstructor>
     <MixedArgument>
-      <code>$funding</code>
-      <code>$fundingWithdrawal</code>
-      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
-      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
       <code>$likelyAvailableFunds</code>
       <code>$lockEndTime - $lockStartTime</code>
       <code>$lockEndTime - $lockStartTime</code>
@@ -945,9 +925,6 @@
     </MixedArgument>
     <MixedAssignment>
       <code>$funding</code>
-      <code>$funding</code>
-      <code>$fundingWithdrawal</code>
-      <code>$fundingWithdrawal</code>
       <code>$likelyAvailableFunds</code>
       <code>$newWithdrawal</code>
       <code>$newWithdrawals</code>
@@ -961,10 +938,6 @@
     </MixedInferredReturnType>
     <MixedMethodCall>
       <code>getAmount</code>
-      <code>getAmount</code>
-      <code>getAmount</code>
-      <code>getAmount</code>
-      <code>getCampaignFunding</code>
       <code>getCurrencyCode</code>
     </MixedMethodCall>
     <MixedOperand>
