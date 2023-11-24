@@ -56,13 +56,21 @@ class FundRepositoryTest extends TestCase
     {
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
+        $campaignFunding = null;
+
         // Validate that with everything new, the Doctrine EM is asked to persist the fund and campaign funding.
         $entityManagerProphecy
             ->persist(Argument::type(ChampionFund::class))
             ->shouldBeCalledTimes(2);
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
-            ->shouldBeCalledTimes(2);
+            ->shouldBeCalledTimes(2)
+            ->will(/**
+             * @param array<CampaignFunding> $args
+             */ function (array $args) use (&$campaignFunding) {
+                $campaignFunding = $args[0];
+            })
+        ;
 
         // This is not mututally exclusive with the above call expectations. It's a quick way to double check
         // that both persists are setting their respective object's amount to £500, even when the pre-existing
@@ -95,6 +103,17 @@ class FundRepositoryTest extends TestCase
         $campaign->setSalesforceId('sfFakeId987');
 
         $repo->pullForCampaign($campaign);
+
+        $this->assertInstanceOf(CampaignFunding::class, $campaignFunding);
+        $this->assertInstanceOf(\DateTime::class, $campaignFunding->getCreatedDate());
+        $this->assertSame('1500', $campaignFunding->getAmount());
+        $this->assertSame('1500', $campaignFunding->getAmountAvailable());
+
+        $fund = $campaignFunding->getFund();
+        $this->assertInstanceOf(ChampionFund::class, $fund);
+        $this->assertSame('sfFundId456', $fund->getSalesforceId());
+        $this->assertSame('GBP', $fund->getCurrencyCode());
+        $this->assertSame('1500', $fund->getAmount());
     }
 
     public function testPullForCampaignExistingFundButNewToCampaign(): void
