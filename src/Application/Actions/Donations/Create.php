@@ -20,7 +20,6 @@ use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
-use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Monolog\Logger;
@@ -136,10 +135,6 @@ class Create extends Action
         if ($donation->getCampaign()->isMatched()) {
             try {
                 $this->donationRepository->allocateMatchFunds($donation);
-            } catch (DomainLockContentionException $exception) {
-                $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
-
-                return $this->respond($response, new ActionPayload(503, null, $error));
             } catch (\Throwable $t) {
                 $this->matchingAdapter->releaseNewlyAllocatedFunds();
                 // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount would be reduced again when the donation expires.

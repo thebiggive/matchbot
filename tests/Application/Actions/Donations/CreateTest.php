@@ -99,45 +99,6 @@ class CreateTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
-    public function testValidDataForMatchedCampaignWhenFundLockNotAcquired(): void
-    {
-        $donation = $this->getTestDonation(true, true);
-
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
-            ->willReturn($donation);
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))
-            ->willThrow(DomainLockContentionException::class)
-            ->shouldBeCalledOnce();
-
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-
-        $data = $this->encodeWithDummyCaptcha($donation);
-        $request = $this->createRequest('POST', '/v1/donations', $data);
-        $response = $app->handle($request);
-
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(503, ['error' => [
-            'type' => 'SERVER_ERROR',
-            'description' => 'Fund resource locked',
-        ]]);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(503, $response->getStatusCode());
-    }
-
     public function testStripeWithMissingStripeAccountID(): void
     {
         $donation = $this->getTestDonation(true, true);
