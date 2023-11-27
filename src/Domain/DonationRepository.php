@@ -14,7 +14,6 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
-use MatchBot\Domain\DomainException\DomainLockContentionException;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 
@@ -237,7 +236,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * without releasing any funds.
      *
      * @param Donation $donation
-     * @throws DomainLockContentionException
      * @throws Matching\TerminalLockException
      */
     public function releaseMatchFunds(Donation $donation): void
@@ -306,7 +304,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         } catch (Matching\TerminalLockException $exception) {
             $waitTime = round(microtime(true) - $lockStartTime, 6);
             $this->logError(
-                'Match release FINAL error: ID ' . $donation->getUuid() . ' got ' . get_class($exception) .
+                'Match release error: ID ' . $donation->getUuid() . ' got ' . get_class($exception) .
                 " after {$waitTime}s: {$exception->getMessage()}"
             );
             throw $exception; // Re-throw exception after logging the details if not recoverable

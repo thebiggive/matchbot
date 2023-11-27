@@ -917,8 +917,6 @@
     </MissingConstructor>
     <MixedArgument>
       <code>$likelyAvailableFunds</code>
-      <code>$lockEndTime - $lockStartTime</code>
-      <code>$lockEndTime - $lockStartTime</code>
       <code>$newWithdrawal</code>
       <code><![CDATA[$newWithdrawal->getAmount()]]></code>
       <code>$salesforceDonationId</code>
@@ -940,10 +938,6 @@
       <code>getAmount</code>
       <code>getCurrencyCode</code>
     </MixedMethodCall>
-    <MixedOperand>
-      <code>$lockEndTime</code>
-      <code>$lockEndTime</code>
-    </MixedOperand>
     <MixedReturnStatement>
       <code>$result</code>
     </MixedReturnStatement>
@@ -979,14 +973,11 @@
       <code>$funding</code>
     </PossiblyNullArgument>
     <PossiblyUndefinedVariable>
-      <code>$lockEndTime</code>
-      <code>$lockEndTime</code>
       <code>$lockStartTime</code>
       <code>$lockStartTime</code>
       <code>$lockStartTime</code>
       <code>$lockStartTime</code>
       <code>$newTotal</code>
-      <code>$totalAmountReleased</code>
     </PossiblyUndefinedVariable>
     <PossiblyUnusedMethod>
       <code>setFundRepository</code>
