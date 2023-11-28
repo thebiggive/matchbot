@@ -339,8 +339,7 @@ class Update extends Action
                     /** @var string|null $nextActionType */
                     $nextActionType = null;
                     if ($confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
-                        $nextActionType = $confirmedIntent->next_action?->type;
-                        \assert(is_string($nextActionType));
+                        $nextActionType = (string) $confirmedIntent->next_action?->type;
                     }
 
                     $statusIsNeitherSuccessNorTipWithCreditsNextAction = !(
