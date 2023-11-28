@@ -8,6 +8,7 @@ use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
@@ -284,7 +285,7 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
-     * @var ArrayCollection|FundingWithdrawal[]
+     * @var Collection<int,FundingWithdrawal>
      */
     protected $fundingWithdrawals;
 
@@ -799,7 +800,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return ArrayCollection|FundingWithdrawal[]
+     * @return Collection<int, FundingWithdrawal>
      */
     public function getFundingWithdrawals()
     {

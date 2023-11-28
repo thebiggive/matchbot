@@ -15,6 +15,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\Pledge;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use UnexpectedValueException;
@@ -75,6 +76,17 @@ class DonationTest extends TestCase
         $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
         $this->getTestDonation('0.99');
+    }
+
+    public function testAmountVerySlightlyTooLowNotPersisted(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Amount must be 1-25000 GBP');
+
+        // PHP floating point math doesn't distinguish between this and 1, but as we use BC Math we can reject it as too small:
+        // See https://3v4l.org/#live
+        $justLessThanOne = '0.99999999999999999';
+        $this->getTestDonation($justLessThanOne);
     }
 
     public function testAmountTooHighNotPersisted(): void
@@ -217,9 +229,9 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation(status: DonationStatus::Pending);
 
-        $amountMatchedByPledges = $donation->toHookModel()['amountMatchedByChampionFunds'];
+        $amountMatchedByChampionFunds = $donation->toHookModel()['amountMatchedByChampionFunds'];
 
-        $this->assertSame(0.0, $amountMatchedByPledges);
+        $this->assertSame(0.0, $amountMatchedByChampionFunds);
     }
 
     public function testItSumsNoChampionFundsToZero(): void
@@ -252,6 +264,31 @@ class DonationTest extends TestCase
 
         \assert(1 + 2 === 3);
         $this->assertSame(3.0, $amountMatchedByPledges);
+    }
+
+    public function testItSumsAmountsMatchedByAllFunds(): void
+    {
+        $donation = $this->getTestDonation(status: DonationStatus::Collected);
+        $campaignFunding0 = new CampaignFunding();
+        $campaignFunding0->setFund(new ChampionFund());
+
+        $withdrawal0 = new FundingWithdrawal();
+        $withdrawal0->setCampaignFunding($campaignFunding0);
+        $withdrawal0->setAmount('1');
+
+        $campaignFunding1 = new CampaignFunding();
+        $campaignFunding1->setFund(new Pledge());
+        $withdrawal1 = new FundingWithdrawal();
+        $withdrawal1->setAmount('2');
+        $withdrawal1->setCampaignFunding($campaignFunding1);
+
+        $donation->addFundingWithdrawal($withdrawal0);
+        $donation->addFundingWithdrawal($withdrawal1);
+
+        $amountMatchedByPledges = $donation->getFundingWithdrawalTotal();
+
+        \assert(1 + 2 === 3);
+        $this->assertSame('3.00', $amountMatchedByPledges);
     }
 
     public function testToHookModelWhenRefunded(): void
@@ -423,7 +460,7 @@ class DonationTest extends TestCase
     /**
      * @return array<array{0: ?string, 1: string}>
      */
-    public function namesAndSFSafeNames()
+    public function namesAndSFSafeLastNames()
     {
         return [
             ['Flintstone', 'Flintstone'],
@@ -442,14 +479,47 @@ class DonationTest extends TestCase
     }
 
     /**
-     * @dataProvider namesAndSFSafeNames
+     * @return array<array{0: ?string, 1: ?string}>
      */
-    public function testItMakesDonorNameSafeForSalesforce(?string $originalName, string $expecteSafeName): void
+    public function namesAndSFSafeFirstNames()
+    {
+        return [
+            // same as last name except we have null not 'N/A'.
+            ['Flintstone', 'Flintstone'],
+            [null, null],
+            ['', null],
+            [' ', null],
+            ['王', '王'], // most common Chinese surname
+            [str_repeat('王', 41), str_repeat('王', 40)],
+            [str_repeat('a', 41), str_repeat('a', 40)],
+            ['👍', '👍'],
+            [str_repeat('👍', 41), str_repeat('👍', 40)],
+            [str_repeat('👩‍👩‍👧‍👧', 10), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
+            [str_repeat('👩‍👩‍👧‍👧', 41), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
+            [str_repeat('👩‍👩‍👧‍👧', 401), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
+        ];
+    }
+
+    /**
+     * @dataProvider namesAndSFSafeLastNames
+     */
+    public function testItMakesDonorLastNameSafeForSalesforce(?string $originalName, string $expecteSafeName): void
     {
         $donation = $this->getTestDonation();
         $donation->setDonorLastName($originalName);
 
         $this->assertSame($expecteSafeName, $donation->getDonorLastName(true));
+    }
+
+    /**
+     * @dataProvider namesAndSFSafeFirstNames
+     */
+    public function testItMakesDonorFirstNameSafeForSalesforce(?string $originalName, ?string $expecteSafeName): void
+    {
+        $donation = $this->getTestDonation();
+        $donation->setDonorFirstName($originalName);
+
+        $this->assertSame($expecteSafeName, $donation->getDonorFirstName(true));
     }
 
     public function testCanCancelPendingDonation(): void
@@ -552,5 +622,30 @@ class DonationTest extends TestCase
             'amount' => ["1", "2"],
         ];
         $donation->preUpdate(new PreUpdateEventArgs($donation, $this->createStub(EntityManagerInterface::class), $changeset));
+    }
+
+    /**
+     * @dataProvider namesEnoughForSalesForce
+     */
+    public function testItHasEnoughDataForSalesforceOnlyIffBothNamesAreNonEmpty(string $firstName, string $lastName, bool $isEnoughForSalesforce): void
+    {
+        $donation = $this->getTestDonation();
+        $donation->setDonorFirstName($firstName);
+        $donation->setDonorLastName($lastName);
+        $this->assertSame($isEnoughForSalesforce, $donation->hasEnoughDataForSalesforce());
+    }
+
+    /**
+     * @return list<array{0: string, 1: string, 2: bool}>
+     */
+    public function namesEnoughForSalesForce(): array
+    {
+        return [
+            // first name, last name, is it enough for SF?
+            ['', '', false],
+            ['', 'nonempty', false],
+            ['nonempty', '', false],
+            ['nonempty', 'nonempty', true],
+        ];
     }
 }
