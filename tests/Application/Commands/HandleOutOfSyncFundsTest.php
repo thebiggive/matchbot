@@ -105,7 +105,7 @@ class HandleOutOfSyncFundsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:handle-out-of-sync-funds starting!',
-            'Please set the mode to "check" or "fix" or "2023-11-30-patch"',
+            'Please set the mode to "check" or "fix"',
             'matchbot:handle-out-of-sync-funds complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
