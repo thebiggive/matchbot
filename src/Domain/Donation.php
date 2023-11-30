@@ -55,7 +55,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @var Campaign
      */
-    #[ORM\ManyToOne(targetEntity: Campaign::class)]
+    #[ORM\ManyToOne(targetEntity: Campaign::class, cascade: ['persist'])]
     protected Campaign $campaign;
 
     /**
