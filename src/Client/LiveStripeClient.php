@@ -2,7 +2,9 @@
 
 namespace MatchBot\Client;
 
-use MatchBot\Domain\Donation;
+use MatchBot\Domain\Currency;
+use MatchBot\Domain\Money;
+use MatchBot\Domain\StripeCustomerId;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
 use Stripe\StripeClient;
@@ -42,21 +44,8 @@ class LiveStripeClient implements Stripe
         return $this->stripeClient->paymentIntents->create($createPayload);
     }
 
-    public function updatePaymentMethodBillingDetail(string $paymentMethodId, Donation $donation): PaymentMethod
+    public function retrievePaymentMethod(string $paymentMethodId): PaymentMethod
     {
-        // "A PaymentMethod must be attached a customer to be updated."
-        $this->stripeClient->paymentMethods->attach($paymentMethodId, ['customer' => $donation->getPspCustomerId()]);
-
-        // Address etc. is set up in Stripe.js already. Adding these values which we collect on the
-        // donation separately helps with support queries and maybe with fraud signals.
-        return $this->stripeClient->paymentMethods->update(
-            $paymentMethodId,
-            [
-                'billing_details' => [
-                    'name' => "{$donation->getDonorFirstName()} {$donation->getDonorLastName()}",
-                    'email' => $donation->getDonorEmailAddress(),
-                ],
-            ],
-        );
+        return $this->stripeClient->paymentMethods->retrieve($paymentMethodId);
     }
 }
