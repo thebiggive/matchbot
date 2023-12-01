@@ -21,7 +21,10 @@ class PersonWithPasswordAuthMiddleware extends PersonManagementAuthMiddleware
         if (!$this->token->isComplete($this->jws)) {
             /** @var array<string> $serverParams */
             $serverParams = $request->getServerParams();
-            $this->logger->error('JWT error: not complete - request URI:' . $request->getUri()  . " referer:" . ($serverParams['HTTP_REFERER'] ?? 'no_referror'));
+            // We've seen in CC23 rare attempts to e.g. update payment method with a token that's not complete,
+            // probably due to state changes in another tab in the same session. Just warn about these so it
+            // doesn't fire alerts.
+            $this->logger->warning('JWT error: not complete - request URI:' . $request->getUri()  . " referer:" . ($serverParams['HTTP_REFERER'] ?? 'no_referror'));
             $this->unauthorised($this->logger, false, $request);
         }
     }
