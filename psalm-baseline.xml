@@ -24,17 +24,6 @@
       <code><![CDATA[$c->get('settings')['recaptcha']['secret_key']]]></code>
       <code><![CDATA[$c->get('settings')['redis']['host']]]></code>
       <code><![CDATA[$c->get('settings')['redis']['host']]]></code>
-      <code><![CDATA[$c->get(CacheInterface::class)]]></code>
-      <code><![CDATA[$c->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$c->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$c->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$c->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$c->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$c->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$c->get(ORM\Configuration::class)]]></code>
-      <code><![CDATA[$c->get(ProblemDetailsResponseFactory::class)]]></code>
-      <code><![CDATA[$c->get(Redis::class)]]></code>
-      <code><![CDATA[$em->getConnection()]]></code>
       <code><![CDATA[$loggerSettings['name']]]></code>
       <code><![CDATA[$loggerSettings['path']]]></code>
       <code><![CDATA[$settings['doctrine']['dev_mode']]]></code>
@@ -45,12 +34,6 @@
       <code><![CDATA[$settings['notifier']['slack']['channel']]]></code>
       <code><![CDATA[$settings['redis']['host']]]></code>
     </MixedArgument>
-    <MixedArgumentTypeCoercion>
-      <code><![CDATA[[
-                    Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
-                    StripePayout::class => [$c->get(StripePayoutHandler::class)],
-                ]]]></code>
-    </MixedArgumentTypeCoercion>
     <MixedArrayAccess>
       <code><![CDATA[$c->get('settings')['doctrine']]]></code>
       <code><![CDATA[$c->get('settings')['identity']]]></code>
@@ -86,29 +69,15 @@
       <code><![CDATA[$settings['redis']['host']]]></code>
     </MixedArrayAccess>
     <MixedAssignment>
-      <code>$em</code>
-      <code>$logger</code>
       <code>$loggerSettings</code>
       <code>$settings</code>
       <code>$settings</code>
       <code>$settings</code>
     </MixedAssignment>
-    <MixedInferredReturnType>
-      <code>EntityManagerInterface</code>
-    </MixedInferredReturnType>
-    <MixedMethodCall>
-      <code>error</code>
-      <code>getConnection</code>
-      <code>warning</code>
-      <code>warning</code>
-    </MixedMethodCall>
     <MixedOperand>
       <code><![CDATA[$c->get('settings')['redis']['host']]]></code>
       <code><![CDATA[$settings['doctrine']['cache_dir']]]></code>
     </MixedOperand>
-    <MixedReturnStatement>
-      <code><![CDATA[$c->get(RetrySafeEntityManager::class)]]></code>
-    </MixedReturnStatement>
     <PossiblyFalseArgument>
       <code><![CDATA[getenv('CLAIMBOT_MESSENGER_TRANSPORT_DSN')]]></code>
       <code><![CDATA[getenv('MESSENGER_TRANSPORT_DSN')]]></code>
@@ -121,48 +90,9 @@
     </UnusedClosureParam>
   </file>
   <file src="app/repositories.php">
-    <MixedAssignment>
-      <code>$repo</code>
-      <code>$repo</code>
-      <code>$repo</code>
-    </MixedAssignment>
-    <MixedInferredReturnType>
-      <code>CampaignFundingRepository</code>
-      <code>CampaignRepository</code>
-      <code>CharityRepository</code>
-      <code>DonationRepository</code>
-      <code>FundRepository</code>
-      <code>FundingWithdrawalRepository</code>
-    </MixedInferredReturnType>
-    <MixedMethodCall>
-      <code>getRepository</code>
-      <code>getRepository</code>
-      <code>getRepository</code>
-      <code>getRepository</code>
-      <code>getRepository</code>
-      <code>getRepository</code>
-      <code>setCampaignFundingRepository</code>
-      <code>setCampaignRepository</code>
-      <code>setClient</code>
-      <code>setClient</code>
-      <code>setClient</code>
-      <code>setFundRepository</code>
-      <code>setLockFactory</code>
-      <code>setLogger</code>
-      <code>setLogger</code>
-      <code>setLogger</code>
-      <code>setMatchingAdapter</code>
-      <code>setMatchingAdapter</code>
-      <code>setSettings</code>
-    </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$c->get(EntityManagerInterface::class)->getRepository(CampaignFunding::class)]]></code>
-      <code><![CDATA[$c->get(EntityManagerInterface::class)->getRepository(Charity::class)]]></code>
-      <code><![CDATA[$c->get(EntityManagerInterface::class)->getRepository(FundingWithdrawal::class)]]></code>
-      <code>$repo</code>
-      <code>$repo</code>
-      <code>$repo</code>
-    </MixedReturnStatement>
+    <MixedArgument>
+      <code><![CDATA[$c->get('settings')]]></code>
+    </MixedArgument>
   </file>
   <file src="app/routes.php">
     <MissingClosureParamType>
@@ -199,30 +129,7 @@
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
     </DeprecatedMethod>
   </file>
-  <file src="matchbot-cli.php">
-    <MixedArgument>
-      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
-      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
-      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
-      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
-      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
-      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
-      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
-      <code><![CDATA[$psr11App->get(LockFactory::class)]]></code>
-      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$psr11App->get(LoggerInterface::class)]]></code>
-    </MixedArgument>
-  </file>
   <file src="public/index.php">
-    <MixedArgument>
-      <code><![CDATA[$app->getContainer()->get(LoggerInterface::class)]]></code>
-    </MixedArgument>
     <MixedArrayAccess>
       <code><![CDATA[$container->get('settings')['displayErrorDetails']]]></code>
     </MixedArrayAccess>
@@ -400,6 +307,9 @@
     <PossiblyUnusedMethod>
       <code>__construct</code>
     </PossiblyUnusedMethod>
+    <PossiblyUnusedReturnValue>
+      <code>ResponseInterface</code>
+    </PossiblyUnusedReturnValue>
   </file>
   <file src="src/Application/Commands/Command.php">
     <PossiblyNullOperand>
@@ -753,7 +663,6 @@
       <code>new ArrayCollection()</code>
     </InvalidPropertyAssignmentValue>
     <PossiblyUnusedMethod>
-      <code>getCurrencyCode</code>
       <code>isShared</code>
     </PossiblyUnusedMethod>
     <PossiblyUnusedProperty>
@@ -916,14 +825,11 @@
       <code>$settings</code>
     </MissingConstructor>
     <MixedArgument>
-      <code>$likelyAvailableFunds</code>
       <code>$newWithdrawal</code>
       <code><![CDATA[$newWithdrawal->getAmount()]]></code>
       <code>$salesforceDonationId</code>
     </MixedArgument>
     <MixedAssignment>
-      <code>$funding</code>
-      <code>$likelyAvailableFunds</code>
       <code>$newWithdrawal</code>
       <code>$newWithdrawals</code>
       <code>$result</code>
@@ -936,7 +842,6 @@
     </MixedInferredReturnType>
     <MixedMethodCall>
       <code>getAmount</code>
-      <code>getCurrencyCode</code>
     </MixedMethodCall>
     <MixedReturnStatement>
       <code>$result</code>
@@ -979,9 +884,6 @@
       <code>$lockStartTime</code>
       <code>$newTotal</code>
     </PossiblyUndefinedVariable>
-    <PossiblyUnusedMethod>
-      <code>setFundRepository</code>
-    </PossiblyUnusedMethod>
     <TooManyArguments>
       <code>refresh</code>
     </TooManyArguments>
@@ -1487,9 +1389,6 @@
       <code><![CDATA[ConsoleRunner::createHelperSet($container->get(EntityManagerInterface::class))]]></code>
       <code>setMetadataCacheImpl</code>
     </DeprecatedMethod>
-    <MixedArgument>
-      <code><![CDATA[$container->get(EntityManagerInterface::class)]]></code>
-    </MixedArgument>
     <PossiblyNullArgument>
       <code><![CDATA[$config->getProxyDir()]]></code>
       <code><![CDATA[$config->getProxyNamespace()]]></code>
@@ -1509,33 +1408,16 @@
     </UndefinedInterfaceMethod>
   </file>
   <file src="tests/Application/Auth/DonationRecaptchaMiddlewareTest.php">
-    <MixedArgument>
-      <code><![CDATA[$container->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$container->get(ReCaptcha::class)]]></code>
-      <code><![CDATA[$container->get(SerializerInterface::class)]]></code>
-    </MixedArgument>
     <PossiblyNullReference>
       <code>get</code>
     </PossiblyNullReference>
   </file>
   <file src="tests/Application/Auth/PersonManagementAuthMiddlewareTest.php">
-    <MixedAssignment>
-      <code>$middleware</code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code>process</code>
-    </MixedMethodCall>
     <PossiblyNullReference>
       <code>get</code>
     </PossiblyNullReference>
   </file>
   <file src="tests/Application/Auth/PersonWithPasswordAuthMiddlewareTest.php">
-    <MixedAssignment>
-      <code>$middleware</code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code>process</code>
-    </MixedMethodCall>
     <PossiblyNullReference>
       <code>get</code>
     </PossiblyNullReference>
@@ -1616,13 +1498,6 @@
     </InternalMethod>
   </file>
   <file src="tests/Application/Commands/UpdateCampaignsTest.php">
-    <MixedArgument>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get(EntityManagerInterface::class)]]></code>
-    </MixedArgument>
     <PossiblyNullReference>
       <code>get</code>
       <code>get</code>
@@ -1636,31 +1511,7 @@
       <code><![CDATA[Donation::emptyTestDonation('124.56')]]></code>
     </DeprecatedMethod>
   </file>
-  <file src="tests/Application/Messenger/Handler/GiftAidResultHandlerTest.php">
-    <MixedArgument>
-      <code><![CDATA[$container->get(DonationRepository::class)]]></code>
-      <code><![CDATA[$container->get(DonationRepository::class)]]></code>
-      <code><![CDATA[$container->get(DonationRepository::class)]]></code>
-      <code><![CDATA[$container->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$container->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$container->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$container->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$container->get(LoggerInterface::class)]]></code>
-      <code><![CDATA[$container->get(LoggerInterface::class)]]></code>
-    </MixedArgument>
-  </file>
   <file src="tests/Application/Messenger/Handler/StripePayoutHandlerTest.php">
-    <MixedArgument>
-      <code><![CDATA[$container->get(DonationRepository::class)]]></code>
-      <code><![CDATA[$container->get(DonationRepository::class)]]></code>
-      <code><![CDATA[$container->get(DonationRepository::class)]]></code>
-      <code><![CDATA[$container->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$container->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$container->get(EntityManagerInterface::class)]]></code>
-      <code><![CDATA[$container->get(StripeClient::class)]]></code>
-      <code><![CDATA[$container->get(StripeClient::class)]]></code>
-      <code><![CDATA[$container->get(StripeClient::class)]]></code>
-    </MixedArgument>
     <PossiblyUndefinedMethod>
       <code>balanceTransactions</code>
       <code>balanceTransactions</code>
@@ -1709,19 +1560,6 @@
       <code><![CDATA[$container->get('settings')['doctrine']]]></code>
       <code><![CDATA[$container->get('settings')['doctrine']]]></code>
     </MixedArrayAccess>
-    <MixedAssignment>
-      <code>$config</code>
-    </MixedAssignment>
-    <MixedInferredReturnType>
-      <code>Configuration</code>
-    </MixedInferredReturnType>
-    <MixedMethodCall>
-      <code>setRepositoryFactory</code>
-    </MixedMethodCall>
-    <MixedReturnStatement>
-      <code>$config</code>
-      <code>$config</code>
-    </MixedReturnStatement>
   </file>
   <file src="tests/Application/VatTrait.php">
     <MixedArrayAssignment>
@@ -1758,9 +1596,6 @@
     </InternalMethod>
   </file>
   <file src="tests/Domain/FundRepositoryTest.php">
-    <MixedArgument>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get(LoggerInterface::class)]]></code>
-    </MixedArgument>
     <PossiblyNullReference>
       <code>get</code>
     </PossiblyNullReference>

@@ -183,6 +183,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $amountMatchedAtStart = $donation->getFundingWithdrawalTotal();
 
         try {
+            /** @var list<CampaignFunding> $likelyAvailableFunds */
             $likelyAvailableFunds = $this->getEntityManager()
                 ->getRepository(CampaignFunding::class)
                 ->getAvailableFundings($donation->getCampaign());
