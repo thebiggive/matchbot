@@ -169,6 +169,76 @@ class CalculatorTest extends TestCase
         $this->assertEquals('0.00', $calculator->getFeeVat());
     }
 
+    /**
+     * Worked example as given at https://biggive.org/our-fees/
+     */
+    public function testGBP10WVithoutGiftAidProvides695(): void
+    {
+        $donationAmount = '10.00';
+
+        $calculator = new Calculator(
+            $this->settingsWithVAT(),
+            psp: 'stripe',
+            cardBrand: 'mastercard',
+            cardCountry: 'GB',
+            amount: $donationAmount,
+            currencyCode: 'GBP',
+            hasGiftAid: false
+        );
+
+        $totalFee = $calculator->getCoreFee();
+
+        $this->assertSame('0.35', $totalFee);
+        $this->assertSame(9.65, $donationAmount - $totalFee);
+    }
+
+    /**
+     * Worked example as given at https://biggive.org/our-fees/
+     */
+    public function testGBP10WVithGiftAidProvides1208(): void
+    {
+        $donationAmount = '10.00';
+        $giftAidAmount = $donationAmount / 4;
+
+        $calculator = new Calculator(
+            $this->settingsWithVAT(),
+            psp: 'stripe',
+            cardBrand: 'mastercard',
+            cardCountry: 'GB',
+            amount: $donationAmount,
+            currencyCode: 'GBP',
+            hasGiftAid: true
+        );
+
+        $totalFee = $calculator->getCoreFee();
+
+        $this->assertSame('0.43', $totalFee);
+        $this->assertSame(12.07, $donationAmount - $totalFee + $giftAidAmount);
+    }
+
+    /**
+     * Worked example as given at https://biggive.org/our-fees/
+     */
+    public function testGBP10NonEUUKWVithoutGiftAidProvides695(): void
+    {
+        $donationAmount = '10.00';
+
+        $calculator = new Calculator(
+            $this->settingsWithVAT(),
+            psp: 'stripe',
+            cardBrand: 'mastercard',
+            cardCountry: 'US',
+            amount: $donationAmount,
+            currencyCode: 'GBP',
+            hasGiftAid: false
+        );
+
+        $totalFee = $calculator->getCoreFee();
+
+        $this->assertSame('0.52', $totalFee);
+        $this->assertSame(9.48, $donationAmount - $totalFee);
+    }
+
     private function settingsWithVAT(): array
     {
         putenv('VAT_PERCENTAGE_LIVE=20');
@@ -208,5 +278,4 @@ class CalculatorTest extends TestCase
             false,
         );
     }
-
 }

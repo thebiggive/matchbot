@@ -335,7 +335,23 @@ class Update extends Action
             if ($donationData->autoConfirmFromCashBalance) {
                 try {
                     $confirmedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId());
-                    if ($confirmedIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
+
+                    /** @var string|null $nextActionType */
+                    $nextActionType = null;
+                    if ($confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
+                        $nextActionType = (string) $confirmedIntent->next_action?->type;
+                    }
+
+                    $statusIsNeitherSuccessNorTipWithCreditsNextAction = !(
+                        $confirmedIntent->status === PaymentIntent::STATUS_SUCCEEDED ||
+                        (
+                            $confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION &&
+                            $nextActionType === 'display_bank_transfer_instructions' &&
+                            $donation->getCampaign()->getCampaignName() === 'Big Give General Donations'
+                        )
+                    );
+
+                    if ($statusIsNeitherSuccessNorTipWithCreditsNextAction) {
                         // As this is autoConfirmFromCashBalance and we only expect people to make such donations if they
                         // have a sufficient balance we expect PI to succeed synchronosly. If it didn't we don't want to
                         // leave the PI around to succeed later when the donor might not be expecting it.

@@ -136,7 +136,12 @@ class Create extends Action
             try {
                 $this->donationRepository->allocateMatchFunds($donation);
             } catch (\Throwable $t) {
-                $this->matchingAdapter->releaseNewlyAllocatedFunds();
+                $this->logger->error(sprintf('Allocation got error: %s', $t->getMessage()));
+
+                $this->matchingAdapter->runTransactionally(
+                    fn() => $this->matchingAdapter->releaseNewlyAllocatedFunds(),
+                );
+
                 // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount would be reduced again when the donation expires.
                 $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
 
