@@ -49,6 +49,27 @@ class DonationRepositoryTest extends TestCase
         $this->assertTrue($success);
     }
 
+    public function testItReplacesNullDonationTypeWithCardOnUpdate(): void
+    {
+        // arrange
+        $donationClientProphecy = $this->prophesize(Client\Donation::class);
+        $donationClientProphecy->put(Argument::any())->willReturn(true);
+        $sut = $this->getRepo($donationClientProphecy);
+
+        // Simulate an old donation that was created in OCtober 22 or earlier,
+        // before we forced every donation to have a Payment Method Type set.
+        // May want to make the property non-nullalble but will require updating DB records.
+        $donation = $this->getTestDonation();
+        $paymentMethodTypeProperty = new \ReflectionProperty(Donation::class, 'paymentMethodType');
+        $paymentMethodTypeProperty->setValue($donation, null);
+
+        // act
+        $sut->doUpdate($donation);
+
+        // assert
+        $this->assertSame(PaymentMethodType::Card, $donation->getPaymentMethodType());
+    }
+
     public function testExistingButPendingNotRePushed(): void
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
