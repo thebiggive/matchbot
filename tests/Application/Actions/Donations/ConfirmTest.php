@@ -11,19 +11,16 @@ use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
-use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\NullLogger;
+use Slim\Exception\HttpBadRequestException;
 use Slim\Psr7\Response;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
-use Stripe\Service\PaymentIntentService;
-use Stripe\Service\PaymentMethodService;
-use Stripe\StripeClient;
 
 class ConfirmTest extends TestCase
 {
@@ -80,6 +77,52 @@ class ConfirmTest extends TestCase
             ['paymentIntent' => ['status' => 'requires_action', 'client_secret' => 'some_client_secret']],
             \json_decode($response->getBody()->getContents(), true)
         );
+    }
+
+    public function testItReturns400OnCancelledDonation(): void
+    {
+        // arrange
+
+        // in reality the fee would be calculated according to details of the card etc. The Calculator class is
+        //tested separately. This is just a dummy value.
+        $newCharityFee = "42.00";
+        $newApplicationFeeAmount = 4200;
+
+        $stripeClientProphecy = $this->fakeStripeClient(
+            cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
+            paymentMethodId: 'PAYMENT_METHOD_ID',
+            updatedIntentData: [
+                'status' => 'requires_payment_method',
+                'client_secret' => 'some_client_secret',
+            ],
+            paymentIntentId: 'PAYMENT_INTENT_ID',
+            expectedMetadataUpdate: [
+                "metadata" => [
+                    "stripeFeeRechargeGross" => $newCharityFee,
+                    "stripeFeeRechargeNet" => $newCharityFee,
+                    "stripeFeeRechargeVat" => "0.00",
+                ],
+                "application_fee_amount" => $newApplicationFeeAmount,
+            ],
+            confirmFailsWithCardError: true,
+            confirmFailsWithApiError: false,
+            confirmFailsWithPaymentMethodUsedError: false,
+            updatePaymentIntentAndConfirmExpected: false,
+        );
+
+        $sut = new Confirm(
+            new NullLogger(),
+            $this->getDonationRepository(newCharityFee: $newCharityFee, donationIsCancelled: true),
+            $stripeClientProphecy->reveal(),
+            $this->prophesize(EntityManagerInterface::class)->reveal()
+        );
+
+        // assert
+        $this->expectException(HttpBadRequestException::class);
+        $this->expectExceptionMessage('Donation has been cancelled, so cannot be confirmed');
+
+        // act
+        $this->callConfirm($sut);
     }
 
     public function testItReturns402OnDecline(): void
@@ -247,14 +290,15 @@ class ConfirmTest extends TestCase
      * @return ObjectProphecy<Stripe>
      */
     private function fakeStripeClient(
-        array $cardDetails,
+        array  $cardDetails,
         string $paymentMethodId,
-        array $updatedIntentData,
+        array  $updatedIntentData,
         string $paymentIntentId,
-        array $expectedMetadataUpdate,
-        bool $confirmFailsWithCardError,
-        bool $confirmFailsWithApiError,
-        bool $confirmFailsWithPaymentMethodUsedError,
+        array  $expectedMetadataUpdate,
+        bool   $confirmFailsWithCardError,
+        bool   $confirmFailsWithApiError,
+        bool   $confirmFailsWithPaymentMethodUsedError,
+        bool   $updatePaymentIntentAndConfirmExpected = true,
     ): ObjectProphecy {
         $paymentMethod = new PaymentMethod(['id' => 'id-doesnt-matter-for-test']);
         $paymentMethod->type = 'card';
@@ -271,6 +315,10 @@ class ConfirmTest extends TestCase
 
         $stripeProphecy->retrievePaymentIntent($paymentIntentId)
             ->willReturn($updatedPaymentIntent);
+
+        if (!$updatePaymentIntentAndConfirmExpected) {
+            return $stripeProphecy;
+        }
 
         $stripeProphecy->updatePaymentIntent(
             $paymentIntentId,
@@ -317,7 +365,7 @@ class ConfirmTest extends TestCase
      * @return DonationRepository Really an ObjectProphecy<DonationRepository>, but psalm
      *                            complains about that.
      */
-    private function getDonationRepository(string $newCharityFee): DonationRepository
+    private function getDonationRepository(string $newCharityFee, bool $donationIsCancelled = false): DonationRepository
     {
         $donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
 
@@ -326,6 +374,10 @@ class ConfirmTest extends TestCase
             $this->getMinimalCampaign(),
         );
         $donation->setTransactionId('PAYMENT_INTENT_ID');
+
+        if ($donationIsCancelled) {
+            $donation->cancel();
+        }
 
         $donationRepositoryProphecy->deriveFees($donation, 'discover', 'some-country')
             ->will(

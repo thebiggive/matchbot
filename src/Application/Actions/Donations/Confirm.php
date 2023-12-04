@@ -9,6 +9,7 @@ use MatchBot\Application\Fees\Calculator;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -80,6 +81,14 @@ class Confirm extends Action
         $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $args['donationId']]);
         if (! $donation) {
             throw new NotFoundException();
+        }
+
+        if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
+            $this->logger->warning(sprintf(
+                'We declined to Confirm as donations was cancelled. Donation UUID %s',
+                $donation->getUuid(),
+            ));
+            throw new HttpBadRequestException($request, 'Donation has been cancelled, so cannot be confirmed');
         }
 
         $paymentIntentId = $donation->getTransactionId();
