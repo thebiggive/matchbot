@@ -2,14 +2,14 @@
 
 namespace MatchBot\Application\Security;
 
-
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
-
-class Cors
+class CorsMiddlware implements MiddlewareInterface
 {
-    public static function addHeaders(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $givenOrigin = $request->getHeaderLine('Origin');
         $corsAllowedOrigin = 'https://donate.thebiggive.org.uk';
@@ -33,7 +33,7 @@ class Cors
 
         // Basic approach based on https://www.slimframework.com/docs/v4/cookbook/enable-cors.html
         // - adapted to allow for multiple potential origins per-MatchBot instance.
-        return $response
+        return $handler->handle($request)
             ->withHeader('Access-Control-Allow-Origin', $corsAllowedOrigin)
             ->withHeader(
                 'Access-Control-Allow-Headers',
