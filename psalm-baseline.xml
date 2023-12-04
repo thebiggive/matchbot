@@ -167,7 +167,6 @@
   <file src="app/routes.php">
     <MissingClosureParamType>
       <code>$args</code>
-      <code>$handler</code>
       <code>$request</code>
       <code>$request</code>
       <code>$response</code>
@@ -175,20 +174,10 @@
     </MissingClosureParamType>
     <MissingClosureReturnType>
       <code>function ($request, $response, $args) {</code>
-      <code>function (RequestInterface $request, $handler) {</code>
     </MissingClosureReturnType>
     <MixedArgument>
       <code>$request</code>
     </MixedArgument>
-    <MixedAssignment>
-      <code>$response</code>
-    </MixedAssignment>
-    <MixedMethodCall>
-      <code>handle</code>
-      <code>withHeader</code>
-      <code>withHeader</code>
-      <code>withHeader</code>
-    </MixedMethodCall>
     <UnusedClosureParam>
       <code>$args</code>
       <code>$response</code>
@@ -753,7 +742,6 @@
       <code>new ArrayCollection()</code>
     </InvalidPropertyAssignmentValue>
     <PossiblyUnusedMethod>
-      <code>getCurrencyCode</code>
       <code>isShared</code>
     </PossiblyUnusedMethod>
     <PossiblyUnusedProperty>
