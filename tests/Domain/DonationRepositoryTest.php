@@ -229,19 +229,16 @@ class DonationRepositoryTest extends TestCase
         $fundRepositoryProphecy = $this->prophesize(FundRepository::class);
         $this->entityManagerProphecy->flush()->shouldBeCalled();
 
+        $dummyCampaign = new Campaign(TestCase::someCharity());
+        $dummyCampaign->setCurrencyCode('GBP');
+        $dummyCampaign->setSalesforceId('testProject123');
+
+
         // No change – campaign still has a charity without a Stripe Account ID.
         $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject123'])
             ->willReturn(null);
-        $campaignRepoProphecy->pull(Argument::type(Campaign::class))->will(/**
-         * @param array<Campaign> $args
-         * @return Campaign
-         */ function (array $args) {
-            $campaign = $args[0];
-            $campaign->setCurrencyCode('GBP');
-            $campaign->setCharity(TestCase::someCharity());
+        $campaignRepoProphecy->pullNewFromSf('testProject123')->willReturn($dummyCampaign);
 
-            return $campaign;
-        });
         $fundRepositoryProphecy->pullForCampaign(Argument::type(Campaign::class))->shouldBeCalled();
 
         $createPayload = new DonationCreate(
