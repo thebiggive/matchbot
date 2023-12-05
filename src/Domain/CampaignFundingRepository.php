@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityRepository;
 
 /**
