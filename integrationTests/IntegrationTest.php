@@ -116,7 +116,6 @@ abstract class IntegrationTest extends TestCase
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
         $donationRepo = $container->get(DonationRepository::class);
-        assert($donationRepo instanceof DonationRepository);
         $donationRepo->setClient($donationClientProphecy->reveal());
     }
 
@@ -181,7 +180,6 @@ abstract class IntegrationTest extends TestCase
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
         $donationRepo = $container->get(DonationRepository::class);
-        assert($donationRepo instanceof DonationRepository);
         $donationRepo->setClient($donationClientProphecy->reveal());
         return $campaignId;
     }
@@ -348,7 +346,6 @@ abstract class IntegrationTest extends TestCase
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
         $donationRepo = $container->get(DonationRepository::class);
-        assert($donationRepo instanceof DonationRepository);
         $donationRepo->setClient($donationClientProphecy->reveal());
 
         return $this->getApp()->handle(
