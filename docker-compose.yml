@@ -35,7 +35,7 @@ services:
       - matchbot
 
   redis:
-    image: redis:7.0
+    image: redis:7.1
     platform: linux/amd64
     networks:
       - matchbot
