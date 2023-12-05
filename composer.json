@@ -53,6 +53,7 @@
     "require-dev": {
         "infection/infection": "^0.27.8",
         "jetbrains/phpstorm-attributes": "^1.0",
+        "lctrs/psalm-psr-container-plugin": "^1.9",
         "phpspec/prophecy-phpunit": "^2.0",
         "phpunit/phpunit": "^9.5",
         "psalm/plugin-phpunit": "^0.18.4",
@@ -122,10 +123,6 @@
         "matchbot:check-out-of-sync-funds": [
           "Composer\\Config::disableProcessTimeout",
           "php matchbot-cli.php matchbot:handle-out-of-sync-funds check"
-        ],
-        "matchbot:check-out-of-sync-funds-2023-12-05-patch": [
-            "Composer\\Config::disableProcessTimeout",
-            "php matchbot-cli.php matchbot:handle-out-of-sync-funds 2023-12-05-patch"
         ],
         "matchbot:scheduled-out-of-sync-funds-check": [
             "Composer\\Config::disableProcessTimeout",

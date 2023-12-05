@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use MatchBot\Application\Handlers\HttpErrorHandler;
 use MatchBot\Application\Handlers\ShutdownHandler;
-use MatchBot\Application\Security\CorsMiddlware;
+use MatchBot\Application\Security\CorsMiddleware;
 use Psr\Log\LoggerInterface;
 use Slim\Factory\AppFactory;
 use Slim\Factory\ServerRequestCreatorFactory;
@@ -47,7 +47,7 @@ $app->addRoutingMiddleware();
 $errorMiddleware = $app->addErrorMiddleware($displayErrorDetails, false, false);
 $errorMiddleware->setDefaultErrorHandler($errorHandler);
 
-$app->add(new CorsMiddlware());
+$app->add(new CorsMiddleware());
 
 // Run App & Emit Response
 $response = $app->handle($request);

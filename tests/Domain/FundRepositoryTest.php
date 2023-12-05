@@ -46,7 +46,7 @@ class FundRepositoryTest extends TestCase
         // `FundRepository` such that `doPull()` is a real call but `pull()` doesn't try a real DB engine lookup.
         $fund->setSalesforceId('sfFakeId987');
 
-        $fund = $repo->pull($fund, false); // Don't auto-save as non-DB-backed tests can't persist
+        $repo->updateFromSf($fund, false); // Don't auto-save as non-DB-backed tests can't persist
 
         $this->assertEquals('API Fund Name', $fund->getName());
         $this->assertEquals('123.45', $fund->getAmount());

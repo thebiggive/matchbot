@@ -61,8 +61,8 @@ class HandleOutOfSyncFunds extends LockingCommand
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $mode = $input->getArgument('mode');
-        if (!in_array($mode, ['check', 'fix', '2023-12-05-patch'], true)) {
-            $output->writeln('Please set the mode to "check" or "fix" or "2023-12-05-patch"');
+        if (!in_array($mode, ['check', 'fix'], true)) {
+            $output->writeln('Please set the mode to "check" or "fix"');
             return 1;
         }
 
@@ -74,17 +74,8 @@ class HandleOutOfSyncFunds extends LockingCommand
         $numFundingsCorrect = 0;
         $numFundingsOvermatched = 0;
         $numFundingsUndermatched = 0;
-
-        $problemIds = [];
         /** @var CampaignFunding[] $fundings */
-        if ($mode === '2023-12-05-patch') {
-            $problemIds = [27190];
-            $output->writeln('Running in 2023-12-05-patch mode');
-            // https://stackoverflow.com/a/52427915/2803757
-            $fundings = $this->campaignFundingRepository->findBy(['id' => $problemIds]);
-        } else {
-            $fundings = $this->campaignFundingRepository->findAll();
-        }
+        $fundings = $this->campaignFundingRepository->findAll();
         $numFundings = count($fundings);
 
         foreach ($fundings as $funding) {
@@ -126,7 +117,7 @@ class HandleOutOfSyncFunds extends LockingCommand
 
             $output->writeln("Funding {$funding->getId()} is under-matched by $undermatchAmount. $details");
 
-            if ($mode === 'fix' || ($mode === '2023-12-05-patch' && in_array($funding->getId(), $problemIds, true))) {
+            if ($mode === 'fix') {
                 $newTotal = $this->matchingAdapter->runTransactionally(
                     function () use ($funding, $undermatchAmount) {
                         return $this->matchingAdapter->addAmount($funding, $undermatchAmount);
