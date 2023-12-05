@@ -73,8 +73,8 @@ class Confirm extends Action
         }
         \assert(is_array($requestBody));
 
-        $pamentMethodId = $requestBody['stripePaymentMethodId'];
-        \assert((is_string($pamentMethodId)));
+        $paymentMethodId = $requestBody['stripePaymentMethodId'];
+        \assert((is_string($paymentMethodId)));
 
         $this->entityManager->beginTransaction();
 
@@ -92,7 +92,7 @@ class Confirm extends Action
         }
 
         $paymentIntentId = $donation->getTransactionId();
-        $paymentMethod = $this->stripe->retrievePaymentMethod($pamentMethodId);
+        $paymentMethod = $this->stripe->retrievePaymentMethod($paymentMethodId);
 
         if ($paymentMethod->type !== 'card') {
             throw new HttpBadRequestException($request, 'Confirm endpoint only supports card payments for now');
@@ -131,8 +131,9 @@ class Confirm extends Action
         ]);
 
         try {
+            // looks like sometimes $paymentIntentId and $paymentMethodId are for different customers.
             $updatedIntent = $this->stripe->confirmPaymentIntent($paymentIntentId, [
-                'payment_method' => $pamentMethodId,
+                'payment_method' => $paymentMethodId,
             ]);
         } catch (CardException $exception) {
             $exceptionClass = get_class($exception);
