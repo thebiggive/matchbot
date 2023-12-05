@@ -30,28 +30,10 @@ class ConfirmTest extends TestCase
 
         // in reality the fee would be calculated according to details of the card etc. The Calculator class is
         //tested separately. This is just a dummy value.
-        $newCharityFee = "42.00";
-        $newApplicationFeeAmount = 4200;
-
-        $stripeClientProphecy = $this->fakeStripeClient(
-            cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
-            paymentMethodId: 'PAYMENT_METHOD_ID',
-            updatedIntentData: [
-                'status' => 'requires_action',
-                'client_secret' => 'some_client_secret',
-            ],
-            paymentIntentId: 'PAYMENT_INTENT_ID',
-            expectedMetadataUpdate: [
-                "metadata" => [
-                    "stripeFeeRechargeGross" => $newCharityFee,
-                    "stripeFeeRechargeNet" => $newCharityFee,
-                    "stripeFeeRechargeVat" => "0.00",
-                ],
-                "application_fee_amount" => $newApplicationFeeAmount,
-            ],
-            confirmFailsWithCardError: false,
-            confirmFailsWithApiError: false,
-            confirmFailsWithPaymentMethodUsedError: false,
+        $newCharityFee = '42.00';
+        $stripeClientProphecy = $this->successReadyFakeStripeClient(
+            amountInWholeUnits: $newCharityFee,
+            confirmCallExpected: true,
         );
 
         // Make sure the latest fees, based on card type, are saved to the database.
@@ -82,32 +64,10 @@ class ConfirmTest extends TestCase
     public function testItReturns400OnCancelledDonation(): void
     {
         // arrange
-
-        // in reality the fee would be calculated according to details of the card etc. The Calculator class is
-        //tested separately. This is just a dummy value.
-        $newCharityFee = "42.00";
-        $newApplicationFeeAmount = 4200;
-
-        $stripeClientProphecy = $this->fakeStripeClient(
-            cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
-            paymentMethodId: 'PAYMENT_METHOD_ID',
-            updatedIntentData: [
-                'status' => 'requires_payment_method',
-                'client_secret' => 'some_client_secret',
-            ],
-            paymentIntentId: 'PAYMENT_INTENT_ID',
-            expectedMetadataUpdate: [
-                "metadata" => [
-                    "stripeFeeRechargeGross" => $newCharityFee,
-                    "stripeFeeRechargeNet" => $newCharityFee,
-                    "stripeFeeRechargeVat" => "0.00",
-                ],
-                "application_fee_amount" => $newApplicationFeeAmount,
-            ],
-            confirmFailsWithCardError: true,
-            confirmFailsWithApiError: false,
-            confirmFailsWithPaymentMethodUsedError: false,
-            updatePaymentIntentAndConfirmExpected: false,
+        $newCharityFee = '42.00';
+        $stripeClientProphecy = $this->successReadyFakeStripeClient(
+            amountInWholeUnits: $newCharityFee,
+            confirmCallExpected: false,
         );
 
         $sut = new Confirm(
@@ -283,6 +243,36 @@ class ConfirmTest extends TestCase
                 'code' => 'some_stripe_anomaly',
             ]],
             \json_decode($response->getBody()->getContents(), true)
+        );
+    }
+
+    /**
+     * @return ObjectProphecy<Stripe>
+     */
+    private function successReadyFakeStripeClient(
+        string $amountInWholeUnits,
+        bool $confirmCallExpected
+    ): ObjectProphecy {
+        return $this->fakeStripeClient(
+            cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
+            paymentMethodId: 'PAYMENT_METHOD_ID',
+            updatedIntentData: [
+                'status' => 'requires_action',
+                'client_secret' => 'some_client_secret',
+            ],
+            paymentIntentId: 'PAYMENT_INTENT_ID',
+            expectedMetadataUpdate: [
+                'metadata' => [
+                    'stripeFeeRechargeGross' => $amountInWholeUnits,
+                    'stripeFeeRechargeNet' => $amountInWholeUnits,
+                    'stripeFeeRechargeVat' => '0.00',
+                ],
+                'application_fee_amount' => 100 * (int) $amountInWholeUnits,
+            ],
+            confirmFailsWithCardError: false,
+            confirmFailsWithApiError: false,
+            confirmFailsWithPaymentMethodUsedError: false,
+            updatePaymentIntentAndConfirmExpected: $confirmCallExpected,
         );
     }
 
