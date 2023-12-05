@@ -123,6 +123,10 @@
           "Composer\\Config::disableProcessTimeout",
           "php matchbot-cli.php matchbot:handle-out-of-sync-funds check"
         ],
+        "matchbot:check-out-of-sync-funds-2023-12-05-patch": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:handle-out-of-sync-funds 2023-12-05-patch"
+        ],
         "matchbot:scheduled-out-of-sync-funds-check": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:scheduled-out-of-sync-funds-check"
