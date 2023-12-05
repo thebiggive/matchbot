@@ -120,8 +120,7 @@ class CreateTest extends TestCase
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->pull(Argument::type(Campaign::class))
-            ->willReturn($donation->getCampaign())
+        $campaignRepoProphecy->updateFromSf(Argument::type(Campaign::class))
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -256,13 +255,12 @@ class CreateTest extends TestCase
         $charityWhichNowHasStripeAccountID = clone $donation->getCampaign()->getCharity();
         $charityWhichNowHasStripeAccountID
             ->setStripeAccountId('unitTest_newStripeAccount_456');
-        $campaignWithCharityWhichNowHasStripeAccountID = clone  $donation->getCampaign();
-        $campaignWithCharityWhichNowHasStripeAccountID->setCharity($charityWhichNowHasStripeAccountID);
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoProphecy->pull(Argument::type(Campaign::class))
-            ->willReturn($campaignWithCharityWhichNowHasStripeAccountID)
-            ->shouldBeCalledOnce();
+        $campaignRepoProphecy->updateFromSf(Argument::type(Campaign::class))
+            ->will(/**
+             * @param array{0: Campaign} $args
+             */ fn (array $args) => $args[0]->setCharity($charityWhichNowHasStripeAccountID));
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());

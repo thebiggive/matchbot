@@ -134,10 +134,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
         if (!$campaign) {
             // Fetch data for as-yet-unknown campaigns on-demand
             $this->logInfo("Loading unknown campaign ID {$donationData->projectId} on-demand");
-            $campaign = new Campaign(charity: null);
-            $campaign->setSalesforceId($donationData->projectId);
             try {
-                $this->campaignRepository->pull($campaign);
+                $campaign = $this->campaignRepository->pullNewFromSf($donationData->projectId);
             } catch (ClientException $exception) {
                 $this->logError("Pull error for campaign ID {$donationData->projectId}: {$exception->getMessage()}");
                 throw new \UnexpectedValueException('Campaign does not exist');

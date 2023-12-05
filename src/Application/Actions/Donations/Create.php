@@ -152,8 +152,8 @@ class Create extends Action
         if ($donation->getPsp() === 'stripe') {
             if (empty($donation->getCampaign()->getCharity()->getStripeAccountId())) {
                 // Try re-pulling in case charity has very recently onboarded with for Stripe.
-                $campaign = $this->campaignRepository
-                    ->pull($donation->getCampaign());
+                $campaign = $donation->getCampaign();
+                $this->campaignRepository->updateFromSf($campaign);
 
                 // If still empty, error out
                 if (empty($campaign->getCharity()->getStripeAccountId())) {
