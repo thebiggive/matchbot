@@ -175,15 +175,12 @@ class FundRepository extends SalesforceReadProxyRepository
      * No need to `setSalesforceLastPull()`, or EM `persist()` - just populate the fields specific to the object.
      *
      * @param Fund $fund
-     * @return Fund
      */
-    protected function doPull(SalesforceReadProxy $fund): SalesforceReadProxy
+    protected function doUpdateFromSf(SalesforceReadProxy $fund): void
     {
         $fundData = $this->getClient()->getById($fund->getSalesforceId());
 
         $fund->setAmount($fundData['totalAmount']);
         $fund->setName($fundData['name'] ?? '');
-
-        return $fund;
     }
 }

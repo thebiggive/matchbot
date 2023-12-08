@@ -1862,7 +1862,6 @@ class UpdateTest extends TestCase
      *
      * @throws \Doctrine\DBAL\Exception\LockWaitTimeoutException
      * @throws \MatchBot\Application\Matching\TerminalLockException
-     * @throws \MatchBot\Domain\DomainException\DomainLockContentionException
      * @throws \Stripe\Exception\ApiErrorException
      *
      * @psalm-param PaymentIntent::STATUS_* $newPaymentIntentStatus

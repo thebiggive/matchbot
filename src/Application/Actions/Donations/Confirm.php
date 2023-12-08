@@ -9,6 +9,7 @@ use MatchBot\Application\Fees\Calculator;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -72,8 +73,8 @@ class Confirm extends Action
         }
         \assert(is_array($requestBody));
 
-        $pamentMethodId = $requestBody['stripePaymentMethodId'];
-        \assert((is_string($pamentMethodId)));
+        $paymentMethodId = $requestBody['stripePaymentMethodId'];
+        \assert((is_string($paymentMethodId)));
 
         $this->entityManager->beginTransaction();
 
@@ -82,8 +83,16 @@ class Confirm extends Action
             throw new NotFoundException();
         }
 
+        if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
+            $this->logger->warning(sprintf(
+                'We declined to Confirm as donations was cancelled. Donation UUID %s',
+                $donation->getUuid(),
+            ));
+            throw new HttpBadRequestException($request, 'Donation has been cancelled, so cannot be confirmed');
+        }
+
         $paymentIntentId = $donation->getTransactionId();
-        $paymentMethod = $this->stripe->retrievePaymentMethod($pamentMethodId);
+        $paymentMethod = $this->stripe->retrievePaymentMethod($paymentMethodId);
 
         if ($paymentMethod->type !== 'card') {
             throw new HttpBadRequestException($request, 'Confirm endpoint only supports card payments for now');
@@ -122,8 +131,9 @@ class Confirm extends Action
         ]);
 
         try {
+            // looks like sometimes $paymentIntentId and $paymentMethodId are for different customers.
             $updatedIntent = $this->stripe->confirmPaymentIntent($paymentIntentId, [
-                'payment_method' => $pamentMethodId,
+                'payment_method' => $paymentMethodId,
             ]);
         } catch (CardException $exception) {
             $exceptionClass = get_class($exception);

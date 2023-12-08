@@ -38,13 +38,22 @@ class CampaignRepository extends SalesforceReadProxyRepository
         return $qb->getQuery()->getResult();
     }
 
+    public function pullNewFromSf(string $salesforceId): Campaign
+    {
+        $campaign = new Campaign(charity: null);
+        $campaign->setSalesforceId($salesforceId);
+
+        $this->updateFromSf($campaign);
+
+        return $campaign;
+    }
+
     /**
      * @param Campaign $campaign
-     * @return Campaign
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
      */
-    protected function doPull(SalesforceReadProxy $campaign): SalesforceReadProxy
+    protected function doUpdateFromSf(SalesforceReadProxy $campaign): void
     {
         $client = $this->getClient();
         $campaignData = $client->getById($campaign->getSalesforceId());
@@ -76,8 +85,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign->setIsMatched($campaignData['isMatched']);
         $campaign->setName($campaignData['title']);
         $campaign->setStartDate(new DateTime($campaignData['startDate']));
-
-        return $campaign;
     }
 
     /**

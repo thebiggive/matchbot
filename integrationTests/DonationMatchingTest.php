@@ -137,10 +137,6 @@ class DonationMatchingTest extends IntegrationTest
         $entityManager = $c->get(RetrySafeEntityManager::class);
         $logger = $c->get(LoggerInterface::class);
 
-        \assert($redis instanceof Redis);
-        \assert($entityManager instanceof RetrySafeEntityManager);
-        \assert($logger instanceof LoggerInterface);
-
         $this->setInContainer(Adapter::class, new OptimisticRedisAdapter(new RedisMatchingStorage($redis), $entityManager, $logger));
     }
 }
