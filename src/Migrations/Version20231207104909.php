@@ -27,6 +27,15 @@ final class Version20231207104909 extends AbstractMigration
             LIMIT 1
             EOT
         );
+
+        $this->addSql( <<<EOT
+            UPDATE Donation
+            SET salesforcePushStatus = 'pending-update', giftAid = 0, tipGiftAid = 0
+            WHERE uuid = '5453a2ee-ce04-434b-9bbb-887c8d4762c4' 
+            AND transactionId = 'pi_3OHR8CKkGuKkxwBN0SwFV9Ph' -- https://dashboard.stripe.com/connect/transfers/pi_3OHR8CKkGuKkxwBN0SwFV9Ph
+            LIMIT 1
+            EOT
+        );
     }
 
     public function down(Schema $schema): void
