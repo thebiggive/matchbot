@@ -952,9 +952,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
-            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -973,13 +970,13 @@ class UpdateTest extends TestCase
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation369',
-                'stripeFeeRechargeGross' => '2.05',
-                'stripeFeeRechargeNet' => '2.05',
+                'stripeFeeRechargeGross' => '3.08',
+                'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
                 'tbgTipGiftAid' => false,
                 'tipAmount' => '3.21',
             ],
-            'application_fee_amount' => 526,
+            'application_fee_amount' => 629,
         ])
             ->shouldBeCalledOnce()
             ->willThrow(UnknownApiErrorException::class);
@@ -1040,9 +1037,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy // here
-            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
-            ->shouldBeCalledOnce();
 
         // Persist as normal.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1057,7 +1051,7 @@ class UpdateTest extends TestCase
 
 
         $mockPI = new PaymentIntent();
-        $mockPI->application_fee_amount = 526;
+        $mockPI->application_fee_amount = 629;
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->retrievePaymentIntent('pi_externalId_123')
@@ -1073,13 +1067,13 @@ class UpdateTest extends TestCase
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation369',
-                'stripeFeeRechargeGross' => '2.05',
-                'stripeFeeRechargeNet' => '2.05',
+                'stripeFeeRechargeGross' => '3.08',
+                'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
                 'tbgTipGiftAid' => false,
                 'tipAmount' => '3.21',
             ],
-            'application_fee_amount' => 526,
+            'application_fee_amount' => 629,
         ])
             ->shouldBeCalledOnce()
             ->willThrow($stripeApiException);
@@ -1103,7 +1097,7 @@ class UpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
-        $this->assertEquals(2.05, $payloadArray['charityFee']);
+        $this->assertEquals(3.08, $payloadArray['charityFee']);
     }
 
     public function testAddDataHitsAlreadyCapturedStripeExceptionWithFeeChange(): void
@@ -1138,9 +1132,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
-            ->shouldBeCalledOnce();
 
         // Internal persist still goes ahead.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1169,13 +1160,13 @@ class UpdateTest extends TestCase
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation369',
-                'stripeFeeRechargeGross' => '2.05',
-                'stripeFeeRechargeNet' => '2.05',
+                'stripeFeeRechargeGross' => '3.08',
+                'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
                 'tbgTipGiftAid' => false,
                 'tipAmount' => '3.21',
             ],
-            'application_fee_amount' => 526,
+            'application_fee_amount' => 629,
         ])
             ->shouldBeCalledOnce()
             ->willThrow($stripeApiException);
@@ -1239,9 +1230,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
-            ->shouldBeCalledOnce();
 
         // Persist as normal.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1253,7 +1241,7 @@ class UpdateTest extends TestCase
 
 
         $mockPI = new PaymentIntent();
-        $mockPI->application_fee_amount = 526;
+        $mockPI->application_fee_amount = 629;
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
@@ -1261,18 +1249,18 @@ class UpdateTest extends TestCase
             'currency' => 'usd',
             'metadata' => [
                 'coreDonationGiftAid' => true,
-                'feeCoverAmount' => '0.00',
+                'feeCoverAmount' => '0',
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation369',
-                'stripeFeeRechargeGross' => '2.05',
-                'stripeFeeRechargeNet' => '2.05',
+                'stripeFeeRechargeGross' => '3.08',
+                'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
                 'tbgTipGiftAid' => false,
                 'tipAmount' => '3.21',
             ],
-            'application_fee_amount' => 526,
+            'application_fee_amount' => 629,
         ])
             ->shouldBeCalledTimes(2)
             ->will(new PaymentIntentUpdateAttemptTwicePromise(
@@ -1301,7 +1289,7 @@ class UpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
-        $this->assertEquals(2.05, $payloadArray['charityFee']);
+        $this->assertEquals(3.08, $payloadArray['charityFee']);
     }
 
     /**
@@ -1339,9 +1327,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
-            ->shouldBeCalledOnce();
 
         // Internal persist still goes ahead.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1351,7 +1336,7 @@ class UpdateTest extends TestCase
 
 
         $mockPI = new PaymentIntent();
-        $mockPI->application_fee_amount = 526;
+        $mockPI->application_fee_amount = 629;
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
@@ -1364,13 +1349,13 @@ class UpdateTest extends TestCase
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation369',
-                'stripeFeeRechargeGross' => '2.05',
-                'stripeFeeRechargeNet' => '2.05',
+                'stripeFeeRechargeGross' => '3.08',
+                'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
                 'tbgTipGiftAid' => false,
                 'tipAmount' => '3.21',
             ],
-            'application_fee_amount' => 526,
+            'application_fee_amount' => 629,
         ])
             ->shouldBeCalledTimes(2)
             ->will(new PaymentIntentUpdateAttemptTwicePromise(
@@ -1437,9 +1422,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
-            ->shouldBeCalledOnce();
 
         // Persist as normal.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1451,7 +1433,7 @@ class UpdateTest extends TestCase
 
 
         $mockPI = new PaymentIntent();
-        $mockPI->application_fee_amount = 526;
+        $mockPI->application_fee_amount = 629;
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->retrievePaymentIntent('pi_externalId_123')
@@ -1467,13 +1449,13 @@ class UpdateTest extends TestCase
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation369',
-                'stripeFeeRechargeGross' => '2.05',
-                'stripeFeeRechargeNet' => '2.05',
+                'stripeFeeRechargeGross' => '3.08',
+                'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
                 'tbgTipGiftAid' => false,
                 'tipAmount' => '3.21',
             ],
-            'application_fee_amount' => 526,
+            'application_fee_amount' => 629,
         ])
             ->shouldBeCalledTimes(2)
             ->will(new PaymentIntentUpdateAttemptTwicePromise(
@@ -1503,7 +1485,7 @@ class UpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
-        $this->assertEquals(2.05, $payloadArray['charityFee']);
+        $this->assertEquals(3.08, $payloadArray['charityFee']);
     }
 
     public function testAddDataSuccessWithAllValues(): void
@@ -1538,9 +1520,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce(); // Updates pushed to Salesforce
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
-            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -1559,13 +1538,13 @@ class UpdateTest extends TestCase
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
                 'salesforceId' => 'sfDonation369',
-                'stripeFeeRechargeGross' => '2.05',
-                'stripeFeeRechargeNet' => '2.05',
+                'stripeFeeRechargeGross' => '3.08',
+                'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
                 'tbgTipGiftAid' => false,
                 'tipAmount' => '3.21',
             ],
-            'application_fee_amount' => 526,
+            'application_fee_amount' => 629,
         ])
             ->shouldBeCalledOnce();
 
@@ -1597,7 +1576,7 @@ class UpdateTest extends TestCase
         $this->assertEquals('US', $payloadArray['countryCode']);
         $this->assertEquals('USD', $payloadArray['currencyCode']);
         // 1.9% + 20p. cardCountry from Stripe payment method ≠ donor country.
-        $this->assertEquals(2.05, $payloadArray['charityFee']);
+        $this->assertEquals(3.08, $payloadArray['charityFee']);
         $this->assertEquals(0, $payloadArray['charityFeeVat']);
         $this->assertEquals('3.21', $payloadArray['tipAmount']);
         $this->assertTrue($payloadArray['giftAid']);
@@ -1805,9 +1784,6 @@ class UpdateTest extends TestCase
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
-            ->shouldBeCalledOnce();
-        $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled(); // Updates pushed to Salesforce
 
@@ -1885,10 +1861,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
-
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
-            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();

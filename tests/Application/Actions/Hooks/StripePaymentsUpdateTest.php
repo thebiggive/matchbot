@@ -117,10 +117,6 @@ class StripePaymentsUpdateTest extends StripeTest
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
 
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), 'visa', 'US')
-            ->shouldBeCalledOnce();
-
-        $donationRepoProphecy
             ->findAndLockOneBy(['transactionId' => 'pi_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
@@ -169,10 +165,6 @@ class StripePaymentsUpdateTest extends StripeTest
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), 'visa', 'US')
-            ->shouldBeCalledOnce();
 
         $donationRepoProphecy
             ->findAndLockOneBy(['transactionId' => 'pi_externalId_123'])

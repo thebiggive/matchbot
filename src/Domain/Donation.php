@@ -12,6 +12,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use Messages;
 use Ramsey\Uuid\Uuid;
@@ -1318,5 +1319,30 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->donationStatus = DonationStatus::Cancelled;
+    }
+
+    /**
+     * Updates a donation to set the appropriate fees. If card details are null then we assume for now that a card with
+     * the lowest possible fees will be used, and this should be called again with the details of the selected card
+     * when confirming the payment.
+     *
+     * @param string|null $cardBrand
+     * @param string|null $cardCountry ISO two letter uppercase code
+     */
+    public function deriveFees(?string $cardBrand, ?string $cardCountry): void
+    {
+        $incursGiftAidFee = $this->hasGiftAid() && $this->hasTbgShouldProcessGiftAid();
+
+        $structure = new Calculator(
+            $this->getPsp(),
+            $cardBrand,
+            $cardCountry,
+            $this->getAmount(),
+            $this->getCurrencyCode(),
+            $incursGiftAidFee,
+            $this->getCampaign()->getFeePercentage(),
+        );
+        $this->setCharityFee($structure->getCoreFee());
+        $this->setCharityFeeVat($structure->getFeeVat());
     }
 }

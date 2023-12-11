@@ -134,7 +134,7 @@ class StripePaymentsUpdate extends Stripe
             if ($card) {
                 /** @psalm-var value-of<Calculator::STRIPE_CARD_BRANDS> $brand */
                 $brand = $card->brand;
-                $this->donationRepository->deriveFees($donation, $brand, $card->country);
+                $donation->deriveFees($brand, $card->country);
             }
 
             $donation->setDonationStatus(DonationStatus::Collected);

@@ -105,7 +105,7 @@ class Confirm extends Action
         // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
         // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
-        $this->donationRepository->deriveFees($donation, $cardBrand, $cardCountry);
+        $donation->deriveFees($cardBrand, $cardCountry);
 
         $this->stripe->updatePaymentIntent($paymentIntentId, [
             // only setting things that may need to be updated at this point.
