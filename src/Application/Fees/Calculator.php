@@ -147,10 +147,6 @@ class Calculator
 
     private function getFeeVatPercentage(): string
     {
-        if (empty(self::STRIPE_FEES['vat_live_date'])) {
-            return '0'; // VAT does not apply to the current PSP's fees.
-        }
-
         $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
         $currenciesIncurringFeeVat = ['EUR', 'GBP'];
         if (!in_array($currencyCode, $currenciesIncurringFeeVat, true)) {

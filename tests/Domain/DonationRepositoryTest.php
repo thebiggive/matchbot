@@ -21,7 +21,6 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
-use MatchBot\Tests\Application\VatTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -34,7 +33,6 @@ use Symfony\Component\Lock\LockInterface;
 class DonationRepositoryTest extends TestCase
 {
     use DonationTestDataTrait;
-    use VatTrait;
 
     public function testExistingPushOK(): void
     {
@@ -544,7 +542,6 @@ class DonationRepositoryTest extends TestCase
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
-        $repo->setSettings($this->getAppInstance()->getContainer()->get('settings'));
 
         $this->assertEquals(
             [$testDonation],
@@ -586,7 +583,6 @@ class DonationRepositoryTest extends TestCase
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
-        $repo->setSettings($this->getAppInstance()->getContainer()->get('settings'));
 
         $this->assertEquals(
             [$testDonation],
@@ -611,11 +607,6 @@ class DonationRepositoryTest extends TestCase
             $donationClientProphecy = $this->prophesize(Client\Donation::class);
         }
 
-        $settings = $this->getAppInstance()->getContainer()->get('settings');
-        if ($vatLive) {
-            $settings = $this->getUKLikeVATSettings($settings);
-        }
-
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $repo = new DonationRepository(
             $entityManagerProphecy->reveal(),
@@ -623,7 +614,6 @@ class DonationRepositoryTest extends TestCase
         );
         $repo->setClient($donationClientProphecy->reveal());
         $repo->setLogger(new NullLogger());
-        $repo->setSettings($settings);
 
         if ($campaignRepoProphecy) {
             $repo->setCampaignRepository($campaignRepoProphecy->reveal());

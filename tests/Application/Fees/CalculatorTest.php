@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Fees;
 
-use DI\ContainerBuilder;
 use MatchBot\Application\Fees\Calculator;
-use MatchBot\Tests\Application\VatTrait;
 use MatchBot\Tests\TestCase;
 
 class CalculatorTest extends TestCase

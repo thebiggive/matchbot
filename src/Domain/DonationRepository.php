@@ -39,8 +39,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
     private Matching\Adapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
     private array $queuedForPersist;
-    private array $settings;
-
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
         $this->matchingAdapter = $adapter;
@@ -553,14 +551,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function setLockFactory(LockFactory $lockFactory): void
     {
         $this->lockFactory = $lockFactory;
-    }
-
-    /**
-     * @param array $settings
-     */
-    public function setSettings(array $settings): void
-    {
-        $this->settings = $settings;
     }
 
     /**

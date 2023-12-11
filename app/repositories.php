@@ -50,7 +50,6 @@ return static function (ContainerBuilder $containerBuilder) {
             $repo->setLockFactory($c->get(LockFactory::class));
             $repo->setLogger($c->get(LoggerInterface::class));
             $repo->setMatchingAdapter($c->get(Matching\Adapter::class));
-            $repo->setSettings($c->get('settings'));
 
             return $repo;
         },
