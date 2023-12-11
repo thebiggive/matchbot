@@ -145,7 +145,12 @@ class StripePaymentsUpdate extends Stripe
                 $originalFeeFractional = $donation->getOriginalPspFee();
             }
 
-            $donation->setCollectedFromStripeCharge($charge, $cardBrand, $cardCountry, (string) $originalFeeFractional);
+            $donation->collectFromStripeCharge(
+                charge: $charge,
+                cardBrand: $cardBrand,
+                cardCountry: $cardCountry,
+                originalFeeFractional: (string)$originalFeeFractional
+            );
 
             $this->logger->info(sprintf(
                 'Set donation %s Collected based on hook for charge ID %s',

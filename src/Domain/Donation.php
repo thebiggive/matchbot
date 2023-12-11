@@ -1358,7 +1358,7 @@ class Donation extends SalesforceWriteProxy
         $this->setCharityFeeVat($structure->getFeeVat());
     }
 
-    public function setCollectedFromStripeCharge(Charge $charge, ?string $cardBrand, ?string $cardCountry, string $originalFeeFractional): void
+    public function collectFromStripeCharge(Charge $charge, ?string $cardBrand, ?string $cardCountry, string $originalFeeFractional): void
     {
         Assertion::eq($charge->status,'succeeded');
         Assertion::eq(is_null($cardBrand), is_null($cardCountry));

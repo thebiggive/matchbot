@@ -54,7 +54,7 @@ trait DonationTestDataTrait
         $stripeCharge->created = (new \DateTimeImmutable())->format('U');
         $stripeCharge->transfer = 'test_transfer_id';
 
-        $donation->setCollectedFromStripeCharge(
+        $donation->collectFromStripeCharge(
             charge: $stripeCharge,
             cardBrand: null,
             cardCountry: null,

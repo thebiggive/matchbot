@@ -285,7 +285,7 @@ class UpdateTest extends TestCase
         $stripeCharge->created = (new \DateTimeImmutable())->format('u');
         $stripeCharge->transfer = 'test_transfer_id';
 
-        $donationResponse->setCollectedFromStripeCharge(
+        $donationResponse->collectFromStripeCharge(
             charge: $stripeCharge,
             cardBrand: null,
             cardCountry: null,
