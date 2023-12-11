@@ -1343,7 +1343,7 @@ class Donation extends SalesforceWriteProxy
     {
         $incursGiftAidFee = $this->hasGiftAid() && $this->hasTbgShouldProcessGiftAid();
 
-        $structure = new Calculator(
+        $fees = Calculator::calculate(
             $this->getPsp(),
             $cardBrand,
             $cardCountry,
@@ -1352,8 +1352,9 @@ class Donation extends SalesforceWriteProxy
             $incursGiftAidFee,
             $this->getCampaign()->getFeePercentage(),
         );
-        $this->setCharityFee($structure->getCoreFee());
-        $this->setCharityFeeVat($structure->getFeeVat());
+
+        $this->setCharityFee($fees->coreFee);
+        $this->setCharityFeeVat($fees->feeVat);
     }
 
     public function collectFromStripeCharge(

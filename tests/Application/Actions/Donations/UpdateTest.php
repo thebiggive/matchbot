@@ -282,7 +282,7 @@ class UpdateTest extends TestCase
 
         $stripeCharge = new Charge('testchargeid');
         $stripeCharge->status = 'succeeded';
-        $stripeCharge->created = (new \DateTimeImmutable())->format('u');
+        $stripeCharge->created = (int)(new \DateTimeImmutable())->format('u');
         $stripeCharge->transfer = 'test_transfer_id';
 
         $donationResponse->collectFromStripeCharge(
@@ -291,7 +291,7 @@ class UpdateTest extends TestCase
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',
-            chargeCreationTimestamp: (new \DateTimeImmutable())->format('U'),
+            chargeCreationTimestamp: (int)(new \DateTimeImmutable())->format('U'),
         );
 
         $donation = $this->getTestDonation();

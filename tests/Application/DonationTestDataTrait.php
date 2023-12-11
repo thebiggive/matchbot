@@ -29,7 +29,6 @@ trait DonationTestDataTrait
         PaymentMethodType $pspMethodType = PaymentMethodType::Card,
         string $tipAmount = '1.00',
         string $currencyCode = 'GBP',
-        DonationStatus $status = DonationStatus::Collected,
     ): Donation {
         $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
@@ -55,7 +54,7 @@ trait DonationTestDataTrait
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',
-            chargeCreationTimestamp: (new \DateTimeImmutable())->format('U'),
+            chargeCreationTimestamp: (int)(new \DateTimeImmutable())->format('U'),
         );
 
         $donation->setDonorCountryCode('GB');

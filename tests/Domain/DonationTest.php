@@ -227,7 +227,7 @@ class DonationTest extends TestCase
 
     public function testAmountMatchedByChampionDefaultsToZero(): void
     {
-        $donation = $this->getTestDonation(status: DonationStatus::Pending);
+        $donation = $this->getTestDonation();
 
         $amountMatchedByChampionFunds = $donation->toHookModel()['amountMatchedByChampionFunds'];
 
@@ -236,7 +236,7 @@ class DonationTest extends TestCase
 
     public function testItSumsNoChampionFundsToZero(): void
     {
-        $donation = $this->getTestDonation(status: DonationStatus::Collected);
+        $donation = $this->getTestDonation();
 
         $amountMatchedByPledges = $donation->toHookModel()['amountMatchedByChampionFunds'];
 
@@ -245,7 +245,7 @@ class DonationTest extends TestCase
 
     public function testItSumsAmountsMatchedByChampionFunds(): void
     {
-        $donation = $this->getTestDonation(status: DonationStatus::Collected);
+        $donation = $this->getTestDonation();
 
         $withdrawal0 = new FundingWithdrawal();
         $campaignFunding = new CampaignFunding();
@@ -268,7 +268,7 @@ class DonationTest extends TestCase
 
     public function testItSumsAmountsMatchedByAllFunds(): void
     {
-        $donation = $this->getTestDonation(status: DonationStatus::Collected);
+        $donation = $this->getTestDonation();
         $campaignFunding0 = new CampaignFunding();
         $campaignFunding0->setFund(new ChampionFund());
 

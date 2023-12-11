@@ -50,7 +50,38 @@ class Calculator
         'vat_live_date' => ' 2021-04-01',
     ];
 
-    public function __construct(
+    public static function calculate(
+        string $psp,
+        ?string $cardBrand,
+        ?string $cardCountry,
+        string $amount,
+        string $currencyCode,
+        bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
+        ?float $feePercentageOverride = null,
+    ): Fees
+    {
+        $calculator = new self(
+            psp: $psp,
+            cardBrand: $cardBrand,
+            cardCountry: $cardCountry,
+            amount: $amount,
+            currencyCode: $currencyCode,
+            hasGiftAid: $hasGiftAid,
+            feePercentageOverride: $feePercentageOverride,
+        );
+
+        return new Fees(
+            coreFee: $calculator->getCoreFee(),
+            feeVat: $calculator->getFeeVat()
+        );
+    }
+
+    /**
+     * We can consider removing all instance properties and methods and relying on static methods and local vars only -
+     * an immutable calculator would be clearer. For now I've hidden the mutability in this private method.
+     *
+     */
+    private function __construct(
         string $psp,
         readonly private ?string $cardBrand,
         readonly private ?string $cardCountry,
@@ -66,7 +97,7 @@ class Calculator
         Assertion::eq($psp, 'stripe', 'Only Stripe PSP is supported as don\'t know what fees to charge for other PSPs.');
     }
 
-    public function getCoreFee(): string
+    private function getCoreFee(): string
     {
         $giftAidFee = '0.00';
         $feeAmountFixed = '0.00';
@@ -126,7 +157,7 @@ class Calculator
         );
     }
 
-    public function getFeeVat(): string
+    private function getFeeVat(): string
     {
         // We need to handle flat, inc-VAT fee logic differently to avoid rounding issues.
         // In this case we work back from the core fee we've derived and subtract it to get

@@ -113,7 +113,6 @@ class DonationPersistenceTest extends IntegrationTest
         $donation = Donation::emptyTestDonation('1');
         $donation->setUuid(Uuid::uuid4());
         $donation->setPsp('stripe');
-        $donation->setDonationStatus(DonationStatus::Collected);
 
         return $donation;
     }
