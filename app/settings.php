@@ -125,11 +125,11 @@ return function (ContainerBuilder $containerBuilder) {
                     'main_percentage_standard' => '1.5',
                     'main_percentage_amex_or_non_uk_eu' => '3.2',
                     // The rate at which VAT is either being or is about to be charged.
-                    'vat_percentage_live' => getenv('VAT_PERCENTAGE_LIVE'),
+                    'vat_percentage_live' => '20',
                     // The rate at which VAT is being charged if before the switch date.
-                    'vat_percentage_old' => getenv('VAT_PERCENTAGE_OLD'),
+                    'vat_percentage_old' => '0',
                     // DateTime constructor-ready string: when the live VAT rate replaces the old one.
-                    'vat_live_date' => getenv('VAT_LIVE_DATE'),
+                    'vat_live_date' => ' 2021-04-01',
                 ],
             ],
         ],

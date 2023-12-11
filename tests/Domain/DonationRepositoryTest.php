@@ -215,12 +215,14 @@ class DonationRepositoryTest extends TestCase
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
-        // Total fee        = £ 31.80
+        // Total fee ex vat = £ 31.80
+        // Total fee inc vat = £ 31.80 * 1.2
+        // Total fee inc vat = £ 38.16
         // Amount after fee = £955.85
 
         // Deduct tip + fee.
-        $this->assertEquals(4_180, $donation->getAmountToDeductFractional());
-        $this->assertEquals(95_585, $donation->getAmountForCharityFractional());
+        $this->assertEquals(48_16, $donation->getAmountToDeductFractional());
+        $this->assertEquals(949_49, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithTipUsingUSCard(): void
@@ -235,11 +237,12 @@ class DonationRepositoryTest extends TestCase
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
         // Total fee        = £ 31.80
+        // Total fee inc vat = £ 38.16
         // Amount after fee = £955.85
 
         // Deduct tip + fee.
-        $this->assertEquals(4_180, $donation->getAmountToDeductFractional());
-        $this->assertEquals(95_585, $donation->getAmountForCharityFractional());
+        $this->assertEquals(48_16, $donation->getAmountToDeductFractional());
+        $this->assertEquals(949_49, $donation->getAmountForCharityFractional());
     }
 
     /**
@@ -280,11 +283,12 @@ class DonationRepositoryTest extends TestCase
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
         // Total fee        = £ 15.01
+        // Total fee inc vat = 18.012
         // Amount after fee = £972.64
 
         // Deduct tip + fee.
-        $this->assertEquals(2_501, $donation->getAmountToDeductFractional());
-        $this->assertEquals(97_264, $donation->getAmountForCharityFractional());
+        $this->assertEquals(28_01, $donation->getAmountToDeductFractional());
+        $this->assertEquals(969_64, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityAndFeeVatWithTipAndVat(): void
@@ -321,10 +325,11 @@ class DonationRepositoryTest extends TestCase
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
         // Total fee        = £ 15.01
+        // Total fee in vcat = 18.012
         // Amount after fee = £972.64
 
-        $this->assertEquals(1_501, $donation->getAmountToDeductFractional());
-        $this->assertEquals(97_264, $donation->getAmountForCharityFractional());
+        $this->assertEquals(18_01, $donation->getAmountToDeductFractional());
+        $this->assertEquals(96_964, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTipWhenTbgClaimingGiftAid(): void
@@ -339,10 +344,11 @@ class DonationRepositoryTest extends TestCase
         // Fixed fee        = £  0.20
         // £987.65 * 0.75%  = £  7.41 (3% of Gift Aid amount)
         // Total fee        = £ 22.42
+        // Total fee inc vat = £ 26.904
         // Amount after fee = £965.23
 
-        $this->assertEquals(2_242, $donation->getAmountToDeductFractional());
-        $this->assertEquals(96_523, $donation->getAmountForCharityFractional());
+        $this->assertEquals(26_90, $donation->getAmountToDeductFractional());
+        $this->assertEquals(96_075, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
@@ -355,9 +361,10 @@ class DonationRepositoryTest extends TestCase
         // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)
         // Fixed fee    = £ 0.20
         // Total fee    = £ 0.29
+        // Total fee inc vat = £ 0.348
         // After fee    = £ 5.96
-        $this->assertEquals(29, $donation->getAmountToDeductFractional());
-        $this->assertEquals(596, $donation->getAmountForCharityFractional());
+        $this->assertEquals(35, $donation->getAmountToDeductFractional());
+        $this->assertEquals(5_90, $donation->getAmountForCharityFractional());
     }
 
     public function testReleaseMatchFundsSuccess(): void
