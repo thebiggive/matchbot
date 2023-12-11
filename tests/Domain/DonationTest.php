@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
+use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
@@ -165,18 +166,24 @@ class DonationTest extends TestCase
 
     public function testInvalidPspRejected(): void
     {
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage("Unexpected PSP 'paypal'");
+        $this->expectException(AssertionFailedException::class);
+        $this->expectExceptionMessage('Value "paypal" does not equal expected value "stripe".');
 
-        $donation = $this->getTestDonation();
         /** @psalm-suppress InvalidArgument */
-        $donation->setPsp('paypal');
+        Donation::fromApiModel(
+            new DonationCreate(
+                currencyCode: 'GBP',
+                donationAmount: '63.0',
+                projectId: 'doesnt-matter',
+                psp: 'paypal',
+            ),
+            new Campaign(TestCase::someCharity())
+        );
     }
 
     public function testValidPspAccepted(): void
     {
-        $donation = $this->getTestDonation();
-        $donation->setPsp('stripe');
+        $_donation = $this->getTestDonation();
 
         $this->addToAssertionCount(1); // Just check setPsp() doesn't hit an exception
     }

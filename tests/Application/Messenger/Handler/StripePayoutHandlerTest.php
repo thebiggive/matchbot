@@ -66,7 +66,9 @@ class StripePayoutHandlerTest extends TestCase
             ->willReturn(json_decode($chargeResponse));
 
         $donationWithInvalidChargeId = clone $this->getTestDonation();
-        $donationWithInvalidChargeId->setChargeId('ch_invalidId_123');
+
+        $reflectionClass = new \ReflectionClass(Donation::class);
+        $reflectionClass->getProperty('chargeId')->setValue($donationWithInvalidChargeId, 'ch_invalidId_123');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy

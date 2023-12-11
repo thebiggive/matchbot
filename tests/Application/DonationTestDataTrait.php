@@ -49,8 +49,8 @@ trait DonationTestDataTrait
         $donation->setChampionComms(false);
 
         $donation->collectFromStripeCharge(
-            chargeId: 'testchargeid',
-            transferId: 'test_transfer_id',
+            chargeId: 'ch_externalId_123',
+            transferId: 'tr_externalId_123',
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',
@@ -65,14 +65,11 @@ trait DonationTestDataTrait
         $donation->setDonorHomeAddressLine1('1 Main St, London'); // Frontend typically includes town for now
         $donation->setDonorHomePostcode('N1 1AA');
         $donation->setGiftAid(true);
-        $donation->setPsp('stripe');
         $donation->setSalesforceId('sfDonation369');
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
         $donation->setTbgComms(false);
         $donation->setTipAmount($tipAmount);
-        $donation->setTransferId('tr_externalId_123');
         $donation->setTransactionId('pi_externalId_123');
-        $donation->setChargeId('ch_externalId_123');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
 
         return $donation;
@@ -94,7 +91,6 @@ trait DonationTestDataTrait
         $donation->setCharityFee('2.57');
         $donation->setCampaign($campaign);
         $donation->setDonationStatus(DonationStatus::Pending);
-        $donation->setPsp('stripe');
         $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setTipAmount('2.00');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ac'));

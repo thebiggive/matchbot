@@ -306,7 +306,9 @@ class Donation extends SalesforceWriteProxy
      */
     public static function emptyTestDonation(string $amount, PaymentMethodType $paymentMethodType = PaymentMethodType::Card, string $currencyCode = 'GBP'): self
     {
-        return new self($amount, $currencyCode, $paymentMethodType);
+        $donation = new self($amount, $currencyCode, $paymentMethodType);
+        $donation->psp = 'stripe';
+        return $donation;
     }
 
     private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
@@ -334,7 +336,7 @@ class Donation extends SalesforceWriteProxy
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
     {
         $psp = $donationData->psp;
-        assert($psp === 'stripe');
+        Assertion::eq($psp, 'stripe');
 
         $donation = new self(
             $donationData->donationAmount,
@@ -532,11 +534,6 @@ class Donation extends SalesforceWriteProxy
         return $this->collectedAt;
     }
 
-    public function setCollectedAt(?DateTimeImmutable $collectedAt): void
-    {
-        $this->collectedAt = $collectedAt;
-    }
-
     /**
      * @return Campaign
      */
@@ -685,25 +682,12 @@ class Donation extends SalesforceWriteProxy
         $this->transactionId = $transactionId;
     }
 
-    public function setChargeId(string $chargeId): void
-    {
-        $this->chargeId = $chargeId;
-    }
-
     /**
      * @return string|null
      */
     public function getTransferId(): ?string
     {
         return $this->transferId;
-    }
-
-    /**
-     * @param string|null $transferId
-     */
-    public function setTransferId(?string $transferId): void
-    {
-        $this->transferId = $transferId;
     }
 
     public function getDonorCountryCode(): ?string
@@ -831,10 +815,9 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @psalm-param 'stripe' $psp
      * @param string $psp   Payment Service Provider short identifier, e.g. 'stripe'.
      */
-    public function setPsp(string $psp): void
+    private function setPsp(string $psp): void
     {
         if (!in_array($psp, $this->possiblePSPs, true)) {
             throw new \UnexpectedValueException("Unexpected PSP '$psp'");
@@ -1370,8 +1353,8 @@ class Donation extends SalesforceWriteProxy
         Assertion::notEmpty($chargeId);
         Assertion::notEmpty($transferId);
 
-        $this->setChargeId($chargeId);
-        $this->setTransferId($transferId);
+        $this->chargeId = $chargeId;
+        $this->transferId = $transferId;
 
         if ($cardBrand) {
             /** @psalm-var value-of<Calculator::STRIPE_CARD_BRANDS> $cardBrand */
@@ -1379,7 +1362,7 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->donationStatus = DonationStatus::Collected;
-        $this->setCollectedAt(new \DateTimeImmutable("@$chargeCreationTimestamp"));
+        $this->collectedAt = (new \DateTimeImmutable("@$chargeCreationTimestamp"));
         $this->setOriginalPspFeeFractional($originalFeeFractional);
     }
 }
