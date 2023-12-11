@@ -49,16 +49,13 @@ trait DonationTestDataTrait
         $donation->setCharityComms(true);
         $donation->setChampionComms(false);
 
-        $stripeCharge = new Charge('testchargeid');
-        $stripeCharge->status = 'succeeded';
-        $stripeCharge->created = (new \DateTimeImmutable())->format('U');
-        $stripeCharge->transfer = 'test_transfer_id';
-
         $donation->collectFromStripeCharge(
-            charge: $stripeCharge,
+            chargeId: 'testchargeid',
+            transferId: 'test_transfer_id',
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',
+            chargeCreationTimestamp: (new \DateTimeImmutable())->format('U'),
         );
 
         $donation->setDonorCountryCode('GB');

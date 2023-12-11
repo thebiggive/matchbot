@@ -12,14 +12,12 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
-use MatchBot\Application\Actions\Hooks\StripePaymentsUpdate;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
-use Stripe\Charge;
 use function bccomp;
 use function sprintf;
 
@@ -1358,14 +1356,21 @@ class Donation extends SalesforceWriteProxy
         $this->setCharityFeeVat($structure->getFeeVat());
     }
 
-    public function collectFromStripeCharge(Charge $charge, ?string $cardBrand, ?string $cardCountry, string $originalFeeFractional): void
+    public function collectFromStripeCharge(
+        string  $chargeId,
+        string  $transferId,
+        ?string $cardBrand,
+        ?string $cardCountry,
+        string  $originalFeeFractional,
+        int     $chargeCreationTimestamp): void
     {
-        Assertion::eq($charge->status,'succeeded');
         Assertion::eq(is_null($cardBrand), is_null($cardCountry));
         Assertion::numeric($originalFeeFractional);
+        Assertion::notEmpty($chargeId);
+        Assertion::notEmpty($transferId);
 
-        $this->setChargeId($charge->id);
-        $this->setTransferId((string) $charge->transfer);
+        $this->setChargeId($chargeId);
+        $this->setTransferId($transferId);
 
         if ($cardBrand) {
             /** @psalm-var value-of<Calculator::STRIPE_CARD_BRANDS> $cardBrand */
@@ -1373,7 +1378,7 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->donationStatus = DonationStatus::Collected;
-        $this->setCollectedAt(new \DateTimeImmutable("@{$charge->created}"));
+        $this->setCollectedAt(new \DateTimeImmutable("@$chargeCreationTimestamp"));
         $this->setOriginalPspFeeFractional($originalFeeFractional);
     }
 }

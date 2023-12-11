@@ -146,10 +146,12 @@ class StripePaymentsUpdate extends Stripe
             }
 
             $donation->collectFromStripeCharge(
-                charge: $charge,
+                chargeId: $charge->id,
+                transferId: (string)$charge->transfer,
                 cardBrand: $cardBrand,
                 cardCountry: $cardCountry,
-                originalFeeFractional: (string)$originalFeeFractional
+                originalFeeFractional: (string)$originalFeeFractional,
+                chargeCreationTimestamp: $charge->created,
             );
 
             $this->logger->info(sprintf(

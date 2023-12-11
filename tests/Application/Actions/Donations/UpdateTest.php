@@ -286,10 +286,12 @@ class UpdateTest extends TestCase
         $stripeCharge->transfer = 'test_transfer_id';
 
         $donationResponse->collectFromStripeCharge(
-            charge: $stripeCharge,
+            chargeId: 'testchargeid',
+            transferId: 'test_transfer_id',
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',
+            chargeCreationTimestamp: (new \DateTimeImmutable())->format('U'),
         );
 
         $donation = $this->getTestDonation();
