@@ -124,33 +124,28 @@ class StripePaymentsUpdate extends Stripe
         // For now we support the happy success path –
         // as this is the only event type we're handling right now besides refunds.
         if ($charge->status === 'succeeded') {
-            $donation->setChargeId($charge->id);
-            $donation->setTransferId($charge->transfer);
-
             /**
              * @var Card|null $card
              */
             $card = $charge->payment_method_details?->card;
-            if ($card) {
-                /** @psalm-var value-of<Calculator::STRIPE_CARD_BRANDS> $brand */
-                $brand = $card->brand;
-                $donation->deriveFees($brand, $card->country);
-            }
-
-            $donation->setDonationStatus(DonationStatus::Collected);
-            $donation->setCollectedAt(new \DateTimeImmutable("@{$charge->created}"));
+            $cardBrand = $card?->brand;
+            $cardCountry = $card?->country;
+            $balanceTransaction = (string) $charge->balance_transaction;
 
             // To give *simulated* webhooks, for Donation API-only load tests, an easy way to complete
             // without crashing, we support skipping the original fee derivation by omitting
             // `balance_transaction`. Real stripe charge.succeeded webhooks should always have
             // an associated Balance Transaction.
-            if (!empty($charge->balance_transaction)) {
+            if (!empty($balanceTransaction)) {
                 $originalFeeFractional = $this->getOriginalFeeFractional(
-                    $charge->balance_transaction,
+                    $balanceTransaction,
                     $donation->getCurrencyCode(),
                 );
-                $donation->setOriginalPspFeeFractional($originalFeeFractional);
+            } else {
+                $originalFeeFractional = $donation->getOriginalPspFee();
             }
+
+            $donation->setCollectedFromStripeCharge($charge, $cardBrand, $cardCountry, (string) $originalFeeFractional);
 
             $this->logger->info(sprintf(
                 'Set donation %s Collected based on hook for charge ID %s',

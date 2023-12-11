@@ -9,6 +9,7 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\SalesforceWriteProxy;
 use Ramsey\Uuid\Uuid;
+use Stripe\Charge;
 
 trait DonationTestDataTrait
 {
@@ -47,8 +48,19 @@ trait DonationTestDataTrait
         $donation->setCampaign($campaign);
         $donation->setCharityComms(true);
         $donation->setChampionComms(false);
-        $donation->setDonationStatus($status);
-        $donation->setCollectedAt(new \DateTimeImmutable());
+
+        $stripeCharge = new Charge('testchargeid');
+        $stripeCharge->status = 'succeeded';
+        $stripeCharge->created = (new \DateTimeImmutable())->format('U');
+        $stripeCharge->transfer = 'test_transfer_id';
+
+        $donation->setCollectedFromStripeCharge(
+            charge: $stripeCharge,
+            cardBrand: null,
+            cardCountry: null,
+            originalFeeFractional: '0',
+        );
+
         $donation->setDonorCountryCode('GB');
         $donation->setDonorEmailAddress('john.doe@example.com');
         $donation->setDonorFirstName('John');

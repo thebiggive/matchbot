@@ -184,7 +184,7 @@ class DonationTest extends TestCase
     public function testSetAndGetOriginalFee(): void
     {
         $donation = $this->getTestDonation();
-        $donation->setOriginalPspFeeFractional(123);
+        $donation->setOriginalPspFeeFractional('123');
 
         $this->assertEquals('1.23', $donation->getOriginalPspFee());
     }

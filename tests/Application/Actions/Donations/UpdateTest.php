@@ -23,6 +23,7 @@ use Slim\App;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Exception\HttpUnauthorizedException;
+use Stripe\Charge;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
@@ -278,7 +279,18 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donationResponse = $this->getTestDonation();
-        $donationResponse->setDonationStatus(DonationStatus::Collected);
+
+        $stripeCharge = new Charge('testchargeid');
+        $stripeCharge->status = 'succeeded';
+        $stripeCharge->created = (new \DateTimeImmutable())->format('u');
+        $stripeCharge->transfer = 'test_transfer_id';
+
+        $donationResponse->setCollectedFromStripeCharge(
+            charge: $stripeCharge,
+            cardBrand: null,
+            cardCountry: null,
+            originalFeeFractional: '0',
+        );
 
         $donation = $this->getTestDonation();
         $donation->cancel();

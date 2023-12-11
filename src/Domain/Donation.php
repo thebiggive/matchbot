@@ -12,11 +12,14 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Actions\Hooks\StripePaymentsUpdate;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Stripe\Charge;
 use function bccomp;
 use function sprintf;
 
@@ -516,6 +519,11 @@ class Donation extends SalesforceWriteProxy
 
         if ($donationStatus === DonationStatus::Cancelled) {
             throw new \Exception('Donation::cancelled must be used to cancel');
+        }
+
+
+        if ($donationStatus === DonationStatus::Collected) {
+            throw new \Exception('Donation::collectFromStripe must be used to collect');
         }
 
         $this->donationStatus = $donationStatus;
@@ -1021,9 +1029,13 @@ class Donation extends SalesforceWriteProxy
         return $this->originalPspFee;
     }
 
-    public function setOriginalPspFeeFractional(int $originalPspFeeFractional): void
+    /**
+     * @param numeric-string $originalPspFeeFractional
+     * @return void
+     */
+    public function setOriginalPspFeeFractional(string $originalPspFeeFractional): void
     {
-        $this->originalPspFee = bcdiv((string) $originalPspFeeFractional, '100', 2);
+        $this->originalPspFee = bcdiv($originalPspFeeFractional, '100', 2);
     }
 
     public function getCurrencyCode(): string
@@ -1344,5 +1356,24 @@ class Donation extends SalesforceWriteProxy
         );
         $this->setCharityFee($structure->getCoreFee());
         $this->setCharityFeeVat($structure->getFeeVat());
+    }
+
+    public function setCollectedFromStripeCharge(Charge $charge, ?string $cardBrand, ?string $cardCountry, string $originalFeeFractional): void
+    {
+        Assertion::eq($charge->status,'succeeded');
+        Assertion::eq(is_null($cardBrand), is_null($cardCountry));
+        Assertion::numeric($originalFeeFractional);
+
+        $this->setChargeId($charge->id);
+        $this->setTransferId((string) $charge->transfer);
+
+        if ($cardBrand) {
+            /** @psalm-var value-of<Calculator::STRIPE_CARD_BRANDS> $cardBrand */
+            $this->deriveFees($cardBrand, $cardCountry);
+        }
+
+        $this->donationStatus = DonationStatus::Collected;
+        $this->setCollectedAt(new \DateTimeImmutable("@{$charge->created}"));
+        $this->setOriginalPspFeeFractional($originalFeeFractional);
     }
 }
