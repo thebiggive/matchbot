@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Fees;
 
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Assertion;
 
 /**
  * @psalm-immutable
@@ -26,11 +27,30 @@ class Calculator
     public const STRIPE_CARD_BRANDS = [
         'amex', 'diners', 'discover', 'eftpos_au', 'jcb', 'mastercard', 'unionpay', 'visa', 'unknown'
     ];
-
-    readonly private array $pspFeeSettings;
+    private const STRIPE_FEES = [
+        // Based on Stripe support email 9/4/21.
+        'fixed' => [
+            'CHF' => '0.3',
+            'DKK' => '1.8',
+            'EUR' => '0.25',
+            'GBP' => '0.2', // Baseline fee in pounds
+            'NOK' => '1.8',
+            'SEK' => '1.8',
+            'USD' => '0.3',
+            'default' => '0.2',
+        ],
+        'gift_aid_percentage' => '0.75', // 3% of Gift Aid amount.
+        'main_percentage_standard' => '1.5',
+        'main_percentage_amex_or_non_uk_eu' => '3.2',
+        // The rate at which VAT is either being or is about to be charged.
+        'vat_percentage_live' => '20',
+        // The rate at which VAT is being charged if before the switch date.
+        'vat_percentage_old' => '0',
+        // DateTime constructor-ready string: when the live VAT rate replaces the old one.
+        'vat_live_date' => ' 2021-04-01',
+    ];
 
     public function __construct(
-        array $settings,
         string $psp,
         readonly private ?string $cardBrand,
         readonly private ?string $cardCountry,
@@ -39,10 +59,11 @@ class Calculator
         readonly private bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
         readonly private ?float $feePercentageOverride = null,
     ) {
-        $this->pspFeeSettings = $settings[$psp]['fee'];
         if (! in_array($this->cardBrand, [...self::STRIPE_CARD_BRANDS, null], true)) {
             throw new \UnexpectedValueException('Unexpected card brand, expected brands are ' . implode(', ', self::STRIPE_CARD_BRANDS));
         }
+        
+        Assertion::eq($psp, 'stripe', 'Only Stripe PSP is supported as don\'t know what fees to charge for other PSPs.');
     }
 
     public function getCoreFee(): string
@@ -55,24 +76,24 @@ class Calculator
             // a fee on Gift Aid. May vary by card type & country.
 
             $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
-            if (array_key_exists($currencyCode, $this->pspFeeSettings['fixed'])) {
-                $feeAmountFixed = $this->pspFeeSettings['fixed'][$currencyCode];
+            if (array_key_exists($currencyCode, self::STRIPE_FEES['fixed'])) {
+                $feeAmountFixed = self::STRIPE_FEES['fixed'][$currencyCode];
             } else {
-                $feeAmountFixed = $this->pspFeeSettings['fixed']['default'];
+                $feeAmountFixed = self::STRIPE_FEES['fixed']['default'];
             }
 
-            $feeRatio = bcdiv($this->pspFeeSettings['main_percentage_standard'], '100', 3);
+            $feeRatio = bcdiv(self::STRIPE_FEES['main_percentage_standard'], '100', 3);
             if (
-                isset($this->pspFeeSettings['main_percentage_amex_or_non_uk_eu']) &&
+                isset(self::STRIPE_FEES['main_percentage_amex_or_non_uk_eu']) &&
                 ($this->cardBrand === 'amex' || !$this->isEU($this->cardCountry))
             ) {
-                $feeRatio = bcdiv($this->pspFeeSettings['main_percentage_amex_or_non_uk_eu'], '100', 3);
+                $feeRatio = bcdiv(self::STRIPE_FEES['main_percentage_amex_or_non_uk_eu'], '100', 3);
             }
 
             if ($this->hasGiftAid) {
                 // 4 points needed to handle overall percentages of GA fee like 0.75% == 0.0075 ratio.
                 $giftAidFee = bcmul(
-                    bcdiv($this->pspFeeSettings['gift_aid_percentage'], '100', 4),
+                    bcdiv(self::STRIPE_FEES['gift_aid_percentage'], '100', 4),
                     $this->amount,
                     3,
                 );
@@ -126,7 +147,7 @@ class Calculator
 
     private function getFeeVatPercentage(): string
     {
-        if (empty($this->pspFeeSettings['vat_live_date'])) {
+        if (empty(self::STRIPE_FEES['vat_live_date'])) {
             return '0'; // VAT does not apply to the current PSP's fees.
         }
 
@@ -136,12 +157,12 @@ class Calculator
             return '0';
         }
 
-        $switchDate = new \DateTime($this->pspFeeSettings['vat_live_date']);
+        $switchDate = new \DateTime(self::STRIPE_FEES['vat_live_date']);
         if (new \DateTime('now') >= $switchDate) {
-            return $this->pspFeeSettings['vat_percentage_live'];
+            return self::STRIPE_FEES['vat_percentage_live'];
         }
 
-        return $this->pspFeeSettings['vat_percentage_old'];
+        return self::STRIPE_FEES['vat_percentage_old'];
     }
 
     /**

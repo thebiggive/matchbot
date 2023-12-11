@@ -544,7 +544,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $incursGiftAidFee = $donation->hasGiftAid() && $donation->hasTbgShouldProcessGiftAid();
 
         $structure = new Calculator(
-            $this->settings,
             $donation->getPsp(),
             $cardBrand,
             $cardCountry,

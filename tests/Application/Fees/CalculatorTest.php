@@ -14,7 +14,6 @@ class CalculatorTest extends TestCase
     public function testStripeUKCardGBPDonation(): void
     {
         $calculator = new Calculator(
-            $this->settingsWithVAT(),
             'stripe',
             'visa',
             'GB',
@@ -31,7 +30,6 @@ class CalculatorTest extends TestCase
     public function testStripeUKCardGBPDonationWithFeeCover(): void
     {
         $calculator = new Calculator(
-            $this->settingsWithVAT(),
             'stripe',
             'visa',
             'GB',
@@ -49,7 +47,6 @@ class CalculatorTest extends TestCase
     public function testStripeUKCardEURDonationWithFeeCover(): void
     {
         $calculator = new Calculator(
-            $this->settingsWithVAT(),
             'stripe',
             'visa',
             'GB',
@@ -67,7 +64,6 @@ class CalculatorTest extends TestCase
     public function testStripeUSCardGBPDonation(): void
     {
         $calculator = new Calculator(
-            $this->settingsWithoutVAT(),
             'stripe',
             'visa',
             'US',
@@ -83,7 +79,6 @@ class CalculatorTest extends TestCase
     public function testStripeUSCardGBPDonationWithTbgClaimingGiftAid(): void
     {
         $calculator = new Calculator(
-            $this->settingsWithoutVAT(),
             'stripe',
             'visa',
             'US',
@@ -99,7 +94,6 @@ class CalculatorTest extends TestCase
     public function testStripeUKCardSEKDonation(): void
     {
         $calculator = new Calculator(
-            $this->settingsWithoutVAT(),
             'stripe',
             'visa',
             'GB',
@@ -115,7 +109,6 @@ class CalculatorTest extends TestCase
     public function testStripeUSCardSEKDonation(): void
     {
         $calculator = new Calculator(
-            $this->settingsWithoutVAT(),
             'stripe',
             'visa',
             'US',
@@ -134,7 +127,6 @@ class CalculatorTest extends TestCase
     public function testStripeUSCardUSDDonation(): void
     {
         $calculator = new Calculator(
-            $this->settingsWithVAT(),
             'stripe',
             'visa',
             'US',
@@ -151,7 +143,6 @@ class CalculatorTest extends TestCase
     public function testStripeUSCardUSDDonationWithFeeCover(): void
     {
         $calculator = new Calculator(
-            $this->settingsWithVAT(),
             'stripe',
             'visa',
             'US',
@@ -169,37 +160,11 @@ class CalculatorTest extends TestCase
         $this->assertEquals('0.00', $calculator->getFeeVat());
     }
 
-    private function settingsWithVAT(): array
-    {
-        putenv('VAT_PERCENTAGE_LIVE=20');
-        putenv('VAT_LIVE_DATE=2020-01-01');
-
-        $settings = $this->settingsWithoutVAT();
-
-        putenv('VAT_PERCENTAGE_LIVE=');
-        putenv('VAT_LIVE_DATE=');
-
-        return $settings;
-    }
-
-    private function settingsWithoutVAT(): array
-    {
-        $builder = new ContainerBuilder();
-        $settingsFunction = require __DIR__ . '/../../../app/settings.php';
-        $settingsFunction($builder);
-
-        $settings = $builder->build()->get('settings');
-        \assert(is_array($settings));
-
-        return $settings;
-    }
-
     public function testItRejectsUnexpectedCardBrand(): void
     {
         $this->expectExceptionMessage("Unexpected card brand, expected brands are amex, diners, discover, eftpos_au, jcb, mastercard, unionpay, visa, unknown");
 
         new Calculator(
-            $this->settingsWithVAT(),
             'stripe',
             'Card brand that doesnt exist',
             'GB',
