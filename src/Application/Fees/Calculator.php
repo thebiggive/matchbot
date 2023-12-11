@@ -78,7 +78,8 @@ class Calculator
 
     /**
      * We can consider removing all instance properties and methods and relying on static methods and local vars only -
-     * an immutable calculator would be clearer. For now I've hidden the mutability in this private method.
+     * a static calculator would be clearer. For now, I've hidden the instance in this private method - there's no
+     * public way to get a Calculator instance.
      *
      */
     private function __construct(
