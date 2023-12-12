@@ -141,7 +141,6 @@ class CreateTest extends TestCase
     public function testStripeWithMissingStripeAccountID(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setPsp('stripe');
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
         $donationToReturn = $donation;
@@ -267,7 +266,6 @@ class CreateTest extends TestCase
     public function testSuccessWithStripeAccountIDMissingInitiallyButFoundOnRefetch(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
@@ -394,7 +392,6 @@ class CreateTest extends TestCase
     public function testSuccessWithMatchedCampaign(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
         $fundingWithdrawalForMatch = new FundingWithdrawal();
@@ -505,7 +502,6 @@ class CreateTest extends TestCase
     public function testSuccessWithMatchedCampaignAndPspCustomerId(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
 
@@ -623,7 +619,6 @@ class CreateTest extends TestCase
         $this->expectExceptionMessage('Unauthorised');
 
         $donation = $this->getTestDonation(true, true);
-        $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
 
@@ -665,7 +660,6 @@ class CreateTest extends TestCase
     public function testMatchedCampaignAndPspCustomerIdButWrongCustomerIdInBody(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId('cus_zzaaaaaaaaaa99');
 
@@ -719,7 +713,6 @@ class CreateTest extends TestCase
     public function testSuccessWithMatchedCampaignAndInitialCampaignDuplicateError(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
         $fundingWithdrawalForMatch = new FundingWithdrawal();
@@ -1081,7 +1074,6 @@ class CreateTest extends TestCase
         $donation = Donation::emptyTestDonation(amount: '12.00', currencyCode: $currencyCode);
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCampaign($campaign);
-        $donation->setPsp('stripe');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
         $donation->setDonorCountryCode('GB');
         $donation->setTipAmount('1.11');

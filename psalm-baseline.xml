@@ -153,7 +153,6 @@
       <code>setLogger</code>
       <code>setMatchingAdapter</code>
       <code>setMatchingAdapter</code>
-      <code>setSettings</code>
     </MixedMethodCall>
     <MixedReturnStatement>
       <code><![CDATA[$c->get(EntityManagerInterface::class)->getRepository(CampaignFunding::class)]]></code>
@@ -303,10 +302,6 @@
       <code><![CDATA[$txn->fee_details[0]->currency]]></code>
       <code><![CDATA[$txn->fee_details[0]->type]]></code>
     </MixedArgument>
-    <PossiblyInvalidArgument>
-      <code><![CDATA[$charge->balance_transaction]]></code>
-      <code><![CDATA[$charge->transfer]]></code>
-    </PossiblyInvalidArgument>
     <PossiblyNullArgument>
       <code>$intentId</code>
       <code>$intentId</code>
@@ -472,30 +467,6 @@
       <code><![CDATA[$this->getFeeVatPercentage()]]></code>
       <code><![CDATA[$this->getFeeVatPercentage()]]></code>
     </ArgumentTypeCoercion>
-    <MixedArgument>
-      <code>$feeAmountFixed</code>
-      <code><![CDATA[$this->pspFeeSettings['fixed']]]></code>
-      <code><![CDATA[$this->pspFeeSettings['gift_aid_percentage']]]></code>
-      <code><![CDATA[$this->pspFeeSettings['main_percentage_amex_or_non_uk_eu']]]></code>
-      <code><![CDATA[$this->pspFeeSettings['main_percentage_standard']]]></code>
-      <code><![CDATA[$this->pspFeeSettings['vat_live_date']]]></code>
-    </MixedArgument>
-    <MixedArrayAccess>
-      <code><![CDATA[$settings[$psp]['fee']]]></code>
-      <code><![CDATA[$this->pspFeeSettings['fixed']['default']]]></code>
-    </MixedArrayAccess>
-    <MixedAssignment>
-      <code>$feeAmountFixed</code>
-      <code>$feeAmountFixed</code>
-      <code><![CDATA[$this->pspFeeSettings]]></code>
-    </MixedAssignment>
-    <MixedInferredReturnType>
-      <code>string</code>
-    </MixedInferredReturnType>
-    <MixedReturnStatement>
-      <code><![CDATA[$this->pspFeeSettings['vat_percentage_live']]]></code>
-      <code><![CDATA[$this->pspFeeSettings['vat_percentage_old']]]></code>
-    </MixedReturnStatement>
   </file>
   <file src="src/Application/Handlers/HttpErrorHandler.php">
     <PropertyNotSetInConstructor>
@@ -913,7 +884,6 @@
       <code>$lockFactory</code>
       <code>$matchingAdapter</code>
       <code>$queuedForPersist</code>
-      <code>$settings</code>
     </MissingConstructor>
     <MixedArgument>
       <code>$likelyAvailableFunds</code>
@@ -1732,34 +1702,12 @@
       <code>$config</code>
     </MixedReturnStatement>
   </file>
-  <file src="tests/Application/VatTrait.php">
-    <MixedArrayAssignment>
-      <code><![CDATA[$settings['stripe']['fee']]]></code>
-      <code><![CDATA[$settings['stripe']['fee']]]></code>
-      <code><![CDATA[$settings['stripe']['fee']]]></code>
-      <code><![CDATA[$settings['stripe']['fee']['vat_live_date']]]></code>
-      <code><![CDATA[$settings['stripe']['fee']['vat_percentage_live']]]></code>
-      <code><![CDATA[$settings['stripe']['fee']['vat_percentage_old']]]></code>
-    </MixedArrayAssignment>
-  </file>
   <file src="tests/Domain/DonationRepositoryTest.php">
     <MixedArgument>
       <code><![CDATA[$donationClientProphecy->reveal()]]></code>
       <code><![CDATA[$lockFactoryProphecy->reveal()]]></code>
       <code><![CDATA[$matchingAdapterProphecy->reveal()]]></code>
-      <code>$settings</code>
-      <code>$settings</code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
     </MixedArgument>
-    <MixedAssignment>
-      <code>$settings</code>
-    </MixedAssignment>
-    <PossiblyNullReference>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-    </PossiblyNullReference>
   </file>
   <file src="tests/Domain/DonationTest.php">
     <InternalMethod>

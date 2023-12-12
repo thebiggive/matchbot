@@ -4,17 +4,14 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Fees;
 
-use DI\ContainerBuilder;
 use MatchBot\Application\Fees\Calculator;
-use MatchBot\Tests\Application\VatTrait;
 use MatchBot\Tests\TestCase;
 
 class CalculatorTest extends TestCase
 {
     public function testStripeUKCardGBPDonation(): void
     {
-        $calculator = new Calculator(
-            $this->settingsWithVAT(),
+        $fees = Calculator::calculate(
             'stripe',
             'visa',
             'GB',
@@ -24,14 +21,13 @@ class CalculatorTest extends TestCase
         );
 
         // 1.5% + 20p
-        $this->assertEquals('2.05', $calculator->getCoreFee());
-        $this->assertEquals('0.41', $calculator->getFeeVat());
+        $this->assertEquals('2.05', $fees->coreFee);
+        $this->assertEquals('0.41', $fees->feeVat);
     }
 
     public function testStripeUKCardGBPDonationWithFeeCover(): void
     {
-        $calculator = new Calculator(
-            $this->settingsWithVAT(),
+        $fees = Calculator::calculate(
             'stripe',
             'visa',
             'GB',
@@ -42,14 +38,13 @@ class CalculatorTest extends TestCase
         );
 
         // £6.15 fee covered, inc. VAT
-        $this->assertEquals('5.13', $calculator->getCoreFee());
-        $this->assertEquals('1.02', $calculator->getFeeVat());
+        $this->assertEquals('5.13', $fees->coreFee);
+        $this->assertEquals('1.02', $fees->feeVat);
     }
 
     public function testStripeUKCardEURDonationWithFeeCover(): void
     {
-        $calculator = new Calculator(
-            $this->settingsWithVAT(),
+        $fees = Calculator::calculate(
             'stripe',
             'visa',
             'GB',
@@ -60,14 +55,13 @@ class CalculatorTest extends TestCase
         );
 
         // £6.15 fee covered, inc. VAT
-        $this->assertEquals('5.13', $calculator->getCoreFee());
-        $this->assertEquals('1.02', $calculator->getFeeVat());
+        $this->assertEquals('5.13', $fees->coreFee);
+        $this->assertEquals('1.02', $fees->feeVat);
     }
 
     public function testStripeUSCardGBPDonation(): void
     {
-        $calculator = new Calculator(
-            $this->settingsWithoutVAT(),
+        $fees = Calculator::calculate(
             'stripe',
             'visa',
             'US',
@@ -77,13 +71,12 @@ class CalculatorTest extends TestCase
         );
 
         // 3.2% + 20p
-        $this->assertEquals('4.14', $calculator->getCoreFee());
+        $this->assertEquals('4.14', $fees->coreFee);
     }
 
     public function testStripeUSCardGBPDonationWithTbgClaimingGiftAid(): void
     {
-        $calculator = new Calculator(
-            $this->settingsWithoutVAT(),
+        $fees = Calculator::calculate(
             'stripe',
             'visa',
             'US',
@@ -93,13 +86,12 @@ class CalculatorTest extends TestCase
         );
 
         // 3.2% + 20p + 0.75% (net)
-        $this->assertEquals('4.15', $calculator->getCoreFee());
+        $this->assertEquals('4.15', $fees->coreFee);
     }
 
     public function testStripeUKCardSEKDonation(): void
     {
-        $calculator = new Calculator(
-            $this->settingsWithoutVAT(),
+        $fees = Calculator::calculate(
             'stripe',
             'visa',
             'GB',
@@ -109,13 +101,12 @@ class CalculatorTest extends TestCase
         );
 
         // 1.5% + 1.80 SEK
-        $this->assertEquals('3.65', $calculator->getCoreFee());
+        $this->assertEquals('3.65', $fees->coreFee);
     }
 
     public function testStripeUSCardSEKDonation(): void
     {
-        $calculator = new Calculator(
-            $this->settingsWithoutVAT(),
+        $fees = Calculator::calculate(
             'stripe',
             'visa',
             'US',
@@ -125,7 +116,7 @@ class CalculatorTest extends TestCase
         );
 
         // 3.2% + 1.80 SEK
-        $this->assertEquals('5.74', $calculator->getCoreFee());
+        $this->assertEquals('5.74', $fees->coreFee);
     }
 
     /**
@@ -133,8 +124,7 @@ class CalculatorTest extends TestCase
      */
     public function testStripeUSCardUSDDonation(): void
     {
-        $calculator = new Calculator(
-            $this->settingsWithVAT(),
+        $fees = Calculator::calculate(
             'stripe',
             'visa',
             'US',
@@ -144,14 +134,13 @@ class CalculatorTest extends TestCase
             5,
         );
 
-        $this->assertEquals('5.00', $calculator->getCoreFee());
-        $this->assertEquals('0.00', $calculator->getFeeVat());
+        $this->assertEquals('5.00', $fees->coreFee);
+        $this->assertEquals('0.00', $fees->feeVat);
     }
 
     public function testStripeUSCardUSDDonationWithFeeCover(): void
     {
-        $calculator = new Calculator(
-            $this->settingsWithVAT(),
+        $fees = Calculator::calculate(
             'stripe',
             'visa',
             'US',
@@ -165,41 +154,15 @@ class CalculatorTest extends TestCase
         // and the donor will be charged a higher amount. E.g. here the core donation is
         // $100 and so that amount is passed to `Calculator`, but the donor card charge
         // would be $105.
-        $this->assertEquals('5.00', $calculator->getCoreFee());
-        $this->assertEquals('0.00', $calculator->getFeeVat());
-    }
-
-    private function settingsWithVAT(): array
-    {
-        putenv('VAT_PERCENTAGE_LIVE=20');
-        putenv('VAT_LIVE_DATE=2020-01-01');
-
-        $settings = $this->settingsWithoutVAT();
-
-        putenv('VAT_PERCENTAGE_LIVE=');
-        putenv('VAT_LIVE_DATE=');
-
-        return $settings;
-    }
-
-    private function settingsWithoutVAT(): array
-    {
-        $builder = new ContainerBuilder();
-        $settingsFunction = require __DIR__ . '/../../../app/settings.php';
-        $settingsFunction($builder);
-
-        $settings = $builder->build()->get('settings');
-        \assert(is_array($settings));
-
-        return $settings;
+        $this->assertEquals('5.00', $fees->coreFee);
+        $this->assertEquals('0.00', $fees->feeVat);
     }
 
     public function testItRejectsUnexpectedCardBrand(): void
     {
         $this->expectExceptionMessage("Unexpected card brand, expected brands are amex, diners, discover, eftpos_au, jcb, mastercard, unionpay, visa, unknown");
 
-        new Calculator(
-            $this->settingsWithVAT(),
+        Calculator::calculate(
             'stripe',
             'Card brand that doesnt exist',
             'GB',

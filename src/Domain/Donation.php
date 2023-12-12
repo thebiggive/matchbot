@@ -12,6 +12,8 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Assertion;
+use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use Messages;
 use Ramsey\Uuid\Uuid;
@@ -304,7 +306,9 @@ class Donation extends SalesforceWriteProxy
      */
     public static function emptyTestDonation(string $amount, PaymentMethodType $paymentMethodType = PaymentMethodType::Card, string $currencyCode = 'GBP'): self
     {
-        return new self($amount, $currencyCode, $paymentMethodType);
+        $donation = new self($amount, $currencyCode, $paymentMethodType);
+        $donation->psp = 'stripe';
+        return $donation;
     }
 
     private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
@@ -332,7 +336,7 @@ class Donation extends SalesforceWriteProxy
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
     {
         $psp = $donationData->psp;
-        assert($psp === 'stripe');
+        Assertion::eq($psp, 'stripe');
 
         $donation = new self(
             $donationData->donationAmount,
@@ -517,17 +521,17 @@ class Donation extends SalesforceWriteProxy
             throw new \Exception('Donation::cancelled must be used to cancel');
         }
 
+
+        if ($donationStatus === DonationStatus::Collected) {
+            throw new \Exception('Donation::collectFromStripe must be used to collect');
+        }
+
         $this->donationStatus = $donationStatus;
     }
 
     public function getCollectedAt(): ?DateTimeImmutable
     {
         return $this->collectedAt;
-    }
-
-    public function setCollectedAt(?DateTimeImmutable $collectedAt): void
-    {
-        $this->collectedAt = $collectedAt;
     }
 
     /**
@@ -678,25 +682,12 @@ class Donation extends SalesforceWriteProxy
         $this->transactionId = $transactionId;
     }
 
-    public function setChargeId(string $chargeId): void
-    {
-        $this->chargeId = $chargeId;
-    }
-
     /**
      * @return string|null
      */
     public function getTransferId(): ?string
     {
         return $this->transferId;
-    }
-
-    /**
-     * @param string|null $transferId
-     */
-    public function setTransferId(?string $transferId): void
-    {
-        $this->transferId = $transferId;
     }
 
     public function getDonorCountryCode(): ?string
@@ -824,10 +815,9 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @psalm-param 'stripe' $psp
      * @param string $psp   Payment Service Provider short identifier, e.g. 'stripe'.
      */
-    public function setPsp(string $psp): void
+    private function setPsp(string $psp): void
     {
         if (!in_array($psp, $this->possiblePSPs, true)) {
             throw new \UnexpectedValueException("Unexpected PSP '$psp'");
@@ -1020,9 +1010,13 @@ class Donation extends SalesforceWriteProxy
         return $this->originalPspFee;
     }
 
-    public function setOriginalPspFeeFractional(int $originalPspFeeFractional): void
+    /**
+     * @param numeric-string $originalPspFeeFractional
+     * @return void
+     */
+    public function setOriginalPspFeeFractional(string $originalPspFeeFractional): void
     {
-        $this->originalPspFee = bcdiv((string) $originalPspFeeFractional, '100', 2);
+        $this->originalPspFee = bcdiv($originalPspFeeFractional, '100', 2);
     }
 
     public function getCurrencyCode(): string
@@ -1318,5 +1312,57 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->donationStatus = DonationStatus::Cancelled;
+    }
+
+    /**
+     * Updates a donation to set the appropriate fees. If card details are null then we assume for now that a card with
+     * the lowest possible fees will be used, and this should be called again with the details of the selected card
+     * when confirming the payment.
+     *
+     * @param string|null $cardBrand
+     * @param string|null $cardCountry ISO two letter uppercase code
+     */
+    public function deriveFees(?string $cardBrand, ?string $cardCountry): void
+    {
+        $incursGiftAidFee = $this->hasGiftAid() && $this->hasTbgShouldProcessGiftAid();
+
+        $fees = Calculator::calculate(
+            $this->getPsp(),
+            $cardBrand,
+            $cardCountry,
+            $this->getAmount(),
+            $this->getCurrencyCode(),
+            $incursGiftAidFee,
+            $this->getCampaign()->getFeePercentage(),
+        );
+
+        $this->setCharityFee($fees->coreFee);
+        $this->setCharityFeeVat($fees->feeVat);
+    }
+
+    public function collectFromStripeCharge(
+        string  $chargeId,
+        string  $transferId,
+        ?string $cardBrand,
+        ?string $cardCountry,
+        string  $originalFeeFractional,
+        int     $chargeCreationTimestamp): void
+    {
+        Assertion::eq(is_null($cardBrand), is_null($cardCountry));
+        Assertion::numeric($originalFeeFractional);
+        Assertion::notEmpty($chargeId);
+        Assertion::notEmpty($transferId);
+
+        $this->chargeId = $chargeId;
+        $this->transferId = $transferId;
+
+        if ($cardBrand) {
+            /** @psalm-var value-of<Calculator::STRIPE_CARD_BRANDS> $cardBrand */
+            $this->deriveFees($cardBrand, $cardCountry);
+        }
+
+        $this->donationStatus = DonationStatus::Collected;
+        $this->collectedAt = (new \DateTimeImmutable("@$chargeCreationTimestamp"));
+        $this->setOriginalPspFeeFractional($originalFeeFractional);
     }
 }

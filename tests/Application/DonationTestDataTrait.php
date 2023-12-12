@@ -9,6 +9,7 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\SalesforceWriteProxy;
 use Ramsey\Uuid\Uuid;
+use Stripe\Charge;
 
 trait DonationTestDataTrait
 {
@@ -28,7 +29,6 @@ trait DonationTestDataTrait
         PaymentMethodType $pspMethodType = PaymentMethodType::Card,
         string $tipAmount = '1.00',
         string $currencyCode = 'GBP',
-        DonationStatus $status = DonationStatus::Collected,
     ): Donation {
         $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
@@ -47,8 +47,16 @@ trait DonationTestDataTrait
         $donation->setCampaign($campaign);
         $donation->setCharityComms(true);
         $donation->setChampionComms(false);
-        $donation->setDonationStatus($status);
-        $donation->setCollectedAt(new \DateTimeImmutable());
+
+        $donation->collectFromStripeCharge(
+            chargeId: 'ch_externalId_123',
+            transferId: 'tr_externalId_123',
+            cardBrand: null,
+            cardCountry: null,
+            originalFeeFractional: '0',
+            chargeCreationTimestamp: (int)(new \DateTimeImmutable())->format('U'),
+        );
+
         $donation->setDonorCountryCode('GB');
         $donation->setDonorEmailAddress('john.doe@example.com');
         $donation->setDonorFirstName('John');
@@ -57,14 +65,11 @@ trait DonationTestDataTrait
         $donation->setDonorHomeAddressLine1('1 Main St, London'); // Frontend typically includes town for now
         $donation->setDonorHomePostcode('N1 1AA');
         $donation->setGiftAid(true);
-        $donation->setPsp('stripe');
         $donation->setSalesforceId('sfDonation369');
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
         $donation->setTbgComms(false);
         $donation->setTipAmount($tipAmount);
-        $donation->setTransferId('tr_externalId_123');
         $donation->setTransactionId('pi_externalId_123');
-        $donation->setChargeId('ch_externalId_123');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
 
         return $donation;
@@ -86,7 +91,6 @@ trait DonationTestDataTrait
         $donation->setCharityFee('2.57');
         $donation->setCampaign($campaign);
         $donation->setDonationStatus(DonationStatus::Pending);
-        $donation->setPsp('stripe');
         $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setTipAmount('2.00');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ac'));

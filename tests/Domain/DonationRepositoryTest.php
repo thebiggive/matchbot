@@ -21,7 +21,6 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
-use MatchBot\Tests\Application\VatTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -34,7 +33,6 @@ use Symfony\Component\Lock\LockInterface;
 class DonationRepositoryTest extends TestCase
 {
     use DonationTestDataTrait;
-    use VatTrait;
 
     public function testExistingPushOK(): void
     {
@@ -209,18 +207,19 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');;
-        $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $this->getRepo()->deriveFees($donation, 'amex', null);
+        $donation->deriveFees('amex', null);
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
-        // Total fee        = £ 31.80
+        // Total fee ex vat = £ 31.80
+        // Total fee inc vat = £ 31.80 * 1.2
+        // Total fee inc vat = £ 38.16
         // Amount after fee = £955.85
 
         // Deduct tip + fee.
-        $this->assertEquals(4_180, $donation->getAmountToDeductFractional());
-        $this->assertEquals(95_585, $donation->getAmountForCharityFractional());
+        $this->assertEquals(48_16, $donation->getAmountToDeductFractional());
+        $this->assertEquals(949_49, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithTipUsingUSCard(): void
@@ -228,18 +227,18 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');;
-        $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $this->getRepo()->deriveFees($donation, 'visa', 'US');
+        $donation->deriveFees('visa', 'US');
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
         // Total fee        = £ 31.80
+        // Total fee inc vat = £ 38.16
         // Amount after fee = £955.85
 
         // Deduct tip + fee.
-        $this->assertEquals(4_180, $donation->getAmountToDeductFractional());
-        $this->assertEquals(95_585, $donation->getAmountForCharityFractional());
+        $this->assertEquals(48_16, $donation->getAmountToDeductFractional());
+        $this->assertEquals(949_49, $donation->getAmountForCharityFractional());
     }
 
     /**
@@ -251,10 +250,9 @@ class DonationRepositoryTest extends TestCase
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');;
         $donation->setTipAmount('0.00');
-        $donation->setPsp('stripe');
         $donation->setFeeCoverAmount('44.44'); // 4.5% fee, inc. any VAT.
         $donation->getCampaign()->setFeePercentage(4.5);
-        $this->getRepo()->deriveFees($donation, null, null);
+        $donation->deriveFees(null, null);
 
         // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
         // Fixed fee        = £  0.00
@@ -273,18 +271,18 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');;
-        $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
-        $this->getRepo()->deriveFees($donation, null, null);
+        $donation->deriveFees(null, null);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
         // Total fee        = £ 15.01
+        // Total fee inc vat = 18.012
         // Amount after fee = £972.64
 
         // Deduct tip + fee.
-        $this->assertEquals(2_501, $donation->getAmountToDeductFractional());
-        $this->assertEquals(97_264, $donation->getAmountForCharityFractional());
+        $this->assertEquals(28_01, $donation->getAmountToDeductFractional());
+        $this->assertEquals(969_64, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityAndFeeVatWithTipAndVat(): void
@@ -292,11 +290,9 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');;
-        $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
 
-        // Get repo with 20% VAT enabled from now setting override.
-        $this->getRepo(null, true)->deriveFees($donation, null, null);
+        $donation->deriveFees(null, null);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -314,50 +310,50 @@ class DonationRepositoryTest extends TestCase
     public function testStripeAmountForCharityWithoutTip(): void
     {
         $donation = $this->getTestDonation('987.65');;
-        $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
-        $this->getRepo()->deriveFees($donation, null, null);
+        $donation->deriveFees(null, null);
 
         // £987.65 * 1.5%   = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
         // Total fee        = £ 15.01
+        // Total fee in vcat = 18.012
         // Amount after fee = £972.64
 
-        $this->assertEquals(1_501, $donation->getAmountToDeductFractional());
-        $this->assertEquals(97_264, $donation->getAmountForCharityFractional());
+        $this->assertEquals(18_01, $donation->getAmountToDeductFractional());
+        $this->assertEquals(96_964, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTipWhenTbgClaimingGiftAid(): void
     {
         $donation = $this->getTestDonation('987.65');
         $donation->setTbgShouldProcessGiftAid(true);
-        $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
-        $this->getRepo()->deriveFees($donation, null, null);
+        $donation->deriveFees(null, null);
 
         // £987.65 *  1.5%  = £ 14.81 (to 2 d.p.)
         // Fixed fee        = £  0.20
         // £987.65 * 0.75%  = £  7.41 (3% of Gift Aid amount)
         // Total fee        = £ 22.42
+        // Total fee inc vat = £ 26.904
         // Amount after fee = £965.23
 
-        $this->assertEquals(2_242, $donation->getAmountToDeductFractional());
-        $this->assertEquals(96_523, $donation->getAmountForCharityFractional());
+        $this->assertEquals(26_90, $donation->getAmountToDeductFractional());
+        $this->assertEquals(96_075, $donation->getAmountForCharityFractional());
     }
 
     public function testStripeAmountForCharityWithoutTipRoundingOnPointFive(): void
     {
         $donation = $this->getTestDonation('6.25');
-        $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
-        $this->getRepo()->deriveFees($donation, null, null);
+        $donation->deriveFees(null, null);
 
         // £6.25 * 1.5% = £ 0.19 (to 2 d.p. – following normal mathematical rounding from £0.075)
         // Fixed fee    = £ 0.20
         // Total fee    = £ 0.29
+        // Total fee inc vat = £ 0.348
         // After fee    = £ 5.96
-        $this->assertEquals(29, $donation->getAmountToDeductFractional());
-        $this->assertEquals(596, $donation->getAmountForCharityFractional());
+        $this->assertEquals(35, $donation->getAmountToDeductFractional());
+        $this->assertEquals(5_90, $donation->getAmountForCharityFractional());
     }
 
     public function testReleaseMatchFundsSuccess(): void
@@ -538,7 +534,6 @@ class DonationRepositoryTest extends TestCase
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
-        $repo->setSettings($this->getAppInstance()->getContainer()->get('settings'));
 
         $this->assertEquals(
             [$testDonation],
@@ -580,7 +575,6 @@ class DonationRepositoryTest extends TestCase
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
-        $repo->setSettings($this->getAppInstance()->getContainer()->get('settings'));
 
         $this->assertEquals(
             [$testDonation],
@@ -605,11 +599,6 @@ class DonationRepositoryTest extends TestCase
             $donationClientProphecy = $this->prophesize(Client\Donation::class);
         }
 
-        $settings = $this->getAppInstance()->getContainer()->get('settings');
-        if ($vatLive) {
-            $settings = $this->getUKLikeVATSettings($settings);
-        }
-
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $repo = new DonationRepository(
             $entityManagerProphecy->reveal(),
@@ -617,7 +606,6 @@ class DonationRepositoryTest extends TestCase
         );
         $repo->setClient($donationClientProphecy->reveal());
         $repo->setLogger(new NullLogger());
-        $repo->setSettings($settings);
 
         if ($campaignRepoProphecy) {
             $repo->setCampaignRepository($campaignRepoProphecy->reveal());

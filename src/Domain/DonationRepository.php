@@ -39,8 +39,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
     private Matching\Adapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
     private array $queuedForPersist;
-    private array $settings;
-
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
         $this->matchingAdapter = $adapter;
@@ -163,7 +161,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         $donation = Donation::fromApiModel($donationData, $campaign);
-        $this->deriveFees($donation, null, null);
+        $donation->deriveFees(null, null);
 
         return $donation;
     }
@@ -532,32 +530,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
-     * Updates a donation to set the appropriate fees. If card details are null then we assume for now that a card with
-     * the lowest possible fees will be used, and this should be called again with the details of the selected card
-     * when confirming the payment.
-     *
-     * @psalm-param value-of<Calculator::STRIPE_CARD_BRANDS>|null $cardBrand
-     * @param string|null $cardCountry ISO two letter uppercase code
-     */
-    public function deriveFees(Donation $donation, ?string $cardBrand, ?string $cardCountry): void
-    {
-        $incursGiftAidFee = $donation->hasGiftAid() && $donation->hasTbgShouldProcessGiftAid();
-
-        $structure = new Calculator(
-            $this->settings,
-            $donation->getPsp(),
-            $cardBrand,
-            $cardCountry,
-            $donation->getAmount(),
-            $donation->getCurrencyCode(),
-            $incursGiftAidFee,
-            $donation->getCampaign()->getFeePercentage(),
-        );
-        $donation->setCharityFee($structure->getCoreFee());
-        $donation->setCharityFeeVat($structure->getFeeVat());
-    }
-
-    /**
      * @param mixed $campaignRepository
      */
     public function setCampaignRepository($campaignRepository): void
@@ -579,14 +551,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function setLockFactory(LockFactory $lockFactory): void
     {
         $this->lockFactory = $lockFactory;
-    }
-
-    /**
-     * @param array $settings
-     */
-    public function setSettings(array $settings): void
-    {
-        $this->settings = $settings;
     }
 
     /**

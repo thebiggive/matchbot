@@ -109,28 +109,6 @@ return function (ContainerBuilder $containerBuilder) {
                 'apiVersion' => getenv('STRIPE_API_VERSION'),
                 'accountWebhookSecret' => getenv('STRIPE_WEBHOOK_SIGNING_SECRET'),
                 'connectAppWebhookSecret' => getenv('STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET'),
-                'fee' => [
-                    // Based on Stripe support email 9/4/21.
-                    'fixed' => [
-                        'CHF' => '0.3',
-                        'DKK' => '1.8',
-                        'EUR' => '0.25',
-                        'GBP' => '0.2', // Baseline fee in pounds
-                        'NOK' => '1.8',
-                        'SEK' => '1.8',
-                        'USD' => '0.3',
-                        'default' => '0.2',
-                    ],
-                    'gift_aid_percentage' => '0.75', // 3% of Gift Aid amount.
-                    'main_percentage_standard' => '1.5',
-                    'main_percentage_amex_or_non_uk_eu' => '3.2',
-                    // The rate at which VAT is either being or is about to be charged.
-                    'vat_percentage_live' => getenv('VAT_PERCENTAGE_LIVE'),
-                    // The rate at which VAT is being charged if before the switch date.
-                    'vat_percentage_old' => getenv('VAT_PERCENTAGE_OLD'),
-                    // DateTime constructor-ready string: when the live VAT rate replaces the old one.
-                    'vat_live_date' => getenv('VAT_LIVE_DATE'),
-                ],
             ],
         ],
     ]);
