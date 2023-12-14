@@ -50,6 +50,8 @@ jobs:
 
       - run: composer install --no-interaction
 
+      - run: composer check-platform-reqs
+
       - save_cache:
           paths:
             - vendor
