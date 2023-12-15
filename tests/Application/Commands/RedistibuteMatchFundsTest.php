@@ -61,6 +61,8 @@ class RedistibuteMatchFundsTest extends TestCase
             ->shouldBeCalledOnce();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
+        $donationRepoProphecy->push(Argument::type(Donation::class), false)
+            ->shouldBeCalledOnce();
 
         $pledgeAmount = '101.00';
         $pledge = new Pledge();

@@ -75,6 +75,7 @@ class RedistributeMatchFunds extends LockingCommand
 
             $this->donationRepository->releaseMatchFunds($donation);
             $this->donationRepository->allocateMatchFunds($donation);
+            $this->donationRepository->push($donation, false);
             $donationsAmended++;
         }
 
