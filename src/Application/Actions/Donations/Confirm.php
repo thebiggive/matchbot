@@ -96,6 +96,8 @@ class Confirm extends Action
         try {
             $paymentMethod = $this->stripe->updatePaymentMethodBillingDetail($paymentMethodId, $donation);
         } catch (CardException $cardException) {
+            $this->entityManager->rollback();
+
             return $this->handleCardException(
                 context: 'updatePaymentMethodBillingDetail',
                 exception: $cardException,
@@ -113,12 +115,7 @@ class Confirm extends Action
 
             $this->entityManager->rollback();
 
-            return new JsonResponse([
-                'error' => [
-                    'message' => $exception->getMessage(),
-                    'code' => $exception->getStripeCode(),
-                ],
-            ], 500);
+            throw $exception;
         }
 
         if ($paymentMethod->type !== 'card') {
@@ -163,6 +160,8 @@ class Confirm extends Action
                 'payment_method' => $paymentMethodId,
             ]);
         } catch (CardException $exception) {
+            $this->entityManager->rollback();
+
             return $this->handleCardException(
                 context: 'confirmPaymentIntent',
                 exception: $exception,
@@ -275,8 +274,6 @@ class Confirm extends Action
             $paymentIntentId,
             $exception->getMessage(),
         ));
-
-        $this->entityManager->rollback();
 
         return new JsonResponse([
             'error' => [
