@@ -2,6 +2,7 @@
 
 namespace MatchBot\Client;
 
+use MatchBot\Domain\Donation;
 use Ramsey\Uuid\Uuid;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
@@ -57,7 +58,11 @@ class StubStripeClient implements Stripe
         return substr(Uuid::uuid4()->toString(), 0, 15);
     }
 
-    public function retrievePaymentMethod(string $paymentMethodId): PaymentMethod
+    /**
+     * The actual billing data patch isn't important; the main job of the stub is to simulate
+     * retrieving a Payment Method, since one is the return value of an update() in the Stripe SDK.
+     */
+    public function updatePaymentMethodBillingDetail(string $paymentMethodId, Donation $donation): PaymentMethod
     {
         $this->pause();
 

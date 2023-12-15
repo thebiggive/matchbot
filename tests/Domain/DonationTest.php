@@ -33,7 +33,7 @@ class DonationTest extends TestCase
             psp:'stripe',
             pspMethodType: PaymentMethodType::Card
         ), $this->getMinimalCampaign());
-        
+
         $this->assertFalse($donation->getDonationStatus()->isSuccessful());
         $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
         $this->assertNull($donation->getSalesforceLastPush());
@@ -455,12 +455,26 @@ class DonationTest extends TestCase
         $this->assertSame('Test First Name', $donation->getDonorFirstName(true));
         $this->assertSame('Test Last Name', $donation->getDonorLastName(true));
         $this->assertSame('donor@email.test', $donation->getDonorEmailAddress());
+        $this->assertSame('Test First Name Test Last Name', $donation->getDonorFullName());
+    }
+
+    /**
+     * @return array<array{0: ?string, 1: ?string, 2: ?string}>
+     */
+    public function namePartsAndFullNames(): array
+    {
+        return [
+            [null, null, null],
+            ['Loraine ', null, 'Loraine'],
+            [' Loraine ', ' James ', 'Loraine   James'],
+            [null, 'James', 'James'],
+        ];
     }
 
     /**
      * @return array<array{0: ?string, 1: string}>
      */
-    public function namesAndSFSafeLastNames()
+    public function namesAndSFSafeLastNames(): array
     {
         return [
             ['Flintstone', 'Flintstone'],
@@ -481,7 +495,7 @@ class DonationTest extends TestCase
     /**
      * @return array<array{0: ?string, 1: ?string}>
      */
-    public function namesAndSFSafeFirstNames()
+    public function namesAndSFSafeFirstNames(): array
     {
         return [
             // same as last name except we have null not 'N/A'.
@@ -498,6 +512,18 @@ class DonationTest extends TestCase
             [str_repeat('👩‍👩‍👧‍👧', 41), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
             [str_repeat('👩‍👩‍👧‍👧', 401), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
         ];
+    }
+
+    /**
+     * @dataProvider namePartsAndFullNames
+     */
+    public function testItMakesDonorFullName(?string $firstName, ?string $lastName, ?string $expectedFullName): void
+    {
+        $donation = $this->getTestDonation();
+        $donation->setDonorFirstName($firstName);
+        $donation->setDonorLastName($lastName);
+
+        $this->assertSame($expectedFullName, $donation->getDonorFullName());
     }
 
     /**
