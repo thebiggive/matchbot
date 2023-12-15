@@ -40,15 +40,9 @@ class RedistributeMatchFunds extends LockingCommand
         foreach ($donationsToCheck as $donation) {
             $highestAllocationOrderUsedForDonation = 0;
             foreach ($donation->getFundingWithdrawals() as $withdrawal) {
-                $funding = $withdrawal->getCampaignFunding();
-                if (!$funding) {
-                    // Not entirely sure why this is nullable at all; we can't work on withdrawals without a funding.
-                    continue;
-                }
-
                 $highestAllocationOrderUsedForDonation = max(
                     $highestAllocationOrderUsedForDonation,
-                    $funding->getAllocationOrder(),
+                    $withdrawal->getCampaignFunding()->getAllocationOrder(),
                 );
             }
 

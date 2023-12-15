@@ -5,6 +5,7 @@ namespace MatchBot\IntegrationTests;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -147,7 +148,11 @@ class DonationRepositoryTest extends IntegrationTest
         } else {
             $oldPendingDonation->setDonationStatus($donationStatus);
         }
-        $fundingWithdrawal = new FundingWithdrawal();
+
+        $campaignFunding = new CampaignFunding();
+        $campaignFunding->setCurrencyCode('GBP');
+        $campaignFunding->setAmountAvailable('1.0');
+        $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
         $oldPendingDonation->addFundingWithdrawal($fundingWithdrawal);
         $fundingWithdrawal->setAmount('1');
         $fundingWithdrawal->setDonation($oldPendingDonation);

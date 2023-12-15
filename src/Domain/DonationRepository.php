@@ -376,7 +376,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->setParameter('checkAfter', $cutoff)
         ;
 
-        return $qb->getQuery()->getResult();
+        /** @var Donation[] $donations */
+        $donations = $qb->getQuery()->getResult();
+
+        return $donations;
     }
 
     /**
@@ -637,9 +640,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $amountLeftToMatch = bcsub($amountLeftToMatch, $amountAllocated, 2);
 
             if (bccomp($amountAllocated, '0.00', 2) === 1) {
-                $withdrawal = new FundingWithdrawal();
+                $withdrawal = new FundingWithdrawal($funding);
                 $withdrawal->setDonation($donation);
-                $withdrawal->setCampaignFunding($funding);
                 $withdrawal->setAmount($amountAllocated);
                 $newWithdrawals[] = $withdrawal;
                 $this->logInfo("Successfully withdrew $amountAllocated from funding {$funding->getId()}");

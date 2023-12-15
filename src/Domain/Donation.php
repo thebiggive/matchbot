@@ -100,7 +100,7 @@ class Donation extends SalesforceWriteProxy
      * Core donation amount in major currency units (i.e. Pounds) excluding any tip.
      *
      * @ORM\Column(type="decimal", precision=18, scale=2)
-     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @psalm-var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
      */
     protected readonly string $amount;
@@ -307,6 +307,9 @@ class Donation extends SalesforceWriteProxy
         return new self($amount, $currencyCode, $paymentMethodType);
     }
 
+    /**
+     * @psalm-param numeric-string $amount
+     */
     private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
     {
         $this->fundingWithdrawals = new ArrayCollection();

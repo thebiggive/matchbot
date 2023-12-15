@@ -1,11 +1,10 @@
 <?php
 
-namespace Domain;
+namespace MatchBot\Tests\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use MatchBot\Application\Matching\OptimisticRedisAdapter;
-use MatchBot\Client\Fund;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
@@ -132,7 +131,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
 
 
     /**
-     * @return list<array{0:string, 1: string, 2: string, 3: string, 4: string, 5: string}>
+     * @psalm-return list<array{0:string, 1: string, 2: numeric-string, 3: string, 4: string, 5: string}>
      */
     public function AllocationFromTwoFundingsCases(): array
     {
@@ -149,6 +148,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
 
     /**
      * @dataProvider AllocationFromTwoFundingsCases
+     * @psalm-param numeric-string $donationAmount
      */
     public function testItAllocatesFromTwoFundingsFor(
         string $funding0Available,
@@ -229,7 +229,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             ),
             $this->campaign,
         );
-        $fundingWithdrawal = new FundingWithdrawal();
+        $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawal->setAmount('1.00');
         $donation->addFundingWithdrawal($fundingWithdrawal);
 

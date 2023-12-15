@@ -11,7 +11,6 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
-use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 
 class DonationFundsNotifierTest extends TestCase

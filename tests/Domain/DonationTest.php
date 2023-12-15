@@ -33,7 +33,7 @@ class DonationTest extends TestCase
             psp:'stripe',
             pspMethodType: PaymentMethodType::Card
         ), $this->getMinimalCampaign());
-        
+
         $this->assertFalse($donation->getDonationStatus()->isSuccessful());
         $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
         $this->assertNull($donation->getSalesforceLastPush());
@@ -191,7 +191,11 @@ class DonationTest extends TestCase
 
     public function testToApiModel(): void
     {
-        $fundingWithdrawal = new FundingWithdrawal();
+        $campaignFunding = new CampaignFunding();
+        $campaignFunding->setCurrencyCode('GBP');
+        $campaignFunding->setAmountAvailable('1.23');
+
+        $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawal->setAmount('1.23');
         $donation = $this->getTestDonation();
         $donation->addFundingWithdrawal($fundingWithdrawal);
@@ -247,10 +251,9 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation(status: DonationStatus::Collected);
 
-        $withdrawal0 = new FundingWithdrawal();
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setFund(new ChampionFund());
-        $withdrawal0->setCampaignFunding($campaignFunding);
+        $withdrawal0 = new FundingWithdrawal($campaignFunding);
         $withdrawal0->setAmount('1');
 
         $withdrawal1 = clone $withdrawal0;
@@ -272,15 +275,13 @@ class DonationTest extends TestCase
         $campaignFunding0 = new CampaignFunding();
         $campaignFunding0->setFund(new ChampionFund());
 
-        $withdrawal0 = new FundingWithdrawal();
-        $withdrawal0->setCampaignFunding($campaignFunding0);
+        $withdrawal0 = new FundingWithdrawal($campaignFunding0);
         $withdrawal0->setAmount('1');
 
         $campaignFunding1 = new CampaignFunding();
         $campaignFunding1->setFund(new Pledge());
-        $withdrawal1 = new FundingWithdrawal();
+        $withdrawal1 = new FundingWithdrawal($campaignFunding1);
         $withdrawal1->setAmount('2');
-        $withdrawal1->setCampaignFunding($campaignFunding1);
 
         $donation->addFundingWithdrawal($withdrawal0);
         $donation->addFundingWithdrawal($withdrawal1);

@@ -10,6 +10,8 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Entity(repositoryClass="FundingWithdrawalRepository")
  * @ORM\HasLifecycleCallbacks
  * @ORM\Table
+ *
+ * @psalm-suppress PropertyNotSetInConstructor Not requiring all props on construct for now.
  */
 class FundingWithdrawal extends Model
 {
@@ -29,9 +31,14 @@ class FundingWithdrawal extends Model
 
     /**
      * @ORM\ManyToOne(targetEntity="CampaignFunding", fetch="EAGER")
-     * @var CampaignFunding|null
+     * @var CampaignFunding
      */
-    protected ?CampaignFunding $campaignFunding = null;
+    protected CampaignFunding $campaignFunding;
+
+    public function __construct(CampaignFunding $campaignFunding)
+    {
+        $this->campaignFunding = $campaignFunding;
+    }
 
     /**
      * @param Donation $donation
@@ -57,15 +64,7 @@ class FundingWithdrawal extends Model
         return $this->amount;
     }
 
-    /**
-     * @param CampaignFunding $campaignFunding
-     */
-    public function setCampaignFunding(CampaignFunding $campaignFunding): void
-    {
-        $this->campaignFunding = $campaignFunding;
-    }
-
-    public function getCampaignFunding(): ?CampaignFunding
+    public function getCampaignFunding(): CampaignFunding
     {
         return $this->campaignFunding;
     }

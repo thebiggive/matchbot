@@ -11,8 +11,8 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -131,7 +131,7 @@ class CreateTest extends TestCase
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::any())->shouldNotBeCalled();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -231,7 +231,10 @@ class CreateTest extends TestCase
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal();
+        $campaignFunding = new CampaignFunding();
+        $campaignFunding->setCurrencyCode('GBP');
+        $campaignFunding->setAmountAvailable('8.00');
+        $fundingWithdrawalForMatch = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
         $fundingWithdrawalForMatch->setDonation($donation);
 
@@ -356,7 +359,7 @@ class CreateTest extends TestCase
         $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal();
+        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
         $fundingWithdrawalForMatch->setDonation($donation);
 
@@ -468,7 +471,7 @@ class CreateTest extends TestCase
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal();
+        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
         $fundingWithdrawalForMatch->setDonation($donation);
 
@@ -537,7 +540,7 @@ class CreateTest extends TestCase
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -586,7 +589,7 @@ class CreateTest extends TestCase
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal();
+        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
         $fundingWithdrawalForMatch->setDonation($donation);
 
@@ -611,7 +614,7 @@ class CreateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -628,7 +631,7 @@ class CreateTest extends TestCase
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId('cus_zzaaaaaaaaaa99');
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal();
+        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
         $fundingWithdrawalForMatch->setDonation($donation);
 
@@ -653,7 +656,7 @@ class CreateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -681,7 +684,7 @@ class CreateTest extends TestCase
         $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal();
+        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
         $fundingWithdrawalForMatch->setDonation($donation);
 
@@ -752,7 +755,7 @@ class CreateTest extends TestCase
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -962,7 +965,7 @@ class CreateTest extends TestCase
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -1055,5 +1058,14 @@ class CreateTest extends TestCase
         }
 
         return $donation;
+    }
+
+    private static function someCampaignFunding(): CampaignFunding
+    {
+        $campaignFunding = new CampaignFunding();
+        $campaignFunding->setAmount('8.00');
+        $campaignFunding->setCurrencyCode('GBP');
+
+        return $campaignFunding;
     }
 }
