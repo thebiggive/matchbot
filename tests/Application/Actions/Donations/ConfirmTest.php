@@ -11,6 +11,7 @@ use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\NullLogger;
@@ -296,7 +297,7 @@ class ConfirmTest extends TestCase
         /** @psalm-suppress InvalidPropertyAssignmentValue */
         $paymentMethod->card = $cardDetails;
         $stripeProphecy = $this->prophesize(Stripe::class);
-        $stripeProphecy->retrievePaymentMethod($paymentMethodId)
+        $stripeProphecy->updatePaymentMethodBillingDetail($paymentMethodId, Argument::type(Donation::class))
             ->willReturn($paymentMethod);
 
         $updatedPaymentIntent = new PaymentIntent(['id' => 'id-doesnt-matter-for-test', ...$updatedIntentData]);
