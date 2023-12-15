@@ -26,6 +26,7 @@ use Slim\Exception\HttpUnauthorizedException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
+use Stripe\StripeObject;
 
 class UpdateTest extends TestCase
 {
@@ -1615,7 +1616,10 @@ class UpdateTest extends TestCase
     public function testAddDataSuccessWithCashBalanceAutoconfirm(): void
     {
         ['app' => $app, 'request' => $request, 'route' => $route, 'donationRepoProphecy' => $donationRepoProphecy, 'entityManagerProphecy' => $entityManagerProphecy] =
-            $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(newPaymentIntentStatus: PaymentIntent::STATUS_SUCCEEDED);
+            $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
+                newPaymentIntentStatus: PaymentIntent::STATUS_SUCCEEDED,
+                nextActionOfAddingFundsIsRequired: false,
+            );
 
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
@@ -1641,7 +1645,10 @@ class UpdateTest extends TestCase
     public function testAddDataFailsWithCashBalanceAutoconfirmForDonorWithInsufficentFunds(): void
     {
         ['app' => $app, 'request' => $request, 'route' => $route, 'stripeProphecy' => $stripeProphecy, 'entityManagerProphecy' => $entityManagerProphecy] =
-            $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(newPaymentIntentStatus: PaymentIntent::STATUS_PROCESSING);
+            $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
+                newPaymentIntentStatus: PaymentIntent::STATUS_PROCESSING,
+                nextActionOfAddingFundsIsRequired: false,
+            );
         try {
             $app->handle($request->withAttribute('route', $route));
             $this->fail("attempt to confirm donation with insufficent funds should have thrown");
@@ -1651,6 +1658,49 @@ class UpdateTest extends TestCase
 
         $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldBeCalled();
         $entityManagerProphecy->flush()->shouldBeCalled(); // flushes cancelled donation to DB.
+    }
+
+    public function testAutoconfirmBGTipAttemptRemainsPendingWithCashBalanceInsufficentFunds(): void
+    {
+        [
+            'app' => $app,
+            'request' => $request,
+            'route' => $route,
+            'donationRepoProphecy' => $donationRepoProphecy,
+            'stripeProphecy' => $stripeProphecy,
+            'entityManagerProphecy' => $entityManagerProphecy
+        ] = $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
+            newPaymentIntentStatus: PaymentIntent::STATUS_REQUIRES_ACTION,
+            nextActionOfAddingFundsIsRequired: true,
+        );
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+
+        $this->assertEquals(200, $response->getStatusCode());
+
+        /**
+         * @psalm-var array{donationAmount:float, status:string} $payloadArray
+         */
+        $payloadArray = json_decode($payload, true);
+
+        $this->assertEquals(123.45, $payloadArray['donationAmount']);
+        // Bank transfer is still required -> status remains pending.
+        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['status']);
+
+        // Stripe PI must be left pending ready for the bank transfer.
+        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldNotBeCalled();
+
+        // This reduced test donation will have false `hasEnoughDataForSalesforce()`.
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
+
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalled();
+        $entityManagerProphecy->commit()->shouldBeCalled();
     }
 
     public function testAddDataRejectsAutoconfirmWithCardMethod(): void
@@ -1866,16 +1916,24 @@ class UpdateTest extends TestCase
      *
      * @psalm-param PaymentIntent::STATUS_* $newPaymentIntentStatus
      */
-    public function setupTestDoublesForConfirmingPaymentFromDonationFunds(string $newPaymentIntentStatus): array
-    {
+    public function setupTestDoublesForConfirmingPaymentFromDonationFunds(
+        string $newPaymentIntentStatus,
+        bool $nextActionOfAddingFundsIsRequired,
+    ): array {
         $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        $donation = $nextActionOfAddingFundsIsRequired
+            ? $this->getPendingBigGiveGeneralCustomerBalanceDonation()
+            : $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
+        $donationInRepo = $this->getTestDonation(
+            pspMethodType: PaymentMethodType::CustomerBalance,
+            tipAmount: '0',
+            status: $nextActionOfAddingFundsIsRequired ? DonationStatus::Pending : DonationStatus::Collected,
+        );  // Get a new mock object so DB has old values.
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
@@ -1898,6 +1956,13 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
         $updatedPaymentIntent = new PaymentIntent('pi_externalId_123');
         $updatedPaymentIntent->status = $newPaymentIntentStatus;
+
+        if ($nextActionOfAddingFundsIsRequired) {
+            $nextAction = new StripeObject();
+            $nextAction->type = 'display_bank_transfer_instructions';
+            $updatedPaymentIntent->next_action = $nextAction;
+        }
+
         $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
             ->shouldBeCalledOnce()
             ->willReturn($updatedPaymentIntent);
