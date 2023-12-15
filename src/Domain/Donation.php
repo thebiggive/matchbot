@@ -1216,9 +1216,15 @@ class Donation extends SalesforceWriteProxy
         return $this->paymentMethodType === PaymentMethodType::Card;
     }
 
-    public function getDonorFullName(): string
+    public function getDonorFullName(): ?string
     {
-        return trim($this->getDonorFirstName() . ' ' . $this->getDonorLastName());
+        $firstName = $this->getDonorFirstName();
+        $lastName = $this->getDonorLastName();
+        if ($firstName === null && $lastName === null) {
+            return null;
+        }
+
+        return trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
     }
 
     public function hasEnoughDataForSalesforce(): bool
