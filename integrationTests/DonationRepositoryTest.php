@@ -12,6 +12,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\Pledge;
 use MatchBot\Tests\TestCase;
 
 class DonationRepositoryTest extends IntegrationTest
@@ -141,7 +142,8 @@ class DonationRepositoryTest extends IntegrationTest
                 projectId: 'projectID',
                 psp: 'stripe',
                 emailAddress: $randomEmailAddress,
-            ), campaign: $campaign
+            ),
+            campaign: $campaign
         );
         if ($donationStatus === DonationStatus::Cancelled) {
             $oldPendingDonation->cancel();
@@ -149,8 +151,17 @@ class DonationRepositoryTest extends IntegrationTest
             $oldPendingDonation->setDonationStatus($donationStatus);
         }
 
+        $pledge = new Pledge();
+        $pledge->setAmount('1.0');
+        $pledge->setCurrencyCode('GBP');
+        $pledge->setName('');
         $campaignFunding = new CampaignFunding();
+        $campaignFunding->setFund($pledge);
+        $campaignFunding->createdNow();
+        $campaignFunding->setFund($campaignFunding->getFund());
+        $campaignFunding->setAllocationOrder(100);
         $campaignFunding->setCurrencyCode('GBP');
+        $campaignFunding->setAmount('1.0');
         $campaignFunding->setAmountAvailable('1.0');
         $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
         $oldPendingDonation->addFundingWithdrawal($fundingWithdrawal);
@@ -158,6 +169,8 @@ class DonationRepositoryTest extends IntegrationTest
         $fundingWithdrawal->setDonation($oldPendingDonation);
 
         $em = $this->getService(EntityManagerInterface::class);
+        $em->persist($pledge);
+        $em->persist($campaignFunding);
         $em->persist($fundingWithdrawal);
         $em->persist($oldPendingDonation->getCampaign());
         $em->persist($oldPendingDonation->getCampaign()->getCharity());
