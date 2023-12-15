@@ -30,7 +30,7 @@ trait DonationTestDataTrait
         string $currencyCode = 'GBP',
     ): Donation {
         $campaignId = '567BgCampId';
-        $campaign = new Campaign(charity: $this->getCharity());
+        $campaign = new Campaign(charity: TestCase::someCharity());
         $campaign->setSalesforceId($campaignId);
         $campaign->setIsMatched(false);
         $campaign->setName('Big Give General Donations');
@@ -99,7 +99,7 @@ trait DonationTestDataTrait
 
     protected function getAnonymousPendingTestDonation(): Donation
     {
-        $campaign = new Campaign(charity: $this->getCharity());
+        $campaign = new Campaign(charity: TestCase::someCharity());
         $campaign->setIsMatched(true);
         $campaign->setName('Test campaign');
         $campaign->setSalesforceId('456ProjectId');
@@ -115,16 +115,6 @@ trait DonationTestDataTrait
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ac'));
 
         return $donation;
-    }
-
-    private function getCharity(): Charity
-    {
-        $charity = TestCase::someCharity();
-        $charity->setSalesforceId('123CharityId');
-        $charity->setName('Test charity');
-        $charity->setStripeAccountId('unitTest_stripeAccount_123');
-
-        return $charity;
     }
 
     private function setMinimumFieldsSetOnFirstPersist(Donation $donation): void
