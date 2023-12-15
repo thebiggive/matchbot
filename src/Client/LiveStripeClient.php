@@ -44,7 +44,8 @@ class LiveStripeClient implements Stripe
 
     public function updatePaymentMethodBillingDetail(string $paymentMethodId, Donation $donation): PaymentMethod
     {
-        // "A PaymentMethod must be attached a customer to be updated."
+        // "A PaymentMethod must be attached a customer to be updated." In tests so far, Stripe seems to permit
+        // repeated attachments to the same customer.
         $this->stripeClient->paymentMethods->attach($paymentMethodId, ['customer' => $donation->getPspCustomerId()]);
 
         // Address etc. is set up in Stripe.js already. Adding these values which we collect on the
