@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
@@ -34,7 +35,6 @@ class Campaign extends SalesforceReadProxy
     /**
      * @ORM\ManyToMany(targetEntity="CampaignFunding", mappedBy="campaigns")
      * @psalm-suppress PossiblyUnusedProperty Used in Doctrine ORM mapping
-     * @psalm-suppress PropertyNotSetInConstructor Set by Doctrine on inverse side too
      */
     protected Collection $campaignFundings;
 
@@ -80,6 +80,7 @@ class Campaign extends SalesforceReadProxy
      */
     public function __construct(?Charity $charity)
     {
+        $this->campaignFundings = new ArrayCollection();
         if ($charity) {
             $this->charity = $charity;
         }
