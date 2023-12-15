@@ -1618,7 +1618,7 @@ class UpdateTest extends TestCase
         ['app' => $app, 'request' => $request, 'route' => $route, 'donationRepoProphecy' => $donationRepoProphecy, 'entityManagerProphecy' => $entityManagerProphecy] =
             $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
                 newPaymentIntentStatus: PaymentIntent::STATUS_SUCCEEDED,
-                nextActionOfAddingFundsIsRequired: false,
+                nextActionRequired: null,
             );
 
         $donationRepoProphecy
@@ -1647,10 +1647,30 @@ class UpdateTest extends TestCase
         ['app' => $app, 'request' => $request, 'route' => $route, 'stripeProphecy' => $stripeProphecy, 'entityManagerProphecy' => $entityManagerProphecy] =
             $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
                 newPaymentIntentStatus: PaymentIntent::STATUS_PROCESSING,
-                nextActionOfAddingFundsIsRequired: false,
+                nextActionRequired: null,
             );
         try {
             $app->handle($request->withAttribute('route', $route));
+            $this->fail("attempt to confirm donation with insufficent funds should have thrown");
+        } catch (HttpBadRequestException $exception) {
+            $this->assertStringContainsString("Status was processing, expected succeeded", $exception->getMessage());
+        }
+
+        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldBeCalled();
+        $entityManagerProphecy->flush()->shouldBeCalled(); // flushes cancelled donation to DB.
+    }
+
+    public function testAutoconfirmBGTipWithUnexpectedNextActionCancelsDonations(): void
+    {
+        ['app' => $app, 'request' => $request, 'route' => $route, 'stripeProphecy' => $stripeProphecy, 'entityManagerProphecy' => $entityManagerProphecy] =
+            $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
+                newPaymentIntentStatus: PaymentIntent::STATUS_PROCESSING,
+                nextActionRequired: 'redirect_to_url',
+            );
+        try {
+            $app->handle($request->withAttribute('route', $route));
+            // Technically this message is misleading, but if things are working as expected the donor won't get this
+            // kind of `next_action`.
             $this->fail("attempt to confirm donation with insufficent funds should have thrown");
         } catch (HttpBadRequestException $exception) {
             $this->assertStringContainsString("Status was processing, expected succeeded", $exception->getMessage());
@@ -1671,7 +1691,7 @@ class UpdateTest extends TestCase
             'entityManagerProphecy' => $entityManagerProphecy
         ] = $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
             newPaymentIntentStatus: PaymentIntent::STATUS_REQUIRES_ACTION,
-            nextActionOfAddingFundsIsRequired: true,
+            nextActionRequired: 'display_bank_transfer_instructions',
         );
 
         $response = $app->handle($request->withAttribute('route', $route));
@@ -1918,21 +1938,21 @@ class UpdateTest extends TestCase
      */
     public function setupTestDoublesForConfirmingPaymentFromDonationFunds(
         string $newPaymentIntentStatus,
-        bool $nextActionOfAddingFundsIsRequired,
+        ?string $nextActionRequired,
     ): array {
         $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $nextActionOfAddingFundsIsRequired
-            ? $this->getPendingBigGiveGeneralCustomerBalanceDonation()
-            : $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        $donation = $nextActionRequired === null
+            ? $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0')
+            : $this->getPendingBigGiveGeneralCustomerBalanceDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationInRepo = $this->getTestDonation(
             pspMethodType: PaymentMethodType::CustomerBalance,
             tipAmount: '0',
-            status: $nextActionOfAddingFundsIsRequired ? DonationStatus::Pending : DonationStatus::Collected,
+            status: $nextActionRequired === null ? DonationStatus::Collected : DonationStatus::Pending,
         );  // Get a new mock object so DB has old values.
 
         $donationRepoProphecy
@@ -1950,16 +1970,15 @@ class UpdateTest extends TestCase
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
 
-
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', Argument::type('array'))
             ->shouldBeCalledOnce();
         $updatedPaymentIntent = new PaymentIntent('pi_externalId_123');
         $updatedPaymentIntent->status = $newPaymentIntentStatus;
 
-        if ($nextActionOfAddingFundsIsRequired) {
+        if ($nextActionRequired !== null) {
             $nextAction = new StripeObject();
-            $nextAction->type = 'display_bank_transfer_instructions';
+            $nextAction->type = $nextActionRequired;
             $updatedPaymentIntent->next_action = $nextAction;
         }
 
