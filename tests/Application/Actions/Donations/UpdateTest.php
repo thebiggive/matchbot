@@ -1723,6 +1723,29 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->commit()->shouldBeCalled();
     }
 
+    public function testAutoconfirmBGTipAttemptAutoCancelsWhenRequiringUnexpectedAction(): void
+    {
+        [
+            'app' => $app,
+            'request' => $request,
+            'route' => $route,
+            'stripeProphecy' => $stripeProphecy,
+            'entityManagerProphecy' => $entityManagerProphecy
+        ] = $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
+            newPaymentIntentStatus: PaymentIntent::STATUS_REQUIRES_ACTION,
+            nextActionRequired: 'any_unexpected_action',
+        );
+
+        $entityManagerProphecy->flush()->shouldBeCalled();
+        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldBeCalled();
+
+
+        $this->expectException(HttpBadRequestException::class);
+        $this->expectExceptionMessage('Status was requires_action, expected succeeded');
+
+        $app->handle($request->withAttribute('route', $route));
+    }
+
     public function testAddDataRejectsAutoconfirmWithCardMethod(): void
     {
         // arrange
