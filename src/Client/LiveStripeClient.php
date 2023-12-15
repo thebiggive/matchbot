@@ -54,7 +54,7 @@ class LiveStripeClient implements Stripe
             $paymentMethodId,
             [
                 'billing_details' => [
-                    'name' => "{$donation->getDonorFirstName()} {$donation->getDonorLastName()}",
+                    'name' => $donation->getDonorFullName(),
                     'email' => $donation->getDonorEmailAddress(),
                 ],
             ],

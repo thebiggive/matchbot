@@ -33,7 +33,7 @@ class DonationTest extends TestCase
             psp:'stripe',
             pspMethodType: PaymentMethodType::Card
         ), $this->getMinimalCampaign());
-        
+
         $this->assertFalse($donation->getDonationStatus()->isSuccessful());
         $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
         $this->assertNull($donation->getSalesforceLastPush());
@@ -455,6 +455,7 @@ class DonationTest extends TestCase
         $this->assertSame('Test First Name', $donation->getDonorFirstName(true));
         $this->assertSame('Test Last Name', $donation->getDonorLastName(true));
         $this->assertSame('donor@email.test', $donation->getDonorEmailAddress());
+        $this->assertSame('Test First Name Test Last Name', $donation->getDonorFullName());
     }
 
     /**
