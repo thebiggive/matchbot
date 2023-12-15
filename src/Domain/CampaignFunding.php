@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -19,7 +20,7 @@ class CampaignFunding extends Model
     use TimestampsTrait;
 
     /**
-     * @ORM\ManyToMany(targetEntity="Campaign")
+     * @ORM\ManyToMany(targetEntity="Campaign", inversedBy="campaignFundings")
      * @ORM\JoinTable(
      *  name="Campaign_CampaignFunding",
      *  joinColumns={
@@ -29,9 +30,9 @@ class CampaignFunding extends Model
      *      @ORM\JoinColumn(name="campaign_id", referencedColumnName="id")
      *  }
      * )
-     * @var Campaign[]
+     * @var Collection<int, Campaign>
      */
-    protected $campaigns;
+    protected Collection $campaigns;
 
     /**
      * @ORM\ManyToOne(targetEntity="Fund", cascade={"persist"})
@@ -135,6 +136,11 @@ class CampaignFunding extends Model
         }
 
         $this->campaigns->add($campaign);
+    }
+
+    public function getAllocationOrder(): int
+    {
+        return $this->allocationOrder;
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -29,6 +30,12 @@ class Campaign extends SalesforceReadProxy
      * @var Charity
      */
     protected Charity $charity;
+
+    /**
+     * @ORM\ManyToMany(targetEntity="CampaignFunding", mappedBy="campaigns")
+     * @psalm-suppress PossiblyUnusedProperty Used in Doctrine ORM mapping
+     */
+    protected Collection $campaignFundings;
 
     /**
      * @ORM\Column(type="string", length=3)

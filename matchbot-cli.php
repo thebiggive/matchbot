@@ -13,8 +13,10 @@ use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\LockingCommand;
 use MatchBot\Application\Commands\PushDonations;
+use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
+use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
 use MatchBot\Application\Commands\UpdateCampaigns;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFundingRepository;
@@ -70,7 +72,11 @@ $commands = [
         $psr11App->get(FundingWithdrawalRepository::class),
         $psr11App->get(Matching\Adapter::class)
     ),
-    new \MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck(
+    new RedistributeMatchFunds(
+        $psr11App->get(CampaignFundingRepository::class),
+        $psr11App->get(DonationRepository::class),
+    ),
+    new ScheduledOutOfSyncFundsCheck(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(FundingWithdrawalRepository::class),
         $psr11App->get(Matching\Adapter::class),

@@ -346,6 +346,40 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
+     * @return Donation[]   Donations which, when considered in isolation, could have some or all of their match
+     *                      funds swapped with higher priority matching (e.g. swapping out champion funds and
+     *                      swapping in pledges). The caller shouldn't assume that *all* donations may be fully
+     *                      swapped; typically we will choose to swap earlier-collected donations first, and it may
+     *                      be that priority funds are used up before we get to the end of the list.
+     */
+    public function findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(\DateTimeImmutable $cutoff): array
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('d')
+            ->from(Donation::class, 'd')
+            // Only select donations with 1+ FWs (i.e. some matching).
+            ->innerJoin('d.fundingWithdrawals', 'fw')
+            ->innerJoin('fw.campaignFunding', 'donationCf')
+            ->innerJoin('d.campaign', 'c')
+            // Join CampaignFundings allocated to campaign `c` with some amount available and a lower allocationOrder
+            // than the funding of `fw`.
+            ->innerJoin(
+                'c.campaignFundings',
+                'availableCf',
+                'WITH',
+                'availableCf.amountAvailable > 0 AND availableCf.allocationOrder < donationCf.allocationOrder'
+            )
+            ->where('d.donationStatus IN (:collectedStatuses)')
+            ->andWhere('d.collectedAt > :checkAfter')
+            ->groupBy('d.id')
+            ->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES)
+            ->setParameter('checkAfter', $cutoff)
+        ;
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
      * @return Donation[]
      */
     public function findReadyToClaimGiftAid(bool $withResends): array

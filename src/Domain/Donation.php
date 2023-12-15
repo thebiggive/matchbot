@@ -802,7 +802,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return Collection<int, FundingWithdrawal>
      */
-    public function getFundingWithdrawals()
+    public function getFundingWithdrawals(): Collection
     {
         return $this->fundingWithdrawals;
     }
