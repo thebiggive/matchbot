@@ -34,6 +34,7 @@ class Campaign extends SalesforceReadProxy
     /**
      * @ORM\ManyToMany(targetEntity="CampaignFunding", mappedBy="campaigns")
      * @psalm-suppress PossiblyUnusedProperty Used in Doctrine ORM mapping
+     * @psalm-suppress PropertyNotSetInConstructor Set by Doctrine on inverse side too
      */
     protected Collection $campaignFundings;
 

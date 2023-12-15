@@ -488,7 +488,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->where('d.transferId IN (:transferIds)')
             ->setParameter('transferIds', $transferIds);
 
-        return $qb->getQuery()->getResult();
+        /** @var Donation[] $donations */
+        $donations = $qb->getQuery()->getResult();
+
+        return $donations;
     }
 
     /**
