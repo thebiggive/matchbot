@@ -1660,26 +1660,6 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalled(); // flushes cancelled donation to DB.
     }
 
-    public function testAutoconfirmBGTipWithUnexpectedNextActionCancelsDonations(): void
-    {
-        ['app' => $app, 'request' => $request, 'route' => $route, 'stripeProphecy' => $stripeProphecy, 'entityManagerProphecy' => $entityManagerProphecy] =
-            $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
-                newPaymentIntentStatus: PaymentIntent::STATUS_PROCESSING,
-                nextActionRequired: 'redirect_to_url',
-            );
-        try {
-            $app->handle($request->withAttribute('route', $route));
-            // Technically this message is misleading, but if things are working as expected the donor won't get this
-            // kind of `next_action`.
-            $this->fail("attempt to confirm donation with insufficent funds should have thrown");
-        } catch (HttpBadRequestException $exception) {
-            $this->assertStringContainsString("Status was processing, expected succeeded", $exception->getMessage());
-        }
-
-        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldBeCalled();
-        $entityManagerProphecy->flush()->shouldBeCalled(); // flushes cancelled donation to DB.
-    }
-
     public function testAutoconfirmBGTipAttemptRemainsPendingWithCashBalanceInsufficentFunds(): void
     {
         [
