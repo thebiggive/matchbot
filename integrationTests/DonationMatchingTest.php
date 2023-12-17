@@ -31,7 +31,7 @@ class DonationMatchingTest extends IntegrationTest
     {
         // arrange
         ['campaignFundingId' => $this->campaignFundingId, 'campaignId' => $campaignId] =
-            $this->addCampaignAndCharityToDB(campaignSfId: $this->randomString(), fundWithAmountInPounds: 100);
+            $this->addFundedCampaignAndCharityToDB(campaignSfId: $this->randomString(), fundWithAmountInPounds: 100);
 
         $campaign = $this->getService(\MatchBot\Domain\CampaignRepository::class)->find($campaignId);
         Assertion::notNull($campaign);
@@ -58,8 +58,8 @@ class DonationMatchingTest extends IntegrationTest
         $this->setInContainer(Adapter::class, $this->matchingAdapater);
         $this->getService(\MatchBot\Domain\DonationRepository::class)->setMatchingAdapter($this->matchingAdapater);
 
-        ['campaignFundingId' => $this->campaignFundingId, 'campaignId' => $campaignId] =
-            $this->addCampaignAndCharityToDB(campaignSfId: $this->randomString(), fundWithAmountInPounds: 100);
+        $campaignInfo = $this->addFundedCampaignAndCharityToDB(campaignSfId: $this->randomString(), fundWithAmountInPounds: 100);
+        ['campaignFundingId' => $this->campaignFundingId, 'campaignId' => $campaignId] = $campaignInfo;
 
         $campaign = $this->getService(\MatchBot\Domain\CampaignRepository::class)->find($campaignId);
         Assertion::notNull($campaign);

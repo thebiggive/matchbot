@@ -18,6 +18,8 @@ abstract class Fund extends SalesforceReadProxy
 {
     use TimestampsTrait;
 
+    public const DISCRIMINATOR_VALUE = 'unknownFund';
+
     /**
      * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!

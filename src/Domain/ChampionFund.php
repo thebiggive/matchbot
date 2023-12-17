@@ -11,4 +11,5 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class ChampionFund extends Fund
 {
+    public const DISCRIMINATOR_VALUE = 'championFund';
 }

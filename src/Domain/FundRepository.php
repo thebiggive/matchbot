@@ -159,7 +159,7 @@ class FundRepository extends SalesforceReadProxyRepository
 
     protected function getNewFund(array $fundData): Fund
     {
-        if ($fundData['type'] === 'pledge') {
+        if ($fundData['type'] === Pledge::DISCRIMINATOR_VALUE) {
             $fund = new Pledge();
         } elseif ($fundData['type'] === 'championFund') {
             $fund = new ChampionFund();

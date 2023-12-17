@@ -3,16 +3,21 @@
 namespace MatchBot\IntegrationTests;
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Application\Matching\Adapter;
 use MatchBot\Domain\CampaignFundingRepository;
+use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\Pledge;
+use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Lock\LockFactory;
 
 class RedistributeMatchingCommandTest extends IntegrationTest
 {
@@ -25,18 +30,27 @@ class RedistributeMatchingCommandTest extends IntegrationTest
 
         $this->setupFakeDonationClient();
         $this->campaignFundingRepository = $this->getService(CampaignFundingRepository::class);
-        $this->matchingAdapater = $this->getService(Adapter::class);
 
-        ['campaignId' => $campaignId] =
-            $this->addCampaignAndCharityToDB(campaignSfId: $this->randomString(), fundWithAmountInPounds: 0);
+        ['campaignId' => $campaignId] = $this->addCampaignAndCharityToDB(campaignSfId: $this->randomString());
 
         $campaign = $this->getService(\MatchBot\Domain\CampaignRepository::class)->find($campaignId);
+        Assertion::notNull($campaign);
 
-        $this->addFunding($campaign->getSalesforceId(), 250, 100); // Pledge
-        ['fundId' => $championFundId, 'campaignFundingId' => $championFundCampaignFundingId] =
-            $this->addFunding($campaign->getSalesforceId(), 250, 200);
+        $this->addFunding(
+            campaignId: $campaignId,
+            amountInPounds: 250,
+            allocationOrder: 100,
+            fundType: Pledge::DISCRIMINATOR_VALUE,
+        );
+        ['campaignFundingId' => $championFundCampaignFundingId] = $this->addFunding(
+            campaignId: $campaignId,
+            amountInPounds: 250,
+            allocationOrder: 200,
+            fundType: ChampionFund::DISCRIMINATOR_VALUE,
+        );
         $championFundCampaignFunding = $this->getService(CampaignFundingRepository::class)
             ->find($championFundCampaignFundingId);
+        Assertion::notNull($championFundCampaignFunding);
 
         $this->donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
@@ -45,13 +59,16 @@ class RedistributeMatchingCommandTest extends IntegrationTest
             psp: 'stripe',
             pspMethodType: PaymentMethodType::Card,
         ), $campaign);
-        $this->donation->setTransactionId('pi_xyz');
+        $this->donation->setTransactionId('pi_' . $this->randomString());
+        $this->donation->setDonationStatus(DonationStatus::Collected);
+        $this->donation->setCollectedAt(new \DateTimeImmutable('now'));
 
         $championFundWithdrawal = new FundingWithdrawal($championFundCampaignFunding);
         $championFundWithdrawal->setAmount('250.00');
         $this->donation->addFundingWithdrawal($championFundWithdrawal);
 
         $em = $this->getService(EntityManagerInterface::class);
+        $em->persist($championFundWithdrawal);
         $em->persist($this->donation);
         $em->flush();
     }
@@ -60,8 +77,9 @@ class RedistributeMatchingCommandTest extends IntegrationTest
     {
         // arrange
         $hook = $this->donation->toHookModel();
-        $this->assertSame('250.00', $hook['amountMatchedByChampionFunds']);
-        $this->assertSame('0.00', $hook['amountMatchedByPledges']);
+        $this->assertSame(250.00, $hook['amountMatchedByChampionFunds']);
+        $this->assertSame(0.00, $hook['amountMatchedByPledges']);
+        $output = new BufferedOutput();
 
         // act
         $command = new RedistributeMatchFunds(
@@ -69,7 +87,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
             $this->getService(\MatchBot\Domain\DonationRepository::class),
             $this->getService(LoggerInterface::class)
         );
-        $output = new BufferedOutput();
+        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->run(new ArrayInput([]), $output);
 
         // assert

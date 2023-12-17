@@ -10,7 +10,7 @@ class CreateDonationTest extends IntegrationTest
     public function setUp(): void
     {
         parent::setUp();
-        $this->addCampaignAndCharityToDB($this->randomString());
+        $this->addFundedCampaignAndCharityToDB($this->randomString());
         $this->setupFakeDonationClient();
     }
 
