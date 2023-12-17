@@ -186,7 +186,7 @@ abstract class IntegrationTest extends TestCase
 
     /**
      * @param string $campaignSfId
-     * @return array{charityId: int, campaignId: int, fundId: int, campaignFundingID: int}
+     * @return array{charityId: int, campaignId: int, fundId: int, campaignFundingId: int}
      * @throws \Doctrine\DBAL\Exception
      *
      * @psalm-suppress MoreSpecificReturnType
@@ -197,7 +197,6 @@ abstract class IntegrationTest extends TestCase
         $charityId = random_int(1000, 100000);
         $charitySfID = $this->randomString();
         $charityStripeId = $this->randomString();
-        $fundSfID = $this->randomString();
 
         $db = $this->db();
 
@@ -222,6 +221,27 @@ abstract class IntegrationTest extends TestCase
 
         $campaignId = (int)$db->lastInsertId();
 
+        if ($fundWithAmountInPounds > 0) {
+            [$fundId, $campaignFundingId] = $this->addFunding($campaignId, $fundWithAmountInPounds, 1);
+
+            $compacted = compact(['charityId', 'campaignId', 'fundId', 'campaignFundingId']);
+            Assertion::allInteger($compacted);
+
+            return $compacted;
+        }
+
+        return compact(['charityId', 'campaignId']);
+    }
+
+    /**
+     * @return array{fundId: int, campaignFundingId: int}
+     */
+    public function addFunding(string $campaignId, int $amountInPounds, int $allocationOrder): array
+    {
+        $db = $this->db();
+        $fundSfID = $this->randomString();
+        $nyd = '2023-01-01'; // specific date doesn't matter.
+
         $db->executeStatement(<<<SQL
             INSERT INTO Fund (amount, name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType, currencyCode) VALUES 
                 (100000, 'Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', 'pledge', 'GBP')
@@ -232,20 +252,18 @@ abstract class IntegrationTest extends TestCase
 
         $db->executeStatement(<<<SQL
             INSERT INTO CampaignFunding (fund_id, amount, amountAvailable, allocationOrder, createdAt, updatedAt, currencyCode) VALUES 
-                    ($fundId, $fundWithAmountInPounds, $fundWithAmountInPounds, 1, '$nyd', '$nyd', 'GBP')                                                                                                                                
+                    ($fundId, $amountInPounds, $amountInPounds, $allocationOrder, '$nyd', '$nyd', 'GBP')                                                                                                                                
         SQL
         );
 
-        $campaignFundingID = (int)$db->lastInsertId();
+        $campaignFundingId = (int)$db->lastInsertId();
 
         $db->executeStatement(<<<SQL
-         INSERT INTO Campaign_CampaignFunding (campaignfunding_id, campaign_id) VALUES ($campaignFundingID, $campaignId);
+         INSERT INTO Campaign_CampaignFunding (campaignfunding_id, campaign_id) VALUES ($campaignFundingId, $campaignId);
         SQL
-);
+        );
 
-        $compacted = compact(['charityId', 'campaignId', 'fundId', 'campaignFundingID']);
-        Assertion::allInteger($compacted);
-        return $compacted;
+        return [$fundId, $campaignFundingId];
     }
 
     /**
