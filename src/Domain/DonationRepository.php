@@ -440,7 +440,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->andWhere('c.isMatched = true')
             ->andWhere('c.endDate < :now')
             ->andWhere('c.endDate > :campaignClosedSince')
-            ->groupBy('d')
+            ->groupBy('d.id')
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter('completeStatuses', array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES))
@@ -466,7 +466,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->where('d.donationStatus IN (:completeStatuses)')
             ->andWhere('c.isMatched = true')
             ->andWhere('d.createdAt >= :checkAfter')
-            ->groupBy('d')
+            ->groupBy('d.id')
             ->having('(SUM(fw.amount) IS NULL OR SUM(fw.amount) < d.amount)') // No withdrawals *or* less than donation
             ->orderBy('d.createdAt', 'ASC')
             ->setParameter('completeStatuses', array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES))
