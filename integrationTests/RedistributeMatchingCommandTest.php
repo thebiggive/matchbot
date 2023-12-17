@@ -9,6 +9,7 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
@@ -85,16 +86,17 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         // act
         $command = new RedistributeMatchFunds(
             $this->campaignFundingRepository,
-            $this->getService(\MatchBot\Domain\DonationRepository::class),
+            $this->getService(DonationRepository::class),
             $this->getService(LoggerInterface::class)
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->run(new ArrayInput([]), $output);
 
         // assert
-        $this->getService(EntityManagerInterface::class)->refresh($this->donation);
-        $this->assertSame('250.00', $this->donation->getFundingWithdrawalTotal());
-        $hook = $this->donation->toHookModel();
+        $updatedDonation = $this->getService(DonationRepository::class)
+            ->find($this->donation->getId());
+        $this->assertSame('250.00', $updatedDonation->getFundingWithdrawalTotal());
+        $hook = $updatedDonation->toHookModel();
         $this->assertSame(0.00, $hook['amountMatchedByChampionFunds']);
         $this->assertSame(250.00, $hook['amountMatchedByPledges']);
 
