@@ -708,7 +708,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string   Total amount in withdrawals - not necessarily finalised.
+     * @psalm-return numeric-string   Total amount in withdrawals - not necessarily finalised.
      */
     public function getFundingWithdrawalTotal(): string
     {

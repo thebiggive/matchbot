@@ -131,7 +131,14 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
 
 
     /**
-     * @psalm-return list<array{0:string, 1: string, 2: numeric-string, 3: string, 4: string, 5: string}>
+     * @psalm-return list<array{
+     *   0: numeric-string,
+     *   1: numeric-string,
+     *   2: numeric-string,
+     *   3: string,
+     *   4: string,
+     *   5: string
+     * }>
      */
     public function AllocationFromTwoFundingsCases(): array
     {
@@ -148,6 +155,8 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
 
     /**
      * @dataProvider AllocationFromTwoFundingsCases
+     * @psalm-param numeric-string $funding0Available
+     * @psalm-param numeric-string $funding1Available
      * @psalm-param numeric-string $donationAmount
      */
     public function testItAllocatesFromTwoFundingsFor(
@@ -157,8 +166,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         string $amountMatchedExpected,
         string $withdrawal0AmountExpected,
         string $withdrawl1AmountExpected
-    ): void
-    {
+    ): void {
         $campaignFunding0 = new CampaignFunding();
         $campaignFunding0->setCurrencyCode('GBP');
         $campaignFunding0->setAmountAvailable($funding0Available);

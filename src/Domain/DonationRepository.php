@@ -171,8 +171,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * available amount figures.
      *
      * @param Donation $donation
-     * @return string Total amount of matching *newly* allocated
-     *  return value is only used in retrospective mathcing command - Donation::create does not take return value.
+     * @psalm-return numeric-string Total amount of matching *newly* allocated. Return value is only used in
+     *                              retrospective matching and redistribution commands - Donation::create does not take
+     *                              return value.
      * @see CampaignFundingRepository::getAvailableFundings() for lock acquisition detail
      */
     public function allocateMatchFunds(Donation $donation): string

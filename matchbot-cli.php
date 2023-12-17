@@ -75,6 +75,7 @@ $commands = [
     new RedistributeMatchFunds(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(DonationRepository::class),
+        $psr11App->get(LoggerInterface::class),
     ),
     new ScheduledOutOfSyncFundsCheck(
         $psr11App->get(CampaignFundingRepository::class),
