@@ -123,6 +123,7 @@ workflows:
           context:
             - docker-hub-creds
             - jira
+            - slack
           post-steps:
             - jira/notify:
                 job_type: build
