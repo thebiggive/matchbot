@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Matching\Adapter;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Donation;
@@ -37,18 +38,23 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $campaign = $this->getService(\MatchBot\Domain\CampaignRepository::class)->find($campaignId);
         Assertion::notNull($campaign);
 
-        $this->addFunding(
+        $amount = 250; // For both funds.
+        ['campaignFundingId' => $pledgeCampaignFundingId] = $this->addFunding(
             campaignId: $campaignId,
-            amountInPounds: 250,
+            amountInPounds: $amount,
             allocationOrder: 100,
             fundType: Pledge::DISCRIMINATOR_VALUE,
         );
         ['campaignFundingId' => $championFundCampaignFundingId] = $this->addFunding(
             campaignId: $campaignId,
-            amountInPounds: 250,
+            amountInPounds: $amount,
             allocationOrder: 200,
             fundType: ChampionFund::DISCRIMINATOR_VALUE,
         );
+
+        $this->prepareInRedis($pledgeCampaignFundingId, $amount);
+        $this->prepareInRedis($championFundCampaignFundingId, $amount);
+
         $championFundCampaignFunding = $this->getService(CampaignFundingRepository::class)
             ->find($championFundCampaignFundingId);
         Assertion::notNull($championFundCampaignFunding);
@@ -107,5 +113,19 @@ class RedistributeMatchingCommandTest extends IntegrationTest
             'matchbot:redistribute-match-funds complete!',
         ]);
         $this->assertSame($expectedOutput, $output->fetch());
+    }
+
+    private function prepareInRedis(int $campaignFundingId, int $amount): void
+    {
+        $campaignFunding = $this->getService(CampaignFundingRepository::class)
+            ->find($campaignFundingId);
+        Assertion::notNull($campaignFunding);
+        $matchingAdapter = $this->getService(Adapter::class);
+        $matchingAdapter->runTransactionally(
+            function () use ($matchingAdapter, $campaignFunding, $amount) {
+                // Also calls Doctrine model's `setAmountAvailable()` in a not-guaranteed-realtime way.
+                return $matchingAdapter->addAmount($campaignFunding, (string) $amount);
+            }
+        );
     }
 }
