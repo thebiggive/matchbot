@@ -377,8 +377,11 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->setParameter('checkAfter', $cutoff)
         ;
 
+        // Result caching rationale as per `findWithExpiredMatching()`.
         /** @var Donation[] $donations */
-        $donations = $qb->getQuery()->getResult();
+        $donations = $qb->getQuery()
+            ->disableResultCache()
+            ->getResult();
 
         return $donations;
     }

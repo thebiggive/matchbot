@@ -270,7 +270,7 @@ abstract class IntegrationTest extends TestCase
 
         $db->executeStatement(<<<SQL
             INSERT INTO CampaignFunding (fund_id, amount, amountAvailable, allocationOrder, createdAt, updatedAt, currencyCode) VALUES 
-                    ($fundId, $amountInPounds, $amountInPounds, $allocationOrder, '$nyd', '$nyd', 'GBP')                                                                                                                                
+                    ($fundId, $amountInPounds, $amountInPounds, $allocationOrder, '$nyd', '$nyd', 'GBP')
         SQL
         );
 

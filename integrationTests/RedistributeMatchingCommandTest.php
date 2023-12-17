@@ -52,10 +52,6 @@ class RedistributeMatchingCommandTest extends IntegrationTest
             ->find($championFundCampaignFundingId);
         Assertion::notNull($championFundCampaignFunding);
 
-        $em = $this->getService(EntityManagerInterface::class);
-        // Make sure Doctrine knows about connected funds, even though they're inserted bypassing it.
-        $em->refresh($campaign);
-
         $this->donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '250',
@@ -71,6 +67,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $championFundWithdrawal->setAmount('250.00');
         $this->donation->addFundingWithdrawal($championFundWithdrawal);
 
+        $em = $this->getService(EntityManagerInterface::class);
         $em->persist($championFundWithdrawal);
         $em->persist($this->donation);
         $em->flush();
@@ -80,6 +77,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
     {
         // arrange
         $hook = $this->donation->toHookModel();
+        $this->assertSame('250.00', $this->donation->getFundingWithdrawalTotal());
         $this->assertSame(250.00, $hook['amountMatchedByChampionFunds']);
         $this->assertSame(0.00, $hook['amountMatchedByPledges']);
         $output = new BufferedOutput();
@@ -96,8 +94,8 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         // assert
         $this->assertSame('250.00', $this->donation->getFundingWithdrawalTotal());
         $hook = $this->donation->toHookModel();
-        $this->assertSame('0.00', $hook['amountMatchedByChampionFunds']);
-        $this->assertSame('250.00', $hook['amountMatchedByPledges']);
+        $this->assertSame(0.00, $hook['amountMatchedByChampionFunds']);
+        $this->assertSame(250.00, $hook['amountMatchedByPledges']);
 
         $expectedOutput = implode(\PHP_EOL, [
             'matchbot:redistribute-match-funds starting!',
