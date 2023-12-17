@@ -18,6 +18,7 @@ abstract class Fund extends SalesforceReadProxy
 {
     use TimestampsTrait;
 
+    /** @var 'championFund'|'pledge'|'unknownFund' */
     public const DISCRIMINATOR_VALUE = 'unknownFund';
 
     /**
