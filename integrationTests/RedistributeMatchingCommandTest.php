@@ -95,6 +95,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         // assert
         $updatedDonation = $this->getService(DonationRepository::class)
             ->find($this->donation->getId());
+        Assertion::notNull($updatedDonation);
         $this->assertSame('250.00', $updatedDonation->getFundingWithdrawalTotal());
         $hook = $updatedDonation->toHookModel();
         $this->assertSame(0.00, $hook['amountMatchedByChampionFunds']);

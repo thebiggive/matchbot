@@ -12,8 +12,6 @@ use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\EntityManagerClosed;
-use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\SalesforceReadProxy;
 use Psr\Log\LoggerInterface;
 
 /**
