@@ -231,13 +231,9 @@ class CreateTest extends TestCase
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
-        $campaignFunding = new CampaignFunding();
-        $campaignFunding->setCurrencyCode('GBP');
-        $campaignFunding->setAmountAvailable('8.00');
-
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
-        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation, $campaignFunding));
+        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -1039,11 +1035,9 @@ class CreateTest extends TestCase
     /**
      * Withdrawal for exactly £8 for now. In this class, typically a partial match.
      */
-    private static function someWithdrawal(
-        Donation $donation,
-        ?CampaignFunding $campaignFunding = null
-    ): FundingWithdrawal {
-        $withdrawal = new FundingWithdrawal($campaignFunding ?? self::someCampaignFunding());
+    private static function someWithdrawal(Donation $donation): FundingWithdrawal
+    {
+        $withdrawal = new FundingWithdrawal(self::someCampaignFunding());
         $withdrawal->setAmount('8.00');
         $withdrawal->setDonation($donation);
 
