@@ -129,6 +129,7 @@ workflows:
           context:
             - docker-hub-creds
             - jira
+            - slack
           matrix:
             parameters:
               php_version: ["dev-8.1", "dev-8.2"]
