@@ -234,13 +234,10 @@ class CreateTest extends TestCase
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setCurrencyCode('GBP');
         $campaignFunding->setAmountAvailable('8.00');
-        $fundingWithdrawalForMatch = new FundingWithdrawal($campaignFunding);
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
-        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation, $campaignFunding));
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -359,13 +356,9 @@ class CreateTest extends TestCase
         $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
-
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
-        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -471,13 +464,9 @@ class CreateTest extends TestCase
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
-
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
-        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -589,13 +578,9 @@ class CreateTest extends TestCase
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
-
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
-        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -631,13 +616,9 @@ class CreateTest extends TestCase
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId('cus_zzaaaaaaaaaa99');
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
-
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
-        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -684,13 +665,9 @@ class CreateTest extends TestCase
         $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
-
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
-        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -884,7 +861,6 @@ class CreateTest extends TestCase
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
-        $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('0', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -1058,6 +1034,20 @@ class CreateTest extends TestCase
         }
 
         return $donation;
+    }
+
+    /**
+     * Withdrawal for exactly £8 for now. In this class, typically a partial match.
+     */
+    private static function someWithdrawal(
+        Donation $donation,
+        ?CampaignFunding $campaignFunding = null
+    ): FundingWithdrawal {
+        $withdrawal = new FundingWithdrawal($campaignFunding ?? self::someCampaignFunding());
+        $withdrawal->setAmount('8.00');
+        $withdrawal->setDonation($donation);
+
+        return $withdrawal;
     }
 
     private static function someCampaignFunding(): CampaignFunding

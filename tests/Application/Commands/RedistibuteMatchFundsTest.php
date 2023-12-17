@@ -52,26 +52,7 @@ class RedistibuteMatchFundsTest extends TestCase
 
     public function testOneDonationHasChampFundsUsedAndIsAssignedPledgeToFullMatchedValue(): void
     {
-        $donationAmount = '10';
-        $donation = Donation::fromApiModel(new DonationCreate(
-            currencyCode: 'GBP',
-            donationAmount: $donationAmount,
-            projectId: 'project-id',
-            psp: 'stripe',
-        ), $this->getMinimalCampaign());
-
-        $championFund = new ChampionFund();
-        $championFund->setAmount($donationAmount);
-        $campaignFunding = new CampaignFunding();
-        $campaignFunding->setAmount($donationAmount);
-        // We're bypassing normal allocation helpers and will set up the FundingWithdrawal to the test donation below.
-        $campaignFunding->setAmountAvailable('0');
-        $campaignFunding->setAllocationOrder(200);
-        $campaignFunding->setFund($championFund);
-
-        $championFundWithdrawal = new FundingWithdrawal($campaignFunding);
-        $championFundWithdrawal->setAmount($donationAmount);
-        $donation->addFundingWithdrawal($championFundWithdrawal);
+        $donation = $this->getTenPoundChampionMatchedDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
@@ -89,18 +70,9 @@ class RedistibuteMatchFundsTest extends TestCase
         $loggerProphecy = $this->prophesize(LoggerInterface::class);
         $loggerProphecy->error(Argument::type('string'))->shouldNotBeCalled();
 
-        $pledgeAmount = '101.00';
-        $pledge = new Pledge();
-        $pledge->setAmount($pledgeAmount);
-        $pledgeFunding = new CampaignFunding();
-        $pledgeFunding->setAmount($pledgeAmount);
-        $pledgeFunding->setAmountAvailable($pledgeAmount);
-        $pledgeFunding->setAllocationOrder(100);
-        $pledgeFunding->setFund($pledge);
-
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
         $campaignFundingRepoProphecy->getAvailableFundings(Argument::type(Campaign::class))
-            ->willReturn([$pledgeFunding]);
+            ->willReturn([$this->getFullyAvailablePledgeFunding()]);
 
         $commandTester = new CommandTester($this->getCommand(
             $campaignFundingRepoProphecy,
@@ -134,6 +106,62 @@ class RedistibuteMatchFundsTest extends TestCase
      */
     public function testOneDonationHasChampFundsUsedAndIsAssignedPledgeButOnlyPartMatched(): void
     {
+        $donation = $this->getTenPoundChampionMatchedDonation();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
+            Argument::type(\DateTimeImmutable::class)
+        )->willReturn([$donation]);
+
+        $donationRepoProphecy->releaseMatchFunds($donation)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy->allocateMatchFunds($donation)
+            ->shouldBeCalledOnce()
+            ->willReturn('5.00'); // Half the donation matched after redistribution.
+        $donationRepoProphecy->push($donation, false)
+            ->shouldBeCalledOnce();
+
+        $uuid = $donation->getUuid();
+        $loggerProphecy = $this->prophesize(LoggerInterface::class);
+        $loggerProphecy->error("Donation $uuid had redistributed match funds reduced from 10.00 to 5.00 (GBP)")
+            ->shouldBeCalledOnce();
+
+        $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
+        $campaignFundingRepoProphecy->getAvailableFundings(Argument::type(Campaign::class))
+            ->willReturn([$this->getFullyAvailablePledgeFunding()]);
+
+        $commandTester = new CommandTester($this->getCommand(
+            $campaignFundingRepoProphecy,
+            $donationRepoProphecy,
+            $loggerProphecy,
+        ));
+        $commandTester->execute([]);
+
+        $expectedOutputLines = [
+            'matchbot:redistribute-match-funds starting!',
+            'Checked 1 donations and redistributed matching for 1',
+            'matchbot:redistribute-match-funds complete!',
+        ];
+        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
+    }
+
+    private function getFullyAvailablePledgeFunding(): CampaignFunding
+    {
+        $pledgeAmount = '101.00';
+        $pledge = new Pledge();
+        $pledge->setAmount($pledgeAmount);
+        $pledgeFunding = new CampaignFunding();
+        $pledgeFunding->setAmount($pledgeAmount);
+        $pledgeFunding->setAmountAvailable($pledgeAmount);
+        $pledgeFunding->setAllocationOrder(100);
+        $pledgeFunding->setFund($pledge);
+
+        return $pledgeFunding;
+    }
+
+    private function getTenPoundChampionMatchedDonation(): Donation
+    {
         $donationAmount = '10';
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
@@ -155,51 +183,7 @@ class RedistibuteMatchFundsTest extends TestCase
         $championFundWithdrawal->setAmount($donationAmount);
         $donation->addFundingWithdrawal($championFundWithdrawal);
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
-            Argument::type(\DateTimeImmutable::class)
-        )->willReturn([$donation]);
-
-        $donationRepoProphecy->releaseMatchFunds($donation)
-            ->shouldBeCalledOnce();
-        $donationRepoProphecy->allocateMatchFunds($donation)
-            ->shouldBeCalledOnce()
-            ->willReturn('5.00'); // Half the donation matched after redistribution.
-        $donationRepoProphecy->push($donation, false)
-            ->shouldBeCalledOnce();
-
-        $uuid = $donation->getUuid();
-        $loggerProphecy = $this->prophesize(LoggerInterface::class);
-        $loggerProphecy->error("Donation $uuid had redistributed match funds reduced from 10.00 to 5.00 (GBP)")
-            ->shouldBeCalledOnce();
-
-        $pledgeAmount = '101.00';
-        $pledge = new Pledge();
-        $pledge->setAmount($pledgeAmount);
-        $pledgeFunding = new CampaignFunding();
-        $pledgeFunding->setAmount($pledgeAmount);
-        $pledgeFunding->setAmountAvailable($pledgeAmount);
-        $pledgeFunding->setAllocationOrder(100);
-        $pledgeFunding->setFund($pledge);
-
-        $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
-        $campaignFundingRepoProphecy->getAvailableFundings(Argument::type(Campaign::class))
-            ->willReturn([$pledgeFunding]);
-
-        $commandTester = new CommandTester($this->getCommand(
-            $campaignFundingRepoProphecy,
-            $donationRepoProphecy,
-            $loggerProphecy,
-        ));
-        $commandTester->execute([]);
-
-        $expectedOutputLines = [
-            'matchbot:redistribute-match-funds starting!',
-            'Checked 1 donations and redistributed matching for 1',
-            'matchbot:redistribute-match-funds complete!',
-        ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
-        $this->assertEquals(0, $commandTester->getStatusCode());
+        return $donation;
     }
 
     /**
