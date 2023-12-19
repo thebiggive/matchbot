@@ -15,7 +15,6 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -693,7 +692,9 @@ class DonationRepositoryTest extends TestCase
     }
 
     /**
-     * @param ObjectProphecy|null   $donationClientProphecy
+     * @param ObjectProphecy<Client\Donation>|null   $donationClientProphecy
+     * @param ObjectProphecy<Adapter>|null $matchingAdapterProphecy
+     * @param ObjectProphecy<LockFactory>|null $lockFactoryProphecy
      * @param bool                  $vatLive    Whether to override config with 20% VAT live from now.
      * @return DonationRepository
      * @throws \Exception
