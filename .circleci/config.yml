@@ -131,7 +131,7 @@ workflows:
             - jira
           matrix:
             parameters:
-              php_version: ["dev-8.1", "dev-8.2", "dev-8.3"]
+              php_version: ["dev-8.1", "dev-8.2"]
           post-steps:
             - jira/notify:
                 job_type: build
