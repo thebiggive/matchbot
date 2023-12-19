@@ -342,14 +342,11 @@ class Update extends Action
                         $nextActionType = (string) $confirmedIntent->next_action?->type;
                     }
 
-                    $statusIsNeitherSuccessNorTipWithCreditsNextAction = !(
-                        $confirmedIntent->status === PaymentIntent::STATUS_SUCCEEDED ||
-                        (
-                            $confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION &&
-                            $nextActionType === 'display_bank_transfer_instructions' &&
-                            $donation->getCampaign()->getCampaignName() === 'Big Give General Donations'
-                        )
-                    );
+                    $isDonationToBGRequiringBankTransfer = $confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION &&
+                        $nextActionType === 'display_bank_transfer_instructions' &&
+                        $donation->getCampaign()->getCampaignName() === 'Big Give General Donations';
+
+                    $statusIsNeitherSuccessNorTipWithCreditsNextAction = $confirmedIntent->status !== PaymentIntent::STATUS_SUCCEEDED && !$isDonationToBGRequiringBankTransfer;
 
                     if ($statusIsNeitherSuccessNorTipWithCreditsNextAction) {
                         // As this is autoConfirmFromCashBalance and we only expect people to make such donations if they
