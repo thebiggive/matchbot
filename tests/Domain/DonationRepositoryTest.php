@@ -351,7 +351,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setTipAmount('0.00');
         $donation->setPsp('stripe');
         $donation->setFeeCoverAmount('44.44'); // 4.5% fee, inc. any VAT.
-        $donation->getCampaign()->setFeePercentage(4.5);
+        $donation->getCampaign()->setFeePercentage('4.5');
         $this->getRepo()->deriveFees($donation, null, null);
 
         // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)

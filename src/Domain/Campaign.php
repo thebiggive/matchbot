@@ -185,12 +185,15 @@ class Campaign extends SalesforceReadProxy
         $this->currencyCode = $currencyCode;
     }
 
-    public function getFeePercentage(): ?float
+    public function getFeePercentage(): ?string
     {
         return $this->feePercentage;
     }
 
-    public function setFeePercentage(?float $feePercentage): void
+    /**
+     * @psalm-param numeric-string|null $feePercentage
+     */
+    public function setFeePercentage(?string $feePercentage): void
     {
         $this->feePercentage = $feePercentage;
     }
