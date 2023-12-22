@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use LosMiddleware\RateLimit\RateLimitMiddleware;
+use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Actions\DeletePaymentMethod;
 use MatchBot\Application\Actions\UpdatePaymentMethod;
 use MatchBot\Application\Actions\Donations;
