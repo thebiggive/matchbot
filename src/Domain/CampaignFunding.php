@@ -22,7 +22,7 @@ class CampaignFunding extends Model
     #[ORM\JoinTable(name: 'Campaign_CampaignFunding')]
     #[ORM\JoinColumn(name: 'campaignfunding_id', referencedColumnName: 'id')]
     #[ORM\InverseJoinColumn(name: 'campaign_id', referencedColumnName: 'id')]
-    #[ORM\ManyToMany(targetEntity: Campaign::class)]
+    #[ORM\ManyToMany(targetEntity: Campaign::class, inversedBy: 'campaignFundings')]
     protected Collection $campaigns;
 
     /**

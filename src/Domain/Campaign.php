@@ -27,9 +27,9 @@ class Campaign extends SalesforceReadProxy
     protected Charity $charity;
 
     /**
-     * @ORM\ManyToMany(targetEntity="CampaignFunding", mappedBy="campaigns")
      * @psalm-suppress PossiblyUnusedProperty Used in Doctrine ORM mapping
      */
+    #[ORM\ManyToMany(targetEntity: CampaignFunding::class, mappedBy: 'campaigns')]
     protected Collection $campaignFundings;
 
     /**
