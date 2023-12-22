@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Migrations;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
@@ -52,7 +53,7 @@ final class Version20220623122551 extends AbstractMigration
             ],
             // https://stackoverflow.com/a/36710894/2803757
             [
-                'correlationIdsToResubmit' => Connection::PARAM_STR_ARRAY,
+                'correlationIdsToResubmit' => ArrayParameterType::STRING,
             ]
         );
 

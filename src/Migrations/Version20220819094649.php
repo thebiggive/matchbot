@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Migrations;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
@@ -37,7 +38,7 @@ WHERE
 LIMIT 392
 EOT,
             ['campaignIdsToRequeue' => $campaignIds],
-            ['campaignIdsToRequeue' => Connection::PARAM_INT_ARRAY],
+            ['campaignIdsToRequeue' => ArrayParameterType::INTEGER],
         );
     }
 

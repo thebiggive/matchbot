@@ -7,65 +7,56 @@ namespace MatchBot\Domain;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity(repositoryClass="CampaignFundingRepository")
- * @ORM\HasLifecycleCallbacks
- * @ORM\Table(indexes={
- *   @ORM\Index(name="available_fundings", columns={"amountAvailable", "allocationOrder", "id"}),
- * })
- */
+#[ORM\Table]
+#[ORM\Index(name: 'available_fundings', columns: ['amountAvailable', 'allocationOrder', 'id'])]
+#[ORM\Entity(repositoryClass: CampaignFundingRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class CampaignFunding extends Model
 {
     use TimestampsTrait;
 
     /**
-     * @ORM\ManyToMany(targetEntity="Campaign")
-     * @ORM\JoinTable(
-     *  name="Campaign_CampaignFunding",
-     *  joinColumns={
-     *      @ORM\JoinColumn(name="campaignfunding_id", referencedColumnName="id")
-     *  },
-     *  inverseJoinColumns={
-     *      @ORM\JoinColumn(name="campaign_id", referencedColumnName="id")
-     *  }
-     * )
      * @var Campaign[]
      */
+    #[ORM\JoinTable(name: 'Campaign_CampaignFunding')]
+    #[ORM\JoinColumn(name: 'campaignfunding_id', referencedColumnName: 'id')]
+    #[ORM\InverseJoinColumn(name: 'campaign_id', referencedColumnName: 'id')]
+    #[ORM\ManyToMany(targetEntity: Campaign::class)]
     protected $campaigns;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Fund", cascade={"persist"})
      * @var Fund
      */
+    #[ORM\ManyToOne(targetEntity: Fund::class, cascade: ['persist'])]
     protected Fund $fund;
 
     /**
-     * @ORM\Column(type="string", length=3)
      * @var string  ISO 4217 code for the currency in which all monetary values are denominated.
      */
+    #[ORM\Column(type: 'string', length: 3)]
     protected string $currencyCode;
 
     /**
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see CampaignFunding::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $amount;
 
     /**
      * The amount of this funding allocation not already claimed. If you plan to allocate funds, always read this
      * with a PESSIMISTIC_WRITE lock and modify it in the same transaction you create a FundingWithdrawal.
      *
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see CampaignFunding::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $amountAvailable;
 
     /**
-     * @ORM\Column(type="integer")
      * @var int     Order of preference as a rank, i.e. lower numbers have their funds used first.
      */
+    #[ORM\Column(type: 'integer')]
     protected int $allocationOrder;
 
     public function __construct()

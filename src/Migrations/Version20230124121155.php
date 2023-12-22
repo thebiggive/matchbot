@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Migrations;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Schema\Schema;
@@ -44,7 +45,7 @@ EOT;
                 'lastDate' => '2023-01-09 23:59:59',
             ],
             [
-                'campaignIdsToNotPatch' => Connection::PARAM_INT_ARRAY,
+                'campaignIdsToNotPatch' => ArrayParameterType::INTEGER,
                 'firstDate' => ParameterType::STRING,
                 'lastDate' => ParameterType::STRING,
             ],

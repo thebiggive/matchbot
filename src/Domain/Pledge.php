@@ -6,9 +6,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity
- */
+#[ORM\Entity]
 class Pledge extends Fund
 {
 }
