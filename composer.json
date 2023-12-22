@@ -163,7 +163,14 @@
         ],
         "start": "php -S localhost:8080 -t public",
         "test": "XDEBUG_MODE=coverage phpunit --order-by=random",
-        "integration-test": "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random",
+        "integration-test": [
+            "APP_ENV=test doctrine orm:clear-cache:metadata",
+            "APP_ENV=test doctrine orm:clear-cache:query",
+            "APP_ENV=test doctrine orm:clear-cache:result",
+            "APP_ENV=test doctrine-migrations migrate --no-interaction --allow-no-migration",
+            "APP_ENV=test doctrine orm:generate-proxies",
+            "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random"
+        ],
         "mutation-test": [
             "Composer\\Config::disableProcessTimeout",
             "vendor/bin/infection --threads=4"
