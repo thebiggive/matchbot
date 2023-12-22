@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use DateTimeInterface;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -35,17 +36,11 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(type: 'string')]
     protected string $name;
 
-    /**
-     * @var DateTime
-     */
     #[ORM\Column(type: 'datetime')]
-    protected DateTime $startDate;
+    protected DateTimeInterface $startDate;
 
-    /**
-     * @var DateTime
-     */
     #[ORM\Column(type: 'datetime')]
-    protected DateTime $endDate;
+    protected DateTimeInterface $endDate;
 
     /**
      * @var string|null
@@ -131,18 +126,12 @@ class Campaign extends SalesforceReadProxy
         $this->name = $name;
     }
 
-    /**
-     * @param DateTime $startDate
-     */
-    public function setStartDate(DateTime $startDate): void
+    public function setStartDate(DateTimeInterface $startDate): void
     {
         $this->startDate = $startDate;
     }
 
-    /**
-     * @param DateTime $endDate
-     */
-    public function setEndDate(DateTime $endDate): void
+    public function setEndDate(DateTimeInterface $endDate): void
     {
         $this->endDate = $endDate;
     }
@@ -194,10 +183,7 @@ class Campaign extends SalesforceReadProxy
         $this->feePercentage = $feePercentage;
     }
 
-    /**
-     * @return DateTime
-     */
-    public function getEndDate(): DateTime
+    public function getEndDate(): DateTimeInterface
     {
         return $this->endDate;
     }

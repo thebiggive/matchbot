@@ -14,7 +14,7 @@
         }
     ],
     "require": {
-        "php": "^8.1",
+        "php": "^8.2",
         "ext-bcmath": "*",
         "ext-json": "*",
         "ext-mbstring": "^8.0",
@@ -68,7 +68,7 @@
         },
         "optimize-autoloader": true,
         "platform": {
-            "php": "8.1.5"
+            "php": "8.2.14"
         },
         "sort-packages": true
     },
