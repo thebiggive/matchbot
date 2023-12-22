@@ -82,7 +82,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign->setCharity($charity);
         $campaign->setCurrencyCode($campaignData['currencyCode'] ?? 'GBP');
         $campaign->setEndDate(new DateTime($campaignData['endDate']));
-        Assertion::numeric($campaignData['feePercentage']);
+        Assertion::nullOrNumeric($campaignData['feePercentage']);
         $campaign->setFeePercentage((string) $campaignData['feePercentage']);
         $campaign->setIsMatched($campaignData['isMatched']);
         $campaign->setName($campaignData['title']);
