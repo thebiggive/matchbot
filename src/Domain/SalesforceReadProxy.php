@@ -14,9 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 abstract class SalesforceReadProxy extends SalesforceProxy
 {
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     protected ?DateTime $salesforceLastPull = null;
 
     /**

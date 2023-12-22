@@ -9,14 +9,14 @@ use MatchBot\Application\LazyAssertionException;
 
 /**
  * @psalm-immutable
- * @Embeddable
  */
+#[Embeddable]
 class DonorName
 {
-    /** @Column(type = "string") */
+    #[Column(type: 'string')]
     public string $first;
 
-    /** @Column(type = "string") */
+    #[Column(type: 'string')]
     private string $last;
 
     /**

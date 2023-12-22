@@ -6,35 +6,33 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity(repositoryClass="FundRepository")
- * @ORM\InheritanceType("SINGLE_TABLE")
- * @ORM\DiscriminatorColumn(name="fundType", type="string")
- * @ORM\DiscriminatorMap({"championFund" = "ChampionFund", "pledge" = "Pledge", "unknownFund" = "Fund"})
- * @ORM\HasLifecycleCallbacks
- * @ORM\Table
- */
+#[ORM\Table]
+#[ORM\Entity(repositoryClass: FundRepository::class)]
+#[ORM\InheritanceType('SINGLE_TABLE')]
+#[ORM\DiscriminatorColumn(name: 'fundType', type: 'string')]
+#[ORM\DiscriminatorMap(['championFund' => 'ChampionFund', 'pledge' => 'Pledge', 'unknownFund' => 'Fund'])]
+#[ORM\HasLifecycleCallbacks]
 abstract class Fund extends SalesforceReadProxy
 {
     use TimestampsTrait;
 
     /**
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Fund::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $amount;
 
     /**
-     * @ORM\Column(type="string", length=3)
      * @var string  ISO 4217 code for the currency of amount, and in which FundingWithdrawals are denominated.
      */
+    #[ORM\Column(type: 'string', length: 3)]
     protected string $currencyCode;
 
     /**
-     * @ORM\Column(type="string")
      * @var string
      */
+    #[ORM\Column(type: 'string')]
     protected string $name;
 
     /**
