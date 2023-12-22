@@ -32,7 +32,7 @@ class FundingWithdrawal extends Model
      * @var CampaignFunding
      */
     #[ORM\ManyToOne(targetEntity: CampaignFunding::class, fetch: 'EAGER')]
-    protected CampaignFunding $campaignFunding;
+    private readonly CampaignFunding $campaignFunding;
 
     public function __construct(CampaignFunding $campaignFunding)
     {
