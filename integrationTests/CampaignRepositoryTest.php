@@ -5,6 +5,7 @@ namespace MatchBot\IntegrationTests;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Assertion;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
@@ -43,7 +44,9 @@ class CampaignRepositoryTest extends IntegrationTest
         $this->assertGreaterThanOrEqual(1, count($campaignsFromDB));
         $this->assertCount(1, $campaignsMatchingFixture);
         $this->assertSame($campaign, $campaignsMatchingFixture->first());
-        $this->assertSame('Charity Name', $campaignsMatchingFixture->first()->getCharity()->getName());
+        $firstCampaign = $campaignsMatchingFixture->first();
+        Assertion::isInstanceOf($firstCampaign, Campaign::class);
+        $this->assertSame('Charity Name', $firstCampaign->getCharity()->getName());
     }
 
     public function testItFindsNoTenWeekOldCampaignEvenIfCharityAwaitingGiftAidApproval(): void
