@@ -9,11 +9,11 @@ use MatchBot\Application\Assertion;
 
 /**
  * @psalm-immutable
- * @Embeddable
  */
+#[Embeddable]
 class EmailAddress
 {
-    /** @Column(type = "string") */
+    #[Column(type: 'string')]
     public readonly string $email;
 
     /**

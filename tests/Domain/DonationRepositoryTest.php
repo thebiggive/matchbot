@@ -15,7 +15,6 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -352,7 +351,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setTipAmount('0.00');
         $donation->setPsp('stripe');
         $donation->setFeeCoverAmount('44.44'); // 4.5% fee, inc. any VAT.
-        $donation->getCampaign()->setFeePercentage(4.5);
+        $donation->getCampaign()->setFeePercentage('4.5');
         $this->getRepo()->deriveFees($donation, null, null);
 
         // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
@@ -693,7 +692,9 @@ class DonationRepositoryTest extends TestCase
     }
 
     /**
-     * @param ObjectProphecy|null   $donationClientProphecy
+     * @param ObjectProphecy<Client\Donation>|null   $donationClientProphecy
+     * @param ObjectProphecy<Adapter>|null $matchingAdapterProphecy
+     * @param ObjectProphecy<LockFactory>|null $lockFactoryProphecy
      * @param bool                  $vatLive    Whether to override config with 20% VAT live from now.
      * @return DonationRepository
      * @throws \Exception

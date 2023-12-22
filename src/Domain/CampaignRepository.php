@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use MatchBot\Application\Assertion;
 use MatchBot\Client;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
@@ -81,7 +82,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign->setCharity($charity);
         $campaign->setCurrencyCode($campaignData['currencyCode'] ?? 'GBP');
         $campaign->setEndDate(new DateTime($campaignData['endDate']));
-        $campaign->setFeePercentage($campaignData['feePercentage']);
+        Assertion::numeric($campaignData['feePercentage']);
+        $campaign->setFeePercentage((string) $campaignData['feePercentage']);
         $campaign->setIsMatched($campaignData['isMatched']);
         $campaign->setName($campaignData['title']);
         $campaign->setStartDate(new DateTime($campaignData['startDate']));

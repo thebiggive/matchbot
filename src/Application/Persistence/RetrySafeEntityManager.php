@@ -12,8 +12,6 @@ use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\EntityManagerClosed;
-use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\SalesforceReadProxy;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -127,6 +125,8 @@ class RetrySafeEntityManager extends EntityManagerDecorator
      * @param object $object
      * @param 0|1|2|4|null  $lockMode
      * @see LockMode
+     * @psalm-suppress ParamNameMismatch This seems to be impossible to fix rn because `ObjectManagerDecorator` and
+     *                `EntityManagerInterface` disagree on the param name.
      */
     public function refresh($object, ?int $lockMode = null): void
     {

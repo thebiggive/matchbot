@@ -19,15 +19,12 @@ use Ramsey\Uuid\UuidInterface;
 use function bccomp;
 use function sprintf;
 
-/**
- * @ORM\Entity(repositoryClass="DonationRepository")
- * @ORM\HasLifecycleCallbacks
- * @ORM\Table(indexes={
- *   @ORM\Index(name="campaign_and_status", columns={"campaign_id", "donationStatus"}),
- *   @ORM\Index(name="date_and_status", columns={"createdAt", "donationStatus"}),
- *   @ORM\Index(name="salesforcePushStatus", columns={"salesforcePushStatus"}),
- * })
- */
+#[ORM\Table]
+#[ORM\Index(name: 'campaign_and_status', columns: ['campaign_id', 'donationStatus'])]
+#[ORM\Index(name: 'date_and_status', columns: ['createdAt', 'donationStatus'])]
+#[ORM\Index(name: 'salesforcePushStatus', columns: ['salesforcePushStatus'])]
+#[ORM\Entity(repositoryClass: DonationRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Donation extends SalesforceWriteProxy
 {
     /**
@@ -44,65 +41,65 @@ class Donation extends SalesforceWriteProxy
      * The donation ID for PSPs and public APIs. Not the same as the internal auto-increment $id used
      * by Doctrine internally for fast joins.
      *
-     * @ORM\Column(type="uuid", unique=true)
      * @var UuidInterface|null
      */
+    #[ORM\Column(type: 'uuid', unique: true)]
     protected ?UuidInterface $uuid = null;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Campaign")
      * @var Campaign
      */
+    #[ORM\ManyToOne(targetEntity: Campaign::class)]
     protected Campaign $campaign;
 
     /**
-     * @ORM\Column(type="string", length=20)
      * @var string  Which Payment Service Provider (PSP) is expected to (or did) process the donation.
      */
+    #[ORM\Column(type: 'string', length: 20)]
     protected string $psp;
 
     /**
-     * @ORM\Column(type="datetime_immutable", nullable=true)
      * @var ?DateTimeImmutable  When the donation first moved to status Collected, i.e. the donor finished paying.
      */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     protected ?DateTimeImmutable $collectedAt = null;
 
     /**
-     * @ORM\Column(type="string", unique=true, nullable=true)
      * @var string|null PSP's transaction ID assigned on their processing.
      *
      * In the case of stripe (which is the only thing we support at present, this is the payment intent ID)
      */
+    #[ORM\Column(type: 'string', unique: true, nullable: true)]
     protected ?string $transactionId = null;
 
     /**
-     * @ORM\Column(type="string", unique=true, nullable=true)
      * @var string|null PSP's charge ID assigned on their processing.
      */
+    #[ORM\Column(type: 'string', unique: true, nullable: true)]
     protected ?string $chargeId = null;
 
     /**
-     * @ORM\Column(type="string", unique=true, nullable=true)
      * @var string|null PSP's transfer ID assigned on a successful charge. For Stripe this
      *                  ID relates to the Platform Account (i.e. the Big Give's) rather than
      *                  the Connected Account for the charity receiving the transferred
      *                  donation balance.
      */
+    #[ORM\Column(type: 'string', unique: true, nullable: true)]
     protected ?string $transferId = null;
 
     /**
-     * @ORM\Column(type="string", length=3)
      * @var string  ISO 4217 code for the currency in which all monetary values are denominated, e.g. 'GBP'.
      */
+    #[ORM\Column(type: 'string', length: 3)]
     protected readonly string $currencyCode;
 
     /**
      * Core donation amount in major currency units (i.e. Pounds) excluding any tip.
      *
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected readonly string $amount;
 
     /**
@@ -111,20 +108,20 @@ class Donation extends SalesforceWriteProxy
      * For Stripe (EU / UK): 1.5% of $amount + 0.20p
      * For Stripe (Non EU / Amex): 3.2% of $amount + 0.20p
      *
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $charityFee = '0.00';
 
     /**
      * Value Added Tax amount on `$charityFee`, in £. In addition to base amount
      * in $charityFee.
      *
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $charityFeeVat = '0.00';
 
     /**
@@ -132,169 +129,162 @@ class Donation extends SalesforceWriteProxy
      * Original fee varies by card brand and country and is based on the full amount paid by the
      * donor: `$amount + $tipAmount`.
      *
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $originalPspFee = '0.00';
 
-    /**
-     * @ORM\Column(type="string", enumType="MatchBot\Domain\DonationStatus")
-     */
+    #[ORM\Column(type: 'string', enumType: DonationStatus::class)]
     protected DonationStatus $donationStatus = DonationStatus::Pending;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether the donor opted to receive email from the charity running the campaign
      */
+    #[ORM\Column(type: 'boolean', nullable: true)]
     protected ?bool $charityComms = null;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
      * @var bool
      */
+    #[ORM\Column(type: 'boolean', nullable: true)]
     protected ?bool $giftAid = null;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether the donor opted to receive email from the Big Give
      */
+    #[ORM\Column(type: 'boolean', nullable: true)]
     protected ?bool $tbgComms = null;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether the donor opted to receive email from the champion funding the campaign
      */
+    #[ORM\Column(type: 'boolean', nullable: true)]
     protected ?bool $championComms = null;
 
     /**
-     * @ORM\Column(type="string", length=2, nullable=true)
      * @var string|null  Set on PSP callback. *Billing* country code.
      */
+    #[ORM\Column(type: 'string', length: 2, nullable: true)]
     protected ?string $donorCountryCode = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
      * @var string|null Set on PSP callback
      */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorEmailAddress = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
      * @var string|null Set on PSP callback
      */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorFirstName = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
      * @var string|null Set on PSP callback
      */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorLastName = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
      * @var string|null Assumed to be billing address going forward.
      */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorPostalAddress = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
      * @var string|null From residential address, if donor is claiming Gift Aid.
      */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorHomeAddressLine1 = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
      * @var string|null From residential address, if donor is claiming Gift Aid.
      */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorHomePostcode = null;
 
     /**
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string  Amount donor chose to add to cover a fee, including any tax.
      *              Precision numeric string.
      * @see Donation::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $feeCoverAmount = '0.00';
 
     /**
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string  Amount donor chose to tip. Precision numeric string.
      *              Set during donation setup and can also be modified later if the donor changes only this.
      * @see Donation::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $tipAmount = '0.00';
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether Gift Aid was claimed on the 'tip' donation to the Big Give.
      */
+    #[ORM\Column(type: 'boolean', nullable: true)]
     protected ?bool $tipGiftAid = null;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether any Gift Aid claim should be made by the Big Give as an agent/nominee
      *              *if* `$giftAid is true too. This field is set independently to allow for claim
      *              status amendments so we must not assume a donation can actualy be claimed just
      *              because it's true.
      * @see Donation::$giftAid
      */
+    #[ORM\Column(type: 'boolean', nullable: true)]
     protected ?bool $tbgShouldProcessGiftAid = null;
 
     /**
-     * @ORM\Column(type="datetime", nullable=true)
      * @var ?DateTime   When a queued message that should lead to a Gift Aid claim was sent.
      */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     protected ?DateTime $tbgGiftAidRequestQueuedAt = null;
 
     /**
-     * @ORM\Column(type="datetime", nullable=true)
      * @var ?DateTime   When a claim submission attempt was detected to have an error returned.
      */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     protected ?DateTime $tbgGiftAidRequestFailedAt = null;
 
     /**
-     * @ORM\Column(type="datetime", nullable=true)
      * @var ?DateTime   When a claim was detected accepted via an async poll.
      */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     protected ?DateTime $tbgGiftAidRequestConfirmedCompleteAt = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
      * @var ?string Provided by HMRC upon initial claim submission acknowledgement.
      *              Doesn't imply success.
      */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $tbgGiftAidRequestCorrelationId = null;
 
     /**
-     * @ORM\Column(type="text", length=65535, nullable=true)
      * @var ?string Verbatim final errors or messages from HMRC received immediately or
      *              (most likely based on real world observation) via an async poll.
      */
+    #[ORM\Column(type: 'text', length: 65535, nullable: true)]
     protected ?string $tbgGiftAidResponseDetail = null;
 
-    /**
-     * @ORM\Column(type="string", nullable=true)
-     */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $pspCustomerId = null;
 
-    /**
-     * @ORM\Column(type="string",  enumType="MatchBot\Domain\PaymentMethodType", nullable=true)
-     */
+    #[ORM\Column(type: 'string', enumType: PaymentMethodType::class, nullable: true)]
     protected ?PaymentMethodType $paymentMethodType = PaymentMethodType::Card;
 
     /**
-     * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
      * @var Collection<int,FundingWithdrawal>
      */
+    #[ORM\OneToMany(targetEntity: FundingWithdrawal::class, mappedBy: 'donation', fetch: 'EAGER')]
     protected $fundingWithdrawals;
 
     /**
      * Date at which we refunded this to the donor. Ideally will be null. Should be not null only iff status is
      * DonationStatus::Refunded
-     *
-     * @ORM\Column(nullable=true)
      */
+    #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $refundedAt = null;
 
     /**
@@ -405,10 +395,10 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @ORM\PreUpdate Check that the amount is never changed
      * @param PreUpdateEventArgs $args
      * @throws \LogicException if amount is changed
      */
+    #[ORM\PreUpdate]
     public function preUpdate(PreUpdateEventArgs $args): void
     {
         if (!$args->hasChangedField('amount')) {
