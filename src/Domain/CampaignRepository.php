@@ -26,15 +26,25 @@ class CampaignRepository extends SalesforceReadProxyRepository
      *
      * @return Campaign[]
      */
-    public function findRecentAndLive(): array
+    public function findRecentLiveAndPendingGiftAidApproval(): array
     {
         $oneWeekAgo = (new DateTime('now'))->sub(new \DateInterval('P7D'));
+        $twoMonthsAgo = (new DateTime('now'))->sub(new \DateInterval('P2M'));
+
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('c')
             ->from(Campaign::class, 'c')
+            ->innerJoin('c.charity', 'charity')
             ->where('c.endDate >= :oneWeekAgo')
+            ->orWhere(<<<EOT
+                charity.tbgClaimingGiftAid = 1 AND
+                charity.tbgApprovedToClaimGiftAid = 0 AND
+                c.endDate >= :twoMonthsAgo
+EOT
+            )
             ->orderBy('c.createdAt', 'ASC')
-            ->setParameter('oneWeekAgo', $oneWeekAgo);
+            ->setParameter('oneWeekAgo', $oneWeekAgo)
+            ->setParameter('twoMonthsAgo', $twoMonthsAgo);
 
         return $qb->getQuery()->getResult();
     }

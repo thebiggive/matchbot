@@ -38,6 +38,14 @@ class FundRepository extends SalesforceReadProxyRepository
     public function pullForCampaign(Campaign $campaign): void
     {
         $client = $this->getClient();
+
+        if (!$campaign->getSalesforceId()) {
+            $this->logWarning(
+                'Cannot pullForCampaign() funds for campaign without SF ID for internal ID ' . $campaign->getId()
+            );
+            return;
+        }
+
         $fundsData = $client->getForCampaign($campaign->getSalesforceId());
         foreach ($fundsData as $fundData) {
             // For each fund linked to the campaign, look it up or create it if unknown
@@ -130,7 +138,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 // Somebody else created the specific funding -> proceed without modifying it.
                 $this->logError(
                     'Skipping campaign funding create as constraint failed with campaign ' .
-                    $campaign->getId() . ', fund ' . $fund->getId()
+                    ($campaign->getId() ?? '[unknown]') . ', fund ' . $fund->getId()
                 );
             }
         }
