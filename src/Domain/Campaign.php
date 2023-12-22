@@ -56,9 +56,10 @@ class Campaign extends SalesforceReadProxy
 
     /**
      * @ORM\Column(type="decimal", nullable=true, precision=3, scale=1)
-     * @var float|null
+     * @var string|null
+     * @psalm-var numeric-string|null
      */
-    protected ?float $feePercentage = null;
+    protected ?string $feePercentage = null;
 
     /**
      * @ORM\Column(type="boolean")
