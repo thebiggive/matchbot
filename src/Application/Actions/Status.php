@@ -44,10 +44,8 @@ class Status extends Action
         }
 
         try {
-            $gotDbConnection = (
-                $this->entityManager->getConnection()->isConnected() ||
-                $this->entityManager->getConnection()->connect()
-            );
+            $connection = $this->entityManager->getConnection();
+            $gotDbConnection = $connection->isConnected() || $connection->connect();
             if (!$gotDbConnection) {
                 $errorMessage = 'Database not connected';
             }

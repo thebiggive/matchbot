@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
-use LosMiddleware\RateLimit\Exception\MissingRequirement;
+use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;

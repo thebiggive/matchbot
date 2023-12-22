@@ -5,29 +5,30 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\ORM\Mapping as ORM;
 
 /**
  * Trait to define timestamp fields and set them when appropriate. For this to work the models *must* be
- * annotated with `@ORM\HasLifecycleCallbacks` at class level.
+ * annotated with `#[ORM\HasLifecycleCallbacks]` at class level.
  */
 trait TimestampsTrait
 {
     /**
-     * @ORM\Column(type="datetime")
      * @var DateTime
      */
+    #[ORM\Column(type: 'datetime')]
     protected DateTime $createdAt;
 
     /**
-     * @ORM\Column(type="datetime")
      * @var DateTime
      */
+    #[ORM\Column(type: 'datetime')]
     protected DateTime $updatedAt;
 
     /**
      * @psalm-suppress PossiblyUnusedMethod
-     * @ORM\PrePersist Set created + updated timestamps
      */
+    #[ORM\PrePersist]
     public function createdNow(): void
     {
         $this->createdAt = new \DateTime('now');
@@ -36,8 +37,8 @@ trait TimestampsTrait
 
     /**
      * @psalm-suppress PossiblyUnusedMethod
-     * @ORM\PreUpdate Set updated timestamp
      */
+    #[ORM\PreUpdate]
     public function updatedNow(): void
     {
         $this->updatedAt = new \DateTime('now');

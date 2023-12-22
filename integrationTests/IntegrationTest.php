@@ -5,7 +5,7 @@ namespace MatchBot\IntegrationTests;
 use ArrayAccess;
 use DI\Container;
 use GuzzleHttp\Psr7\ServerRequest;
-use LosMiddleware\RateLimit\RateLimitMiddleware;
+use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
 use MatchBot\Domain\Donation;

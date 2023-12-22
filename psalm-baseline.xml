@@ -1,19 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <files psalm-version="5.15.0@5c774aca4746caf3d239d9c8cadb9f882ca29352">
   <file src="app/dependencies.php">
-    <DeprecatedClass>
-      <code><![CDATA[Setup::createAnnotationMetadataConfiguration(
-                $settings['doctrine']['metadata_dirs'],
-                $settings['doctrine']['dev_mode'],
-                $settings['doctrine']['cache_dir'] . '/proxies',
-                $cache
-            )]]></code>
-      <code>new ArrayCache()</code>
-      <code>new RedisCache()</code>
-    </DeprecatedClass>
-    <DeprecatedMethod>
-      <code>setMetadataCacheImpl</code>
-    </DeprecatedMethod>
     <MixedArgument>
       <code><![CDATA[$c->get('settings')]]></code>
       <code><![CDATA[$c->get('settings')]]></code>
@@ -1365,15 +1352,6 @@
     </MixedAssignment>
   </file>
   <file src="tests/Application/Actions/StatusTest.php">
-    <DeprecatedClass>
-      <code>Setup::createAnnotationMetadataConfiguration(
-            [self::DOMAIN_DIR],
-            false, // Simulate live mode for these tests.
-            $proxyPath,
-            $cache,
-        )</code>
-      <code>new ArrayCache()</code>
-    </DeprecatedClass>
     <DeprecatedMethod>
       <code><![CDATA[ConsoleRunner::createHelperSet($container->get(EntityManagerInterface::class))]]></code>
       <code>setMetadataCacheImpl</code>

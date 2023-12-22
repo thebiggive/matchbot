@@ -6,28 +6,26 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity
- * @ORM\Table(name="CommandLockKeys", options={"collate"="utf8mb4_bin"})
- */
+#[ORM\Table(name: 'CommandLockKeys', options: ['collate' => 'utf8mb4_bin'])]
+#[ORM\Entity]
 class CommandLockKeys
 {
     /**
-     * @ORM\Id
-     * @ORM\Column(type="string", length=64)
      * @var string
      */
+    #[ORM\Id]
+    #[ORM\Column(type: 'string', length: 64)]
     public string $key_id;
 
     /**
-     * @ORM\Column(type="string", length=44)
      * @var string
      */
+    #[ORM\Column(type: 'string', length: 44)]
     public string $key_token;
 
     /**
-     * @ORM\Column(type="integer", options={"unsigned"=true})
      * @var int
      */
+    #[ORM\Column(type: 'integer', options: ['unsigned' => true])]
     public int $key_expiration;
 }

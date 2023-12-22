@@ -8,7 +8,7 @@ volumes:
 
 services:
   app:
-    image: thebiggive/php:dev-8.1
+    image: thebiggive/php:dev-8.2
     platform: linux/amd64
     ports:
       - "30030:80"
@@ -34,6 +34,9 @@ services:
     networks:
       - matchbot
 
+  # Redis seem to have ended up with an 'interesting' release pattern where 7.0 is stable but 'older', 7.2 is stable,
+  # and 7.1 tags have been pulled; yet 7.1 is the newest AWS ElastiCache version and is being recommended by AWS as
+  # a performance upgrade. It's probably safe enough to use 7.0 for dev for now.
   redis:
     image: redis:7.0
     platform: linux/amd64

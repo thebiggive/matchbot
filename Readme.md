@@ -215,10 +215,10 @@ The most important areas to explore in `src` are:
 * [`Domain`](./src/Domain): defines the whole app's data structure. This is essential to both the code and how the
   database schema definition is generated. Changes here must be accompanied by Doctrine-generated migrations
   so the database stays in sync. 
-  [Doctrine annotations](https://www.doctrine-project.org/projects/doctrine-orm/en/2.7/reference/annotations-reference.html)
+  [Doctrine attributes](https://www.doctrine-project.org/projects/doctrine-orm/en/2.17/reference/attributes-reference.html)
   are used to define important aspects of the data model. Two special things to notice:
-  1. Several models rely on the `@ORM\HasLifecycleCallbacks` annotation. In many cases this is because they
-     `use TimestampsTrait`. This is a nice time saver but models _must_ include the lifecycle annotation, or their
+  1. Several models rely on the `#[ORM\HasLifecycleCallbacks]` attribute. In many cases this is because they
+     `use TimestampsTrait`. This is a nice time saver but models _must_ include the lifecycle attribute, or their
      timestamps won't work.
   2. [`Fund`](./src/Domain/Fund.php) and its subclasses use 
      [Single Table Inheritance](https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/inheritance-mapping.html#single-table-inheritance).

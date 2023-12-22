@@ -4,17 +4,11 @@ declare(strict_types=1);
 
 use DI\Container;
 use DI\ContainerBuilder;
-use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\Common\Cache\ArrayCache;
-use Doctrine\Common\Cache\RedisCache;
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
-use Doctrine\ORM\Tools\Setup;
-use LosMiddleware\RateLimit\RateLimitMiddleware;
-use LosMiddleware\RateLimit\RateLimitOptions;
+use Los\RateLimit\RateLimitMiddleware;
+use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
 use MatchBot\Application\Matching;
@@ -42,6 +36,8 @@ use ReCaptcha\ReCaptcha;
 use ReCaptcha\RequestMethod\CurlPost;
 use Slim\Psr7\Factory\ResponseFactory;
 use Stripe\StripeClient;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\DoctrineDbalStore;
@@ -266,9 +262,7 @@ return function (ContainerBuilder $containerBuilder) {
             $redis = new Redis();
             try {
                 $redis->connect($settings['redis']['host']);
-                $cache = new RedisCache();
-                $cache->setRedis($redis);
-                $cache->setNamespace("matchbot-{$settings['appEnv']}");
+                $cacheAdapter = new RedisAdapter(redis: $redis, namespace: "matchbot-{$settings['appEnv']}");
             } catch (RedisException $exception) {
                 // This essentially means Doctrine is not using a cache. `/ping` should fail separately based on
                 // Redis being down whenever this happens, so we should find out without relying on this warning log.
@@ -281,14 +275,14 @@ return function (ContainerBuilder $containerBuilder) {
                     get_class($exception),
                     $exception->getMessage(),
                 ));
-                $cache = new ArrayCache();
+                $cacheAdapter = new ArrayAdapter();
             }
 
-            $config = Setup::createAnnotationMetadataConfiguration(
+            $config = ORM\ORMSetup::createAttributeMetadataConfiguration(
                 $settings['doctrine']['metadata_dirs'],
                 $settings['doctrine']['dev_mode'],
                 $settings['doctrine']['cache_dir'] . '/proxies',
-                $cache
+                $cacheAdapter,
             );
 
             // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
@@ -296,10 +290,10 @@ return function (ContainerBuilder $containerBuilder) {
             $config->setAutoGenerateProxyClasses($settings['doctrine']['dev_mode']);
 
             $config->setMetadataDriverImpl(
-                new AnnotationDriver(new AnnotationReader(), $settings['doctrine']['metadata_dirs'])
+                new ORM\Mapping\Driver\AttributeDriver($settings['doctrine']['metadata_dirs'])
             );
 
-            $config->setMetadataCacheImpl($cache);
+            $config->setMetadataCache($cacheAdapter);
 
             return $config;
         },

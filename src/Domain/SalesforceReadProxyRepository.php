@@ -35,6 +35,14 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
             ($existingProxy = $this->findOneBy(['salesforceId' => $proxy->getSalesforceId()]))
         ) {
             $this->logInfo('Updating ' . get_class($proxy) . ' ' . $proxy->getSalesforceId() . '...');
+            if (!$proxy->getSalesforceId()) {
+                $this->logWarning(
+                    'Cannot update ' .
+                    get_class($proxy) . ' without SF ID for internal ID ' .
+                    ($proxy->getId() ?? '[unknown]')
+                );
+                return;
+            }
             $proxy = $existingProxy;
         } else {
             $this->logInfo('Creating ' . get_class($proxy) . ' ' . $proxy->getSalesforceId());

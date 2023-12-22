@@ -131,6 +131,12 @@ class ClaimGiftAidTest extends TestCase
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
+    /**
+     * @param ObjectProphecy<DonationRepository> $donationRepoProphecy
+     * @param ObjectProphecy<EntityManagerInterface> $entityManagerProphecy
+     * @param ObjectProphecy<RoutableMessageBus> $routableBusProphecy
+     * @return ClaimGiftAid
+     */
     private function getCommand(
         ObjectProphecy $donationRepoProphecy,
         ObjectProphecy $entityManagerProphecy,

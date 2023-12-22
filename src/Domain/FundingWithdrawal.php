@@ -7,32 +7,31 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="FundingWithdrawalRepository")
- * @ORM\HasLifecycleCallbacks
- * @ORM\Table
- *
  * @psalm-suppress PropertyNotSetInConstructor Not requiring all props on construct for now.
  */
+#[ORM\Table]
+#[ORM\Entity(repositoryClass: FundingWithdrawalRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class FundingWithdrawal extends Model
 {
     use TimestampsTrait;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Donation", inversedBy="fundingWithdrawals", fetch="EAGER")
      * @var Donation
      */
+    #[ORM\ManyToOne(targetEntity: Donation::class, inversedBy: 'fundingWithdrawals', fetch: 'EAGER')]
     protected Donation $donation;
 
     /**
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $amount;
 
     /**
-     * @ORM\ManyToOne(targetEntity="CampaignFunding", fetch="EAGER")
      * @var CampaignFunding
      */
+    #[ORM\ManyToOne(targetEntity: CampaignFunding::class, fetch: 'EAGER')]
     protected CampaignFunding $campaignFunding;
 
     public function __construct(CampaignFunding $campaignFunding)
