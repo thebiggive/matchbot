@@ -34,7 +34,7 @@ class RedistributeMatchFunds extends LockingCommand
     {
         // TODO Change the fixed lookback to 2 days, or parameter-ise it, once CC23 is tidied in Prod.
         $donationsToCheck = $this->donationRepository->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
-            new \DateTimeImmutable('-3 weeks')
+            new \DateTimeImmutable('-5 weeks')
         );
 
         $donationsAmended = 0;

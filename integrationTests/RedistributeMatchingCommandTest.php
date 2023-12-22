@@ -61,18 +61,30 @@ class RedistributeMatchingCommandTest extends IntegrationTest
 
         $this->donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
-            donationAmount: '250',
+            donationAmount: (string) $amount,
             projectId: 'any project',
             psp: 'stripe',
             pspMethodType: PaymentMethodType::Card,
         ), $campaign);
         $this->donation->setTransactionId('pi_' . $this->randomString());
+        $this->donation->setSalesforceId(substr('006' . $this->randomString(), 0, 18));
         $this->donation->setDonationStatus(DonationStatus::Collected);
         $this->donation->setCollectedAt(new \DateTimeImmutable('now'));
 
         $championFundWithdrawal = new FundingWithdrawal($championFundCampaignFunding);
         $championFundWithdrawal->setAmount('250.00');
+        $championFundWithdrawal->setDonation($this->donation);
+        // Not really sure why fixture has to do this both ways around, but re-loading the object
+        // and doing just one both seemed to cause problems.
         $this->donation->addFundingWithdrawal($championFundWithdrawal);
+
+        // Withdraw the donation value from the champion fund in Redis.
+        $matchingAdapter = $this->getService(Adapter::class);
+        $matchingAdapter->runTransactionally(
+            function () use ($matchingAdapter, $championFundCampaignFunding, $amount) {
+                $matchingAdapter->subtractAmount($championFundCampaignFunding, (string) $amount);
+            }
+        );
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($championFundWithdrawal);
@@ -111,6 +123,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
             'matchbot:redistribute-match-funds starting!',
             'Checked 1 donations and redistributed matching for 1',
             'matchbot:redistribute-match-funds complete!',
+            '',
         ]);
         $this->assertSame($expectedOutput, $output->fetch());
     }
