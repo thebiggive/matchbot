@@ -53,8 +53,10 @@ class DeleteStalePaymentDetailsTest extends TestCase
 
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
 
-        $stripeClientProphecy->customers = $stripeCustomersProphecy->reveal();
-        $stripeClientProphecy->paymentMethods = $stripePaymentMethodsProphecy->reveal();
+        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test code,
+        // and may get mutation tests working again.
+        @$stripeClientProphecy->customers = $stripeCustomersProphecy->reveal();
+        @$stripeClientProphecy->paymentMethods = $stripePaymentMethodsProphecy->reveal();
 
         $commandTester = new CommandTester($this->getCommand(
             $stripeClientProphecy,
