@@ -133,7 +133,9 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($balanceTxnResponse));
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test code,
+        // and may get mutation tests working again.
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -182,7 +184,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($balanceTxnResponse));
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
