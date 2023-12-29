@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Table]
@@ -16,13 +17,13 @@ class CampaignFunding extends Model
     use TimestampsTrait;
 
     /**
-     * @var Campaign[]
+     * @var Collection<int, Campaign>
      */
     #[ORM\JoinTable(name: 'Campaign_CampaignFunding')]
     #[ORM\JoinColumn(name: 'campaignfunding_id', referencedColumnName: 'id')]
     #[ORM\InverseJoinColumn(name: 'campaign_id', referencedColumnName: 'id')]
-    #[ORM\ManyToMany(targetEntity: Campaign::class)]
-    protected $campaigns;
+    #[ORM\ManyToMany(targetEntity: Campaign::class, inversedBy: 'campaignFundings')]
+    protected Collection $campaigns;
 
     /**
      * @var Fund
@@ -47,14 +48,14 @@ class CampaignFunding extends Model
      * The amount of this funding allocation not already claimed. If you plan to allocate funds, always read this
      * with a PESSIMISTIC_WRITE lock and modify it in the same transaction you create a FundingWithdrawal.
      *
-     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @psalm-var numeric-string Use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see CampaignFunding::$currencyCode
      */
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $amountAvailable;
 
     /**
-     * @var int     Order of preference as a rank, i.e. lower numbers have their funds used first.
+     * @var int     Order of preference as a rank, i.e. lower numbers have their funds used first. Must be >= 0.
      */
     #[ORM\Column(type: 'integer')]
     protected int $allocationOrder;
@@ -92,6 +93,7 @@ class CampaignFunding extends Model
 
     /**
      * @return string
+     * @psalm-return numeric-string
      */
     public function getAmountAvailable(): string
     {
@@ -99,7 +101,7 @@ class CampaignFunding extends Model
     }
 
     /**
-     * @param string $amountAvailable
+     * @psalm-param numeric-string $amountAvailable
      */
     public function setAmountAvailable(string $amountAvailable): void
     {
@@ -128,11 +130,20 @@ class CampaignFunding extends Model
         $this->campaigns->add($campaign);
     }
 
+    public function getAllocationOrder(): int
+    {
+        return $this->allocationOrder;
+    }
+
     /**
      * @param int $allocationOrder
      */
     public function setAllocationOrder(int $allocationOrder): void
     {
+        if ($allocationOrder < 0) {
+            throw new \LogicException('Allocation order must be a positive integer');
+        }
+
         $this->allocationOrder = $allocationOrder;
     }
 

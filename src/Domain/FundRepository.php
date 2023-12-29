@@ -86,6 +86,7 @@ class FundRepository extends SalesforceReadProxyRepository
             // We must now support funds' totals changing over time, even after a campaign opens. This must play
             // well with high volume real-time adapters, so we must first check for a likely change and then push the
             // change to the matching adapter when needed.
+            /** @psalm-var numeric-string $amountForCampaign */
             $amountForCampaign = $fundData['amountForCampaign'] === null
                 ? '0.00'
                 : (string) $fundData['amountForCampaign'];
@@ -166,7 +167,7 @@ class FundRepository extends SalesforceReadProxyRepository
 
     protected function getNewFund(array $fundData): Fund
     {
-        if ($fundData['type'] === 'pledge') {
+        if ($fundData['type'] === Pledge::DISCRIMINATOR_VALUE) {
             $fund = new Pledge();
         } elseif ($fundData['type'] === 'championFund') {
             $fund = new ChampionFund();

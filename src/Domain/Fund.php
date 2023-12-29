@@ -16,6 +16,9 @@ abstract class Fund extends SalesforceReadProxy
 {
     use TimestampsTrait;
 
+    /** @var 'championFund'|'pledge'|'unknownFund' */
+    public const DISCRIMINATOR_VALUE = 'unknownFund';
+
     /**
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Fund::$currencyCode

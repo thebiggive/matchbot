@@ -10,6 +10,8 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\Fund;
+use MatchBot\Domain\Pledge;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -19,7 +21,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-
 use Ramsey\Uuid\Uuid;
 use Slim\App;
 use Slim\Factory\AppFactory;
@@ -112,6 +113,7 @@ abstract class IntegrationTest extends TestCase
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
         $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
+        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
@@ -162,7 +164,7 @@ abstract class IntegrationTest extends TestCase
         $campaignId = $this->randomString();
         $paymentIntentId = $this->randomString();
 
-        $this->addCampaignAndCharityToDB($campaignId);
+        $this->addFundedCampaignAndCharityToDB($campaignId);
 
         $stripePaymentIntent = new PaymentIntent($paymentIntentId);
         $stripePaymentIntent->client_secret = 'any string, doesnt affect test';
@@ -186,23 +188,22 @@ abstract class IntegrationTest extends TestCase
 
     /**
      * @param string $campaignSfId
-     * @return array{charityId: int, campaignId: int, fundId: int, campaignFundingID: int}
+     * @return array{charityId: int, campaignId: int}
      * @throws \Doctrine\DBAL\Exception
      *
      * @psalm-suppress MoreSpecificReturnType
      * @psalm-suppress LessSpecificReturnStatement
      */
-    public function addCampaignAndCharityToDB(string $campaignSfId, int $fundWithAmountInPounds = 100_000): array
+    public function addCampaignAndCharityToDB(string $campaignSfId, bool $campaignOpen): array
     {
         $charityId = random_int(1000, 100000);
         $charitySfID = $this->randomString();
         $charityStripeId = $this->randomString();
-        $fundSfID = $this->randomString();
 
         $db = $this->db();
 
         $nyd = '2023-01-01'; // specific date doesn't matter.
-        $futureDate = '2093-01-01';
+        $closeDate = $campaignOpen ? '2093-01-01' : '2023-01-02';
 
         $db->executeStatement(<<<EOF
             INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId, hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber) 
@@ -216,15 +217,56 @@ abstract class IntegrationTest extends TestCase
 
         $db->executeStatement(<<<EOF
             INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull, createdAt, updatedAt, currencyCode, feePercentage) 
-            VALUES ('$charityId', 'some charity', '$nyd', '$futureDate', '$matched', '$campaignSfId', '$nyd', '$nyd', '$nyd', 'GBP', 0)
+            VALUES ('$charityId', 'some charity', '$nyd', '$closeDate', '$matched', '$campaignSfId', '$nyd', '$nyd', '$nyd', 'GBP', 0)
             EOF
         );
 
         $campaignId = (int)$db->lastInsertId();
 
+        return compact('charityId', 'campaignId');
+    }
+
+    /**
+     * @param string $campaignSfId
+     * @return array{charityId: int, campaignId: int, fundId: int, campaignFundingId: int}
+     * @throws \Doctrine\DBAL\Exception
+     * @psalm-suppress MoreSpecificReturnType
+     * @psalm-suppress LessSpecificReturnStatement
+     */
+    public function addFundedCampaignAndCharityToDB(string $campaignSfId, int $fundWithAmountInPounds = 100_000): array
+    {
+        ['charityId' => $charityId, 'campaignId' => $campaignId] = $this->addCampaignAndCharityToDB(
+            campaignSfId: $campaignSfId,
+            campaignOpen: true,
+        );
+        ['fundId' => $fundId, 'campaignFundingId' => $campaignFundingId] =
+            $this->addFunding($campaignId, $fundWithAmountInPounds, 1, Pledge::DISCRIMINATOR_VALUE);
+
+        $compacted = compact('charityId', 'campaignId', 'fundId', 'campaignFundingId');
+        Assertion::allInteger($compacted);
+
+        return $compacted;
+    }
+
+    /**
+     * @param 'championFund'|'pledge'|'unknownFund' $fundType
+     * @return array{fundId: int, campaignFundingId: int}
+     * @psalm-suppress MoreSpecificReturnType
+     * @psalm-suppress LessSpecificReturnStatement
+     */
+    public function addFunding(
+        int $campaignId,
+        int $amountInPounds,
+        int $allocationOrder,
+        string $fundType = Fund::DISCRIMINATOR_VALUE,
+    ): array {
+        $db = $this->db();
+        $fundSfID = $this->randomString();
+        $nyd = '2023-01-01'; // specific date doesn't matter.
+
         $db->executeStatement(<<<SQL
             INSERT INTO Fund (amount, name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType, currencyCode) VALUES 
-                (100000, 'Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', 'pledge', 'GBP')
+                (100000, 'Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '$fundType', 'GBP')
         SQL
         );
 
@@ -232,20 +274,18 @@ abstract class IntegrationTest extends TestCase
 
         $db->executeStatement(<<<SQL
             INSERT INTO CampaignFunding (fund_id, amount, amountAvailable, allocationOrder, createdAt, updatedAt, currencyCode) VALUES 
-                    ($fundId, $fundWithAmountInPounds, $fundWithAmountInPounds, 1, '$nyd', '$nyd', 'GBP')                                                                                                                                
+                    ($fundId, $amountInPounds, $amountInPounds, $allocationOrder, '$nyd', '$nyd', 'GBP')
         SQL
         );
 
-        $campaignFundingID = (int)$db->lastInsertId();
+        $campaignFundingId = (int)$db->lastInsertId();
 
         $db->executeStatement(<<<SQL
-         INSERT INTO Campaign_CampaignFunding (campaignfunding_id, campaign_id) VALUES ($campaignFundingID, $campaignId);
+         INSERT INTO Campaign_CampaignFunding (campaignfunding_id, campaign_id) VALUES ($campaignFundingId, $campaignId);
         SQL
-);
+        );
 
-        $compacted = compact(['charityId', 'campaignId', 'fundId', 'campaignFundingID']);
-        Assertion::allInteger($compacted);
-        return $compacted;
+        return compact('fundId', 'campaignFundingId');
     }
 
     /**
@@ -327,7 +367,7 @@ abstract class IntegrationTest extends TestCase
         $paymentIntentId = $this->randomString();
 
         if ($withPremadeCampaign) {
-            $this->addCampaignAndCharityToDB($campaignId);
+            $this->addFundedCampaignAndCharityToDB($campaignId);
         } // else application will attempt to pull campaign and charity from SF.
 
         $stripePaymentIntent = new PaymentIntent($paymentIntentId);

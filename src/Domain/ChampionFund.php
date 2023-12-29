@@ -9,4 +9,5 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 class ChampionFund extends Fund
 {
+    public const DISCRIMINATOR_VALUE = 'championFund';
 }

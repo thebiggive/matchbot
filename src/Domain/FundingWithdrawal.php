@@ -6,6 +6,9 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * @psalm-suppress PropertyNotSetInConstructor Not requiring all props on construct for now.
+ */
 #[ORM\Table]
 #[ORM\Entity(repositoryClass: FundingWithdrawalRepository::class)]
 #[ORM\HasLifecycleCallbacks]
@@ -26,10 +29,15 @@ class FundingWithdrawal extends Model
     protected string $amount;
 
     /**
-     * @var CampaignFunding|null
+     * @var CampaignFunding
      */
     #[ORM\ManyToOne(targetEntity: CampaignFunding::class, fetch: 'EAGER')]
-    protected ?CampaignFunding $campaignFunding = null;
+    private readonly CampaignFunding $campaignFunding;
+
+    public function __construct(CampaignFunding $campaignFunding)
+    {
+        $this->campaignFunding = $campaignFunding;
+    }
 
     /**
      * @param Donation $donation
@@ -55,15 +63,7 @@ class FundingWithdrawal extends Model
         return $this->amount;
     }
 
-    /**
-     * @param CampaignFunding $campaignFunding
-     */
-    public function setCampaignFunding(CampaignFunding $campaignFunding): void
-    {
-        $this->campaignFunding = $campaignFunding;
-    }
-
-    public function getCampaignFunding(): ?CampaignFunding
+    public function getCampaignFunding(): CampaignFunding
     {
         return $this->campaignFunding;
     }
