@@ -25,6 +25,9 @@ trait DonationTestDataTrait
         return file_get_contents($fullPath);
     }
 
+    /**
+     * @param numeric-string $amount
+     */
     protected function getPendingBigGiveGeneralCustomerBalanceDonation(
         string $amount = '123.45',
         string $currencyCode = 'GBP',

@@ -6,6 +6,8 @@ namespace MatchBot\Domain;
 
 use DateTime;
 use DateTimeInterface;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -23,6 +25,12 @@ class Campaign extends SalesforceReadProxy
     #[ORM\ManyToOne(targetEntity: Charity::class, cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'charity_id', referencedColumnName: 'id')]
     protected Charity $charity;
+
+    /**
+     * @psalm-suppress PossiblyUnusedProperty Used in Doctrine ORM mapping
+     */
+    #[ORM\ManyToMany(targetEntity: CampaignFunding::class, mappedBy: 'campaigns')]
+    protected Collection $campaignFundings;
 
     /**
      * @var string  ISO 4217 code for the currency in which donations can be accepted and matching's organised.
@@ -61,6 +69,7 @@ class Campaign extends SalesforceReadProxy
      */
     public function __construct(?Charity $charity)
     {
+        $this->campaignFundings = new ArrayCollection();
         if ($charity) {
             $this->charity = $charity;
         }

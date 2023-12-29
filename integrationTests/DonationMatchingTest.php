@@ -7,7 +7,6 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\OptimisticRedisAdapter;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\RedisMatchingStorage;
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use Psr\Log\LoggerInterface;
@@ -31,8 +30,8 @@ class DonationMatchingTest extends IntegrationTest
     public function testDonatingReducesAvailableMatchFunds(): void
     {
         // arrange
-        ['campaignFundingID' => $this->campaignFundingId, 'campaignId' => $campaignId] =
-            $this->addCampaignAndCharityToDB(campaignSfId: $this->randomString(), fundWithAmountInPounds: 100);
+        ['campaignFundingId' => $this->campaignFundingId, 'campaignId' => $campaignId] =
+            $this->addFundedCampaignAndCharityToDB(campaignSfId: $this->randomString(), fundWithAmountInPounds: 100);
 
         $campaign = $this->getService(\MatchBot\Domain\CampaignRepository::class)->find($campaignId);
         Assertion::notNull($campaign);
@@ -59,8 +58,8 @@ class DonationMatchingTest extends IntegrationTest
         $this->setInContainer(Adapter::class, $this->matchingAdapater);
         $this->getService(\MatchBot\Domain\DonationRepository::class)->setMatchingAdapter($this->matchingAdapater);
 
-        ['campaignFundingID' => $this->campaignFundingId, 'campaignId' => $campaignId] =
-            $this->addCampaignAndCharityToDB(campaignSfId: $this->randomString(), fundWithAmountInPounds: 100);
+        $campaignInfo = $this->addFundedCampaignAndCharityToDB(campaignSfId: $this->randomString(), fundWithAmountInPounds: 100);
+        ['campaignFundingId' => $this->campaignFundingId, 'campaignId' => $campaignId] = $campaignInfo;
 
         $campaign = $this->getService(\MatchBot\Domain\CampaignRepository::class)->find($campaignId);
         Assertion::notNull($campaign);

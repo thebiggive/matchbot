@@ -14,6 +14,7 @@ class DonationCreate
 {
     /**
      * @param string $donationAmount In full currency unit, e.g. whole pounds GBP, whole dollars USD
+     * @psalm-param numeric-string $donationAmount
      */
     public function __construct(
         public string $currencyCode,
