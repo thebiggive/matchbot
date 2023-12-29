@@ -24,14 +24,22 @@ use Symfony\Component\Lock\LockFactory;
 
 class RedistibuteMatchFundsTest extends TestCase
 {
+    private \DateTimeImmutable $newYearsEveNoon;
+    private \DateTimeImmutable $midNovemberNoon;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->newYearsEveNoon = new \DateTimeImmutable('2023-12-31T12:00:00');
+        $this->midNovemberNoon = new \DateTimeImmutable('2023-11-19T12:00:00');
+    }
+
     public function testNoEligibleDonations(): void
     {
-        $now = new \DateTimeImmutable('now');
-
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
-            $now,
-            $now->sub(new \DateInterval('P6W')),
+            $this->newYearsEveNoon,
+            $this->midNovemberNoon,
         )
             ->willReturn([])
             ->shouldBeCalledOnce();
@@ -39,7 +47,7 @@ class RedistibuteMatchFundsTest extends TestCase
 
         $commandTester = new CommandTester($this->getCommand(
             $this->prophesize(CampaignFundingRepository::class),
-            $now,
+            $this->newYearsEveNoon,
             $donationRepoProphecy,
             $this->prophesize(LoggerInterface::class),
         ));
@@ -56,13 +64,12 @@ class RedistibuteMatchFundsTest extends TestCase
 
     public function testOneDonationHasChampFundsUsedAndIsAssignedPledgeToFullMatchedValue(): void
     {
-        $now = new \DateTimeImmutable('now');
         $donation = $this->getTenPoundChampionMatchedDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
-            $now,
-            $now->sub(new \DateInterval('P6W')),
+            $this->newYearsEveNoon,
+            $this->midNovemberNoon,
         )->willReturn([$donation]);
 
         $donationRepoProphecy->releaseMatchFunds($donation)
@@ -82,7 +89,7 @@ class RedistibuteMatchFundsTest extends TestCase
 
         $commandTester = new CommandTester($this->getCommand(
             $campaignFundingRepoProphecy,
-            $now,
+            $this->newYearsEveNoon,
             $donationRepoProphecy,
             $loggerProphecy,
         ));
@@ -113,13 +120,12 @@ class RedistibuteMatchFundsTest extends TestCase
      */
     public function testOneDonationHasChampFundsUsedAndIsAssignedPledgeButOnlyPartMatched(): void
     {
-        $now = new \DateTimeImmutable('now');
         $donation = $this->getTenPoundChampionMatchedDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
-            $now,
-            $now->sub(new \DateInterval('P6W')),
+            $this->newYearsEveNoon,
+            $this->midNovemberNoon,
         )->willReturn([$donation]);
 
         $donationRepoProphecy->releaseMatchFunds($donation)
@@ -141,7 +147,7 @@ class RedistibuteMatchFundsTest extends TestCase
 
         $commandTester = new CommandTester($this->getCommand(
             $campaignFundingRepoProphecy,
-            $now,
+            $this->newYearsEveNoon,
             $donationRepoProphecy,
             $loggerProphecy,
         ));
