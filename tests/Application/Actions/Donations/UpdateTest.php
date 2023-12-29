@@ -1615,7 +1615,13 @@ class UpdateTest extends TestCase
 
     public function testAddDataSuccessWithCashBalanceAutoconfirm(): void
     {
-        ['app' => $app, 'request' => $request, 'route' => $route, 'donationRepoProphecy' => $donationRepoProphecy, 'entityManagerProphecy' => $entityManagerProphecy] =
+        [
+            'app' => $app,
+            'request' => $request,
+            'route' => $route,
+            'donationRepoProphecy' => $donationRepoProphecy,
+            'entityManagerProphecy' => $entityManagerProphecy,
+        ] =
             $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
                 newPaymentIntentStatus: PaymentIntent::STATUS_SUCCEEDED,
                 nextActionRequired: null,
@@ -1644,7 +1650,13 @@ class UpdateTest extends TestCase
 
     public function testAddDataFailsWithCashBalanceAutoconfirmForDonorWithInsufficentFunds(): void
     {
-        ['app' => $app, 'request' => $request, 'route' => $route, 'stripeProphecy' => $stripeProphecy, 'entityManagerProphecy' => $entityManagerProphecy] =
+        [
+            'app' => $app,
+            'request' => $request,
+            'route' => $route,
+            'stripeProphecy' => $stripeProphecy,
+            'entityManagerProphecy' => $entityManagerProphecy,
+        ] =
             $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
                 newPaymentIntentStatus: PaymentIntent::STATUS_PROCESSING,
                 nextActionRequired: null,
@@ -1736,9 +1748,9 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::Card);  // Get a new mock object so DB has old values.
-        // Make it explicit that the payment method type is (the unsupported
-        // for auto-confirms) "card".
+        // Get a new mock object so DB has old values. Make it explicit that the payment method type is (the
+        // unsupported for auto-confirms) "card".
+        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::Card);
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
@@ -1869,9 +1881,9 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');  // Get a new mock object so DB has old values.
-        // Make it explicit that the payment method type is (the unsupported
-        // for auto-confirms) "card".
+        // Get a new mock object so DB has old values. Make it explicit that the payment method type is (the
+        // unsupported for auto-confirms) "card".
+        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])

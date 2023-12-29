@@ -266,7 +266,10 @@ class CalculatorTest extends TestCase
 
     public function testItRejectsUnexpectedCardBrand(): void
     {
-        $this->expectExceptionMessage("Unexpected card brand, expected brands are amex, diners, discover, eftpos_au, jcb, mastercard, unionpay, visa, unknown");
+        $this->expectExceptionMessage(
+            'Unexpected card brand, expected brands are amex, diners, discover, eftpos_au, jcb, mastercard, ' .
+            'unionpay, visa, unknown'
+        );
 
         new Calculator(
             $this->settingsWithVAT(),

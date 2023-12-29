@@ -51,11 +51,13 @@ class Create extends Action
         $stripeCustomerIdString = $request->getAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME);
         \assert(is_string($stripeCustomerIdString));
 
-        $emailAddressString = $requestBody['emailAddress'] ?? throw new HttpBadRequestException($request, 'Expected emailAddress');
+        $emailAddressString = $requestBody['emailAddress'] ??
+            throw new HttpBadRequestException($request, 'Expected emailAddress');
         \assert(is_string($emailAddressString));
 
         /** @var array{firstName: string, lastName: string} $donorNameArray */
-        $donorNameArray = $requestBody['donorName'] ?? throw new HttpBadRequestException($request, 'Expected donorName');
+        $donorNameArray = $requestBody['donorName'] ??
+            throw new HttpBadRequestException($request, 'Expected donorName');
 
         try {
             $emailAddress = EmailAddress::of($emailAddressString);

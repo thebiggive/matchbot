@@ -39,8 +39,10 @@ abstract class IntegrationTest extends TestCase
         parent::setUp();
 
         $noOpMiddleware = new class implements MiddlewareInterface {
-            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-            {
+            public function process(
+                ServerRequestInterface $request,
+                RequestHandlerInterface $handler,
+            ): ResponseInterface {
                 return $handler->handle($request);
             }
         };
@@ -206,8 +208,10 @@ abstract class IntegrationTest extends TestCase
         $closeDate = $campaignOpen ? '2093-01-01' : '2023-01-02';
 
         $db->executeStatement(<<<EOF
-            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId, hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber) 
-            VALUES ($charityId, 'Some Charity', '$charitySfID', '$nyd', '$nyd', '$nyd', '$charityStripeId', null, 0, 0, null, null)
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber) 
+            VALUES ($charityId, 'Some Charity', '$charitySfID', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    null, 0, 0, null, null)
             EOF
         );
 
@@ -216,8 +220,10 @@ abstract class IntegrationTest extends TestCase
         $matched =  1;
 
         $db->executeStatement(<<<EOF
-            INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull, createdAt, updatedAt, currencyCode, feePercentage) 
-            VALUES ('$charityId', 'some charity', '$nyd', '$closeDate', '$matched', '$campaignSfId', '$nyd', '$nyd', '$nyd', 'GBP', 0)
+            INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull,
+                                  createdAt, updatedAt, currencyCode, feePercentage) 
+            VALUES ('$charityId', 'some charity', '$nyd', '$closeDate', '$matched', '$campaignSfId', '$nyd',
+                    '$nyd', '$nyd', 'GBP', 0)
             EOF
         );
 
@@ -265,23 +271,28 @@ abstract class IntegrationTest extends TestCase
         $nyd = '2023-01-01'; // specific date doesn't matter.
 
         $db->executeStatement(<<<SQL
-            INSERT INTO Fund (amount, name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType, currencyCode) VALUES 
-                (100000, 'Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '$fundType', 'GBP')
+            INSERT INTO Fund (amount, name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
+                              currencyCode) VALUES 
+                (100000, 'Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '$fundType',
+                 'GBP')
         SQL
         );
 
         $fundId = (int)$db->lastInsertId();
 
         $db->executeStatement(<<<SQL
-            INSERT INTO CampaignFunding (fund_id, amount, amountAvailable, allocationOrder, createdAt, updatedAt, currencyCode) VALUES 
-                    ($fundId, $amountInPounds, $amountInPounds, $allocationOrder, '$nyd', '$nyd', 'GBP')
+            INSERT INTO CampaignFunding (fund_id, amount, amountAvailable, allocationOrder, createdAt, updatedAt,
+                                         currencyCode) VALUES 
+                    ($fundId, $amountInPounds, $amountInPounds, $allocationOrder, '$nyd', '$nyd',
+                     'GBP')
         SQL
         );
 
         $campaignFundingId = (int)$db->lastInsertId();
 
         $db->executeStatement(<<<SQL
-         INSERT INTO Campaign_CampaignFunding (campaignfunding_id, campaign_id) VALUES ($campaignFundingId, $campaignId);
+         INSERT INTO Campaign_CampaignFunding (campaignfunding_id, campaign_id)
+         VALUES ($campaignFundingId, $campaignId);
         SQL
         );
 
@@ -323,7 +334,8 @@ abstract class IntegrationTest extends TestCase
      * @template T
      * @param class-string<T> $name
      * @return T
-     */ public function getService(string $name): mixed
+     */
+    public function getService(string $name): mixed
     {
         $service = $this->getContainer()->get($name);
         $this->assertInstanceOf($name, $service);
@@ -352,7 +364,7 @@ abstract class IntegrationTest extends TestCase
         $fakeStripeClient = $this->createStub(StripeClient::class);
         $fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
         $fakeStripeClient->customers = $stripeCustomerServiceProphecy->reveal();
-        $fakeStripeClient->paymentIntents =$stripePaymentIntents->reveal();
+        $fakeStripeClient->paymentIntents = $stripePaymentIntents->reveal();
 
         return $fakeStripeClient;
     }

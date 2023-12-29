@@ -6,5 +6,4 @@ use Assert\LazyAssertionException as BaseLazyAssertionExceptionAlias;
 
 class LazyAssertionException extends BaseLazyAssertionExceptionAlias
 {
-
 }

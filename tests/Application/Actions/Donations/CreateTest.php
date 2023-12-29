@@ -256,7 +256,8 @@ class CreateTest extends TestCase
         $campaignRepoProphecy->updateFromSf(Argument::type(Campaign::class))
             ->will(/**
              * @param array{0: Campaign} $args
-             */ fn (array $args) => $args[0]->setCharity($charityWhichNowHasStripeAccountID));
+             */                fn (array $args) => $args[0]->setCharity($charityWhichNowHasStripeAccountID)
+            );
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());

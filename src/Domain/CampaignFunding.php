@@ -67,7 +67,8 @@ class CampaignFunding extends Model
 
     public function __toString(): string
     {
-        return "CampaignFunding, ID #{$this->id}, created {$this->createdAt->format('c')} of fund SF ID {$this->fund->getSalesforceId()}";
+        return "CampaignFunding, ID #{$this->id}, created {$this->createdAt->format('c')} " .
+            "of fund SF ID {$this->fund->getSalesforceId()}";
     }
 
     public function isShared(): bool

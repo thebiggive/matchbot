@@ -73,7 +73,11 @@ trait DonationTestDataTrait
         $campaign->setSalesforceId('456ProjectId');
 
         /** @psalm-suppress DeprecatedMethod **/
-        $donation = Donation::emptyTestDonation(amount: $amount, paymentMethodType: $pspMethodType, currencyCode: $currencyCode);
+        $donation = Donation::emptyTestDonation(
+            amount: $amount,
+            paymentMethodType: $pspMethodType,
+            currencyCode: $currencyCode,
+        );
 
         $this->setMinimumFieldsSetOnFirstPersist($donation);
 

@@ -99,7 +99,9 @@ class Campaign extends SalesforceReadProxy
 
             $_charity = $this->charity;
         } catch (\Error $e) {
-            throw new \Exception("Error on attempt to persist campaign #{$this->id}, sfID {$this->salesforceId}: \n{$e}");
+            throw new \Exception(
+                "Error on attempt to persist campaign #{$this->id}, sfID {$this->salesforceId}: \n{$e}"
+            );
         }
     }
 

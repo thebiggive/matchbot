@@ -36,7 +36,11 @@ class OptimisticRedisAdapterTest extends TestCase
             $closure();
         });
 
-        $this->sut = new OptimisticRedisAdapter($this->storage, $this->entityManagerProphecy->reveal(), new NullLogger());
+        $this->sut = new OptimisticRedisAdapter(
+            $this->storage,
+            $this->entityManagerProphecy->reveal(),
+            new NullLogger(),
+        );
     }
 
     public function testItReturnsAmountAvailableFromAFundingNotInStorage(): void
@@ -91,12 +95,14 @@ class OptimisticRedisAdapterTest extends TestCase
 
             $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
             $this->sut->subtractAmount($funding, $amountToSubtract);
-                try {
-                    $this->sut->subtractAmount($funding, $amountToSubtract); // this second subtraction will take the fund negative in redis temporarily, but our Adapter will add back the 30 just subtracted.
-                    $this->fail("should have thrown exception on attempt to allocate more than available");
-                } catch (LessThanRequestedAllocatedException $exception){
-                    $this->assertStringContainsString("Less than requested was allocated", $exception->getMessage());
-                }
+            try {
+                // this second subtraction will take the fund negative in redis temporarily, but our Adapter will add
+                // back the 30 just subtracted.
+                $this->sut->subtractAmount($funding, $amountToSubtract);
+                $this->fail("should have thrown exception on attempt to allocate more than available");
+            } catch (LessThanRequestedAllocatedException $exception) {
+                $this->assertStringContainsString("Less than requested was allocated", $exception->getMessage());
+            }
 
                 $this->assertSame('0.00', $funding->getAmountAvailable());
                 $this->assertSame('0.00', $this->sut->getAmountAvailable($funding));
@@ -126,7 +132,6 @@ class OptimisticRedisAdapterTest extends TestCase
             // result of running the test.
             $this->expectExceptionMessage("Fund 53 balance sub-zero after 6 attempts. Releasing final -10000 'cents'");
             $this->sut->subtractAmount($funding, $amountToSubtract);
-
         });
     }
 

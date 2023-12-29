@@ -156,7 +156,7 @@ class RetrySafeEntityManagerTest extends TestCase
     {
         $underlyingEmProphecy = $this->prophesize(EntityManager::class);
         $underlyingEmProphecy
-            ->refresh(Argument::type(Donation::class),LockMode::PESSIMISTIC_WRITE)
+            ->refresh(Argument::type(Donation::class), LockMode::PESSIMISTIC_WRITE)
             ->shouldBeCalledOnce();
 
         $retrySafeEntityManagerReflected = new ReflectionClass($this->retrySafeEntityManager);

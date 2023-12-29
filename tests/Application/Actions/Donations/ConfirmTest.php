@@ -25,7 +25,7 @@ use Stripe\PaymentMethod;
 
 class ConfirmTest extends TestCase
 {
-    public function test_it_confirms_a_card_donation(): void
+    public function testItConfirmsACardDonation(): void
     {
         // arrange
 
@@ -281,15 +281,15 @@ class ConfirmTest extends TestCase
      * @return ObjectProphecy<Stripe>
      */
     private function fakeStripeClient(
-        array  $cardDetails,
+        array $cardDetails,
         string $paymentMethodId,
-        array  $updatedIntentData,
+        array $updatedIntentData,
         string $paymentIntentId,
-        array  $expectedMetadataUpdate,
-        bool   $confirmFailsWithCardError,
-        bool   $confirmFailsWithApiError,
-        bool   $confirmFailsWithPaymentMethodUsedError,
-        bool   $updatePaymentIntentAndConfirmExpected = true,
+        array $expectedMetadataUpdate,
+        bool $confirmFailsWithCardError,
+        bool $confirmFailsWithApiError,
+        bool $confirmFailsWithPaymentMethodUsedError,
+        bool $updatePaymentIntentAndConfirmExpected = true,
     ): ObjectProphecy {
         $paymentMethod = new PaymentMethod(['id' => 'id-doesnt-matter-for-test']);
         $paymentMethod->type = 'card';

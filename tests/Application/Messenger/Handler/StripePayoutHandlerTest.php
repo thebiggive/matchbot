@@ -97,8 +97,8 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce();
 
         $stripeClientProphecy = $this->getStripeClient();
-        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test code,
-        // and may get mutation tests working again.
+        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
+        // code, and may get mutation tests working again.
         @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
         @$stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
 
@@ -296,8 +296,8 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($this->getStripeHookMock('ApiResponse/po')));
 
-        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test code,
-        // and may get mutation tests working again.
+        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
+        // code, and may get mutation tests working again.
         @$stripeClientProphecy->payouts = $stripePayoutProphecy->reveal();
 
         return $stripeClientProphecy;

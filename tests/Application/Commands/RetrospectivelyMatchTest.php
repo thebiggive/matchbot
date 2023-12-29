@@ -92,7 +92,8 @@ class RetrospectivelyMatchTest extends TestCase
     {
         $donationRepo = $this->prophesize(DonationRepository::class);
 
-        $donationRepo->findNotFullyMatchedToCampaignsWhichClosedSince(Argument::type(DateTime::class))->willReturn([$this->getTestDonation()]);
+        $donationRepo->findNotFullyMatchedToCampaignsWhichClosedSince(Argument::type(DateTime::class))
+            ->willReturn([$this->getTestDonation()]);
 
         // Simulate specific day count mode not finding any campaigns to match, for now.
         $donationRepo->findRecentNotFullyMatchedToMatchCampaigns(Argument::type(DateTime::class))->willReturn([]);

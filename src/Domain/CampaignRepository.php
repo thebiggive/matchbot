@@ -14,7 +14,6 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
-
     /**
      * Gets those campaigns which are live now or recently closed (in the last week),
      * based on their last known end time. This allows for campaigns to receive updates

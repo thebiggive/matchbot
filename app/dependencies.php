@@ -22,6 +22,7 @@ use MatchBot\Application\RealTimeMatchingStorage;
 use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
+use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
@@ -158,8 +159,8 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\LiveStripeClient($c->get(StripeClient::class));
         },
 
-        \MatchBot\Domain\DonationFundsNotifier::class => function (ContainerInterface $c): \MatchBot\Domain\DonationFundsNotifier {
-            return new \MatchBot\Domain\DonationFundsNotifier($c->get(Client\Mailer::class));
+        DonationFundsNotifier::class => function (ContainerInterface $c): DonationFundsNotifier {
+            return new DonationFundsNotifier($c->get(Client\Mailer::class));
         },
 
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {

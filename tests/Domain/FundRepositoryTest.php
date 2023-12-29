@@ -65,11 +65,14 @@ class FundRepositoryTest extends TestCase
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
             ->shouldBeCalledTimes(2)
-            ->will(/**
-             * @param array<CampaignFunding> $args
-             */ function (array $args) use (&$campaignFunding) {
-                $campaignFunding = $args[0];
-            })
+            ->will(
+                /**
+                 * @param array<CampaignFunding> $args
+                 */
+                function (array $args) use (&$campaignFunding) {
+                    $campaignFunding = $args[0];
+                }
+            )
         ;
 
         // This is not mututally exclusive with the above call expectations. It's a quick way to double check
