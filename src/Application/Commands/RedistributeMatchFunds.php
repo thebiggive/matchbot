@@ -19,6 +19,7 @@ class RedistributeMatchFunds extends LockingCommand
 
     public function __construct(
         private CampaignFundingRepository $campaignFundingRepository,
+        private \DateTimeImmutable $now,
         private DonationRepository $donationRepository,
         private LoggerInterface $logger,
     ) {
@@ -32,9 +33,12 @@ class RedistributeMatchFunds extends LockingCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        // TODO Change the fixed lookback to 2 days, or parameter-ise it, once CC23 is tidied in Prod.
         $donationsToCheck = $this->donationRepository->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
-            new \DateTimeImmutable('-5 weeks')
+            campaignsClosedBefore: $this->now,
+            // Since very long campaigns usually only have one funding type, it's currently unlikely
+            // that the combination of minimum & maximum dates will stop funds being redistributed when
+            // we'd like them to.
+            donationsCollectedAfter: $this->now->sub(new \DateInterval('P6W')),
         );
 
         $donationsAmended = 0;
@@ -78,6 +82,7 @@ class RedistributeMatchFunds extends LockingCommand
             $amountMatchedAfterRedistribution = $this->donationRepository->allocateMatchFunds($donation);
 
             // If the new allocation is less, log an error but still count the donation and continue with the loop.
+            // We don't expect to actually see this happen as we now intend to run the script only for closed campaigns.
             if (bccomp($amountMatchedAfterRedistribution, $amountMatchedBeforeRedistribution, 2) === -1) {
                 $this->logger->error(sprintf(
                     'Donation %s had redistributed match funds reduced from %s to %s (%s)',

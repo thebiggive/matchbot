@@ -74,6 +74,7 @@ $commands = [
     ),
     new RedistributeMatchFunds(
         $psr11App->get(CampaignFundingRepository::class),
+        new \DateTimeImmutable('now'),
         $psr11App->get(DonationRepository::class),
         $psr11App->get(LoggerInterface::class),
     ),

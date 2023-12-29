@@ -353,8 +353,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
      *                      swapped; typically we will choose to swap earlier-collected donations first, and it may
      *                      be that priority funds are used up before we get to the end of the list.
      */
-    public function findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(\DateTimeImmutable $cutoff): array
-    {
+    public function findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
+        \DateTimeImmutable $campaignsClosedBefore,
+        \DateTimeImmutable $donationsCollectedAfter,
+    ): array {
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
             ->from(Donation::class, 'd')
@@ -370,11 +372,13 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 'WITH',
                 'availableCf.amountAvailable > 0 AND availableCf.allocationOrder < donationCf.allocationOrder'
             )
-            ->where('d.donationStatus IN (:collectedStatuses)')
-            ->andWhere('d.collectedAt > :checkAfter')
+            ->where('c.endDate < :campaignsClosedBefore')
+            ->andWhere('d.donationStatus IN (:collectedStatuses)')
+            ->andWhere('d.collectedAt > :donationsCollectedAfter')
             ->groupBy('d.id')
+            ->setParameter('campaignsClosedBefore', $campaignsClosedBefore)
             ->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES)
-            ->setParameter('checkAfter', $cutoff)
+            ->setParameter('donationsCollectedAfter', $donationsCollectedAfter)
         ;
 
         // Result caching rationale as per `findWithExpiredMatching()`.

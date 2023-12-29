@@ -194,7 +194,7 @@ abstract class IntegrationTest extends TestCase
      * @psalm-suppress MoreSpecificReturnType
      * @psalm-suppress LessSpecificReturnStatement
      */
-    public function addCampaignAndCharityToDB(string $campaignSfId): array
+    public function addCampaignAndCharityToDB(string $campaignSfId, bool $campaignOpen): array
     {
         $charityId = random_int(1000, 100000);
         $charitySfID = $this->randomString();
@@ -203,7 +203,7 @@ abstract class IntegrationTest extends TestCase
         $db = $this->db();
 
         $nyd = '2023-01-01'; // specific date doesn't matter.
-        $futureDate = '2093-01-01';
+        $closeDate = $campaignOpen ? '2093-01-01' : '2023-01-02';
 
         $db->executeStatement(<<<EOF
             INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId, hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber) 
@@ -217,7 +217,7 @@ abstract class IntegrationTest extends TestCase
 
         $db->executeStatement(<<<EOF
             INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull, createdAt, updatedAt, currencyCode, feePercentage) 
-            VALUES ('$charityId', 'some charity', '$nyd', '$futureDate', '$matched', '$campaignSfId', '$nyd', '$nyd', '$nyd', 'GBP', 0)
+            VALUES ('$charityId', 'some charity', '$nyd', '$closeDate', '$matched', '$campaignSfId', '$nyd', '$nyd', '$nyd', 'GBP', 0)
             EOF
         );
 
@@ -235,7 +235,10 @@ abstract class IntegrationTest extends TestCase
      */
     public function addFundedCampaignAndCharityToDB(string $campaignSfId, int $fundWithAmountInPounds = 100_000): array
     {
-        ['charityId' => $charityId, 'campaignId' => $campaignId] = $this->addCampaignAndCharityToDB($campaignSfId);
+        ['charityId' => $charityId, 'campaignId' => $campaignId] = $this->addCampaignAndCharityToDB(
+            campaignSfId: $campaignSfId,
+            campaignOpen: true,
+        );
         ['fundId' => $fundId, 'campaignFundingId' => $campaignFundingId] =
             $this->addFunding($campaignId, $fundWithAmountInPounds, 1, Pledge::DISCRIMINATOR_VALUE);
 
