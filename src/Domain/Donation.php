@@ -163,26 +163,17 @@ class Donation extends SalesforceWriteProxy
     protected ?bool $championComms = null;
 
     /**
-     * @var string|null  Set on PSP callback. *Billing* country code.
+     * @var string|null  *Billing* country code.
      */
     #[ORM\Column(type: 'string', length: 2, nullable: true)]
     protected ?string $donorCountryCode = null;
 
-    /**
-     * @var string|null Set on PSP callback
-     */
     #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorEmailAddress = null;
 
-    /**
-     * @var string|null Set on PSP callback
-     */
     #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorFirstName = null;
 
-    /**
-     * @var string|null Set on PSP callback
-     */
     #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorLastName = null;
 
