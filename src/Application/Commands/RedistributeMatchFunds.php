@@ -76,8 +76,10 @@ class RedistributeMatchFunds extends LockingCommand
             $amountMatchedBeforeRedistribution = $donation->getFundingWithdrawalTotal();
 
             // Technically another donation could be allocated funds in between these two lines, so we aim to run
-            // this command only at quiet traffic times. The worst case scenario is that we inaccurately tell two
-            // donors they received matching. We log an error if this happens so we can take action.
+            // this command only at quiet traffic times and also now only against donations to campaigns which
+            // have closed. If we ever relax the latter condition, the worst case scenario is that we
+            // inaccurately tell two donors they received matching. We log an error if this happens so we can
+            // take action.
             $this->donationRepository->releaseMatchFunds($donation);
             $amountMatchedAfterRedistribution = $this->donationRepository->allocateMatchFunds($donation);
 

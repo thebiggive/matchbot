@@ -376,6 +376,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ->andWhere('d.donationStatus IN (:collectedStatuses)')
             ->andWhere('d.collectedAt > :donationsCollectedAfter')
             ->groupBy('d.id')
+            ->orderBy('d.id')
             ->setParameter('campaignsClosedBefore', $campaignsClosedBefore)
             ->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES)
             ->setParameter('donationsCollectedAfter', $donationsCollectedAfter)
