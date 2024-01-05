@@ -28,7 +28,8 @@ class TestCase extends PHPUnitTestCase
     use ProphecyTrait;
 
     /**
-     * @var array<0|1, ?App> array of app instances with and without real redis. Each one may be initialised up to once per test.
+     * @var array<0|1, ?App> array of app instances with and without real redis. Each one may be
+     *                       initialised up to once per test.
      */
     private array $appInstance = [0 => null, 1 => null];
 

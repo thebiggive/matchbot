@@ -16,6 +16,7 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+
 use function bccomp;
 use function sprintf;
 
@@ -96,7 +97,8 @@ class Donation extends SalesforceWriteProxy
     /**
      * Core donation amount in major currency units (i.e. Pounds) excluding any tip.
      *
-     * @psalm-var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @psalm-var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths
+     *                           with decimals!
      * @see Donation::$currencyCode
      */
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
@@ -283,8 +285,11 @@ class Donation extends SalesforceWriteProxy
      * @deprecated but retained for now as used in old test classes. Not recommend for continued use - either use
      * fromApiModel or create a new named constructor that takes required data for your use case.
      */
-    public static function emptyTestDonation(string $amount, PaymentMethodType $paymentMethodType = PaymentMethodType::Card, string $currencyCode = 'GBP'): self
-    {
+    public static function emptyTestDonation(
+        string $amount,
+        PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
+        string $currencyCode = 'GBP'
+    ): self {
         return new self($amount, $currencyCode, $paymentMethodType);
     }
 
@@ -464,7 +469,9 @@ class Donation extends SalesforceWriteProxy
             'homeAddress' => $this->getDonorHomeAddressLine1(),
             'homePostcode' => $this->getDonorHomePostcode(),
             'lastName' => $this->getDonorLastName(true),
-            'matchedAmount' => $this->getDonationStatus()->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0,
+            'matchedAmount' => $this->getDonationStatus()->isSuccessful()
+                ? (float) $this->getFundingWithdrawalTotal()
+                : 0,
             'matchReservedAmount' => 0,
             'optInCharityEmail' => $this->getCharityComms(),
             'optInChampionEmail' => $this->getChampionComms(),

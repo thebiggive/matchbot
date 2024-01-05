@@ -43,13 +43,19 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $this->campaignFundingsRepositoryProphecy = $this->prophesize(CampaignFundingRepository::class);
 
         $this->emProphecy = $this->prophesize(\Doctrine\ORM\EntityManagerInterface::class);
-        $this->emProphecy->getRepository(CampaignFunding::class)->willReturn($this->campaignFundingsRepositoryProphecy->reveal());
+        $this->emProphecy->getRepository(CampaignFunding::class)
+            ->willReturn($this->campaignFundingsRepositoryProphecy->reveal());
 
         $this->emProphecy->transactional(Argument::type(\Closure::class))->will(/**
          * @param list<\Closure> $args
          * @return mixed
-         */ fn(array $args) => $args[0]());
-        $matchingAdapter = new OptimisticRedisAdapter(new ArrayMatchingStorage(), $this->emProphecy->reveal(), new NullLogger());
+         */            fn(array $args) => $args[0]()
+        );
+        $matchingAdapter = new OptimisticRedisAdapter(
+            new ArrayMatchingStorage(),
+            $this->emProphecy->reveal(),
+            new NullLogger(),
+        );
 
         $this->sut = new DonationRepository(
             $this->emProphecy->reveal(),
@@ -140,8 +146,9 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
      *   5: string
      * }>
      */
-    public function AllocationFromTwoFundingsCases(): array
+    public function allocationFromTwoFundingsCases(): array
     {
+    // phpcs:disable
         return [
             // f0 available, f1 available, donation amount, amount matched, withdrawal0, withdrawal1,
             ['6.00', '1000000', '10', '10.00', '6.00', '4.00'],
@@ -151,10 +158,11 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             ['0.999999999999999999999999999999999', '6.00', '10', '6.99', '0.999999999999999999999999999999999', '6.00'],
             ['6.00', '0.999999999999999999999999999999999', '10', '6.99', '6.00', '0.999999999999999999999999999999999'],
         ];
+        // phpcs:enable
     }
 
     /**
-     * @dataProvider AllocationFromTwoFundingsCases
+     * @dataProvider allocationFromTwoFundingsCases
      * @psalm-param numeric-string $funding0Available
      * @psalm-param numeric-string $funding1Available
      * @psalm-param numeric-string $donationAmount
@@ -210,7 +218,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $this->assertSame($campaignFunding0, $fundingWithdrawals[0]->getCampaignFunding());
 
         $this->assertInstanceOf(FundingWithdrawal::class, $fundingWithdrawals[1]);
-        \assert(10-6 == 4);
+        \assert(10 - 6 == 4);
         $this->assertSame($withdrawl1AmountExpected, $fundingWithdrawals[1]->getAmount());
         $this->assertSame($campaignFunding1, $fundingWithdrawals[1]->getCampaignFunding());
     }

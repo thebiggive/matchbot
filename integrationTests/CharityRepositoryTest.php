@@ -43,7 +43,8 @@ class CharityRepositoryTest extends IntegrationTest
         assert($charityReturnedFromDB instanceof Charity);
 
         // assert
-        $this->assertNotSame($charity, $charityReturnedFromDB); // proves that we loaded a new copy of the charity out of the DB.
+        // proves that we loaded a new copy of the charity out of the DB.
+        $this->assertNotSame($charity, $charityReturnedFromDB);
         $this->assertSame("Charity Name", $charity->getName());
     }
 }

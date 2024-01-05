@@ -97,7 +97,11 @@ class Create extends Action
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $exception->getMessage());
 
-            return $this->validationError($response, $message . ': ' . $exception->getMessage(), $exception->getMessage());
+            return $this->validationError(
+                $response,
+                $message . ': ' . $exception->getMessage(),
+                $exception->getMessage(),
+            );
         } catch (UniqueConstraintViolationException $exception) {
             // If we get this, the most likely explanation is that another donation request
             // created the same campaign a very short time before this request tried to. We
@@ -142,7 +146,8 @@ class Create extends Action
                     fn() => $this->matchingAdapter->releaseNewlyAllocatedFunds(),
                 );
 
-                // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount would be reduced again when the donation expires.
+                // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
+                // would be reduced again when the donation expires.
                 $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
 
                 throw $t;

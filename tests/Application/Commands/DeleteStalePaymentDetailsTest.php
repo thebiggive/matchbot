@@ -44,7 +44,8 @@ class DeleteStalePaymentDetailsTest extends TestCase
 
         $stripeCustomersProphecy = $this->prophesize(CustomerService::class);
         $stripeCustomersProphecy->search([
-            'query' => "created<{$previousDay->getTimestamp()} and metadata['hasPasswordSince']:null and metadata['paymentMethodsCleared']:null",
+            'query' => "created<{$previousDay->getTimestamp()} and metadata['hasPasswordSince']:null " .
+                "and metadata['paymentMethodsCleared']:null",
             'limit' => 100,
         ])
             ->willReturn($this->buildCollectionFromSingleObjectFixture(
@@ -53,8 +54,8 @@ class DeleteStalePaymentDetailsTest extends TestCase
 
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
 
-        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test code,
-        // and may get mutation tests working again.
+        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
+        // code, and may get mutation tests working again.
         @$stripeClientProphecy->customers = $stripeCustomersProphecy->reveal();
         @$stripeClientProphecy->paymentMethods = $stripePaymentMethodsProphecy->reveal();
 
@@ -67,7 +68,10 @@ class DeleteStalePaymentDetailsTest extends TestCase
         // One PM should be detached i.e. soft deleted.
         $stripePaymentMethodsProphecy->detach($testPaymentMethodId)->shouldBeCalledOnce();
 
-        $stripeCustomersProphecy->update($testCustomerId, ['metadata' => ['paymentMethodsCleared' => '2023-04-10 00:00:00']])->shouldBeCalledOnce();
+        $stripeCustomersProphecy->update(
+            $testCustomerId,
+            ['metadata' => ['paymentMethodsCleared' => '2023-04-10 00:00:00']]
+        )->shouldBeCalledOnce();
 
         // act
         $commandTester->execute([]);

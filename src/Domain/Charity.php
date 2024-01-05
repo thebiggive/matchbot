@@ -12,6 +12,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\HasLifecycleCallbacks]
 class Charity extends SalesforceReadProxy
 {
+    use TimestampsTrait;
+
     private const GIFT_AID_APPROVED_STATUS = 'Onboarded & Approved';
 
     private const GIFT_AID_ONBOARDED_STATUSES = [
@@ -27,8 +29,6 @@ class Charity extends SalesforceReadProxy
         'Invited to Onboard',
         'Withdrawn',
     ];
-
-    use TimestampsTrait;
 
     /**
      * @var string
@@ -90,8 +90,7 @@ class Charity extends SalesforceReadProxy
         ?string $regulator,
         ?string $regulatorNumber,
         DateTime $time,
-    )
-    {
+    ) {
         $this->updatedAt = $time;
         $this->createdAt = $time;
         $this->setSalesforceId($salesforceId);
@@ -209,7 +208,9 @@ class Charity extends SalesforceReadProxy
         ?string $regulatorNumber,
         DateTime $time,
     ): void {
-        if (!is_null($giftAidOnboardingStatus) && !in_array($giftAidOnboardingStatus, self::POSSIBLE_GIFT_AID_STATUSES, true)) {
+        $statusUnexpected = !is_null($giftAidOnboardingStatus)
+            && !in_array($giftAidOnboardingStatus, self::POSSIBLE_GIFT_AID_STATUSES, true);
+        if ($statusUnexpected) {
             throw new \UnexpectedValueException();
         }
 

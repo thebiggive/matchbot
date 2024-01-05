@@ -58,7 +58,10 @@ class DonationMatchingTest extends IntegrationTest
         $this->setInContainer(Adapter::class, $this->matchingAdapater);
         $this->getService(\MatchBot\Domain\DonationRepository::class)->setMatchingAdapter($this->matchingAdapater);
 
-        $campaignInfo = $this->addFundedCampaignAndCharityToDB(campaignSfId: $this->randomString(), fundWithAmountInPounds: 100);
+        $campaignInfo = $this->addFundedCampaignAndCharityToDB(
+            campaignSfId: $this->randomString(),
+            fundWithAmountInPounds: 100,
+        );
         ['campaignFundingId' => $this->campaignFundingId, 'campaignId' => $campaignId] = $campaignInfo;
 
         $campaign = $this->getService(\MatchBot\Domain\CampaignRepository::class)->find($campaignId);
@@ -75,7 +78,10 @@ class DonationMatchingTest extends IntegrationTest
                 amountInPounds: 10
             );
         } catch (\Exception $e) {
-            $this->assertEquals("Throwing after subtracting funds to test how our system handles the crash", $e->getMessage());
+            $this->assertEquals(
+                'Throwing after subtracting funds to test how our system handles the crash',
+                $e->getMessage(),
+            );
         }
 
         // assert
@@ -103,7 +109,8 @@ class DonationMatchingTest extends IntegrationTest
 
             protected function doRunTransactionally(callable $function)
             {
-                // call to runTransactionally not doRunTransactionally because the wrappedAdapater has to know that its in a transaction.
+                // call to runTransactionally not doRunTransactionally because the wrappedAdapater has to know that
+                // it's in a transaction.
                 return $this->wrappedAdapter->runTransactionally($function);
             }
 
@@ -136,6 +143,9 @@ class DonationMatchingTest extends IntegrationTest
         $entityManager = $c->get(RetrySafeEntityManager::class);
         $logger = $c->get(LoggerInterface::class);
 
-        $this->setInContainer(Adapter::class, new OptimisticRedisAdapter(new RedisMatchingStorage($redis), $entityManager, $logger));
+        $this->setInContainer(
+            Adapter::class,
+            new OptimisticRedisAdapter(new RedisMatchingStorage($redis), $entityManager, $logger),
+        );
     }
 }

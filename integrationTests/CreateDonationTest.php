@@ -74,5 +74,4 @@ class CreateDonationTest extends IntegrationTest
 
         $this->assertSame(400, $response->getStatusCode());
     }
-
 }

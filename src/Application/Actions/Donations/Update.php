@@ -16,6 +16,7 @@ use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\PaymentMethodType;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -115,7 +116,10 @@ class Update extends Action
                     throw new DomainRecordNotFoundException('Donation not found');
                 }
 
-                if ($donationData->status !== DonationStatus::Cancelled->value && $donationData->status !== $donation->getDonationStatus()->value) {
+                if (
+                    $donationData->status !== DonationStatus::Cancelled->value &&
+                    $donationData->status !== $donation->getDonationStatus()->value
+                ) {
                     $this->entityManager->rollback();
 
                     return $this->validationError(
@@ -125,7 +129,10 @@ class Update extends Action
                     );
                 }
 
-                if ($donationData->autoConfirmFromCashBalance && $donation->getPaymentMethodType() !== \MatchBot\Domain\PaymentMethodType::CustomerBalance) {
+                if (
+                    $donationData->autoConfirmFromCashBalance &&
+                    $donation->getPaymentMethodType() !== PaymentMethodType::CustomerBalance
+                ) {
                     $this->entityManager->rollback();
 
                     // Log a warning to more easily spot occurrences in dashboards.
@@ -153,7 +160,8 @@ class Update extends Action
                     $retryCount,
                 ));
 
-                $microseconds = (int)(100_000 * (2 ** $retryCount)); // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
+                // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
+                $microseconds = (int)(100_000 * (2 ** $retryCount));
                 \assert($microseconds >= 0);
                 \usleep($microseconds);
                 $retryCount++;
@@ -199,8 +207,13 @@ class Update extends Action
      * @throws InvalidRequestException
      * @throws ApiErrorException if confirm() fails other than because of a missing payment method.
      */
-    private function addData(Donation $donation, HttpModels\Donation $donationData, array $args, Response $response, Request $request): Response
-    {
+    private function addData(
+        Donation $donation,
+        HttpModels\Donation $donationData,
+        array $args,
+        Response $response,
+        Request $request
+    ): Response {
         // If the app tries to PUT with a different amount, something has gone very wrong and we should
         // explicitly fail instead of ignoring that field.
         if (bccomp($donation->getAmount(), (string) $donationData->donationAmount) !== 0) {
@@ -286,7 +299,9 @@ class Update extends Action
         $donation->setDonorBillingAddress($donationData->billingPostalAddress);
 
         // currently this can't change the fee from what it was when donation entity was created, but
-        // we call deriveFees here for consistency with the Create action, in case the derivation logic changes to depend on something we do mutate in the donation. But if this is a card payment it will be called again in the `confirm` action.
+        // we call deriveFees here for consistency with the Create action, in case the derivation logic changes to
+        // depend on something we do mutate in the donation. But if this is a card payment it will be called again in
+        // the `confirm` action.
         $this->donationRepository->deriveFees($donation, null, null);
 
         if ($donation->getPsp() === 'stripe') {
@@ -342,16 +357,19 @@ class Update extends Action
                         $nextActionType = (string) $confirmedIntent->next_action?->type;
                     }
 
-                    $isDonationToBGRequiringBankTransfer = $confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION &&
+                    $isDonationToBGRequiringBankTransfer =
+                        $confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION &&
                         $nextActionType === 'display_bank_transfer_instructions' &&
                         $donation->getCampaign()->getCampaignName() === 'Big Give General Donations';
 
-                    $statusIsNeitherSuccessNorTipWithCreditsNextAction = $confirmedIntent->status !== PaymentIntent::STATUS_SUCCEEDED && !$isDonationToBGRequiringBankTransfer;
+                    $statusIsNeitherSuccessNorTipWithCreditsNextAction =
+                        $confirmedIntent->status !== PaymentIntent::STATUS_SUCCEEDED &&
+                        !$isDonationToBGRequiringBankTransfer;
 
                     if ($statusIsNeitherSuccessNorTipWithCreditsNextAction) {
-                        // As this is autoConfirmFromCashBalance and we only expect people to make such donations if they
-                        // have a sufficient balance we expect PI to succeed synchronosly. If it didn't we don't want to
-                        // leave the PI around to succeed later when the donor might not be expecting it.
+                        // As this is autoConfirmFromCashBalance and we only expect people to make such donations if
+                        // they have a sufficient balance we expect PI to succeed synchronosly. If it didn't we don't
+                        // want to leave the PI around to succeed later when the donor might not be expecting it.
                         $this->cancelDonationAndPaymentIntent($donation, $confirmedIntent);
                         throw new HttpBadRequestException(
                             $request,
@@ -367,9 +385,15 @@ class Update extends Action
                     // To help analyse it quicker we handle the specific auto-confirm API failure we've
                     // seen before with a distinct message, but both options give the client an HTTP 500,
                     // as we expect neither with our updated guard conditions.
-                    if (str_starts_with($exception->getMessage(), "You cannot confirm this PaymentIntent because it's missing a payment method")) {
+                    if (
+                        str_starts_with(
+                            $exception->getMessage(),
+                            "You cannot confirm this PaymentIntent because it's missing a payment method"
+                        )
+                    ) {
                         $this->logger->error(sprintf(
-                            'Stripe Payment Intent for donation ID %s was missing a payment method, so we could not confirm it',
+                            'Stripe Payment Intent for donation ID %s was missing a payment method, so we ' .
+                                'could not confirm it',
                             $donation->getUuid(),
                         ));
                         $error = new ActionError(ActionError::SERVER_ERROR, 'Could not confirm Stripe Payment Intent');
@@ -519,8 +543,11 @@ class Update extends Action
     /**
      * @return ?Response Response to send client, if appropriate. HTTP 500.
      */
-    private function handleGeneralStripeError(ApiErrorException $exception, Donation $donation, Response $response): ?Response
-    {
+    private function handleGeneralStripeError(
+        ApiErrorException $exception,
+        Donation $donation,
+        Response $response
+    ): ?Response {
         $alreadyCapturedMsg = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
             'after a capture has already been made.';
         if (
@@ -583,7 +610,8 @@ class Update extends Action
         $this->entityManager->flush();
 
         $this->logger->warning(
-            "Cancelled funded donation #{$donation->getId()} due to non-success on confirmation attempt status {$confirmedPaymentIntent->status}. May be insufficent funds in donor account."
+            "Cancelled funded donation #{$donation->getId()} due to non-success on confirmation attempt status " .
+            "{$confirmedPaymentIntent->status}. May be insufficent funds in donor account."
         );
     }
 }

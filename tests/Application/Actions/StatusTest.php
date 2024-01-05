@@ -23,7 +23,7 @@ use Symfony\Component\Console\Output\NullOutput;
 
 class StatusTest extends TestCase
 {
-    const DOMAIN_DIR = __DIR__ . '/../../../src/Domain';
+    private const DOMAIN_DIR = __DIR__ . '/../../../src/Domain';
 
     public function setUp(): void
     {
