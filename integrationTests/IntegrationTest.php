@@ -362,9 +362,12 @@ abstract class IntegrationTest extends TestCase
         ObjectProphecy $stripePaymentIntents,
     ): StripeClient {
         $fakeStripeClient = $this->createStub(StripeClient::class);
-        $fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
-        $fakeStripeClient->customers = $stripeCustomerServiceProphecy->reveal();
-        $fakeStripeClient->paymentIntents = $stripePaymentIntents->reveal();
+
+        // Suppressing deprecation warnings with `@` for creation of dynamic properties. Will crash in PHP 9, we can
+        // deal with it then if the code is still there.
+        @$fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
+        @$fakeStripeClient->customers = $stripeCustomerServiceProphecy->reveal();
+        @$fakeStripeClient->paymentIntents = $stripePaymentIntents->reveal();
 
         return $fakeStripeClient;
     }
