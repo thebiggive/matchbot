@@ -38,7 +38,7 @@ class RedistributeMatchFunds extends LockingCommand
             // Since very long campaigns usually only have one funding type, it's currently unlikely
             // that the combination of minimum & maximum dates will stop funds being redistributed when
             // we'd like them to.
-            donationsCollectedAfter: $this->now->sub(new \DateInterval('P6W')),
+            donationsCollectedAfter: $this->now->sub(new \DateInterval('P8W')),
         );
 
         $donationsAmended = 0;
