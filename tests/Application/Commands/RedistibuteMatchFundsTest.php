@@ -25,13 +25,13 @@ use Symfony\Component\Lock\LockFactory;
 class RedistibuteMatchFundsTest extends TestCase
 {
     private \DateTimeImmutable $newYearsEveNoon;
-    private \DateTimeImmutable $midNovemberNoon;
+    private \DateTimeImmutable $earlyNovemberNoon;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->newYearsEveNoon = new \DateTimeImmutable('2023-12-31T12:00:00');
-        $this->midNovemberNoon = new \DateTimeImmutable('2023-11-19T12:00:00');
+        $this->earlyNovemberNoon = new \DateTimeImmutable('2023-11-05T12:00:00');
     }
 
     public function testNoEligibleDonations(): void
@@ -39,7 +39,7 @@ class RedistibuteMatchFundsTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
             $this->newYearsEveNoon,
-            $this->midNovemberNoon,
+            $this->earlyNovemberNoon,
         )
             ->willReturn([])
             ->shouldBeCalledOnce();
@@ -69,7 +69,7 @@ class RedistibuteMatchFundsTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
             $this->newYearsEveNoon,
-            $this->midNovemberNoon,
+            $this->earlyNovemberNoon,
         )->willReturn([$donation]);
 
         $donationRepoProphecy->releaseMatchFunds($donation)
@@ -125,7 +125,7 @@ class RedistibuteMatchFundsTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
             $this->newYearsEveNoon,
-            $this->midNovemberNoon,
+            $this->earlyNovemberNoon,
         )->willReturn([$donation]);
 
         $donationRepoProphecy->releaseMatchFunds($donation)
