@@ -15,7 +15,7 @@ related APIs.
 
 You should usually use Docker to run the app locally in an easy way, with the least possible
 configuration and the most consistency with other runtime environments - both those used
-when the app is deployed 'for real' and other developers' machines.
+when in production and similar environments and on and other developers' machines.
 
 ### Prerequisites
 
