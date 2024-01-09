@@ -8,7 +8,8 @@ use Monolog\Logger;
 return function (ContainerBuilder $containerBuilder) {
     $doctrineConnectionOptions = [];
     if (getenv('APP_ENV') !== 'local') {
-        $doctrineConnectionOptions[PDO::MYSQL_ATTR_SSL_CA] = dirname(__DIR__) . '/deploy/rds-ca-2019-root.pem';
+        $doctrineConnectionOptions[PDO::MYSQL_ATTR_SSL_CA] =
+            dirname(__DIR__) . '/deploy/rds-ca-eu-west-1-bundle.pem';
     }
 
     // Global Settings Object
@@ -26,6 +27,10 @@ return function (ContainerBuilder $containerBuilder) {
                 ],
                 'fund' => [
                     'baseUri' => getenv('SALESFORCE_FUND_API'),
+                ],
+                'mailer' => [
+                    'baseUri' => getenv('MAILER_BASE_URI'),
+                    'sendSecret' => getenv('MAILER_SEND_SECRET'),
                 ],
                 'webhook' => [
                     'baseUri' => getenv('SALESFORCE_WEBHOOK_RECEIVER'),
@@ -85,7 +90,10 @@ return function (ContainerBuilder $containerBuilder) {
             'notifier' => [
                 'slack' => [
                     'api_token' => getenv('SLACK_API_TOKEN'),
+                    // e.g. '#matchbot' – channel for app's own general actions.
                     'channel' => getenv('SLACK_CHANNEL'),
+                    // Override channel for administrative Stripe notifications.
+                    'stripe_channel' => 'stripe',
                 ],
             ],
 

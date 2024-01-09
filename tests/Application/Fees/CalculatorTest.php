@@ -4,22 +4,17 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Fees;
 
+use DI\ContainerBuilder;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Tests\Application\VatTrait;
 use MatchBot\Tests\TestCase;
 
 class CalculatorTest extends TestCase
 {
-    use VatTrait;
-
     public function testStripeUKCardGBPDonation(): void
     {
-        $settingsWithVAT = $this->getUKLikeVATSettings(
-            $this->getAppInstance()->getContainer()->get('settings')
-        );
-
         $calculator = new Calculator(
-            $settingsWithVAT,
+            $this->settingsWithVAT(),
             'stripe',
             'visa',
             'GB',
@@ -35,19 +30,33 @@ class CalculatorTest extends TestCase
 
     public function testStripeUKCardGBPDonationWithFeeCover(): void
     {
-        $settingsWithVAT = $this->getUKLikeVATSettings(
-            $this->getAppInstance()->getContainer()->get('settings')
-        );
-
         $calculator = new Calculator(
-            $settingsWithVAT,
+            $this->settingsWithVAT(),
             'stripe',
             'visa',
             'GB',
             '123',
-            'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
+            'GbP', // Case doesn't matter for calculator
             false,
-            5, // 5% fee inc. 20% VAT.
+            '5', // 5% fee inc. 20% VAT.
+        );
+
+        // £6.15 fee covered, inc. VAT
+        $this->assertEquals('5.13', $calculator->getCoreFee());
+        $this->assertEquals('1.02', $calculator->getFeeVat());
+    }
+
+    public function testStripeUKCardEURDonationWithFeeCover(): void
+    {
+        $calculator = new Calculator(
+            $this->settingsWithVAT(),
+            'stripe',
+            'visa',
+            'GB',
+            '123',
+            'EUR',
+            false,
+            '5', // 5% fee inc. 20% VAT.
         );
 
         // £6.15 fee covered, inc. VAT
@@ -58,7 +67,7 @@ class CalculatorTest extends TestCase
     public function testStripeUSCardGBPDonation(): void
     {
         $calculator = new Calculator(
-            $this->getAppInstance()->getContainer()->get('settings'),
+            $this->settingsWithoutVAT(),
             'stripe',
             'visa',
             'US',
@@ -74,7 +83,7 @@ class CalculatorTest extends TestCase
     public function testStripeUSCardGBPDonationWithTbgClaimingGiftAid(): void
     {
         $calculator = new Calculator(
-            $this->getAppInstance()->getContainer()->get('settings'),
+            $this->settingsWithoutVAT(),
             'stripe',
             'visa',
             'US',
@@ -90,12 +99,12 @@ class CalculatorTest extends TestCase
     public function testStripeUKCardSEKDonation(): void
     {
         $calculator = new Calculator(
-            $this->getAppInstance()->getContainer()->get('settings'),
+            $this->settingsWithoutVAT(),
             'stripe',
             'visa',
             'GB',
             '123',
-            'SEK', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
+            'sek',
             false,
         );
 
@@ -106,7 +115,7 @@ class CalculatorTest extends TestCase
     public function testStripeUSCardSEKDonation(): void
     {
         $calculator = new Calculator(
-            $this->getAppInstance()->getContainer()->get('settings'),
+            $this->settingsWithoutVAT(),
             'stripe',
             'visa',
             'US',
@@ -124,19 +133,15 @@ class CalculatorTest extends TestCase
      */
     public function testStripeUSCardUSDDonation(): void
     {
-        $settingsWithVAT = $this->getUKLikeVATSettings(
-            $this->getAppInstance()->getContainer()->get('settings')
-        );
-
         $calculator = new Calculator(
-            $settingsWithVAT,
+            $this->settingsWithVAT(),
             'stripe',
             'visa',
             'US',
             '100',
             'USD',
             false,
-            5,
+            '5',
         );
 
         $this->assertEquals('5.00', $calculator->getCoreFee());
@@ -145,19 +150,15 @@ class CalculatorTest extends TestCase
 
     public function testStripeUSCardUSDDonationWithFeeCover(): void
     {
-        $settingsWithVAT = $this->getUKLikeVATSettings(
-            $this->getAppInstance()->getContainer()->get('settings')
-        );
-
         $calculator = new Calculator(
-            $settingsWithVAT,
+            $this->settingsWithVAT(),
             'stripe',
             'visa',
             'US',
             '100',
             'USD',
             false,
-            5,
+            '5',
         );
 
         // We now record this as a fee to the charity which will be invoiced, without VAT,
@@ -166,5 +167,118 @@ class CalculatorTest extends TestCase
         // would be $105.
         $this->assertEquals('5.00', $calculator->getCoreFee());
         $this->assertEquals('0.00', $calculator->getFeeVat());
+    }
+
+    /**
+     * Worked example as given at https://biggive.org/our-fees/
+     */
+    public function testGBP10WVithoutGiftAidProvides695(): void
+    {
+        $donationAmount = '10.00';
+
+        $calculator = new Calculator(
+            $this->settingsWithVAT(),
+            psp: 'stripe',
+            cardBrand: 'mastercard',
+            cardCountry: 'GB',
+            amount: $donationAmount,
+            currencyCode: 'GBP',
+            hasGiftAid: false
+        );
+
+        $totalFee = $calculator->getCoreFee();
+
+        $this->assertSame('0.35', $totalFee);
+        $this->assertSame(9.65, $donationAmount - $totalFee);
+    }
+
+    /**
+     * Worked example as given at https://biggive.org/our-fees/
+     */
+    public function testGBP10WVithGiftAidProvides1208(): void
+    {
+        $donationAmount = '10.00';
+        $giftAidAmount = $donationAmount / 4;
+
+        $calculator = new Calculator(
+            $this->settingsWithVAT(),
+            psp: 'stripe',
+            cardBrand: 'mastercard',
+            cardCountry: 'GB',
+            amount: $donationAmount,
+            currencyCode: 'GBP',
+            hasGiftAid: true
+        );
+
+        $totalFee = $calculator->getCoreFee();
+
+        $this->assertSame('0.43', $totalFee);
+        $this->assertSame(12.07, $donationAmount - $totalFee + $giftAidAmount);
+    }
+
+    /**
+     * Worked example as given at https://biggive.org/our-fees/
+     */
+    public function testGBP10NonEUUKWVithoutGiftAidProvides695(): void
+    {
+        $donationAmount = '10.00';
+
+        $calculator = new Calculator(
+            $this->settingsWithVAT(),
+            psp: 'stripe',
+            cardBrand: 'mastercard',
+            cardCountry: 'US',
+            amount: $donationAmount,
+            currencyCode: 'GBP',
+            hasGiftAid: false
+        );
+
+        $totalFee = $calculator->getCoreFee();
+
+        $this->assertSame('0.52', $totalFee);
+        $this->assertSame(9.48, $donationAmount - $totalFee);
+    }
+
+    private function settingsWithVAT(): array
+    {
+        putenv('VAT_PERCENTAGE_LIVE=20');
+        putenv('VAT_LIVE_DATE=2020-01-01');
+
+        $settings = $this->settingsWithoutVAT();
+
+        putenv('VAT_PERCENTAGE_LIVE=');
+        putenv('VAT_LIVE_DATE=');
+
+        return $settings;
+    }
+
+    private function settingsWithoutVAT(): array
+    {
+        $builder = new ContainerBuilder();
+        $settingsFunction = require __DIR__ . '/../../../app/settings.php';
+        $settingsFunction($builder);
+
+        $settings = $builder->build()->get('settings');
+        \assert(is_array($settings));
+
+        return $settings;
+    }
+
+    public function testItRejectsUnexpectedCardBrand(): void
+    {
+        $this->expectExceptionMessage(
+            'Unexpected card brand, expected brands are amex, diners, discover, eftpos_au, jcb, mastercard, ' .
+            'unionpay, visa, unknown'
+        );
+
+        new Calculator(
+            $this->settingsWithVAT(),
+            'stripe',
+            'Card brand that doesnt exist',
+            'GB',
+            '1',
+            'GBP',
+            false,
+        );
     }
 }

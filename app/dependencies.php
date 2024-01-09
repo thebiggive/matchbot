@@ -4,15 +4,11 @@ declare(strict_types=1);
 
 use DI\Container;
 use DI\ContainerBuilder;
-use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\Common\Cache\ArrayCache;
-use Doctrine\Common\Cache\RedisCache;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
-use Doctrine\ORM\Tools\Setup;
-use LosMiddleware\RateLimit\RateLimitMiddleware;
-use LosMiddleware\RateLimit\RateLimitOptions;
+use Los\RateLimit\RateLimitMiddleware;
+use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
 use MatchBot\Application\Matching;
@@ -20,9 +16,14 @@ use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use MatchBot\Application\RealTimeMatchingStorage;
+use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
+use MatchBot\Domain\DonationFundsNotifier;
+use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
 use Monolog\Handler\StreamHandler;
@@ -34,7 +35,8 @@ use Psr\Log\LoggerInterface;
 use Psr\SimpleCache\CacheInterface;
 use Slim\Psr7\Factory\ResponseFactory;
 use Stripe\StripeClient;
-use Stripe\StripeClientInterface;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\DoctrineDbalStore;
@@ -54,6 +56,7 @@ use Symfony\Component\Notifier\Bridge\Slack\SlackTransport;
 use Symfony\Component\Notifier\Chatter;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\BackedEnumNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -85,6 +88,24 @@ return function (ContainerBuilder $containerBuilder) {
             );
 
             return new Chatter($transport);
+        },
+
+        // Don't inject this directly for now, since its return type doesn't actually implement
+        // our custom interface. We're working around needing two services with distinct channels.
+        StripeChatterInterface::class => static function (ContainerInterface $c): ChatterInterface {
+            /**
+             * @var array{
+             *    notifier: array{
+             *      slack: array{
+             *        stripe_channel: string
+             *      }
+             *    }
+             *  } $settings
+             */
+            $settings = $c->get('settings');
+            $stripeChannel = $settings['notifier']['slack']['stripe_channel'];
+
+            return $c->get(SlackChannelChatterFactory::class)->makeChatter($stripeChannel);
         },
 
         SlackChannelChatterFactory::class => static function (ContainerInterface $c): SlackChannelChatterFactory {
@@ -120,6 +141,26 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\Fund($c->get('settings'), $c->get(LoggerInterface::class));
         },
 
+        Client\Mailer::class => function (ContainerInterface $c): Client\Mailer {
+            $settings = $c->get('settings');
+            \assert(is_array($settings));
+            return new Client\Mailer($settings, $c->get(LoggerInterface::class));
+        },
+
+        Client\Stripe::class => function (ContainerInterface $c): Client\Stripe {
+
+            $useStubStripe = (getenv('APP_ENV') !== 'production' && getenv('BYPASS_PSP'));
+            if ($useStubStripe) {
+                return new Client\StubStripeClient();
+            }
+
+            return new Client\LiveStripeClient($c->get(StripeClient::class));
+        },
+
+        DonationFundsNotifier::class => function (ContainerInterface $c): DonationFundsNotifier {
+            return new DonationFundsNotifier($c->get(Client\Mailer::class));
+        },
+
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
             return $c->get(RetrySafeEntityManager::class);
         },
@@ -138,6 +179,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         LoggerInterface::class => function (ContainerInterface $c): Logger {
+
             $settings = $c->get('settings');
 
             $loggerSettings = $settings['logger'];
@@ -155,15 +197,35 @@ return function (ContainerBuilder $containerBuilder) {
             $handler = new StreamHandler($loggerSettings['path'], $loggerSettings['level']);
             $logger->pushHandler($handler);
 
+            $alarmChannelName = match (getenv('APP_ENV')) {
+                'production' => 'production-alarms',
+                'staging' => 'staging-alarms',
+                'regression' => 'regression-alarms',
+                default => null,
+            };
+
+            if ($alarmChannelName) {
+                $logger->pushHandler(
+                    new SlackHandler($c->get(SlackChannelChatterFactory::class)->makeChatter($alarmChannelName))
+                );
+            }
+
             return $logger;
         },
 
+        RealTimeMatchingStorage::class => static function (ContainerInterface $c): RealTimeMatchingStorage {
+            return new RedisMatchingStorage($c->get(Redis::class));
+        },
+
         Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
-            return new Matching\OptimisticRedisAdapter($c->get(Redis::class), $c->get(RetrySafeEntityManager::class));
+            return new Matching\OptimisticRedisAdapter(
+                $c->get(RealTimeMatchingStorage::class),
+                $c->get(RetrySafeEntityManager::class),
+                $c->get(LoggerInterface::class)
+            );
         },
 
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {
-            /** @var LoggerInterface $logger */
             $logger = $c->get(LoggerInterface::class);
 
             $sendMiddleware = new SendMessageMiddleware(new SendersLocator(
@@ -199,9 +261,7 @@ return function (ContainerBuilder $containerBuilder) {
             $redis = new Redis();
             try {
                 $redis->connect($settings['redis']['host']);
-                $cache = new RedisCache();
-                $cache->setRedis($redis);
-                $cache->setNamespace("matchbot-{$settings['appEnv']}");
+                $cacheAdapter = new RedisAdapter(redis: $redis, namespace: "matchbot-{$settings['appEnv']}");
             } catch (RedisException $exception) {
                 // This essentially means Doctrine is not using a cache. `/ping` should fail separately based on
                 // Redis being down whenever this happens, so we should find out without relying on this warning log.
@@ -214,14 +274,14 @@ return function (ContainerBuilder $containerBuilder) {
                     get_class($exception),
                     $exception->getMessage(),
                 ));
-                $cache = new ArrayCache();
+                $cacheAdapter = new ArrayAdapter();
             }
 
-            $config = Setup::createAnnotationMetadataConfiguration(
+            $config = ORM\ORMSetup::createAttributeMetadataConfiguration(
                 $settings['doctrine']['metadata_dirs'],
                 $settings['doctrine']['dev_mode'],
                 $settings['doctrine']['cache_dir'] . '/proxies',
-                $cache
+                $cacheAdapter,
             );
 
             // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
@@ -229,10 +289,10 @@ return function (ContainerBuilder $containerBuilder) {
             $config->setAutoGenerateProxyClasses($settings['doctrine']['dev_mode']);
 
             $config->setMetadataDriverImpl(
-                new AnnotationDriver(new AnnotationReader(), $settings['doctrine']['metadata_dirs'])
+                new ORM\Mapping\Driver\AttributeDriver($settings['doctrine']['metadata_dirs'])
             );
 
-            $config->setMetadataCacheImpl($cache);
+            $config->setMetadataCache($cacheAdapter);
 
             return $config;
         },
@@ -293,20 +353,21 @@ return function (ContainerBuilder $containerBuilder) {
 
         SerializerInterface::class => static function (ContainerInterface $c): SerializerInterface {
             $encoders = [new JsonEncoder()];
-            $normalizers = [new ObjectNormalizer()];
+            $normalizers = [
+                new BackedEnumNormalizer(),
+                new ObjectNormalizer(),
+            ];
 
             return new Serializer($normalizers, $encoders);
         },
 
+        // StripeClientInterface doesn't have enough properties documented to keep
+        // psalm happy.
         StripeClient::class => static function (ContainerInterface $c): StripeClient {
             return new StripeClient([
                 'api_key' => $c->get('settings')['stripe']['apiKey'],
                 'stripe_version' => $c->get('settings')['stripe']['apiVersion'],
             ]);
-        },
-
-        StripeClientInterface::class => static function (ContainerInterface $c): StripeClientInterface {
-            return $c->get(StripeClient::class);
         },
 
         TransportInterface::class => static function (ContainerInterface $c): TransportInterface {
@@ -319,6 +380,9 @@ return function (ContainerBuilder $containerBuilder) {
                 [],
                 new PhpSerializer(),
             );
+        },
+        Connection::class => static function (ContainerInterface $c): Connection {
+            return $c->get(EntityManagerInterface::class)->getConnection();
         },
     ]);
 };

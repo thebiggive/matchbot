@@ -13,9 +13,9 @@ use Doctrine\ORM\Mapping as ORM;
 abstract class SalesforceProxy extends Model
 {
     /**
-     * @ORM\Column(type="string", length=18, unique=true, nullable=true)
      * @var string|null Nullable because write proxies may be created before the first Salesforce push
      */
+    #[ORM\Column(type: 'string', length: 18, unique: true, nullable: true)]
     protected ?string $salesforceId = null;
 
     /**

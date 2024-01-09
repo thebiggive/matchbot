@@ -1,9 +1,10 @@
 <?php
 
-namespace MatchBot\Tests\Application;
+namespace MatchBot\Tests\Application\Actions;
 
 use Laminas\Diactoros\ServerRequest;
 use MatchBot\Application\Actions\DeletePaymentMethod;
+use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Tests\TestCase;
 use PHPUnit\Framework\MockObject\Stub;
 use Prophecy\Argument;
@@ -22,7 +23,10 @@ class DeletePaymentMethodTest extends TestCase
         // arrange
         $stripePaymentMethodServiceProphecy = $this->prophesize(PaymentMethodService::class);
         $stripeCustomerServiceProphecy = $this->prophesize(CustomerService::class);
-        $fakeStripeClient = $this->fakeStripeClient($stripePaymentMethodServiceProphecy, $stripeCustomerServiceProphecy);
+        $fakeStripeClient = $this->fakeStripeClient(
+            $stripePaymentMethodServiceProphecy,
+            $stripeCustomerServiceProphecy,
+        );
 
         $stripeCustomerServiceProphecy->allPaymentMethods('stripe_customer_id_12')->willReturn(
             $this->stubCollectionOf([
@@ -33,7 +37,7 @@ class DeletePaymentMethodTest extends TestCase
         $sut = new DeletePaymentMethod($fakeStripeClient, new NullLogger());
 
         $request = (new ServerRequest())
-            ->withAttribute('pspId', 'stripe_customer_id_12');
+            ->withAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME, 'stripe_customer_id_12');
 
         // assert
         $stripePaymentMethodServiceProphecy->detach('stripe_payment_method_id_35')
@@ -47,7 +51,10 @@ class DeletePaymentMethodTest extends TestCase
     {
         $stripePaymentMethodServiceProphecy = $this->prophesize(PaymentMethodService::class);
         $stripeCustomerServiceProphecy = $this->prophesize(CustomerService::class);
-        $fakeStripeClient = $this->fakeStripeClient($stripePaymentMethodServiceProphecy, $stripeCustomerServiceProphecy);
+        $fakeStripeClient = $this->fakeStripeClient(
+            $stripePaymentMethodServiceProphecy,
+            $stripeCustomerServiceProphecy,
+        );
 
         $stripeCustomerServiceProphecy->allPaymentMethods('stripe_customer_id_12')->willReturn(
             $this->stubCollectionOf([
@@ -58,7 +65,7 @@ class DeletePaymentMethodTest extends TestCase
         $sut = new DeletePaymentMethod($fakeStripeClient, new NullLogger());
 
         $request = (new ServerRequest())
-            ->withAttribute('pspId', 'stripe_customer_id_12');
+            ->withAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME, 'stripe_customer_id_12');
 
         // assert
         $stripePaymentMethodServiceProphecy->detach(Argument::any())->shouldNotBeCalled();
@@ -84,8 +91,10 @@ class DeletePaymentMethodTest extends TestCase
         ObjectProphecy $stripeCustomerServiceProphecy
     ): StripeClient {
         $fakeStripeClient = $this->createStub(StripeClient::class);
-        $fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
-        $fakeStripeClient->customers = $stripeCustomerServiceProphecy->reveal();
+        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
+        // code, and may get mutation tests working again.
+        @$fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
+        @$fakeStripeClient->customers = $stripeCustomerServiceProphecy->reveal();
 
         return $fakeStripeClient;
     }

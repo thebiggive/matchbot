@@ -14,23 +14,23 @@
         }
     ],
     "require": {
-        "php": "^8.1",
+        "php": "^8.3",
         "ext-bcmath": "*",
         "ext-json": "*",
         "ext-mbstring": "^8.0",
         "ext-pdo": "*",
         "ext-pdo_mysql": "*",
         "ext-redis": "*",
-        "doctrine/annotations": "^1.13",
-        "doctrine/cache": "^1.11.3",
-        "doctrine/migrations": "^3.3",
+        "beberlei/assert": "^3.3",
+        "doctrine/cache": "^2.0",
+        "doctrine/migrations": "^3.7",
         "doctrine/orm": "^2.14.0",
         "firebase/php-jwt": "^6.3",
         "guzzlehttp/guzzle": "^6.5",
-        "los/los-rate-limit": "^3.3.0",
+        "los/los-rate-limit": "^4.0.1",
         "middlewares/client-ip": "^2.0",
         "monolog/monolog": "^2.2",
-        "php-di/php-di": "^6.3",
+        "php-di/php-di": "^7.0",
         "ramsey/uuid-doctrine": "^2.0.0",
         "slim/psr7": "^1.3",
         "slim/slim": "^4.7",
@@ -49,22 +49,24 @@
         "thebiggive/messages": "^3.0"
     },
     "require-dev": {
+        "infection/infection": "^0.27.8",
         "jetbrains/phpstorm-attributes": "^1.0",
         "phpspec/prophecy-phpunit": "^2.0",
         "phpunit/phpunit": "^9.5",
         "psalm/plugin-phpunit": "^0.18.4",
         "roave/security-advisories": "dev-latest",
         "squizlabs/php_codesniffer": "^3.6",
-        "vimeo/psalm": "^5.7.4",
+        "vimeo/psalm": "^5.14.0",
         "weirdan/doctrine-psalm-plugin": "^2.8"
     },
     "config": {
         "allow-plugins": {
-            "composer/package-versions-deprecated": true
+            "composer/package-versions-deprecated": true,
+            "infection/extension-installer": true
         },
         "optimize-autoloader": true,
         "platform": {
-            "php": "8.1.5"
+            "php": "8.3.1"
         },
         "sort-packages": true
     },
@@ -95,7 +97,8 @@
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
         "doctrine:migrate:generate": "doctrine-migrations generate",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
-        "sa:check": "vendor/bin/psalm",
+        "sa:check": "vendor/bin/psalm --threads=4",
+        "sa:check-with-new-cache": "vendor/bin/psalm --clear-cache; vendor/bin/psalm",
         "lint:check": "phpcs --standard=phpcs.xml -s .",
         "lint:fix": "phpcbf --standard=phpcs.xml -s .",
         "matchbot:claim-gift-aid": [
@@ -106,6 +109,10 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:claim-gift-aid --with-resends"
         ],
+        "matchbot:delete-stale-payment-details": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:delete-stale-payment-details"
+        ],
         "matchbot:expire-match-funds": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:expire-match-funds"
@@ -113,6 +120,14 @@
         "matchbot:check-out-of-sync-funds": [
           "Composer\\Config::disableProcessTimeout",
           "php matchbot-cli.php matchbot:handle-out-of-sync-funds check"
+        ],
+        "matchbot:redistribute-match-funds": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:redistribute-match-funds"
+        ],
+        "matchbot:scheduled-out-of-sync-funds-check": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:scheduled-out-of-sync-funds-check"
         ],
         "matchbot:fix-out-of-sync-funds": [
             "Composer\\Config::disableProcessTimeout",
@@ -146,6 +161,17 @@
         ],
         "start": "php -S localhost:8080 -t public",
         "test": "XDEBUG_MODE=coverage phpunit --order-by=random",
-        "integration-test": "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random"
+        "integration-test": [
+            "APP_ENV=test doctrine orm:clear-cache:metadata",
+            "APP_ENV=test doctrine orm:clear-cache:query",
+            "APP_ENV=test doctrine orm:clear-cache:result",
+            "APP_ENV=test doctrine-migrations migrate --no-interaction --allow-no-migration",
+            "APP_ENV=test doctrine orm:generate-proxies",
+            "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random"
+        ],
+        "mutation-test": [
+            "Composer\\Config::disableProcessTimeout",
+            "vendor/bin/infection --threads=4"
+        ]
     }
 }

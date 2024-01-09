@@ -6,7 +6,9 @@ namespace MatchBot\Application\Matching;
 
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\RealTimeMatchingStorage;
 use MatchBot\Domain\CampaignFunding;
+use Psr\Log\LoggerInterface;
 use Redis;
 
 /**
@@ -14,7 +16,7 @@ use Redis;
  * It has an internal retry / adjust mechanism to handle the case where a fund's just running out and the database
  * copy of the amount available was out of date.
  *
- * As this is adapter has now been well tested and is the only one we're using, the alternative
+ * As this adapter has now been well tested and is the only one we're using, the alternative
  * transactional `DoctrineAdapter` is now removed. It can be viewed in its final state from 2020 at
  * https://github.com/thebiggive/matchbot/blob/b3a861c97190ac91d073aa86530401958c816e74/src/Application/Matching/DoctrineAdapter.php
  */
@@ -32,9 +34,15 @@ class OptimisticRedisAdapter extends Adapter
      */
     private static int $storageDurationSeconds = 86_400; // 1 day
 
+    /**
+     * @var list<array{campaignFunding: CampaignFunding, amount:string}>
+     */
+    private array $amountsSubtractedInCurrentProcess = [];
+
     public function __construct(
-        private Redis $redis,
+        private RealTimeMatchingStorage $storage,
         private EntityManagerInterface $entityManager,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -50,7 +58,7 @@ class OptimisticRedisAdapter extends Adapter
 
     public function getAmountAvailable(CampaignFunding $funding): string
     {
-        $redisFundBalanceFractional = $this->redis->get($this->buildKey($funding));
+        $redisFundBalanceFractional = $this->storage->get($this->buildKey($funding));
         if ($redisFundBalanceFractional === false) {
             // No value in Redis -> may well have expired after 24 hours. Consult the DB for the
             // stable value. This will often happen for old or slower moving campaigns.
@@ -63,12 +71,14 @@ class OptimisticRedisAdapter extends Adapter
         return $this->toCurrencyWholeUnit((int) $redisFundBalanceFractional);
     }
 
-    #[Pure]
     protected function doSubtractAmount(CampaignFunding $funding, string $amount): string
     {
         $decrementFractional = $this->toCurrencyFractionalUnit($amount);
 
-        [$initResponse, $fundBalanceFractional] = $this->redis->multi()
+        /**
+         * @psalm-suppress PossiblyFalseReference - in mulit mode decrBy will not return false.
+         */
+        [$initResponse, $fundBalanceFractional] = $this->storage->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),
@@ -97,14 +107,16 @@ class OptimisticRedisAdapter extends Adapter
             while ($retries++ < $this->maxPartialAllocateTries && $fundBalanceFractional < 0) {
                 // Try deallocating just the difference until the fund has exactly zero
                 $overspendFractional = 0 - $fundBalanceFractional;
-                $fundBalanceFractional = (int) $this->redis->incrBy($this->buildKey($funding), $overspendFractional);
+                /** @psalm-suppress InvalidCast - not in Redis Multi Mode */
+                $fundBalanceFractional = (int) $this->storage->incrBy($this->buildKey($funding), $overspendFractional);
                 $amountAllocatedFractional -= $overspendFractional;
             }
 
             if ($fundBalanceFractional < 0) {
                 // We couldn't get the values to work within the maximum number of iterations, so release whatever
                 // we tried to hold back to the match pot and bail out.
-                $fundBalanceFractional = (int) $this->redis->incrBy(
+                /** @psalm-suppress InvalidCast not in multi mode **/
+                $fundBalanceFractional = (int) $this->storage->incrBy(
                     $this->buildKey($funding),
                     $amountAllocatedFractional,
                 );
@@ -122,6 +134,8 @@ class OptimisticRedisAdapter extends Adapter
             );
         }
 
+        $this->amountsSubtractedInCurrentProcess[] = ['campaignFunding' => $funding, 'amount' => $amount];
+
         $fundBalance = $this->toCurrencyWholeUnit($fundBalanceFractional);
         $this->setFundingValue($funding, $fundBalance);
 
@@ -133,7 +147,11 @@ class OptimisticRedisAdapter extends Adapter
     {
         $incrementFractional = $this->toCurrencyFractionalUnit($amount);
 
-        [$initResponse, $fundBalanceFractional] = $this->redis->multi()
+        /**
+         * @psalm-suppress PossiblyInvalidArrayAccess
+         * @psalm-suppress PossiblyFalseReference - we know incrBy will retrun an array in multi mode
+         */
+        [$initResponse, $fundBalanceFractional] = $this->storage->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),
@@ -151,7 +169,7 @@ class OptimisticRedisAdapter extends Adapter
 
     public function delete(CampaignFunding $funding): void
     {
-        $this->redis->del($this->buildKey($funding));
+        $this->storage->del($this->buildKey($funding));
     }
 
     /**
@@ -171,7 +189,7 @@ class OptimisticRedisAdapter extends Adapter
      * a 100-fold division is reasonable.
      *
      * @param int $fractionalUnit   e.g. pence, cents.
-     * @return string   e.g. pounds, dollars.
+     * @psalm-return numeric-string   e.g. pounds, dollars.
      */
     private function toCurrencyWholeUnit(int $fractionalUnit): string
     {
@@ -197,11 +215,30 @@ class OptimisticRedisAdapter extends Adapter
         });
     }
 
+    /**
+     * @psalm-param numeric-string $newValue
+     */
     private function setFundingValue(CampaignFunding $funding, string $newValue): void
     {
         $funding->setAmountAvailable($newValue);
         if (!in_array($funding, $this->fundingsToPersist, true)) {
             $this->fundingsToPersist[] = $funding;
+        }
+    }
+
+    /**
+     * For use only in case of errors, to release allocated funds in redis that would otherwise be out of sync with
+     * what we have in MySQL.
+     */
+    public function releaseNewlyAllocatedFunds(): void
+    {
+        foreach ($this->amountsSubtractedInCurrentProcess as $fundingAndAmount) {
+            $amount = $fundingAndAmount['amount'];
+            $funding = $fundingAndAmount['campaignFunding'];
+
+            $this->logger->warning("Released newly allocated funds of $amount for funding# {$funding->getId()}");
+
+            $this->addAmount($funding, $amount);
         }
     }
 }

@@ -19,7 +19,7 @@ class ExpireMatchFundsTest extends TestCase
     public function testNoExpiries(): void
     {
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->findWithExpiredMatching()
+        $donationRepoProphecy->findWithExpiredMatching(Argument::type(\DateTimeImmutable::class))
             ->willReturn([])
             ->shouldBeCalledOnce();
         $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -39,9 +39,9 @@ class ExpireMatchFundsTest extends TestCase
     public function testTwoExpiries(): void
     {
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->findWithExpiredMatching()->willReturn([
-            new Donation(),
-            new Donation()
+        $donationRepoProphecy->findWithExpiredMatching(Argument::type(\DateTimeImmutable::class))->willReturn([
+            Donation::emptyTestDonation('1'),
+            Donation::emptyTestDonation('1')
         ]);
         $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledTimes(2);
@@ -58,6 +58,10 @@ class ExpireMatchFundsTest extends TestCase
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
+    /**
+     * @param ObjectProphecy<DonationRepository> $donationRepoProphecy
+     * @return ExpireMatchFunds
+     */
     private function getCommand(ObjectProphecy $donationRepoProphecy): ExpireMatchFunds
     {
         $command = new ExpireMatchFunds($donationRepoProphecy->reveal());

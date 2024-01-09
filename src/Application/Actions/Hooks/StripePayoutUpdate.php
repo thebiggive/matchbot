@@ -6,7 +6,7 @@ namespace MatchBot\Application\Actions\Hooks;
 
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Messenger\StripePayout;
-use MatchBot\Application\SlackChannelChatterFactory;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -17,6 +17,7 @@ use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Messenger\Stamp\BusNameStamp;
 use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
+use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
 /**
@@ -26,17 +27,22 @@ use Symfony\Component\Notifier\Message\ChatMessage;
  */
 class StripePayoutUpdate extends Stripe
 {
-
-    private SlackChannelChatterFactory $chatterFactory;
+    private ChatterInterface $chatter;
 
     public function __construct(
         ContainerInterface $container,
         LoggerInterface $logger,
         private RoutableMessageBus $bus,
-        SlackChannelChatterFactory $chatterFactory
     ) {
+        /**
+         * @var ChatterInterface $chatter
+         * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
+         * is final and does not implement our custom interface.
+         */
+        $chatter = $container->get(StripeChatterInterface::class);
+        $this->chatter = $chatter;
+
         parent::__construct($container, $logger);
-        $this->chatterFactory = $chatterFactory;
     }
 
     /**
@@ -55,38 +61,51 @@ class StripePayoutUpdate extends Stripe
             return $validationErrorResponse;
         }
 
+        $event = $this->event ?? throw new \RuntimeException("Stripe event not set");
+
         $this->logger->info(sprintf(
             'Received Stripe Connect app event type "%s" on account %s',
-            $this->event->type,
-            $this->event->account,
+            $event->type,
+            $event->account,
         ));
 
 
-        switch ($this->event->type) {
+        switch ($event->type) {
             case Event::PAYOUT_PAID:
-                return $this->handlePayoutPaid($request, $this->event, $response);
+                return $this->handlePayoutPaid($request, $event, $response);
             case Event::PAYOUT_FAILED:
+                $id = $event->data->object->id;
+                \assert(is_string($id));
                 $failureMessage = sprintf(
                     'payout.failed for ID %s, account %s',
-                    $this->event->data->object->id,
-                    $this->event->account,
+                    $id,
+                    $event->account,
                 );
-                $stripeChannel = $this->chatterFactory->makeChatter('stripe');
-                $stripeChannel->send(new ChatMessage($failureMessage));
+
                 $this->logger->warning($failureMessage);
+                /** @var string $env */
+                $env = getenv('APP_ENV');
+                $failureMessageWithContext = sprintf(
+                    '[%s] %s',
+                    $env,
+                    $failureMessage,
+                );
+                $this->chatter->send(new ChatMessage($failureMessageWithContext));
 
                 return $this->respond($response, new ActionPayload(200));
             default:
-                $this->logger->warning(sprintf('Unsupported event type "%s"', $this->event->type));
+                $this->logger->warning(sprintf('Unsupported event type "%s"', $event->type));
                 return $this->respond($response, new ActionPayload(204));
         }
     }
 
     private function handlePayoutPaid(Request $request, Event $event, Response $response): Response
     {
-        $payoutId = $event->data->object->id;
+        /** @var object{id: string} $object */
+        $object = $event->data->object;
+        $payoutId = $object->id;
 
-        if (!$event->data->object->automatic) {
+        if (!$object->automatic) {
             // If we try to use the `payout` filter attribute in the `balanceTransactions` call
             // in the manual payout case, Stripe errors out with "Balance transaction history
             // can only be filtered on automatic transfers, not manual".
@@ -115,6 +134,6 @@ class StripePayoutUpdate extends Stripe
             return $this->respond($response, new ActionPayload(500));
         }
 
-        return $this->respondWithData($response, $event->data->object);
+        return $this->respondWithData($response, $object);
     }
 }

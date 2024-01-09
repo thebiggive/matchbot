@@ -51,18 +51,16 @@ abstract class SalesforceWriteProxy extends SalesforceProxy
      */
     abstract public function hasPostCreateUpdates(): bool;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     protected ?DateTime $salesforceLastPush = null;
 
     /**
-     * @ORM\Column(type="string")
      * @var string  One of 'not-sent', 'pending-create', 'creating', 'pending-update',
      *              'pending-additional-update', 'updating', 'complete' or 'removed'.
      *              Use class constants above to guard against typos and improve inline
      *              documentation where we use these.
      */
+    #[ORM\Column(type: 'string')]
     protected string $salesforcePushStatus = self::PUSH_STATUS_NOT_SENT;
 
     /**

@@ -5,38 +5,36 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\DBAL\Types\Types;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Mapping\Column;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\HttpModels\DonationCreate;
 use Messages;
+use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
-/**
- * @ORM\Entity(repositoryClass="DonationRepository")
- * @ORM\HasLifecycleCallbacks
- * @ORM\Table(indexes={
- *   @ORM\Index(name="campaign_and_status", columns={"campaign_id", "donationStatus"}),
- *   @ORM\Index(name="date_and_status", columns={"createdAt", "donationStatus"}),
- *   @ORM\Index(name="salesforcePushStatus", columns={"salesforcePushStatus"}),
- * })
- */
+use function bccomp;
+use function sprintf;
+
+#[ORM\Table]
+#[ORM\Index(name: 'campaign_and_status', columns: ['campaign_id', 'donationStatus'])]
+#[ORM\Index(name: 'date_and_status', columns: ['createdAt', 'donationStatus'])]
+#[ORM\Index(name: 'salesforcePushStatus', columns: ['salesforcePushStatus'])]
+#[ORM\Entity(repositoryClass: DonationRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Donation extends SalesforceWriteProxy
 {
     /**
-     * @var int
      * @see Donation::$currencyCode
      */
-    private int $minimumAmount = 1;
+    public const MAXIMUM_CARD_DONATION = 25_000;
 
-    /**
-     * @var int
-     * @see Donation::$currencyCode
-     */
-    private int $maximumAmount = 25000;
+    public const MAXIMUM_CUSTOMER_BALANCE_DONATION = 200_000;
+    public const MINUMUM_AMOUNT = 1;
 
     private array $possiblePSPs = ['stripe'];
 
@@ -44,70 +42,67 @@ class Donation extends SalesforceWriteProxy
      * The donation ID for PSPs and public APIs. Not the same as the internal auto-increment $id used
      * by Doctrine internally for fast joins.
      *
-     * @ORM\Column(type="uuid", unique=true)
      * @var UuidInterface|null
      */
+    #[ORM\Column(type: 'uuid', unique: true)]
     protected ?UuidInterface $uuid = null;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Campaign")
      * @var Campaign
      */
+    #[ORM\ManyToOne(targetEntity: Campaign::class)]
     protected Campaign $campaign;
 
     /**
-     * @ORM\Column(type="string", length=20)
      * @var string  Which Payment Service Provider (PSP) is expected to (or did) process the donation.
      */
+    #[ORM\Column(type: 'string', length: 20)]
     protected string $psp;
 
     /**
-     * @ORM\Column(type="datetime", nullable=true)
-     * @var ?DateTime    When the donation first moved to status Collected, i.e. the donor finished paying.
+     * @var ?DateTimeImmutable  When the donation first moved to status Collected, i.e. the donor finished paying.
      */
-    protected ?DateTime $collectedAt = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    protected ?DateTimeImmutable $collectedAt = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
-     * @var string  Token for the client to complete payment, set by PSPs like Stripe for Payment Intents.
-     */
-    protected ?string $clientSecret = null;
-
-    /**
-     * @ORM\Column(type="string", unique=true, nullable=true)
      * @var string|null PSP's transaction ID assigned on their processing.
+     *
+     * In the case of stripe (which is the only thing we support at present, this is the payment intent ID)
      */
+    #[ORM\Column(type: 'string', unique: true, nullable: true)]
     protected ?string $transactionId = null;
 
     /**
-     * @ORM\Column(type="string", unique=true, nullable=true)
      * @var string|null PSP's charge ID assigned on their processing.
      */
+    #[ORM\Column(type: 'string', unique: true, nullable: true)]
     protected ?string $chargeId = null;
 
     /**
-     * @ORM\Column(type="string", unique=true, nullable=true)
      * @var string|null PSP's transfer ID assigned on a successful charge. For Stripe this
      *                  ID relates to the Platform Account (i.e. the Big Give's) rather than
      *                  the Connected Account for the charity receiving the transferred
      *                  donation balance.
      */
+    #[ORM\Column(type: 'string', unique: true, nullable: true)]
     protected ?string $transferId = null;
 
     /**
-     * @ORM\Column(type="string", length=3)
      * @var string  ISO 4217 code for the currency in which all monetary values are denominated, e.g. 'GBP'.
      */
-    protected string $currencyCode;
+    #[ORM\Column(type: 'string', length: 3)]
+    protected readonly string $currencyCode;
 
     /**
-     * Core donation amount excluding any tip.
+     * Core donation amount in major currency units (i.e. Pounds) excluding any tip.
      *
-     * @ORM\Column(type="decimal", precision=18, scale=2)
-     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @psalm-var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths
+     *                           with decimals!
      * @see Donation::$currencyCode
      */
-    protected string $amount;
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
+    protected readonly string $amount;
 
     /**
      * Fee the charity takes on, in £. Excludes any tax if applicable.
@@ -115,20 +110,20 @@ class Donation extends SalesforceWriteProxy
      * For Stripe (EU / UK): 1.5% of $amount + 0.20p
      * For Stripe (Non EU / Amex): 3.2% of $amount + 0.20p
      *
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $charityFee = '0.00';
 
     /**
      * Value Added Tax amount on `$charityFee`, in £. In addition to base amount
      * in $charityFee.
      *
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $charityFeeVat = '0.00';
 
     /**
@@ -136,178 +131,273 @@ class Donation extends SalesforceWriteProxy
      * Original fee varies by card brand and country and is based on the full amount paid by the
      * donor: `$amount + $tipAmount`.
      *
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $originalPspFee = '0.00';
 
-    /**
-     * @ORM\Column(type="string", enumType="MatchBot\Domain\DonationStatus")
-     */
-    protected DonationStatus $donationStatus = DonationStatus::NotSet;
+    #[ORM\Column(type: 'string', enumType: DonationStatus::class)]
+    protected DonationStatus $donationStatus = DonationStatus::Pending;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether the donor opted to receive email from the charity running the campaign
      */
+    #[ORM\Column(type: 'boolean', nullable: true)]
     protected ?bool $charityComms = null;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
      * @var bool
      */
+    #[ORM\Column(type: 'boolean', nullable: true)]
     protected ?bool $giftAid = null;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether the donor opted to receive email from the Big Give
      */
+    #[ORM\Column(type: 'boolean', nullable: true)]
     protected ?bool $tbgComms = null;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether the donor opted to receive email from the champion funding the campaign
      */
+    #[ORM\Column(type: 'boolean', nullable: true)]
     protected ?bool $championComms = null;
 
     /**
-     * @ORM\Column(type="string", length=2, nullable=true)
-     * @var string|null  Set on PSP callback. *Billing* country code.
+     * @var string|null  *Billing* country code.
      */
+    #[ORM\Column(type: 'string', length: 2, nullable: true)]
     protected ?string $donorCountryCode = null;
 
-    /**
-     * @ORM\Column(type="string", nullable=true)
-     * @var string|null Set on PSP callback
-     */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorEmailAddress = null;
 
-    /**
-     * @ORM\Column(type="string", nullable=true)
-     * @var string|null Set on PSP callback
-     */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorFirstName = null;
 
-    /**
-     * @ORM\Column(type="string", nullable=true)
-     * @var string|null Set on PSP callback
-     */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorLastName = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
      * @var string|null Assumed to be billing address going forward.
      */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorPostalAddress = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
      * @var string|null From residential address, if donor is claiming Gift Aid.
      */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorHomeAddressLine1 = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
      * @var string|null From residential address, if donor is claiming Gift Aid.
      */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorHomePostcode = null;
 
     /**
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string  Amount donor chose to add to cover a fee, including any tax.
      *              Precision numeric string.
      * @see Donation::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $feeCoverAmount = '0.00';
 
     /**
-     * @ORM\Column(type="decimal", precision=18, scale=2)
      * @var string  Amount donor chose to tip. Precision numeric string.
      *              Set during donation setup and can also be modified later if the donor changes only this.
      * @see Donation::$currencyCode
      */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $tipAmount = '0.00';
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether Gift Aid was claimed on the 'tip' donation to the Big Give.
      */
+    #[ORM\Column(type: 'boolean', nullable: true)]
     protected ?bool $tipGiftAid = null;
 
     /**
-     * @ORM\Column(type="boolean", nullable=true)
      * @var bool    Whether any Gift Aid claim should be made by the Big Give as an agent/nominee
      *              *if* `$giftAid is true too. This field is set independently to allow for claim
      *              status amendments so we must not assume a donation can actualy be claimed just
      *              because it's true.
      * @see Donation::$giftAid
      */
+    #[ORM\Column(type: 'boolean', nullable: true)]
     protected ?bool $tbgShouldProcessGiftAid = null;
 
     /**
-     * @ORM\Column(type="datetime", nullable=true)
      * @var ?DateTime   When a queued message that should lead to a Gift Aid claim was sent.
      */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     protected ?DateTime $tbgGiftAidRequestQueuedAt = null;
 
     /**
-     * @ORM\Column(type="datetime", nullable=true)
      * @var ?DateTime   When a claim submission attempt was detected to have an error returned.
      */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     protected ?DateTime $tbgGiftAidRequestFailedAt = null;
 
     /**
-     * @ORM\Column(type="datetime", nullable=true)
      * @var ?DateTime   When a claim was detected accepted via an async poll.
      */
+    #[ORM\Column(type: 'datetime', nullable: true)]
     protected ?DateTime $tbgGiftAidRequestConfirmedCompleteAt = null;
 
     /**
-     * @ORM\Column(type="string", nullable=true)
      * @var ?string Provided by HMRC upon initial claim submission acknowledgement.
      *              Doesn't imply success.
      */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $tbgGiftAidRequestCorrelationId = null;
 
     /**
-     * @ORM\Column(type="text", length=65535, nullable=true)
      * @var ?string Verbatim final errors or messages from HMRC received immediately or
      *              (most likely based on real world observation) via an async poll.
      */
+    #[ORM\Column(type: 'text', length: 65535, nullable: true)]
     protected ?string $tbgGiftAidResponseDetail = null;
 
-    /**
-     * @ORM\Column(type="string", nullable=true)
-     */
+    #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $pspCustomerId = null;
 
-    /**
-     * @ORM\Column(type="string", nullable=true)
-     */
-    protected ?string $paymentMethodType = 'card';
+    #[ORM\Column(type: 'string', enumType: PaymentMethodType::class, nullable: true)]
+    protected ?PaymentMethodType $paymentMethodType = PaymentMethodType::Card;
 
     /**
-     * @ORM\OneToMany(targetEntity="FundingWithdrawal", mappedBy="donation", fetch="EAGER")
-     * @var ArrayCollection|FundingWithdrawal[]
+     * @var Collection<int,FundingWithdrawal>
      */
+    #[ORM\OneToMany(targetEntity: FundingWithdrawal::class, mappedBy: 'donation', fetch: 'EAGER')]
     protected $fundingWithdrawals;
 
-    public function __construct()
-    {
-        $this->fundingWithdrawals = new ArrayCollection();
-    }
+    /**
+     * Date at which we refunded this to the donor. Ideally will be null. Should be not null only iff status is
+     * DonationStatus::Refunded
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $refundedAt = null;
 
-    public function __toString()
-    {
-        return "Donation {$this->getUuid()} to {$this->getCampaign()->getCharity()->getName()}";
+    /**
+     * @param string $amount
+     * @deprecated but retained for now as used in old test classes. Not recommend for continued use - either use
+     * fromApiModel or create a new named constructor that takes required data for your use case.
+     */
+    public static function emptyTestDonation(
+        string $amount,
+        PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
+        string $currencyCode = 'GBP'
+    ): self {
+        return new self($amount, $currencyCode, $paymentMethodType);
     }
 
     /**
-     * @ORM\PreUpdate Check that the amount is never changed
+     * @psalm-param numeric-string $amount
+     */
+    private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
+    {
+        $this->fundingWithdrawals = new ArrayCollection();
+        $this->currencyCode = $currencyCode;
+        $maximumAmount = self::maximumAmount($paymentMethodType);
+
+        if (
+            bccomp($amount, (string)self::MINUMUM_AMOUNT, 2) === -1 ||
+            bccomp($amount, (string)$maximumAmount, 2) === 1
+        ) {
+            throw new \UnexpectedValueException(sprintf(
+                'Amount must be %d-%d %s',
+                self::MINUMUM_AMOUNT,
+                $maximumAmount,
+                $this->currencyCode,
+            ));
+        }
+
+        $this->amount = $amount;
+        $this->paymentMethodType = $paymentMethodType;
+    }
+
+    public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
+    {
+        $psp = $donationData->psp;
+        assert($psp === 'stripe');
+
+        $donation = new self(
+            $donationData->donationAmount,
+            $donationData->currencyCode,
+            $donationData->pspMethodType,
+        );
+
+        $donation->setPsp($psp);
+        $donation->setUuid(Uuid::uuid4());
+        $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
+
+        $donation->setGiftAid($donationData->giftAid);
+        // `DonationCreate` doesn't support a distinct property yet & we only ask once about GA.
+        $donation->setTipGiftAid($donationData->giftAid);
+        $donation->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
+
+        $donation->setCharityComms($donationData->optInCharityEmail);
+        $donation->setChampionComms($donationData->optInChampionEmail);
+        $donation->setPspCustomerId($donationData->pspCustomerId);
+        $donation->setTbgComms($donationData->optInTbgEmail);
+        $donation->setDonorFirstName($donationData->firstName);
+        $donation->setDonorLastName($donationData->lastName);
+        $donation->setDonorEmailAddress($donationData->emailAddress);
+
+        if (!empty($donationData->countryCode)) {
+            $donation->setDonorCountryCode($donationData->countryCode);
+        }
+
+        if (isset($donationData->feeCoverAmount)) {
+            $donation->setFeeCoverAmount($donationData->feeCoverAmount);
+        }
+
+        if (isset($donationData->tipAmount)) {
+            $donation->setTipAmount($donationData->tipAmount);
+        }
+
+        return $donation;
+    }
+
+    private static function maximumAmount(PaymentMethodType $paymentMethodType): int
+    {
+        return match ($paymentMethodType) {
+            PaymentMethodType::CustomerBalance => self::MAXIMUM_CUSTOMER_BALANCE_DONATION,
+            PaymentMethodType::Card => self::MAXIMUM_CARD_DONATION,
+        };
+    }
+
+    public function __toString(): string
+    {
+        // if we're in __toString then probably something has already gone wrong, and we don't want to allow
+        // any more crashes during the logging process.
+        try {
+            $charityName = $this->getCampaign()->getCharity()->getName();
+        } catch (\Throwable $t) {
+            // perhaps the charity was never pulled from Salesforce into our database, in which case we might
+            // have a TypeError trying to get a string name from it.
+            $charityName = "[pending charity threw " . get_class($t) . "]";
+        }
+        return "Donation {$this->getUuid()} to $charityName";
+    }
+
+    /*
+     * In contrast to __toString, this is used when creating a payment intent. If we can't find the charity name
+     * then we should let the process of making the intent and registering the donation crash.
+     */
+    public function getDescription(): string
+    {
+        $charityName = $this->getCampaign()->getCharity()->getName();
+        return "Donation {$this->getUuid()} to $charityName";
+    }
+
+    /**
      * @param PreUpdateEventArgs $args
      * @throws \LogicException if amount is changed
      */
+    #[ORM\PreUpdate]
     public function preUpdate(PreUpdateEventArgs $args): void
     {
         if (!$args->hasChangedField('amount')) {
@@ -319,6 +409,17 @@ class Donation extends SalesforceWriteProxy
         }
     }
 
+    public function replaceNullPaymentMethodTypeWithCard(): void
+    {
+        if ($this->paymentMethodType !== null) {
+            throw new \Exception('Should only be called when payment method type is null');
+        }
+        $this->paymentMethodType = PaymentMethodType::Card;
+    }
+
+    /**
+     * @return array A json encode-ready array representation of the donation, for sending to Salesforce.
+     */
     public function toHookModel(): array
     {
         $data = $this->toApiModel();
@@ -332,9 +433,9 @@ class Donation extends SalesforceWriteProxy
         $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
         $data['originalPspFee'] = (float) $this->getOriginalPspFee();
+        $data['refundedTime'] = $this->refundedAt?->format(DateTimeInterface::ATOM);
 
         unset(
-            $data['clientSecret'],
             $data['charityName'],
             $data['donationId'],
             $data['matchReservedAmount'],
@@ -350,10 +451,9 @@ class Donation extends SalesforceWriteProxy
     {
         $data = [
             'billingPostalAddress' => $this->getDonorBillingAddress(),
-            'clientSecret' => $this->getClientSecret(),
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
-            'charityId' => $this->getCampaign()->getCharity()->getDonateLinkId(),
+            'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
             'charityName' => $this->getCampaign()->getCharity()->getName(),
             'countryCode' => $this->getDonorCountryCode(),
             'collectedTime' => $this->getCollectedAt()?->format(DateTimeInterface::ATOM),
@@ -369,7 +469,9 @@ class Donation extends SalesforceWriteProxy
             'homeAddress' => $this->getDonorHomeAddressLine1(),
             'homePostcode' => $this->getDonorHomePostcode(),
             'lastName' => $this->getDonorLastName(true),
-            'matchedAmount' => $this->getDonationStatus()->isSuccessful() ? (float) $this->getFundingWithdrawalTotal() : 0,
+            'matchedAmount' => $this->getDonationStatus()->isSuccessful()
+                ? (float) $this->getFundingWithdrawalTotal()
+                : 0,
             'matchReservedAmount' => 0,
             'optInCharityEmail' => $this->getCharityComms(),
             'optInChampionEmail' => $this->getChampionComms(),
@@ -377,7 +479,7 @@ class Donation extends SalesforceWriteProxy
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
             'pspCustomerId' => $this->getPspCustomerId(),
-            'pspMethodType' => $this->getPaymentMethodType(),
+            'pspMethodType' => $this->getPaymentMethodType()?->value,
             'status' => $this->getDonationStatus(),
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
@@ -398,15 +500,23 @@ class Donation extends SalesforceWriteProxy
 
     public function setDonationStatus(DonationStatus $donationStatus): void
     {
+        if ($donationStatus === DonationStatus::Refunded) {
+            throw new \Exception('Donation::recordRefundAt must be used to set refunded status');
+        }
+
+        if ($donationStatus === DonationStatus::Cancelled) {
+            throw new \Exception('Donation::cancelled must be used to cancel');
+        }
+
         $this->donationStatus = $donationStatus;
     }
 
-    public function getCollectedAt(): ?DateTime
+    public function getCollectedAt(): ?DateTimeImmutable
     {
         return $this->collectedAt;
     }
 
-    public function setCollectedAt(?DateTime $collectedAt): void
+    public function setCollectedAt(?DateTimeImmutable $collectedAt): void
     {
         $this->collectedAt = $collectedAt;
     }
@@ -549,26 +659,6 @@ class Donation extends SalesforceWriteProxy
         return bcadd($this->getCharityFee(), $this->getCharityFeeVat(), 2);
     }
 
-    /**
-     * @param string $amount    Core donation amount, excluding any tip, in full pounds GBP.
-     */
-    public function setAmount(string $amount): void
-    {
-        if (
-            bccomp($amount, (string) $this->minimumAmount, 2) === -1 ||
-            bccomp($amount, (string) $this->maximumAmount, 2) === 1
-        ) {
-            throw new \UnexpectedValueException(sprintf(
-                'Amount must be %d-%d %s',
-                $this->minimumAmount,
-                $this->maximumAmount,
-                $this->currencyCode,
-            ));
-        }
-
-        $this->amount = $amount;
-    }
-
     public function setCharityFee(string $charityFee): void
     {
         $this->charityFee = $charityFee;
@@ -606,7 +696,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string   Total amount in withdrawals - not necessarily finalised.
+     * @psalm-return numeric-string   Total amount in withdrawals - not necessarily finalised.
      */
     public function getFundingWithdrawalTotal(): string
     {
@@ -621,7 +711,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return string Total amount *finalised*, matched by `Fund`s of type "championFund"
      */
-    public function getConfirmedChampionWithdrawalTotal(): string
+    private function getConfirmedChampionWithdrawalTotal(): string
     {
         if (!$this->getDonationStatus()->isSuccessful()) {
             return '0.0';
@@ -641,7 +731,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return string Total amount *finalised*, matched by `Fund`s of type "pledge"
      */
-    public function getConfirmedPledgeWithdrawalTotal(): string
+    private function getConfirmedPledgeWithdrawalTotal(): string
     {
         if (!$this->getDonationStatus()->isSuccessful()) {
             return '0.0';
@@ -658,8 +748,19 @@ class Donation extends SalesforceWriteProxy
         return $withdrawalTotal;
     }
 
-    public function getTransactionId(): ?string
+    /**
+     * We may call this safely *only* after a donation has a PSP's transaction ID.
+     * Stripe assigns the ID before we return a usable donation object to the Donate client,
+     * so this should be true in most of the app.
+     *
+     * @throws \LogicException if the transaction ID is not set
+     */
+    public function getTransactionId(): string
     {
+        if (!$this->transactionId) {
+            throw new \LogicException('Transaction ID not set');
+        }
+
         return $this->transactionId;
     }
 
@@ -690,9 +791,9 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return ArrayCollection|FundingWithdrawal[]
+     * @return Collection<int, FundingWithdrawal>
      */
-    public function getFundingWithdrawals()
+    public function getFundingWithdrawals(): Collection
     {
         return $this->fundingWithdrawals;
     }
@@ -729,22 +830,6 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return string
      */
-    public function getClientSecret(): ?string
-    {
-        return $this->clientSecret;
-    }
-
-    /**
-     * @param string $clientSecret
-     */
-    public function setClientSecret(string $clientSecret): void
-    {
-        $this->clientSecret = $clientSecret;
-    }
-
-    /**
-     * @return string
-     */
     public function getFeeCoverAmount(): string
     {
         return $this->feeCoverAmount;
@@ -766,17 +851,30 @@ class Donation extends SalesforceWriteProxy
         return $this->tipAmount;
     }
 
-    /**
-     * @param string $tipAmount
-     */
     public function setTipAmount(string $tipAmount): void
     {
-        if (bccomp($tipAmount, (string) $this->maximumAmount, 2) === 1) {
+        /** @psalm-var numeric-string $tipAmount */
+        if (
+            $this->paymentMethodType === PaymentMethodType::CustomerBalance &&
+            bccomp($tipAmount, '0', 2) !== 0
+        ) {
+            // We would have accepted a tip at the time the customer balance was created, so we don't take a second
+            // tip as part of the donation.
+            throw new \UnexpectedValueException('A Customer Balance Donation may not include a tip');
+        }
+
+        $max = self::MAXIMUM_CARD_DONATION;
+
+        if (bccomp($tipAmount, (string)(self::MAXIMUM_CARD_DONATION), 2) === 1) {
             throw new \UnexpectedValueException(sprintf(
                 'Tip amount must not exceed %d %s',
-                $this->maximumAmount,
+                $max,
                 $this->currencyCode,
             ));
+        }
+
+        if (bccomp($tipAmount, '0', 2) === -1) {
+            throw new \UnexpectedValueException('Tip amount must not be negative');
         }
 
         $this->tipAmount = $tipAmount;
@@ -792,7 +890,7 @@ class Donation extends SalesforceWriteProxy
         $this->tipGiftAid = $tipGiftAid;
     }
 
-    public function getDonorHomeAddressLine1(): ?string
+    private function getDonorHomeAddressLine1(): ?string
     {
         return $this->donorHomeAddressLine1;
     }
@@ -802,7 +900,7 @@ class Donation extends SalesforceWriteProxy
         $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
     }
 
-    public function getDonorHomePostcode(): ?string
+    private function getDonorHomePostcode(): ?string
     {
         return $this->donorHomePostcode;
     }
@@ -834,7 +932,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function hasPostCreateUpdates(): bool
     {
-        return ! $this->getDonationStatus()->isNew();
+        return $this->getDonationStatus() !== DonationStatus::Pending;
     }
 
     /**
@@ -921,11 +1019,6 @@ class Donation extends SalesforceWriteProxy
     public function getCurrencyCode(): string
     {
         return $this->currencyCode;
-    }
-
-    public function setCurrencyCode(string $currencyCode): void
-    {
-        $this->currencyCode = $currencyCode;
     }
 
     /**
@@ -1025,14 +1118,9 @@ class Donation extends SalesforceWriteProxy
         $this->pspCustomerId = $pspCustomerId;
     }
 
-    public function getPaymentMethodType(): ?string
+    public function getPaymentMethodType(): ?PaymentMethodType
     {
         return $this->paymentMethodType;
-    }
-
-    public function setPaymentMethodType(string $paymentMethodType): void
-    {
-        $this->paymentMethodType = $paymentMethodType;
     }
 
     /**
@@ -1048,17 +1136,27 @@ class Donation extends SalesforceWriteProxy
      */
     public function getStripeMethodProperties(): array
     {
-        $properties = [
-            'payment_method_types' => [$this->paymentMethodType],
-        ];
+        $properties = match ($this->paymentMethodType) {
+            PaymentMethodType::CustomerBalance => [
+                'payment_method_types' => ['customer_balance'],
+            ],
+            PaymentMethodType::Card => [
+                // in this case we want to use the Stripe Payment Element, so we can't specify card explicitly, we
+                // need to turn on automatic methods instead and let the element decide what methods to show.
+                'automatic_payment_methods' => [
+                    'enabled' => true,
+                    'allow_redirects' => 'never',
+                ]
+            ],
+        };
 
-        if ($this->paymentMethodType === 'customer_balance') {
+        if ($this->paymentMethodType === PaymentMethodType::CustomerBalance) {
             if ($this->currencyCode !== 'GBP') {
                 throw new \UnexpectedValueException('Customer balance payments only supported for GBP');
             }
 
             $properties['payment_method_data'] = [
-                'type' => 'customer_balance',
+                'type' => PaymentMethodType::CustomerBalance->value,
             ];
 
             $properties['payment_method_options'] = [
@@ -1079,12 +1177,20 @@ class Donation extends SalesforceWriteProxy
      * really needed for them because the fee is fixed at the lowest level and there
      * is no new donor bank transaction, so no statement ref to consider.
      *
+     * An important side effect to keep in mind is that this means payout timing for
+     * donations funded by bank transfer / customer balance is dictated by the platform
+     * (Big Give) Stripe settings, *not* those of the receiving charity's connected
+     * account. This means we cannot currently add a delay, so depending on the day of the
+     * week it's received, a donation could be paid out to the charity almost immediately.
+     * This may necessitate us having a different refund policy for donations via credit –
+     * to be discussed further in early/mid 2023.
+     *
      * @link https://stripe.com/docs/payments/connected-accounts
      * @link https://stripe.com/docs/connect/destination-charges#settlement-merchant
      */
     public function getStripeOnBehalfOfProperties(): array
     {
-        if ($this->paymentMethodType === 'card') {
+        if ($this->paymentMethodType === PaymentMethodType::Card) {
             return ['on_behalf_of' => $this->getCampaign()->getCharity()->getStripeAccountId()];
         }
 
@@ -1098,7 +1204,18 @@ class Donation extends SalesforceWriteProxy
      */
     public function supportsSavingPaymentMethod(): bool
     {
-        return $this->paymentMethodType === 'card';
+        return $this->paymentMethodType === PaymentMethodType::Card;
+    }
+
+    public function getDonorFullName(): ?string
+    {
+        $firstName = $this->getDonorFirstName();
+        $lastName = $this->getDonorLastName();
+        if ($firstName === null && $lastName === null) {
+            return null;
+        }
+
+        return trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
     }
 
     public function hasEnoughDataForSalesforce(): bool
@@ -1140,7 +1257,7 @@ class Donation extends SalesforceWriteProxy
         $donationMessage->amount = (float) $this->amount;
 
         $donationMessage->org_hmrc_ref = $this->getCampaign()->getCharity()->getHmrcReferenceNumber() ?? '';
-        $donationMessage->org_name = $this->getCampaign()->getCharity()->getName() ?? '';
+        $donationMessage->org_name = $this->getCampaign()->getCharity()->getName();
         $donationMessage->org_regulator = $this->getCampaign()->getCharity()->getRegulator();
         $donationMessage->org_regulator_number = $this->getCampaign()->getCharity()->getRegulatorNumber();
 
@@ -1167,4 +1284,41 @@ class Donation extends SalesforceWriteProxy
         return mb_substr($text, 0, 40);
     }
 
+    public function recordRefundAt(\DateTimeImmutable $refundDate): void
+    {
+        if ($this->donationStatus === DonationStatus::Refunded) {
+            return;
+        }
+        $this->donationStatus = DonationStatus::Refunded;
+        $this->refundedAt = $refundDate;
+    }
+
+    /**
+     * When a donation has been partially refunded (e.g. a tip-only refund) we record the refund date but we
+     * don't change the status.
+     */
+    public function setPartialRefundDate(\DateTimeImmutable $datetime): void
+    {
+        $this->refundedAt = $datetime;
+    }
+
+    public function cancel(): void
+    {
+        if (
+            !in_array(
+                $this->donationStatus,
+                [
+                    DonationStatus::Pending,
+                    DonationStatus::Cancelled,
+                    DonationStatus::Collected, // doesn't really make sense to cancel a collected donation but we have
+                                               // existing unit tests doing that, not changing now.
+                ],
+                true
+            )
+        ) {
+            throw new \UnexpectedValueException("Cannot cancel {$this->donationStatus->value} donation");
+        }
+
+        $this->donationStatus = DonationStatus::Cancelled;
+    }
 }

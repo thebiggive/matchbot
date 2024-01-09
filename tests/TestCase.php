@@ -6,6 +6,8 @@ namespace MatchBot\Tests;
 
 use DI\ContainerBuilder;
 use Exception;
+use MatchBot\Domain\Campaign;
+use MatchBot\Domain\Charity;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -25,11 +27,22 @@ class TestCase extends PHPUnitTestCase
     use ProphecyTrait;
 
     /**
+     * @var array<0|1, ?App> array of app instances with and without real redis. Each one may be
+     *                       initialised up to once per test.
+     */
+    private array $appInstance = [0 => null, 1 => null];
+
+    /**
      * @return App
      * @throws Exception
      */
     protected function getAppInstance(bool $withRealRedis = false): App
     {
+        $memoizedInstance = $this->appInstance[(int)$withRealRedis];
+        if ($memoizedInstance) {
+            return $memoizedInstance;
+        }
+
         // Instantiate PHP-DI ContainerBuilder
         $containerBuilder = new ContainerBuilder();
 
@@ -55,14 +68,14 @@ class TestCase extends PHPUnitTestCase
             // crash trying to actually connect to REDIS_HOST "dummy-redis-hostname".
             $redisProphecy = $this->prophesize(Redis::class);
             $redisProphecy->isConnected()->willReturn(true);
-            $redisProphecy->mget(['matchbot-cache:10d49f663215e991d10df22692f03e89'])->willReturn(null);
+            $redisProphecy->mget(Argument::type('array'))->willReturn([]);
             // symfony/cache Redis adapter apparently does something around prepping value-setting
             // through a fancy pipeline() and calls this.
-            $redisProphecy->multi(Argument::any())->willReturn();
+            $redisProphecy->multi(Argument::any())->willReturn(true);
             $redisProphecy
-                ->setex('matchbot-cache:10d49f663215e991d10df22692f03e89', 3600, Argument::type('string'))
+                ->setex(Argument::type('string'), 3600, Argument::type('string'))
                 ->willReturn(true);
-            $redisProphecy->exec()->willReturn(); // Commits the multi() operation.
+            $redisProphecy->exec()->willReturn([]); // Commits the multi() operation.
             $container->set(Redis::class, $redisProphecy->reveal());
         }
 
@@ -78,6 +91,7 @@ class TestCase extends PHPUnitTestCase
         $routes($app);
 
         $app->addRoutingMiddleware();
+        $this->appInstance[(int) $withRealRedis] = $app;
 
         return $app;
     }
@@ -154,5 +168,36 @@ class TestCase extends PHPUnitTestCase
             'Y3VzX2FhYWFhYWFhYWFhYTExIn19.KdeGTDkkWCjI4-Kayay0LKn9TXziPXCUxxTPIZgGxxE';
 
         return $dummyPersonAuthTokenValidUntil2050;
+    }
+
+    protected function getMinimalCampaign(): Campaign
+    {
+        return new Campaign(\MatchBot\Tests\TestCase::someCharity());
+    }
+
+    /**
+     * Returns some random charity - use if you don't care about the details or will replace them with setters later.
+     * Introduced to replace many old calls to instantiate Charity with zero arguments.
+     */
+    public static function someCharity(): Charity
+    {
+        return new Charity(
+            salesforceId: '12CharityId_' .  self::randomHex(3),
+            charityName: "Charity Name",
+            stripeAccountId: "stripe-account-id-" . self::randomHex(),
+            hmrcReferenceNumber: 'H' . self::randomHex(3),
+            giftAidOnboardingStatus: 'Onboarded',
+            regulator: 'CCEW',
+            regulatorNumber: 'Reg-no',
+            time: new \DateTime('2023-10-06T18:51:27'),
+        );
+    }
+
+    /**
+     * @param positive-int $num_bytes
+     */
+    private static function randomHex(int $num_bytes=8): string
+    {
+        return bin2hex(random_bytes($num_bytes));
     }
 }

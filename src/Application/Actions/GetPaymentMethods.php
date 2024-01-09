@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions;
 
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -29,7 +30,7 @@ class GetPaymentMethods extends Action
         // The route at `/people/{personId}/donations` validates that the donor has permission to act
         // as the person, and sets this attribute to the Stripe Customer ID based on JWS claims, all
         // in `PersonWithPasswordAuthMiddleware`.
-        $customerId = $request->getAttribute('pspId');
+        $customerId = $request->getAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME);
 
         $paymentMethods = $this->stripeClient->customers->allPaymentMethods(
             $customerId,

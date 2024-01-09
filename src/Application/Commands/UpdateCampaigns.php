@@ -49,7 +49,7 @@ EOT
         if ($input->getOption('all')) {
             $campaigns = $this->campaignRepository->findAll();
         } else {
-            $campaigns = $this->campaignRepository->findRecentAndLive();
+            $campaigns = $this->campaignRepository->findRecentLiveAndPendingGiftAidApproval();
         }
 
         foreach ($campaigns as $campaign) {
@@ -110,7 +110,7 @@ EOT
 
     protected function pull(Campaign $campaign, OutputInterface $output): void
     {
-        $this->campaignRepository->pull($campaign);
+        $this->campaignRepository->updateFromSf($campaign);
         $this->fundRepository->pullForCampaign($campaign);
         $output->writeln('Updated campaign ' . $campaign->getSalesforceId());
     }

@@ -26,7 +26,9 @@ $dependencies($containerBuilder);
 $repositories = require __DIR__ . '/app/repositories.php';
 $repositories($containerBuilder);
 
-Type::addType('uuid', Ramsey\Uuid\Doctrine\UuidType::class);
+if (! Type::hasType('uuid')) {
+    Type::addType('uuid', Ramsey\Uuid\Doctrine\UuidType::class);
+}
 
 // Build PHP-DI Container instance
 return $containerBuilder->build();

@@ -7,19 +7,18 @@ namespace MatchBot\Tests\Application\Actions\Hooks;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Domain\DonationRepository;
 use Prophecy\Argument;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\TransportException;
-use Symfony\Component\Messenger\Transport\InMemoryTransport;
+use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 use Symfony\Component\Messenger\Transport\TransportInterface;
-use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
 class StripePayoutUpdateTest extends StripeTest
 {
-
     public function testUnsupportedAction(): void
     {
         $app = $this->getAppInstance();
@@ -136,10 +135,8 @@ class StripePayoutUpdateTest extends StripeTest
         $container = $app->getContainer();
         $transport = new InMemoryTransport();
         $container->set(TransportInterface::class, $transport);
-        $stripeChatterFactoryProphecy = $this->prophesize(SlackChannelChatterFactory::class);
-        $chatterProphecy = $this->prophesize(ChatterInterface::class);
-        $container->set(SlackChannelChatterFactory::class, $stripeChatterFactoryProphecy->reveal());
-        $stripeChatterFactoryProphecy->makeChatter('stripe')->willReturn($chatterProphecy);
+        $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
+        $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -151,12 +148,15 @@ class StripePayoutUpdateTest extends StripeTest
         $time = (string) time();
 
         $request = $this->createRequest('POST', '/hooks/stripe-connect', $this->getStripeHookMock('po_failed'))
-            ->withHeader('Stripe-Signature', $this->generateSignature($time, $this->getStripeHookMock('po_failed'), $webhookSecret));
+            ->withHeader(
+                'Stripe-Signature',
+                $this->generateSignature($time, $this->getStripeHookMock('po_failed'), $webhookSecret),
+            );
 
         $chatterProphecy->send(
-            new ChatMessage('payout.failed for ID po_externalId_123, account acct_unitTest543')
+            new ChatMessage('[test] payout.failed for ID po_externalId_123, account acct_unitTest543')
         )
-            ->shouldBeCalled();
+            ->shouldBeCalledOnce();
         $response = $app->handle($request);
 
         $this->assertEquals(200, $response->getStatusCode());

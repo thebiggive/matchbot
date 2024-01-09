@@ -5,24 +5,28 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
-use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Client\Stripe;
+use Slim\Routing\Route;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Http\Message\ServerRequestInterface;
+use Slim\App;
+use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Exception\HttpUnauthorizedException;
 use Stripe\Exception\InvalidRequestException;
-use Stripe\Exception\RateLimitException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
-use Stripe\Service\PaymentIntentService;
-use Stripe\StripeClient;
+use Stripe\StripeObject;
 
 class UpdateTest extends TestCase
 {
@@ -155,7 +159,11 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $request = $this->createRequest('PUT', '/v2/donations/87654321-1234-1234-1234-ba0987654321')
+        $request = $this->createRequest(
+            method: 'PUT',
+            path: '/v1/donations/87654321-1234-1234-1234-ba0987654321',
+            bodyString: json_encode($this->getTestDonation()->toApiModel()),
+        )
             ->withHeader('x-tbg-auth', DonationToken::create('87654321-1234-1234-1234-ba0987654321'));
         $route = $this->getRouteWithDonationId('put', '87654321-1234-1234-1234-ba0987654321');
 
@@ -225,9 +233,8 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donation)
-            ->shouldBeCalledOnce();
+            ->findAndLockOneBy(Argument::cetera())
+            ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
@@ -236,8 +243,7 @@ class UpdateTest extends TestCase
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+        $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -276,7 +282,7 @@ class UpdateTest extends TestCase
         $donationResponse->setDonationStatus(DonationStatus::Collected);
 
         $donation = $this->getTestDonation();
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation->cancel();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -324,15 +330,14 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation = $this->getTestDonation('999.99');
+        $donation->cancel();
         // Check this is ignored and only status patched. N.B. this is currently a bit circular as we simulate both
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
-        $donation->setAmount('999.99');
 
         $responseDonation = $this->getTestDonation();
-        $responseDonation->setDonationStatus(DonationStatus::Cancelled);
+        $responseDonation->cancel();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -369,7 +374,7 @@ class UpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
-        $this->assertEquals('Cancelled', $payloadArray['status']);
+        $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
         $this->assertEquals('1 Main St, London N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
         $this->assertTrue($payloadArray['optInCharityEmail']);
@@ -387,12 +392,11 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation = $this->getTestDonation('999.99');
+        $donation->cancel();
         // Check this is ignored and only status patched. N.B. this is currently a bit circular as we simulate both
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
-        $donation->setAmount('999.99');
 
         $responseDonation = $this->getTestDonation();
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
@@ -419,16 +423,13 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->cancel('pi_externalId_123')
-            ->shouldBeCalledOnce()
-            ->willReturn($this->prophesize(PaymentIntent::class));
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')
+            ->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -445,7 +446,7 @@ class UpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
-        $this->assertEquals('Cancelled', $payloadArray['status']);
+        $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
         $this->assertEquals('1 Main St, London N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
         $this->assertTrue($payloadArray['optInCharityEmail']);
@@ -468,7 +469,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation->cancel();
 
         $responseDonation = $this->getTestDonation();
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
@@ -500,16 +501,15 @@ class UpdateTest extends TestCase
             'requires_payment_method, requires_capture, requires_confirmation, requires_action, ' .
             'processing.';
         $stripeApiException = new InvalidRequestException($stripeErrorMessage);
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->cancel('pi_externalId_123')
+
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')
             ->shouldBeCalledOnce()
             ->willThrow($stripeApiException);
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -537,7 +537,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation->cancel();
 
         $responseDonation = $this->getTestDonation();
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
@@ -569,16 +569,16 @@ class UpdateTest extends TestCase
             'requires_payment_method, requires_capture, requires_confirmation, requires_action, ' .
             'processing.';
         $stripeApiException = new InvalidRequestException($stripeErrorMessage);
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->cancel('pi_externalId_123')
+
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')
             ->shouldBeCalledOnce()
             ->willThrow($stripeApiException);
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -595,7 +595,7 @@ class UpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
-        $this->assertEquals('Cancelled', $payloadArray['status']);
+        $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
     }
 
     public function testCancelSuccessWithChangeFromPendingAnonymousDonation(): void
@@ -605,7 +605,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getAnonymousPendingTestDonation();
-        $donation->setDonationStatus(DonationStatus::Cancelled);
+        $donation->cancel();
 
         $responseDonation = $this->getAnonymousPendingTestDonation();
 
@@ -629,16 +629,13 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->cancel('pi_stripe_pending_123')
-            ->shouldBeCalledOnce()
-            ->willReturn($this->prophesize(PaymentIntent::class));
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->cancelPaymentIntent('pi_stripe_pending_123')
+            ->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -655,7 +652,7 @@ class UpdateTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
-        $this->assertEquals('Cancelled', $payloadArray['status']);
+        $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
         $this->assertNull($payloadArray['giftAid']);
         $this->assertEquals(124.56, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertEquals(0, $payloadArray['matchedAmount']);
@@ -670,8 +667,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donationInRequest = $this->getTestDonation();
-        $donationInRequest->setAmount('99.99');
+        $donationInRequest = $this->getTestDonation('99.99');
 
         $donationInRepo = $this->getTestDonation(); //  // Get a new mock object so it's £123.45.
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -780,9 +776,8 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donation)
-            ->shouldBeCalledOnce();
+            ->findAndLockOneBy(Argument::cetera())
+            ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
@@ -791,8 +786,7 @@ class UpdateTest extends TestCase
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+        $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -933,9 +927,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -950,10 +943,9 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -962,8 +954,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -972,8 +963,8 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldNotBeCalled();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -993,12 +984,10 @@ class UpdateTest extends TestCase
         ])
             ->shouldBeCalledOnce()
             ->willThrow(UnknownApiErrorException::class);
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1029,9 +1018,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1046,17 +1034,15 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(); // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+        $donationRepoProphecy // here
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Persist as normal.
@@ -1069,15 +1055,16 @@ class UpdateTest extends TestCase
         $stripeErrorMessage = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
             'after a capture has already been made.';
         $stripeApiException = new InvalidRequestException($stripeErrorMessage);
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 526;
 
-        $stripePaymentIntentsProphecy->retrieve('pi_externalId_123')
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->retrievePaymentIntent('pi_externalId_123')
             ->willReturn($mockPI)
             ->shouldBeCalledOnce();
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -1097,12 +1084,10 @@ class UpdateTest extends TestCase
         ])
             ->shouldBeCalledOnce()
             ->willThrow($stripeApiException);
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1128,9 +1113,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1145,10 +1129,9 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -1157,8 +1140,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Internal persist still goes ahead.
@@ -1169,15 +1151,16 @@ class UpdateTest extends TestCase
         $stripeErrorMessage = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
             'after a capture has already been made.';
         $stripeApiException = new InvalidRequestException($stripeErrorMessage);
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 527; // Different from what we'll derive to be right.
 
-        $stripePaymentIntentsProphecy->retrieve('pi_externalId_123')
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->retrievePaymentIntent('pi_externalId_123')
             ->willReturn($mockPI)
             ->shouldBeCalledOnce();
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -1197,12 +1180,10 @@ class UpdateTest extends TestCase
         ])
             ->shouldBeCalledOnce()
             ->willThrow($stripeApiException);
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1236,9 +1217,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1253,17 +1233,15 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Persist as normal.
@@ -1273,12 +1251,13 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 526;
 
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -1299,16 +1278,13 @@ class UpdateTest extends TestCase
             ->shouldBeCalledTimes(2)
             ->will(new PaymentIntentUpdateAttemptTwicePromise(
                 true,
-                false,
-                $this->prophesize(PaymentIntent::class)->reveal(),
+                false
             ));
 
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1338,9 +1314,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1355,10 +1330,9 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation(); // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -1367,8 +1341,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Internal persist still goes ahead.
@@ -1376,12 +1349,13 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 526;
 
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -1403,14 +1377,11 @@ class UpdateTest extends TestCase
             ->will(new PaymentIntentUpdateAttemptTwicePromise(
                 false,
                 false,
-                $this->prophesize(PaymentIntent::class)->reveal(),
             ));
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1444,9 +1415,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1461,17 +1431,15 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donatinInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donatinInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         // Persist as normal.
@@ -1481,15 +1449,16 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
+
 
         $mockPI = new PaymentIntent();
         $mockPI->application_fee_amount = 526;
 
-        $stripePaymentIntentsProphecy->retrieve('pi_externalId_123')
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->retrievePaymentIntent('pi_externalId_123')
             ->willReturn($mockPI)
             ->shouldBeCalledOnce();
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -1511,14 +1480,11 @@ class UpdateTest extends TestCase
             ->will(new PaymentIntentUpdateAttemptTwicePromise(
                 false,
                 true,
-                $this->prophesize(PaymentIntent::class)->reveal(),
             ));
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1547,9 +1513,8 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(currencyCode: 'USD');
         $donation->setDonorCountryCode('US');
-        $donation->setCurrencyCode('USD');
         $donation->setTipAmount('3.21');
         $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
@@ -1564,10 +1529,9 @@ class UpdateTest extends TestCase
         $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($donationInRepo)
+            ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -1576,8 +1540,7 @@ class UpdateTest extends TestCase
             ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce(); // Updates pushed to Salesforce
         $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1586,8 +1549,8 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
             'amount' => 12_666,
             'currency' => 'usd',
             'metadata' => [
@@ -1606,12 +1569,10 @@ class UpdateTest extends TestCase
             'application_fee_amount' => 526,
         ])
             ->shouldBeCalledOnce();
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'PUT',
@@ -1631,7 +1592,7 @@ class UpdateTest extends TestCase
 
         // These two values are unchanged but still returned.
         $this->assertEquals(123.45, $payloadArray['donationAmount']);
-        $this->assertEquals('Collected', $payloadArray['status']);
+        $this->assertEquals(DonationStatus::Collected->value, $payloadArray['status']);
 
         // Remaining properties should be updated.
         $this->assertEquals('US', $payloadArray['countryCode']);
@@ -1654,29 +1615,361 @@ class UpdateTest extends TestCase
 
     public function testAddDataSuccessWithCashBalanceAutoconfirm(): void
     {
+        [
+            'app' => $app,
+            'request' => $request,
+            'route' => $route,
+            'donationRepoProphecy' => $donationRepoProphecy,
+            'entityManagerProphecy' => $entityManagerProphecy,
+        ] =
+            $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
+                newPaymentIntentStatus: PaymentIntent::STATUS_SUCCEEDED,
+                nextActionRequired: null,
+            );
+
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldBeCalledOnce(); // Updates pushed to Salesforce
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+
+        // These values are unchanged but still returned. Confirming alone doesn't change the
+        // response payload.
+        $this->assertEquals(123.45, $payloadArray['donationAmount']);
+        $this->assertEquals(DonationStatus::Collected->value, $payloadArray['status']);
+    }
+
+    public function testAddDataFailsWithCashBalanceAutoconfirmForDonorWithInsufficentFunds(): void
+    {
+        [
+            'app' => $app,
+            'request' => $request,
+            'route' => $route,
+            'stripeProphecy' => $stripeProphecy,
+            'entityManagerProphecy' => $entityManagerProphecy,
+        ] =
+            $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
+                newPaymentIntentStatus: PaymentIntent::STATUS_PROCESSING,
+                nextActionRequired: null,
+            );
+        try {
+            $app->handle($request->withAttribute('route', $route));
+            $this->fail("attempt to confirm donation with insufficent funds should have thrown");
+        } catch (HttpBadRequestException $exception) {
+            $this->assertStringContainsString("Status was processing, expected succeeded", $exception->getMessage());
+        }
+
+        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldBeCalled();
+        $entityManagerProphecy->flush()->shouldBeCalled(); // flushes cancelled donation to DB.
+    }
+
+    public function testAutoconfirmBGTipAttemptRemainsPendingWithCashBalanceInsufficentFunds(): void
+    {
+        [
+            'app' => $app,
+            'request' => $request,
+            'route' => $route,
+            'donationRepoProphecy' => $donationRepoProphecy,
+            'stripeProphecy' => $stripeProphecy,
+            'entityManagerProphecy' => $entityManagerProphecy
+        ] = $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
+            newPaymentIntentStatus: PaymentIntent::STATUS_REQUIRES_ACTION,
+            nextActionRequired: 'display_bank_transfer_instructions',
+        );
+
+        $response = $app->handle($request->withAttribute('route', $route));
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+
+        $this->assertEquals(200, $response->getStatusCode());
+
+        /**
+         * @psalm-var array{donationAmount:float, status:string} $payloadArray
+         */
+        $payloadArray = json_decode($payload, true);
+
+        $this->assertEquals(123.45, $payloadArray['donationAmount']);
+        // Bank transfer is still required -> status remains pending.
+        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['status']);
+
+        // Stripe PI must be left pending ready for the bank transfer.
+        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldNotBeCalled();
+
+        // This reduced test donation will have false `hasEnoughDataForSalesforce()`.
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
+
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalled();
+        $entityManagerProphecy->commit()->shouldBeCalled();
+    }
+
+    public function testAutoconfirmBGTipAttemptAutoCancelsWhenRequiringUnexpectedAction(): void
+    {
+        [
+            'app' => $app,
+            'request' => $request,
+            'route' => $route,
+            'stripeProphecy' => $stripeProphecy,
+            'entityManagerProphecy' => $entityManagerProphecy
+        ] = $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
+            newPaymentIntentStatus: PaymentIntent::STATUS_REQUIRES_ACTION,
+            nextActionRequired: 'any_unexpected_action',
+        );
+
+        $entityManagerProphecy->flush()->shouldBeCalled();
+        $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldBeCalled();
+
+
+        $this->expectException(HttpBadRequestException::class);
+        $this->expectExceptionMessage('Status was requires_action, expected succeeded');
+
+        $app->handle($request->withAttribute('route', $route));
+    }
+
+    public function testAddDataRejectsAutoconfirmWithCardMethod(): void
+    {
+        // arrange
         $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation();
-        $donation->setDonorCountryCode('GB');
-        $donation->setCurrencyCode('GBP');
-        $donation->setGiftAid(true);
-        $donation->setTipAmount('0');
-        $donation->setTipGiftAid(false);
-        $donation->setDonorHomeAddressLine1('99 Updated St');
-        $donation->setDonorHomePostcode('X1 1XY');
-        $donation->setDonorFirstName('Saul');
-        $donation->setDonorLastName('Williams');
-        $donation->setDonorEmailAddress('saul@example.com');
-        $donation->setTbgComms(true);
-        $donation->setCharityComms(false);
-        $donation->setChampionComms(false);
-        $donation->setDonorBillingAddress('Y1 1YX');
-        $donation->setPaymentMethodType('customer_balance');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationInRepo = $this->getTestDonation();  // Get a new mock object so DB has old values.
+        // Get a new mock object so DB has old values. Make it explicit that the payment method type is (the
+        // unsupported for auto-confirms) "card".
+        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::Card);
+
+        $donationRepoProphecy
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($donationInRepo)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled(); // Updates pushed to Salesforce
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy->flush()->shouldNotBeCalled();
+        $entityManagerProphecy->commit()->shouldNotBeCalled();
+
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent(Argument::cetera())
+            ->shouldNotBeCalled();
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
+            ->shouldNotBeCalled();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
+
+        $requestPayload = $donation->toApiModel();
+        $requestPayload['autoConfirmFromCashBalance'] = true;
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($requestPayload),
+        )
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        // act
+        $response = $app->handle($request->withAttribute('route', $route));
+
+        // assert
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(400, $response->getStatusCode());
+
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'Processing incomplete. Please refresh and check your donation funds balance',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $this->assertEquals($expectedSerialised, $payload);
+    }
+
+    public function testCannotAutoConfirmCardPayment(): void
+    {
+        // arrange
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::Card);
+        // Get a new mock object so DB has old values.
+        // Make it explicit that the payment method type is (the unsupported
+        // for auto-confirms) "card".
+
+        $donationRepoProphecy
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($donationInRepo)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled(); // Updates pushed to Salesforce
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy->flush()->shouldNotBeCalled();
+        $entityManagerProphecy->commit()->shouldNotBeCalled();
+
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent(Argument::cetera())
+            ->shouldNotBeCalled();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
+
+        $requestPayload = $donation->toApiModel();
+        $requestPayload['autoConfirmFromCashBalance'] = true;
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($requestPayload),
+        )
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        // act
+        $response = $app->handle($request->withAttribute('route', $route));
+
+        // assert
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(400, $response->getStatusCode());
+
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'Processing incomplete. Please refresh and check your donation funds balance',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $this->assertEquals($expectedSerialised, $payload);
+    }
+
+    public function testAddDataAutoconfirmHitsUnknownInvalidRequestException(): void
+    {
+        // arrange
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        // Get a new mock object so DB has old values. Make it explicit that the payment method type is (the
+        // unsupported for auto-confirms) "card".
+        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+
+        $donationRepoProphecy
+            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->willReturn($donationInRepo)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->deriveFees(Argument::type(Donation::class), null, null)// Actual fee calculation is tested elsewhere.
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled(); // Updates pushed to Salesforce
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy->flush()->shouldNotBeCalled();
+        $entityManagerProphecy->commit()->shouldNotBeCalled();
+
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', Argument::type('array'))
+            ->shouldBeCalledOnce();
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
+            ->willThrow(new InvalidRequestException('Not the one we know!'))
+            ->shouldBeCalledOnce();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
+
+        $requestPayload = $donation->toApiModel();
+        $requestPayload['autoConfirmFromCashBalance'] = true;
+        $request = $this->createRequest(
+            'PUT',
+            '/v1/donations/12345678-1234-1234-1234-1234567890ab',
+            json_encode($requestPayload),
+        )
+            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
+        $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
+
+        // assert [early]
+
+        // We re-throw this unknown type and leave it to be handled "downstream" in
+        // the shutdown handler.
+        $this->expectException(InvalidRequestException::class);
+        $this->expectExceptionMessage('Not the one we know!');
+
+        // act
+        $app->handle($request->withAttribute('route', $route));
+    }
+
+    /**
+     * @return array{
+     *     app: App,
+     * request: ServerRequestInterface,
+     * route: Route,
+     * donationRepoProphecy: ObjectProphecy<DonationRepository>,
+     * entityManagerProphecy: ObjectProphecy<EntityManagerInterface>,
+     * stripeProphecy: ObjectProphecy<Stripe>
+     * }
+     *
+     * @throws \Doctrine\DBAL\Exception\LockWaitTimeoutException
+     * @throws \MatchBot\Application\Matching\TerminalLockException
+     * @throws \Stripe\Exception\ApiErrorException
+     *
+     * @psalm-param PaymentIntent::STATUS_* $newPaymentIntentStatus
+     */
+    public function setupTestDoublesForConfirmingPaymentFromDonationFunds(
+        string $newPaymentIntentStatus,
+        ?string $nextActionRequired,
+    ): array {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $nextActionRequired === null
+            ? $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0')
+            : $this->getPendingBigGiveGeneralCustomerBalanceDonation();
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationInRepo = $this->getTestDonation(
+            pspMethodType: PaymentMethodType::CustomerBalance,
+            tipAmount: '0',
+            status: $nextActionRequired === null ? DonationStatus::Collected : DonationStatus::Pending,
+        );  // Get a new mock object so DB has old values.
+
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationInRepo)
@@ -1684,48 +1977,34 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+
         $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldBeCalledOnce(); // Updates pushed to Salesforce
-        $donationRepoProphecy
-            ->deriveFees(Argument::type(Donation::class), null, null)
-            ->willReturn($donation) // Actual fee calculation is tested elsewhere.
+            ->deriveFees(Argument::type(Donation::class), null, null) // Actual fee calculation is tested elsewhere.
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
-        $stripePaymentIntentsProphecy = $this->prophesize(PaymentIntentService::class);
-        $stripePaymentIntentsProphecy->update('pi_externalId_123', [
-            'amount' => 12_345,
-            'currency' => 'gbp',
-            'metadata' => [
-                'coreDonationGiftAid' => true,
-                'feeCoverAmount' => '0.00',
-                'matchedAmount' => '0.0',
-                'optInCharityEmail' => false,
-                'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
-                'stripeFeeRechargeGross' => '2.05',
-                'stripeFeeRechargeNet' => '2.05',
-                'stripeFeeRechargeVat' => '0.00',
-                'tbgTipGiftAid' => false,
-                'tipAmount' => '0',
-            ],
-            'application_fee_amount' => 205,
-        ])
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentIntent('pi_externalId_123', Argument::type('array'))
             ->shouldBeCalledOnce();
-        $stripePaymentIntentsProphecy->confirm('pi_externalId_123')
-            ->shouldBeCalledOnce();
-        $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->paymentIntents = $stripePaymentIntentsProphecy->reveal();
+        $updatedPaymentIntent = new PaymentIntent('pi_externalId_123');
+        $updatedPaymentIntent->status = $newPaymentIntentStatus;
+
+        if ($nextActionRequired !== null) {
+            $nextAction = new StripeObject();
+            $nextAction->type = $nextActionRequired;
+            $updatedPaymentIntent->next_action = $nextAction;
+        }
+
+        $stripeProphecy->confirmPaymentIntent('pi_externalId_123')
+            ->shouldBeCalledOnce()
+            ->willReturn($updatedPaymentIntent);
+
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $requestPayload = $donation->toApiModel();
         $requestPayload['autoConfirmFromCashBalance'] = true;
@@ -1737,34 +2016,13 @@ class UpdateTest extends TestCase
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
-        $response = $app->handle($request->withAttribute('route', $route));
-        $payload = (string) $response->getBody();
-
-        $this->assertJson($payload);
-        $this->assertEquals(200, $response->getStatusCode());
-
-        $payloadArray = json_decode($payload, true);
-
-        // These two values are unchanged but still returned.
-        $this->assertEquals(123.45, $payloadArray['donationAmount']);
-        $this->assertEquals('Collected', $payloadArray['status']);
-
-        // Remaining properties should be updated.
-        $this->assertEquals('GB', $payloadArray['countryCode']);
-        $this->assertEquals('GBP', $payloadArray['currencyCode']);
-        // 1.9% + 20p. cardCountry from Stripe payment method ≠ donor country.
-        $this->assertEquals(2.05, $payloadArray['charityFee']);
-        $this->assertEquals(0, $payloadArray['charityFeeVat']);
-        $this->assertEquals('0', $payloadArray['tipAmount']);
-        $this->assertTrue($payloadArray['giftAid']);
-        $this->assertFalse($payloadArray['tipGiftAid']);
-        $this->assertEquals('99 Updated St', $payloadArray['homeAddress']);
-        $this->assertEquals('X1 1XY', $payloadArray['homePostcode']);
-        $this->assertEquals('Saul', $payloadArray['firstName']);
-        $this->assertEquals('Williams', $payloadArray['lastName']);
-        $this->assertEquals('saul@example.com', $payloadArray['emailAddress']);
-        $this->assertTrue($payloadArray['optInTbgEmail']);
-        $this->assertFalse($payloadArray['optInCharityEmail']);
-        $this->assertEquals('Y1 1YX', $payloadArray['billingPostalAddress']);
+        return [
+            'app' => $app,
+            'request' => $request,
+            'route' => $route,
+            'donationRepoProphecy' => $donationRepoProphecy,
+            'entityManagerProphecy' => $entityManagerProphecy,
+            'stripeProphecy' => $stripeProphecy,
+        ];
     }
 }

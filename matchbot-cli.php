@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 
 declare(strict_types=1);
@@ -7,12 +8,15 @@ $psr11App = require __DIR__ . '/bootstrap.php';
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\ClaimGiftAid;
+use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\LockingCommand;
 use MatchBot\Application\Commands\PushDonations;
+use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
+use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
 use MatchBot\Application\Commands\UpdateCampaigns;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFundingRepository;
@@ -21,6 +25,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
 use MatchBot\Domain\FundRepository;
 use Psr\Log\LoggerInterface;
+use Stripe\StripeClient;
 use Symfony\Component\Console\Application;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Lock\LockFactory;
@@ -35,6 +40,14 @@ $messengerReceiverKey = 'receiver';
 $messengerReceiverLocator = new Container();
 $messengerReceiverLocator->set($messengerReceiverKey, $psr11App->get(TransportInterface::class));
 
+$chatter = $psr11App->get(ChatterInterface::class);
+assert($chatter instanceof ChatterInterface);
+
+/**
+ * @psalm-suppress MixedArgument - too many of these to fix here. At some point we could fix on mass
+ * by using a stub psr11 with generics. It's also not very important to fix for this statement as it is called inside
+ * any loop or conditional. If it's broken we'll know about it.
+ */
 $commands = [
     new ClaimGiftAid(
         $psr11App->get(DonationRepository::class),
@@ -48,17 +61,34 @@ $commands = [
         $psr11App->get(LoggerInterface::class),
         [$messengerReceiverKey],
     ),
+    new DeleteStalePaymentDetails(
+        new \DateTimeImmutable('now'),
+        $psr11App->get(LoggerInterface::class),
+        $psr11App->get(StripeClient::class),
+    ),
     new ExpireMatchFunds($psr11App->get(DonationRepository::class)),
     new HandleOutOfSyncFunds(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(FundingWithdrawalRepository::class),
         $psr11App->get(Matching\Adapter::class)
     ),
+    new RedistributeMatchFunds(
+        $psr11App->get(CampaignFundingRepository::class),
+        new \DateTimeImmutable('now'),
+        $psr11App->get(DonationRepository::class),
+        $psr11App->get(LoggerInterface::class),
+    ),
+    new ScheduledOutOfSyncFundsCheck(
+        $psr11App->get(CampaignFundingRepository::class),
+        $psr11App->get(FundingWithdrawalRepository::class),
+        $psr11App->get(Matching\Adapter::class),
+        $chatter,
+    ),
     new PushDonations($psr11App->get(DonationRepository::class)),
     new ResetMatching($psr11App->get(CampaignFundingRepository::class), $psr11App->get(Matching\Adapter::class)),
     new RetrospectivelyMatch(
         $psr11App->get(DonationRepository::class),
-        $psr11App->get(ChatterInterface::class),
+        $chatter,
     ),
     new UpdateCampaigns(
         $psr11App->get(CampaignRepository::class),

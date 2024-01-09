@@ -1,10 +1,11 @@
 <?php
 
+namespace MatchBot\IntegrationTests;
+
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
-use MatchBot\IntegrationTests\IntegrationTest;
 use Ramsey\Uuid\Uuid;
 
 class DonationPersistenceTest extends IntegrationTest
@@ -15,6 +16,7 @@ class DonationPersistenceTest extends IntegrationTest
         $em = $this->getService(EntityManagerInterface::class);
         $connection = $em->getConnection();
         $donation = $this->makeDonationObject();
+        $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 10:00:00'));
 
         // act
         $em->persist($donation);
@@ -39,7 +41,7 @@ class DonationPersistenceTest extends IntegrationTest
         $donation = $donationRepo->findOneBy(['uuid' => $donationRow['uuid']]);
 
         $this->assertNotNull($donation);
-        $this->assertSame(DonationStatus::Refunded, $donation->getDonationStatus());
+        $this->assertEquals(DonationStatus::Refunded, $donation->getDonationStatus());
     }
 
     /**
@@ -49,7 +51,7 @@ class DonationPersistenceTest extends IntegrationTest
     {
         $ignoredColumns = ['id' => 0, 'uuid' => 0, 'updatedAt' => 0, 'createdAt' => 0];
 
-        $this->assertSame($ignoredColumns + $expected, $ignoredColumns + $actual , $message);
+        $this->assertSame($ignoredColumns + $expected, $ignoredColumns + $actual, $message);
     }
 
     /**
@@ -58,44 +60,44 @@ class DonationPersistenceTest extends IntegrationTest
     private function donationRow(): array
     {
         return [
-            'campaign_id' => NULL,
+            'campaign_id' => null,
             'uuid' => Uuid::uuid4(),
-            'transactionId' => NULL,
+            'transactionId' => null,
             'amount' => '1.00',
-            'donationStatus' => 'Refunded',
-            'charityComms' => NULL,
-            'giftAid' => NULL,
-            'tbgComms' => NULL,
-            'donorCountryCode' => NULL,
-            'donorEmailAddress' => NULL,
-            'donorFirstName' => NULL,
-            'donorLastName' => NULL,
-            'donorPostalAddress' => NULL,
-            'salesforceLastPush' => NULL,
+            'donationStatus' => DonationStatus::Refunded->value,
+            'charityComms' => null,
+            'giftAid' => null,
+            'tbgComms' => null,
+            'donorCountryCode' => null,
+            'donorEmailAddress' => null,
+            'donorFirstName' => null,
+            'donorLastName' => null,
+            'donorPostalAddress' => null,
+            'salesforceLastPush' => null,
             'salesforcePushStatus' => 'not-sent',
-            'salesforceId' => NULL,
+            'salesforceId' => null,
             'tipAmount' => '0.00',
             'psp' => 'stripe',
-            'clientSecret' => NULL,
-            'donorHomeAddressLine1' => NULL,
-            'donorHomePostcode' => NULL,
-            'tipGiftAid' => NULL,
-            'chargeId' => NULL,
-            'championComms' => NULL,
+            'donorHomeAddressLine1' => null,
+            'donorHomePostcode' => null,
+            'tipGiftAid' => null,
+            'chargeId' => null,
+            'championComms' => null,
             'charityFee' => '0.00',
             'charityFeeVat' => '0.00',
             'originalPspFee' => '0.00',
             'currencyCode' => 'GBP',
             'feeCoverAmount' => '0.00',
-            'collectedAt' => NULL,
-            'tbgShouldProcessGiftAid' => NULL,
-            'tbgGiftAidRequestQueuedAt' => NULL,
-            'tbgGiftAidRequestFailedAt' => NULL,
-            'transferId' => NULL,
-            'tbgGiftAidRequestConfirmedCompleteAt' => NULL,
-            'tbgGiftAidRequestCorrelationId' => NULL,
-            'tbgGiftAidResponseDetail' => NULL,
-            'pspCustomerId' => NULL,
+            'collectedAt' => null,
+            'refundedAt' => '2023-06-22 10:00:00',
+            'tbgShouldProcessGiftAid' => null,
+            'tbgGiftAidRequestQueuedAt' => null,
+            'tbgGiftAidRequestFailedAt' => null,
+            'transferId' => null,
+            'tbgGiftAidRequestConfirmedCompleteAt' => null,
+            'tbgGiftAidRequestCorrelationId' => null,
+            'tbgGiftAidResponseDetail' => null,
+            'pspCustomerId' => null,
             'paymentMethodType' => 'card',
 
             'updatedAt' => '1970-01-01',
@@ -108,12 +110,10 @@ class DonationPersistenceTest extends IntegrationTest
      */
     public function makeDonationObject(): Donation
     {
-        $donation = new Donation();
+        $donation = Donation::emptyTestDonation('1');
         $donation->setUuid(Uuid::uuid4());
         $donation->setPsp('stripe');
-        $donation->setCurrencyCode('GBP');
-        $donation->setAmount('1');
-        $donation->setDonationStatus(DonationStatus::Refunded);
+        $donation->setDonationStatus(DonationStatus::Collected);
 
         return $donation;
     }

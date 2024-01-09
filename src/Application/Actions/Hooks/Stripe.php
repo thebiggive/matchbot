@@ -15,7 +15,9 @@ use Stripe\Event;
 
 abstract class Stripe extends Action
 {
-    protected Event $event;
+    protected ?Event $event = null;
+
+    /** @var array{connectAppWebhookSecret: string, accountWebhookSecret: string} */
     protected array $stripeSettings;
 
     public function __construct(ContainerInterface $container, LoggerInterface $logger)
@@ -39,9 +41,10 @@ abstract class Stripe extends Action
         Response $response,
     ): ?ResponseInterface {
         try {
+            $headerLine = $request->getHeaderLine('stripe-signature');
             $this->event = \Stripe\Webhook::constructEvent(
                 $request->getBody(),
-                $request->getHeaderLine('stripe-signature'),
+                $headerLine,
                 $webhookSecret
             );
         } catch (\UnexpectedValueException $e) {

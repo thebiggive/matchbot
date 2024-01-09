@@ -5,13 +5,13 @@ namespace MatchBot\IntegrationTests;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityRepository;
-use PHPUnit\Framework\TestCase;
 
 /**
  * CharityRepository probably doesn't really need testing since it has no code of its own, but this
  * is a proof of concept integration test + serves to check that the database connection and ORM are configured
  * correctly and migrations have been run.
- */class CharityRepositoryTest extends IntegrationTest
+ */
+class CharityRepositoryTest extends IntegrationTest
 {
     public function testItDoesNotFindCharityThatDoesNotExist(): void
     {
@@ -27,8 +27,7 @@ use PHPUnit\Framework\TestCase;
         // arrange
         $sut = $this->getService(CharityRepository::class);
 
-        $charity = new Charity();
-        $charity->setDonateLinkId("doesn't matter, has to be set");
+        $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setName("Charity Name");
 
         $em = $this->getService(EntityManagerInterface::class);
@@ -44,7 +43,8 @@ use PHPUnit\Framework\TestCase;
         assert($charityReturnedFromDB instanceof Charity);
 
         // assert
-        $this->assertNotSame($charity, $charityReturnedFromDB); // proves that we loaded a new copy of the charity out of the DB.
+        // proves that we loaded a new copy of the charity out of the DB.
+        $this->assertNotSame($charity, $charityReturnedFromDB);
         $this->assertSame("Charity Name", $charity->getName());
     }
 }

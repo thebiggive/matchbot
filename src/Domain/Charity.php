@@ -4,66 +4,113 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use DateTime;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity(repositoryClass="CharityRepository")
- * @ORM\HasLifecycleCallbacks
- * @ORM\Table
- */
+#[ORM\Table]
+#[ORM\Entity(repositoryClass: CharityRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Charity extends SalesforceReadProxy
 {
     use TimestampsTrait;
 
-    /**
-     * @ORM\Column(type="string")
-     * @var string  The ID PSPs expect us to identify the charity by. Currently matches
-     *              `$id` for new charities but has a numeric value for those imported from the
-     *              legacy database.
-     */
-    protected string $donateLinkId;
+    private const GIFT_AID_APPROVED_STATUS = 'Onboarded & Approved';
+
+    private const GIFT_AID_ONBOARDED_STATUSES = [
+        'Onboarded',
+        'Onboarded & Data Sent to HMRC',
+        self::GIFT_AID_APPROVED_STATUS,
+        // We'll always aim to fix data problems with HMRC, so should still plan to claim.
+        'Onboarded but HMRC Rejected',
+    ];
+
+    private const POSSIBLE_GIFT_AID_STATUSES = [
+        ...self::GIFT_AID_ONBOARDED_STATUSES,
+        'Invited to Onboard',
+        'Withdrawn',
+    ];
 
     /**
-     * @ORM\Column(type="string")
      * @var string
      */
+    #[ORM\Column(type: 'string')]
     protected string $name;
 
     /**
-     * @ORM\Column(type="string", length=255, unique=true, nullable=true)
      * @var string
      */
+    #[ORM\Column(type: 'string', length: 255, unique: true, nullable: true)]
     protected ?string $stripeAccountId = null;
 
     /**
-     * @ORM\Column(type="string", length=7, unique=true, nullable=true)
      * @var ?string
      */
+    #[ORM\Column(type: 'string', length: 7, unique: true, nullable: true)]
     protected ?string $hmrcReferenceNumber = null;
 
     /**
      * HMRC-permitted values: CCEW, CCNI, OSCR. Anything else should have this null and
      * just store an "OtherReg" number in `$regulatorNumber` if applicable.
      *
-     * @ORM\Column(type="string", length=4, nullable=true)
      * @var ?string
      * @see Charity::$permittedRegulators
      */
+    #[ORM\Column(type: 'string', length: 4, nullable: true)]
     protected ?string $regulator = null;
 
     /**
-     * @ORM\Column(type="string", length=10, nullable=true)
      * @var ?string
      */
+    #[ORM\Column(type: 'string', length: 10, nullable: true)]
     protected ?string $regulatorNumber = null;
 
     private static array $permittedRegulators = ['CCEW', 'CCNI', 'OSCR'];
 
     /**
-     * @ORM\Column(type="boolean")
-     * @var bool    Whether the charity's Gift Aid is currently to be claimed by the Big Give.
+     * @var bool    Whether the charity's Gift Aid is expected to be claimed by the Big Give. This
+     *              indicates we should charge a fee and plan to claim, but not that we are necessarily
+     *              set up as an approved Agent yet.
      */
+    #[ORM\Column(type: 'boolean')]
     protected bool $tbgClaimingGiftAid = false;
+
+    /**
+     * @psalm-suppress UnusedProperty - used in a database query in DonationRepository::findReadyToClaimGiftAid
+     * @var bool    Whether the charity's Gift Aid may NOW be claimed by the Big Give according to HMRC.
+     */
+    #[ORM\Column(type: 'boolean')]
+    private bool $tbgApprovedToClaimGiftAid = false;
+
+    public function __construct(
+        string $salesforceId,
+        string $charityName,
+        ?string $stripeAccountId,
+        ?string $hmrcReferenceNumber,
+        ?string $giftAidOnboardingStatus,
+        ?string $regulator,
+        ?string $regulatorNumber,
+        DateTime $time,
+    ) {
+        $this->updatedAt = $time;
+        $this->createdAt = $time;
+        $this->setSalesforceId($salesforceId);
+
+        // every charity originates as pulled from SF.
+        $this->updateFromSfPull(
+            charityName: $charityName,
+            stripeAccountId: $stripeAccountId,
+            hmrcReferenceNumber: $hmrcReferenceNumber,
+            giftAidOnboardingStatus: $giftAidOnboardingStatus,
+            regulator: $regulator,
+            regulatorNumber: $regulatorNumber,
+            time: new \DateTime('now'),
+        );
+    }
+
+    public function __toString(): string
+    {
+        return "Charity sfID ($this->salesforceId}";
+    }
 
     /**
      * @param string $name
@@ -73,22 +120,9 @@ class Charity extends SalesforceReadProxy
         $this->name = $name;
     }
 
-    /**
-     * @return string
-     */
     public function getName(): string
     {
         return $this->name;
-    }
-
-    public function getDonateLinkId(): string
-    {
-        return $this->donateLinkId;
-    }
-
-    public function setDonateLinkId(string $donateLinkId): void
-    {
-        $this->donateLinkId = $donateLinkId;
     }
 
     /**
@@ -107,17 +141,11 @@ class Charity extends SalesforceReadProxy
         $this->stripeAccountId = $stripeAccountId;
     }
 
-    /**
-     * @return bool
-     */
     public function isTbgClaimingGiftAid(): bool
     {
         return $this->tbgClaimingGiftAid;
     }
 
-    /**
-     * @param bool $tbgClaimingGiftAid
-     */
     public function setTbgClaimingGiftAid(bool $tbgClaimingGiftAid): void
     {
         $this->tbgClaimingGiftAid = $tbgClaimingGiftAid;
@@ -161,5 +189,53 @@ class Charity extends SalesforceReadProxy
     public function setRegulatorNumber(?string $regulatorNumber): void
     {
         $this->regulatorNumber = $regulatorNumber;
+    }
+
+    public function setTbgApprovedToClaimGiftAid(bool $tbgApprovedToClaimGiftAid): void
+    {
+        $this->tbgApprovedToClaimGiftAid = $tbgApprovedToClaimGiftAid;
+    }
+
+    /**
+     * @throws \UnexpectedValueException if $giftAidOnboardingStatus is not listed in self::POSSIBLE_GIFT_AID_STATUSES
+     */
+    public function updateFromSfPull(
+        string $charityName,
+        ?string $stripeAccountId,
+        ?string $hmrcReferenceNumber,
+        ?string $giftAidOnboardingStatus,
+        ?string $regulator,
+        ?string $regulatorNumber,
+        DateTime $time,
+    ): void {
+        $statusUnexpected = !is_null($giftAidOnboardingStatus)
+            && !in_array($giftAidOnboardingStatus, self::POSSIBLE_GIFT_AID_STATUSES, true);
+        if ($statusUnexpected) {
+            throw new \UnexpectedValueException();
+        }
+
+        $this->setName($charityName);
+        $this->setStripeAccountId($stripeAccountId);
+
+        $tbgCanClaimGiftAid = (
+            !empty($hmrcReferenceNumber) &&
+            in_array($giftAidOnboardingStatus, self::GIFT_AID_ONBOARDED_STATUSES, true)
+        );
+        $tbgApprovedToClaimGiftAid = (
+            !empty($hmrcReferenceNumber) &&
+            $giftAidOnboardingStatus === self::GIFT_AID_APPROVED_STATUS
+        );
+
+        $this->setTbgClaimingGiftAid($tbgCanClaimGiftAid);
+        $this->setTbgApprovedToClaimGiftAid($tbgApprovedToClaimGiftAid);
+
+        // May be null. Should be set to its string value if provided even if the charity is now opted out for new
+        // claims, because there could still be historic donations that should be claimed by TBG.
+        $this->setHmrcReferenceNumber($hmrcReferenceNumber);
+
+        $this->setRegulator($regulator);
+        $this->setRegulatorNumber($regulatorNumber);
+
+        $this->setSalesforceLastPull($time);
     }
 }

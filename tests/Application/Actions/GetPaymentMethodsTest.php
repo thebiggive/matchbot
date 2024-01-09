@@ -35,7 +35,9 @@ class GetPaymentMethodsTest extends TestCase
             ]);
 
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->customers = $stripeCustomersProphecy->reveal();
+        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
+        // code, and may get mutation tests working again.
+        @$stripeClientProphecy->customers = $stripeCustomersProphecy->reveal();
 
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 

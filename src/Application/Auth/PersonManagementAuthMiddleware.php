@@ -24,6 +24,7 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
 {
     use ErrorTrait;
 
+    public const PSP_ATTRIBUTE_NAME = 'pspId';
     protected ?string $jws = null;
 
     #[Pure]
@@ -57,7 +58,7 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
 
         $this->checkCompleteness($request);
 
-        return $handler->handle($request->withAttribute('pspId', IdentityToken::getPspId($this->jws)));
+        return $handler->handle($request->withAttribute(self::PSP_ATTRIBUTE_NAME, IdentityToken::getPspId($this->jws)));
     }
 
     protected function checkCompleteness(ServerRequestInterface $request): void

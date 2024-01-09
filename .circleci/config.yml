@@ -3,7 +3,7 @@ version: 2.1
 orbs:
   aws-ecr: circleci/aws-ecr@8.1.3
   aws-ecs: circleci/aws-ecs@3.2.0
-  codecov: codecov/codecov@1.1.3
+  codecov: codecov/codecov@3.2.4
   jira: circleci/jira@1.3.1
   slack: circleci/slack@4.12.1
 
@@ -12,8 +12,9 @@ jobs:
     # Working directory must match docker-compose mount / Docker `COPY` for real Doctrine proxy
     # generation-dependent tests to work.
     working_directory: /var/www/html
+    resource_class: large
     docker:
-      - image: thebiggive/php:dev-8.1
+      - image: thebiggive/php:dev-8.3
         auth:
           username: $DOCKER_HUB_USERNAME
           password: $DOCKER_HUB_ACCESS_TOKEN
@@ -31,7 +32,70 @@ jobs:
         environment:
           MYSQL_DATABASE: matchbot
           MYSQL_ROOT_PASSWORD: tbgCircle123
-      - image: redis:6.2
+      - image: redis:7.0
+        auth:
+          username: $DOCKER_HUB_USERNAME
+          password: $DOCKER_HUB_ACCESS_TOKEN
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - composer-v1-{{ checksum "composer.lock" }}
+
+      - run: composer install --no-interaction
+
+      - run: composer check-platform-reqs
+
+      - save_cache:
+          paths:
+            - vendor
+          key: composer-v1-{{ checksum "composer.lock" }}
+
+      - run: composer run lint:check
+
+      - run: composer run sa:check
+
+      - run: composer run test
+
+      - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose
+
+      - run: vendor/bin/doctrine-migrations diff --allow-empty-diff # check that this works
+
+      - run: composer run integration-test
+
+      - store_artifacts:
+          path: reports
+
+      - codecov/upload:
+          file: 'coverage.xml'
+      - codecov/upload:
+          file: 'coverage-integration.xml'
+
+  mutation_coverage:
+    resource_class: large
+    working_directory: /var/www/html
+    docker:
+      - image: thebiggive/php:dev-8.3
+        auth:
+          username: $DOCKER_HUB_USERNAME
+          password: $DOCKER_HUB_ACCESS_TOKEN
+        environment:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_SCHEMA: matchbot
+          MYSQL_USER: root
+          MYSQL_PASSWORD: tbgCircle123
+
+          REDIS_HOST: 127.0.0.1
+      - image: cimg/mysql:8.0
+        auth:
+          username: $DOCKER_HUB_USERNAME
+          password: $DOCKER_HUB_ACCESS_TOKEN
+        environment:
+          MYSQL_DATABASE: matchbot
+          MYSQL_ROOT_PASSWORD: tbgCircle123
+      - image: redis:7.0
         auth:
           username: $DOCKER_HUB_USERNAME
           password: $DOCKER_HUB_ACCESS_TOKEN
@@ -50,19 +114,10 @@ jobs:
             - vendor
           key: composer-v1-{{ checksum "composer.lock" }}
 
-      - run: composer run lint:check
+      - run: composer run mutation-test
 
-      - run: composer run sa:check
-
-      - run: composer run test
-
-      - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose
-
-      - run: composer run integration-test
-
-      - codecov/upload:
-          file: 'coverage.xml'
-
+      - store_artifacts:
+          path: reports
 workflows:
   build:
     jobs:
@@ -70,6 +125,7 @@ workflows:
           context:
             - docker-hub-creds
             - jira
+            - slack
           post-steps:
             - jira/notify:
                 job_type: build
@@ -77,6 +133,11 @@ workflows:
             - slack/notify:
                 event: fail
                 template: basic_fail_1
+      - mutation_coverage:
+          context:
+            - docker-hub-creds
+          requires:
+            - test
 
   deploy-regression:
     jobs:
@@ -217,7 +278,7 @@ workflows:
                         "fields": [
                           {
                             "type": "mrkdwn",
-                            "text": "*Production: Matchbhot deployed!* All visitors should see the updated app version within 30 minutes."
+                            "text": "*Production: Matchbot deployed!* All visitors should see the updated app version within 30 minutes."
                           }
                         ]
                       }

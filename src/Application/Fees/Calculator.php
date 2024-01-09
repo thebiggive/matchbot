@@ -6,10 +6,13 @@ namespace MatchBot\Application\Fees;
 
 use JetBrains\PhpStorm\Pure;
 
+/**
+ * @psalm-immutable
+ */
 class Calculator
 {
     /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
-    private array $euISOs = [
+    private const EU_COUNTRY_CODES = [
         'AT', 'BE', 'BG', 'CY', 'CZ', 'DK', 'EE',
         'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT',
         'LV', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL',
@@ -17,19 +20,35 @@ class Calculator
         'CH', 'GB',
     ];
 
-    private array $pspFeeSettings;
+    /**
+     * From https://stripe.com/docs/api/errors#errors-payment_method-card-brand
+     */
+    public const STRIPE_CARD_BRANDS = [
+        'amex', 'diners', 'discover', 'eftpos_au', 'jcb', 'mastercard', 'unionpay', 'visa', 'unknown'
+    ];
 
+    private readonly array $pspFeeSettings;
+
+    /**
+     * @psalm-param numeric-string|null $feePercentageOverride
+     */
     public function __construct(
         array $settings,
         string $psp,
-        private ?string $cardBrand,
-        private ?string $cardCountry,
-        private string $amount,
-        private string $currencyCode,
-        private bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
-        private ?float $feePercentageOverride = null,
+        readonly private ?string $cardBrand,
+        readonly private ?string $cardCountry,
+        readonly private string $amount,
+        readonly private string $currencyCode,
+        readonly private bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
+        readonly private ?string $feePercentageOverride = null,
     ) {
         $this->pspFeeSettings = $settings[$psp]['fee'];
+        if (! in_array($this->cardBrand, [...self::STRIPE_CARD_BRANDS, null], true)) {
+            throw new \UnexpectedValueException(
+                'Unexpected card brand, expected brands are ' .
+                implode(', ', self::STRIPE_CARD_BRANDS)
+            );
+        }
     }
 
     public function getCoreFee(): string
@@ -69,7 +88,7 @@ class Calculator
             // Amount given is inclusive of any tax, so subtract it to get a net value.
             $vatRatio = bcdiv($this->getFeeVatPercentage(), '100', 3);
             $vatRatioPlusOne = bcadd('1', $vatRatio, 2);
-            $grossFeeRatio = bcdiv((string)$this->feePercentageOverride, '100', 3);
+            $grossFeeRatio = bcdiv($this->feePercentageOverride, '100', 3);
 
             $feeRatioBeforeOffest = bcdiv($grossFeeRatio, $vatRatioPlusOne, 10);
             // To get rounding correct (by standard accounting calculations), we need to 'round up'
@@ -99,7 +118,7 @@ class Calculator
         // the VAT amount. This is not necessarily the same result as adding the VAT % to
         // the *rounded* net fee.
         if ($this->feePercentageOverride) {
-            $grossFeeRatio = bcdiv((string)$this->feePercentageOverride, '100', 3);
+            $grossFeeRatio = bcdiv($this->feePercentageOverride, '100', 3);
             $grossFeeAmount = $this->roundAmount(bcmul($this->amount, $grossFeeRatio, 3));
 
             return bcsub($grossFeeAmount, $this->getCoreFee(), 2);
@@ -158,6 +177,6 @@ class Calculator
             return true;
         }
 
-        return in_array($cardCountry, $this->euISOs, true);
+        return in_array($cardCountry, self::EU_COUNTRY_CODES, true);
     }
 }

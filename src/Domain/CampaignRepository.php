@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use MatchBot\Application\Assertion;
 use MatchBot\Client;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
@@ -13,11 +14,6 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
-    private static array $giftAidOnboardedStatuses = [
-        'Onboarded',
-        'Onboarded & Data Sent to HMRC',
-    ];
-
     /**
      * Gets those campaigns which are live now or recently closed (in the last week),
      * based on their last known end time. This allows for campaigns to receive updates
@@ -29,26 +25,45 @@ class CampaignRepository extends SalesforceReadProxyRepository
      *
      * @return Campaign[]
      */
-    public function findRecentAndLive(): array
+    public function findRecentLiveAndPendingGiftAidApproval(): array
     {
         $oneWeekAgo = (new DateTime('now'))->sub(new \DateInterval('P7D'));
+        $twoMonthsAgo = (new DateTime('now'))->sub(new \DateInterval('P2M'));
+
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('c')
             ->from(Campaign::class, 'c')
+            ->innerJoin('c.charity', 'charity')
             ->where('c.endDate >= :oneWeekAgo')
+            ->orWhere(<<<EOT
+                charity.tbgClaimingGiftAid = 1 AND
+                charity.tbgApprovedToClaimGiftAid = 0 AND
+                c.endDate >= :twoMonthsAgo
+EOT
+            )
             ->orderBy('c.createdAt', 'ASC')
-            ->setParameter('oneWeekAgo', $oneWeekAgo);
+            ->setParameter('oneWeekAgo', $oneWeekAgo)
+            ->setParameter('twoMonthsAgo', $twoMonthsAgo);
 
         return $qb->getQuery()->getResult();
     }
 
+    public function pullNewFromSf(string $salesforceId): Campaign
+    {
+        $campaign = new Campaign(charity: null);
+        $campaign->setSalesforceId($salesforceId);
+
+        $this->updateFromSf($campaign);
+
+        return $campaign;
+    }
+
     /**
      * @param Campaign $campaign
-     * @return Campaign
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
      */
-    protected function doPull(SalesforceReadProxy $campaign): SalesforceReadProxy
+    protected function doUpdateFromSf(SalesforceReadProxy $campaign): void
     {
         $client = $this->getClient();
         $campaignData = $client->getById($campaign->getSalesforceId());
@@ -66,7 +81,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charity = $this->pullCharity(
             $campaignData['charity']['id'],
             $campaignData['charity']['name'],
-            $campaignData['charity']['donateLinkId'],
             $campaignData['charity']['stripeAccountId'],
             $campaignData['charity']['giftAidOnboardingStatus'],
             $campaignData['charity']['hmrcReferenceNumber'],
@@ -77,12 +91,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign->setCharity($charity);
         $campaign->setCurrencyCode($campaignData['currencyCode'] ?? 'GBP');
         $campaign->setEndDate(new DateTime($campaignData['endDate']));
-        $campaign->setFeePercentage($campaignData['feePercentage']);
+        /** @var float|null $feePercentage */
+        $feePercentage = $campaignData['feePercentage'];
+        Assertion::nullOrNumeric($feePercentage);
+        $campaign->setFeePercentage($feePercentage === null ? null : (string) $feePercentage);
         $campaign->setIsMatched($campaignData['isMatched']);
         $campaign->setName($campaignData['title']);
         $campaign->setStartDate(new DateTime($campaignData['startDate']));
-
-        return $campaign;
     }
 
     /**
@@ -93,38 +108,38 @@ class CampaignRepository extends SalesforceReadProxyRepository
     private function pullCharity(
         string $salesforceCharityId,
         string $charityName,
-        string $donateLinkId,
         ?string $stripeAccountId,
         ?string $giftAidOnboardingStatus,
         ?string $hmrcReferenceNumber,
-        ?string $regulator,
+        string $regulator,
         ?string $regulatorNumber,
     ): Charity {
         $charity = $this->getEntityManager()
             ->getRepository(Charity::class)
             ->findOneBy(['salesforceId' => $salesforceCharityId]);
         if (!$charity) {
-            $charity = new Charity();
-            $charity->setSalesforceId($salesforceCharityId);
+            $charity = new Charity(
+                salesforceId: $salesforceCharityId,
+                charityName: $charityName,
+                stripeAccountId: $stripeAccountId,
+                hmrcReferenceNumber: $hmrcReferenceNumber,
+                giftAidOnboardingStatus: $giftAidOnboardingStatus,
+                regulator: $this->getRegulatorHMRCIdentifier($regulator),
+                regulatorNumber: $regulatorNumber,
+                time: new \DateTime('now'),
+            );
+        } else {
+            $charity->updateFromSfPull(
+                charityName: $charityName,
+                stripeAccountId: $stripeAccountId,
+                hmrcReferenceNumber: $hmrcReferenceNumber,
+                giftAidOnboardingStatus: $giftAidOnboardingStatus,
+                regulator: $this->getRegulatorHMRCIdentifier($regulator),
+                regulatorNumber: $regulatorNumber,
+                time: new \DateTime('now'),
+            );
         }
-        $charity->setDonateLinkId($donateLinkId);
-        $charity->setName($charityName);
-        $charity->setStripeAccountId($stripeAccountId);
 
-        $tbgCanClaimGiftAid = (
-            !empty($hmrcReferenceNumber) &&
-            in_array($giftAidOnboardingStatus, static::$giftAidOnboardedStatuses, true)
-        );
-
-        $charity->setTbgClaimingGiftAid($tbgCanClaimGiftAid);
-        // May be null. Should be set to its string value if provided even if the charity is now opted out for new
-        // claims, because there could still be historic donations that should be claimed by TBG.
-        $charity->setHmrcReferenceNumber($hmrcReferenceNumber);
-
-        $charity->setRegulator($this->getRegulatorHMRCIdentifier($regulator));
-        $charity->setRegulatorNumber($regulatorNumber);
-
-        $charity->setSalesforceLastPull(new DateTime('now'));
         $this->getEntityManager()->persist($charity);
 
         return $charity;

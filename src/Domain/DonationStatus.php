@@ -6,14 +6,6 @@ enum DonationStatus: string
 {
     public const SUCCESS_STATUSES = [self::Collected, self::Paid];
 
-    public function isNew(): bool
-    {
-        return match ($this) {
-            self::NotSet, self::Pending => true,
-            default => false,
-        };
-    }
-
     /**
      * @return bool Whether this donation is *currently* in a state that we consider to be successful.
      *              Note that this is not guaranteed to be permanent: donations can be refunded or charged back after
@@ -26,6 +18,8 @@ enum DonationStatus: string
 
     /**
      * @link https://thebiggive.slack.com/archives/GGQRV08BZ/p1576070168066200?thread_ts=1575655432.161800&cid=GGQRV08BZ
+     * @psalm-suppress DeprecatedConstant - self::Chargedback is never set but we do still need to check it here for now
+     * in case we're looking at an old donation.
      */
     public function isReversed(): bool
     {
@@ -34,13 +28,6 @@ enum DonationStatus: string
             default => false,
         };
     }
-
-    /**
-     * Never saved to database - this is just a placeholder used on incomplete donation objects in memory.
-     * @todo consider removing this, either replace with `null` or preferably force every donation to have a real
-     * status when constructed.
-     */
-    case NotSet = 'NotSet';
 
     /**
      * A Pending donation represents a non-binding statement of intent to donate. We don't know whether
@@ -98,6 +85,7 @@ enum DonationStatus: string
      * Exists in database entries from 2020 only. There is now no code that can set this status.
      * We may want to see if eventually these can be archived and moved out of the live DB, and then this case can be
      * removed.
+     * @deprecated
      */
     case Chargedback = 'Chargedback';
 }
