@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Auth;
 
-use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Application\Auth\IdentityToken;
 use MatchBot\Tests\TestCase;
+use MatchBot\Tests\TestData;
 use Psr\Log\NullLogger;
 
 /**
@@ -21,7 +21,7 @@ class IdentityTokenTest extends TestCase
         $this->assertFalse(
             $tokenHelper->check(
                 'someOtherPersonId',
-                $this->getTestIdentityTokenIncomplete(),
+                TestData\Identity::getTestIdentityTokenIncomplete(),
                 new NullLogger(),
             ),
         );
@@ -34,7 +34,7 @@ class IdentityTokenTest extends TestCase
         $this->assertFalse(
             $tokenHelper->check(
                 '12345678-1234-1234-1234-1234567890ab',
-                $this->getTestIdentityTokenIncomplete(),
+                TestData\Identity::getTestIdentityTokenIncomplete(),
                 new NullLogger(),
             ),
         );
@@ -43,7 +43,7 @@ class IdentityTokenTest extends TestCase
     public function testCheckFailsAndPersonIdNullWhenSignatureGarbled(): void
     {
         $tokenHelper = new IdentityToken('https://unit-test-fake-id-sub.thebiggivetest.org.uk');
-        $badToken = $this->getTestIdentityTokenIncomplete() . 'x';
+        $badToken = TestData\Identity::getTestIdentityTokenIncomplete() . 'x';
 
         $this->assertFalse(
             $tokenHelper->check(

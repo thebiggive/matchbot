@@ -18,6 +18,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
+use MatchBot\Tests\TestData;
 use Prophecy\Argument;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
@@ -889,7 +890,7 @@ class CreateTest extends TestCase
      */
     private function addDummyPersonAuth(ServerRequestInterface $request): ServerRequestInterface
     {
-        return $request->withHeader('x-tbg-auth', $this->getTestIdentityTokenIncomplete());
+        return $request->withHeader('x-tbg-auth', TestData\Identity::getTestIdentityTokenIncomplete());
     }
 
     private function getTestDonation(

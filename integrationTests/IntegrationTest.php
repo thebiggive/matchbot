@@ -11,6 +11,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\Pledge;
+use MatchBot\Tests\TestData;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -404,7 +405,10 @@ abstract class IntegrationTest extends TestCase
         return $this->getApp()->handle(
             new ServerRequest(
                 'POST',
-                '/v1/donations',
+                '/v1/people/12345678-1234-1234-1234-1234567890ab/donations',
+                headers: [
+                    'X-Tbg-Auth' => TestData\Identity::getTestIdentityTokenComplete(),
+                ],
                 // The Symfony Serializer will throw an exception if the JSON document doesn't include all the required
                 // constructor params of DonationCreate
                 body: <<<EOF
@@ -413,6 +417,7 @@ abstract class IntegrationTest extends TestCase
                     "donationAmount": "{$amountInPounds}",
                     "projectId": "$campaignId",
                     "psp": "stripe",
+                    "pspCustomerId": "cus_aaaaaaaaaaaa11",
                     "tipAmount": $tipAmount
                 }
             EOF,
