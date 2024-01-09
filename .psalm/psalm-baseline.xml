@@ -220,19 +220,6 @@
       <code>getArgument</code>
     </PossiblyNullReference>
   </file>
-  <file src="src/Application/Auth/DonationRecaptchaMiddleware.php">
-    <MixedArgument>
-      <code>$captchaCode</code>
-      <code><![CDATA[$request->getAttribute('client-ip')]]></code>
-    </MixedArgument>
-    <MixedAssignment>
-      <code>$captchaCode</code>
-      <code>$donationData</code>
-    </MixedAssignment>
-    <MixedPropertyFetch>
-      <code><![CDATA[$donationData->creationRecaptchaCode]]></code>
-    </MixedPropertyFetch>
-  </file>
   <file src="src/Application/Auth/DonationToken.php">
     <FalsableReturnStatement>
       <code><![CDATA[getenv('JWT_DONATION_SECRET')]]></code>
@@ -1373,11 +1360,6 @@
       <code>set</code>
       <code>set</code>
     </UndefinedInterfaceMethod>
-  </file>
-  <file src="tests/Application/Auth/DonationRecaptchaMiddlewareTest.php">
-    <PossiblyNullReference>
-      <code>get</code>
-    </PossiblyNullReference>
   </file>
   <file src="tests/Application/Auth/PersonManagementAuthMiddlewareTest.php">
     <PossiblyNullReference>

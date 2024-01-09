@@ -7,7 +7,6 @@ use DI\Container;
 use GuzzleHttp\Psr7\ServerRequest;
 use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
@@ -49,7 +48,6 @@ abstract class IntegrationTest extends TestCase
 
         $container = require __DIR__ . '/../bootstrap.php';
         IntegrationTest::setContainer($container);
-        $container->set(DonationRecaptchaMiddleware::class, $noOpMiddleware);
         $container->set(RateLimitMiddleware::class, $noOpMiddleware);
         $container->set(\Psr\Log\LoggerInterface::class, new \Psr\Log\NullLogger());
 

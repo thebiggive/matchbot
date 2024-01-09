@@ -41,7 +41,7 @@ class GetPaymentMethodsTest extends TestCase
 
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
-        $request = $this->createRequest('GET', '/v2/people/12345678-1234-1234-1234-1234567890ab/payment_methods')
+        $request = $this->createRequest('GET', '/v1/people/12345678-1234-1234-1234-1234567890ab/payment_methods')
             ->withHeader('x-tbg-auth', $this->getTestIdentityTokenComplete());
 
         $response = $app->handle($request);
