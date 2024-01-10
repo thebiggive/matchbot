@@ -9,6 +9,11 @@ namespace MatchBot\Tests\TestData;
  */
 class Identity
 {
+    public static function getTestPersonNewDonationEndpoint(): string
+    {
+        return '/v1/people/12345678-1234-1234-1234-1234567890ab/donations';
+    }
+
     /**
      * @see self::getTestIdentityTokenIncomplete()
      */

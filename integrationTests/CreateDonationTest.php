@@ -57,7 +57,7 @@ class CreateDonationTest extends IntegrationTest
         $response = $this->getApp()->handle(
             new ServerRequest(
                 method: 'POST',
-                uri: '/v1/people/12345678-1234-1234-1234-1234567890ab/donations',
+                uri: TestData\Identity::getTestPersonNewDonationEndpoint(),
                 headers: [
                   'X-Tbg-Auth' => TestData\Identity::getTestIdentityTokenComplete(),
                 ],

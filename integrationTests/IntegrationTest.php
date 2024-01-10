@@ -405,7 +405,7 @@ abstract class IntegrationTest extends TestCase
         return $this->getApp()->handle(
             new ServerRequest(
                 'POST',
-                '/v1/people/12345678-1234-1234-1234-1234567890ab/donations',
+                TestData\Identity::getTestPersonNewDonationEndpoint(),
                 headers: [
                     'X-Tbg-Auth' => TestData\Identity::getTestIdentityTokenComplete(),
                 ],
