@@ -133,7 +133,9 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($balanceTxnResponse));
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
+        // code, and may get mutation tests working again.
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -182,7 +184,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($balanceTxnResponse));
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
-        $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -332,7 +334,11 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $options = (new SlackOptions())
             ->block((new SlackHeaderBlock('[test] Over-refund detected')))
-            ->block((new SlackSectionBlock())->text('Over-refund detected for donation 12345678-1234-1234-1234-1234567890ab based on charge.dispute.closed (lost) hook. Donation inc. tip was 124.45 GBP and refund or dispute was 124.46 GBP'))
+            ->block((new SlackSectionBlock())->text(
+                'Over-refund detected for donation 12345678-1234-1234-1234-1234567890ab based on ' .
+                'charge.dispute.closed (lost) hook. Donation inc. tip was 124.45 GBP and refund or dispute was ' .
+                '124.46 GBP'
+            ))
             ->iconEmoji(':o');
         $expectedMessage = (new ChatMessage('Over-refund detected'))
             ->options($options);
@@ -489,7 +495,10 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $options = (new SlackOptions())
             ->block((new SlackHeaderBlock('[test] Over-refund detected')))
-            ->block((new SlackSectionBlock())->text('Over-refund detected for donation 12345678-1234-1234-1234-1234567890ab based on charge.refunded hook. Donation inc. tip was 124.45 GBP and refund or dispute was 134.45 GBP'))
+            ->block((new SlackSectionBlock())->text(
+                'Over-refund detected for donation 12345678-1234-1234-1234-1234567890ab based on ' .
+                'charge.refunded hook. Donation inc. tip was 124.45 GBP and refund or dispute was 134.45 GBP'
+            ))
             ->iconEmoji(':o');
         $expectedMessage = (new ChatMessage('Over-refund detected'))
             ->options($options);

@@ -8,16 +8,16 @@ use MatchBot\Application\Assertion;
 
 /**
  * @psalm-immutable
- * @Embeddable
  */
+#[Embeddable]
 class StripeCustomerId
 {
-    /** @Column(type = "string") */
+    #[Column(type: 'string')]
     public readonly string $stripeCustomerId;
 
     private function __construct(
         string $stripeCustomerId
-    ){
+    ) {
         $this->stripeCustomerId = $stripeCustomerId;
         Assertion::notEmpty($this->stripeCustomerId);
         Assertion::maxLength($this->stripeCustomerId, 255);

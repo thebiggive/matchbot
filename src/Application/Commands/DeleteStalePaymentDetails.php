@@ -17,9 +17,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class DeleteStalePaymentDetails extends LockingCommand
 {
-    const STRIPE_PAGE_SIZE = 100; // Maximum allowed. Iterators page through automatically.
+    private const STRIPE_PAGE_SIZE = 100; // Maximum allowed. Iterators page through automatically.
 
-    const MAX_CUSTOMER_COUNT_TO_DETATCH_PER_RUN = 2_000;
+    private const MAX_CUSTOMER_COUNT_TO_DETATCH_PER_RUN = 2_000;
 
     protected static $defaultName = 'matchbot:delete-stale-payment-details';
 
@@ -49,7 +49,8 @@ class DeleteStalePaymentDetails extends LockingCommand
         // The metadata restriction lets us better leave people with passwords since April 2023,
         // so this `query` covers conditions (1) and (2) from the class doc block.
         $customers = $this->stripeClient->customers->search([
-            'query' => "created<$oneDayAgo and metadata['hasPasswordSince']:null and metadata['paymentMethodsCleared']:null",
+            'query' => "created<$oneDayAgo and metadata['hasPasswordSince']:null " .
+                "and metadata['paymentMethodsCleared']:null",
             'limit' => static::STRIPE_PAGE_SIZE,
         ]);
 
@@ -87,7 +88,10 @@ class DeleteStalePaymentDetails extends LockingCommand
         $timeTaken = microtime(true) - $startTime;
         $timeTaken = round($timeTaken, 2);
 
-        $output->writeln("Deleted $methodsDeleted payment methods from Stripe, having checked $customerCount customers. Time Taken: {$timeTaken}s");
+        $output->writeln(
+            "Deleted $methodsDeleted payment methods from Stripe, having checked " .
+                "$customerCount customers. Time Taken: {$timeTaken}s"
+        );
 
         return 0;
     }

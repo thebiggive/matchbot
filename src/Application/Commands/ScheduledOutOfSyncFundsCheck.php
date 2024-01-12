@@ -24,9 +24,7 @@ class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
         FundingWithdrawalRepository $fundingWithdrawalRepository,
         Matching\Adapter $matchingAdapter,
         private ChatterInterface $chatter,
-
-    )
-    {
+    ) {
         parent::__construct($campaignFundingRepository, $fundingWithdrawalRepository, $matchingAdapter);
     }
 
@@ -34,19 +32,24 @@ class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
 
     protected function configure(): void
     {
-        $this->setDescription("For running via a cron job. Checks for out of sync funds but doesn't attempt to fix them. Sends output to Slack");
+        $this->setDescription("For running via a cron job. Checks for out of sync funds but doesn't " .
+            "attempt to fix them. Sends output to Slack");
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $bufferedOutput = new BufferedOutput();
 
-        $arrayInput = new ArrayInput(['mode' => 'check'], new InputDefinition([new InputArgument('mode', InputArgument::REQUIRED)]));
+        $arrayInput = new ArrayInput(
+            ['mode' => 'check'],
+            new InputDefinition([new InputArgument('mode', InputArgument::REQUIRED)]),
+        );
 
         parent::doExecute($arrayInput, $bufferedOutput);
 
         $chatMessage = new ChatMessage('Out of sync funds check');
-        $message = 'Out of sync funds check completed' . ($this->outOfSyncFundFound ? " OUT OF SYNC FUNDS DETECTED" : " no out of sync funds detected");
+        $message = 'Out of sync funds check completed' .
+            ($this->outOfSyncFundFound ? " OUT OF SYNC FUNDS DETECTED" : " no out of sync funds detected");
         $output->writeln($message);
         if ($this->outOfSyncFundFound) {
             $env = getenv('APP_ENV');

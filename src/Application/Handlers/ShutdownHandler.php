@@ -62,13 +62,6 @@ class ShutdownHandler
                 return;
             }
 
-            if ($errorType === E_DEPRECATED) {
-                // Don't let deprecations trigger `HttpInternalServerErrorException`, at least for as
-                // long as we know our rate limit middleware has one in PHP 8.1.
-                // See https://github.com/Lansoweb/LosRateLimit/issues/11
-                return;
-            }
-
             $exception = new HttpInternalServerErrorException($this->request, $message);
             $response = $this->errorHandler->__invoke(
                 $this->request,

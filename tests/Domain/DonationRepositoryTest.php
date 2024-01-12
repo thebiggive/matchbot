@@ -15,7 +15,6 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -307,7 +306,8 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        $donation = $this->getTestDonation('987.65');
+        ;
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
         $this->getRepo()->deriveFees($donation, 'amex', null);
@@ -326,7 +326,8 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        $donation = $this->getTestDonation('987.65');
+        ;
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
         $this->getRepo()->deriveFees($donation, 'visa', 'US');
@@ -348,11 +349,12 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        $donation = $this->getTestDonation('987.65');
+        ;
         $donation->setTipAmount('0.00');
         $donation->setPsp('stripe');
         $donation->setFeeCoverAmount('44.44'); // 4.5% fee, inc. any VAT.
-        $donation->getCampaign()->setFeePercentage(4.5);
+        $donation->getCampaign()->setFeePercentage('4.5');
         $this->getRepo()->deriveFees($donation, null, null);
 
         // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
@@ -371,7 +373,8 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        $donation = $this->getTestDonation('987.65');
+        ;
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
         $this->getRepo()->deriveFees($donation, null, null);
@@ -390,7 +393,8 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        $donation = $this->getTestDonation('987.65');
+        ;
         $donation->setPsp('stripe');
         $donation->setTipAmount('10.00');
 
@@ -412,7 +416,8 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTip(): void
     {
-        $donation = $this->getTestDonation('987.65');;
+        $donation = $this->getTestDonation('987.65');
+        ;
         $donation->setPsp('stripe');
         $donation->setTipAmount('0.00');
         $this->getRepo()->deriveFees($donation, null, null);
@@ -478,7 +483,8 @@ class DonationRepositoryTest extends TestCase
         $this->entityManagerProphecy->transactional(Argument::type(\Closure::class))->will(/**
          * @param array<\Closure> $args
          * @return mixed
-         */ fn(array $args) => $args[0]());
+         */            fn(array $args) => $args[0]()
+        );
 
         $repo = $this->getRepo(
             null,
@@ -693,7 +699,9 @@ class DonationRepositoryTest extends TestCase
     }
 
     /**
-     * @param ObjectProphecy|null   $donationClientProphecy
+     * @param ObjectProphecy<Client\Donation>|null   $donationClientProphecy
+     * @param ObjectProphecy<Adapter>|null $matchingAdapterProphecy
+     * @param ObjectProphecy<LockFactory>|null $lockFactoryProphecy
      * @param bool                  $vatLive    Whether to override config with 20% VAT live from now.
      * @return DonationRepository
      * @throws \Exception

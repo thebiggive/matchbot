@@ -26,7 +26,10 @@ use Stripe\StripeClient;
         // arrange
         $stripePaymentMethodServiceProphecy = $this->prophesize(PaymentMethodService::class);
         $stripeCustomerServiceProphecy = $this->prophesize(CustomerService::class);
-        $fakeStripeClient = $this->fakeStripeClient($stripePaymentMethodServiceProphecy, $stripeCustomerServiceProphecy);
+        $fakeStripeClient = $this->fakeStripeClient(
+            $stripePaymentMethodServiceProphecy,
+            $stripeCustomerServiceProphecy,
+        );
 
         $stripeCustomerServiceProphecy->allPaymentMethods('stripe_customer_id_12')->willReturn(
             $this->stubCollectionOf([
@@ -60,7 +63,10 @@ use Stripe\StripeClient;
     {
         $stripePaymentMethodServiceProphecy = $this->prophesize(PaymentMethodService::class);
         $stripeCustomerServiceProphecy = $this->prophesize(CustomerService::class);
-        $fakeStripeClient = $this->fakeStripeClient($stripePaymentMethodServiceProphecy, $stripeCustomerServiceProphecy);
+        $fakeStripeClient = $this->fakeStripeClient(
+            $stripePaymentMethodServiceProphecy,
+            $stripeCustomerServiceProphecy,
+        );
 
         $stripeCustomerServiceProphecy->allPaymentMethods('stripe_customer_id_12')->willReturn(
             $this->stubCollectionOf([
@@ -97,8 +103,11 @@ use Stripe\StripeClient;
         ObjectProphecy $stripeCustomerServiceProphecy
     ): StripeClient {
         $fakeStripeClient = $this->createStub(StripeClient::class);
-        $fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
-        $fakeStripeClient->customers = $stripeCustomerServiceProphecy->reveal();
+
+        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
+        // code, and may get mutation tests working again.
+        @$fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
+        @$fakeStripeClient->customers = $stripeCustomerServiceProphecy->reveal();
 
         return $fakeStripeClient;
     }

@@ -58,6 +58,10 @@ class ExpireMatchFundsTest extends TestCase
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
+    /**
+     * @param ObjectProphecy<DonationRepository> $donationRepoProphecy
+     * @return ExpireMatchFunds
+     */
     private function getCommand(ObjectProphecy $donationRepoProphecy): ExpireMatchFunds
     {
         $command = new ExpireMatchFunds($donationRepoProphecy->reveal());

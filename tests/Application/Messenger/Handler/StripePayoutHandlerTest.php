@@ -97,8 +97,10 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce();
 
         $stripeClientProphecy = $this->getStripeClient();
-        $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
-        $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
+        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
+        // code, and may get mutation tests working again.
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+        @$stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -173,8 +175,8 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce();
 
         $stripeClientProphecy = $this->getStripeClient();
-        $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
-        $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+        @$stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -252,8 +254,8 @@ class StripePayoutHandlerTest extends TestCase
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $stripeClientProphecy = $this->getStripeClient();
-        $stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
-        $stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+        @$stripeClientProphecy->charges = $stripeChargeProphecy->reveal();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -294,7 +296,9 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce()
             ->willReturn(json_decode($this->getStripeHookMock('ApiResponse/po')));
 
-        $stripeClientProphecy->payouts = $stripePayoutProphecy->reveal();
+        // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
+        // code, and may get mutation tests working again.
+        @$stripeClientProphecy->payouts = $stripePayoutProphecy->reveal();
 
         return $stripeClientProphecy;
     }

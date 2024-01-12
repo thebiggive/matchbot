@@ -13,14 +13,12 @@ use MatchBot\Domain\DonationRepository;
 use Prophecy\Argument;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\TransportException;
-use Symfony\Component\Messenger\Transport\InMemoryTransport;
+use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
 use Symfony\Component\Messenger\Transport\TransportInterface;
-use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
 class StripePayoutUpdateTest extends StripeTest
 {
-
     public function testUnsupportedAction(): void
     {
         $app = $this->getAppInstance();
@@ -150,7 +148,10 @@ class StripePayoutUpdateTest extends StripeTest
         $time = (string) time();
 
         $request = $this->createRequest('POST', '/hooks/stripe-connect', $this->getStripeHookMock('po_failed'))
-            ->withHeader('Stripe-Signature', $this->generateSignature($time, $this->getStripeHookMock('po_failed'), $webhookSecret));
+            ->withHeader(
+                'Stripe-Signature',
+                $this->generateSignature($time, $this->getStripeHookMock('po_failed'), $webhookSecret),
+            );
 
         $chatterProphecy->send(
             new ChatMessage('[test] payout.failed for ID po_externalId_123, account acct_unitTest543')

@@ -5,65 +5,62 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use DateTimeInterface;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity(repositoryClass="CampaignRepository")
- * @ORM\HasLifecycleCallbacks
- * @ORM\Table(indexes={
- *   @ORM\Index(name="end_date_and_is_matched", columns={"endDate", "isMatched"}),
- * })
- *
- *
- * Represents any Campaign type in Salesforce which can receive donations. Note that this does NOT include Master
- * record type(s). The only way Salesforce type impacts this model is in setting `$isMatched` appropriately.
- */
+#[ORM\Table]
+#[ORM\Index(name: 'end_date_and_is_matched', columns: ['endDate', 'isMatched'])]
+#[ORM\Entity(repositoryClass: CampaignRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Campaign extends SalesforceReadProxy
 {
     use TimestampsTrait;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Charity", cascade={"persist"})
-     * @ORM\JoinColumn(name="charity_id", referencedColumnName="id")
      * @var Charity
      */
+    #[ORM\ManyToOne(targetEntity: Charity::class, cascade: ['persist'])]
+    #[ORM\JoinColumn(name: 'charity_id', referencedColumnName: 'id')]
     protected Charity $charity;
 
     /**
-     * @ORM\Column(type="string", length=3)
+     * @psalm-suppress PossiblyUnusedProperty Used in Doctrine ORM mapping
+     */
+    #[ORM\ManyToMany(targetEntity: CampaignFunding::class, mappedBy: 'campaigns')]
+    protected Collection $campaignFundings;
+
+    /**
      * @var string  ISO 4217 code for the currency in which donations can be accepted and matching's organised.
      */
+    #[ORM\Column(type: 'string', length: 3)]
     protected ?string $currencyCode;
 
     /**
-     * @ORM\Column(type="string")
      * @var string
      */
+    #[ORM\Column(type: 'string')]
     protected string $name;
 
-    /**
-     * @ORM\Column(type="datetime")
-     * @var DateTime
-     */
-    protected DateTime $startDate;
+    #[ORM\Column(type: 'datetime')]
+    protected DateTimeInterface $startDate;
+
+    #[ORM\Column(type: 'datetime')]
+    protected DateTimeInterface $endDate;
 
     /**
-     * @ORM\Column(type="datetime")
-     * @var DateTime
+     * @var string|null
+     * @psalm-var numeric-string|null
      */
-    protected DateTime $endDate;
+    #[ORM\Column(type: 'decimal', nullable: true, precision: 3, scale: 1)]
+    protected ?string $feePercentage = null;
 
     /**
-     * @ORM\Column(type="decimal", nullable=true, precision=3, scale=1)
-     * @var float|null
-     */
-    protected ?float $feePercentage = null;
-
-    /**
-     * @ORM\Column(type="boolean")
      * @var bool    Whether the Campaign has any match funds
      */
+    #[ORM\Column(type: 'boolean')]
     protected bool $isMatched;
 
     /**
@@ -72,6 +69,7 @@ class Campaign extends SalesforceReadProxy
      */
     public function __construct(?Charity $charity)
     {
+        $this->campaignFundings = new ArrayCollection();
         if ($charity) {
             $this->charity = $charity;
         }
@@ -86,9 +84,9 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
-     * @ORM\PrePersist()
      * @psalm-suppress PossiblyUnusedMethod
      */
+    #[ORM\PrePersist]
     public function prePersistCheck(PrePersistEventArgs $_args): void
     {
         try {
@@ -101,7 +99,9 @@ class Campaign extends SalesforceReadProxy
 
             $_charity = $this->charity;
         } catch (\Error $e) {
-            throw new \Exception("Error on attempt to persist campaign #{$this->id}, sfID {$this->salesforceId}: \n{$e}");
+            throw new \Exception(
+                "Error on attempt to persist campaign #{$this->id}, sfID {$this->salesforceId}: \n{$e}"
+            );
         }
     }
 
@@ -137,18 +137,12 @@ class Campaign extends SalesforceReadProxy
         $this->name = $name;
     }
 
-    /**
-     * @param DateTime $startDate
-     */
-    public function setStartDate(DateTime $startDate): void
+    public function setStartDate(DateTimeInterface $startDate): void
     {
         $this->startDate = $startDate;
     }
 
-    /**
-     * @param DateTime $endDate
-     */
-    public function setEndDate(DateTime $endDate): void
+    public function setEndDate(DateTimeInterface $endDate): void
     {
         $this->endDate = $endDate;
     }
@@ -184,20 +178,23 @@ class Campaign extends SalesforceReadProxy
         $this->currencyCode = $currencyCode;
     }
 
-    public function getFeePercentage(): ?float
+    /**
+     * @psalm-return numeric-string|null
+     */
+    public function getFeePercentage(): ?string
     {
         return $this->feePercentage;
     }
 
-    public function setFeePercentage(?float $feePercentage): void
+    /**
+     * @psalm-param numeric-string|null $feePercentage
+     */
+    public function setFeePercentage(?string $feePercentage): void
     {
         $this->feePercentage = $feePercentage;
     }
 
-    /**
-     * @return DateTime
-     */
-    public function getEndDate(): DateTime
+    public function getEndDate(): DateTimeInterface
     {
         return $this->endDate;
     }

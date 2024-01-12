@@ -94,5 +94,5 @@ abstract class Adapter
      * Only for use in case of a crash. Releases funds allocated by this adapter, i.e. this particular object instance,
      * so just funds allocated within this particular HTTP request.
      */
-    public abstract function releaseNewlyAllocatedFunds(): void;
+    abstract public function releaseNewlyAllocatedFunds(): void;
 }

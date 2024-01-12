@@ -14,7 +14,6 @@ use Stripe\PaymentMethod;
  */
 class StubStripeClient implements Stripe
 {
-
     public function cancelPaymentIntent(string $paymentIntentId): void
     {
         $this->pause();
@@ -42,7 +41,7 @@ class StubStripeClient implements Stripe
         return $pi;
     }
 
-    public function retrievePaymentIntent(string $paymentIntentId): Never
+    public function retrievePaymentIntent(string $paymentIntentId): never
     {
         throw new \Exception("Retrieve Payment Intent not implemented in stub- not currently used in load tests");
     }

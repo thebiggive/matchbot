@@ -49,7 +49,7 @@ EOT
         if ($input->getOption('all')) {
             $campaigns = $this->campaignRepository->findAll();
         } else {
-            $campaigns = $this->campaignRepository->findRecentAndLive();
+            $campaigns = $this->campaignRepository->findRecentLiveAndPendingGiftAidApproval();
         }
 
         foreach ($campaigns as $campaign) {

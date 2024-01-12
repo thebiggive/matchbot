@@ -38,6 +38,14 @@ class FundRepository extends SalesforceReadProxyRepository
     public function pullForCampaign(Campaign $campaign): void
     {
         $client = $this->getClient();
+
+        if (!$campaign->getSalesforceId()) {
+            $this->logWarning(
+                'Cannot pullForCampaign() funds for campaign without SF ID for internal ID ' . $campaign->getId()
+            );
+            return;
+        }
+
         $fundsData = $client->getForCampaign($campaign->getSalesforceId());
         foreach ($fundsData as $fundData) {
             // For each fund linked to the campaign, look it up or create it if unknown
@@ -78,6 +86,7 @@ class FundRepository extends SalesforceReadProxyRepository
             // We must now support funds' totals changing over time, even after a campaign opens. This must play
             // well with high volume real-time adapters, so we must first check for a likely change and then push the
             // change to the matching adapter when needed.
+            /** @psalm-var numeric-string $amountForCampaign */
             $amountForCampaign = $fundData['amountForCampaign'] === null
                 ? '0.00'
                 : (string) $fundData['amountForCampaign'];
@@ -130,7 +139,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 // Somebody else created the specific funding -> proceed without modifying it.
                 $this->logError(
                     'Skipping campaign funding create as constraint failed with campaign ' .
-                    $campaign->getId() . ', fund ' . $fund->getId()
+                    ($campaign->getId() ?? '[unknown]') . ', fund ' . $fund->getId()
                 );
             }
         }
@@ -158,7 +167,7 @@ class FundRepository extends SalesforceReadProxyRepository
 
     protected function getNewFund(array $fundData): Fund
     {
-        if ($fundData['type'] === 'pledge') {
+        if ($fundData['type'] === Pledge::DISCRIMINATOR_VALUE) {
             $fund = new Pledge();
         } elseif ($fundData['type'] === 'championFund') {
             $fund = new ChampionFund();

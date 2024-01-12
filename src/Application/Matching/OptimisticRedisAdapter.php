@@ -41,8 +41,8 @@ class OptimisticRedisAdapter extends Adapter
 
     public function __construct(
         private RealTimeMatchingStorage $storage,
-        private EntityManagerInterface  $entityManager,
-        private LoggerInterface         $logger,
+        private EntityManagerInterface $entityManager,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -189,7 +189,7 @@ class OptimisticRedisAdapter extends Adapter
      * a 100-fold division is reasonable.
      *
      * @param int $fractionalUnit   e.g. pence, cents.
-     * @return string   e.g. pounds, dollars.
+     * @psalm-return numeric-string   e.g. pounds, dollars.
      */
     private function toCurrencyWholeUnit(int $fractionalUnit): string
     {
@@ -215,6 +215,9 @@ class OptimisticRedisAdapter extends Adapter
         });
     }
 
+    /**
+     * @psalm-param numeric-string $newValue
+     */
     private function setFundingValue(CampaignFunding $funding, string $newValue): void
     {
         $funding->setAmountAvailable($newValue);

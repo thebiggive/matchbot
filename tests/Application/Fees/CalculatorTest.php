@@ -38,7 +38,7 @@ class CalculatorTest extends TestCase
             '123',
             'GbP', // Case doesn't matter for calculator
             false,
-            5, // 5% fee inc. 20% VAT.
+            '5', // 5% fee inc. 20% VAT.
         );
 
         // £6.15 fee covered, inc. VAT
@@ -56,7 +56,7 @@ class CalculatorTest extends TestCase
             '123',
             'EUR',
             false,
-            5, // 5% fee inc. 20% VAT.
+            '5', // 5% fee inc. 20% VAT.
         );
 
         // £6.15 fee covered, inc. VAT
@@ -141,7 +141,7 @@ class CalculatorTest extends TestCase
             '100',
             'USD',
             false,
-            5,
+            '5',
         );
 
         $this->assertEquals('5.00', $calculator->getCoreFee());
@@ -158,7 +158,7 @@ class CalculatorTest extends TestCase
             '100',
             'USD',
             false,
-            5,
+            '5',
         );
 
         // We now record this as a fee to the charity which will be invoiced, without VAT,
@@ -266,7 +266,10 @@ class CalculatorTest extends TestCase
 
     public function testItRejectsUnexpectedCardBrand(): void
     {
-        $this->expectExceptionMessage("Unexpected card brand, expected brands are amex, diners, discover, eftpos_au, jcb, mastercard, unionpay, visa, unknown");
+        $this->expectExceptionMessage(
+            'Unexpected card brand, expected brands are amex, diners, discover, eftpos_au, jcb, mastercard, ' .
+            'unionpay, visa, unknown'
+        );
 
         new Calculator(
             $this->settingsWithVAT(),

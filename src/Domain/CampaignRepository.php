@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use MatchBot\Application\Assertion;
 use MatchBot\Client;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
@@ -13,7 +14,6 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
-
     /**
      * Gets those campaigns which are live now or recently closed (in the last week),
      * based on their last known end time. This allows for campaigns to receive updates
@@ -25,15 +25,25 @@ class CampaignRepository extends SalesforceReadProxyRepository
      *
      * @return Campaign[]
      */
-    public function findRecentAndLive(): array
+    public function findRecentLiveAndPendingGiftAidApproval(): array
     {
         $oneWeekAgo = (new DateTime('now'))->sub(new \DateInterval('P7D'));
+        $twoMonthsAgo = (new DateTime('now'))->sub(new \DateInterval('P2M'));
+
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('c')
             ->from(Campaign::class, 'c')
+            ->innerJoin('c.charity', 'charity')
             ->where('c.endDate >= :oneWeekAgo')
+            ->orWhere(<<<EOT
+                charity.tbgClaimingGiftAid = 1 AND
+                charity.tbgApprovedToClaimGiftAid = 0 AND
+                c.endDate >= :twoMonthsAgo
+EOT
+            )
             ->orderBy('c.createdAt', 'ASC')
-            ->setParameter('oneWeekAgo', $oneWeekAgo);
+            ->setParameter('oneWeekAgo', $oneWeekAgo)
+            ->setParameter('twoMonthsAgo', $twoMonthsAgo);
 
         return $qb->getQuery()->getResult();
     }
@@ -81,7 +91,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign->setCharity($charity);
         $campaign->setCurrencyCode($campaignData['currencyCode'] ?? 'GBP');
         $campaign->setEndDate(new DateTime($campaignData['endDate']));
-        $campaign->setFeePercentage($campaignData['feePercentage']);
+        /** @var float|null $feePercentage */
+        $feePercentage = $campaignData['feePercentage'];
+        Assertion::nullOrNumeric($feePercentage);
+        $campaign->setFeePercentage($feePercentage === null ? null : (string) $feePercentage);
         $campaign->setIsMatched($campaignData['isMatched']);
         $campaign->setName($campaignData['title']);
         $campaign->setStartDate(new DateTime($campaignData['startDate']));

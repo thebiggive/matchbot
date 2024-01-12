@@ -180,7 +180,8 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $this->entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $this->entityManagerProphecy->beginTransaction()->shouldBeCalledTimes(2);
-        $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2); // One failure, one success
+        $this->entityManagerProphecy->persist(Argument::type(Donation::class))
+            ->shouldBeCalledTimes(2); // One failure, one success
         $this->entityManagerProphecy->commit()->shouldBeCalledOnce();
     }
 }

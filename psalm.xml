@@ -5,10 +5,13 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns="https://getpsalm.org/schema/config"
     xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
-    errorBaseline="psalm-baseline.xml"
+    errorBaseline=".psalm/psalm-baseline.xml"
     findUnusedBaselineEntry="false"
     findUnusedCode="true"
 >
+    <stubs>
+        <file name=".psalm/containers.php.stub" preloadClasses="true"/>
+    </stubs>
     <projectFiles>
         <directory name="app"/>
         <directory name="public"/>
@@ -33,4 +36,8 @@
             </errorLevel>
         </PossiblyUnusedMethod>
     </issueHandlers>
-<plugins><pluginClass class="Psalm\PhpUnitPlugin\Plugin"/><pluginClass class="Weirdan\DoctrinePsalmPlugin\Plugin"/><pluginClass class="Lctrs\PsalmPsrContainerPlugin\Plugin"/></plugins></psalm>
+    <plugins>
+        <pluginClass class="Psalm\PhpUnitPlugin\Plugin"/>
+        <pluginClass class="Weirdan\DoctrinePsalmPlugin\Plugin"/>
+    </plugins>
+</psalm>
