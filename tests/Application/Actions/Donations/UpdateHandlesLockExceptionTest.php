@@ -132,7 +132,6 @@ class UpdateHandlesLockExceptionTest extends TestCase
           "autoConfirmFromCashBalance": false,
           "billingPostalAddress": null,
           "countryCode": null,
-          "creationRecaptchaCode": null,
           "currencyCode": null,
           "donationAmount": "1",
           "emailAddress": null,

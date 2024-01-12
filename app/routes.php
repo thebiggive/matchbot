@@ -11,11 +11,9 @@ use MatchBot\Application\Actions\GetPaymentMethods;
 use MatchBot\Application\Actions\Hooks;
 use MatchBot\Application\Actions\Status;
 use MatchBot\Application\Auth\DonationPublicAuthMiddleware;
-use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use Middlewares\ClientIp;
-use Psr\Http\Message\RequestInterface;
 use Slim\App;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Routing\RouteCollectorProxy;
@@ -28,14 +26,6 @@ return function (App $app) {
         $ipMiddleware = getenv('APP_ENV') === 'local'
             ? new ClientIp()
             : (new ClientIp())->proxy([], ['X-Forwarded-For']);
-
-        // Current unauthenticated endpoint in the `/v1` group. Middlewares run in reverse
-        // order when chained this way – so we check rate limits first, then get the real
-        // IP in an attribute for reCAPTCHA sending, then check the captcha.
-        $versionGroup->post('/donations', Donations\Create::class)
-            ->add(DonationRecaptchaMiddleware::class) // Runs last
-            ->add($ipMiddleware)
-            ->add(RateLimitMiddleware::class);
 
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {
             $group->get('', Donations\Get::class);
@@ -65,7 +55,6 @@ return function (App $app) {
             }
         )
             ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
-            ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
     });
 

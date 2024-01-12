@@ -8,6 +8,7 @@ use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Tests\Application\Actions\Donations\CreateTest;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
+use MatchBot\Tests\TestData;
 use Slim\CallableResolver;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Response;
@@ -56,11 +57,10 @@ class PersonManagementAuthMiddlewareTest extends TestCase
 
         $donationObject = $this->getTestDonation();
         $donation = $donationObject->toApiModel();
-        $donation['creationRecaptchaCode'] = 'good response';
         $donation['personId'] = 'cus_aaaaaaaaaaaa11';
         $body = json_encode($donation);
 
-        $request = $this->createRequest('POST', '/v1/people/12345678-1234-1234-1234-1234567890ab/donations', $body);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $body);
 
         // Because the error ends the request, we can dispatch this against realistic, full app
         // middleware and test this piece of middleware in the process.
@@ -76,7 +76,7 @@ class PersonManagementAuthMiddlewareTest extends TestCase
     {
         return new Route(
             ['POST'],
-            '/v1/donations',
+            TestData\Identity::getTestPersonNewDonationEndpoint(),
             static function () {
                 return new Response(200);
             },
