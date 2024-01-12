@@ -11,7 +11,7 @@ use Firebase\JWT\JWT;
  */
 class Identity
 {
-    private const array INCOMPLETE_TOKEN_PAYLOAD = [
+    private const INCOMPLETE_TOKEN_PAYLOAD = [
         "iss" => "https://unit-test-fake-id-sub.thebiggivetest.org.uk",
         "iat" => 1663436154,
         "exp" => 2524608000,
