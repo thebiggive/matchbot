@@ -34,7 +34,7 @@ class CalculatorTest extends TestCase
             '123',
             'GbP', // Case doesn't matter for calculator
             false,
-            5, // 5% fee inc. 20% VAT.
+            '5', // 5% fee inc. 20% VAT.
         );
 
         // £6.15 fee covered, inc. VAT
@@ -51,7 +51,7 @@ class CalculatorTest extends TestCase
             '123',
             'EUR',
             false,
-            5, // 5% fee inc. 20% VAT.
+            '5', // 5% fee inc. 20% VAT.
         );
 
         // £6.15 fee covered, inc. VAT
@@ -131,7 +131,7 @@ class CalculatorTest extends TestCase
             '100',
             'USD',
             false,
-            5,
+            '5',
         );
 
         $this->assertEquals('5.00', $fees->coreFee);
@@ -147,40 +147,15 @@ class CalculatorTest extends TestCase
             '100',
             'USD',
             false,
-            5,
+            '5',
         );
 
         // We now record this as a fee to the charity which will be invoiced, without VAT,
         // and the donor will be charged a higher amount. E.g. here the core donation is
         // $100 and so that amount is passed to `Calculator`, but the donor card charge
         // would be $105.
-        $this->assertEquals('5.00', $calculator->getCoreFee());
-        $this->assertEquals('0.00', $calculator->getFeeVat());
-    }
-
-    private function settingsWithVAT(): array
-    {
-        putenv('VAT_PERCENTAGE_LIVE=20');
-        putenv('VAT_LIVE_DATE=2020-01-01');
-
-        $settings = $this->settingsWithoutVAT();
-
-        putenv('VAT_PERCENTAGE_LIVE=');
-        putenv('VAT_LIVE_DATE=');
-
-        return $settings;
-    }
-
-    private function settingsWithoutVAT(): array
-    {
-        $builder = new ContainerBuilder();
-        $settingsFunction = require __DIR__ . '/../../../app/settings.php';
-        $settingsFunction($builder);
-
-        $settings = $builder->build()->get('settings');
-        \assert(is_array($settings));
-
-        return $settings;
+        $this->assertEquals('5.00', $fees->coreFee);
+        $this->assertEquals('0.00', $fees->feeVat);
     }
 
     public function testItRejectsUnexpectedCardBrand(): void

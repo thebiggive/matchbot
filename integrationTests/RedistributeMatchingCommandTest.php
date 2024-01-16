@@ -163,7 +163,6 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $donation->setTransactionId('pi_' . $this->randomString());
         $donation->setSalesforceId(substr('006' . $this->randomString(), 0, 18));
         $donation->setDonationStatus(DonationStatus::Collected);
-        $donation->setCollectedAt(new \DateTimeImmutable('now'));
 
         $championFundWithdrawal = new FundingWithdrawal($championFundCampaignFunding);
         $championFundWithdrawal->setAmount('250.00');

@@ -291,7 +291,10 @@ class Donation extends SalesforceWriteProxy
         PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
         string $currencyCode = 'GBP'
     ): self {
-        return new self($amount, $currencyCode, $paymentMethodType);
+        $donation = new self($amount, $currencyCode, $paymentMethodType);
+        $donation->psp = 'stripe';
+
+        return $donation;
     }
 
     /**

@@ -350,7 +350,7 @@ class DonationRepositoryTest extends TestCase
         ;
         $donation->setTipAmount('0.00');
         $donation->setFeeCoverAmount('44.44'); // 4.5% fee, inc. any VAT.
-        $donation->getCampaign()->setFeePercentage(4.5);
+        $donation->getCampaign()->setFeePercentage('4.5');
         $this->getRepo()->deriveFees($donation, null, null);
 
         // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
@@ -704,11 +704,6 @@ class DonationRepositoryTest extends TestCase
     ): DonationRepository {
         if (!$donationClientProphecy) {
             $donationClientProphecy = $this->prophesize(Client\Donation::class);
-        }
-
-        $settings = $this->getAppInstance()->getContainer()->get('settings');
-        if ($vatLive) {
-            $settings = $this->getUKLikeVATSettings($settings);
         }
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);

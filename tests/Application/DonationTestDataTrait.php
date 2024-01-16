@@ -105,9 +105,7 @@ trait DonationTestDataTrait
         $donation->setSalesforceId('sfDonation369');
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
         $donation->setTipAmount($tipAmount);
-        $donation->setTransferId('tr_externalId_123');
         $donation->setTransactionId('pi_externalId_123');
-        $donation->setChargeId('ch_externalId_123');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
 
         return $donation;

@@ -1957,7 +1957,6 @@ class UpdateTest extends TestCase
         $donationInRepo = $this->getTestDonation(
             pspMethodType: PaymentMethodType::CustomerBalance,
             tipAmount: '0',
-            status: $nextActionRequired === null ? DonationStatus::Collected : DonationStatus::Pending,
         );  // Get a new mock object so DB has old values.
 
         $donationRepoProphecy

@@ -353,7 +353,7 @@ class CreateTest extends TestCase
         $donation = $this->getTestDonation(true, true);
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal();
+        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
         $fundingWithdrawalForMatch->setDonation($donation);
 
@@ -425,7 +425,7 @@ class CreateTest extends TestCase
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = $this->encodeWithDummyCaptcha($donation);
+        $data = $this->encode($donation);
         $request = $this->createRequest('POST', '/v1/donations', $data);
         $response = $app->handle($request);
 
@@ -464,7 +464,7 @@ class CreateTest extends TestCase
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal();
+        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
         $fundingWithdrawalForMatch->setDonation($donation);
 

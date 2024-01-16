@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Fees;
 
+use Assert\AssertionFailedException;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
 
@@ -50,6 +51,9 @@ class Calculator
         'vat_live_date' => ' 2021-04-01',
     ];
 
+    /**
+     * @param numeric-string $feePercentageOverride
+     */
     public static function calculate(
         string $psp,
         ?string $cardBrand,
@@ -57,7 +61,7 @@ class Calculator
         string $amount,
         string $currencyCode,
         bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
-        ?float $feePercentageOverride = null,
+        ?string $feePercentageOverride = null,
     ): Fees
     {
         $calculator = new self(
@@ -80,7 +84,8 @@ class Calculator
      * We can consider removing all instance properties and methods and relying on static methods and local vars only -
      * a static calculator would be clearer. For now, I've hidden the instance in this private method - there's no
      * public way to get a Calculator instance.
-     *
+
+     * @param numeric-string|null $feePercentageOverride
      */
     private function __construct(
         string $psp,
