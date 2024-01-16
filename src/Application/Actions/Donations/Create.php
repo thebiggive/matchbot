@@ -20,7 +20,6 @@ use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
-use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Monolog\Logger;
@@ -98,7 +97,11 @@ class Create extends Action
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $exception->getMessage());
 
-            return $this->validationError($response, $message . ': ' . $exception->getMessage(), $exception->getMessage());
+            return $this->validationError(
+                $response,
+                $message . ': ' . $exception->getMessage(),
+                $exception->getMessage(),
+            );
         } catch (UniqueConstraintViolationException $exception) {
             // If we get this, the most likely explanation is that another donation request
             // created the same campaign a very short time before this request tried to. We
@@ -136,13 +139,15 @@ class Create extends Action
         if ($donation->getCampaign()->isMatched()) {
             try {
                 $this->donationRepository->allocateMatchFunds($donation);
-            } catch (DomainLockContentionException $exception) {
-                $error = new ActionError(ActionError::SERVER_ERROR, 'Fund resource locked');
-
-                return $this->respond($response, new ActionPayload(503, null, $error));
             } catch (\Throwable $t) {
-                $this->matchingAdapter->releaseNewlyAllocatedFunds();
-                // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount would be reduced again when the donation expires.
+                $this->logger->error(sprintf('Allocation got error: %s', $t->getMessage()));
+
+                $this->matchingAdapter->runTransactionally(
+                    fn() => $this->matchingAdapter->releaseNewlyAllocatedFunds(),
+                );
+
+                // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
+                // would be reduced again when the donation expires.
                 $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
 
                 throw $t;
@@ -152,8 +157,8 @@ class Create extends Action
         if ($donation->getPsp() === 'stripe') {
             if (empty($donation->getCampaign()->getCharity()->getStripeAccountId())) {
                 // Try re-pulling in case charity has very recently onboarded with for Stripe.
-                $campaign = $this->campaignRepository
-                    ->pull($donation->getCampaign());
+                $campaign = $donation->getCampaign();
+                $this->campaignRepository->updateFromSf($campaign);
 
                 // If still empty, error out
                 if (empty($campaign->getCharity()->getStripeAccountId())) {

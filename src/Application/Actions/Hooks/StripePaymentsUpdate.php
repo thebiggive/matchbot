@@ -395,7 +395,8 @@ class StripePaymentsUpdate extends Stripe
         string $refundedOrDisputedCurrencyCode,
     ): void {
         $detailsMessage = sprintf(
-            'Over-refund detected for donation %s based on %s hook. Donation inc. tip was %s %s and refund or dispute was %s %s',
+            'Over-refund detected for donation %s based on %s hook. Donation inc. tip was %s %s ' .
+                'and refund or dispute was %s %s',
             $donation->getUuid(),
             $eventType,
             bcdiv((string) $donation->getAmountFractionalIncTip(), '100', 2),
@@ -456,7 +457,8 @@ class StripePaymentsUpdate extends Stripe
      * Assumes it will be called only after starting a transaction pre-donation-select.
      *
      * @param Donation $donation
-     * @param bool $isCoreDonationReversed Should be true for full refunds, over-refunds and disputes closed lost. False for tip refunds.
+     * @param bool $isCoreDonationReversed  Should be true for full refunds, over-refunds and disputes
+     *                                      closed lost. False for tip refunds.
      */
     private function doPostMarkRefundedUpdates(Donation $donation, bool $isCoreDonationReversed): void
     {

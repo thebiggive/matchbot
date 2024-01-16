@@ -27,11 +27,16 @@ use Symfony\Component\Lock\LockFactory;
 return static function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
         CampaignFundingRepository::class => static function (ContainerInterface $c): CampaignFundingRepository {
-            return $c->get(EntityManagerInterface::class)->getRepository(CampaignFunding::class);
+            $repository = $c->get(EntityManagerInterface::class)->getRepository(CampaignFunding::class);
+            \assert($repository instanceof CampaignFundingRepository);
+
+            return $repository;
         },
 
         CampaignRepository::class => static function (ContainerInterface $c): CampaignRepository {
             $repo = $c->get(EntityManagerInterface::class)->getRepository(Campaign::class);
+            \assert($repo instanceof CampaignRepository);
+
             $repo->setClient($c->get(Client\Campaign::class));
             $repo->setLogger($c->get(LoggerInterface::class));
 
@@ -39,11 +44,17 @@ return static function (ContainerBuilder $containerBuilder) {
         },
 
         CharityRepository::class => static function (ContainerInterface $c): CharityRepository {
-            return $c->get(EntityManagerInterface::class)->getRepository(Charity::class);
+            $repository = $c->get(EntityManagerInterface::class)->getRepository(Charity::class);
+            \assert($repository instanceof CharityRepository);
+
+            return $repository;
         },
 
         DonationRepository::class => static function (ContainerInterface $c): DonationRepository {
             $repo = $c->get(EntityManagerInterface::class)->getRepository(Donation::class);
+
+            \assert($repo instanceof DonationRepository);
+
             $repo->setCampaignRepository($c->get(CampaignRepository::class));
             $repo->setClient($c->get(Client\Donation::class));
             $repo->setFundRepository($c->get(FundRepository::class));
@@ -56,16 +67,21 @@ return static function (ContainerBuilder $containerBuilder) {
 
         FundRepository::class => static function (ContainerInterface $c): FundRepository {
             $repo = $c->get(EntityManagerInterface::class)->getRepository(Fund::class);
+            assert($repo instanceof FundRepository);
+
             $repo->setClient($c->get(Client\Fund::class));
             $repo->setCampaignFundingRepository($c->get(CampaignFundingRepository::class));
             $repo->setLogger($c->get(LoggerInterface::class));
             $repo->setMatchingAdapter($c->get(Matching\Adapter::class));
 
+
             return $repo;
         },
 
         FundingWithdrawalRepository::class => static function (ContainerInterface $c): FundingWithdrawalRepository {
-            return $c->get(EntityManagerInterface::class)->getRepository(FundingWithdrawal::class);
+            $repository = $c->get(EntityManagerInterface::class)->getRepository(FundingWithdrawal::class);
+            \assert($repository instanceof FundingWithdrawalRepository);
+            return $repository;
         },
 
         DonorAccountRepository::class => static function (ContainerInterface $c): DonorAccountRepository {

@@ -89,12 +89,15 @@ class Calculator
         readonly private string $amount,
         readonly private string $currencyCode,
         readonly private bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
-        readonly private ?float $feePercentageOverride = null,
+        readonly private ?string $feePercentageOverride = null,
     ) {
         if (! in_array($this->cardBrand, [...self::STRIPE_CARD_BRANDS, null], true)) {
-            throw new \UnexpectedValueException('Unexpected card brand, expected brands are ' . implode(', ', self::STRIPE_CARD_BRANDS));
+            throw new \UnexpectedValueException(
+                'Unexpected card brand, expected brands are ' .
+                implode(', ', self::STRIPE_CARD_BRANDS)
+            );
         }
-        
+
         Assertion::eq($psp, 'stripe', 'Only Stripe PSP is supported as don\'t know what fees to charge for other PSPs.');
     }
 
@@ -135,7 +138,7 @@ class Calculator
             // Amount given is inclusive of any tax, so subtract it to get a net value.
             $vatRatio = bcdiv($this->getFeeVatPercentage(), '100', 3);
             $vatRatioPlusOne = bcadd('1', $vatRatio, 2);
-            $grossFeeRatio = bcdiv((string)$this->feePercentageOverride, '100', 3);
+            $grossFeeRatio = bcdiv($this->feePercentageOverride, '100', 3);
 
             $feeRatioBeforeOffest = bcdiv($grossFeeRatio, $vatRatioPlusOne, 10);
             // To get rounding correct (by standard accounting calculations), we need to 'round up'
@@ -165,7 +168,7 @@ class Calculator
         // the VAT amount. This is not necessarily the same result as adding the VAT % to
         // the *rounded* net fee.
         if ($this->feePercentageOverride) {
-            $grossFeeRatio = bcdiv((string)$this->feePercentageOverride, '100', 3);
+            $grossFeeRatio = bcdiv($this->feePercentageOverride, '100', 3);
             $grossFeeAmount = $this->roundAmount(bcmul($this->amount, $grossFeeRatio, 3));
 
             return bcsub($grossFeeAmount, $this->getCoreFee(), 2);

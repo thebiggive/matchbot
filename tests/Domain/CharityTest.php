@@ -57,8 +57,7 @@ class CharityTest extends TestCase
         string $hmrcReference,
         string $giftaidOnboardingStatus,
         bool $expected,
-    ): void 
-    {
+    ): void {
         $charity = TestCase::someCharity();
         $charity->updateFromSfPull(
             charityName: "Charity Name",

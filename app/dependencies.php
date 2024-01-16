@@ -4,17 +4,11 @@ declare(strict_types=1);
 
 use DI\Container;
 use DI\ContainerBuilder;
-use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\Common\Cache\ArrayCache;
-use Doctrine\Common\Cache\RedisCache;
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
-use Doctrine\ORM\Tools\Setup;
-use LosMiddleware\RateLimit\RateLimitMiddleware;
-use LosMiddleware\RateLimit\RateLimitOptions;
+use Los\RateLimit\RateLimitMiddleware;
+use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
 use MatchBot\Application\Matching;
@@ -28,6 +22,7 @@ use MatchBot\Application\RealTimeMatchingStorage;
 use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
+use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
@@ -38,10 +33,10 @@ use Monolog\Processor\UidProcessor;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\SimpleCache\CacheInterface;
-use ReCaptcha\ReCaptcha;
-use ReCaptcha\RequestMethod\CurlPost;
 use Slim\Psr7\Factory\ResponseFactory;
 use Stripe\StripeClient;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\DoctrineDbalStore;
@@ -109,9 +104,8 @@ return function (ContainerBuilder $containerBuilder) {
              */
             $settings = $c->get('settings');
             $stripeChannel = $settings['notifier']['slack']['stripe_channel'];
-            /** @var SlackChannelChatterFactory $chatterFactory */
-            $chatterFactory = $c->get(SlackChannelChatterFactory::class);
-            return $chatterFactory->makeChatter($stripeChannel);
+
+            return $c->get(SlackChannelChatterFactory::class)->makeChatter($stripeChannel);
         },
 
         SlackChannelChatterFactory::class => static function (ContainerInterface $c): SlackChannelChatterFactory {
@@ -156,22 +150,15 @@ return function (ContainerBuilder $containerBuilder) {
         Client\Stripe::class => function (ContainerInterface $c): Client\Stripe {
 
             $useStubStripe = (getenv('APP_ENV') !== 'production' && getenv('BYPASS_PSP'));
-            $offTheShelfStripeClient = $c->get(StripeClient::class);
-
-            \assert($offTheShelfStripeClient instanceof StripeClient);
-
             if ($useStubStripe) {
                 return new Client\StubStripeClient();
             }
 
-            return new Client\LiveStripeClient($offTheShelfStripeClient);
+            return new Client\LiveStripeClient($c->get(StripeClient::class));
         },
 
-        \MatchBot\Domain\DonationFundsNotifier::class => function (ContainerInterface $c): \MatchBot\Domain\DonationFundsNotifier {
-            $mailer = $c->get(Client\Mailer::class);
-            \assert($mailer instanceof Client\Mailer);
-
-            return new \MatchBot\Domain\DonationFundsNotifier($mailer);
+        DonationFundsNotifier::class => function (ContainerInterface $c): DonationFundsNotifier {
+            return new DonationFundsNotifier($c->get(Client\Mailer::class));
         },
 
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
@@ -218,11 +205,8 @@ return function (ContainerBuilder $containerBuilder) {
             };
 
             if ($alarmChannelName) {
-                $slackChannelChatterFactory = $c->get(SlackChannelChatterFactory::class);
-                \assert($slackChannelChatterFactory instanceof SlackChannelChatterFactory);
-
                 $logger->pushHandler(
-                    new SlackHandler($slackChannelChatterFactory->makeChatter($alarmChannelName))
+                    new SlackHandler($c->get(SlackChannelChatterFactory::class)->makeChatter($alarmChannelName))
                 );
             }
 
@@ -230,26 +214,18 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         RealTimeMatchingStorage::class => static function (ContainerInterface $c): RealTimeMatchingStorage {
-            $redis = $c->get(Redis::class);
-            \assert($redis instanceof Redis);
-
-            return new RedisMatchingStorage($redis);
+            return new RedisMatchingStorage($c->get(Redis::class));
         },
 
         Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
-            $storage = $c->get(RealTimeMatchingStorage::class);
-            $entityManager = $c->get(RetrySafeEntityManager::class);
-            $logger = $c->get(LoggerInterface::class);
-
-            \assert($storage instanceof RealTimeMatchingStorage);
-            \assert($entityManager instanceof RetrySafeEntityManager);
-            \assert($logger instanceof LoggerInterface);
-
-            return new Matching\OptimisticRedisAdapter($storage, $entityManager, $logger);
+            return new Matching\OptimisticRedisAdapter(
+                $c->get(RealTimeMatchingStorage::class),
+                $c->get(RetrySafeEntityManager::class),
+                $c->get(LoggerInterface::class)
+            );
         },
 
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {
-            /** @var LoggerInterface $logger */
             $logger = $c->get(LoggerInterface::class);
 
             $sendMiddleware = new SendMessageMiddleware(new SendersLocator(
@@ -285,9 +261,7 @@ return function (ContainerBuilder $containerBuilder) {
             $redis = new Redis();
             try {
                 $redis->connect($settings['redis']['host']);
-                $cache = new RedisCache();
-                $cache->setRedis($redis);
-                $cache->setNamespace("matchbot-{$settings['appEnv']}");
+                $cacheAdapter = new RedisAdapter(redis: $redis, namespace: "matchbot-{$settings['appEnv']}");
             } catch (RedisException $exception) {
                 // This essentially means Doctrine is not using a cache. `/ping` should fail separately based on
                 // Redis being down whenever this happens, so we should find out without relying on this warning log.
@@ -300,14 +274,14 @@ return function (ContainerBuilder $containerBuilder) {
                     get_class($exception),
                     $exception->getMessage(),
                 ));
-                $cache = new ArrayCache();
+                $cacheAdapter = new ArrayAdapter();
             }
 
-            $config = Setup::createAnnotationMetadataConfiguration(
+            $config = ORM\ORMSetup::createAttributeMetadataConfiguration(
                 $settings['doctrine']['metadata_dirs'],
                 $settings['doctrine']['dev_mode'],
                 $settings['doctrine']['cache_dir'] . '/proxies',
-                $cache
+                $cacheAdapter,
             );
 
             // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
@@ -315,10 +289,10 @@ return function (ContainerBuilder $containerBuilder) {
             $config->setAutoGenerateProxyClasses($settings['doctrine']['dev_mode']);
 
             $config->setMetadataDriverImpl(
-                new AnnotationDriver(new AnnotationReader(), $settings['doctrine']['metadata_dirs'])
+                new ORM\Mapping\Driver\AttributeDriver($settings['doctrine']['metadata_dirs'])
             );
 
-            $config->setMetadataCacheImpl($cache);
+            $config->setMetadataCache($cacheAdapter);
 
             return $config;
         },
@@ -333,10 +307,6 @@ return function (ContainerBuilder $containerBuilder) {
                 $c->get(ProblemDetailsResponseFactory::class),
                 new RateLimitOptions($c->get('settings')['los_rate_limit']),
             );
-        },
-
-        ReCaptcha::class => static function (ContainerInterface $c): ReCaptcha {
-            return new ReCaptcha($c->get('settings')['recaptcha']['secret_key'], new CurlPost());
         },
 
         /**
@@ -365,13 +335,10 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         RetrySafeEntityManager::class => static function (ContainerInterface $c): RetrySafeEntityManager {
-            $logger = $c->get(LoggerInterface::class);
-            \assert($logger instanceof LoggerInterface);
-
             return new RetrySafeEntityManager(
                 $c->get(ORM\Configuration::class),
                 $c->get('settings')['doctrine']['connection'],
-                $logger,
+                $c->get(LoggerInterface::class),
             );
         },
 
@@ -415,9 +382,7 @@ return function (ContainerBuilder $containerBuilder) {
             );
         },
         Connection::class => static function (ContainerInterface $c): Connection {
-            $em = $c->get(EntityManagerInterface::class);
-            \assert($em instanceof EntityManagerInterface);
-            return $em->getConnection();
+            return $c->get(EntityManagerInterface::class)->getConnection();
         },
     ]);
 };

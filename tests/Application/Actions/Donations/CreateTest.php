@@ -5,19 +5,20 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
-use LosMiddleware\RateLimit\Exception\MissingRequirement;
+use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\DomainException\DomainLockContentionException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
+use MatchBot\Tests\TestData;
 use Prophecy\Argument;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
@@ -55,8 +56,8 @@ class CreateTest extends TestCase
 
         $data = '{"not-good-json';
 
-        $request = $this->createRequest('POST', '/v1/donations', $data);
-        $response = $app->handle($request);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
 
@@ -84,9 +85,9 @@ class CreateTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $data = $this->encodeWithDummyCaptcha($donation);
-        $request = $this->createRequest('POST', '/v1/donations', $data);
-        $response = $app->handle($request);
+        $data = $this->encode($donation);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
         $expectedPayload = new ActionPayload(400, ['error' => [
@@ -97,45 +98,6 @@ class CreateTest extends TestCase
 
         $this->assertEquals($expectedSerialised, $payload);
         $this->assertEquals(400, $response->getStatusCode());
-    }
-
-    public function testValidDataForMatchedCampaignWhenFundLockNotAcquired(): void
-    {
-        $donation = $this->getTestDonation(true, true);
-
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
-            ->willReturn($donation);
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))
-            ->willThrow(DomainLockContentionException::class)
-            ->shouldBeCalledOnce();
-
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-
-        $data = $this->encodeWithDummyCaptcha($donation);
-        $request = $this->createRequest('POST', '/v1/donations', $data);
-        $response = $app->handle($request);
-
-        $payload = (string) $response->getBody();
-
-        $expectedPayload = new ActionPayload(503, ['error' => [
-            'type' => 'SERVER_ERROR',
-            'description' => 'Fund resource locked',
-        ]]);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertEquals($expectedSerialised, $payload);
-        $this->assertEquals(503, $response->getStatusCode());
     }
 
     public function testStripeWithMissingStripeAccountID(): void
@@ -158,8 +120,7 @@ class CreateTest extends TestCase
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->pull(Argument::type(Campaign::class))
-            ->willReturn($donation->getCampaign())
+        $campaignRepoProphecy->updateFromSf(Argument::type(Campaign::class))
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -170,14 +131,14 @@ class CreateTest extends TestCase
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::any())->shouldNotBeCalled();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = $this->encodeWithDummyCaptcha($donation);
-        $request = $this->createRequest('POST', '/v1/donations', $data);
-        $response = $app->handle($request);
+        $data = $this->encode($donation);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
 
@@ -210,9 +171,9 @@ class CreateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
 
-        $data = $this->encodeWithDummyCaptcha($donation);
-        $request = $this->createRequest('POST', '/v1/donations', $data);
-        $response = $app->handle($request);
+        $data = $this->encode($donation);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
 
@@ -253,14 +214,14 @@ class CreateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
 
-        $data = $this->encodeWithDummyCaptcha($donation);
+        $data = $this->encode($donation);
         $request = $this->createRequest(
             'POST',
-            '/v1/donations',
+            TestData\Identity::getTestPersonNewDonationEndpoint(),
             $data,
             ['HTTP_ACCEPT' => 'application/json'], // Un-set forwarded IP header.
         );
-        $app->handle($request); // Rate limit middleware should bail out.
+        $app->handle($this->addDummyPersonAuth($request)); // Rate limit middleware should bail out.
     }
 
     public function testSuccessWithStripeAccountIDMissingInitiallyButFoundOnRefetch(): void
@@ -269,13 +230,9 @@ class CreateTest extends TestCase
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal();
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
-
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
-        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -293,13 +250,13 @@ class CreateTest extends TestCase
         $charityWhichNowHasStripeAccountID = clone $donation->getCampaign()->getCharity();
         $charityWhichNowHasStripeAccountID
             ->setStripeAccountId('unitTest_newStripeAccount_456');
-        $campaignWithCharityWhichNowHasStripeAccountID = clone  $donation->getCampaign();
-        $campaignWithCharityWhichNowHasStripeAccountID->setCharity($charityWhichNowHasStripeAccountID);
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoProphecy->pull(Argument::type(Campaign::class))
-            ->willReturn($campaignWithCharityWhichNowHasStripeAccountID)
-            ->shouldBeCalledOnce();
+        $campaignRepoProphecy->updateFromSf(Argument::type(Campaign::class))
+            ->will(/**
+             * @param array{0: Campaign} $args
+             */                fn (array $args) => $args[0]->setCharity($charityWhichNowHasStripeAccountID)
+            );
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
@@ -314,6 +271,7 @@ class CreateTest extends TestCase
                 'enabled' => true,
                 'allow_redirects' => 'never',
             ],
+            'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
                 'campaignId' => '123CampaignId',
@@ -329,6 +287,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
+            'setup_future_usage' => 'on_session',
             'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_newStripeAccount_456',
@@ -356,9 +315,9 @@ class CreateTest extends TestCase
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = $this->encodeWithDummyCaptcha($donation);
-        $request = $this->createRequest('POST', '/v1/donations', $data);
-        $response = $app->handle($request);
+        $data = $this->encode($donation);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
 
@@ -511,7 +470,7 @@ class CreateTest extends TestCase
 
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
-        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -574,13 +533,16 @@ class CreateTest extends TestCase
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
-        $request = $this->createRequest('POST', '/v1/people/12345678-1234-1234-1234-1234567890ab/donations', $data);
+        $request = $this->createRequest(
+            'POST',
+            TestData\Identity::getTestPersonNewDonationEndpoint(),
+            $this->encode($donation),
+        );
         $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
@@ -607,28 +569,23 @@ class CreateTest extends TestCase
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
         $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
-        $this->assertEquals('cus_aaaaaaaaaaaa11', $payloadArray['donation']['pspCustomerId']);
         $this->assertEquals(DonationStatus::Pending->value, $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
         $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
     }
 
-    public function testMatchedCampaignAndPspCustomerIdButWrongPersonInRoute(): void
+    public function testMatchedCampaignButWrongPersonInRoute(): void
     {
         $this->expectException(HttpUnauthorizedException::class);
         $this->expectExceptionMessage('Unauthorised');
 
+        // Default test Customer ID is cus_aaaaaaaaaaaa11.
         $donation = $this->getTestDonation(true, true);
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
-        $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
-
-        $fundingWithdrawalForMatch = new FundingWithdrawal();
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
-        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -647,29 +604,26 @@ class CreateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
+        // Don't match default test customer ID from body, in this path.
         $request = $this->createRequest('POST', '/v1/people/99999999-1234-1234-1234-1234567890zz/donations', $data);
         $app->handle($this->addDummyPersonAuth($request)); // Throws HttpUnauthorizedException.
     }
 
-    public function testMatchedCampaignAndPspCustomerIdButWrongCustomerIdInBody(): void
+    public function testMatchedCampaignButWrongCustomerIdInBody(): void
     {
         $donation = $this->getTestDonation(true, true);
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId('cus_zzaaaaaaaaaa99');
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal();
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
-
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
-        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -688,13 +642,13 @@ class CreateTest extends TestCase
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
-        $request = $this->createRequest('POST', '/v1/people/12345678-1234-1234-1234-1234567890ab/donations', $data);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
 
         $response = $app->handle($this->addDummyPersonAuth($request));
 
@@ -715,13 +669,9 @@ class CreateTest extends TestCase
         $donation = $this->getTestDonation(true, true);
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
-        $fundingWithdrawalForMatch = new FundingWithdrawal();
-        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
-        $fundingWithdrawalForMatch->setDonation($donation);
-
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
-        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppInstance();
         /** @var Container $container */
@@ -749,6 +699,7 @@ class CreateTest extends TestCase
                 'enabled' => true,
                 'allow_redirects' => 'never',
             ],
+            'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
                 'campaignId' => '123CampaignId',
@@ -764,6 +715,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
+            'setup_future_usage' => 'on_session',
             'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
@@ -786,14 +738,14 @@ class CreateTest extends TestCase
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = $this->encodeWithDummyCaptcha($donation);
-        $request = $this->createRequest('POST', '/v1/donations', $data);
-        $response = $app->handle($request);
+        $data = $this->encode($donation);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
 
@@ -852,6 +804,7 @@ class CreateTest extends TestCase
                 'enabled' => true,
                 'allow_redirects' => 'never',
             ],
+            'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
                 'campaignId' => '123CampaignId',
@@ -867,6 +820,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
+            'setup_future_usage' => 'on_session',
             'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 154,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
@@ -895,9 +849,9 @@ class CreateTest extends TestCase
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = $this->encodeWithDummyCaptcha($donation);
-        $request = $this->createRequest('POST', '/v1/donations', $data);
-        $response = $app->handle($request);
+        $data = $this->encode($donation);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
 
@@ -915,7 +869,6 @@ class CreateTest extends TestCase
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
-        $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('0', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -957,6 +910,7 @@ class CreateTest extends TestCase
                 'enabled' => true,
                 'allow_redirects' => 'never',
             ],
+            'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
                 'campaignId' => '123CampaignId',
@@ -972,6 +926,7 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
+            'setup_future_usage' => 'on_session',
             'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 154,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
@@ -991,19 +946,18 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
         ]);
 
-
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
-        
+
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = $this->encodeWithDummyCaptcha($donation);
-        $request = $this->createRequest('POST', '/v1/donations', $data);
-        $response = $app->handle($request);
+        $data = $this->encode($donation);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
 
@@ -1031,10 +985,9 @@ class CreateTest extends TestCase
         $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
     }
 
-    private function encodeWithDummyCaptcha(Donation $donation): string
+    private function encode(Donation $donation): string
     {
         $donationArray = $donation->toApiModel();
-        $donationArray['creationRecaptchaCode'] = 'good response';
 
         return json_encode($donationArray);
     }
@@ -1046,7 +999,7 @@ class CreateTest extends TestCase
      */
     private function addDummyPersonAuth(ServerRequestInterface $request): ServerRequestInterface
     {
-        return $request->withHeader('x-tbg-auth', $this->getTestIdentityTokenIncomplete());
+        return $request->withHeader('x-tbg-auth', TestData\Identity::getTestIdentityTokenIncomplete());
     }
 
     private function getTestDonation(
@@ -1088,5 +1041,26 @@ class CreateTest extends TestCase
         }
 
         return $donation;
+    }
+
+    /**
+     * Withdrawal for exactly £8 for now. In this class, typically a partial match.
+     */
+    private static function someWithdrawal(Donation $donation): FundingWithdrawal
+    {
+        $withdrawal = new FundingWithdrawal(self::someCampaignFunding());
+        $withdrawal->setAmount('8.00');
+        $withdrawal->setDonation($donation);
+
+        return $withdrawal;
+    }
+
+    private static function someCampaignFunding(): CampaignFunding
+    {
+        $campaignFunding = new CampaignFunding();
+        $campaignFunding->setAmount('8.00');
+        $campaignFunding->setCurrencyCode('GBP');
+
+        return $campaignFunding;
     }
 }

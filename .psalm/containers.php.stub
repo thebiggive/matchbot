@@ -1,0 +1,46 @@
+<?php
+
+// file based on one quoted at https://github.com/Lctrs/psalm-psr-container-plugin/issues/545#issue-1263346742
+
+declare(strict_types=1);
+
+namespace Psr\Container {
+    interface ContainerInterface
+    {
+        /** @param string|class-string $name */
+        public function has(string $name): bool;
+
+        /**
+         * @template T of object
+         * @psalm-param string|class-string<T> $name
+         * @psalm-return ($name is class-string ? T : mixed)
+         */
+        public function get(string $name): object;
+    }
+}
+
+namespace DI {
+    use Psr\Container\ContainerInterface;
+    use \DI\FactoryInterface;
+    use Invoker\InvokerInterface;
+
+    class Container implements ContainerInterface, FactoryInterface, InvokerInterface
+    {
+        /**
+         * @template T of object
+         * @psalm-param string|class-string<T> $name
+         * @psalm-param ($name is class-string ? T : mixed) $value
+         */
+        public function set(string $name, mixed $value): void;
+
+        /** @param string|class-string $name */
+        public function has(string $name): bool;
+
+        /**
+         * @template T of object
+         * @psalm-param string|class-string<T> $name
+         * @psalm-return ($name is class-string ? T : mixed)
+         */
+        public function get(string $name): object;
+    }
+}

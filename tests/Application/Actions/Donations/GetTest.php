@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
-use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
@@ -25,7 +24,7 @@ class GetTest extends TestCase
         // Route not matched at all
         $this->expectException(HttpNotFoundException::class);
 
-        $request = $this->createRequest('GET', '/v1/donations/');
+        $request = $this->createRequest('GET', '/v1/404');
         $app->handle($request);
     }
 

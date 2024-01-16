@@ -18,8 +18,11 @@ class DonationFundsNotifier
      *
      * If they want to know their balance, they can look at "My Account" on the site.
      */
-    public function notifyRecieptOfAccountFunds(DonorAccount $donorAccount, Money $transferAmount, Money $_newBalance): void
-    {
+    public function notifyRecieptOfAccountFunds(
+        DonorAccount $donorAccount,
+        Money $transferAmount,
+        Money $_newBalance,
+    ): void {
         $this->mailer->sendEmail([
             'templateKey' => 'donor-funds-thanks',
             'recipientEmailAddress' => $donorAccount->emailAddress->email,

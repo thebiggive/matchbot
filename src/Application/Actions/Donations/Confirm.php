@@ -8,7 +8,9 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -65,15 +67,18 @@ class Confirm extends Action
     {
         try {
             $requestBody = json_decode(
-                $request->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR
+                $request->getBody()->getContents(),
+                true,
+                512,
+                JSON_THROW_ON_ERROR
             );
         } catch (\JsonException) {
             throw new HttpBadRequestException($request, 'Cannot parse request body as JSON');
         }
         \assert(is_array($requestBody));
 
-        $pamentMethodId = $requestBody['stripePaymentMethodId'];
-        \assert((is_string($pamentMethodId)));
+        $paymentMethodId = $requestBody['stripePaymentMethodId'];
+        \assert((is_string($paymentMethodId)));
 
         $this->entityManager->beginTransaction();
 
@@ -82,8 +87,39 @@ class Confirm extends Action
             throw new NotFoundException();
         }
 
+        if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
+            $this->logger->warning(sprintf(
+                'We declined to Confirm as donations was cancelled. Donation UUID %s',
+                $donation->getUuid(),
+            ));
+            throw new HttpBadRequestException($request, 'Donation has been cancelled, so cannot be confirmed');
+        }
+
         $paymentIntentId = $donation->getTransactionId();
-        $paymentMethod = $this->stripe->retrievePaymentMethod($pamentMethodId);
+        try {
+            $paymentMethod = $this->stripe->updatePaymentMethodBillingDetail($paymentMethodId, $donation);
+        } catch (CardException $cardException) {
+            $this->entityManager->rollback();
+
+            return $this->handleCardException(
+                context: 'updatePaymentMethodBillingDetail',
+                exception: $cardException,
+                donation: $donation,
+                paymentIntentId: $paymentIntentId,
+            );
+        } catch (ApiErrorException $exception) {
+            $this->logger->error(sprintf(
+                'Stripe %s on Confirm updatePaymentMethodBillingDetail for donation %s (%s): %s',
+                get_class($exception),
+                $donation->getUuid(),
+                $paymentIntentId,
+                $exception->getMessage(),
+            ));
+
+            $this->entityManager->rollback();
+
+            throw $exception;
+        }
 
         if ($paymentMethod->type !== 'card') {
             throw new HttpBadRequestException($request, 'Confirm endpoint only supports card payments for now');
@@ -122,28 +158,19 @@ class Confirm extends Action
         ]);
 
         try {
+            // looks like sometimes $paymentIntentId and $paymentMethodId are for different customers.
             $updatedIntent = $this->stripe->confirmPaymentIntent($paymentIntentId, [
-                'payment_method' => $pamentMethodId,
+                'payment_method' => $paymentMethodId,
             ]);
         } catch (CardException $exception) {
-            $exceptionClass = get_class($exception);
-            $this->logger->info(sprintf(
-                'Stripe %s on Confirm for donation %s (%s): %s',
-                $exceptionClass,
-                $donation->getUuid(),
-                $paymentIntentId,
-                $exception->getMessage(),
-            ));
-
             $this->entityManager->rollback();
 
-            return new JsonResponse([
-                'error' => [
-                    'message' => $exception->getMessage(),
-                    'code' => $exception->getStripeCode(),
-                    'decline_code' => $exception->getDeclineCode(),
-                ],
-            ], 402);
+            return $this->handleCardException(
+                context: 'confirmPaymentIntent',
+                exception: $exception,
+                donation: $donation,
+                paymentIntentId: $paymentIntentId,
+            );
         } catch (InvalidRequestException $exception) {
             // We've seen card test bots, and no humans, try to reuse payment methods like this as of Oct '23. For now
             // we want to log it as a warning, so we can see frequency on a dashboard but don't get alarms.
@@ -233,5 +260,30 @@ class Confirm extends Action
     public function randomString(): string
     {
         return substr(Uuid::uuid4()->toString(), 0, 15);
+    }
+
+    private function handleCardException(
+        string $context,
+        CardException $exception,
+        Donation $donation,
+        string $paymentIntentId,
+    ): JsonResponse {
+        $exceptionClass = get_class($exception);
+        $this->logger->info(sprintf(
+            'Stripe %s on Confirm %s for donation %s (%s): %s',
+            $exceptionClass,
+            $context,
+            $donation->getUuid(),
+            $paymentIntentId,
+            $exception->getMessage(),
+        ));
+
+        return new JsonResponse([
+            'error' => [
+                'message' => $exception->getMessage(),
+                'code' => $exception->getStripeCode(),
+                'decline_code' => $exception->getDeclineCode(),
+            ],
+        ], 402);
     }
 }

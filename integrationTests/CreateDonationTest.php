@@ -3,6 +3,7 @@
 namespace MatchBot\IntegrationTests;
 
 use GuzzleHttp\Psr7\ServerRequest;
+use MatchBot\Tests\TestData;
 use Ramsey\Uuid\Uuid;
 
 class CreateDonationTest extends IntegrationTest
@@ -10,7 +11,7 @@ class CreateDonationTest extends IntegrationTest
     public function setUp(): void
     {
         parent::setUp();
-        $this->addCampaignAndCharityToDB($this->randomString());
+        $this->addFundedCampaignAndCharityToDB($this->randomString());
         $this->setupFakeDonationClient();
     }
 
@@ -49,23 +50,27 @@ class CreateDonationTest extends IntegrationTest
         $this->assertSame(400, $response->getStatusCode());
     }
 
-    public function testITReturns400OnRequestToDonateNullAmount(): void
+    public function testItReturns400OnRequestToDonateNullAmount(): void
     {
         $campaignId = $this->setupNewCampaign();
 
         $response = $this->getApp()->handle(
             new ServerRequest(
-                'POST',
-                '/v1/donations',
+                method: 'POST',
+                uri: TestData\Identity::getTestPersonNewDonationEndpoint(),
+                headers: [
+                  'X-Tbg-Auth' => TestData\Identity::getTestIdentityTokenComplete(),
+                ],
                 // The Symfony Serializer will throw an exception if the JSON document doesn't include all the required
                 // constructor params of DonationCreate
                 body: <<<EOF
                 {
-                    "currencyCode": "GBP",
-                    "donationAmount": null,
-                    "projectId": "$campaignId",
-                    "psp": "stripe",
-                    "tipAmount": "0"
+                  "currencyCode": "GBP",
+                  "donationAmount": null,
+                  "projectId": "$campaignId",
+                  "psp": "stripe",
+                  "pspCustomerId": "cus_aaaaaaaaaaaa11",
+                  "tipAmount": "0"
                 }
             EOF,
                 serverParams: ['REMOTE_ADDR' => '127.0.0.1']
@@ -74,5 +79,4 @@ class CreateDonationTest extends IntegrationTest
 
         $this->assertSame(400, $response->getStatusCode());
     }
-
 }

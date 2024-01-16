@@ -8,7 +8,8 @@ use Monolog\Logger;
 return function (ContainerBuilder $containerBuilder) {
     $doctrineConnectionOptions = [];
     if (getenv('APP_ENV') !== 'local') {
-        $doctrineConnectionOptions[PDO::MYSQL_ATTR_SSL_CA] = dirname(__DIR__) . '/deploy/rds-ca-2019-root.pem';
+        $doctrineConnectionOptions[PDO::MYSQL_ATTR_SSL_CA] =
+            dirname(__DIR__) . '/deploy/rds-ca-eu-west-1-bundle.pem';
     }
 
     // Global Settings Object
@@ -94,10 +95,6 @@ return function (ContainerBuilder $containerBuilder) {
                     // Override channel for administrative Stripe notifications.
                     'stripe_channel' => 'stripe',
                 ],
-            ],
-
-            'recaptcha' => [
-                'secret_key' => getenv('RECAPTCHA_SECRET_KEY'),
             ],
 
             'redis' => [

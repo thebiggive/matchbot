@@ -14,12 +14,17 @@ use Stripe\StripeClient;
 
 class UpdatePaymentMethod extends Action
 {
+    public const EXPECTED_STRIPE_NEW_CARD_MESSAGES = [
+        "Your card's security code is incorrect.",
+        'Your card was declined.',
+        'Your card does not support this type of purchase.',
+    ];
+
     #[Pure]
     public function __construct(
         private StripeClient $stripeClient,
-        LoggerInterface      $logger
-    )
-    {
+        LoggerInterface $logger
+    ) {
         parent::__construct($logger);
     }
 
@@ -73,7 +78,7 @@ class UpdatePaymentMethod extends Action
 
             $exceptionClass = get_class($e);
 
-            $isExpectedExceptionMessage = $e->getMessage() === "Your card's security code is incorrect.";
+            $isExpectedExceptionMessage = in_array($e->getMessage(), self::EXPECTED_STRIPE_NEW_CARD_MESSAGES, true);
 
             $this->logger->log(
                 level: $isExpectedExceptionMessage ? LogLevel::INFO : LogLevel::ERROR,

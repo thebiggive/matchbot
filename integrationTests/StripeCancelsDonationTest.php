@@ -22,7 +22,13 @@ class StripeCancelsDonationTest extends IntegrationTest
 
         $this->sendCancellationWebhookFromStripe($donation['transactionId']);
 
-        $this->assertSame(DonationStatus::Cancelled->value, $this->db()->fetchOne('SELECT donationStatus from Donation where uuid = ?', [$donation['donationId']]));
+        $this->assertSame(
+            DonationStatus::Cancelled->value,
+            $this->db()->fetchOne(
+                'SELECT donationStatus from Donation where uuid = ?',
+                [$donation['donationId']]
+            )
+        );
     }
 
     private function sendCancellationWebhookFromStripe(string $transactionId): void
@@ -50,11 +56,12 @@ class StripeCancelsDonationTest extends IntegrationTest
 
 
         $this->getApp()->handle(new ServerRequest(
-                method: 'POST',
-                uri: '/hooks/stripe',
-                headers: ['stripe-signature' => StripeTest::generateSignature((string)time(), $requestBody, $webhookSecret)],
-                body: $requestBody
-            )
-        );
+            method: 'POST',
+            uri: '/hooks/stripe',
+            headers: [
+                'stripe-signature' => StripeTest::generateSignature((string)time(), $requestBody, $webhookSecret),
+            ],
+            body: $requestBody
+        ));
     }
 }

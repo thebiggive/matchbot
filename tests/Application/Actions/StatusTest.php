@@ -4,27 +4,26 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Actions;
 
-use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\Common\Cache\ArrayCache;
 use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Platforms\MySQL80Platform;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
-use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
+use Doctrine\ORM\Mapping\Driver\AttributeDriver;
+use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Proxy\ProxyFactory;
 use Doctrine\ORM\Tools\Console\Command\GenerateProxiesCommand;
 use Doctrine\ORM\Tools\Console\ConsoleRunner;
-use Doctrine\ORM\Tools\Setup;
 use Doctrine\ORM\UnitOfWork;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Tests\TestCase;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\NullOutput;
 
 class StatusTest extends TestCase
 {
-    const DOMAIN_DIR = __DIR__ . '/../../../src/Domain';
+    private const DOMAIN_DIR = __DIR__ . '/../../../src/Domain';
 
     public function setUp(): void
     {
@@ -89,20 +88,21 @@ class StatusTest extends TestCase
     private function getConnectedMockEntityManager(
         string $proxyPath = __DIR__ . '/../../../var/doctrine/proxies',
     ): EntityManagerInterface {
-        $cache = new ArrayCache();
-        $config = Setup::createAnnotationMetadataConfiguration(
+        $cacheAdapter = new ArrayAdapter();
+
+        $config = ORMSetup::createAttributeMetadataConfiguration(
             [self::DOMAIN_DIR],
             false, // Simulate live mode for these tests.
             $proxyPath,
-            $cache,
+            $cacheAdapter,
         );
 
         // No auto-generation – like live mode – for these tests.
         $config->setAutoGenerateProxyClasses(false);
         $config->setMetadataDriverImpl(
-            new AnnotationDriver(new AnnotationReader(), [self::DOMAIN_DIR]),
+            new AttributeDriver([self::DOMAIN_DIR]),
         );
-        $config->setMetadataCacheImpl($cache);
+        $config->setMetadataCache($cacheAdapter);
 
         $connectionProphecy = $this->prophesize(Connection::class);
         $connectionProphecy->isConnected()

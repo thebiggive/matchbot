@@ -5,11 +5,13 @@ namespace MatchBot\IntegrationTests;
 use ArrayAccess;
 use DI\Container;
 use GuzzleHttp\Psr7\ServerRequest;
-use LosMiddleware\RateLimit\RateLimitMiddleware;
+use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\Fund;
+use MatchBot\Domain\Pledge;
+use MatchBot\Tests\TestData;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -19,7 +21,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-
 use Ramsey\Uuid\Uuid;
 use Slim\App;
 use Slim\Factory\AppFactory;
@@ -38,15 +39,16 @@ abstract class IntegrationTest extends TestCase
         parent::setUp();
 
         $noOpMiddleware = new class implements MiddlewareInterface {
-            public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-            {
+            public function process(
+                ServerRequestInterface $request,
+                RequestHandlerInterface $handler,
+            ): ResponseInterface {
                 return $handler->handle($request);
             }
         };
 
         $container = require __DIR__ . '/../bootstrap.php';
         IntegrationTest::setContainer($container);
-        $container->set(DonationRecaptchaMiddleware::class, $noOpMiddleware);
         $container->set(RateLimitMiddleware::class, $noOpMiddleware);
         $container->set(\Psr\Log\LoggerInterface::class, new \Psr\Log\NullLogger());
 
@@ -112,11 +114,11 @@ abstract class IntegrationTest extends TestCase
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
         $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
+        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
         $donationRepo = $container->get(DonationRepository::class);
-        assert($donationRepo instanceof DonationRepository);
         $donationRepo->setClient($donationClientProphecy->reveal());
     }
 
@@ -163,7 +165,7 @@ abstract class IntegrationTest extends TestCase
         $campaignId = $this->randomString();
         $paymentIntentId = $this->randomString();
 
-        $this->addCampaignAndCharityToDB($campaignId);
+        $this->addFundedCampaignAndCharityToDB($campaignId);
 
         $stripePaymentIntent = new PaymentIntent($paymentIntentId);
         $stripePaymentIntent->client_secret = 'any string, doesnt affect test';
@@ -181,34 +183,34 @@ abstract class IntegrationTest extends TestCase
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
         $donationRepo = $container->get(DonationRepository::class);
-        assert($donationRepo instanceof DonationRepository);
         $donationRepo->setClient($donationClientProphecy->reveal());
         return $campaignId;
     }
 
     /**
      * @param string $campaignSfId
-     * @return array{charityId: int, campaignId: int, fundId: int, campaignFundingID: int}
+     * @return array{charityId: int, campaignId: int}
      * @throws \Doctrine\DBAL\Exception
      *
      * @psalm-suppress MoreSpecificReturnType
      * @psalm-suppress LessSpecificReturnStatement
      */
-    public function addCampaignAndCharityToDB(string $campaignSfId, int $fundWithAmountInPounds = 100_000): array
+    public function addCampaignAndCharityToDB(string $campaignSfId, bool $campaignOpen): array
     {
         $charityId = random_int(1000, 100000);
         $charitySfID = $this->randomString();
         $charityStripeId = $this->randomString();
-        $fundSfID = $this->randomString();
 
         $db = $this->db();
 
         $nyd = '2023-01-01'; // specific date doesn't matter.
-        $futureDate = '2093-01-01';
+        $closeDate = $campaignOpen ? '2093-01-01' : '2023-01-02';
 
         $db->executeStatement(<<<EOF
-            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId, hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber) 
-            VALUES ($charityId, 'Some Charity', '$charitySfID', '$nyd', '$nyd', '$nyd', '$charityStripeId', null, 0, 0, null, null)
+            INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber) 
+            VALUES ($charityId, 'Some Charity', '$charitySfID', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+                    null, 0, 0, null, null)
             EOF
         );
 
@@ -217,37 +219,83 @@ abstract class IntegrationTest extends TestCase
         $matched =  1;
 
         $db->executeStatement(<<<EOF
-            INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull, createdAt, updatedAt, currencyCode, feePercentage) 
-            VALUES ('$charityId', 'some charity', '$nyd', '$futureDate', '$matched', '$campaignSfId', '$nyd', '$nyd', '$nyd', 'GBP', 0)
+            INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull,
+                                  createdAt, updatedAt, currencyCode, feePercentage) 
+            VALUES ('$charityId', 'some charity', '$nyd', '$closeDate', '$matched', '$campaignSfId', '$nyd',
+                    '$nyd', '$nyd', 'GBP', 0)
             EOF
         );
 
         $campaignId = (int)$db->lastInsertId();
 
+        return compact('charityId', 'campaignId');
+    }
+
+    /**
+     * @param string $campaignSfId
+     * @return array{charityId: int, campaignId: int, fundId: int, campaignFundingId: int}
+     * @throws \Doctrine\DBAL\Exception
+     * @psalm-suppress MoreSpecificReturnType
+     * @psalm-suppress LessSpecificReturnStatement
+     */
+    public function addFundedCampaignAndCharityToDB(string $campaignSfId, int $fundWithAmountInPounds = 100_000): array
+    {
+        ['charityId' => $charityId, 'campaignId' => $campaignId] = $this->addCampaignAndCharityToDB(
+            campaignSfId: $campaignSfId,
+            campaignOpen: true,
+        );
+        ['fundId' => $fundId, 'campaignFundingId' => $campaignFundingId] =
+            $this->addFunding($campaignId, $fundWithAmountInPounds, 1, Pledge::DISCRIMINATOR_VALUE);
+
+        $compacted = compact('charityId', 'campaignId', 'fundId', 'campaignFundingId');
+        Assertion::allInteger($compacted);
+
+        return $compacted;
+    }
+
+    /**
+     * @param 'championFund'|'pledge'|'unknownFund' $fundType
+     * @return array{fundId: int, campaignFundingId: int}
+     * @psalm-suppress MoreSpecificReturnType
+     * @psalm-suppress LessSpecificReturnStatement
+     */
+    public function addFunding(
+        int $campaignId,
+        int $amountInPounds,
+        int $allocationOrder,
+        string $fundType = Fund::DISCRIMINATOR_VALUE,
+    ): array {
+        $db = $this->db();
+        $fundSfID = $this->randomString();
+        $nyd = '2023-01-01'; // specific date doesn't matter.
+
         $db->executeStatement(<<<SQL
-            INSERT INTO Fund (amount, name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType, currencyCode) VALUES 
-                (100000, 'Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', 'pledge', 'GBP')
+            INSERT INTO Fund (amount, name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
+                              currencyCode) VALUES 
+                (100000, 'Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '$fundType',
+                 'GBP')
         SQL
         );
 
         $fundId = (int)$db->lastInsertId();
 
         $db->executeStatement(<<<SQL
-            INSERT INTO CampaignFunding (fund_id, amount, amountAvailable, allocationOrder, createdAt, updatedAt, currencyCode) VALUES 
-                    ($fundId, $fundWithAmountInPounds, $fundWithAmountInPounds, 1, '$nyd', '$nyd', 'GBP')                                                                                                                                
+            INSERT INTO CampaignFunding (fund_id, amount, amountAvailable, allocationOrder, createdAt, updatedAt,
+                                         currencyCode) VALUES 
+                    ($fundId, $amountInPounds, $amountInPounds, $allocationOrder, '$nyd', '$nyd',
+                     'GBP')
         SQL
         );
 
-        $campaignFundingID = (int)$db->lastInsertId();
+        $campaignFundingId = (int)$db->lastInsertId();
 
         $db->executeStatement(<<<SQL
-         INSERT INTO Campaign_CampaignFunding (campaignfunding_id, campaign_id) VALUES ($campaignFundingID, $campaignId);
+         INSERT INTO Campaign_CampaignFunding (campaignfunding_id, campaign_id)
+         VALUES ($campaignFundingId, $campaignId);
         SQL
-);
+        );
 
-        $compacted = compact(['charityId', 'campaignId', 'fundId', 'campaignFundingID']);
-        Assertion::allInteger($compacted);
-        return $compacted;
+        return compact('fundId', 'campaignFundingId');
     }
 
     /**
@@ -285,7 +333,8 @@ abstract class IntegrationTest extends TestCase
      * @template T
      * @param class-string<T> $name
      * @return T
-     */ public function getService(string $name): mixed
+     */
+    public function getService(string $name): mixed
     {
         $service = $this->getContainer()->get($name);
         $this->assertInstanceOf($name, $service);
@@ -312,9 +361,12 @@ abstract class IntegrationTest extends TestCase
         ObjectProphecy $stripePaymentIntents,
     ): StripeClient {
         $fakeStripeClient = $this->createStub(StripeClient::class);
-        $fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
-        $fakeStripeClient->customers = $stripeCustomerServiceProphecy->reveal();
-        $fakeStripeClient->paymentIntents =$stripePaymentIntents->reveal();
+
+        // Suppressing deprecation warnings with `@` for creation of dynamic properties. Will crash in PHP 9, we can
+        // deal with it then if the code is still there.
+        @$fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
+        @$fakeStripeClient->customers = $stripeCustomerServiceProphecy->reveal();
+        @$fakeStripeClient->paymentIntents = $stripePaymentIntents->reveal();
 
         return $fakeStripeClient;
     }
@@ -329,7 +381,7 @@ abstract class IntegrationTest extends TestCase
         $paymentIntentId = $this->randomString();
 
         if ($withPremadeCampaign) {
-            $this->addCampaignAndCharityToDB($campaignId);
+            $this->addFundedCampaignAndCharityToDB($campaignId);
         } // else application will attempt to pull campaign and charity from SF.
 
         $stripePaymentIntent = new PaymentIntent($paymentIntentId);
@@ -348,13 +400,15 @@ abstract class IntegrationTest extends TestCase
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
         $donationRepo = $container->get(DonationRepository::class);
-        assert($donationRepo instanceof DonationRepository);
         $donationRepo->setClient($donationClientProphecy->reveal());
 
         return $this->getApp()->handle(
             new ServerRequest(
                 'POST',
-                '/v1/donations',
+                TestData\Identity::getTestPersonNewDonationEndpoint(),
+                headers: [
+                    'X-Tbg-Auth' => TestData\Identity::getTestIdentityTokenComplete(),
+                ],
                 // The Symfony Serializer will throw an exception if the JSON document doesn't include all the required
                 // constructor params of DonationCreate
                 body: <<<EOF
@@ -363,6 +417,7 @@ abstract class IntegrationTest extends TestCase
                     "donationAmount": "{$amountInPounds}",
                     "projectId": "$campaignId",
                     "psp": "stripe",
+                    "pspCustomerId": "cus_aaaaaaaaaaaa11",
                     "tipAmount": $tipAmount
                 }
             EOF,

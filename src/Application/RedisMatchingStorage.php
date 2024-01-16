@@ -4,7 +4,9 @@ namespace MatchBot\Application;
 
 class RedisMatchingStorage implements RealTimeMatchingStorage
 {
-    public function __construct(private \Redis $redis) {}
+    public function __construct(private \Redis $redis)
+    {
+    }
 
     public function get(string $key)
     {
@@ -16,7 +18,7 @@ class RedisMatchingStorage implements RealTimeMatchingStorage
         return $return;
     }
 
-    public function set(string $key, string|int $value, array $options ): bool|self
+    public function set(string $key, string|int $value, array $options): bool|self
     {
         $return = $this->redis->set($key, (string)$value, $options);
         if ($return instanceof \Redis) {

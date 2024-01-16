@@ -154,8 +154,33 @@ class CalculatorTest extends TestCase
         // and the donor will be charged a higher amount. E.g. here the core donation is
         // $100 and so that amount is passed to `Calculator`, but the donor card charge
         // would be $105.
-        $this->assertEquals('5.00', $fees->coreFee);
-        $this->assertEquals('0.00', $fees->feeVat);
+        $this->assertEquals('5.00', $calculator->getCoreFee());
+        $this->assertEquals('0.00', $calculator->getFeeVat());
+    }
+
+    private function settingsWithVAT(): array
+    {
+        putenv('VAT_PERCENTAGE_LIVE=20');
+        putenv('VAT_LIVE_DATE=2020-01-01');
+
+        $settings = $this->settingsWithoutVAT();
+
+        putenv('VAT_PERCENTAGE_LIVE=');
+        putenv('VAT_LIVE_DATE=');
+
+        return $settings;
+    }
+
+    private function settingsWithoutVAT(): array
+    {
+        $builder = new ContainerBuilder();
+        $settingsFunction = require __DIR__ . '/../../../app/settings.php';
+        $settingsFunction($builder);
+
+        $settings = $builder->build()->get('settings');
+        \assert(is_array($settings));
+
+        return $settings;
     }
 
     public function testItRejectsUnexpectedCardBrand(): void

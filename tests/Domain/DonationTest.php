@@ -34,7 +34,7 @@ class DonationTest extends TestCase
             psp:'stripe',
             pspMethodType: PaymentMethodType::Card
         ), $this->getMinimalCampaign());
-        
+
         $this->assertFalse($donation->getDonationStatus()->isSuccessful());
         $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
         $this->assertNull($donation->getSalesforceLastPush());
@@ -84,7 +84,8 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Amount must be 1-25000 GBP');
 
-        // PHP floating point math doesn't distinguish between this and 1, but as we use BC Math we can reject it as too small:
+        // PHP floating point math doesn't distinguish between this and 1, but as we use BC Math we can reject it as
+        // too small:
         // See https://3v4l.org/#live
         $justLessThanOne = '0.99999999999999999';
         $this->getTestDonation($justLessThanOne);
@@ -198,7 +199,11 @@ class DonationTest extends TestCase
 
     public function testToApiModel(): void
     {
-        $fundingWithdrawal = new FundingWithdrawal();
+        $campaignFunding = new CampaignFunding();
+        $campaignFunding->setCurrencyCode('GBP');
+        $campaignFunding->setAmountAvailable('1.23');
+
+        $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawal->setAmount('1.23');
         $donation = $this->getTestDonation();
         $donation->addFundingWithdrawal($fundingWithdrawal);
@@ -254,10 +259,9 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
 
-        $withdrawal0 = new FundingWithdrawal();
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setFund(new ChampionFund());
-        $withdrawal0->setCampaignFunding($campaignFunding);
+        $withdrawal0 = new FundingWithdrawal($campaignFunding);
         $withdrawal0->setAmount('1');
 
         $withdrawal1 = clone $withdrawal0;
@@ -279,15 +283,13 @@ class DonationTest extends TestCase
         $campaignFunding0 = new CampaignFunding();
         $campaignFunding0->setFund(new ChampionFund());
 
-        $withdrawal0 = new FundingWithdrawal();
-        $withdrawal0->setCampaignFunding($campaignFunding0);
+        $withdrawal0 = new FundingWithdrawal($campaignFunding0);
         $withdrawal0->setAmount('1');
 
         $campaignFunding1 = new CampaignFunding();
         $campaignFunding1->setFund(new Pledge());
-        $withdrawal1 = new FundingWithdrawal();
+        $withdrawal1 = new FundingWithdrawal($campaignFunding1);
         $withdrawal1->setAmount('2');
-        $withdrawal1->setCampaignFunding($campaignFunding1);
 
         $donation->addFundingWithdrawal($withdrawal0);
         $donation->addFundingWithdrawal($withdrawal1);
@@ -416,7 +418,11 @@ class DonationTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Customer balance payments only supported for GBP');
 
-        $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0', currencyCode: 'SEK');
+        $donation = $this->getTestDonation(
+            pspMethodType: PaymentMethodType::CustomerBalance,
+            tipAmount: '0',
+            currencyCode: 'SEK',
+        );
 
         $donation->getStripeMethodProperties(); // Throws in this getter for now.
     }
@@ -462,12 +468,26 @@ class DonationTest extends TestCase
         $this->assertSame('Test First Name', $donation->getDonorFirstName(true));
         $this->assertSame('Test Last Name', $donation->getDonorLastName(true));
         $this->assertSame('donor@email.test', $donation->getDonorEmailAddress());
+        $this->assertSame('Test First Name Test Last Name', $donation->getDonorFullName());
+    }
+
+    /**
+     * @return array<array{0: ?string, 1: ?string, 2: ?string}>
+     */
+    public function namePartsAndFullNames(): array
+    {
+        return [
+            [null, null, null],
+            ['Loraine ', null, 'Loraine'],
+            [' Loraine ', ' James ', 'Loraine   James'],
+            [null, 'James', 'James'],
+        ];
     }
 
     /**
      * @return array<array{0: ?string, 1: string}>
      */
-    public function namesAndSFSafeLastNames()
+    public function namesAndSFSafeLastNames(): array
     {
         return [
             ['Flintstone', 'Flintstone'],
@@ -488,7 +508,7 @@ class DonationTest extends TestCase
     /**
      * @return array<array{0: ?string, 1: ?string}>
      */
-    public function namesAndSFSafeFirstNames()
+    public function namesAndSFSafeFirstNames(): array
     {
         return [
             // same as last name except we have null not 'N/A'.
@@ -505,6 +525,18 @@ class DonationTest extends TestCase
             [str_repeat('👩‍👩‍👧‍👧', 41), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
             [str_repeat('👩‍👩‍👧‍👧', 401), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
         ];
+    }
+
+    /**
+     * @dataProvider namePartsAndFullNames
+     */
+    public function testItMakesDonorFullName(?string $firstName, ?string $lastName, ?string $expectedFullName): void
+    {
+        $donation = $this->getTestDonation();
+        $donation->setDonorFirstName($firstName);
+        $donation->setDonorLastName($lastName);
+
+        $this->assertSame($expectedFullName, $donation->getDonorFullName());
     }
 
     /**
@@ -531,7 +563,15 @@ class DonationTest extends TestCase
 
     public function testCanCancelPendingDonation(): void
     {
-        $donation = Donation::fromApiModel(new DonationCreate('GBP', '1.00', 'project-id', 'stripe'), $this->getMinimalCampaign());
+        $donation = Donation::fromApiModel(
+            new DonationCreate(
+                'GBP',
+                '1.00',
+                'project-id',
+                'stripe',
+            ),
+            $this->getMinimalCampaign()
+        );
         $donation->cancel();
 
         $this->assertEquals(DonationStatus::Cancelled, $donation->getDonationStatus());
@@ -539,7 +579,12 @@ class DonationTest extends TestCase
 
     public function testCantCancelPaidDonation(): void
     {
-        $donation = Donation::fromApiModel(new DonationCreate('GBP', '1.00', 'project-id', 'stripe'), $this->getMinimalCampaign());
+        $donation = Donation::fromApiModel(new DonationCreate(
+            'GBP',
+            '1.00',
+            'project-id',
+            'stripe',
+        ), $this->getMinimalCampaign());
         $donation->setDonationStatus(DonationStatus::Paid);
 
         $this->expectExceptionMessage('Cannot cancel Paid donation');
@@ -600,8 +645,6 @@ class DonationTest extends TestCase
             donationAmount: '1.0',
             projectId: 'project_id',
             psp: 'stripe',
-
-
         ), new Campaign(TestCase::someCharity()));
 
         $this->assertSame($expected, $donation->getFeeCoverAmount());
@@ -628,14 +671,21 @@ class DonationTest extends TestCase
         $changeset = [
             'amount' => ["1", "2"],
         ];
-        $donation->preUpdate(new PreUpdateEventArgs($donation, $this->createStub(EntityManagerInterface::class), $changeset));
+        $donation->preUpdate(new PreUpdateEventArgs(
+            $donation,
+            $this->createStub(EntityManagerInterface::class),
+            $changeset,
+        ));
     }
 
     /**
      * @dataProvider namesEnoughForSalesForce
      */
-    public function testItHasEnoughDataForSalesforceOnlyIffBothNamesAreNonEmpty(string $firstName, string $lastName, bool $isEnoughForSalesforce): void
-    {
+    public function testItHasEnoughDataForSalesforceOnlyIffBothNamesAreNonEmpty(
+        string $firstName,
+        string $lastName,
+        bool $isEnoughForSalesforce,
+    ): void {
         $donation = $this->getTestDonation();
         $donation->setDonorFirstName($firstName);
         $donation->setDonorLastName($lastName);

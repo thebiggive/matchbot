@@ -25,10 +25,10 @@ class UpdateCampaignsTest extends TestCase
         $campaign = new Campaign(charity: null);
         $campaign->setSalesforceId('someCampaignId');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoProphecy->findRecentAndLive()
+        $campaignRepoProphecy->findRecentLiveAndPendingGiftAidApproval()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
-        $campaignRepoProphecy->pull($campaign)->willReturn($campaign)->shouldBeCalledOnce();
+        $campaignRepoProphecy->updateFromSf($campaign)->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
         $fundRepoProphecy->pullForCampaign($campaign)->shouldbeCalledOnce();
@@ -61,10 +61,10 @@ class UpdateCampaignsTest extends TestCase
         $campaign = new Campaign(charity: null);
         $campaign->setSalesforceId('missingOnSfCampaignId');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoProphecy->findRecentAndLive()
+        $campaignRepoProphecy->findRecentLiveAndPendingGiftAidApproval()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
-        $campaignRepoProphecy->pull($campaign)->willThrow(NotFoundException::class)->shouldBeCalledOnce();
+        $campaignRepoProphecy->updateFromSf($campaign)->willThrow(NotFoundException::class)->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
         $fundRepoProphecy->pullForCampaign($campaign)->shouldNotBeCalled(); // Exception reached before this call
@@ -101,10 +101,10 @@ class UpdateCampaignsTest extends TestCase
         $campaign = new Campaign(charity: null);
         $campaign->setSalesforceId('someCampaignId');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoProphecy->findRecentAndLive()
+        $campaignRepoProphecy->findRecentLiveAndPendingGiftAidApproval()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
-        $campaignRepoProphecy->pull($campaign)
+        $campaignRepoProphecy->updateFromSf($campaign)
             ->willThrow($exception)
             ->shouldBeCalledTimes(2);
 
@@ -151,17 +151,17 @@ class UpdateCampaignsTest extends TestCase
 
         $mockBuilder = $this->getMockBuilder(CampaignRepository::class);
         $mockBuilder->setConstructorArgs([$entityManagerProphecy->reveal(), new ClassMetadata(Campaign::class)]);
-        $mockBuilder->onlyMethods(['findRecentAndLive', 'pull']);
+        $mockBuilder->onlyMethods(['findRecentLiveAndPendingGiftAidApproval', 'updateFromSf']);
 
         $campaignRepo = $mockBuilder->getMock();
         $campaignRepo->expects($this->once())
-            ->method('findRecentAndLive')
+            ->method('findRecentLiveAndPendingGiftAidApproval')
             ->willReturn([$campaign]);
         $campaignRepo->expects($this->exactly(2))
-            ->method('pull')
+            ->method('updateFromSf')
             ->willReturnOnConsecutiveCalls(
                 $this->throwException($exception),
-                $campaign,
+                null,
             );
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
@@ -197,7 +197,7 @@ class UpdateCampaignsTest extends TestCase
         $campaignRepoProphecy->findAll()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
-        $campaignRepoProphecy->pull($campaign)->willReturn($campaign)->shouldBeCalledOnce();
+        $campaignRepoProphecy->updateFromSf($campaign)->shouldBeCalledOnce();
 
         $fundRepoProphecy = $this->prophesize(FundRepository::class);
         $fundRepoProphecy->pullForCampaign($campaign)->shouldbeCalledOnce();
