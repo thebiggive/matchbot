@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Auth;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Tests\Application\Actions\GetPaymentMethodsTest;
 use MatchBot\Tests\TestCase;
+use MatchBot\Tests\TestData;
 use Slim\CallableResolver;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Response;
@@ -52,7 +53,7 @@ class PersonWithPasswordAuthMiddlewareTest extends TestCase
         $this->expectExceptionMessage('Unauthorised');
 
         $request = $this->createRequest('GET', '/v1/people/12345678-1234-1234-1234-1234567890ab/payment_methods')
-            ->withHeader('x-tbg-auth', $this->getTestIdentityTokenIncomplete());
+            ->withHeader('x-tbg-auth', TestData\Identity::getTestIdentityTokenIncomplete());
 
         // Because the error ends the request, we can dispatch this against realistic, full app
         // middleware and test this piece of middleware in the process.

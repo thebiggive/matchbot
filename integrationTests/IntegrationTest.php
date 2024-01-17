@@ -7,11 +7,11 @@ use DI\Container;
 use GuzzleHttp\Psr7\ServerRequest;
 use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Auth\DonationRecaptchaMiddleware;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\Pledge;
+use MatchBot\Tests\TestData;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -49,7 +49,6 @@ abstract class IntegrationTest extends TestCase
 
         $container = require __DIR__ . '/../bootstrap.php';
         IntegrationTest::setContainer($container);
-        $container->set(DonationRecaptchaMiddleware::class, $noOpMiddleware);
         $container->set(RateLimitMiddleware::class, $noOpMiddleware);
         $container->set(\Psr\Log\LoggerInterface::class, new \Psr\Log\NullLogger());
 
@@ -406,7 +405,10 @@ abstract class IntegrationTest extends TestCase
         return $this->getApp()->handle(
             new ServerRequest(
                 'POST',
-                '/v1/donations',
+                TestData\Identity::getTestPersonNewDonationEndpoint(),
+                headers: [
+                    'X-Tbg-Auth' => TestData\Identity::getTestIdentityTokenComplete(),
+                ],
                 // The Symfony Serializer will throw an exception if the JSON document doesn't include all the required
                 // constructor params of DonationCreate
                 body: <<<EOF
@@ -415,6 +417,7 @@ abstract class IntegrationTest extends TestCase
                     "donationAmount": "{$amountInPounds}",
                     "projectId": "$campaignId",
                     "psp": "stripe",
+                    "pspCustomerId": "cus_aaaaaaaaaaaa11",
                     "tipAmount": $tipAmount
                 }
             EOF,
