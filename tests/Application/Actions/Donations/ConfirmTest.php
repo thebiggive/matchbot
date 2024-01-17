@@ -204,8 +204,6 @@ class ConfirmTest extends TestCase
     {
         // arrange
 
-        // in reality the fee would be calculated according to details of the card etc. The Calculator class is
-        //tested separately. This is just a dummy value.
 
         $stripeClientProphecy = $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
