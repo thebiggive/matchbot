@@ -1618,6 +1618,7 @@ class UpdateTest extends TestCase
             $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
                 newPaymentIntentStatus: PaymentIntent::STATUS_SUCCEEDED,
                 nextActionRequired: null,
+                collectedDonation: false,
             );
 
         $donationRepoProphecy
@@ -1638,7 +1639,7 @@ class UpdateTest extends TestCase
         // These values are unchanged but still returned. Confirming alone doesn't change the
         // response payload.
         $this->assertEquals(123.45, $payloadArray['donationAmount']);
-        $this->assertEquals(DonationStatus::Collected->value, $payloadArray['status']);
+        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['status']);
     }
 
     public function testAddDataFailsWithCashBalanceAutoconfirmForDonorWithInsufficentFunds(): void
@@ -1653,6 +1654,7 @@ class UpdateTest extends TestCase
             $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
                 newPaymentIntentStatus: PaymentIntent::STATUS_PROCESSING,
                 nextActionRequired: null,
+                collectedDonation: false,
             );
         try {
             $app->handle($request->withAttribute('route', $route));
@@ -1944,19 +1946,25 @@ class UpdateTest extends TestCase
     public function setupTestDoublesForConfirmingPaymentFromDonationFunds(
         string $newPaymentIntentStatus,
         ?string $nextActionRequired,
+        bool $collectedDonation = true,
     ): array {
         $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $app->getContainer();
 
         $donation = $nextActionRequired === null
-            ? $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0')
+            ? $this->getTestDonation(
+                pspMethodType: PaymentMethodType::CustomerBalance,
+                tipAmount: '0',
+                collected: $collectedDonation
+            )
             : $this->getPendingBigGiveGeneralCustomerBalanceDonation();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationInRepo = $this->getTestDonation(
             pspMethodType: PaymentMethodType::CustomerBalance,
             tipAmount: '0',
+            collected: false,
         );  // Get a new mock object so DB has old values.
 
         $donationRepoProphecy

@@ -20,6 +20,7 @@ use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
 use Psr\Log\LoggerInterface;
+use Random\Randomizer;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Lock\LockFactory;
@@ -160,9 +161,18 @@ class RedistributeMatchingCommandTest extends IntegrationTest
             psp: 'stripe',
             pspMethodType: PaymentMethodType::Card,
         ), $campaign);
+        $randomizer = new Randomizer();
+
         $donation->setTransactionId('pi_' . $this->randomString());
         $donation->setSalesforceId(substr('006' . $this->randomString(), 0, 18));
-        $donation->setDonationStatus(DonationStatus::Collected);
+        $donation->collectFromStripeCharge(
+            'chg' . (string)$randomizer->getBytesFromString('0123456789abcdef', 10),
+            'tsf' . (string)$randomizer->getBytesFromString('0123456789abcdef', 10),
+            null,
+            null,
+            '0',
+            time(),
+        );
 
         $championFundWithdrawal = new FundingWithdrawal($championFundCampaignFunding);
         $championFundWithdrawal->setAmount('250.00');

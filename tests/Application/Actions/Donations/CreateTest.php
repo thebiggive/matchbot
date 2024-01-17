@@ -19,6 +19,7 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
+use PHPUnit\Util\Test;
 use Prophecy\Argument;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
@@ -377,12 +378,13 @@ class CreateTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
         $expectedPaymentIntentArgs = [
-            'amount' => 1311, // Pence including tip
-            'currency' => 'gbp',
             'automatic_payment_methods' => [
                 'enabled' => true,
                 'allow_redirects' => 'never',
             ],
+            'on_behalf_of' => 'unitTest_stripeAccount_123',
+            'amount' => 1311, // Pence including tip
+            'currency' => 'gbp',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
                 'campaignId' => '123CampaignId',
@@ -400,10 +402,11 @@ class CreateTest extends TestCase
             ],
             'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
-            'on_behalf_of' => 'unitTest_stripeAccount_123',
             'transfer_data' => [
                 'destination' => 'unitTest_stripeAccount_123',
             ],
+            'customer' => 'cus_aaaaaaaaaaaa11',
+            'setup_future_usage' => 'on_session'
         ];
         // Most properites we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
@@ -426,8 +429,8 @@ class CreateTest extends TestCase
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encode($donation);
-        $request = $this->createRequest('POST', '/v1/donations', $data);
-        $response = $app->handle($request);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
 
@@ -1024,6 +1027,7 @@ class CreateTest extends TestCase
             $campaign->setEndDate((new \DateTime())->sub(new \DateInterval('P1D')));
         }
 
+        /** @psalm-suppress DeprecatedMethod */
         $donation = Donation::emptyTestDonation(amount: '12.00', currencyCode: $currencyCode);
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCampaign($campaign);
@@ -1031,6 +1035,7 @@ class CreateTest extends TestCase
         $donation->setDonorCountryCode('GB');
         $donation->setTipAmount('1.11');
         $donation->setTransactionId('pi_stripe_pending_123');
+        $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
         $donation->setCharityFee('0.43');
 
         if (!$minimalSetupData) {

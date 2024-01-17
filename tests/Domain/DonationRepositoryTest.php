@@ -304,7 +304,8 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        $donation = $this->getTestDonation('987.65');
+        ;
         $donation->setTipAmount('10.00');
         $donation->deriveFees('amex', null);
 
@@ -324,7 +325,8 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        $donation = $this->getTestDonation('987.65');
+        ;
         $donation->setTipAmount('10.00');
         $donation->deriveFees('visa', 'US');
 
@@ -351,7 +353,7 @@ class DonationRepositoryTest extends TestCase
         $donation->setTipAmount('0.00');
         $donation->setFeeCoverAmount('44.44'); // 4.5% fee, inc. any VAT.
         $donation->getCampaign()->setFeePercentage('4.5');
-        $this->getRepo()->deriveFees($donation, null, null);
+        $donation->deriveFees(null, null);
 
         // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
         // Fixed fee        = £  0.00
@@ -369,7 +371,8 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        $donation = $this->getTestDonation('987.65');
+        ;
         $donation->setTipAmount('10.00');
         $donation->deriveFees(null, null);
 
@@ -388,7 +391,8 @@ class DonationRepositoryTest extends TestCase
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');;
+        $donation = $this->getTestDonation('987.65');
+        ;
         $donation->setTipAmount('10.00');
 
         $donation->deriveFees(null, null);
@@ -408,7 +412,8 @@ class DonationRepositoryTest extends TestCase
 
     public function testStripeAmountForCharityWithoutTip(): void
     {
-        $donation = $this->getTestDonation('987.65');;
+        $donation = $this->getTestDonation('987.65');
+        ;
         $donation->setTipAmount('0.00');
         $donation->deriveFees(null, null);
 
@@ -688,12 +693,9 @@ class DonationRepositoryTest extends TestCase
     }
 
     /**
-     * @param ObjectProphecy<Client\Donation>|null   $donationClientProphecy
-     * @param ObjectProphecy<Adapter>|null $matchingAdapterProphecy
-     * @param ObjectProphecy<LockFactory>|null $lockFactoryProphecy
-     * @param bool                  $vatLive    Whether to override config with 20% VAT live from now.
-     * @return DonationRepository
-     * @throws \Exception
+     * @param ObjectProphecy<Client\Donation> $donationClientProphecy
+     * @param ObjectProphecy<Adapter> $matchingAdapterProphecy
+     * @param ObjectProphecy<LockFactory> $lockFactoryProphecy
      */
     private function getRepo(
         ?ObjectProphecy $donationClientProphecy = null,
@@ -706,7 +708,13 @@ class DonationRepositoryTest extends TestCase
             $donationClientProphecy = $this->prophesize(Client\Donation::class);
         }
 
-        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $configurationProphecy = $this->prophesize(\Doctrine\ORM\Configuration::class);
+        $config = $configurationProphecy->reveal();
+        $configurationProphecy->getResultCacheImpl()->willReturn($this->createStub(CacheProvider::class));
+
+        $entityManagerProphecy = $this->entityManagerProphecy;
+
+        $entityManagerProphecy->getConfiguration()->willReturn($config);
         $repo = new DonationRepository(
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),

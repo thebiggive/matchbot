@@ -115,7 +115,6 @@ class StripePaymentsUpdateTest extends StripeTest
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-
         $donationRepoProphecy
             ->findAndLockOneBy(['transactionId' => 'pi_externalId_123'])
             ->willReturn($donation)
@@ -167,7 +166,6 @@ class StripePaymentsUpdateTest extends StripeTest
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-
         $donationRepoProphecy
             ->findAndLockOneBy(['transactionId' => 'pi_externalId_123'])
             ->willReturn($donation)

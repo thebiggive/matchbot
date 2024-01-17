@@ -85,7 +85,7 @@ class ConfirmTest extends TestCase
 
         $sut = new Confirm(
             new NullLogger(),
-            $this->getDonationRepository(),
+            $this->getDonationRepository(donationIsCancelled: true),
             $stripeClientProphecy->reveal(),
             $this->prophesize(EntityManagerInterface::class)->reveal()
         );
@@ -359,7 +359,7 @@ class ConfirmTest extends TestCase
      * @return DonationRepository Really an ObjectProphecy<DonationRepository>, but psalm
      *                            complains about that.
      */
-    private function getDonationRepository(): DonationRepository
+    private function getDonationRepository(bool $donationIsCancelled = false): DonationRepository
     {
         $donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
 
@@ -368,6 +368,9 @@ class ConfirmTest extends TestCase
             $this->getMinimalCampaign(),
         );
         $donation->setTransactionId('PAYMENT_INTENT_ID');
+        if ($donationIsCancelled) {
+            $donation->cancel();
+        }
 
         $donationRepositoryProphecy->findAndLockOneBy(['uuid' => 'DONATION_ID'])->willReturn(
             $donation

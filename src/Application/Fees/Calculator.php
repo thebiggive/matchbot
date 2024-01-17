@@ -62,8 +62,7 @@ class Calculator
         string $currencyCode,
         bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
         ?string $feePercentageOverride = null,
-    ): Fees
-    {
+    ): Fees {
         $calculator = new self(
             psp: $psp,
             cardBrand: $cardBrand,
@@ -103,7 +102,11 @@ class Calculator
             );
         }
 
-        Assertion::eq($psp, 'stripe', 'Only Stripe PSP is supported as don\'t know what fees to charge for other PSPs.');
+        Assertion::eq(
+            $psp,
+            'stripe',
+            'Only Stripe PSP is supported as don\'t know what fees to charge for other PSPs.'
+        );
     }
 
     private function getCoreFee(): string

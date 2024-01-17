@@ -91,7 +91,7 @@ class DonationRepositoryTest extends IntegrationTest
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',
-            chargeCreationTimestamp: 0
+            chargeCreationTimestamp: (new \DateTimeImmutable())->sub(new \DateInterval('P14D'))->getTimestamp()
         );
 
         $donation->setDonationStatus(DonationStatus::Paid);

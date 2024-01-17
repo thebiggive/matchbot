@@ -18,6 +18,7 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+
 use function bccomp;
 use function sprintf;
 
@@ -1343,13 +1344,13 @@ class Donation extends SalesforceWriteProxy
     }
 
     public function collectFromStripeCharge(
-        string  $chargeId,
-        string  $transferId,
+        string $chargeId,
+        string $transferId,
         ?string $cardBrand,
         ?string $cardCountry,
-        string  $originalFeeFractional,
-        int     $chargeCreationTimestamp): void
-    {
+        string $originalFeeFractional,
+        int $chargeCreationTimestamp
+    ): void {
         Assertion::eq(is_null($cardBrand), is_null($cardCountry));
         Assertion::numeric($originalFeeFractional);
         Assertion::notEmpty($chargeId);
