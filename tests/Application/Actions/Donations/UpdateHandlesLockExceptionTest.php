@@ -54,8 +54,6 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Pending);
 
-        $this->donationRepositoryProphecy->deriveFees($donation, null, null)->shouldBeCalled();
-
         $updateAction = new Update(
             $this->donationRepositoryProphecy->reveal(),
             $this->entityManagerProphecy->reveal(),
@@ -115,7 +113,6 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $donation->createdNow();
         $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setCampaign($campaign);
-        $donation->setPsp('stripe');
         $donation->setUuid(Uuid::uuid4());
         $donation->setDonorFirstName('Donor first name');
         $donation->setDonorLastName('Donor last name');

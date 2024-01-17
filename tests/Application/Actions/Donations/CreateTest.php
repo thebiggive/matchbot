@@ -19,6 +19,7 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
+use PHPUnit\Util\Test;
 use Prophecy\Argument;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
@@ -103,7 +104,6 @@ class CreateTest extends TestCase
     public function testStripeWithMissingStripeAccountID(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setPsp('stripe');
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
         $donationToReturn = $donation;
@@ -228,7 +228,6 @@ class CreateTest extends TestCase
     public function testSuccessWithStripeAccountIDMissingInitiallyButFoundOnRefetch(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->getCampaign()->getCharity()->setStripeAccountId(null);
 
@@ -353,8 +352,124 @@ class CreateTest extends TestCase
     public function testSuccessWithMatchedCampaign(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
+
+        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
+        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
+        $fundingWithdrawalForMatch->setDonation($donation);
+
+        $donationToReturn = $donation;
+        $donationToReturn->setDonationStatus(DonationStatus::Pending);
+        $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
+
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->willReturn($donationToReturn);
+        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
+        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
+
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        // These are called once after initial ID setup and once after Stripe fields added.
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
+        $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
+
+        $expectedPaymentIntentArgs = [
+            'automatic_payment_methods' => [
+                'enabled' => true,
+                'allow_redirects' => 'never',
+            ],
+            'on_behalf_of' => 'unitTest_stripeAccount_123',
+            'amount' => 1311, // Pence including tip
+            'currency' => 'gbp',
+            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'metadata' => [
+                'campaignId' => '123CampaignId',
+                'campaignName' => '123CampaignName',
+                'charityId' => '567CharitySFID',
+                'charityName' => 'Create test charity',
+                'donationId' => '12345678-1234-1234-1234-1234567890ab',
+                'environment' => getenv('APP_ENV'),
+                'feeCoverAmount' => '0.00',
+                'matchedAmount' => '8.00',
+                'stripeFeeRechargeGross' => '0.38',
+                'stripeFeeRechargeNet' => '0.38',
+                'stripeFeeRechargeVat' => '0.00',
+                'tipAmount' => '1.11',
+            ],
+            'statement_descriptor' => 'Big Give Create test c',
+            'application_fee_amount' => 149,
+            'transfer_data' => [
+                'destination' => 'unitTest_stripeAccount_123',
+            ],
+            'customer' => 'cus_aaaaaaaaaaaa11',
+            'setup_future_usage' => 'on_session'
+        ];
+        // Most properites we don't use omitted.
+        // See https://stripe.com/docs/api/payment_intents/object
+        $paymentIntentMockResult = new PaymentIntent([
+            'id' => 'pi_dummyIntent_id',
+            'object' => 'payment_intent',
+            'amount' => 1311,
+            'client_secret' => 'pi_dummySecret_123',
+            'confirmation_method' => 'automatic',
+            'currency' => 'gbp',
+        ]);
+
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
+            ->willReturn($paymentIntentMockResult)
+            ->shouldBeCalledOnce();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
+
+        $data = $this->encode($donation);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $response = $app->handle($this->addDummyPersonAuth($request));
+
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(201, $response->getStatusCode());
+
+        $payloadArray = json_decode($payload, true);
+
+        $this->assertIsString($payloadArray['jwt']);
+        $this->assertNotEmpty($payloadArray['jwt']);
+        $this->assertIsArray($payloadArray['donation']);
+        $this->assertFalse($payloadArray['donation']['giftAid']);
+        $this->assertEquals(0.38, $payloadArray['donation']['charityFee']); // 1.5% + 20p.
+        $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
+        $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
+        $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
+        $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
+        $this->assertFalse($payloadArray['donation']['giftAid']);
+        $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
+        $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
+        $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
+        $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
+        $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
+        $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
+        $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
+        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['donation']['status']);
+        $this->assertEquals('stripe', $payloadArray['donation']['psp']);
+        $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
+    }
+
+    public function testSuccessWithMatchedCampaignAndPspCustomerId(): void
+    {
+        $donation = $this->getTestDonation(true, true);
+        $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
+        $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
+
+        $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
+        $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
+        $fundingWithdrawalForMatch->setDonation($donation);
 
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
@@ -469,7 +584,6 @@ class CreateTest extends TestCase
 
         // Default test Customer ID is cus_aaaaaaaaaaaa11.
         $donation = $this->getTestDonation(true, true);
-        $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
         $donationToReturn = $donation;
@@ -507,7 +621,6 @@ class CreateTest extends TestCase
     public function testMatchedCampaignButWrongCustomerIdInBody(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
         $donation->setPspCustomerId('cus_zzaaaaaaaaaa99');
 
@@ -557,7 +670,6 @@ class CreateTest extends TestCase
     public function testSuccessWithMatchedCampaignAndInitialCampaignDuplicateError(): void
     {
         $donation = $this->getTestDonation(true, true);
-        $donation->setPsp('stripe');
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
         $donationToReturn = $donation;
@@ -915,15 +1027,15 @@ class CreateTest extends TestCase
             $campaign->setEndDate((new \DateTime())->sub(new \DateInterval('P1D')));
         }
 
+        /** @psalm-suppress DeprecatedMethod */
         $donation = Donation::emptyTestDonation(amount: '12.00', currencyCode: $currencyCode);
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCampaign($campaign);
-        $donation->setPsp('stripe');
-        $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
         $donation->setDonorCountryCode('GB');
         $donation->setTipAmount('1.11');
         $donation->setTransactionId('pi_stripe_pending_123');
+        $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
         $donation->setCharityFee('0.43');
 
         if (!$minimalSetupData) {

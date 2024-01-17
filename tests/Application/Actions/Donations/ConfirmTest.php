@@ -28,13 +28,25 @@ class ConfirmTest extends TestCase
     public function testItConfirmsACardDonation(): void
     {
         // arrange
-
-        // in reality the fee would be calculated according to details of the card etc. The Calculator class is
-        //tested separately. This is just a dummy value.
-        $newCharityFee = '42.00';
-        $stripeClientProphecy = $this->successReadyFakeStripeClient(
-            amountInWholeUnits: $newCharityFee,
-            confirmCallExpected: true,
+        $stripeClientProphecy = $this->fakeStripeClient(
+            cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
+            paymentMethodId: 'PAYMENT_METHOD_ID',
+            updatedIntentData: [
+                'status' => 'requires_action',
+                'client_secret' => 'some_client_secret',
+            ],
+            paymentIntentId: 'PAYMENT_INTENT_ID',
+            expectedMetadataUpdate: [
+                "metadata" => [
+                    "stripeFeeRechargeGross" => '2.66',
+                    "stripeFeeRechargeNet" => "2.22",
+                    "stripeFeeRechargeVat" => "0.44",
+                ],
+                "application_fee_amount" => 266,
+            ],
+            confirmFailsWithCardError: false,
+            confirmFailsWithApiError: false,
+            confirmFailsWithPaymentMethodUsedError: false,
         );
 
         // Make sure the latest fees, based on card type, are saved to the database.
@@ -45,7 +57,7 @@ class ConfirmTest extends TestCase
 
         $sut = new Confirm(
             new NullLogger(),
-            $this->getDonationRepository($newCharityFee),
+            $this->getDonationRepository(),
             $stripeClientProphecy->reveal(),
             $em->reveal(),
         );
@@ -73,7 +85,7 @@ class ConfirmTest extends TestCase
 
         $sut = new Confirm(
             new NullLogger(),
-            $this->getDonationRepository(newCharityFee: $newCharityFee, donationIsCancelled: true),
+            $this->getDonationRepository(donationIsCancelled: true),
             $stripeClientProphecy->reveal(),
             $this->prophesize(EntityManagerInterface::class)->reveal()
         );
@@ -90,11 +102,6 @@ class ConfirmTest extends TestCase
     {
         // arrange
 
-        // in reality the fee would be calculated according to details of the card etc. The Calculator class is
-        //tested separately. This is just a dummy value.
-        $newCharityFee = "42.00";
-        $newApplicationFeeAmount = 4200;
-
         $stripeClientProphecy = $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
             paymentMethodId: 'PAYMENT_METHOD_ID',
@@ -105,11 +112,11 @@ class ConfirmTest extends TestCase
             paymentIntentId: 'PAYMENT_INTENT_ID',
             expectedMetadataUpdate: [
                 "metadata" => [
-                    "stripeFeeRechargeGross" => $newCharityFee,
-                    "stripeFeeRechargeNet" => $newCharityFee,
-                    "stripeFeeRechargeVat" => "0.00",
+                    "stripeFeeRechargeGross" => "2.66",
+                    "stripeFeeRechargeNet" => "2.22",
+                    "stripeFeeRechargeVat" => "0.44",
                 ],
-                "application_fee_amount" => $newApplicationFeeAmount,
+                "application_fee_amount" => 266,
             ],
             confirmFailsWithCardError: true,
             confirmFailsWithApiError: false,
@@ -118,7 +125,7 @@ class ConfirmTest extends TestCase
 
         $sut = new Confirm(
             new NullLogger(),
-            $this->getDonationRepository($newCharityFee),
+            $this->getDonationRepository(),
             $stripeClientProphecy->reveal(),
             $this->prophesize(EntityManagerInterface::class)->reveal()
         );
@@ -149,8 +156,6 @@ class ConfirmTest extends TestCase
 
         // in reality the fee would be calculated according to details of the card etc. The Calculator class is
         //tested separately. This is just a dummy value.
-        $newCharityFee = "42.00";
-        $newApplicationFeeAmount = 4200;
 
         $stripeClientProphecy = $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
@@ -162,11 +167,11 @@ class ConfirmTest extends TestCase
             paymentIntentId: 'PAYMENT_INTENT_ID',
             expectedMetadataUpdate: [
                 "metadata" => [
-                    "stripeFeeRechargeGross" => $newCharityFee,
-                    "stripeFeeRechargeNet" => $newCharityFee,
-                    "stripeFeeRechargeVat" => "0.00",
+                    "stripeFeeRechargeGross" => "2.66",
+                    "stripeFeeRechargeNet" => "2.22",
+                    "stripeFeeRechargeVat" => "0.44",
                 ],
-                "application_fee_amount" => $newApplicationFeeAmount,
+                "application_fee_amount" => 266,
             ],
             confirmFailsWithCardError: false,
             confirmFailsWithApiError: false,
@@ -175,7 +180,7 @@ class ConfirmTest extends TestCase
 
         $sut = new Confirm(
             new NullLogger(),
-            $this->getDonationRepository($newCharityFee),
+            $this->getDonationRepository(),
             $stripeClientProphecy->reveal(),
             $this->prophesize(EntityManagerInterface::class)->reveal()
         );
@@ -199,10 +204,6 @@ class ConfirmTest extends TestCase
     {
         // arrange
 
-        // in reality the fee would be calculated according to details of the card etc. The Calculator class is
-        //tested separately. This is just a dummy value.
-        $newCharityFee = "42.00";
-        $newApplicationFeeAmount = 4200;
 
         $stripeClientProphecy = $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
@@ -214,11 +215,11 @@ class ConfirmTest extends TestCase
             paymentIntentId: 'PAYMENT_INTENT_ID',
             expectedMetadataUpdate: [
                 "metadata" => [
-                    "stripeFeeRechargeGross" => $newCharityFee,
-                    "stripeFeeRechargeNet" => $newCharityFee,
-                    "stripeFeeRechargeVat" => "0.00",
+                    "stripeFeeRechargeGross" => "2.66",
+                    "stripeFeeRechargeNet" => "2.22",
+                    "stripeFeeRechargeVat" => "0.44",
                 ],
-                "application_fee_amount" => $newApplicationFeeAmount,
+                "application_fee_amount" => 266,
             ],
             confirmFailsWithCardError: false,
             confirmFailsWithApiError: true,
@@ -227,7 +228,7 @@ class ConfirmTest extends TestCase
 
         $sut = new Confirm(
             new NullLogger(),
-            $this->getDonationRepository($newCharityFee),
+            $this->getDonationRepository(),
             $stripeClientProphecy->reveal(),
             $this->prophesize(EntityManagerInterface::class)->reveal()
         );
@@ -356,7 +357,7 @@ class ConfirmTest extends TestCase
      * @return DonationRepository Really an ObjectProphecy<DonationRepository>, but psalm
      *                            complains about that.
      */
-    private function getDonationRepository(string $newCharityFee, bool $donationIsCancelled = false): DonationRepository
+    private function getDonationRepository(bool $donationIsCancelled = false): DonationRepository
     {
         $donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
 
@@ -365,15 +366,9 @@ class ConfirmTest extends TestCase
             $this->getMinimalCampaign(),
         );
         $donation->setTransactionId('PAYMENT_INTENT_ID');
-
         if ($donationIsCancelled) {
             $donation->cancel();
         }
-
-        $donationRepositoryProphecy->deriveFees($donation, 'discover', 'some-country')
-            ->will(
-                fn() => $donation->setCharityFee($newCharityFee)
-            );
 
         $donationRepositoryProphecy->findAndLockOneBy(['uuid' => 'DONATION_ID'])->willReturn(
             $donation

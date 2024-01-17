@@ -84,8 +84,17 @@ class DonationRepositoryTest extends IntegrationTest
             psp: 'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
         ), $campaign);
+
+        $donation->collectFromStripeCharge(
+            chargeId: 'charge_id',
+            transferId: 'transfer_id',
+            cardBrand: null,
+            cardCountry: null,
+            originalFeeFractional: '0',
+            chargeCreationTimestamp: (new \DateTimeImmutable())->sub(new \DateInterval('P14D'))->getTimestamp()
+        );
+
         $donation->setDonationStatus(DonationStatus::Paid);
-        $donation->setCollectedAt((new \DateTimeImmutable())->sub(new \DateInterval('P14D')));
 
         $em->persist($donation);
         $em->flush(); // Cascade persists campaign and charity.

@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
+use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
@@ -166,18 +167,24 @@ class DonationTest extends TestCase
 
     public function testInvalidPspRejected(): void
     {
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage("Unexpected PSP 'paypal'");
+        $this->expectException(AssertionFailedException::class);
+        $this->expectExceptionMessage('Value "paypal" does not equal expected value "stripe".');
 
-        $donation = $this->getTestDonation();
         /** @psalm-suppress InvalidArgument */
-        $donation->setPsp('paypal');
+        Donation::fromApiModel(
+            new DonationCreate(
+                currencyCode: 'GBP',
+                donationAmount: '63.0',
+                projectId: 'doesnt-matter',
+                psp: 'paypal',
+            ),
+            new Campaign(TestCase::someCharity())
+        );
     }
 
     public function testValidPspAccepted(): void
     {
-        $donation = $this->getTestDonation();
-        $donation->setPsp('stripe');
+        $_donation = $this->getTestDonation();
 
         $this->addToAssertionCount(1); // Just check setPsp() doesn't hit an exception
     }
@@ -185,7 +192,7 @@ class DonationTest extends TestCase
     public function testSetAndGetOriginalFee(): void
     {
         $donation = $this->getTestDonation();
-        $donation->setOriginalPspFeeFractional(123);
+        $donation->setOriginalPspFeeFractional('123');
 
         $this->assertEquals('1.23', $donation->getOriginalPspFee());
     }
@@ -232,7 +239,7 @@ class DonationTest extends TestCase
 
     public function testAmountMatchedByChampionDefaultsToZero(): void
     {
-        $donation = $this->getTestDonation(status: DonationStatus::Pending);
+        $donation = $this->getTestDonation();
 
         $amountMatchedByChampionFunds = $donation->toHookModel()['amountMatchedByChampionFunds'];
 
@@ -241,7 +248,7 @@ class DonationTest extends TestCase
 
     public function testItSumsNoChampionFundsToZero(): void
     {
-        $donation = $this->getTestDonation(status: DonationStatus::Collected);
+        $donation = $this->getTestDonation();
 
         $amountMatchedByPledges = $donation->toHookModel()['amountMatchedByChampionFunds'];
 
@@ -250,7 +257,7 @@ class DonationTest extends TestCase
 
     public function testItSumsAmountsMatchedByChampionFunds(): void
     {
-        $donation = $this->getTestDonation(status: DonationStatus::Collected);
+        $donation = $this->getTestDonation();
 
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setFund(new ChampionFund());
@@ -272,7 +279,7 @@ class DonationTest extends TestCase
 
     public function testItSumsAmountsMatchedByAllFunds(): void
     {
-        $donation = $this->getTestDonation(status: DonationStatus::Collected);
+        $donation = $this->getTestDonation();
         $campaignFunding0 = new CampaignFunding();
         $campaignFunding0->setFund(new ChampionFund());
 

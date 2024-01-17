@@ -8,6 +8,7 @@ use Assert\Assertion;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
@@ -21,6 +22,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Stripe\Card;
 use Stripe\Charge;
 use Stripe\Dispute;
 use Stripe\Event;
@@ -122,23 +124,35 @@ class StripePaymentsUpdate extends Stripe
         // For now we support the happy success path –
         // as this is the only event type we're handling right now besides refunds.
         if ($charge->status === 'succeeded') {
-            $donation->setChargeId($charge->id);
-            $donation->setTransferId($charge->transfer);
-
-            $donation->setDonationStatus(DonationStatus::Collected);
-            $donation->setCollectedAt(new \DateTimeImmutable("@{$charge->created}"));
+            /**
+             * @var Card|null $card
+             */
+            $card = $charge->payment_method_details?->card;
+            $cardBrand = $card?->brand;
+            $cardCountry = $card?->country;
+            $balanceTransaction = (string) $charge->balance_transaction;
 
             // To give *simulated* webhooks, for Donation API-only load tests, an easy way to complete
             // without crashing, we support skipping the original fee derivation by omitting
             // `balance_transaction`. Real stripe charge.succeeded webhooks should always have
             // an associated Balance Transaction.
-            if (!empty($charge->balance_transaction)) {
+            if (!empty($balanceTransaction)) {
                 $originalFeeFractional = $this->getOriginalFeeFractional(
-                    $charge->balance_transaction,
+                    $balanceTransaction,
                     $donation->getCurrencyCode(),
                 );
-                $donation->setOriginalPspFeeFractional($originalFeeFractional);
+            } else {
+                $originalFeeFractional = $donation->getOriginalPspFee();
             }
+
+            $donation->collectFromStripeCharge(
+                chargeId: $charge->id,
+                transferId: (string)$charge->transfer,
+                cardBrand: $cardBrand,
+                cardCountry: $cardCountry,
+                originalFeeFractional: (string)$originalFeeFractional,
+                chargeCreationTimestamp: $charge->created,
+            );
 
             $this->logger->info(sprintf(
                 'Set donation %s Collected based on hook for charge ID %s',
