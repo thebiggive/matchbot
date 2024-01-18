@@ -11,6 +11,7 @@ use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
+use Stripe\Service\AccountService;
 use Stripe\Service\ChargeService;
 use Stripe\Service\CustomerService;
 use Stripe\Service\PaymentMethodService;
@@ -58,6 +59,12 @@ class DeleteStalePaymentDetailsTest extends TestCase
         // code, and may get mutation tests working again.
         @$stripeClientProphecy->customers = $stripeCustomersProphecy->reveal();
         @$stripeClientProphecy->paymentMethods = $stripePaymentMethodsProphecy->reveal();
+
+        /////////// delete when BG2-2548 done
+        $accountService = $this->prophesize(AccountService::class);
+        $accountService->allPersons(Argument::cetera())->willReturn([]);
+        @$stripeClientProphecy->accounts = $accountService->reveal();
+        ///////////
 
         $commandTester = new CommandTester($this->getCommand(
             $stripeClientProphecy,
