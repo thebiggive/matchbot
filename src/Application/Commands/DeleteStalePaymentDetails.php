@@ -119,6 +119,12 @@ class DeleteStalePaymentDetails extends LockingCommand
         foreach ($peopleOnAccount as $person) {
             \assert($person instanceof \Stripe\Person);
 
+            if (getenv('APP_ENV') !== 'production') {
+                continue;
+                // running the below outside of prod would give us an error:
+                // "Only live keys can access this method. "
+            }
+
             $this->stripeClient->accounts->updatePerson(
                 $relaventAccountId,
                 $person->id,
