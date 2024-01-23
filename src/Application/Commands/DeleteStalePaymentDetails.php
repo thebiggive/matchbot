@@ -119,13 +119,14 @@ class DeleteStalePaymentDetails extends LockingCommand
         foreach ($peopleOnAccount as $person) {
             \assert($person instanceof \Stripe\Person);
 
-
-            $person->updateAttributes(
+            $this->stripeClient->accounts->updatePerson(
+                $relaventAccountId,
+                $person->id,
                 ['relationship' => ['representative' => false]]
             );
 
             $this->logger->info(
-                "Updated relationship rep to false for person id #{$person->id} " .
+                "Updated relationship rep with updatePerson to false for person id #{$person->id} " .
                 "on account $relaventAccountId"
             );
         }
