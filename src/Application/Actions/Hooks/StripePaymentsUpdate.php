@@ -125,9 +125,14 @@ class StripePaymentsUpdate extends Stripe
         // as this is the only event type we're handling right now besides refunds.
         if ($charge->status === 'succeeded') {
             /**
-             * @var Card|null $card
+             * @var array|Card|null $card
              */
-            $card = $charge->payment_method_details?->card;
+            $card = $charge->payment_method_details?->toArray()['card'] ?? null;
+            if (is_array($card)) {
+                /** @var Card $card */
+                $card = (object)$card;
+            }
+
             $cardBrand = $card?->brand;
             $cardCountry = $card?->country;
             $balanceTransaction = (string) $charge->balance_transaction;
