@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Psr\Log\LoggerInterface;
-use Stripe\Person;
 use Stripe\StripeClient;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -94,47 +93,6 @@ class DeleteStalePaymentDetails extends LockingCommand
                 "$customerCount customers. Time Taken: {$timeTaken}s"
         );
 
-        /**
-         * This has nothing to do with deleting stale payment details, but it's convenient to call it here just
-         * because this is a function that runs every couple of hours. It's a bit messy but will be deleted once
-         * it's run once in prod.
-         */
-        $this->clearAccountRep();
-
         return 0;
-    }
-
-    /**
-     * One off tempoary function to clear an account rep for a connected account. Let this run once in production and
-     * then delete. It's not possible to do the same thing without using the API. Doesn't matter if it runs a few times.
-     *
-     * See https://stripe.com/docs/connect/update-verified-information?locale=en-GB#change-the-account-representative
-     */
-    private function clearAccountRep(): void
-    {
-        $relaventAccountId = 'acct_1JKj2g4EM6tmvjBM';
-
-        $peopleOnAccount = $this->stripeClient->accounts->allPersons($relaventAccountId);
-
-        foreach ($peopleOnAccount as $person) {
-            \assert($person instanceof \Stripe\Person);
-
-            if (getenv('APP_ENV') !== 'production') {
-                continue;
-                // running the below outside of prod would give us an error:
-                // "Only live keys can access this method. "
-            }
-
-            $this->stripeClient->accounts->updatePerson(
-                $relaventAccountId,
-                $person->id,
-                ['relationship' => ['representative' => false]]
-            );
-
-            $this->logger->info(
-                "Updated relationship rep with updatePerson to false for person id #{$person->id} " .
-                "on account $relaventAccountId"
-            );
-        }
     }
 }
