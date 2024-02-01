@@ -439,7 +439,8 @@ class Donation extends SalesforceWriteProxy
         $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
         $data['originalPspFee'] = (float) $this->getOriginalPspFee();
         $data['refundedTime'] = $this->refundedAt?->format(DateTimeInterface::ATOM);
-
+        $data['tbgGiftAidRequestConfirmedCompleteAt'] =
+            $this->tbgGiftAidRequestConfirmedCompleteAt?->format(DateTimeInterface::ATOM);
         unset(
             $data['charityName'],
             $data['donationId'],
