@@ -2,6 +2,7 @@
 
 namespace MatchBot\Tests\Application;
 
+use DateTime;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
@@ -60,6 +61,7 @@ trait DonationTestDataTrait
         string $tipAmount = '1.00',
         string $currencyCode = 'GBP',
         bool $collected = true,
+        DateTime $tbgGiftAidRequestConfirmedCompleteAt = null,
     ): Donation {
         $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
@@ -110,6 +112,7 @@ trait DonationTestDataTrait
         $donation->setTipAmount($tipAmount);
         $donation->setTransactionId('pi_externalId_123');
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
+        $donation->setTbgGiftAidRequestConfirmedCompleteAt($tbgGiftAidRequestConfirmedCompleteAt);
 
         return $donation;
     }

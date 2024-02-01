@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Domain;
 
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use MatchBot\Application\AssertionFailedException;
@@ -227,7 +228,9 @@ class DonationTest extends TestCase
 
     public function testToHookModel(): void
     {
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(
+            tbgGiftAidRequestConfirmedCompleteAt: new DateTime('2000-01-01T00:00:00+00:00')
+        );
 
         $donationData = $donation->toHookModel();
 
@@ -235,6 +238,7 @@ class DonationTest extends TestCase
         $this->assertIsString($donationData['collectedTime']);
         $this->assertNull($donationData['refundedTime']);
         $this->assertEquals('card', $donationData['pspMethodType']);
+        $this->assertEquals('2000-01-01T00:00:00+00:00', $donationData['tbgGiftAidRequestConfirmedCompleteAt']);
     }
 
     public function testAmountMatchedByChampionDefaultsToZero(): void
