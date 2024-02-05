@@ -115,21 +115,21 @@ class DonationMatchingTest extends IntegrationTest
             }
 
 
-            /**
-             * @param CampaignFunding $funding
-             * @param string $amount
-             * @return string New fund balance as bcmath-ready string
-             */
+//            /**
+//             * @param CampaignFunding $funding
+//             * @param string $amount
+//             * @return string New fund balance as bcmath-ready string
+//             */
+//            public function addAmount(CampaignFunding $funding, string $amount): string
+//            {
+//                if (!$this->inTransaction) {
+//                    throw new \LogicException('Matching adapter work must be in a transaction');
+//                }
+//
+//                return $this->doAddAmount($funding, $amount);
+//            }
+
             public function addAmount(CampaignFunding $funding, string $amount): string
-            {
-                if (!$this->inTransaction) {
-                    throw new \LogicException('Matching adapter work must be in a transaction');
-                }
-
-                return $this->doAddAmount($funding, $amount);
-            }
-
-            private function doAddAmount(CampaignFunding $funding, string $amount): string
             {
                 return $this->wrappedAdapter->addAmount($funding, $amount);
             }

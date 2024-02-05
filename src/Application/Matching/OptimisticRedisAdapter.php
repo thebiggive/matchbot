@@ -75,7 +75,26 @@ class OptimisticRedisAdapter
             throw new \LogicException('Matching adapter work must be in a transaction');
         }
 
-        return $this->doAddAmount($funding, $amount);
+        $incrementFractional = $this->toCurrencyFractionalUnit($amount);
+
+        /**
+         * @psalm-suppress PossiblyInvalidArrayAccess
+         * @psalm-suppress PossiblyFalseReference - we know incrBy will retrun an array in multi mode
+         */
+        [$initResponse, $fundBalanceFractional] = $this->storage->multi()
+            // Init if and only if new to Redis or expired (after 24 hours), using database value.
+            ->set(
+                $this->buildKey($funding),
+                $this->toCurrencyFractionalUnit($funding->getAmountAvailable()),
+                ['nx', 'ex' => self::$storageDurationSeconds],
+            )
+            ->incrBy($this->buildKey($funding), $incrementFractional)
+            ->exec();
+
+        $fundBalance = $this->toCurrencyWholeUnit((int)$fundBalanceFractional);
+        $this->setFundingValue($funding, $fundBalance);
+
+        return $fundBalance;
     }
 
     /**
@@ -182,38 +201,6 @@ class OptimisticRedisAdapter
         // but are actually stored as strings internally, and seem to come back to PHP as strings
         // when get() is used => cast to int before converting to pounds.
         return $this->toCurrencyWholeUnit((int) $redisFundBalanceFractional);
-    }
-
-    /**
-     * Release funds atomically or within a transaction.
-     *
-     * @param CampaignFunding $funding
-     * @param string $amount
-     * @return string New fund balance as bcmath-ready string
-     */
-    #[Pure]
-    private function doAddAmount(CampaignFunding $funding, string $amount): string
-    {
-        $incrementFractional = $this->toCurrencyFractionalUnit($amount);
-
-        /**
-         * @psalm-suppress PossiblyInvalidArrayAccess
-         * @psalm-suppress PossiblyFalseReference - we know incrBy will retrun an array in multi mode
-         */
-        [$initResponse, $fundBalanceFractional] = $this->storage->multi()
-            // Init if and only if new to Redis or expired (after 24 hours), using database value.
-            ->set(
-                $this->buildKey($funding),
-                $this->toCurrencyFractionalUnit($funding->getAmountAvailable()),
-                ['nx', 'ex' => static::$storageDurationSeconds],
-            )
-            ->incrBy($this->buildKey($funding), $incrementFractional)
-            ->exec();
-
-        $fundBalance = $this->toCurrencyWholeUnit((int) $fundBalanceFractional);
-        $this->setFundingValue($funding, $fundBalance);
-
-        return $fundBalance;
     }
 
     public function delete(CampaignFunding $funding): void
