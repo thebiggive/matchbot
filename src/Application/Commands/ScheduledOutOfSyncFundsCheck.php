@@ -22,7 +22,7 @@ class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
     public function __construct(
         CampaignFundingRepository $campaignFundingRepository,
         FundingWithdrawalRepository $fundingWithdrawalRepository,
-        Matching\OptimisticRedisAdapter $matchingAdapter,
+        Matching\Adapter $matchingAdapter,
         private ChatterInterface $chatter,
     ) {
         parent::__construct($campaignFundingRepository, $fundingWithdrawalRepository, $matchingAdapter);

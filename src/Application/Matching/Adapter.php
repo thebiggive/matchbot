@@ -20,7 +20,7 @@ use Redis;
  * transactional `DoctrineAdapter` is now removed. It can be viewed in its final state from 2020 at
  * https://github.com/thebiggive/matchbot/blob/b3a861c97190ac91d073aa86530401958c816e74/src/Application/Matching/DoctrineAdapter.php
  */
-class OptimisticRedisAdapter
+class Adapter
 {
     /** @var CampaignFunding[] */
     private array $fundingsToPersist = [];

@@ -3,7 +3,7 @@
 namespace MatchBot\IntegrationTests;
 
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Matching\OptimisticRedisAdapter;
+use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Domain\CampaignFunding;
@@ -15,7 +15,7 @@ class DonationMatchingTest extends IntegrationTest
 {
     private int $campaignFundingId;
     private CampaignFundingRepository $campaignFundingRepository;
-    private OptimisticRedisAdapter $matchingAdapater;
+    private Adapter $matchingAdapater;
 
     public function setUp(): void
     {
@@ -23,7 +23,7 @@ class DonationMatchingTest extends IntegrationTest
 
         $this->setupFakeDonationClient();
         $this->campaignFundingRepository = $this->getService(CampaignFundingRepository::class);
-        $this->matchingAdapater = $this->getService(OptimisticRedisAdapter::class);
+        $this->matchingAdapater = $this->getService(Adapter::class);
     }
 
     public function testDonatingReducesAvailableMatchFunds(): void
@@ -54,7 +54,7 @@ class DonationMatchingTest extends IntegrationTest
     {
         // arrange
         $this->matchingAdapater = $this->makeAdapterThatThrowsAfterSubtractingFunds($this->matchingAdapater);
-        $this->setInContainer(OptimisticRedisAdapter::class, $this->matchingAdapater);
+        $this->setInContainer(Adapter::class, $this->matchingAdapater);
         $this->getService(\MatchBot\Domain\DonationRepository::class)->setMatchingAdapter($this->matchingAdapater);
 
         $campaignInfo = $this->addFundedCampaignAndCharityToDB(
@@ -90,12 +90,12 @@ class DonationMatchingTest extends IntegrationTest
     }
 
     private function makeAdapterThatThrowsAfterSubtractingFunds(
-        OptimisticRedisAdapter $matchingAdapater
-    ): OptimisticRedisAdapter {
-        return new class ($matchingAdapater) extends OptimisticRedisAdapter {
+        Adapter $matchingAdapater
+    ): Adapter {
+        return new class ($matchingAdapater) extends Adapter {
             private bool $inTransaction = false;
 
-            public function __construct(private OptimisticRedisAdapter $wrappedAdapter)
+            public function __construct(private Adapter $wrappedAdapter)
             {
             }
 
@@ -144,8 +144,8 @@ class DonationMatchingTest extends IntegrationTest
         $logger = $c->get(LoggerInterface::class);
 
         $this->setInContainer(
-            OptimisticRedisAdapter::class,
-            new OptimisticRedisAdapter(new RedisMatchingStorage($redis), $entityManager, $logger),
+            Adapter::class,
+            new Adapter(new RedisMatchingStorage($redis), $entityManager, $logger),
         );
     }
 }

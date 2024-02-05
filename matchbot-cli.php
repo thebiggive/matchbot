@@ -70,7 +70,7 @@ $commands = [
     new HandleOutOfSyncFunds(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(FundingWithdrawalRepository::class),
-        $psr11App->get(Matching\OptimisticRedisAdapter::class)
+        $psr11App->get(Matching\Adapter::class)
     ),
     new RedistributeMatchFunds(
         $psr11App->get(CampaignFundingRepository::class),
@@ -81,13 +81,13 @@ $commands = [
     new ScheduledOutOfSyncFundsCheck(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(FundingWithdrawalRepository::class),
-        $psr11App->get(Matching\OptimisticRedisAdapter::class),
+        $psr11App->get(Matching\Adapter::class),
         $chatter,
     ),
     new PushDonations($psr11App->get(DonationRepository::class)),
     new ResetMatching(
         $psr11App->get(CampaignFundingRepository::class),
-        $psr11App->get(Matching\OptimisticRedisAdapter::class)
+        $psr11App->get(Matching\Adapter::class)
     ),
     new RetrospectivelyMatch(
         $psr11App->get(DonationRepository::class),

@@ -11,7 +11,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Application\Matching\OptimisticRedisAdapter;
+use MatchBot\Application\Matching\Adapter;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -471,7 +471,7 @@ class DonationRepositoryTest extends TestCase
             ->willReturn($lockProphecy->reveal())
             ->shouldBeCalledOnce();
 
-        $matchingAdapterProphecy = $this->prophesize(OptimisticRedisAdapter::class);
+        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
         $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
             ->willReturn('0.00')
             ->shouldBeCalledOnce();
@@ -505,7 +505,7 @@ class DonationRepositoryTest extends TestCase
             ->willReturn($lockProphecy->reveal())
             ->shouldBeCalledOnce();
 
-        $matchingAdapterProphecy = $this->prophesize(OptimisticRedisAdapter::class);
+        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
         $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
             ->shouldNotBeCalled();
 
@@ -534,7 +534,7 @@ class DonationRepositoryTest extends TestCase
             ->willReturn($lockProphecy->reveal())
             ->shouldBeCalledOnce();
 
-        $matchingAdapterProphecy = $this->prophesize(OptimisticRedisAdapter::class);
+        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
         $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
             ->shouldNotBeCalled();
 
@@ -694,7 +694,7 @@ class DonationRepositoryTest extends TestCase
 
     /**
      * @param ObjectProphecy<Client\Donation> $donationClientProphecy
-     * @param ObjectProphecy<OptimisticRedisAdapter> $matchingAdapterProphecy
+     * @param ObjectProphecy<Adapter> $matchingAdapterProphecy
      * @param ObjectProphecy<LockFactory> $lockFactoryProphecy
      */
     private function getRepo(

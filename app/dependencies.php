@@ -217,9 +217,9 @@ return function (ContainerBuilder $containerBuilder) {
             return new RedisMatchingStorage($c->get(Redis::class));
         },
 
-        Matching\OptimisticRedisAdapter::class =>
-            static function (ContainerInterface $c): Matching\OptimisticRedisAdapter {
-                return new Matching\OptimisticRedisAdapter(
+        Matching\Adapter::class =>
+            static function (ContainerInterface $c): Matching\Adapter {
+                return new Matching\Adapter(
                     $c->get(RealTimeMatchingStorage::class),
                     $c->get(RetrySafeEntityManager::class),
                     $c->get(LoggerInterface::class)

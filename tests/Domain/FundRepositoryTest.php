@@ -86,7 +86,7 @@ class FundRepositoryTest extends TestCase
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
 
-        $matchingAdapterProphecy = $this->prophesize(Matching\OptimisticRedisAdapter::class);
+        $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
         // Validate that the matching adapter does NOT have its `addAmount()` called in the case where the fund is
         // brand new and so an initial amount can be safely set on the Doctrine object with `setAmountAvailable()`.
         $matchingAdapterProphecy
@@ -144,7 +144,7 @@ class FundRepositoryTest extends TestCase
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
 
-        $matchingAdapterProphecy = $this->prophesize(Matching\OptimisticRedisAdapter::class);
+        $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
         // Validate that the matching adapter does NOT have its `addAmount()` called in the case where the fund is
         // brand new and so an initial amount can be safely set on the Doctrine object with `setAmountAvailable()`.
         $matchingAdapterProphecy
@@ -208,7 +208,7 @@ class FundRepositoryTest extends TestCase
             ->willReturn($this->getExistingCampaignFunding(true))
             ->shouldBeCalledOnce();
 
-        $matchingAdapterProphecy = $this->prophesize(Matching\OptimisticRedisAdapter::class);
+        $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
 
         // Validate that the matching adapter DOES have its `addAmount()` called inside a safe transaction
         // wrapper, and the £100 increase in match funding from £400 to £500 is reflected.
@@ -262,7 +262,7 @@ class FundRepositoryTest extends TestCase
             ->willReturn($this->getExistingCampaignFunding(true))
             ->shouldNotBeCalled();
 
-        $matchingAdapterProphecy = $this->prophesize(Matching\OptimisticRedisAdapter::class);
+        $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
         $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
             ->shouldNotBeCalled();
 
@@ -352,7 +352,7 @@ class FundRepositoryTest extends TestCase
      * @param EntityManagerInterface    $entityManager
      * @param CampaignFundingRepository $campaignFundingRepo
      * @param Client\Fund               $fundClient
-     * @param Matching\OptimisticRedisAdapter          $matchingAdapter
+     * @param Matching\Adapter          $matchingAdapter
      * @param Fund|null                 $existingFundNonShared
      * @param Fund|null                 $existingFundShared
      */

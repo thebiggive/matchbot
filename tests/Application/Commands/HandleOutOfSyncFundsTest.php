@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Commands;
 
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
-use MatchBot\Application\Matching\OptimisticRedisAdapter;
+use MatchBot\Application\Matching\Adapter;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
@@ -81,7 +81,7 @@ class HandleOutOfSyncFundsTest extends TestCase
         $command = new HandleOutOfSyncFunds(
             $this->prophesize(CampaignFundingRepository::class)->reveal(),
             $this->prophesize(FundingWithdrawalRepository::class)->reveal(),
-            $this->prophesize(OptimisticRedisAdapter::class)->reveal(),
+            $this->prophesize(Adapter::class)->reveal(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
@@ -95,7 +95,7 @@ class HandleOutOfSyncFundsTest extends TestCase
         $command = new HandleOutOfSyncFunds(
             $this->prophesize(CampaignFundingRepository::class)->reveal(),
             $this->prophesize(FundingWithdrawalRepository::class)->reveal(),
-            $this->prophesize(OptimisticRedisAdapter::class)->reveal(),
+            $this->prophesize(Adapter::class)->reveal(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
@@ -177,11 +177,11 @@ class HandleOutOfSyncFundsTest extends TestCase
     }
 
     /**
-     * @psalm-return ObjectProphecy<OptimisticRedisAdapter>
+     * @psalm-return ObjectProphecy<Adapter>
      */
     private function getMatchingAdapterProphecy($expectFixes = false): ObjectProphecy
     {
-        $matchingAdapterProphecy = $this->prophesize(OptimisticRedisAdapter::class);
+        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
         $matchingAdapterProphecy
             ->getAmountAvailable($this->getFundingInSync())
             ->willReturn('80.01') // DB amount available === £80.01

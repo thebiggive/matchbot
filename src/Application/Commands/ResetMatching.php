@@ -20,7 +20,7 @@ class ResetMatching extends LockingCommand
 
     public function __construct(
         private CampaignFundingRepository $campaignFundingRepository,
-        private Matching\OptimisticRedisAdapter $matchingAdapter
+        private Matching\Adapter $matchingAdapter
     ) {
         parent::__construct();
     }

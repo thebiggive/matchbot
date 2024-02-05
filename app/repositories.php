@@ -60,7 +60,7 @@ return static function (ContainerBuilder $containerBuilder) {
             $repo->setFundRepository($c->get(FundRepository::class));
             $repo->setLockFactory($c->get(LockFactory::class));
             $repo->setLogger($c->get(LoggerInterface::class));
-            $repo->setMatchingAdapter($c->get(Matching\OptimisticRedisAdapter::class));
+            $repo->setMatchingAdapter($c->get(Matching\Adapter::class));
 
             return $repo;
         },
@@ -72,7 +72,7 @@ return static function (ContainerBuilder $containerBuilder) {
             $repo->setClient($c->get(Client\Fund::class));
             $repo->setCampaignFundingRepository($c->get(CampaignFundingRepository::class));
             $repo->setLogger($c->get(LoggerInterface::class));
-            $repo->setMatchingAdapter($c->get(Matching\OptimisticRedisAdapter::class));
+            $repo->setMatchingAdapter($c->get(Matching\Adapter::class));
 
 
             return $repo;

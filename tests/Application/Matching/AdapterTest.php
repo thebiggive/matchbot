@@ -4,7 +4,7 @@ namespace MatchBot\Tests\Application\Matching;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Matching\LessThanRequestedAllocatedException;
-use MatchBot\Application\Matching\OptimisticRedisAdapter;
+use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\TerminalLockException;
 use MatchBot\Domain\CampaignFunding;
 use PHPUnit\Framework\TestCase;
@@ -13,12 +13,12 @@ use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 
-class OptimisticRedisAdapterTest extends TestCase
+class AdapterTest extends TestCase
 {
     use ProphecyTrait;
 
     private ArrayMatchingStorage $storage;
-    private OptimisticRedisAdapter $sut;
+    private Adapter $sut;
 
     /**
      * @var ObjectProphecy<EntityManagerInterface>
@@ -36,7 +36,7 @@ class OptimisticRedisAdapterTest extends TestCase
             $closure();
         });
 
-        $this->sut = new OptimisticRedisAdapter(
+        $this->sut = new Adapter(
             $this->storage,
             $this->entityManagerProphecy->reveal(),
             new NullLogger(),

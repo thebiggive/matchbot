@@ -364,7 +364,7 @@
       <code>$fundRemainingAmount</code>
     </UnusedProperty>
   </file>
-  <file src="src/Application/Matching/OptimisticRedisAdapter.php">
+  <file src="src/Application/Matching/Adapter.php">
     <ArgumentTypeCoercion>
       <code>$wholeUnit</code>
     </ArgumentTypeCoercion>
