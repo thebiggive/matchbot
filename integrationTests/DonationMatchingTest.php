@@ -99,6 +99,11 @@ class DonationMatchingTest extends IntegrationTest
             {
             }
 
+            public function runTransactionally(callable $function)
+            {
+                return $this->wrappedAdapter->runTransactionally($function);
+            }
+
             public function getAmountAvailable(CampaignFunding $funding): string
             {
                 return $this->wrappedAdapter->getAmountAvailable($funding);
@@ -109,12 +114,6 @@ class DonationMatchingTest extends IntegrationTest
                 $this->wrappedAdapter->delete($funding);
             }
 
-            private function doRunTransactionally(callable $function): mixed
-            {
-                // call to runTransactionally not doRunTransactionally because the wrappedAdapater has to know that
-                // it's in a transaction.
-                return $this->wrappedAdapter->runTransactionally($function);
-            }
 
             /**
              * @param CampaignFunding $funding
