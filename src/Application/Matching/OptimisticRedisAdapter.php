@@ -108,7 +108,6 @@ class OptimisticRedisAdapter
             throw new \LogicException('Matching adapter work must be in a transaction');
         }
 
-        $funding1 = $funding;
         $decrementFractional = $this->toCurrencyFractionalUnit($amount);
 
         /**
@@ -117,11 +116,11 @@ class OptimisticRedisAdapter
         [$initResponse, $fundBalanceFractional] = $this->storage->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
-                $this->buildKey($funding1),
-                $this->toCurrencyFractionalUnit($funding1->getAmountAvailable()),
+                $this->buildKey($funding),
+                $this->toCurrencyFractionalUnit($funding->getAmountAvailable()),
                 ['nx', 'ex' => self::$storageDurationSeconds],
             )
-            ->decrBy($this->buildKey($funding1), $decrementFractional)
+            ->decrBy($this->buildKey($funding), $decrementFractional)
             ->exec();
 
         $fundBalanceFractional = (int)$fundBalanceFractional;
@@ -144,7 +143,7 @@ class OptimisticRedisAdapter
                 // Try deallocating just the difference until the fund has exactly zero
                 $overspendFractional = 0 - $fundBalanceFractional;
                 /** @psalm-suppress InvalidCast - not in Redis Multi Mode */
-                $fundBalanceFractional = (int)$this->storage->incrBy($this->buildKey($funding1), $overspendFractional);
+                $fundBalanceFractional = (int)$this->storage->incrBy($this->buildKey($funding), $overspendFractional);
                 $amountAllocatedFractional -= $overspendFractional;
             }
 
@@ -153,27 +152,27 @@ class OptimisticRedisAdapter
                 // we tried to hold back to the match pot and bail out.
                 /** @psalm-suppress InvalidCast not in multi mode * */
                 $fundBalanceFractional = (int)$this->storage->incrBy(
-                    $this->buildKey($funding1),
+                    $this->buildKey($funding),
                     $amountAllocatedFractional,
                 );
-                $this->setFundingValue($funding1, $this->toCurrencyWholeUnit($fundBalanceFractional));
+                $this->setFundingValue($funding, $this->toCurrencyWholeUnit($fundBalanceFractional));
                 throw new TerminalLockException(
-                    "Fund {$funding1->getId()} balance sub-zero after $retries attempts. " .
+                    "Fund {$funding->getId()} balance sub-zero after $retries attempts. " .
                     "Releasing final $amountAllocatedFractional 'cents'"
                 );
             }
 
-            $this->setFundingValue($funding1, $this->toCurrencyWholeUnit($fundBalanceFractional));
+            $this->setFundingValue($funding, $this->toCurrencyWholeUnit($fundBalanceFractional));
             throw new LessThanRequestedAllocatedException(
                 $this->toCurrencyWholeUnit($amountAllocatedFractional),
                 $this->toCurrencyWholeUnit($fundBalanceFractional)
             );
         }
 
-        $this->amountsSubtractedInCurrentProcess[] = ['campaignFunding' => $funding1, 'amount' => $amount];
+        $this->amountsSubtractedInCurrentProcess[] = ['campaignFunding' => $funding, 'amount' => $amount];
 
         $fundBalance = $this->toCurrencyWholeUnit($fundBalanceFractional);
-        $this->setFundingValue($funding1, $fundBalance);
+        $this->setFundingValue($funding, $fundBalance);
 
         return $fundBalance;
     }
