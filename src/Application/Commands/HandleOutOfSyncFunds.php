@@ -39,7 +39,7 @@ class HandleOutOfSyncFunds extends LockingCommand
     public function __construct(
         private CampaignFundingRepository $campaignFundingRepository,
         private FundingWithdrawalRepository $fundingWithdrawalRepository,
-        private Matching\Adapter $matchingAdapter
+        private Matching\OptimisticRedisAdapter $matchingAdapter
     ) {
         parent::__construct();
     }

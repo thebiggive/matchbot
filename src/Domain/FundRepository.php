@@ -16,7 +16,7 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 class FundRepository extends SalesforceReadProxyRepository
 {
     private CampaignFundingRepository $campaignFundingRepository;
-    private Matching\Adapter $matchingAdapter;
+    private Matching\OptimisticRedisAdapter $matchingAdapter;
 
     public function setCampaignFundingRepository(CampaignFundingRepository $repository): void
     {
@@ -24,9 +24,9 @@ class FundRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * @param Matching\Adapter $matchingAdapter
+     * @param Matching\OptimisticRedisAdapter $matchingAdapter
      */
-    public function setMatchingAdapter(Matching\Adapter $matchingAdapter): void
+    public function setMatchingAdapter(Matching\OptimisticRedisAdapter $matchingAdapter): void
     {
         $this->matchingAdapter = $matchingAdapter;
     }

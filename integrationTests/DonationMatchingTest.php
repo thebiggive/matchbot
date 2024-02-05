@@ -3,7 +3,6 @@
 namespace MatchBot\IntegrationTests;
 
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\OptimisticRedisAdapter;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\RedisMatchingStorage;
@@ -16,7 +15,7 @@ class DonationMatchingTest extends IntegrationTest
 {
     private int $campaignFundingId;
     private CampaignFundingRepository $campaignFundingRepository;
-    private Adapter $matchingAdapater;
+    private OptimisticRedisAdapter $matchingAdapater;
 
     public function setUp(): void
     {
@@ -24,7 +23,7 @@ class DonationMatchingTest extends IntegrationTest
 
         $this->setupFakeDonationClient();
         $this->campaignFundingRepository = $this->getService(CampaignFundingRepository::class);
-        $this->matchingAdapater = $this->getService(Adapter::class);
+        $this->matchingAdapater = $this->getService(OptimisticRedisAdapter::class);
     }
 
     public function testDonatingReducesAvailableMatchFunds(): void
@@ -55,7 +54,7 @@ class DonationMatchingTest extends IntegrationTest
     {
         // arrange
         $this->matchingAdapater = $this->makeAdapterThatThrowsAfterSubtractingFunds($this->matchingAdapater);
-        $this->setInContainer(Adapter::class, $this->matchingAdapater);
+        $this->setInContainer(OptimisticRedisAdapter::class, $this->matchingAdapater);
         $this->getService(\MatchBot\Domain\DonationRepository::class)->setMatchingAdapter($this->matchingAdapater);
 
         $campaignInfo = $this->addFundedCampaignAndCharityToDB(
@@ -90,10 +89,13 @@ class DonationMatchingTest extends IntegrationTest
         $this->assertEquals(100, $amountAvailable); // not reduced
     }
 
-    private function makeAdapterThatThrowsAfterSubtractingFunds(Adapter $matchingAdapater): Adapter
-    {
-        return new class ($matchingAdapater) extends Adapter {
-            public function __construct(private Adapter $wrappedAdapter)
+    private function makeAdapterThatThrowsAfterSubtractingFunds(
+        OptimisticRedisAdapter $matchingAdapater
+    ): OptimisticRedisAdapter {
+        return new class ($matchingAdapater) extends OptimisticRedisAdapter {
+            private bool $inTransaction = false;
+
+            public function __construct(private OptimisticRedisAdapter $wrappedAdapter)
             {
             }
 
@@ -107,16 +109,58 @@ class DonationMatchingTest extends IntegrationTest
                 $this->wrappedAdapter->delete($funding);
             }
 
-            protected function doRunTransactionally(callable $function)
+            /**
+             * @param callable $function
+             * @return mixed The given `$function`'s return value
+             */
+            public function runTransactionally(callable $function)
+            {
+                $this->inTransaction = true;
+                /** @var mixed $result */
+                $result = $this->doRunTransactionally($function);
+                $this->inTransaction = false;
+
+                return $result;
+            }
+
+            private function doRunTransactionally(callable $function): mixed
             {
                 // call to runTransactionally not doRunTransactionally because the wrappedAdapater has to know that
                 // it's in a transaction.
                 return $this->wrappedAdapter->runTransactionally($function);
             }
 
-            protected function doAddAmount(CampaignFunding $funding, string $amount): string
+            /**
+             * @param CampaignFunding $funding
+             * @param string $amount
+             * @return string New fund balance as bcmath-ready string
+             */
+            public function addAmount(CampaignFunding $funding, string $amount): string
             {
-                return $this->wrappedAdapter->doAddAmount($funding, $amount);
+                if (!$this->inTransaction) {
+                    throw new \LogicException('Matching adapter work must be in a transaction');
+                }
+
+                return $this->doAddAmount($funding, $amount);
+            }
+
+            private function doAddAmount(CampaignFunding $funding, string $amount): string
+            {
+                return $this->wrappedAdapter->addAmount($funding, $amount);
+            }
+
+            /**
+             * @param CampaignFunding $funding
+             * @param string $amount
+             * @return string New fund balance as bcmath-ready string
+             */
+            public function subtractAmount(CampaignFunding $funding, string $amount): string
+            {
+                if (!$this->inTransaction) {
+                    throw new \LogicException('Matching adapter work must be in a transaction');
+                }
+
+                return $this->doSubtractAmount($funding, $amount);
             }
 
             protected function doSubtractAmount(CampaignFunding $funding, string $amount): string
@@ -144,7 +188,7 @@ class DonationMatchingTest extends IntegrationTest
         $logger = $c->get(LoggerInterface::class);
 
         $this->setInContainer(
-            Adapter::class,
+            OptimisticRedisAdapter::class,
             new OptimisticRedisAdapter(new RedisMatchingStorage($redis), $entityManager, $logger),
         );
     }

@@ -20,7 +20,7 @@ use Redis;
  * transactional `DoctrineAdapter` is now removed. It can be viewed in its final state from 2020 at
  * https://github.com/thebiggive/matchbot/blob/b3a861c97190ac91d073aa86530401958c816e74/src/Application/Matching/DoctrineAdapter.php
  */
-class OptimisticRedisAdapter extends Adapter
+class OptimisticRedisAdapter
 {
     /** @var CampaignFunding[] */
     private array $fundingsToPersist = [];
@@ -38,6 +38,7 @@ class OptimisticRedisAdapter extends Adapter
      * @var list<array{campaignFunding: CampaignFunding, amount:string}>
      */
     private array $amountsSubtractedInCurrentProcess = [];
+    private bool $inTransaction = false;
 
     public function __construct(
         private RealTimeMatchingStorage $storage,
@@ -46,8 +47,11 @@ class OptimisticRedisAdapter extends Adapter
     ) {
     }
 
-    #[Pure]
-    public function doRunTransactionally(callable $function)
+    /**
+     * @param callable $function
+     * @return mixed The given `$function`'s return value
+     */
+    private function doRunTransactionally(callable $function)
     {
         $result = $function();
 
@@ -56,6 +60,58 @@ class OptimisticRedisAdapter extends Adapter
         return $result;
     }
 
+    /**
+     * @param callable $function
+     * @return mixed The given `$function`'s return value
+     */
+    public function runTransactionally(callable $function)
+    {
+        $this->inTransaction = true;
+        /** @var mixed $result */
+        $result = $this->doRunTransactionally($function);
+        $this->inTransaction = false;
+
+        return $result;
+    }
+
+    /**
+     * @param CampaignFunding $funding
+     * @param string $amount
+     * @return string New fund balance as bcmath-ready string
+     */
+    public function addAmount(CampaignFunding $funding, string $amount): string
+    {
+        if (!$this->inTransaction) {
+            throw new \LogicException('Matching adapter work must be in a transaction');
+        }
+
+        return $this->doAddAmount($funding, $amount);
+    }
+
+    /**
+     * @param CampaignFunding $funding
+     * @param string $amount
+     * @return string New fund balance as bcmath-ready string
+     */
+    public function subtractAmount(CampaignFunding $funding, string $amount): string
+    {
+        if (!$this->inTransaction) {
+            throw new \LogicException('Matching adapter work must be in a transaction');
+        }
+
+        return $this->doSubtractAmount($funding, $amount);
+    }
+
+    /**
+     * Get a snapshot of the amount of match funds available in the given `$funding`. This should not be used to start
+     * allocation maths except in emergencies where things appear to have got out of sync, because there is no
+     * guarantee with this function that another thread will not reserve or release funds before you have finished
+     * your work. You should instead use `addAmount()` and `subtractAmount()` which are built to work atomically or
+     * transactionally so that they are safe for high-volume, multi-thread use.
+     *
+     * @param CampaignFunding $funding
+     * @return string Amount available as bcmath-ready decimal string
+     */
     public function getAmountAvailable(CampaignFunding $funding): string
     {
         $redisFundBalanceFractional = $this->storage->get($this->buildKey($funding));
@@ -71,7 +127,15 @@ class OptimisticRedisAdapter extends Adapter
         return $this->toCurrencyWholeUnit((int) $redisFundBalanceFractional);
     }
 
-    protected function doSubtractAmount(CampaignFunding $funding, string $amount): string
+    /**
+     * Allocate funds atomically or within a transaction.
+     *
+     * @param CampaignFunding $funding
+     * @param string $amount
+     * @return string New fund balance as bcmath-ready string
+     * @throws LessThanRequestedAllocatedException if the adapter allocated less than requested for matching
+     */
+    private function doSubtractAmount(CampaignFunding $funding, string $amount): string
     {
         $decrementFractional = $this->toCurrencyFractionalUnit($amount);
 
@@ -142,8 +206,15 @@ class OptimisticRedisAdapter extends Adapter
         return $fundBalance;
     }
 
+    /**
+     * Release funds atomically or within a transaction.
+     *
+     * @param CampaignFunding $funding
+     * @param string $amount
+     * @return string New fund balance as bcmath-ready string
+     */
     #[Pure]
-    public function doAddAmount(CampaignFunding $funding, string $amount): string
+    private function doAddAmount(CampaignFunding $funding, string $amount): string
     {
         $incrementFractional = $this->toCurrencyFractionalUnit($amount);
 

@@ -34,10 +34,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     private const EXPIRY_SECONDS = 32 * 60; // 32 minutes: 30 min official timed window plus 2 mins grace.
 
-    private Matching\Adapter $matchingAdapter;
+    private Matching\OptimisticRedisAdapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
     private array $queuedForPersist;
-    public function setMatchingAdapter(Matching\Adapter $adapter): void
+    public function setMatchingAdapter(Matching\OptimisticRedisAdapter $adapter): void
     {
         $this->matchingAdapter = $adapter;
     }

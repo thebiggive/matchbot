@@ -6,7 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\OptimisticRedisAdapter;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
@@ -134,7 +134,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $campaignFunding = $this->getService(CampaignFundingRepository::class)
             ->find($campaignFundingId);
         Assertion::notNull($campaignFunding);
-        $matchingAdapter = $this->getService(Adapter::class);
+        $matchingAdapter = $this->getService(OptimisticRedisAdapter::class);
         $matchingAdapter->runTransactionally(
             function () use ($matchingAdapter, $campaignFunding, $amount) {
                 // Also calls Doctrine model's `setAmountAvailable()` in a not-guaranteed-realtime way.
@@ -182,7 +182,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $donation->addFundingWithdrawal($championFundWithdrawal);
 
         // Withdraw the donation value from the champion fund in Redis.
-        $matchingAdapter = $this->getService(Adapter::class);
+        $matchingAdapter = $this->getService(OptimisticRedisAdapter::class);
         $matchingAdapter->runTransactionally(
             function () use ($matchingAdapter, $championFundCampaignFunding, $amount) {
                 $matchingAdapter->subtractAmount($championFundCampaignFunding, (string) $amount);

@@ -217,13 +217,14 @@ return function (ContainerBuilder $containerBuilder) {
             return new RedisMatchingStorage($c->get(Redis::class));
         },
 
-        Matching\Adapter::class => static function (ContainerInterface $c): Matching\Adapter {
-            return new Matching\OptimisticRedisAdapter(
-                $c->get(RealTimeMatchingStorage::class),
-                $c->get(RetrySafeEntityManager::class),
-                $c->get(LoggerInterface::class)
-            );
-        },
+        Matching\OptimisticRedisAdapter::class =>
+            static function (ContainerInterface $c): Matching\OptimisticRedisAdapter {
+                return new Matching\OptimisticRedisAdapter(
+                    $c->get(RealTimeMatchingStorage::class),
+                    $c->get(RetrySafeEntityManager::class),
+                    $c->get(LoggerInterface::class)
+                );
+            },
 
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {
             $logger = $c->get(LoggerInterface::class);

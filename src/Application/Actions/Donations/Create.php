@@ -15,7 +15,7 @@ use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
-use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\OptimisticRedisAdapter;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
@@ -41,7 +41,7 @@ class Create extends Action
         private RetrySafeEntityManager $entityManager,
         private SerializerInterface $serializer,
         private Stripe $stripe,
-        private Adapter $matchingAdapter,
+        private OptimisticRedisAdapter $matchingAdapter,
         LoggerInterface $logger
     ) {
         parent::__construct($logger);

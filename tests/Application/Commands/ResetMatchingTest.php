@@ -34,7 +34,7 @@ class ResetMatchingTest extends TestCase
         $campaignFunding->setAmount('400');
         $campaignFunding->setAllocationOrder(200);
 
-        $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
+        $matchingAdapterProphecy = $this->prophesize(Matching\OptimisticRedisAdapter::class);
         $matchingAdapterProphecy->delete($campaignFunding)->shouldBeCalledOnce();
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
@@ -60,7 +60,7 @@ class ResetMatchingTest extends TestCase
 
     public function testBlankDb(): void
     {
-        $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
+        $matchingAdapterProphecy = $this->prophesize(Matching\OptimisticRedisAdapter::class);
         $matchingAdapterProphecy->delete(Argument::type(CampaignFunding::class))->shouldNotBeCalled();
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
