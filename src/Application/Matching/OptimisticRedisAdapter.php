@@ -51,24 +51,14 @@ class OptimisticRedisAdapter
      * @param callable $function
      * @return mixed The given `$function`'s return value
      */
-    private function doRunTransactionally(callable $function)
+    public function runTransactionally(callable $function)
     {
+        $this->inTransaction = true;
+
         $result = $function();
 
         $this->saveFundingsToDatabase();
 
-        return $result;
-    }
-
-    /**
-     * @param callable $function
-     * @return mixed The given `$function`'s return value
-     */
-    public function runTransactionally(callable $function)
-    {
-        $this->inTransaction = true;
-        /** @var mixed $result */
-        $result = $this->doRunTransactionally($function);
         $this->inTransaction = false;
 
         return $result;

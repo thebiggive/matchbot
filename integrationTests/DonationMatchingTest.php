@@ -109,20 +109,6 @@ class DonationMatchingTest extends IntegrationTest
                 $this->wrappedAdapter->delete($funding);
             }
 
-            /**
-             * @param callable $function
-             * @return mixed The given `$function`'s return value
-             */
-            public function runTransactionally(callable $function)
-            {
-                $this->inTransaction = true;
-                /** @var mixed $result */
-                $result = $this->doRunTransactionally($function);
-                $this->inTransaction = false;
-
-                return $result;
-            }
-
             private function doRunTransactionally(callable $function): mixed
             {
                 // call to runTransactionally not doRunTransactionally because the wrappedAdapater has to know that
