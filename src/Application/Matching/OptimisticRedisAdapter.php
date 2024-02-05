@@ -89,7 +89,74 @@ class OptimisticRedisAdapter
             throw new \LogicException('Matching adapter work must be in a transaction');
         }
 
-        return $this->doSubtractAmount($funding, $amount);
+        $funding1 = $funding;
+        $decrementFractional = $this->toCurrencyFractionalUnit($amount);
+
+        /**
+         * @psalm-suppress PossiblyFalseReference - in mulit mode decrBy will not return false.
+         */
+        [$initResponse, $fundBalanceFractional] = $this->storage->multi()
+            // Init if and only if new to Redis or expired (after 24 hours), using database value.
+            ->set(
+                $this->buildKey($funding1),
+                $this->toCurrencyFractionalUnit($funding1->getAmountAvailable()),
+                ['nx', 'ex' => $this->storageDurationSeconds],
+            )
+            ->decrBy($this->buildKey($funding1), $decrementFractional)
+            ->exec();
+
+        $fundBalanceFractional = (int)$fundBalanceFractional;
+        if ($fundBalanceFractional < 0) {
+            // We have hit the edge case where not having strict, slow locks falls down. We atomically
+            // allocated some match funds based on the amount available when we queried the database, but since our
+            // query somebody else got some match funds and now taking the amount we wanted would take the fund's
+            // balance below zero.
+            //
+            // Fortunately, Redis's atomic operations mean we find out this happened straight away, and we know it's
+            // always safe to release funds - there is no upper limit so atomically putting the funds back in the pot
+            // cannot fail (except in service outages etc.)
+            //
+            // So, let's do exactly that and then fail in a way that tells the caller to retry, getting the new fund
+            // total first. This is essentially a DIY optimistic lock exception.
+
+            $retries = 0;
+            $amountAllocatedFractional = $decrementFractional;
+            while ($retries++ < $this->maxPartialAllocateTries && $fundBalanceFractional < 0) {
+                // Try deallocating just the difference until the fund has exactly zero
+                $overspendFractional = 0 - $fundBalanceFractional;
+                /** @psalm-suppress InvalidCast - not in Redis Multi Mode */
+                $fundBalanceFractional = (int)$this->storage->incrBy($this->buildKey($funding1), $overspendFractional);
+                $amountAllocatedFractional -= $overspendFractional;
+            }
+
+            if ($fundBalanceFractional < 0) {
+                // We couldn't get the values to work within the maximum number of iterations, so release whatever
+                // we tried to hold back to the match pot and bail out.
+                /** @psalm-suppress InvalidCast not in multi mode * */
+                $fundBalanceFractional = (int)$this->storage->incrBy(
+                    $this->buildKey($funding1),
+                    $amountAllocatedFractional,
+                );
+                $this->setFundingValue($funding1, $this->toCurrencyWholeUnit($fundBalanceFractional));
+                throw new TerminalLockException(
+                    "Fund {$funding1->getId()} balance sub-zero after $retries attempts. " .
+                    "Releasing final $amountAllocatedFractional 'cents'"
+                );
+            }
+
+            $this->setFundingValue($funding1, $this->toCurrencyWholeUnit($fundBalanceFractional));
+            throw new LessThanRequestedAllocatedException(
+                $this->toCurrencyWholeUnit($amountAllocatedFractional),
+                $this->toCurrencyWholeUnit($fundBalanceFractional)
+            );
+        }
+
+        $this->amountsSubtractedInCurrentProcess[] = ['campaignFunding' => $funding1, 'amount' => $amount];
+
+        $fundBalance = $this->toCurrencyWholeUnit($fundBalanceFractional);
+        $this->setFundingValue($funding1, $fundBalance);
+
+        return $fundBalance;
     }
 
     /**
@@ -115,85 +182,6 @@ class OptimisticRedisAdapter
         // but are actually stored as strings internally, and seem to come back to PHP as strings
         // when get() is used => cast to int before converting to pounds.
         return $this->toCurrencyWholeUnit((int) $redisFundBalanceFractional);
-    }
-
-    /**
-     * Allocate funds atomically or within a transaction.
-     *
-     * @param CampaignFunding $funding
-     * @param string $amount
-     * @return string New fund balance as bcmath-ready string
-     * @throws LessThanRequestedAllocatedException if the adapter allocated less than requested for matching
-     */
-    private function doSubtractAmount(CampaignFunding $funding, string $amount): string
-    {
-        $decrementFractional = $this->toCurrencyFractionalUnit($amount);
-
-        /**
-         * @psalm-suppress PossiblyFalseReference - in mulit mode decrBy will not return false.
-         */
-        [$initResponse, $fundBalanceFractional] = $this->storage->multi()
-            // Init if and only if new to Redis or expired (after 24 hours), using database value.
-            ->set(
-                $this->buildKey($funding),
-                $this->toCurrencyFractionalUnit($funding->getAmountAvailable()),
-                ['nx', 'ex' => static::$storageDurationSeconds],
-            )
-            ->decrBy($this->buildKey($funding), $decrementFractional)
-            ->exec();
-
-        $fundBalanceFractional = (int) $fundBalanceFractional;
-        if ($fundBalanceFractional < 0) {
-            // We have hit the edge case where not having strict, slow locks falls down. We atomically
-            // allocated some match funds based on the amount available when we queried the database, but since our
-            // query somebody else got some match funds and now taking the amount we wanted would take the fund's
-            // balance below zero.
-            //
-            // Fortunately, Redis's atomic operations mean we find out this happened straight away, and we know it's
-            // always safe to release funds - there is no upper limit so atomically putting the funds back in the pot
-            // cannot fail (except in service outages etc.)
-            //
-            // So, let's do exactly that and then fail in a way that tells the caller to retry, getting the new fund
-            // total first. This is essentially a DIY optimistic lock exception.
-
-            $retries = 0;
-            $amountAllocatedFractional = $decrementFractional;
-            while ($retries++ < $this->maxPartialAllocateTries && $fundBalanceFractional < 0) {
-                // Try deallocating just the difference until the fund has exactly zero
-                $overspendFractional = 0 - $fundBalanceFractional;
-                /** @psalm-suppress InvalidCast - not in Redis Multi Mode */
-                $fundBalanceFractional = (int) $this->storage->incrBy($this->buildKey($funding), $overspendFractional);
-                $amountAllocatedFractional -= $overspendFractional;
-            }
-
-            if ($fundBalanceFractional < 0) {
-                // We couldn't get the values to work within the maximum number of iterations, so release whatever
-                // we tried to hold back to the match pot and bail out.
-                /** @psalm-suppress InvalidCast not in multi mode **/
-                $fundBalanceFractional = (int) $this->storage->incrBy(
-                    $this->buildKey($funding),
-                    $amountAllocatedFractional,
-                );
-                $this->setFundingValue($funding, $this->toCurrencyWholeUnit($fundBalanceFractional));
-                throw new TerminalLockException(
-                    "Fund {$funding->getId()} balance sub-zero after $retries attempts. " .
-                    "Releasing final $amountAllocatedFractional 'cents'"
-                );
-            }
-
-            $this->setFundingValue($funding, $this->toCurrencyWholeUnit($fundBalanceFractional));
-            throw new LessThanRequestedAllocatedException(
-                $this->toCurrencyWholeUnit($amountAllocatedFractional),
-                $this->toCurrencyWholeUnit($fundBalanceFractional)
-            );
-        }
-
-        $this->amountsSubtractedInCurrentProcess[] = ['campaignFunding' => $funding, 'amount' => $amount];
-
-        $fundBalance = $this->toCurrencyWholeUnit($fundBalanceFractional);
-        $this->setFundingValue($funding, $fundBalance);
-
-        return $fundBalance;
     }
 
     /**

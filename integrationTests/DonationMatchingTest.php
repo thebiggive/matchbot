@@ -135,21 +135,7 @@ class DonationMatchingTest extends IntegrationTest
                 return $this->wrappedAdapter->addAmount($funding, $amount);
             }
 
-            /**
-             * @param CampaignFunding $funding
-             * @param string $amount
-             * @return string New fund balance as bcmath-ready string
-             */
             public function subtractAmount(CampaignFunding $funding, string $amount): string
-            {
-                if (!$this->inTransaction) {
-                    throw new \LogicException('Matching adapter work must be in a transaction');
-                }
-
-                return $this->doSubtractAmount($funding, $amount);
-            }
-
-            protected function doSubtractAmount(CampaignFunding $funding, string $amount): string
             {
                 $this->wrappedAdapter->subtractAmount($funding, $amount);
 
