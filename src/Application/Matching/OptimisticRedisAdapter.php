@@ -100,7 +100,7 @@ class OptimisticRedisAdapter
             ->set(
                 $this->buildKey($funding1),
                 $this->toCurrencyFractionalUnit($funding1->getAmountAvailable()),
-                ['nx', 'ex' => $this->storageDurationSeconds],
+                ['nx', 'ex' => self::$storageDurationSeconds],
             )
             ->decrBy($this->buildKey($funding1), $decrementFractional)
             ->exec();
