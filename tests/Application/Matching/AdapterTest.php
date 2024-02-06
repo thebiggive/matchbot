@@ -70,41 +70,39 @@ class AdapterTest extends TestCase
 
     public function testItSubtractsAmountForFunding(): void
     {
-        $this->sut->runTransactionally(function () {
             $funding = new CampaignFunding();
             $funding->setAmountAvailable('50');
             $amountToSubtract = "10.10";
 
             $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
-            $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract);
+            $fundBalanceReturned = $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+            $this->sut->saveFundingsToDatabase();
 
             \assert(50 - 10.10 === 39.9);
             $this->assertSame('39.90', $this->sut->getAmountAvailable($funding));
             $this->assertSame('39.90', $fundBalanceReturned);
-        });
     }
 
     public function testItReleasesFundsInCaseOfRaceCondition(): void
     {
-        $this->sut->runTransactionally(function () {
                 $funding = new CampaignFunding();
                 $funding->setAmountAvailable('50');
                 $amountToSubtract = "30";
 
             $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
-            $this->sut->subtractAmount($funding, $amountToSubtract);
-            try {
-                // this second subtraction will take the fund negative in redis temporarily, but our Adapter will add
-                // back the 30 just subtracted.
-                $this->sut->subtractAmount($funding, $amountToSubtract);
-                $this->fail("should have thrown exception on attempt to allocate more than available");
-            } catch (LessThanRequestedAllocatedException $exception) {
-                $this->assertStringContainsString("Less than requested was allocated", $exception->getMessage());
-            }
+            $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+            $this->sut->saveFundingsToDatabase();
+        try {
+            // this second subtraction will take the fund negative in redis temporarily, but our Adapter will add
+            // back the 30 just subtracted.
+            $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+            $this->fail("should have thrown exception on attempt to allocate more than available");
+        } catch (LessThanRequestedAllocatedException $exception) {
+            $this->assertStringContainsString("Less than requested was allocated", $exception->getMessage());
+        }
 
                 $this->assertSame('0.00', $funding->getAmountAvailable());
                 $this->assertSame('0.00', $this->sut->getAmountAvailable($funding));
-        });
     }
 
 
@@ -116,21 +114,19 @@ class AdapterTest extends TestCase
             return $this->storage->decrBy($key, 30_00);
         });
 
-        $this->sut->runTransactionally(function () {
             $funding = new CampaignFunding();
             $funding->setId(53);
             $funding->setAmountAvailable('50');
             $amountToSubtract = "30";
 
-            $this->sut->subtractAmount($funding, $amountToSubtract);
+            $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
 
             $this->expectException(TerminalLockException::class);
             // todo - work out where the -100_00 figure here comes from. Message below is just pasted in from
             // see ticket MAT-332
             // result of running the test.
             $this->expectExceptionMessage("Fund 53 balance sub-zero after 6 attempts. Releasing final -10000 'cents'");
-            $this->sut->subtractAmount($funding, $amountToSubtract);
-        });
+            $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
     }
 
     public function testItDeletesCampaignFundingData(): void
@@ -155,9 +151,7 @@ class AdapterTest extends TestCase
         $amountToSubtract = "10.10";
 
         $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
-        $fundBalanceReturned = $this->sut->runTransactionally(function () use ($funding, $amountToSubtract) {
-            return $this->sut->subtractAmount($funding, $amountToSubtract);
-        });
+        $fundBalanceReturned = $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
 
         // act
         $this->sut->releaseNewlyAllocatedFunds();

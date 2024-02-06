@@ -263,7 +263,7 @@ class FundRepositoryTest extends TestCase
             ->shouldNotBeCalled();
 
         $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
-        $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
+        $matchingAdapterProphecy->addAmount(Argument::cetera())
             ->shouldNotBeCalled();
 
         $repo = $this->getFundRepoPartialMock(

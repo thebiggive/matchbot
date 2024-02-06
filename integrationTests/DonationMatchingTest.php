@@ -99,11 +99,6 @@ class DonationMatchingTest extends IntegrationTest
             {
             }
 
-            public function runTransactionally(callable $function)
-            {
-                return $this->wrappedAdapter->runTransactionally($function);
-            }
-
             public function getAmountAvailable(CampaignFunding $funding): string
             {
                 return $this->wrappedAdapter->getAmountAvailable($funding);
@@ -119,9 +114,9 @@ class DonationMatchingTest extends IntegrationTest
 //                return $this->wrappedAdapter->addAmount($funding, $amount);
 //            }
 
-            public function subtractAmount(CampaignFunding $funding, string $amount): string
+            public function subtractAmountWithoutSavingToDB(CampaignFunding $funding, string $amount): string
             {
-                $this->wrappedAdapter->subtractAmount($funding, $amount);
+                $this->wrappedAdapter->subtractAmountWithoutSavingToDB($funding, $amount);
 
                 throw new \Exception("Throwing after subtracting funds to test how our system handles the crash");
             }

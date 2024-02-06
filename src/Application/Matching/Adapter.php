@@ -55,7 +55,7 @@ class Adapter
      * @psalm-param callable():T $function
      * @psalm-return T
      */
-    public function runTransactionally(callable $function)
+    private function runTransactionally(callable $function)
     {
         $this->inTransaction = true;
 
@@ -108,16 +108,15 @@ class Adapter
     }
 
     /**
+     *
+     *
      * @param CampaignFunding $funding
      * @param string $amount
      * @return string New fund balance as bcmath-ready string
+     *
      */
-    public function subtractAmount(CampaignFunding $funding, string $amount): string
+    public function subtractAmountWithoutSavingToDB(CampaignFunding $funding, string $amount): string
     {
-        if (!$this->inTransaction) {
-            throw new \LogicException('Matching adapter work must be in a transaction');
-        }
-
         $decrementFractional = $this->toCurrencyFractionalUnit($amount);
 
         /**
@@ -251,7 +250,7 @@ class Adapter
      * This is not guaranteed to *always* be a match for the real-time Redis store since we make no effort to fix race
      * conditions on the database when using Redis as the source of truth for matching allocation.
      */
-    private function saveFundingsToDatabase(): void
+    public function saveFundingsToDatabase(): void
     {
         $this->entityManager->transactional(function () {
             foreach ($this->fundingsToPersist as $funding) {

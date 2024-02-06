@@ -195,9 +195,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             }
 
             $lockStartTime = microtime(true);
-            $newWithdrawals = $this->matchingAdapter->runTransactionally(
-                fn() => $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart)
-            );
+            $newWithdrawals = $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart);
             $lockEndTime = microtime(true);
 
             $this->persistQueuedDonations();
@@ -596,7 +594,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             }
 
             try {
-                $newTotal = $this->matchingAdapter->subtractAmount($funding, $amountToAllocateNow);
+                $newTotal = $this->matchingAdapter->subtractAmountWithoutSavingToDB($funding, $amountToAllocateNow);
                 $amountAllocated = $amountToAllocateNow; // If no exception thrown
             } catch (Matching\LessThanRequestedAllocatedException $exception) {
                 $amountAllocated = $exception->getAmountAllocated();
@@ -622,6 +620,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $this->queueForPersist($donation);
 
+        $this->matchingAdapter->saveFundingsToDatabase();
         return $newWithdrawals;
     }
 
