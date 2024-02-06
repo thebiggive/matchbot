@@ -51,7 +51,7 @@ class Adapter
 
     public function addAmount(CampaignFunding $funding, string $amount): string
     {
-        $fundBalance = $this->addAmountWithoutNewTransaction($funding, $amount);
+        $fundBalance = $this->addAmountWithoutSavingFundingsToDB($funding, $amount);
         $this->saveFundingsToDatabase();
 
         return $fundBalance;
@@ -63,7 +63,7 @@ class Adapter
      * @param string $amount
      * @return string New fund balance as bcmath-ready string
      */
-    private function addAmountWithoutNewTransaction(CampaignFunding $funding, string $amount): string
+    private function addAmountWithoutSavingFundingsToDB(CampaignFunding $funding, string $amount): string
     {
         $incrementFractional = $this->toCurrencyFractionalUnit($amount);
 
@@ -262,7 +262,7 @@ class Adapter
 
             $this->logger->warning("Released newly allocated funds of $amount for funding# {$funding->getId()}");
 
-            $this->addAmountWithoutNewTransaction($funding, $amount);
+            $this->addAmountWithoutSavingFundingsToDB($funding, $amount);
         }
 
         $this->saveFundingsToDatabase();
@@ -274,19 +274,18 @@ class Adapter
     public function releaseAllFundsForDonation(Donation $donation): string
     {
                 $totalAmountReleased = '0.00';
-                foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-                    $funding = $fundingWithdrawal->getCampaignFunding();
-                    $fundingWithDrawalAmount = $fundingWithdrawal->getAmount();
-                    Assertion::numeric($fundingWithDrawalAmount);
-                    $newTotal = $this->addAmountWithoutNewTransaction($funding, $fundingWithDrawalAmount);
-                    $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithDrawalAmount, 2);
-                    $this->logger->info("Released {$fundingWithDrawalAmount} to funding {$funding->getId()}");
-                    $this->logger->info("New fund total for {$funding->getId()}: $newTotal");
-                }
+        foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+            $funding = $fundingWithdrawal->getCampaignFunding();
+            $fundingWithDrawalAmount = $fundingWithdrawal->getAmount();
+            Assertion::numeric($fundingWithDrawalAmount);
+            $newTotal = $this->addAmountWithoutSavingFundingsToDB($funding, $fundingWithDrawalAmount);
+            $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithDrawalAmount, 2);
+            $this->logger->info("Released {$fundingWithDrawalAmount} to funding {$funding->getId()}");
+            $this->logger->info("New fund total for {$funding->getId()}: $newTotal");
+        }
 
         $this->saveFundingsToDatabase();
 
         return $totalAmountReleased;
-
     }
 }
