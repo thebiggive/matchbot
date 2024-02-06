@@ -273,7 +273,7 @@ class Adapter
      */
     public function releaseAllFundsForDonation(Donation $donation): string
     {
-                $totalAmountReleased = '0.00';
+        $totalAmountReleased = '0.00';
         foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
             $funding = $fundingWithdrawal->getCampaignFunding();
             $fundingWithDrawalAmount = $fundingWithdrawal->getAmount();
