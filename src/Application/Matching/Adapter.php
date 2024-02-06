@@ -68,9 +68,9 @@ class Adapter
         return $result;
     }
 
-    public function addAmountTransactionally(CampaignFunding $funding, string $amount): string
+    public function addAmount(CampaignFunding $funding, string $amount): string
     {
-        return $this->runTransactionally(fn() => $this->addAmount($funding, $amount));
+        return $this->runTransactionally(fn() => $this->addAmountWithoutNewTransaction($funding, $amount));
     }
 
 
@@ -79,7 +79,7 @@ class Adapter
      * @param string $amount
      * @return string New fund balance as bcmath-ready string
      */
-    private function addAmount(CampaignFunding $funding, string $amount): string
+    private function addAmountWithoutNewTransaction(CampaignFunding $funding, string $amount): string
     {
         if (!$this->inTransaction) {
             throw new \LogicException('Matching adapter work must be in a transaction');
@@ -284,7 +284,7 @@ class Adapter
 
                 $this->logger->warning("Released newly allocated funds of $amount for funding# {$funding->getId()}");
 
-                $this->addAmount($funding, $amount);
+                $this->addAmountWithoutNewTransaction($funding, $amount);
             }
         });
     }
@@ -301,7 +301,7 @@ class Adapter
                     $funding = $fundingWithdrawal->getCampaignFunding();
                     $fundingWithDrawalAmount = $fundingWithdrawal->getAmount();
                     Assertion::numeric($fundingWithDrawalAmount);
-                    $newTotal = $this->addAmount($funding, $fundingWithDrawalAmount);
+                    $newTotal = $this->addAmountWithoutNewTransaction($funding, $fundingWithDrawalAmount);
                     $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithDrawalAmount, 2);
                     $this->logger->info("Released {$fundingWithDrawalAmount} to funding {$funding->getId()}");
                     $this->logger->info("New fund total for {$funding->getId()}: $newTotal");

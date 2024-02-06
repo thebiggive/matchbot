@@ -673,5 +673,4 @@ class DonationRepository extends SalesforceWriteProxyRepository
             }
         });
     }
-
 }

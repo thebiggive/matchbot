@@ -57,7 +57,7 @@ class AdapterTest extends TestCase
     {
         $funding = new CampaignFunding();
         $funding->setAmountAvailable('50');
-        $this->sut->addAmountTransactionally($funding, '12.53');
+        $this->sut->addAmount($funding, '12.53');
         $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
 
         // set the amount available in the funding to something different so we know the
@@ -138,7 +138,7 @@ class AdapterTest extends TestCase
         $funding = new CampaignFunding();
         $funding->setAmountAvailable('1');
         $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
-        $this->sut->addAmountTransactionally($funding, '5');
+        $this->sut->addAmount($funding, '5');
 
         $funding->setAmountAvailable('53');
         $this->sut->delete($funding);

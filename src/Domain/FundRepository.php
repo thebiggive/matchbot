@@ -98,7 +98,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 $increaseInAmount = bcsub($amountForCampaign, $campaignFunding->getAmount(), 2);
 
                 if (bccomp($increaseInAmount, '0.00', 2) === 1) {
-                    $newTotal = $this->matchingAdapter->addAmountTransactionally($campaignFunding, $increaseInAmount);
+                    $newTotal = $this->matchingAdapter->addAmount($campaignFunding, $increaseInAmount);
 
                     $this->logger->info(
                         "Funding ID {$campaignFunding->getId()} balance increased " .

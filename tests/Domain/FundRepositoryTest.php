@@ -90,7 +90,7 @@ class FundRepositoryTest extends TestCase
         // Validate that the matching adapter does NOT have its `addAmount()` called in the case where the fund is
         // brand new and so an initial amount can be safely set on the Doctrine object with `setAmountAvailable()`.
         $matchingAdapterProphecy
-            ->addAmountTransactionally(Argument::type(CampaignFunding::class), Argument::type('string'))
+            ->addAmount(Argument::type(CampaignFunding::class), Argument::type('string'))
             ->shouldNotBeCalled();
 
         $repo = $this->getFundRepoPartialMock(
@@ -148,7 +148,7 @@ class FundRepositoryTest extends TestCase
         // Validate that the matching adapter does NOT have its `addAmount()` called in the case where the fund is
         // brand new and so an initial amount can be safely set on the Doctrine object with `setAmountAvailable()`.
         $matchingAdapterProphecy
-            ->addAmountTransactionally(Argument::type(CampaignFunding::class), Argument::type('string'))
+            ->addAmount(Argument::type(CampaignFunding::class), Argument::type('string'))
             ->shouldNotBeCalled();
 
         $repo = $this->getFundRepoPartialMock(
@@ -212,7 +212,7 @@ class FundRepositoryTest extends TestCase
 
         // Validate that the matching adapter DOES have its `addAmount()` called inside a safe transaction
         // wrapper, and the £100 increase in match funding from £400 to £500 is reflected.
-        $matchingAdapterProphecy->addAmountTransactionally(Argument::cetera())
+        $matchingAdapterProphecy->addAmount(Argument::cetera())
             ->willReturn('100.00') // Amount available after adjustment
             ->shouldBeCalledTimes(2);
 

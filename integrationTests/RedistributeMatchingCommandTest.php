@@ -137,7 +137,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $matchingAdapter = $this->getService(Adapter::class);
 
         // Also calls Doctrine model's `setAmountAvailable()` in a not-guaranteed-realtime way.
-        $matchingAdapter->addAmountTransactionally($campaignFunding, (string) $amount);
+        $matchingAdapter->addAmount($campaignFunding, (string) $amount);
     }
 
     /**
