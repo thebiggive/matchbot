@@ -153,21 +153,21 @@ class AdapterTest extends TestCase
 
     public function testItReleasesNewlyAllocatedFunds(): void
     {
-        $this->sut->runTransactionally(function () {
-            // arrange
-            $funding = new CampaignFunding();
-            $funding->setAmountAvailable('50');
-            $amountToSubtract = "10.10";
+        // arrange
+        $funding = new CampaignFunding();
+        $funding->setAmountAvailable('50');
+        $amountToSubtract = "10.10";
 
-            $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
-            $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract);
-
-            // act
-            $this->sut->releaseNewlyAllocatedFunds();
-
-            // assert
-            $this->assertSame('50.00', $this->sut->getAmountAvailable($funding));
-            $this->assertSame('39.90', $fundBalanceReturned);
+        $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
+        $fundBalanceReturned = $this->sut->runTransactionally(function () use ($funding, $amountToSubtract) {
+            return $this->sut->subtractAmount($funding, $amountToSubtract);
         });
+
+        // act
+        $this->sut->releaseNewlyAllocatedFunds();
+
+        // assert
+        $this->assertSame('50.00', $this->sut->getAmountAvailable($funding));
+        $this->assertSame('39.90', $fundBalanceReturned);
     }
 }

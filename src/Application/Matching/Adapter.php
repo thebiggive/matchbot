@@ -267,13 +267,15 @@ class Adapter
      */
     public function releaseNewlyAllocatedFunds(): void
     {
-        foreach ($this->amountsSubtractedInCurrentProcess as $fundingAndAmount) {
-            $amount = $fundingAndAmount['amount'];
-            $funding = $fundingAndAmount['campaignFunding'];
+        $this->runTransactionally(function () {
+            foreach ($this->amountsSubtractedInCurrentProcess as $fundingAndAmount) {
+                $amount = $fundingAndAmount['amount'];
+                $funding = $fundingAndAmount['campaignFunding'];
 
-            $this->logger->warning("Released newly allocated funds of $amount for funding# {$funding->getId()}");
+                $this->logger->warning("Released newly allocated funds of $amount for funding# {$funding->getId()}");
 
-            $this->addAmount($funding, $amount);
-        }
+                $this->addAmount($funding, $amount);
+            }
+        });
     }
 }
