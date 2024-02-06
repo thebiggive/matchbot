@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<files psalm-version="5.15.0@5c774aca4746caf3d239d9c8cadb9f882ca29352">
+<files psalm-version="5.19.0@06b71be009a6bd6d81b9811855d6629b9fe90e1b">
   <file src="app/dependencies.php">
     <MixedArgument>
       <code><![CDATA[$c->get('settings')]]></code>
@@ -8,7 +8,6 @@
       <code><![CDATA[$c->get('settings')['doctrine']['connection']]]></code>
       <code><![CDATA[$c->get('settings')['identity']['baseUri']]]></code>
       <code><![CDATA[$c->get('settings')['los_rate_limit']]]></code>
-      <code><![CDATA[$c->get('settings')['recaptcha']['secret_key']]]></code>
       <code><![CDATA[$c->get('settings')['redis']['host']]]></code>
       <code><![CDATA[$c->get('settings')['redis']['host']]]></code>
       <code><![CDATA[$loggerSettings['name']]]></code>
@@ -25,7 +24,6 @@
       <code><![CDATA[$c->get('settings')['doctrine']]]></code>
       <code><![CDATA[$c->get('settings')['identity']]]></code>
       <code><![CDATA[$c->get('settings')['los_rate_limit']]]></code>
-      <code><![CDATA[$c->get('settings')['recaptcha']]]></code>
       <code><![CDATA[$c->get('settings')['redis']]]></code>
       <code><![CDATA[$c->get('settings')['redis']]]></code>
       <code><![CDATA[$c->get('settings')['redis']]]></code>
@@ -75,11 +73,6 @@
       <code>$c</code>
       <code>$c</code>
     </UnusedClosureParam>
-  </file>
-  <file src="app/repositories.php">
-    <MixedArgument>
-      <code><![CDATA[$c->get('settings')]]></code>
-    </MixedArgument>
   </file>
   <file src="app/routes.php">
     <MissingClosureParamType>
@@ -174,22 +167,11 @@
       <code>$donation</code>
       <code>$donation</code>
     </DocblockTypeContradiction>
-    <ImplicitToStringCast>
-      <code>$intentId</code>
-      <code>$intentId</code>
-      <code>$intentId</code>
-      <code>$intentId</code>
-      <code>$intentId</code>
-    </ImplicitToStringCast>
     <MixedArgument>
       <code><![CDATA[$event->data->object]]></code>
       <code><![CDATA[$txn->fee_details[0]->currency]]></code>
       <code><![CDATA[$txn->fee_details[0]->type]]></code>
     </MixedArgument>
-    <PossiblyInvalidArgument>
-      <code><![CDATA[$charge->balance_transaction]]></code>
-      <code><![CDATA[$charge->transfer]]></code>
-    </PossiblyInvalidArgument>
     <PossiblyNullArgument>
       <code>$intentId</code>
       <code>$intentId</code>
@@ -293,7 +275,6 @@
     </MixedArgument>
     <MixedAssignment>
       <code>$excludedFundingIds</code>
-      <code>$newTotal</code>
     </MixedAssignment>
   </file>
   <file src="src/Application/Commands/LockingCommand.php">
@@ -305,10 +286,6 @@
     </PossiblyNullOperand>
   </file>
   <file src="src/Application/Commands/RetrospectivelyMatch.php">
-    <ArgumentTypeCoercion>
-      <code>$amountAllocated</code>
-      <code>$amountAllocated</code>
-    </ArgumentTypeCoercion>
     <PossiblyFalseArgument>
       <code><![CDATA[getenv('APP_ENV')]]></code>
     </PossiblyFalseArgument>
@@ -345,30 +322,6 @@
       <code><![CDATA[$this->getFeeVatPercentage()]]></code>
       <code><![CDATA[$this->getFeeVatPercentage()]]></code>
     </ArgumentTypeCoercion>
-    <MixedArgument>
-      <code>$feeAmountFixed</code>
-      <code><![CDATA[$this->pspFeeSettings['fixed']]]></code>
-      <code><![CDATA[$this->pspFeeSettings['gift_aid_percentage']]]></code>
-      <code><![CDATA[$this->pspFeeSettings['main_percentage_amex_or_non_uk_eu']]]></code>
-      <code><![CDATA[$this->pspFeeSettings['main_percentage_standard']]]></code>
-      <code><![CDATA[$this->pspFeeSettings['vat_live_date']]]></code>
-    </MixedArgument>
-    <MixedArrayAccess>
-      <code><![CDATA[$settings[$psp]['fee']]]></code>
-      <code><![CDATA[$this->pspFeeSettings['fixed']['default']]]></code>
-    </MixedArrayAccess>
-    <MixedAssignment>
-      <code>$feeAmountFixed</code>
-      <code>$feeAmountFixed</code>
-      <code><![CDATA[$this->pspFeeSettings]]></code>
-    </MixedAssignment>
-    <MixedInferredReturnType>
-      <code>string</code>
-    </MixedInferredReturnType>
-    <MixedReturnStatement>
-      <code><![CDATA[$this->pspFeeSettings['vat_percentage_live']]]></code>
-      <code><![CDATA[$this->pspFeeSettings['vat_percentage_old']]]></code>
-    </MixedReturnStatement>
   </file>
   <file src="src/Application/Handlers/HttpErrorHandler.php">
     <PropertyNotSetInConstructor>
@@ -390,7 +343,6 @@
     </MissingConstructor>
     <PossiblyUnusedProperty>
       <code>$charityId</code>
-      <code>$creationRecaptchaCode</code>
       <code>$donationMatched</code>
       <code>$projectId</code>
       <code>$transactionId</code>
@@ -406,48 +358,21 @@
       <code>$jwt</code>
     </PossiblyUnusedProperty>
   </file>
-  <file src="src/Application/Matching/Adapter.php">
-    <MixedAssignment>
-      <code>$result</code>
-    </MixedAssignment>
-  </file>
   <file src="src/Application/Matching/LessThanRequestedAllocatedException.php">
     <UnusedProperty>
       <code>$fundRemainingAmount</code>
     </UnusedProperty>
   </file>
-  <file src="src/Application/Matching/OptimisticRedisAdapter.php">
+  <file src="src/Application/Matching/Adapter.php">
     <ArgumentTypeCoercion>
       <code>$wholeUnit</code>
     </ArgumentTypeCoercion>
     <DeprecatedMethod>
       <code>transactional</code>
     </DeprecatedMethod>
-    <ImpureFunctionCall>
-      <code>$function()</code>
-    </ImpureFunctionCall>
-    <ImpureMethodCall>
-      <code>buildKey</code>
-      <code>buildKey</code>
-      <code>exec</code>
-      <code>incrBy</code>
-      <code>multi</code>
-      <code>saveFundingsToDatabase</code>
-      <code>set</code>
-      <code>setFundingValue</code>
-      <code>toCurrencyFractionalUnit</code>
-      <code>toCurrencyFractionalUnit</code>
-      <code>toCurrencyWholeUnit</code>
-    </ImpureMethodCall>
-    <ImpureStaticProperty>
-      <code>static::$storageDurationSeconds</code>
-    </ImpureStaticProperty>
     <InvalidCast>
       <code>$redisFundBalanceFractional</code>
     </InvalidCast>
-    <MixedAssignment>
-      <code>$result</code>
-    </MixedAssignment>
     <PossiblyInvalidArrayAccess>
       <code>$fundBalanceFractional</code>
       <code>$fundBalanceFractional</code>
@@ -505,17 +430,12 @@
     <LessSpecificReturnStatement>
       <code><![CDATA[$this->ormConfig->getRepositoryFactory()->getRepository($this, $className)]]></code>
     </LessSpecificReturnStatement>
-    <MethodSignatureMustProvideReturnType>
-      <code>getRepository</code>
-    </MethodSignatureMustProvideReturnType>
     <MoreSpecificReturnType>
       <code>getRepository</code>
     </MoreSpecificReturnType>
     <TooManyArguments>
       <code>flush</code>
       <code>flush</code>
-      <code>refresh</code>
-      <code>refresh</code>
     </TooManyArguments>
   </file>
   <file src="src/Client/Campaign.php">
@@ -560,11 +480,6 @@
     </RedundantPropertyInitializationCheck>
   </file>
   <file src="src/Client/Donation.php">
-    <ImplicitToStringCast>
-      <code><![CDATA[$ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A']]></code>
-      <code><![CDATA[$ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A']]></code>
-      <code><![CDATA[$ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A']]></code>
-    </ImplicitToStringCast>
     <MixedArrayAccess>
       <code><![CDATA[$donationCreatedResponse['donation']]]></code>
       <code><![CDATA[$donationCreatedResponse['donation']['donationId']]]></code>
@@ -618,19 +533,9 @@
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Domain/CampaignFunding.php">
-    <InvalidMethodCall>
-      <code>add</code>
-      <code>contains</code>
-    </InvalidMethodCall>
-    <InvalidPropertyAssignmentValue>
-      <code>new ArrayCollection()</code>
-    </InvalidPropertyAssignmentValue>
     <PossiblyUnusedMethod>
       <code>isShared</code>
     </PossiblyUnusedMethod>
-    <PossiblyUnusedProperty>
-      <code>$allocationOrder</code>
-    </PossiblyUnusedProperty>
     <PropertyNotSetInConstructor>
       <code>$allocationOrder</code>
       <code>$amount</code>
@@ -654,9 +559,6 @@
       <code><![CDATA[$query->getResult()]]></code>
       <code>CampaignFunding[]</code>
     </MixedReturnTypeCoercion>
-    <PossiblyUnusedMethod>
-      <code>getAvailableFundings</code>
-    </PossiblyUnusedMethod>
   </file>
   <file src="src/Domain/CampaignRepository.php">
     <MixedArgument>
@@ -670,7 +572,6 @@
       <code><![CDATA[$campaignData['currencyCode']]]></code>
       <code><![CDATA[$campaignData['currencyCode'] ?? 'GBP']]></code>
       <code><![CDATA[$campaignData['endDate']]]></code>
-      <code><![CDATA[$campaignData['feePercentage']]]></code>
       <code><![CDATA[$campaignData['id']]]></code>
       <code><![CDATA[$campaignData['isMatched']]]></code>
       <code><![CDATA[$campaignData['startDate']]]></code>
@@ -750,8 +651,6 @@
       <code><![CDATA[$this->getCollectedAt()?->format('Y-m-d')]]></code>
     </PossiblyNullPropertyAssignmentValue>
     <PossiblyNullReference>
-      <code>getFund</code>
-      <code>getFund</code>
       <code>toString</code>
       <code>toString</code>
     </PossiblyNullReference>
@@ -771,9 +670,6 @@
       <code>$amountAllocated</code>
       <code>$amountMatchedAtStart</code>
       <code><![CDATA[$donation->getAmount()]]></code>
-      <code><![CDATA[$funding->getAmountAvailable()]]></code>
-      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
-      <code>$newWithdrawal</code>
     </ArgumentTypeCoercion>
     <DeprecatedMethod>
       <code>getResultCacheImpl</code>
@@ -785,27 +681,18 @@
       <code>$lockFactory</code>
       <code>$matchingAdapter</code>
       <code>$queuedForPersist</code>
-      <code>$settings</code>
     </MissingConstructor>
     <MixedArgument>
-      <code>$newWithdrawal</code>
-      <code><![CDATA[$newWithdrawal->getAmount()]]></code>
       <code>$salesforceDonationId</code>
     </MixedArgument>
     <MixedAssignment>
-      <code>$newWithdrawal</code>
-      <code>$newWithdrawals</code>
       <code>$result</code>
       <code>$salesforceDonationId</code>
       <code><![CDATA[$this->campaignRepository]]></code>
-      <code>$totalAmountReleased</code>
     </MixedAssignment>
     <MixedInferredReturnType>
       <code>bool</code>
     </MixedInferredReturnType>
-    <MixedMethodCall>
-      <code>getAmount</code>
-    </MixedMethodCall>
     <MixedReturnStatement>
       <code>$result</code>
     </MixedReturnStatement>
@@ -838,7 +725,6 @@
     <PossiblyNullArgument>
       <code><![CDATA[$donation->getId()]]></code>
       <code><![CDATA[$donation->getSalesforceId()]]></code>
-      <code>$funding</code>
     </PossiblyNullArgument>
     <PossiblyUndefinedVariable>
       <code>$lockStartTime</code>
@@ -847,9 +733,6 @@
       <code>$lockStartTime</code>
       <code>$newTotal</code>
     </PossiblyUndefinedVariable>
-    <TooManyArguments>
-      <code>refresh</code>
-    </TooManyArguments>
     <UndefinedMethod>
       <code>create</code>
       <code>put</code>
@@ -867,7 +750,6 @@
   </file>
   <file src="src/Domain/FundRepository.php">
     <ArgumentTypeCoercion>
-      <code>$amountForCampaign</code>
       <code><![CDATA[$campaignFunding->getAmount()]]></code>
     </ArgumentTypeCoercion>
     <DocblockTypeContradiction>
@@ -899,7 +781,6 @@
       <code>$fundData</code>
       <code>$fundData</code>
       <code>$fundsData</code>
-      <code>$newTotal</code>
     </MixedAssignment>
     <MixedOperand>
       <code><![CDATA[$fundData['id']]]></code>
@@ -920,10 +801,6 @@
     </UndefinedMethod>
   </file>
   <file src="src/Domain/FundingWithdrawal.php">
-    <MissingConstructor>
-      <code>$amount</code>
-      <code>$donation</code>
-    </MissingConstructor>
     <PossiblyUnusedProperty>
       <code>$donation</code>
     </PossiblyUnusedProperty>
@@ -1200,9 +1077,6 @@
     </DeprecatedMethod>
   </file>
   <file src="tests/Application/Actions/Donations/CreateTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[Donation::emptyTestDonation(amount: '12.00', currencyCode: $currencyCode)]]></code>
-    </DeprecatedMethod>
     <MixedArrayAccess>
       <code><![CDATA[$payloadArray['error']]]></code>
       <code><![CDATA[$payloadArray['error']]]></code>
@@ -1341,7 +1215,6 @@
   <file src="tests/Application/Actions/StatusTest.php">
     <DeprecatedMethod>
       <code><![CDATA[ConsoleRunner::createHelperSet($container->get(EntityManagerInterface::class))]]></code>
-      <code>setMetadataCacheImpl</code>
     </DeprecatedMethod>
     <PossiblyNullArgument>
       <code><![CDATA[$config->getProxyDir()]]></code>
@@ -1377,11 +1250,6 @@
     </MissingParamType>
   </file>
   <file src="tests/Application/Commands/ClaimGiftAidTest.php">
-    <MixedArgument>
-      <code><![CDATA[$donationRepoProphecy->reveal()]]></code>
-      <code><![CDATA[$entityManagerProphecy->reveal()]]></code>
-      <code><![CDATA[$routableBusProphecy->reveal()]]></code>
-    </MixedArgument>
     <MixedArgumentTypeCoercion>
       <code><![CDATA[$this->getExpectedStamps($testDonation->getUuid())]]></code>
       <code><![CDATA[$this->getExpectedStamps($testDonation->getUuid())]]></code>
@@ -1393,20 +1261,13 @@
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
     </DeprecatedMethod>
-    <MixedArgument>
-      <code><![CDATA[$donationRepoProphecy->reveal()]]></code>
-    </MixedArgument>
   </file>
   <file src="tests/Application/Commands/HandleOutOfSyncFundsTest.php">
     <ArgumentTypeCoercion>
       <code><![CDATA[$this->getFundingInSync()->getAmount()]]></code>
-      <code><![CDATA[$this->getFundingInSync()->getAmountAvailable()]]></code>
       <code><![CDATA[$this->getFundingOverMatched()->getAmount()]]></code>
-      <code><![CDATA[$this->getFundingOverMatched()->getAmountAvailable()]]></code>
       <code><![CDATA[$this->getFundingUnderMatched()->getAmount()]]></code>
-      <code><![CDATA[$this->getFundingUnderMatched()->getAmountAvailable()]]></code>
       <code><![CDATA[$this->getFundingUnderMatchedWithNothingAllocated()->getAmount()]]></code>
-      <code><![CDATA[$this->getFundingUnderMatchedWithNothingAllocated()->getAmountAvailable()]]></code>
     </ArgumentTypeCoercion>
     <MissingParamType>
       <code>$expectFixes</code>
@@ -1509,35 +1370,6 @@
       <code><![CDATA[$container->get('settings')['doctrine']]]></code>
       <code><![CDATA[$container->get('settings')['doctrine']]]></code>
     </MixedArrayAccess>
-  </file>
-  <file src="tests/Application/VatTrait.php">
-    <MixedArrayAssignment>
-      <code><![CDATA[$settings['stripe']['fee']]]></code>
-      <code><![CDATA[$settings['stripe']['fee']]]></code>
-      <code><![CDATA[$settings['stripe']['fee']]]></code>
-      <code><![CDATA[$settings['stripe']['fee']['vat_live_date']]]></code>
-      <code><![CDATA[$settings['stripe']['fee']['vat_percentage_live']]]></code>
-      <code><![CDATA[$settings['stripe']['fee']['vat_percentage_old']]]></code>
-    </MixedArrayAssignment>
-  </file>
-  <file src="tests/Domain/DonationRepositoryTest.php">
-    <MixedArgument>
-      <code><![CDATA[$donationClientProphecy->reveal()]]></code>
-      <code><![CDATA[$lockFactoryProphecy->reveal()]]></code>
-      <code><![CDATA[$matchingAdapterProphecy->reveal()]]></code>
-      <code>$settings</code>
-      <code>$settings</code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-      <code><![CDATA[$this->getAppInstance()->getContainer()->get('settings')]]></code>
-    </MixedArgument>
-    <MixedAssignment>
-      <code>$settings</code>
-    </MixedAssignment>
-    <PossiblyNullReference>
-      <code>get</code>
-      <code>get</code>
-      <code>get</code>
-    </PossiblyNullReference>
   </file>
   <file src="tests/Domain/DonationTest.php">
     <InternalMethod>

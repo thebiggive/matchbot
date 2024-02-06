@@ -115,7 +115,7 @@ Redis is used for Doctrine caches but also for real-time matching allocations, t
 worrying about database locks. When Redis is the matching adapter (currently always), match data is normally sent to
 MySQL after the fact, but Redis handles fund balances so that MySQL is never involved in race conditions.
 
-In [`OptimisticRedisAdapter`](./src/Application/Matching/OptimisticRedisAdapter.php) we use atomic, multiple Redis
+In [`OptimisticRedisAdapter`](./src/Application/Matching/Adapter.php) we use atomic, multiple Redis
 operations which can both init a value (if empty) and increment/decrement it (unconditionally), eliminating the need
 for locks. In the rare edge case where two processes do this near-simultaneously based on slightly out of date database
 values, and a fund's balance drops below zero, the thread which last changed the value immediately 'knows' this happened

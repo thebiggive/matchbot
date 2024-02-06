@@ -4,7 +4,7 @@ namespace MatchBot\Tests\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use MatchBot\Application\Matching\OptimisticRedisAdapter;
+use MatchBot\Application\Matching\Adapter;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
@@ -51,7 +51,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
          * @return mixed
          */            fn(array $args) => $args[0]()
         );
-        $matchingAdapter = new OptimisticRedisAdapter(
+        $matchingAdapter = new Adapter(
             new ArrayMatchingStorage(),
             $this->emProphecy->reveal(),
             new NullLogger(),

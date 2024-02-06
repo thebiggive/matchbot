@@ -85,7 +85,10 @@ $commands = [
         $chatter,
     ),
     new PushDonations($psr11App->get(DonationRepository::class)),
-    new ResetMatching($psr11App->get(CampaignFundingRepository::class), $psr11App->get(Matching\Adapter::class)),
+    new ResetMatching(
+        $psr11App->get(CampaignFundingRepository::class),
+        $psr11App->get(Matching\Adapter::class)
+    ),
     new RetrospectivelyMatch(
         $psr11App->get(DonationRepository::class),
         $chatter,
