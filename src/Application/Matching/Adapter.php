@@ -6,8 +6,11 @@ namespace MatchBot\Application\Matching;
 
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\RealTimeMatchingStorage;
 use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
 use Redis;
 
@@ -76,7 +79,7 @@ class Adapter
      * @param string $amount
      * @return string New fund balance as bcmath-ready string
      */
-    public function addAmount(CampaignFunding $funding, string $amount): string
+    private function addAmount(CampaignFunding $funding, string $amount): string
     {
         if (!$this->inTransaction) {
             throw new \LogicException('Matching adapter work must be in a transaction');
@@ -284,5 +287,28 @@ class Adapter
                 $this->addAmount($funding, $amount);
             }
         });
+    }
+
+    /**
+     * @return string
+     */
+    public function releaseAllFundsForDonation(Donation $donation): string
+    {
+        return $this->runTransactionally(
+            function () use ($donation) {
+                $totalAmountReleased = '0.00';
+                foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
+                    $funding = $fundingWithdrawal->getCampaignFunding();
+                    $fundingWithDrawalAmount = $fundingWithdrawal->getAmount();
+                    Assertion::numeric($fundingWithDrawalAmount);
+                    $newTotal = $this->addAmount($funding, $fundingWithDrawalAmount);
+                    $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithDrawalAmount, 2);
+                    $this->logger->info("Released {$fundingWithDrawalAmount} to funding {$funding->getId()}");
+                    $this->logger->info("New fund total for {$funding->getId()}: $newTotal");
+                }
+
+                return $totalAmountReleased;
+            }
+        );
     }
 }

@@ -113,11 +113,11 @@ class DonationMatchingTest extends IntegrationTest
             {
                 $this->wrappedAdapter->delete($funding);
             }
-
-            public function addAmount(CampaignFunding $funding, string $amount): string
-            {
-                return $this->wrappedAdapter->addAmount($funding, $amount);
-            }
+//
+//            public function addAmount(CampaignFunding $funding, string $amount): string
+//            {
+//                return $this->wrappedAdapter->addAmount($funding, $amount);
+//            }
 
             public function subtractAmount(CampaignFunding $funding, string $amount): string
             {

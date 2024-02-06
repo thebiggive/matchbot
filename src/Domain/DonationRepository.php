@@ -281,22 +281,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
             return;
         }
 
-        $totalAmountReleased = '0.00';
         try {
             $lockStartTime = microtime(true);
-            $totalAmountReleased = $this->matchingAdapter->runTransactionally(
-                function () use ($donation, $totalAmountReleased) {
-                    foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-                        $funding = $fundingWithdrawal->getCampaignFunding();
-                        $newTotal = $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
-                        $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
-                        $this->logInfo("Released {$fundingWithdrawal->getAmount()} to funding {$funding->getId()}");
-                        $this->logInfo("New fund total for {$funding->getId()}: $newTotal");
-                    }
-
-                    return $totalAmountReleased;
-                }
-            );
+            $totalAmountReleased = $this->matchingAdapter->releaseAllFundsForDonation($donation);
             $lockEndTime = microtime(true);
 
             try {
@@ -686,4 +673,5 @@ class DonationRepository extends SalesforceWriteProxyRepository
             }
         });
     }
+
 }
