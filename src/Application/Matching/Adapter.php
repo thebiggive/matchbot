@@ -41,7 +41,6 @@ class Adapter
      * @var list<array{campaignFunding: CampaignFunding, amount:string}>
      */
     private array $amountsSubtractedInCurrentProcess = [];
-    private bool $inTransaction = false;
 
     public function __construct(
         private RealTimeMatchingStorage $storage,
@@ -50,27 +49,12 @@ class Adapter
     ) {
     }
 
-    /**
-     * @psalm-template T
-     * @psalm-param callable():T $function
-     * @psalm-return T
-     */
-    private function runTransactionally(callable $function)
-    {
-        $this->inTransaction = true;
-
-        $result = $function();
-
-        $this->saveFundingsToDatabase();
-
-        $this->inTransaction = false;
-
-        return $result;
-    }
-
     public function addAmount(CampaignFunding $funding, string $amount): string
     {
-        return $this->runTransactionally(fn() => $this->addAmountWithoutNewTransaction($funding, $amount));
+        $fundBalance = $this->addAmountWithoutNewTransaction($funding, $amount);
+        $this->saveFundingsToDatabase();
+
+        return $fundBalance;
     }
 
 
@@ -81,10 +65,6 @@ class Adapter
      */
     private function addAmountWithoutNewTransaction(CampaignFunding $funding, string $amount): string
     {
-        if (!$this->inTransaction) {
-            throw new \LogicException('Matching adapter work must be in a transaction');
-        }
-
         $incrementFractional = $this->toCurrencyFractionalUnit($amount);
 
         /**
@@ -276,16 +256,16 @@ class Adapter
      */
     public function releaseNewlyAllocatedFunds(): void
     {
-        $this->runTransactionally(function () {
-            foreach ($this->amountsSubtractedInCurrentProcess as $fundingAndAmount) {
-                $amount = $fundingAndAmount['amount'];
-                $funding = $fundingAndAmount['campaignFunding'];
+        foreach ($this->amountsSubtractedInCurrentProcess as $fundingAndAmount) {
+            $amount = $fundingAndAmount['amount'];
+            $funding = $fundingAndAmount['campaignFunding'];
 
-                $this->logger->warning("Released newly allocated funds of $amount for funding# {$funding->getId()}");
+            $this->logger->warning("Released newly allocated funds of $amount for funding# {$funding->getId()}");
 
-                $this->addAmountWithoutNewTransaction($funding, $amount);
-            }
-        });
+            $this->addAmountWithoutNewTransaction($funding, $amount);
+        }
+
+        $this->saveFundingsToDatabase();
     }
 
     /**
@@ -293,8 +273,6 @@ class Adapter
      */
     public function releaseAllFundsForDonation(Donation $donation): string
     {
-        return $this->runTransactionally(
-            function () use ($donation) {
                 $totalAmountReleased = '0.00';
                 foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
                     $funding = $fundingWithdrawal->getCampaignFunding();
@@ -306,8 +284,9 @@ class Adapter
                     $this->logger->info("New fund total for {$funding->getId()}: $newTotal");
                 }
 
-                return $totalAmountReleased;
-            }
-        );
+        $this->saveFundingsToDatabase();
+
+        return $totalAmountReleased;
+
     }
 }
