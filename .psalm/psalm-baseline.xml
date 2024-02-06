@@ -275,7 +275,6 @@
     </MixedArgument>
     <MixedAssignment>
       <code>$excludedFundingIds</code>
-      <code>$newTotal</code>
     </MixedAssignment>
   </file>
   <file src="src/Application/Commands/LockingCommand.php">
@@ -371,27 +370,9 @@
     <DeprecatedMethod>
       <code>transactional</code>
     </DeprecatedMethod>
-    <ImpureMethodCall>
-      <code>buildKey</code>
-      <code>buildKey</code>
-      <code>exec</code>
-      <code>incrBy</code>
-      <code>multi</code>
-      <code>set</code>
-      <code>setFundingValue</code>
-      <code>toCurrencyFractionalUnit</code>
-      <code>toCurrencyFractionalUnit</code>
-      <code>toCurrencyWholeUnit</code>
-    </ImpureMethodCall>
-    <ImpureStaticProperty>
-      <code>static::$storageDurationSeconds</code>
-    </ImpureStaticProperty>
     <InvalidCast>
       <code>$redisFundBalanceFractional</code>
     </InvalidCast>
-    <MixedAssignment>
-      <code>$result</code>
-    </MixedAssignment>
     <PossiblyInvalidArrayAccess>
       <code>$fundBalanceFractional</code>
       <code>$fundBalanceFractional</code>
@@ -689,8 +670,6 @@
       <code>$amountAllocated</code>
       <code>$amountMatchedAtStart</code>
       <code><![CDATA[$donation->getAmount()]]></code>
-      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
-      <code>$newWithdrawal</code>
     </ArgumentTypeCoercion>
     <DeprecatedMethod>
       <code>getResultCacheImpl</code>
@@ -704,24 +683,16 @@
       <code>$queuedForPersist</code>
     </MissingConstructor>
     <MixedArgument>
-      <code>$newWithdrawal</code>
-      <code><![CDATA[$newWithdrawal->getAmount()]]></code>
       <code>$salesforceDonationId</code>
     </MixedArgument>
     <MixedAssignment>
-      <code>$newWithdrawal</code>
-      <code>$newWithdrawals</code>
       <code>$result</code>
       <code>$salesforceDonationId</code>
       <code><![CDATA[$this->campaignRepository]]></code>
-      <code>$totalAmountReleased</code>
     </MixedAssignment>
     <MixedInferredReturnType>
       <code>bool</code>
     </MixedInferredReturnType>
-    <MixedMethodCall>
-      <code>getAmount</code>
-    </MixedMethodCall>
     <MixedReturnStatement>
       <code>$result</code>
     </MixedReturnStatement>
@@ -810,7 +781,6 @@
       <code>$fundData</code>
       <code>$fundData</code>
       <code>$fundsData</code>
-      <code>$newTotal</code>
     </MixedAssignment>
     <MixedOperand>
       <code><![CDATA[$fundData['id']]]></code>
