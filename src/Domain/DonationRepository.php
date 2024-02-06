@@ -9,6 +9,7 @@ use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use GuzzleHttp\Exception\ClientException;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
@@ -217,7 +218,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
         foreach ($newWithdrawals as $newWithdrawal) {
             $this->getEntityManager()->persist($newWithdrawal);
             $donation->addFundingWithdrawal($newWithdrawal);
-            $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawal->getAmount(), 2);
+            $newWithdrawalAmount = $newWithdrawal->getAmount();
+            Assertion::numeric($newWithdrawalAmount);
+            $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawalAmount, 2);
         }
 
         $this->logInfo('ID ' . $donation->getUuid() . ' allocated new match funds totalling ' . $amountNewlyMatched);

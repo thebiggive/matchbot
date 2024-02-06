@@ -55,19 +55,17 @@ class AdapterTest extends TestCase
 
     public function testItAddsAmountForFunding(): void
     {
-        $this->sut->runTransactionally(function () {
-            $funding = new CampaignFunding();
-            $funding->setAmountAvailable('50');
-            $this->sut->addAmount($funding, '12.53');
-            $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
+        $funding = new CampaignFunding();
+        $funding->setAmountAvailable('50');
+        $this->sut->addAmountTransactionally($funding, '12.53');
+        $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
 
-            // set the amount available in the funding to something different so we know the
-            // amount returned in the getAmountAvailable call has to be from the realtime storage.
-            $funding->setAmountAvailable('3');
+        // set the amount available in the funding to something different so we know the
+        // amount returned in the getAmountAvailable call has to be from the realtime storage.
+        $funding->setAmountAvailable('3');
 
-            \assert(50 + 12.53 === 62.53);
-            $this->assertSame('62.53', $this->sut->getAmountAvailable($funding));
-        });
+        \assert(50 + 12.53 === 62.53);
+        $this->assertSame('62.53', $this->sut->getAmountAvailable($funding));
     }
 
     public function testItSubtractsAmountForFunding(): void
@@ -140,9 +138,7 @@ class AdapterTest extends TestCase
         $funding = new CampaignFunding();
         $funding->setAmountAvailable('1');
         $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
-        $this->sut->runTransactionally(function () use ($funding) {
-            $this->sut->addAmount($funding, '5');
-        });
+        $this->sut->addAmountTransactionally($funding, '5');
 
         $funding->setAmountAvailable('53');
         $this->sut->delete($funding);

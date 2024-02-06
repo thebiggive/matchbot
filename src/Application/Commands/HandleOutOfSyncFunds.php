@@ -118,11 +118,7 @@ class HandleOutOfSyncFunds extends LockingCommand
             $output->writeln("Funding {$funding->getId()} is under-matched by $undermatchAmount. $details");
 
             if ($mode === 'fix') {
-                $newTotal = $this->matchingAdapter->runTransactionally(
-                    function () use ($funding, $undermatchAmount) {
-                        return $this->matchingAdapter->addAmount($funding, $undermatchAmount);
-                    }
-                );
+                $newTotal = $this->matchingAdapter->addAmountTransactionally($funding, $undermatchAmount);
 
                 $output->writeln("Released {$undermatchAmount} to funding ID {$funding->getId()}");
                 $output->writeln("New fund total for funding ID {$funding->getId()}: $newTotal");

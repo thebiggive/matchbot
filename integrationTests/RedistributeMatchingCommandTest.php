@@ -135,12 +135,9 @@ class RedistributeMatchingCommandTest extends IntegrationTest
             ->find($campaignFundingId);
         Assertion::notNull($campaignFunding);
         $matchingAdapter = $this->getService(Adapter::class);
-        $matchingAdapter->runTransactionally(
-            function () use ($matchingAdapter, $campaignFunding, $amount) {
-                // Also calls Doctrine model's `setAmountAvailable()` in a not-guaranteed-realtime way.
-                return $matchingAdapter->addAmount($campaignFunding, (string) $amount);
-            }
-        );
+
+        // Also calls Doctrine model's `setAmountAvailable()` in a not-guaranteed-realtime way.
+        $matchingAdapter->addAmountTransactionally($campaignFunding, (string) $amount);
     }
 
     /**

@@ -48,8 +48,9 @@ class Adapter
     }
 
     /**
-     * @param callable $function
-     * @return mixed The given `$function`'s return value
+     * @psalm-template T
+     * @psalm-param callable():T $function
+     * @psalm-return T
      */
     public function runTransactionally(callable $function)
     {
@@ -63,6 +64,12 @@ class Adapter
 
         return $result;
     }
+
+    public function addAmountTransactionally(CampaignFunding $funding, string $amount): string
+    {
+        return $this->runTransactionally(fn() => $this->addAmount($funding, $amount));
+    }
+
 
     /**
      * @param CampaignFunding $funding
