@@ -4,7 +4,6 @@ namespace MatchBot\IntegrationTests;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Adapter;
-use MatchBot\Application\Matching\OptimisticRedisAdapter;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Domain\CampaignFunding;
@@ -90,9 +89,12 @@ class DonationMatchingTest extends IntegrationTest
         $this->assertEquals(100, $amountAvailable); // not reduced
     }
 
-    private function makeAdapterThatThrowsAfterSubtractingFunds(Adapter $matchingAdapater): Adapter
-    {
+    private function makeAdapterThatThrowsAfterSubtractingFunds(
+        Adapter $matchingAdapater
+    ): Adapter {
         return new class ($matchingAdapater) extends Adapter {
+            private bool $inTransaction = false;
+
             public function __construct(private Adapter $wrappedAdapter)
             {
             }
@@ -107,21 +109,9 @@ class DonationMatchingTest extends IntegrationTest
                 $this->wrappedAdapter->delete($funding);
             }
 
-            protected function doRunTransactionally(callable $function)
+            public function subtractAmountWithoutSavingToDB(CampaignFunding $funding, string $amount): string
             {
-                // call to runTransactionally not doRunTransactionally because the wrappedAdapater has to know that
-                // it's in a transaction.
-                return $this->wrappedAdapter->runTransactionally($function);
-            }
-
-            protected function doAddAmount(CampaignFunding $funding, string $amount): string
-            {
-                return $this->wrappedAdapter->doAddAmount($funding, $amount);
-            }
-
-            protected function doSubtractAmount(CampaignFunding $funding, string $amount): string
-            {
-                $this->wrappedAdapter->subtractAmount($funding, $amount);
+                $this->wrappedAdapter->subtractAmountWithoutSavingToDB($funding, $amount);
 
                 throw new \Exception("Throwing after subtracting funds to test how our system handles the crash");
             }
@@ -145,7 +135,7 @@ class DonationMatchingTest extends IntegrationTest
 
         $this->setInContainer(
             Adapter::class,
-            new OptimisticRedisAdapter(new RedisMatchingStorage($redis), $entityManager, $logger),
+            new Adapter(new RedisMatchingStorage($redis), $entityManager, $logger),
         );
     }
 }

@@ -200,11 +200,11 @@ class HandleOutOfSyncFundsTest extends TestCase
             ->shouldBeCalledOnce();
 
         if ($expectFixes) {
-            $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
+            $matchingAdapterProphecy->addAmount(Argument::cetera())
                 ->willReturn('487.65', '1000.00') // Amount available after adjustment, in call order.
                 ->shouldBeCalledTimes(2);
         } else {
-            $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))->shouldNotBeCalled();
+            $matchingAdapterProphecy->addAmount(Argument::cetera())->shouldNotBeCalled();
         }
 
         return $matchingAdapterProphecy;
