@@ -472,7 +472,7 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce();
 
         $matchingAdapterProphecy = $this->prophesize(Adapter::class);
-        $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
+        $matchingAdapterProphecy->releaseAllFundsForDonation(Argument::cetera())
             ->willReturn('0.00')
             ->shouldBeCalledOnce();
 
@@ -506,7 +506,7 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce();
 
         $matchingAdapterProphecy = $this->prophesize(Adapter::class);
-        $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
+        $matchingAdapterProphecy->subtractAmountWithoutSavingToDB(Argument::cetera())
             ->shouldNotBeCalled();
 
         $repo = $this->getRepo(
@@ -535,7 +535,7 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce();
 
         $matchingAdapterProphecy = $this->prophesize(Adapter::class);
-        $matchingAdapterProphecy->runTransactionally(Argument::type('callable'))
+        $matchingAdapterProphecy->subtractAmountWithoutSavingToDB(Argument::cetera())
             ->shouldNotBeCalled();
 
         $repo = $this->getRepo(

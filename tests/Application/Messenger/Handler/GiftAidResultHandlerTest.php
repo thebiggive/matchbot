@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -59,6 +60,10 @@ class GiftAidResultHandlerTest extends TestCase
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestConfirmedCompleteAt());
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestCorrelationId());
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidResponseDetail());
+        $this->assertSame(
+            SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE,
+            $testDonationPassedToProphecy->getSalesforcePushStatus()
+        );
     }
 
     public function testErrorProcessing(): void

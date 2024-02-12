@@ -5,6 +5,7 @@ namespace MatchBot\Application\Messenger\Handler;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\SalesforceWriteProxy;
 use Messages;
 use Psr\Log\LoggerInterface;
 
@@ -42,6 +43,8 @@ class GiftAidResultHandler
         if (!empty($donationMessage->response_detail)) {
             $donation->setTbgGiftAidResponseDetail($donationMessage->response_detail);
         }
+
+        $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
 
         $this->entityManager->persist($donation);
         $this->entityManager->flush();

@@ -9,6 +9,7 @@ use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use GuzzleHttp\Exception\ClientException;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
@@ -194,9 +195,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             }
 
             $lockStartTime = microtime(true);
-            $newWithdrawals = $this->matchingAdapter->runTransactionally(
-                fn() => $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart)
-            );
+            $newWithdrawals = $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart);
             $lockEndTime = microtime(true);
 
             $this->persistQueuedDonations();
@@ -217,7 +216,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
         foreach ($newWithdrawals as $newWithdrawal) {
             $this->getEntityManager()->persist($newWithdrawal);
             $donation->addFundingWithdrawal($newWithdrawal);
-            $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawal->getAmount(), 2);
+            $newWithdrawalAmount = $newWithdrawal->getAmount();
+            Assertion::numeric($newWithdrawalAmount);
+            $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawalAmount, 2);
         }
 
         $this->logInfo('ID ' . $donation->getUuid() . ' allocated new match funds totalling ' . $amountNewlyMatched);
@@ -278,22 +279,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
             return;
         }
 
-        $totalAmountReleased = '0.00';
         try {
             $lockStartTime = microtime(true);
-            $totalAmountReleased = $this->matchingAdapter->runTransactionally(
-                function () use ($donation, $totalAmountReleased) {
-                    foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
-                        $funding = $fundingWithdrawal->getCampaignFunding();
-                        $newTotal = $this->matchingAdapter->addAmount($funding, $fundingWithdrawal->getAmount());
-                        $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithdrawal->getAmount(), 2);
-                        $this->logInfo("Released {$fundingWithdrawal->getAmount()} to funding {$funding->getId()}");
-                        $this->logInfo("New fund total for {$funding->getId()}: $newTotal");
-                    }
-
-                    return $totalAmountReleased;
-                }
-            );
+            $totalAmountReleased = $this->matchingAdapter->releaseAllFundsForDonation($donation);
             $lockEndTime = microtime(true);
 
             try {
@@ -606,7 +594,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             }
 
             try {
-                $newTotal = $this->matchingAdapter->subtractAmount($funding, $amountToAllocateNow);
+                $newTotal = $this->matchingAdapter->subtractAmountWithoutSavingToDB($funding, $amountToAllocateNow);
                 $amountAllocated = $amountToAllocateNow; // If no exception thrown
             } catch (Matching\LessThanRequestedAllocatedException $exception) {
                 $amountAllocated = $exception->getAmountAllocated();
@@ -632,6 +620,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $this->queueForPersist($donation);
 
+        $this->matchingAdapter->saveFundingsToDatabase();
         return $newWithdrawals;
     }
 
