@@ -285,20 +285,29 @@ class Update extends Action
 
         // All calls using the new two-step approach should set all the remaining values in this
         // method every time they `addData()`.
-        $donation->update(
-            giftAid: $donationData->giftAid,
-            tipGiftAid: $donationData->tipGiftAid ?? $donationData->giftAid,
-            tbgShouldProcessGiftAid: $donation->getCampaign()->getCharity()->isTbgClaimingGiftAid(),
-            donorHomeAddressLine1: $donationData->homeAddress,
-            donorHomePostcode: $donationData->homePostcode,
-            donorFirstName: $donationData->firstName,
-            donorLastName: $donationData->lastName,
-            donorEmailAddress: $donationData->emailAddress,
-            tbgComms: $donationData->optInTbgEmail,
-            charityComms: $donationData->optInCharityEmail,
-            championComms: $donationData->optInChampionEmail,
-            donorPostalAddress: $donationData->billingPostalAddress
-        );
+        try {
+            $donation->update(
+                giftAid: $donationData->giftAid,
+                tipGiftAid: $donationData->tipGiftAid ?? $donationData->giftAid,
+                tbgShouldProcessGiftAid: $donation->getCampaign()->getCharity()->isTbgClaimingGiftAid(),
+                donorHomeAddressLine1: $donationData->homeAddress,
+                donorHomePostcode: $donationData->homePostcode,
+                donorFirstName: $donationData->firstName,
+                donorLastName: $donationData->lastName,
+                donorEmailAddress: $donationData->emailAddress,
+                tbgComms: $donationData->optInTbgEmail,
+                charityComms: $donationData->optInCharityEmail,
+                championComms: $donationData->optInChampionEmail,
+                donorPostalAddress: $donationData->billingPostalAddress
+            );
+        } catch (\UnexpectedValueException $exception) {
+            return $this->validationError(
+                $response,
+                $exception->getMessage(),
+                $exception->getMessage(),
+                false,
+            );
+        }
 
 
         // currently this can't change the fee from what it was when donation entity was created, but
