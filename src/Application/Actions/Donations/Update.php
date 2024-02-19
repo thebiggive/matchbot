@@ -285,24 +285,20 @@ class Update extends Action
 
         // All calls using the new two-step approach should set all the remaining values in this
         // method every time they `addData()`.
-        $donation->setGiftAid($donationData->giftAid);
-        $donation->setTipGiftAid($donationData->tipGiftAid ?? $donationData->giftAid);
-        $donation->setTbgShouldProcessGiftAid($donation->getCampaign()->getCharity()->isTbgClaimingGiftAid());
-        $donation->setDonorHomeAddressLine1($donationData->homeAddress);
-        $donation->setDonorHomePostcode($donationData->homePostcode);
-        $donation->setDonorFirstName($donationData->firstName);
-        $donation->setDonorLastName($donationData->lastName);
-        $donation->setDonorEmailAddress($donationData->emailAddress);
-        $donation->setTbgComms($donationData->optInTbgEmail);
-        $donation->setCharityComms($donationData->optInCharityEmail);
-        $donation->setChampionComms($donationData->optInChampionEmail);
-        $donation->setDonorBillingAddress($donationData->billingPostalAddress);
-
-        // currently this can't change the fee from what it was when donation entity was created, but
-        // we call deriveFees here for consistency with the Create action, in case the derivation logic changes to
-        // depend on something we do mutate in the donation. But if this is a card payment it will be called again in
-        // the `confirm` action.
-        $donation->deriveFees(null, null);
+        $donation->update(
+            giftAid: $donationData->giftAid,
+            tipGiftAid: $donationData->tipGiftAid ?? $donationData->giftAid,
+            tbgShouldProcessGiftAid: $donation->getCampaign()->getCharity()->isTbgClaimingGiftAid(),
+            donorHomeAddressLine1: $donationData->homeAddress,
+            donorHomePostcode: $donationData->homePostcode,
+            donorFirstName: $donationData->firstName,
+            donorLastName: $donationData->lastName,
+            donorEmailAddress: $donationData->emailAddress,
+            tbgComms: $donationData->optInTbgEmail,
+            charityComms: $donationData->optInCharityEmail,
+            championComms: $donationData->optInChampionEmail,
+            donorPostalAddress: $donationData->billingPostalAddress
+        );
 
         if ($donation->getPsp() === 'stripe') {
             try {

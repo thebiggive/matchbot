@@ -1369,4 +1369,41 @@ class Donation extends SalesforceWriteProxy
         $this->collectedAt = (new \DateTimeImmutable("@$chargeCreationTimestamp"));
         $this->setOriginalPspFeeFractional($originalFeeFractional);
     }
+
+    /**
+     * Updates a pending donation to reflect changes made in the donation form.
+     */
+    public function update(
+        ?bool $giftAid,
+        ?bool $tipGiftAid,
+        bool $tbgShouldProcessGiftAid,
+        ?string $donorHomeAddressLine1,
+        ?string $donorHomePostcode,
+        ?string $donorFirstName,
+        ?string $donorLastName,
+        ?string $donorEmailAddress,
+        ?bool $tbgComms,
+        ?bool $charityComms,
+        ?bool $championComms,
+        ?string $donorPostalAddress
+    ): void {
+        $this->setGiftAid($giftAid);
+        $this->setTipGiftAid($tipGiftAid);
+        $this->setTbgShouldProcessGiftAid($tbgShouldProcessGiftAid);
+        $this->setDonorHomePostcode($donorHomePostcode);
+        $this->setDonorHomeAddressLine1($donorHomeAddressLine1);
+        $this->setDonorFirstName($donorFirstName);
+        $this->setDonorLastName($donorLastName);
+        $this->setDonorEmailAddress($donorEmailAddress);
+        $this->setTbgComms($tbgComms);
+        $this->setCharityComms($charityComms);
+        $this->setChampionComms($championComms);
+        $this->setDonorBillingAddress($donorPostalAddress);
+
+        // currently this can't change the fee from what it was when donation entity was created, but
+        // we call deriveFees here for consistency with the Create action, in case the derivation logic changes to
+        // depend on something we do mutate in the donation. But if this is a card payment it will be called again in
+        // the `confirm` action.
+        $this->deriveFees(null, null);
+    }
 }
