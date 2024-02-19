@@ -62,6 +62,7 @@ trait DonationTestDataTrait
         string $currencyCode = 'GBP',
         bool $collected = true,
         DateTime $tbgGiftAidRequestConfirmedCompleteAt = null,
+        bool $charityComms = false,
     ): Donation {
         $charity = \MatchBot\Tests\TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
@@ -83,11 +84,13 @@ trait DonationTestDataTrait
         );
         $donation->setCampaign(TestCase::getMinimalCampaign());
 
-        $donation->update(giftAid: true);
-
-
-
         $this->setMinimumFieldsSetOnFirstPersist($donation);
+
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: '1 Main St, London',  // Frontend typically includes town for now
+            charityComms: $charityComms
+        );
 
         $donation->setCharityFee('2.05');
         $donation->setCampaign($campaign);
@@ -110,7 +113,6 @@ trait DonationTestDataTrait
         $donation->setDonorFirstName('John');
         $donation->setDonorLastName('Doe');
         $donation->setDonorBillingAddress('1 Main St, London N1 1AA');
-        $donation->setDonorHomeAddressLine1('1 Main St, London'); // Frontend typically includes town for now
         $donation->setDonorHomePostcode('N1 1AA');
         $donation->setSalesforceId('sfDonation369');
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);

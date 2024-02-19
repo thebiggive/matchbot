@@ -350,7 +350,7 @@ class UpdateTest extends TestCase
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
 
-        $responseDonation = $this->getTestDonation();
+        $responseDonation = $this->getTestDonation(charityComms: true);
         $responseDonation->cancel();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -412,7 +412,7 @@ class UpdateTest extends TestCase
         // the request and response, but it's (maybe) marginally better than the test not mentioning this behaviour
         // at all.
 
-        $responseDonation = $this->getTestDonation();
+        $responseDonation = $this->getTestDonation(charityComms: true);
         // This is the mock repo's response, not the API response. So it's the *prior* state before we cancel the
         // mock donation.
         $responseDonation->setDonationStatus(DonationStatus::Pending);
@@ -942,12 +942,14 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
-        $donation->update(giftAid: true);
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: '99 Updated St',
+        );
 
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
-        $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorFirstName('Saul');
         $donation->setDonorLastName('Williams');
@@ -1031,11 +1033,13 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
-        $donation->update(giftAid: true);
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: '99 Updated St',
+        );
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
-        $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorFirstName('Saul');
         $donation->setDonorLastName('Williams');
@@ -1124,12 +1128,14 @@ class UpdateTest extends TestCase
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
 
-        $donation->update(giftAid: true);
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: '99 Updated St',
+        );
 
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
-        $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorFirstName('Saul');
         $donation->setDonorLastName('Williams');
@@ -1227,12 +1233,14 @@ class UpdateTest extends TestCase
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
 
-        $donation->update(giftAid: true);
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: '99 Updated St',
+        );
 
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
-        $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorFirstName('Saul');
         $donation->setDonorLastName('Williams');
@@ -1322,12 +1330,15 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
-        $donation->update(giftAid: true);
+
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: '99 Updated St'
+        );
 
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
-        $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorFirstName('Saul');
         $donation->setDonorLastName('Williams');
@@ -1421,12 +1432,13 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
-        $donation->update(giftAid: true);
-
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: '99 Updated St'
+        );
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
-        $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorFirstName('Saul');
         $donation->setDonorLastName('Williams');
@@ -1517,12 +1529,13 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
-        $donation->update(giftAid: true);
-
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: '99 Updated St'
+        );
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
-        $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorFirstName('Saul');
         $donation->setDonorLastName('Williams');

@@ -131,9 +131,10 @@ class GetTest extends TestCase
         $container = $app->getContainer();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $testDonation = $this->getTestDonation(charityComms: true);
         $donationRepoProphecy
             ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation())
+            ->willReturn($testDonation)
             ->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -152,7 +153,7 @@ class GetTest extends TestCase
         $this->assertNotEmpty($payloadArray['createdTime']);
         $this->assertEquals('1 Main St, London N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
-        $this->assertTrue($payloadArray['optInCharityEmail']);
+        $this->assertTrue($payloadArray['optInCharityEmail']); // optincharityemail should be true
         $this->assertFalse($payloadArray['optInTbgEmail']);
         $this->assertEquals(0, $payloadArray['matchedAmount']);
         $this->assertEquals(1.00, $payloadArray['tipAmount']);

@@ -887,7 +887,7 @@ class Donation extends SalesforceWriteProxy
         return $this->donorHomeAddressLine1;
     }
 
-    public function setDonorHomeAddressLine1(?string $donorHomeAddressLine1): void
+    private function setDonorHomeAddressLine1(?string $donorHomeAddressLine1): void
     {
         $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
     }
