@@ -289,7 +289,6 @@ class Update extends Action
             $donation->update(
                 giftAid: $donationData->giftAid,
                 tipGiftAid: $donationData->tipGiftAid ?? $donationData->giftAid,
-                tbgShouldProcessGiftAid: $donation->getCampaign()->getCharity()->isTbgClaimingGiftAid(),
                 donorHomeAddressLine1: $donationData->homeAddress,
                 donorHomePostcode: $donationData->homePostcode,
                 donorFirstName: $donationData->firstName,

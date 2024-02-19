@@ -1379,7 +1379,6 @@ class Donation extends SalesforceWriteProxy
     public function update(
         ?bool $giftAid,
         ?bool $tipGiftAid = null,
-        bool $tbgShouldProcessGiftAid = false,
         ?string $donorHomeAddressLine1 = null,
         ?string $donorHomePostcode = null,
         ?string $donorFirstName = '',
@@ -1399,7 +1398,7 @@ class Donation extends SalesforceWriteProxy
 
         $this->setGiftAid($giftAid);
         $this->setTipGiftAid($tipGiftAid);
-        $this->setTbgShouldProcessGiftAid($tbgShouldProcessGiftAid);
+        $this->setTbgShouldProcessGiftAid($this->getCampaign()->getCharity()->isTbgClaimingGiftAid());
         $this->setDonorHomePostcode($donorHomePostcode);
         $this->setDonorHomeAddressLine1($donorHomeAddressLine1);
         $this->setDonorFirstName($donorFirstName);

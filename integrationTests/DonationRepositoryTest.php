@@ -87,7 +87,6 @@ class DonationRepositoryTest extends IntegrationTest
         $donation->update(
             giftAid: true,
             donorHomeAddressLine1: "home address",
-            tbgShouldProcessGiftAid: true,
         );
 
         $donation->collectFromStripeCharge(

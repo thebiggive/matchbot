@@ -137,7 +137,9 @@ class TestCase extends PHPUnitTestCase
 
     public static function getMinimalCampaign(): Campaign
     {
-        return new Campaign(\MatchBot\Tests\TestCase::someCharity());
+        $charity = \MatchBot\Tests\TestCase::someCharity();
+        $charity->setTbgClaimingGiftAid(false);
+        return new Campaign($charity);
     }
 
     /**
