@@ -81,6 +81,11 @@ trait DonationTestDataTrait
             paymentMethodType: $pspMethodType,
             currencyCode: $currencyCode,
         );
+        $donation->setCampaign(TestCase::getMinimalCampaign());
+
+        $donation->update(giftAid: true);
+
+
 
         $this->setMinimumFieldsSetOnFirstPersist($donation);
 
@@ -99,6 +104,7 @@ trait DonationTestDataTrait
             );
         }
 
+
         $donation->setDonorCountryCode('GB');
         $donation->setDonorEmailAddress('john.doe@example.com');
         $donation->setDonorFirstName('John');
@@ -106,7 +112,6 @@ trait DonationTestDataTrait
         $donation->setDonorBillingAddress('1 Main St, London N1 1AA');
         $donation->setDonorHomeAddressLine1('1 Main St, London'); // Frontend typically includes town for now
         $donation->setDonorHomePostcode('N1 1AA');
-        $donation->setGiftAid(true);
         $donation->setSalesforceId('sfDonation369');
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
         $donation->setTipAmount($tipAmount);
@@ -139,8 +144,9 @@ trait DonationTestDataTrait
     private function setMinimumFieldsSetOnFirstPersist(Donation $donation): void
     {
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
+        $donation->update(giftAid: true);
+
         $donation->setTransactionId('pi_externalId_123');
-        $donation->setGiftAid(true);
         $donation->setCharityComms(true);
         $donation->setTbgComms(false);
     }

@@ -942,9 +942,10 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
+        $donation->update(giftAid: true);
+
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
-        $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
         $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');
@@ -1030,9 +1031,9 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
+        $donation->update(giftAid: true);
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
-        $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
         $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');
@@ -1122,9 +1123,11 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
+
+        $donation->update(giftAid: true);
+
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
-        $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
         $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');
@@ -1223,9 +1226,11 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
+
+        $donation->update(giftAid: true);
+
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
-        $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
         $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');
@@ -1317,9 +1322,10 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
+        $donation->update(giftAid: true);
+
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
-        $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
         $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');
@@ -1415,9 +1421,10 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
+        $donation->update(giftAid: true);
+
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
-        $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
         $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');
@@ -1510,9 +1517,10 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD');
+        $donation->update(giftAid: true);
+
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
-        $donation->setGiftAid(true);
         $donation->setTipGiftAid(false);
         $donation->setDonorHomeAddressLine1('99 Updated St');
         $donation->setDonorHomePostcode('X1 1XY');

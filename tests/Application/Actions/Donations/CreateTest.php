@@ -1029,6 +1029,15 @@ class CreateTest extends TestCase
 
         /** @psalm-suppress DeprecatedMethod */
         $donation = Donation::emptyTestDonation(amount: '12.00', currencyCode: $currencyCode);
+        $donation->setCampaign(TestCase::getMinimalCampaign());
+
+        if (!$minimalSetupData) {
+            $donation->update(giftAid: false);
+            $donation->setCharityComms(true);
+            $donation->setChampionComms(false);
+            $donation->setTbgComms(false);
+        }
+
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCampaign($campaign);
         $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
@@ -1038,12 +1047,7 @@ class CreateTest extends TestCase
         $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
         $donation->setCharityFee('0.43');
 
-        if (!$minimalSetupData) {
-            $donation->setCharityComms(true);
-            $donation->setChampionComms(false);
-            $donation->setGiftAid(false);
-            $donation->setTbgComms(false);
-        }
+
 
         return $donation;
     }

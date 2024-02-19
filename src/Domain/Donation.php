@@ -620,7 +620,7 @@ class Donation extends SalesforceWriteProxy
         return $this->giftAid;
     }
 
-    public function setGiftAid(?bool $giftAid): void
+    private function setGiftAid(?bool $giftAid): void
     {
         $this->giftAid = $giftAid;
 
@@ -1375,17 +1375,17 @@ class Donation extends SalesforceWriteProxy
      */
     public function update(
         ?bool $giftAid,
-        ?bool $tipGiftAid,
-        bool $tbgShouldProcessGiftAid,
-        ?string $donorHomeAddressLine1,
-        ?string $donorHomePostcode,
-        ?string $donorFirstName,
-        ?string $donorLastName,
-        ?string $donorEmailAddress,
-        ?bool $tbgComms,
-        ?bool $charityComms,
-        ?bool $championComms,
-        ?string $donorPostalAddress
+        ?bool $tipGiftAid = null,
+        bool $tbgShouldProcessGiftAid = false,
+        ?string $donorHomeAddressLine1 = null,
+        ?string $donorHomePostcode = null,
+        ?string $donorFirstName = '',
+        ?string $donorLastName = '',
+        ?string $donorEmailAddress = null,
+        ?bool $tbgComms = false,
+        ?bool $charityComms = false,
+        ?bool $championComms = false,
+        ?string $donorPostalAddress = null,
     ): void {
         $this->setGiftAid($giftAid);
         $this->setTipGiftAid($tipGiftAid);
@@ -1399,11 +1399,5 @@ class Donation extends SalesforceWriteProxy
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
         $this->setDonorBillingAddress($donorPostalAddress);
-
-        // currently this can't change the fee from what it was when donation entity was created, but
-        // we call deriveFees here for consistency with the Create action, in case the derivation logic changes to
-        // depend on something we do mutate in the donation. But if this is a card payment it will be called again in
-        // the `confirm` action.
-        $this->deriveFees(null, null);
     }
 }
