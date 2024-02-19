@@ -146,7 +146,10 @@ trait DonationTestDataTrait
     private function setMinimumFieldsSetOnFirstPersist(Donation $donation): void
     {
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
-        $donation->update(giftAid: true);
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: 'Home Address'
+        );
 
         $donation->setTransactionId('pi_externalId_123');
         $donation->setCharityComms(true);

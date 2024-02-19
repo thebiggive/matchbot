@@ -338,9 +338,12 @@ class Donation extends SalesforceWriteProxy
         $donation->setUuid(Uuid::uuid4());
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
 
-        $donation->setGiftAid($donationData->giftAid);
+        // Gift Aid is always set to false at donation creation time. It can only be set to true if the donor supplies
+        // their address later.
+        $donation->setGiftAid(false);
         // `DonationCreate` doesn't support a distinct property yet & we only ask once about GA.
-        $donation->setTipGiftAid($donationData->giftAid);
+        $donation->setTipGiftAid(false);
+
         $donation->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
 
         $donation->setCharityComms($donationData->optInCharityEmail);
@@ -1387,6 +1390,13 @@ class Donation extends SalesforceWriteProxy
         ?bool $championComms = false,
         ?string $donorPostalAddress = null,
     ): void {
+        if (
+            $giftAid &&
+            ($donorHomeAddressLine1 === null || trim($donorHomeAddressLine1) === '')
+        ) {
+            throw new \UnexpectedValueException("Cannot Claim Gift Aid Without Home Address");
+        }
+
         $this->setGiftAid($giftAid);
         $this->setTipGiftAid($tipGiftAid);
         $this->setTbgShouldProcessGiftAid($tbgShouldProcessGiftAid);
