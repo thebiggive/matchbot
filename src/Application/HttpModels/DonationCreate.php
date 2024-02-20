@@ -24,7 +24,6 @@ class DonationCreate
         public PaymentMethodType $pspMethodType = PaymentMethodType::Card,
         public ?string $countryCode = null,
         public ?string $feeCoverAmount = '0.00',
-        public ?bool $giftAid = null,
         public ?bool $optInCharityEmail = null,
         public ?bool $optInChampionEmail = null,
         public ?bool $optInTbgEmail = null,
