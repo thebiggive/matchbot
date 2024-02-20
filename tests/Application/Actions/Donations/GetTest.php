@@ -153,7 +153,7 @@ class GetTest extends TestCase
         $this->assertNotEmpty($payloadArray['createdTime']);
         $this->assertEquals('1 Main St, London N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
-        $this->assertTrue($payloadArray['optInCharityEmail']); // optincharityemail should be true
+        $this->assertTrue($payloadArray['optInCharityEmail']);
         $this->assertFalse($payloadArray['optInTbgEmail']);
         $this->assertEquals(0, $payloadArray['matchedAmount']);
         $this->assertEquals(1.00, $payloadArray['tipAmount']);
