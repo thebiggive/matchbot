@@ -941,7 +941,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        $donation = $this->getTestDonation(currencyCode: 'USD', collected: false);
         $donation->update(
             giftAid: true,
             donorHomeAddressLine1: '99 Updated St',
@@ -1032,7 +1032,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        $donation = $this->getTestDonation(currencyCode: 'USD', collected: false);
         $donation->update(
             giftAid: true,
             donorHomeAddressLine1: '99 Updated St',
@@ -1126,7 +1126,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        $donation = $this->getTestDonation(currencyCode: 'USD', collected: false);
 
         $donation->update(
             giftAid: true,
@@ -1231,7 +1231,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        $donation = $this->getTestDonation(currencyCode: 'USD', collected: false);
 
         $donation->update(
             giftAid: true,
@@ -1329,7 +1329,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        $donation = $this->getTestDonation(currencyCode: 'USD', collected: false);
 
         $donation->update(
             giftAid: true,
@@ -1431,7 +1431,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        $donation = $this->getTestDonation(currencyCode: 'USD', collected: false);
         $donation->update(
             giftAid: true,
             donorHomeAddressLine1: '99 Updated St'
@@ -1528,7 +1528,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(currencyCode: 'USD');
+        $donation = $this->getTestDonation(currencyCode: 'USD', collected: false);
         $donation->update(
             giftAid: true,
             donorHomeAddressLine1: '99 Updated St'
@@ -1606,7 +1606,7 @@ class UpdateTest extends TestCase
 
         // These two values are unchanged but still returned.
         $this->assertEquals(123.45, $payloadArray['donationAmount']);
-        $this->assertEquals(DonationStatus::Collected->value, $payloadArray['status']);
+        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['status']);
 
         // Remaining properties should be updated.
         $this->assertEquals('US', $payloadArray['countryCode']);
@@ -1894,12 +1894,20 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        $donation = $this->getTestDonation(
+            pspMethodType: PaymentMethodType::CustomerBalance,
+            tipAmount: '0',
+            collected: false,
+        );
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         // Get a new mock object so DB has old values. Make it explicit that the payment method type is (the
         // unsupported for auto-confirms) "card".
-        $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
+        $donationInRepo = $this->getTestDonation(
+            pspMethodType: PaymentMethodType::CustomerBalance,
+            tipAmount: '0',
+            collected: false
+        );
 
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])

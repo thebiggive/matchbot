@@ -664,6 +664,36 @@ class DonationTest extends TestCase
         );
     }
 
+    public function testCannotUpdateADonationAfterCollection(): void
+    {
+        // arrange
+        $donation = Donation::fromApiModel(new DonationCreate(
+            countryCode: 'GB',
+            currencyCode: 'GBP',
+            donationAmount: '1.0',
+            projectId: 'project_id',
+            psp: 'stripe',
+        ), new Campaign(TestCase::someCharity()));
+
+        $donation->collectFromStripeCharge(
+            chargeId: 'irrelevent',
+            transferId: 'irrelevent',
+            cardBrand: 'visa',
+            cardCountry: 'gb',
+            originalFeeFractional: '1',
+            chargeCreationTimestamp: 1,
+        );
+
+        // assert
+        $this->expectExceptionMessage('Update only allowed for pending donation');
+
+        // act
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: 'Updated home address',
+        );
+    }
+
     /**
      * @return array<array{0: ?string, 1: ?string}>
      */
