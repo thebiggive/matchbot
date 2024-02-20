@@ -1389,6 +1389,10 @@ class Donation extends SalesforceWriteProxy
         ?bool $championComms = false,
         ?string $donorPostalAddress = null,
     ): void {
+        if ($this->donationStatus !== DonationStatus::Pending) {
+            throw new \UnexpectedValueException("Update only allowed for pending donation");
+        }
+
         if (
             $giftAid &&
             ($donorHomeAddressLine1 === null || trim($donorHomeAddressLine1) === '')
