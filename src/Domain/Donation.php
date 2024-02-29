@@ -338,9 +338,12 @@ class Donation extends SalesforceWriteProxy
         $donation->setUuid(Uuid::uuid4());
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
 
-        $donation->setGiftAid($donationData->giftAid);
+        // Gift Aid is always set to false at donation creation time. It can only be set to true if the donor supplies
+        // their address later.
+        $donation->setGiftAid(false);
         // `DonationCreate` doesn't support a distinct property yet & we only ask once about GA.
-        $donation->setTipGiftAid($donationData->giftAid);
+        $donation->setTipGiftAid(false);
+
         $donation->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
 
         $donation->setCharityComms($donationData->optInCharityEmail);
@@ -620,7 +623,7 @@ class Donation extends SalesforceWriteProxy
         return $this->giftAid;
     }
 
-    public function setGiftAid(?bool $giftAid): void
+    private function setGiftAid(?bool $giftAid): void
     {
         $this->giftAid = $giftAid;
 
@@ -887,7 +890,7 @@ class Donation extends SalesforceWriteProxy
         return $this->donorHomeAddressLine1;
     }
 
-    public function setDonorHomeAddressLine1(?string $donorHomeAddressLine1): void
+    private function setDonorHomeAddressLine1(?string $donorHomeAddressLine1): void
     {
         $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
     }
@@ -1368,5 +1371,46 @@ class Donation extends SalesforceWriteProxy
         $this->donationStatus = DonationStatus::Collected;
         $this->collectedAt = (new \DateTimeImmutable("@$chargeCreationTimestamp"));
         $this->setOriginalPspFeeFractional($originalFeeFractional);
+    }
+
+    /**
+     * Updates a pending donation to reflect changes made in the donation form.
+     */
+    public function update(
+        ?bool $giftAid,
+        ?bool $tipGiftAid = null,
+        ?string $donorHomeAddressLine1 = null,
+        ?string $donorHomePostcode = null,
+        ?string $donorFirstName = '',
+        ?string $donorLastName = '',
+        ?string $donorEmailAddress = null,
+        ?bool $tbgComms = false,
+        ?bool $charityComms = false,
+        ?bool $championComms = false,
+        ?string $donorPostalAddress = null,
+    ): void {
+        if ($this->donationStatus !== DonationStatus::Pending) {
+            throw new \UnexpectedValueException("Update only allowed for pending donation");
+        }
+
+        if (
+            $giftAid &&
+            ($donorHomeAddressLine1 === null || trim($donorHomeAddressLine1) === '')
+        ) {
+            throw new \UnexpectedValueException("Cannot Claim Gift Aid Without Home Address");
+        }
+
+        $this->setGiftAid($giftAid);
+        $this->setTipGiftAid($tipGiftAid);
+        $this->setTbgShouldProcessGiftAid($this->getCampaign()->getCharity()->isTbgClaimingGiftAid());
+        $this->setDonorHomePostcode($donorHomePostcode);
+        $this->setDonorHomeAddressLine1($donorHomeAddressLine1);
+        $this->setDonorFirstName($donorFirstName);
+        $this->setDonorLastName($donorLastName);
+        $this->setDonorEmailAddress($donorEmailAddress);
+        $this->setTbgComms($tbgComms);
+        $this->setCharityComms($charityComms);
+        $this->setChampionComms($championComms);
+        $this->setDonorBillingAddress($donorPostalAddress);
     }
 }

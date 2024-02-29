@@ -79,11 +79,15 @@ class DonationRepositoryTest extends IntegrationTest
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '300',
-            giftAid: true,
             projectId: 'ccampaign123',
             psp: 'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
         ), $campaign);
+
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: "home address",
+        );
 
         $donation->collectFromStripeCharge(
             chargeId: 'charge_id',

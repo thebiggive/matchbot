@@ -40,7 +40,7 @@ class DonationTest extends TestCase
         $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
         $this->assertNull($donation->getSalesforceLastPush());
         $this->assertNull($donation->getSalesforceId());
-        $this->assertNull($donation->hasGiftAid());
+        $this->assertFalse($donation->hasGiftAid());
         $this->assertNull($donation->getCharityComms());
         $this->assertNull($donation->getTbgComms());
     }
@@ -622,6 +622,76 @@ class DonationTest extends TestCase
         ), new Campaign(TestCase::someCharity()));
 
         $this->assertSame($expected, $donation->getDonorCountryCode());
+    }
+
+    /**
+     * HMRC will not process a gift aid claim without the donors home address, so we should
+     * also not accept an instruction to claim to claim gift aid if we don't have the donor's address.
+     */
+    public function testCannotRequestGiftAidWithoutHomeAddress(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            countryCode: 'GB',
+            currencyCode: 'GBP',
+            donationAmount: '1.0',
+            projectId: 'project_id',
+            psp: 'stripe',
+        ), new Campaign(TestCase::someCharity()));
+
+        $this->expectExceptionMessage('Cannot Claim Gift Aid Without Home Address');
+
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: null,
+        );
+    }
+
+    public function testCannotRequestGiftAidWithWhitespaceOnlyHomeAddress(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            countryCode: 'GB',
+            currencyCode: 'GBP',
+            donationAmount: '1.0',
+            projectId: 'project_id',
+            psp: 'stripe',
+        ), new Campaign(TestCase::someCharity()));
+
+        $this->expectExceptionMessage('Cannot Claim Gift Aid Without Home Address');
+
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: '   ',
+        );
+    }
+
+    public function testCannotUpdateADonationAfterCollection(): void
+    {
+        // arrange
+        $donation = Donation::fromApiModel(new DonationCreate(
+            countryCode: 'GB',
+            currencyCode: 'GBP',
+            donationAmount: '1.0',
+            projectId: 'project_id',
+            psp: 'stripe',
+        ), new Campaign(TestCase::someCharity()));
+
+        $donation->collectFromStripeCharge(
+            chargeId: 'irrelevent',
+            transferId: 'irrelevent',
+            cardBrand: 'visa',
+            cardCountry: 'gb',
+            originalFeeFractional: '1',
+            chargeCreationTimestamp: 1,
+        );
+
+        // assert
+        $this->expectExceptionMessage('Update only allowed for pending donation');
+
+        // act
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: 'Updated home address',
+        );
     }
 
     /**

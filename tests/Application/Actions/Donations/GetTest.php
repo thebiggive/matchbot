@@ -131,9 +131,10 @@ class GetTest extends TestCase
         $container = $app->getContainer();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $testDonation = $this->getTestDonation(charityComms: true);
         $donationRepoProphecy
             ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
-            ->willReturn($this->getTestDonation())
+            ->willReturn($testDonation)
             ->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
