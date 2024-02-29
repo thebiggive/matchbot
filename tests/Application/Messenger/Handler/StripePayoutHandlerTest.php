@@ -91,11 +91,13 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce();
         $loggerProphecy->info("Payout: Getting original TBG charge IDs related to payout's Charge IDs")
             ->shouldBeCalledOnce();
-        $loggerProphecy->info('Payout: Donation not found with Charge ID ch_invalidId_123')
+        $loggerProphecy->log('INFO', 'Payout: Donation not found with Charge ID ch_invalidId_123')
             ->shouldBeCalledOnce();
         $loggerProphecy->info('Payout: Finished getting original Charge IDs, found 1')
             ->shouldBeCalledOnce();
-        $loggerProphecy->info('Payout: Updating paid donations complete, persisted 0')
+        $loggerProphecy->info(
+            'Payout: Updating paid donations complete for stripe payout #po_externalId_123, persisted 0'
+        )
             ->shouldBeCalledOnce();
 
         $stripeClientProphecy = $this->getStripeClient();

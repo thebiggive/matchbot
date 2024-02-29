@@ -38,7 +38,6 @@ class StripePayoutHandler implements MessageHandlerInterface
         $connectAccountId = $payout->getConnectAccountId();
         $payoutId = $payout->getPayoutId();
 
-        /** @var \Stripe\Payout $stripePayout */
         $stripePayout = $this->stripeClient->payouts->retrieve(
             $payoutId,
             null,
@@ -103,7 +102,7 @@ class StripePayoutHandler implements MessageHandlerInterface
         $chargeIds = $this->getOriginalDonationChargeIds($paidChargeIds, $connectAccountId, $payoutCreated);
 
         if ($chargeIds === []) {
-            $this->logger->info(sprintf(
+            $this->logger->error(sprintf(
                 'Payout: Exited with no original donation charge IDs for Payout ID %s',
                 $payoutId,
             ));
@@ -114,15 +113,18 @@ class StripePayoutHandler implements MessageHandlerInterface
         foreach ($chargeIds as $chargeId) {
             $this->entityManager->beginTransaction();
 
-            /** @var Donation $donation */
             $donation = $this->donationRepository->findAndLockOneBy(['chargeId' => $chargeId]);
 
             // If a donation was not found, then it's most likely from a different
             // sandbox and therefore we info log this. Typically this should happen for
             // all donations in the batch but we continue looping so that behaviour for
             // other donations remains consistent if not.
+            //
+            // In prod if we can't find the donation it's an error.
             if (!$donation) {
-                $this->logger->info(sprintf('Payout: Donation not found with Charge ID %s', $chargeId));
+                $logLevel = (getenv('APP_ENV') === 'production') ? 'ERROR' : 'INFO';
+
+                $this->logger->log($logLevel, sprintf('Payout: Donation not found with Charge ID %s', $chargeId));
                 $this->entityManager->commit();
                 continue;
             }
@@ -136,6 +138,8 @@ class StripePayoutHandler implements MessageHandlerInterface
                 $this->entityManager->persist($donation);
                 $this->entityManager->flush();
                 $this->entityManager->commit();
+
+                $this->logger->info("Marked donation #{$donation->getId()} paid based on stripe payout #{$payoutId}");
 
                 $count++;
                 continue;
@@ -162,7 +166,11 @@ class StripePayoutHandler implements MessageHandlerInterface
             }
         }
 
-        $this->logger->info(sprintf('Payout: Updating paid donations complete, persisted %s', $count));
+        $this->logger->info(sprintf(
+            'Payout: Updating paid donations complete for stripe payout #%s, persisted %s',
+            $payoutId,
+            $count,
+        ));
     }
 
     /**
