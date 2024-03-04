@@ -1,8 +1,9 @@
 version: 2.1
 
 orbs:
-  aws-ecr: circleci/aws-ecr@8.1.3
+  aws-ecr: circleci/aws-ecr@9.0.2
   aws-ecs: circleci/aws-ecs@3.2.0
+  aws-cli: circleci/aws-cli@4.1.3
   codecov: codecov/codecov@3.2.4
   jira: circleci/jira@1.3.1
   slack: circleci/slack@4.12.1
@@ -148,20 +149,24 @@ workflows:
                 - develop
           context:
             - docker-hub-creds
-      - aws-ecr/build-and-push-image:
+      - aws-ecr/build_and_push_image:
           context:
             - ecs-deploys
           requires:
             - test
           repo: '${AWS_ECR_REPO_NAME}'
           tag: 'regression,regression-${CIRCLE_SHA1}'
+          auth:
+            - aws-cli/setup:
+                aws_access_key_id: AWS_ACCESS_KEY_ID
+                aws_secret_access_key: AWS_SECRET_ACCESS_KEY
       - aws-ecs/deploy-service-update:
           context:
             - ecs-deploys
             - jira
             - slack
           requires:
-            - aws-ecr/build-and-push-image
+            - aws-ecr/build_and_push_image
           family: 'tbg-regression-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_WEB}'
           cluster: 'tbg-regression-${AWS_REGION}'
           container-image-name-updates: 'container=matchbot_web,tag=regression-${CIRCLE_SHA1}'
@@ -196,20 +201,24 @@ workflows:
                 - develop
           context:
             - docker-hub-creds
-      - aws-ecr/build-and-push-image:
+      - aws-ecr/build_and_push_image:
           context:
             - ecs-deploys
           requires:
             - test
           repo: '${AWS_ECR_REPO_NAME}'
           tag: 'staging,staging-${CIRCLE_SHA1}'
+          auth:
+            - aws-cli/setup:
+                aws_access_key_id: AWS_ACCESS_KEY_ID
+                aws_secret_access_key: AWS_SECRET_ACCESS_KEY
       - aws-ecs/deploy-service-update:
           context:
             - ecs-deploys
             - jira
             - slack
           requires:
-            - aws-ecr/build-and-push-image
+            - aws-ecr/build_and_push_image
           family: 'tbg-staging-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_WEB}'
           cluster: 'tbg-staging-${AWS_REGION}'
           container-image-name-updates: 'container=matchbot_web,tag=staging-${CIRCLE_SHA1}'
@@ -245,20 +254,24 @@ workflows:
                 - main
           context:
             - docker-hub-creds
-      - aws-ecr/build-and-push-image:
+      - aws-ecr/build_and_push_image:
           context:
             - ecs-deploys
           requires:
             - test
           repo: '${AWS_ECR_REPO_NAME}'
           tag: 'production,production-${CIRCLE_SHA1}'
+          auth:
+            - aws-cli/setup:
+                aws_access_key_id: AWS_ACCESS_KEY_ID
+                aws_secret_access_key: AWS_SECRET_ACCESS_KEY
       - aws-ecs/deploy-service-update:
           context:
             - ecs-deploys
             - jira
             - slack
           requires:
-            - aws-ecr/build-and-push-image
+            - aws-ecr/build_and_push_image
           family: 'tbg-production-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_WEB}'
           cluster: 'tbg-production-${AWS_REGION}'
           container-image-name-updates: 'container=matchbot_web,tag=production-${CIRCLE_SHA1}'
