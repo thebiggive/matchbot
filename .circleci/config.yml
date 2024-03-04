@@ -150,6 +150,7 @@ workflows:
           context:
             - docker-hub-creds
       - aws-ecr/build_and_push_image:
+          account_id: ${AWS_ECR_REGISTRY_ID}
           context:
             - ecs-deploys
           requires:
@@ -202,6 +203,7 @@ workflows:
           context:
             - docker-hub-creds
       - aws-ecr/build_and_push_image:
+          account_id: ${AWS_ECR_REGISTRY_ID}
           context:
             - ecs-deploys
           requires:
@@ -255,6 +257,7 @@ workflows:
           context:
             - docker-hub-creds
       - aws-ecr/build_and_push_image:
+          account_id: ${AWS_ECR_REGISTRY_ID}
           context:
             - ecs-deploys
           requires:
