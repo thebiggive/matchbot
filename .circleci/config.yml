@@ -147,7 +147,6 @@ workflows:
             branches:
               only:
                 - develop
-                - MAT-355-circle-ci-update
           context:
             - docker-hub-creds
       - aws-ecr/build_and_push_image:
