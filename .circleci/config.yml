@@ -147,10 +147,12 @@ workflows:
             branches:
               only:
                 - develop
+                - MAT-355-circle-ci-update
           context:
             - docker-hub-creds
       - aws-ecr/build_and_push_image:
           account_id: ${AWS_ECR_REGISTRY_ID}
+          region: '${AWS_REGION}'
           context:
             - ecs-deploys
           requires:
@@ -204,6 +206,7 @@ workflows:
             - docker-hub-creds
       - aws-ecr/build_and_push_image:
           account_id: ${AWS_ECR_REGISTRY_ID}
+          region: '${AWS_REGION}'
           context:
             - ecs-deploys
           requires:
@@ -264,6 +267,7 @@ workflows:
             - test
           repo: '${AWS_ECR_REPO_NAME}'
           tag: 'production,production-${CIRCLE_SHA1}'
+          region: '${AWS_REGION}'
           auth:
             - aws-cli/setup:
                 aws_access_key_id: AWS_ACCESS_KEY_ID
