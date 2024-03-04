@@ -58,6 +58,10 @@ class Status extends Action
         }
 
         if ($errorMessage === null) {
+            if (($request->getQueryParams()['ping'] ?? null) === 'ping') {
+                return $this->respondWithData($response, ['pong']);
+            }
+
             return $this->respondWithData($response, ['status' => 'OK']);
         }
 
