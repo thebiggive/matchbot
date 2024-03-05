@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Actions\Donations;
 
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use MatchBot\Domain\Donation;
 use Prophecy\Promise\PromiseInterface;
 use Prophecy\Promise\ThrowPromise;
 use Prophecy\Prophecy\MethodProphecy;
 use Prophecy\Prophecy\ObjectProphecy;
-use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
-use Stripe\PaymentIntent;
 
 /**
  * Either fail with a lock error then succeed, or fail twice.
