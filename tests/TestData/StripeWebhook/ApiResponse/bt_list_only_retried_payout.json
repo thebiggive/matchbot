@@ -4,7 +4,7 @@
     {
       "id": "txn_1OXXXX",
       "object": "balance_transaction",
-      "amount": -519983,
+      "amount": -200,
       "available_on": 1705276800,
       "created": 1704850096,
       "currency": "gbp",
@@ -12,36 +12,28 @@
       "exchange_rate": null,
       "fee": 0,
       "fee_details": [],
-      "net": -519983,
+      "net": -200,
       "reporting_category": "payout",
-      "source": "po_externalId_123",
+      "source": "po_retrySuccess_234",
       "status": "available",
       "type": "payout"
     },
     {
-      "id": "txn_1H4Rt9KkGuKkxwBNtVRZeh4v",
+      "id": "txn_20XXXX",
       "object": "balance_transaction",
-      "amount": 700,
-      "available_on": 1595203200,
-      "created": 1594647611,
+      "amount": 200,
+      "available_on": 1703748850,
+      "created": 1703748850,
       "currency": "gbp",
-      "description": null,
+      "description": "REFUND FOR PAYOUT (STRIPE PAYOUT)",
       "exchange_rate": null,
-      "fee": 30,
-      "fee_details": [
-        {
-          "amount": 30,
-          "application": null,
-          "currency": "gbp",
-          "description": "Stripe processing fees",
-          "type": "stripe_fee"
-        }
-      ],
-      "net": 670,
-      "reporting_category": "charge",
-      "source": "ch_externalId_123",
+      "fee": 0,
+      "fee_details": [],
+      "net": 200,
+      "reporting_category": "payout_reversal",
+      "source": "po_externalId_123",
       "status": "available",
-      "type": "payment"
+      "type": "payout_failure"
     }
   ],
   "has_more": false,
