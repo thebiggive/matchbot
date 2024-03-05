@@ -84,10 +84,6 @@ $commands = [
         $psr11App->get(Matching\Adapter::class),
         $chatter,
     ),
-    new \MatchBot\Application\Commands\UnPaidDonationCheck(
-        $psr11App->get(\Doctrine\DBAL\Connection::class),
-        $psr11App->get(LoggerInterface::class)
-    ),
     new PushDonations($psr11App->get(DonationRepository::class)),
     new ResetMatching(
         $psr11App->get(CampaignFundingRepository::class),
