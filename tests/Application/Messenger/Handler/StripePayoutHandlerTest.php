@@ -29,9 +29,9 @@ class StripePayoutHandlerTest extends TestCase
     use DonationTestDataTrait;
     use StripeFormattingTrait;
 
-    const CONNECTED_ACCOUNT_ID = 'acct_unitTest123';
-    const DEFAULT_PAYOUT_ID = 'po_externalId_123';
-    const RETRIED_PAYOUT_ID = 'po_retrySuccess_234';
+    private const CONNECTED_ACCOUNT_ID = 'acct_unitTest123';
+    private const DEFAULT_PAYOUT_ID = 'po_externalId_123';
+    private const RETRIED_PAYOUT_ID = 'po_retrySuccess_234';
 
     public function testUnrecognisedChargeId(): void
     {
