@@ -140,7 +140,7 @@ class StripePayoutHandler implements MessageHandlerInterface
     }
 
     /**
-     * @return array{created: DateTime, chargeIds: array<string>}
+     * @return array{created: \DateTimeImmutable, chargeIds: array<string>}
      * @throws ApiErrorException if balance transaction listing fails.
      */
     private function processPayout(string $payoutId, string $connectAccountId): array
