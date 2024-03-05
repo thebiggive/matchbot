@@ -150,7 +150,7 @@ class StripePayoutHandler implements MessageHandlerInterface
             null,
             ['stripe_account' => $connectAccountId],
         );
-        $payoutCreated = (new DateTime())->setTimestamp($stripePayout->created);
+        $payoutCreated = (new \DateTimeImmutable())->setTimestamp($stripePayout->created);
 
         $this->logger->info(sprintf(
             'Payout: Getting all charges related to Payout ID %s for Connect account ID %s',
@@ -226,20 +226,19 @@ class StripePayoutHandler implements MessageHandlerInterface
     private function getOriginalDonationChargeIds(
         array $paidChargeIds,
         string $connectAccountId,
-        DateTime $payoutCreated
+        \DateTimeImmutable $payoutCreated
     ): array {
         $this->logger->info("Payout: Getting original TBG charge IDs related to payout's Charge IDs");
-
-        $fromDate = clone $payoutCreated;
-        $toDate = clone $payoutCreated;
 
         // Payouts' usual scheduled as of 2022 is a 2 week minimum offset (give or take a calendar day)
         // with a fixed day of the week for payouts, making the maximum normal lag 21 days. However we
         // have had edge cases with bank details problems taking a couple of weeks to resolve, so we now
         // look back up to 60 days in order to still catch charges for status updates if this happens.
+
         $tz = new \DateTimeZone('Europe/London');
-        $fromDate->sub(new \DateInterval('P60D'))->setTimezone($tz);
-        $toDate->add(new \DateInterval('P1D'))->setTimezone($tz);
+        $fromDate = $payoutCreated->sub(new \DateInterval('P60D'))->setTimezone($tz);
+        $toDate = $payoutCreated->add(new \DateInterval('P1D'))->setTimezone($tz);
+
 
         // Get charges (`ch_...`) related to the charity's Connect account and then get
         // their corresponding transfers (`tr_...`).
