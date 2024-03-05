@@ -2,7 +2,6 @@
 
 namespace MatchBot\Application\Messenger\Handler;
 
-use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Domain\Donation;
@@ -11,8 +10,7 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\SalesforceWriteProxy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
-use Stripe\Charge;
-use Stripe\Collection;
+use Stripe\BalanceTransaction;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
@@ -182,11 +180,11 @@ class StripePayoutHandler implements MessageHandlerInterface
         // Auto page, iterating in reverse chronological order. https://stripe.com/docs/api/pagination/auto?lang=php
         foreach ($balanceTransactions->autoPagingIterator() as $balanceTransaction) {
             switch ($balanceTransaction->type) {
-                case 'payment':
+                case BalanceTransaction::TYPE_PAYMENT:
                     // source is the `ch_...` charge ID from the connected account txns.
                     $paidChargeIds[] = (string) $balanceTransaction->source;
                     break;
-                case 'payout_failure':
+                case BalanceTransaction::TYPE_PAYOUT_FAILURE:
                     // source is the previous failed payout `po_...` ID.
                     $extraPayoutIdsToMap[] = (string) $balanceTransaction->source;
                     break;
