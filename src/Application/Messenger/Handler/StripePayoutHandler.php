@@ -150,7 +150,11 @@ class StripePayoutHandler implements MessageHandlerInterface
             null,
             ['stripe_account' => $connectAccountId],
         );
-        $payoutCreated = (new \DateTimeImmutable())->setTimestamp($stripePayout->created);
+
+        $payoutCreated = \DateTimeImmutable::createFromFormat('U', (string) $stripePayout->created);
+        if (! $payoutCreated) {
+            throw new \Exception('Bad date format from stripe');
+        }
 
         $this->logger->info(sprintf(
             'Payout: Getting all charges related to Payout ID %s for Connect account ID %s',
