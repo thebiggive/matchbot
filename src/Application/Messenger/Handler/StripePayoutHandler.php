@@ -156,6 +156,20 @@ class StripePayoutHandler implements MessageHandlerInterface
             throw new \Exception('Bad date format from stripe');
         }
 
+        if ($stripePayout->status !== 'paid') {
+            $this->logger->info(sprintf(
+                'Payout: Skipping payout ID %s for Connect account ID %s; status is %s',
+                $payoutId,
+                $connectAccountId,
+                $stripePayout->status,
+            ));
+
+            return [
+                'created' => $payoutCreated,
+                'chargeIds' => [],
+            ];
+        }
+
         $this->logger->info(sprintf(
             'Payout: Getting all charges related to Payout ID %s for Connect account ID %s',
             $payoutId,

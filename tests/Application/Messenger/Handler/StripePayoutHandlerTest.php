@@ -279,16 +279,73 @@ class StripePayoutHandlerTest extends TestCase
     }
 
     /**
+     * This scenario is especially pertinent in March 2024 while we're planning use of a one-time script to patch
+     * payouts from historic edge cases. But it's also good to cover the data sanity check for the long term, since
+     * Stripe {@link https://docs.stripe.com/api/payouts/object#payout_object-status say} "Some payouts that fail might
+     * initially show as paid, then change to failed."
+     */
+    public function testNoOpWhenPayoutFailed(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $donation = $this->getTestDonation();
+
+        $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
+        $stripeBalanceTransactionProphecy->all(
+            [
+                'limit' => 100,
+                'payout' => self::DEFAULT_PAYOUT_ID,
+            ],
+            ['stripe_account' => self::CONNECTED_ACCOUNT_ID],
+        )
+            ->shouldNotBeCalled();
+
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->getRepository(Donation::class)->shouldNotBeCalled();
+        $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
+
+        $loggerProphecy = $this->prophesize(LoggerInterface::class);
+        $loggerProphecy->info(
+            'Payout: Skipping payout ID po_externalId_123 for Connect account ID acct_unitTest123; status is failed'
+        )
+            ->shouldBeCalledOnce();
+        $loggerProphecy->info(
+            'Payout: Exited with no paid Charge IDs for Payout ID po_externalId_123, account acct_unitTest123',
+        )
+            ->shouldBeCalledOnce();
+
+        $stripeClientProphecy = $this->getStripeClient(withRetriedPayout: false, withPayoutSuccess: false);
+        @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
+
+        $container->set(DonationRepository::class, $this->prophesize(DonationRepository::class)->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(LoggerInterface::class, $loggerProphecy->reveal());
+        $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+
+        $this->invokePayoutHandler($container, $loggerProphecy->reveal());
+
+        // No change because payout's failed.
+        $this->assertEquals(DonationStatus::Collected, $donation->getDonationStatus());
+    }
+
+    /**
      * Helper to return Prophecy of a Stripe client with its revealed prophesised properties that
      * *don't* vary between scenarios already set up.
      *
      * @return ObjectProphecy<StripeClient>
      */
-    private function getStripeClient(bool $withRetriedPayout): ObjectProphecy
+    private function getStripeClient(bool $withRetriedPayout, bool $withPayoutSuccess = true): ObjectProphecy
     {
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
 
         $stripePayoutProphecy = $this->prophesize(PayoutService::class);
+
+        /** @var \stdClass $payoutMock */
+        $payoutMock = json_decode($this->getStripeHookMock(
+            $withPayoutSuccess ? 'ApiResponse/po' : 'ApiResponse/po_failed',
+        ), false, 512, JSON_THROW_ON_ERROR);
 
         if ($withRetriedPayout) {
             $stripePayoutProphecy->retrieve(
@@ -298,8 +355,8 @@ class StripePayoutHandlerTest extends TestCase
             )
                 ->shouldBeCalledOnce()
                 // This mock isn't very realistic as it has the other ID, but for this test
-                // its properties aren't relevant.
-                ->willReturn(json_decode($this->getStripeHookMock('ApiResponse/po')));
+                // its properties except `status` aren't relevant.
+                ->willReturn($payoutMock);
         }
 
         $stripePayoutProphecy->retrieve(
@@ -308,7 +365,7 @@ class StripePayoutHandlerTest extends TestCase
             ['stripe_account' => self::CONNECTED_ACCOUNT_ID],
         )
             ->shouldBeCalledOnce()
-            ->willReturn(json_decode($this->getStripeHookMock('ApiResponse/po')));
+            ->willReturn($payoutMock);
 
         // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
         // code, and may get mutation tests working again.
