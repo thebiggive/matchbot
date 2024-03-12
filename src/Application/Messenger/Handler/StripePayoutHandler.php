@@ -52,8 +52,9 @@ class StripePayoutHandler implements MessageHandlerInterface
 
         if (count($payoutInfo['chargeIds']) === 0) {
             $this->logger->info(sprintf(
-                'Payout: Exited with no paid Charge IDs for Payout ID %s',
+                'Payout: Exited with no paid Charge IDs for Payout ID %s, account %s',
                 $payoutId,
+                $connectAccountId,
             ));
 
             return;
@@ -67,8 +68,9 @@ class StripePayoutHandler implements MessageHandlerInterface
 
         if ($chargeIds === []) {
             $this->logger->error(sprintf(
-                'Payout: Exited with no original donation charge IDs for Payout ID %s',
+                'Payout: Exited with no original donation charge IDs for Payout ID %s, account %s',
                 $payoutId,
+                $connectAccountId,
             ));
 
             return;
