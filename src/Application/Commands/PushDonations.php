@@ -8,8 +8,6 @@ use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-use function Symfony\Component\Clock\now;
-
 class PushDonations extends LockingCommand
 {
     protected static $defaultName = 'matchbot:push-donations';
