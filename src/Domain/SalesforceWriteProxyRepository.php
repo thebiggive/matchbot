@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use Doctrine\Common\Collections\Criteria;
 use MatchBot\Application\Commands\PushDonations;
 
 /**
@@ -106,8 +107,13 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
      * @param int $limit    Maximum of each type of pending object to process
      * @return int  Number of objects pushed
      */
-    public function pushSalesforcePending(int $limit = 200): int
+    public function pushSalesforcePending(\DateTimeImmutable $now, int $limit = 200): int
     {
+        // We don't want to push donations that were created or modified in the last 5 minutes,
+        // to avoid collisions with other pushes.
+        $fiveMinutesAgo = $now->modify('-5 minutes');
+
+        /** @var SalesforceWriteProxy[] $proxiesToCreate */
         $proxiesToCreate = $this->findBy(
             ['salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE],
             ['id' => 'ASC'],
@@ -115,6 +121,13 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
         );
 
         foreach ($proxiesToCreate as $proxy) {
+            if ($proxy->getUpdatedDate() > $fiveMinutesAgo) {
+                // fetching the proxy just to skip it here is a bit wasteful but the performance cost is low
+                // compared to working out how to do a findBy equivalent with multiple criteria
+                // (i.e. using \Doctrine\ORM\EntityRepository::matching() method)
+                continue;
+            }
+
             $this->push($proxy, true);
         }
 
@@ -125,6 +138,10 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
         );
 
         foreach ($proxiesToUpdate as $proxy) {
+            if ($proxy->getUpdatedDate() > $fiveMinutesAgo) {
+                continue;
+            }
+
             $this->push($proxy, false);
         }
 

@@ -48,6 +48,7 @@ assert($chatter instanceof ChatterInterface);
  * by using a stub psr11 with generics. It's also not very important to fix for this statement as it is called inside
  * any loop or conditional. If it's broken we'll know about it.
  */
+$now = new \DateTimeImmutable('now');
 $commands = [
     new ClaimGiftAid(
         $psr11App->get(DonationRepository::class),
@@ -62,7 +63,7 @@ $commands = [
         [$messengerReceiverKey],
     ),
     new DeleteStalePaymentDetails(
-        new \DateTimeImmutable('now'),
+        $now,
         $psr11App->get(LoggerInterface::class),
         $psr11App->get(StripeClient::class),
     ),
@@ -74,7 +75,7 @@ $commands = [
     ),
     new RedistributeMatchFunds(
         $psr11App->get(CampaignFundingRepository::class),
-        new \DateTimeImmutable('now'),
+        $now,
         $psr11App->get(DonationRepository::class),
         $psr11App->get(LoggerInterface::class),
     ),
@@ -84,7 +85,7 @@ $commands = [
         $psr11App->get(Matching\Adapter::class),
         $chatter,
     ),
-    new PushDonations($psr11App->get(DonationRepository::class)),
+    new PushDonations(now: $now, donationRepository: $psr11App->get(DonationRepository::class)),
     new ResetMatching(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(Matching\Adapter::class)
