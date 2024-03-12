@@ -2,6 +2,7 @@
 
 namespace MatchBot\IntegrationTests;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
@@ -14,6 +15,7 @@ use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 
 class DonationRepositoryTest extends IntegrationTest
 {
@@ -190,5 +192,61 @@ class DonationRepositoryTest extends IntegrationTest
         $em->persist($oldPendingDonation);
 
         $em->flush();
+    }
+
+    /**
+     * @dataProvider donationAgesDataProvider
+     */
+    public function testPushSalesForcePendingPushesNewDonationButNotVeryNewDonation(
+        int $donationAgeSeconds,
+        bool $shouldPush
+    ): void {
+        // arrange
+        $connection = $this->getService(Connection::class);
+        $response = $this->createDonation();
+        /** @psalm-suppress MixedArrayAccess */
+        $donationUUID = json_decode((string)$response->getBody(), associative: true)['donation']['donationId'];
+        \assert(is_string($donationUUID));
+
+        $sut = $this->getService(DonationRepository::class);
+        $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
+        /** @var Donation $donationInDB */
+
+        $pendingCreate = \MatchBot\Domain\SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE;
+        $connection->executeStatement(<<<SQL
+            UPDATE Donation set salesforcePushStatus = "$pendingCreate", salesforceLastPush = null
+            WHERE uuid = "$donationUUID"
+            LIMIT 1;
+        SQL
+        );
+
+        $sut->setClient($donationClientProphecy->reveal());
+
+        $simulatedNow = (new \DateTimeImmutable())->modify('+' . $donationAgeSeconds . ' seconds');
+        \assert($simulatedNow instanceof \DateTimeImmutable);
+
+        // assert
+        $method = $donationClientProphecy->create(Argument::type(Donation::class));
+        if ($shouldPush) {
+            $method->shouldBeCalledOnce();
+        } else {
+            $method->shouldNotBeCalled();
+        }
+
+        // act
+        $sut->pushSalesforcePending(now: $simulatedNow);
+    }
+
+    /**
+     * @return list<array{0: int, 1: bool}>
+     */
+    public function donationAgesDataProvider(): array
+    {
+        // age in seconds, should be pushed to sf
+        return [
+            [0, false],
+            [299, false],
+            [300, true],
+        ];
     }
 }

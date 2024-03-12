@@ -8,11 +8,14 @@ use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function Symfony\Component\Clock\now;
+
 class PushDonations extends LockingCommand
 {
     protected static $defaultName = 'matchbot:push-donations';
 
     public function __construct(
+        private \DateTimeImmutable $now,
         private DonationRepository $donationRepository
     ) {
         parent::__construct();
@@ -29,7 +32,7 @@ class PushDonations extends LockingCommand
             $output->writeln("Abandoned $numberAbandoned old Cancelled donations from Salesforce push");
         }
 
-        $numberPushed = $this->donationRepository->pushSalesforcePending();
+        $numberPushed = $this->donationRepository->pushSalesforcePending(now: $this->now);
         $output->writeln("Pushed $numberPushed donations to Salesforce");
 
         return 0;
