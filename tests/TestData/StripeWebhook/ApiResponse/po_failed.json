@@ -18,6 +18,6 @@
     "method": "standard",
     "source_type": "card",
     "statement_descriptor": null,
-    "status": "paid",
+    "status": "failed",
     "type": "bank_account"
 }
