@@ -133,6 +133,10 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:handle-out-of-sync-funds fix"
         ],
+        "matchbot:unpaid-donations-check": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:unpaid-donations-check"
+        ],
         "matchbot:list-commands": "php matchbot-cli.php list",
         "matchbot:push-donations": [
             "Composer\\Config::disableProcessTimeout",

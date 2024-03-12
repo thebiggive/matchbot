@@ -2,7 +2,6 @@
 
 namespace MatchBot\Application\Messenger\Handler;
 
-use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Domain\Donation;
@@ -11,8 +10,7 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\SalesforceWriteProxy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
-use Stripe\Charge;
-use Stripe\Collection;
+use Stripe\BalanceTransaction;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
@@ -38,34 +36,8 @@ class StripePayoutHandler implements MessageHandlerInterface
         $connectAccountId = $payout->getConnectAccountId();
         $payoutId = $payout->getPayoutId();
 
-        /** @var \Stripe\Payout $stripePayout */
-        $stripePayout = $this->stripeClient->payouts->retrieve(
-            $payoutId,
-            null,
-            ['stripe_account' => $connectAccountId],
-        );
-        $payoutCreated = (new DateTime())->setTimestamp($stripePayout->created);
-
-        $this->logger->info(sprintf(
-            'Payout: Getting all charges related to Payout ID %s for Connect account ID %s',
-            $payoutId,
-            $connectAccountId,
-        ));
-
-        $paidChargeIds = [];
-        $attributes = [
-            'limit' => 100,
-            'payout' => $payoutId,
-            'type' => 'payment',
-        ];
-
-        // Get all balance transactions (`py_...`) related to the specific payout defined in
-        // `$attributes`, scoping the lookup to the correct Connect account.
         try {
-            $balanceTransactions = $this->stripeClient->balanceTransactions->all(
-                $attributes,
-                ['stripe_account' => $connectAccountId],
-            );
+            $payoutInfo = $this->processPayout($payoutId, $connectAccountId);
         } catch (ApiErrorException $exception) {
             $this->logger->error(sprintf(
                 'Stripe Balance Transaction lookup error for Payout ID %s, %s [%s]: %s',
@@ -78,34 +50,27 @@ class StripePayoutHandler implements MessageHandlerInterface
             return;
         }
 
-        // Auto page, iterating in reverse chronological order. https://stripe.com/docs/api/pagination/auto?lang=php
-        foreach ($balanceTransactions->autoPagingIterator() as $balanceTransaction) {
-            $paidChargeIds[] = $balanceTransaction->source;
-        }
-
-        $this->logger->info(
-            sprintf(
-                'Payout: Getting all Connect account paid Charge IDs for Payout ID %s complete, found %s',
-                $payoutId,
-                count($paidChargeIds),
-            )
-        );
-
-        if (count($paidChargeIds) === 0) {
+        if (count($payoutInfo['chargeIds']) === 0) {
             $this->logger->info(sprintf(
-                'Payout: Exited with no paid Charge IDs for Payout ID %s',
+                'Payout: Exited with no paid Charge IDs for Payout ID %s, account %s',
                 $payoutId,
+                $connectAccountId,
             ));
 
             return;
         }
 
-        $chargeIds = $this->getOriginalDonationChargeIds($paidChargeIds, $connectAccountId, $payoutCreated);
+        $chargeIds = $this->getOriginalDonationChargeIds(
+            $payoutInfo['chargeIds'],
+            $connectAccountId,
+            $payoutInfo['created'],
+        );
 
         if ($chargeIds === []) {
-            $this->logger->info(sprintf(
-                'Payout: Exited with no original donation charge IDs for Payout ID %s',
+            $this->logger->error(sprintf(
+                'Payout: Exited with no original donation charge IDs for Payout ID %s, account %s',
                 $payoutId,
+                $connectAccountId,
             ));
 
             return;
@@ -114,15 +79,18 @@ class StripePayoutHandler implements MessageHandlerInterface
         foreach ($chargeIds as $chargeId) {
             $this->entityManager->beginTransaction();
 
-            /** @var Donation $donation */
             $donation = $this->donationRepository->findAndLockOneBy(['chargeId' => $chargeId]);
 
             // If a donation was not found, then it's most likely from a different
             // sandbox and therefore we info log this. Typically this should happen for
             // all donations in the batch but we continue looping so that behaviour for
             // other donations remains consistent if not.
+            //
+            // In prod if we can't find the donation it's an error.
             if (!$donation) {
-                $this->logger->info(sprintf('Payout: Donation not found with Charge ID %s', $chargeId));
+                $logLevel = (getenv('APP_ENV') === 'production') ? 'ERROR' : 'INFO';
+
+                $this->logger->log($logLevel, sprintf('Payout: Donation not found with Charge ID %s', $chargeId));
                 $this->entityManager->commit();
                 continue;
             }
@@ -136,6 +104,8 @@ class StripePayoutHandler implements MessageHandlerInterface
                 $this->entityManager->persist($donation);
                 $this->entityManager->flush();
                 $this->entityManager->commit();
+
+                $this->logger->info("Marked donation #{$donation->getId()} paid based on stripe payout #{$payoutId}");
 
                 $count++;
                 continue;
@@ -162,32 +132,117 @@ class StripePayoutHandler implements MessageHandlerInterface
             }
         }
 
-        $this->logger->info(sprintf('Payout: Updating paid donations complete, persisted %s', $count));
+        $this->logger->info(sprintf(
+            'Payout: Updating paid donations complete for stripe payout #%s, persisted %s',
+            $payoutId,
+            $count,
+        ));
+    }
+
+    /**
+     * @return array{created: \DateTimeImmutable, chargeIds: array<string>}
+     * @throws ApiErrorException if balance transaction listing fails.
+     */
+    private function processPayout(string $payoutId, string $connectAccountId): array
+    {
+        $stripePayout = $this->stripeClient->payouts->retrieve(
+            $payoutId,
+            null,
+            ['stripe_account' => $connectAccountId],
+        );
+
+        $payoutCreated = \DateTimeImmutable::createFromFormat('U', (string) $stripePayout->created);
+        if (! $payoutCreated) {
+            throw new \Exception('Bad date format from stripe');
+        }
+
+        $this->logger->info(sprintf(
+            'Payout: Getting all charges related to Payout ID %s for Connect account ID %s',
+            $payoutId,
+            $connectAccountId,
+        ));
+
+        /** @var string[] $paidChargeIds */
+        $paidChargeIds = [];
+        $attributes = [
+            'limit' => 100,
+            'payout' => $payoutId,
+        ];
+
+        // Get all balance transactions (`py_...`) related to the specific payout defined in
+        // `$attributes`, scoping the lookup to the correct Connect account.
+        $balanceTransactions = $this->stripeClient->balanceTransactions->all(
+            $attributes,
+            ['stripe_account' => $connectAccountId],
+        );
+
+        /** @var string[] $extraPayoutIdsToMap */
+        $extraPayoutIdsToMap = [];
+
+        // Auto page, iterating in reverse chronological order. https://stripe.com/docs/api/pagination/auto?lang=php
+        foreach ($balanceTransactions->autoPagingIterator() as $balanceTransaction) {
+            switch ($balanceTransaction->type) {
+                case BalanceTransaction::TYPE_PAYMENT:
+                    // source is the `ch_...` charge ID from the connected account txns.
+                    $paidChargeIds[] = (string) $balanceTransaction->source;
+                    break;
+                case BalanceTransaction::TYPE_PAYOUT_FAILURE:
+                    // source is the previous failed payout `po_...` ID.
+                    $extraPayoutIdsToMap[] = (string) $balanceTransaction->source;
+                    break;
+                // Other types are ignored. 'payout' is expected but we don't use it here.
+            }
+        }
+
+        if (count($extraPayoutIdsToMap) > 0) {
+            $this->logger->info(sprintf(
+                'Payout: Found %d extra %s Payout IDs to map donations from: %s',
+                count($extraPayoutIdsToMap),
+                $connectAccountId,
+                implode(', ', $extraPayoutIdsToMap),
+            ));
+
+            foreach ($extraPayoutIdsToMap as $extraPayoutId) {
+                $extraPayoutInfo = $this->processPayout($extraPayoutId, $connectAccountId);
+                // Include all previously delayed payouts' charge IDs in the handler's main list.
+                $paidChargeIds = [...$paidChargeIds, ...$extraPayoutInfo['chargeIds']];
+            }
+        }
+
+        $this->logger->info(
+            sprintf(
+                'Payout: Getting all Connect account paid Charge IDs for Payout ID %s complete, found %s',
+                $payoutId,
+                count($paidChargeIds),
+            )
+        );
+
+        return [
+            'created' => $payoutCreated,
+            'chargeIds' => $paidChargeIds,
+        ];
     }
 
     /**
      * @param string[]  $paidChargeIds  Original charge IDs from balance txn lines.
-     * @param string    $connectAccountId
-     * @param DateTime  $payoutCreated
      * @return string[] Original TBG Charge IDs (`ch_...`).
      */
     private function getOriginalDonationChargeIds(
         array $paidChargeIds,
         string $connectAccountId,
-        DateTime $payoutCreated
+        \DateTimeImmutable $payoutCreated
     ): array {
         $this->logger->info("Payout: Getting original TBG charge IDs related to payout's Charge IDs");
-
-        $fromDate = clone $payoutCreated;
-        $toDate = clone $payoutCreated;
 
         // Payouts' usual scheduled as of 2022 is a 2 week minimum offset (give or take a calendar day)
         // with a fixed day of the week for payouts, making the maximum normal lag 21 days. However we
         // have had edge cases with bank details problems taking a couple of weeks to resolve, so we now
         // look back up to 60 days in order to still catch charges for status updates if this happens.
+
         $tz = new \DateTimeZone('Europe/London');
-        $fromDate->sub(new \DateInterval('P60D'))->setTimezone($tz);
-        $toDate->add(new \DateInterval('P1D'))->setTimezone($tz);
+        $fromDate = $payoutCreated->sub(new \DateInterval('P60D'))->setTimezone($tz);
+        $toDate = $payoutCreated->add(new \DateInterval('P1D'))->setTimezone($tz);
+
 
         // Get charges (`ch_...`) related to the charity's Connect account and then get
         // their corresponding transfers (`tr_...`).
