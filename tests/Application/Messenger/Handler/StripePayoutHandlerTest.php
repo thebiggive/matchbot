@@ -293,13 +293,7 @@ class StripePayoutHandlerTest extends TestCase
         $donation = $this->getTestDonation();
 
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
-        $stripeBalanceTransactionProphecy->all(
-            [
-                'limit' => 100,
-                'payout' => self::DEFAULT_PAYOUT_ID,
-            ],
-            ['stripe_account' => self::CONNECTED_ACCOUNT_ID],
-        )
+        $stripeBalanceTransactionProphecy->all(Argument::cetera())
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
