@@ -22,6 +22,12 @@ use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
  */
 class StripePayoutHandler implements MessageHandlerInterface
 {
+    /**
+     * @var int How many levels of previous payout to check. We know that when a payout takes 3 or more tries, the
+     *          successful one might not directly reference the payout with the original charges that we need to
+     *          reconcile donations' statuses. We limit the levels to 10, more than we've seen to date, to ensure
+     *          we can never end up in an infinite loop.
+     */
     private const MAX_RETRY_DEPTH = 10;
     /** @var string[] */
     private array $processedPayoutIds = [];
@@ -214,10 +220,10 @@ class StripePayoutHandler implements MessageHandlerInterface
     }
 
     /**
-     * Called only from `processSuccessfulPayout()` when there is a reference to an earlier payout that contains
-     * charges reflected in the successful one's total. The `$payoutId` to this method is the earlier one so we
-     * do not check its status, which is likely "failed". We also don't recurse further for now, tbc whether this
-     * could theoretically leave donations unreconciled.
+     * Called from `processSuccessfulPayout()` when there is a reference to an earlier payout that contains
+     * charges reflected in the successful one's total, or from this method if a failed payout also references
+     * previous ones that make up part of its total value. The `$payoutId` to this method is the earlier one so we
+     * do not check its status, which is likely "failed".
      *
      * @return array{created: \DateTimeImmutable, chargeIds: array<string>}
      * @throws ApiErrorException if balance transaction listing fails.
