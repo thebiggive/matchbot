@@ -37,7 +37,11 @@ class StripePayoutHandler implements MessageHandlerInterface
         $payoutId = $payout->getPayoutId();
 
         try {
-            $payoutInfo = $this->processPayout($payoutId, $connectAccountId);
+            $payoutInfo = $this->processPayout(
+                payoutId: $payoutId,
+                connectAccountId: $connectAccountId,
+                inSuccessfulRetry: false,
+            );
         } catch (ApiErrorException $exception) {
             $this->logger->error(sprintf(
                 'Stripe Balance Transaction lookup error for Payout ID %s, %s [%s]: %s',
@@ -133,7 +137,7 @@ class StripePayoutHandler implements MessageHandlerInterface
         }
 
         $this->logger->info(sprintf(
-            'Payout: Updating paid donations complete for stripe payout #%s, persisted %s',
+            'Payout: Updating paid donations complete for stripe payout #%s, persisted %d',
             $payoutId,
             $count,
         ));
@@ -143,7 +147,7 @@ class StripePayoutHandler implements MessageHandlerInterface
      * @return array{created: \DateTimeImmutable, chargeIds: array<string>}
      * @throws ApiErrorException if balance transaction listing fails.
      */
-    private function processPayout(string $payoutId, string $connectAccountId): array
+    private function processPayout(string $payoutId, string $connectAccountId, bool $inSuccessfulRetry): array
     {
         $stripePayout = $this->stripeClient->payouts->retrieve(
             $payoutId,
@@ -156,7 +160,9 @@ class StripePayoutHandler implements MessageHandlerInterface
             throw new \Exception('Bad date format from stripe');
         }
 
-        if ($stripePayout->status !== 'paid') {
+        // If a later payout B succeeded and covers the balance of this payout A, we should ignore
+        // the payout A status.
+        if (!$inSuccessfulRetry && $stripePayout->status !== 'paid') {
             $this->logger->info(sprintf(
                 'Payout: Skipping payout ID %s for Connect account ID %s; status is %s',
                 $payoutId,
@@ -217,7 +223,11 @@ class StripePayoutHandler implements MessageHandlerInterface
             ));
 
             foreach ($extraPayoutIdsToMap as $extraPayoutId) {
-                $extraPayoutInfo = $this->processPayout($extraPayoutId, $connectAccountId);
+                $extraPayoutInfo = $this->processPayout(
+                    payoutId: $extraPayoutId,
+                    connectAccountId: $connectAccountId,
+                    inSuccessfulRetry: true // `status` of the original payout confirmed 'paid' above.
+                );
                 // Include all previously delayed payouts' charge IDs in the handler's main list.
                 $paidChargeIds = [...$paidChargeIds, ...$extraPayoutInfo['chargeIds']];
             }
