@@ -24,7 +24,7 @@ class StripePayoutHandler implements MessageHandlerInterface
 {
     private const MAX_RETRY_DEPTH = 10;
     /** @var string[] */
-    private static array $processedPayoutIds = [];
+    private array $processedPayoutIds = [];
 
     public function __construct(
         private DonationRepository $donationRepository,
@@ -259,7 +259,7 @@ class StripePayoutHandler implements MessageHandlerInterface
             ));
 
             foreach ($ids['payoutIds'] as $extraPayoutId) {
-                if (!in_array($extraPayoutId, self::$processedPayoutIds, true)) {
+                if (!in_array($extraPayoutId, $this->processedPayoutIds, true)) {
                     $extraPayoutInfo = $this->processChargesFromPreviousPayout(
                         payoutId: $extraPayoutId,
                         connectAccountId: $connectAccountId,
@@ -267,7 +267,7 @@ class StripePayoutHandler implements MessageHandlerInterface
                     );
                     // Include all previously delayed payouts' charge IDs in the handler's main list.
                     $ids['chargeIds'] = [...$ids['chargeIds'], ...$extraPayoutInfo['chargeIds']];
-                    self::$processedPayoutIds[] = $extraPayoutId;
+                    $this->processedPayoutIds[] = $extraPayoutId;
                 }
             }
         }
