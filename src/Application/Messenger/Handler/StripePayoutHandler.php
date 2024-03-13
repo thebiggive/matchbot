@@ -22,7 +22,7 @@ use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
  */
 class StripePayoutHandler implements MessageHandlerInterface
 {
-    private const int MAX_RETRY_DEPTH = 10;
+    private const MAX_RETRY_DEPTH = 10;
     /** @var string[] */
     private static array $processedPayoutIds = [];
 
@@ -222,8 +222,11 @@ class StripePayoutHandler implements MessageHandlerInterface
      * @return array{created: \DateTimeImmutable, chargeIds: array<string>}
      * @throws ApiErrorException if balance transaction listing fails.
      */
-    private function processChargesFromPreviousPayout(string $payoutId, string $connectAccountId, int $retryDepth): array
-    {
+    private function processChargesFromPreviousPayout(
+        string $payoutId,
+        string $connectAccountId,
+        int $retryDepth
+    ): array {
         $payoutInfo = $this->getPayoutInfo($payoutId, $connectAccountId);
 
         $this->logger->info(sprintf(
