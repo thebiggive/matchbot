@@ -29,6 +29,11 @@ class Confirm extends Action
     public const EXPECTED_STRIPE_INVALID_REQUEST_MESSAGES = [
         'The provided PaymentMethod has failed authentication',
         'You must collect the security code (CVC) for this card from the cardholder before you can use it',
+
+        // When a donation is cancelled we update it to cancelled in the DB, which stops it being confirmed later. But
+        // we can still get this error if the cancellation is too late to stop us attempting to confirm.
+        // phpcs:ignore
+        'This PaymentIntent\'s payment_method could not be updated because it has a status of canceled. You may only update the payment_method of a PaymentIntent with one of the following statuses: requires_payment_method, requires_confirmation, requires_action.',
     ];
 
     public function __construct(
