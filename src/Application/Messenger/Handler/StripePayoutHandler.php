@@ -22,6 +22,10 @@ use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
  */
 class StripePayoutHandler implements MessageHandlerInterface
 {
+    private const int MAX_RETRY_DEPTH = 10;
+    /** @var string[] */
+    private static array $processedPayoutIds = [];
+
     public function __construct(
         private DonationRepository $donationRepository,
         private EntityManagerInterface $entityManager,
@@ -188,6 +192,7 @@ class StripePayoutHandler implements MessageHandlerInterface
                 $extraPayoutInfo = $this->processChargesFromPreviousPayout(
                     payoutId: $extraPayoutId,
                     connectAccountId: $connectAccountId,
+                    retryDepth: 0,
                 );
                 // Include all previously delayed payouts' charge IDs in the handler's main list.
                 $paidChargeIds = [...$ids['chargeIds'], ...$extraPayoutInfo['chargeIds']];
@@ -217,7 +222,7 @@ class StripePayoutHandler implements MessageHandlerInterface
      * @return array{created: \DateTimeImmutable, chargeIds: array<string>}
      * @throws ApiErrorException if balance transaction listing fails.
      */
-    private function processChargesFromPreviousPayout(string $payoutId, string $connectAccountId): array
+    private function processChargesFromPreviousPayout(string $payoutId, string $connectAccountId, int $retryDepth): array
     {
         $payoutInfo = $this->getPayoutInfo($payoutId, $connectAccountId);
 
@@ -228,6 +233,41 @@ class StripePayoutHandler implements MessageHandlerInterface
         ));
 
         $ids = $this->getChargeAndAdditionalPayoutIds($payoutId, $connectAccountId);
+        if ($ids['payoutIds'] !== []) {
+            if ($retryDepth >= self::MAX_RETRY_DEPTH) {
+                $this->logger->error(sprintf(
+                    'Payout: Max retry depth %d reached for Connect account ID %s, Payout ID %s',
+                    self::MAX_RETRY_DEPTH,
+                    $connectAccountId,
+                    $payoutId,
+                ));
+
+                return [
+                    'created' => $payoutInfo['created'],
+                    'chargeIds' => [],
+                ];
+            }
+
+            $this->logger->info(sprintf(
+                'Payout: Found %d extra %s Payout IDs to map donations from: %s',
+                count($ids['payoutIds']),
+                $connectAccountId,
+                implode(', ', $ids['payoutIds']),
+            ));
+
+            foreach ($ids['payoutIds'] as $extraPayoutId) {
+                if (!in_array($extraPayoutId, self::$processedPayoutIds, true)) {
+                    $extraPayoutInfo = $this->processChargesFromPreviousPayout(
+                        payoutId: $extraPayoutId,
+                        connectAccountId: $connectAccountId,
+                        retryDepth: $retryDepth + 1,
+                    );
+                    // Include all previously delayed payouts' charge IDs in the handler's main list.
+                    $ids['chargeIds'] = [...$ids['chargeIds'], ...$extraPayoutInfo['chargeIds']];
+                    self::$processedPayoutIds[] = $extraPayoutId;
+                }
+            }
+        }
 
         $this->logger->info(
             sprintf(
