@@ -301,7 +301,7 @@ class StripePayoutHandlerTest extends TestCase
         $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
 
         $loggerProphecy = $this->prophesize(LoggerInterface::class);
-        $loggerProphecy->info(
+        $loggerProphecy->warning(
             'Payout: Skipping payout ID po_externalId_123 for Connect account ID acct_unitTest123; status is failed'
         )
             ->shouldBeCalledOnce();

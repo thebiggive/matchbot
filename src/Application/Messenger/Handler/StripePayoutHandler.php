@@ -37,7 +37,10 @@ class StripePayoutHandler implements MessageHandlerInterface
         $payoutId = $payout->getPayoutId();
 
         try {
-            $payoutInfo = $this->processPayout($payoutId, $connectAccountId);
+            $payoutInfo = $this->processSuccessfulPayout(
+                payoutId: $payoutId,
+                connectAccountId: $connectAccountId,
+            );
         } catch (ApiErrorException $exception) {
             $this->logger->error(sprintf(
                 'Stripe Balance Transaction lookup error for Payout ID %s, %s [%s]: %s',
@@ -133,17 +136,117 @@ class StripePayoutHandler implements MessageHandlerInterface
         }
 
         $this->logger->info(sprintf(
-            'Payout: Updating paid donations complete for stripe payout #%s, persisted %s',
+            'Payout: Updating paid donations complete for stripe payout #%s, persisted %d',
             $payoutId,
             $count,
         ));
     }
 
     /**
+     * Logs a warning and returns no charges if payout is in fact not successful. This is expected short-term while
+     * we run temporary scripts, and should not happen later when only webhooks lead to `StripePayoutHandler` messages.
+     *
      * @return array{created: \DateTimeImmutable, chargeIds: array<string>}
      * @throws ApiErrorException if balance transaction listing fails.
      */
-    private function processPayout(string $payoutId, string $connectAccountId): array
+    private function processSuccessfulPayout(string $payoutId, string $connectAccountId): array
+    {
+        $payoutInfo = $this->getPayoutInfo($payoutId, $connectAccountId);
+
+        if ($payoutInfo['status'] !== 'paid') {
+            $this->logger->warning(sprintf(
+                'Payout: Skipping payout ID %s for Connect account ID %s; status is %s',
+                $payoutId,
+                $connectAccountId,
+                $payoutInfo['status'],
+            ));
+
+            return [
+                'created' => $payoutInfo['created'],
+                'chargeIds' => [],
+            ];
+        }
+
+        $this->logger->info(sprintf(
+            'Payout: Getting all charges related to Payout ID %s for Connect account ID %s',
+            $payoutId,
+            $connectAccountId,
+        ));
+
+        $ids = $this->getChargeAndAdditionalPayoutIds($payoutId, $connectAccountId);
+        $paidChargeIds = $ids['chargeIds'];
+
+        if (count($ids['payoutIds']) > 0) {
+            $this->logger->info(sprintf(
+                'Payout: Found %d extra %s Payout IDs to map donations from: %s',
+                count($ids['payoutIds']),
+                $connectAccountId,
+                implode(', ', $ids['payoutIds']),
+            ));
+
+            foreach ($ids['payoutIds'] as $extraPayoutId) {
+                $extraPayoutInfo = $this->processChargesFromPreviousPayout(
+                    payoutId: $extraPayoutId,
+                    connectAccountId: $connectAccountId,
+                );
+                // Include all previously delayed payouts' charge IDs in the handler's main list.
+                $paidChargeIds = [...$ids['chargeIds'], ...$extraPayoutInfo['chargeIds']];
+            }
+        }
+
+        $this->logger->info(
+            sprintf(
+                'Payout: Getting all Connect account paid Charge IDs for Payout ID %s complete, found %s',
+                $payoutId,
+                count($paidChargeIds),
+            )
+        );
+
+        return [
+            'created' => $payoutInfo['created'],
+            'chargeIds' => $paidChargeIds,
+        ];
+    }
+
+    /**
+     * Called only from `processSuccessfulPayout()` when there is a reference to an earlier payout that contains
+     * charges reflected in the successful one's total. The `$payoutId` to this method is the earlier one so we
+     * do not check its status, which is likely "failed". We also don't recurse further for now, tbc whether this
+     * could theoretically leave donations unreconciled.
+     *
+     * @return array{created: \DateTimeImmutable, chargeIds: array<string>}
+     * @throws ApiErrorException if balance transaction listing fails.
+     */
+    private function processChargesFromPreviousPayout(string $payoutId, string $connectAccountId): array
+    {
+        $payoutInfo = $this->getPayoutInfo($payoutId, $connectAccountId);
+
+        $this->logger->info(sprintf(
+            'Payout: Getting all charges related to *earlier* Payout ID %s for Connect account ID %s',
+            $payoutId,
+            $connectAccountId,
+        ));
+
+        $ids = $this->getChargeAndAdditionalPayoutIds($payoutId, $connectAccountId);
+
+        $this->logger->info(
+            sprintf(
+                'Payout: Getting all Connect account paid Charge IDs for *earlier& Payout ID %s complete, found %s',
+                $payoutId,
+                count($ids['chargeIds']),
+            )
+        );
+
+        return [
+            'created' => $payoutInfo['created'],
+            'chargeIds' => $ids['chargeIds'],
+        ];
+    }
+
+    /**
+     * @return array{created: \DateTimeImmutable, status: string}
+     */
+    private function getPayoutInfo(string $payoutId, string $connectAccountId): array
     {
         $stripePayout = $this->stripeClient->payouts->retrieve(
             $payoutId,
@@ -156,26 +259,17 @@ class StripePayoutHandler implements MessageHandlerInterface
             throw new \Exception('Bad date format from stripe');
         }
 
-        if ($stripePayout->status !== 'paid') {
-            $this->logger->info(sprintf(
-                'Payout: Skipping payout ID %s for Connect account ID %s; status is %s',
-                $payoutId,
-                $connectAccountId,
-                $stripePayout->status,
-            ));
+        return [
+            'created' => $payoutCreated,
+            'status' => $stripePayout->status,
+        ];
+    }
 
-            return [
-                'created' => $payoutCreated,
-                'chargeIds' => [],
-            ];
-        }
-
-        $this->logger->info(sprintf(
-            'Payout: Getting all charges related to Payout ID %s for Connect account ID %s',
-            $payoutId,
-            $connectAccountId,
-        ));
-
+    /**
+     * @return array{chargeIds: array<string>, payoutIds: array<string>}
+     */
+    private function getChargeAndAdditionalPayoutIds(string $payoutId, string $connectAccountId): array
+    {
         /** @var string[] $paidChargeIds */
         $paidChargeIds = [];
         $attributes = [
@@ -208,33 +302,7 @@ class StripePayoutHandler implements MessageHandlerInterface
             }
         }
 
-        if (count($extraPayoutIdsToMap) > 0) {
-            $this->logger->info(sprintf(
-                'Payout: Found %d extra %s Payout IDs to map donations from: %s',
-                count($extraPayoutIdsToMap),
-                $connectAccountId,
-                implode(', ', $extraPayoutIdsToMap),
-            ));
-
-            foreach ($extraPayoutIdsToMap as $extraPayoutId) {
-                $extraPayoutInfo = $this->processPayout($extraPayoutId, $connectAccountId);
-                // Include all previously delayed payouts' charge IDs in the handler's main list.
-                $paidChargeIds = [...$paidChargeIds, ...$extraPayoutInfo['chargeIds']];
-            }
-        }
-
-        $this->logger->info(
-            sprintf(
-                'Payout: Getting all Connect account paid Charge IDs for Payout ID %s complete, found %s',
-                $payoutId,
-                count($paidChargeIds),
-            )
-        );
-
-        return [
-            'created' => $payoutCreated,
-            'chargeIds' => $paidChargeIds,
-        ];
+        return ['chargeIds' => $paidChargeIds, 'payoutIds' => $extraPayoutIdsToMap];
     }
 
     /**
