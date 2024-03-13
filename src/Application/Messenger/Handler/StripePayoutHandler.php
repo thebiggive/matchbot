@@ -368,10 +368,11 @@ class StripePayoutHandler implements MessageHandlerInterface
         // Payouts' usual scheduled as of 2022 is a 2 week minimum offset (give or take a calendar day)
         // with a fixed day of the week for payouts, making the maximum normal lag 21 days. However we
         // have had edge cases with bank details problems taking a couple of weeks to resolve, so we now
-        // look back up to 60 days in order to still catch charges for status updates if this happens.
+        // look back up to 2 years in order to still catch charges for status updates if this happens.
+        // Once historic donations are reconciled in March 2024, we'll reduce this to 60 days again.
 
         $tz = new \DateTimeZone('Europe/London');
-        $fromDate = $payoutCreated->sub(new \DateInterval('P60D'))->setTimezone($tz);
+        $fromDate = $payoutCreated->sub(new \DateInterval('P2Y'))->setTimezone($tz);
         $toDate = $payoutCreated->add(new \DateInterval('P1D'))->setTimezone($tz);
 
 
