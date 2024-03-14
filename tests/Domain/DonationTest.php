@@ -17,6 +17,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
@@ -218,16 +219,6 @@ class DonationTest extends TestCase
         $this->assertIsString($donationData['collectedTime']);
     }
 
-    public function testToApiModelTemporaryHackHasNoImpact(): void
-    {
-        $donation = $this->getTestDonation();
-        $donation->setDonorEmailAddress('noel;;@thebiggive.org.uk');
-
-        $donationData = $donation->toApiModel();
-
-        $this->assertEquals('noel;;@thebiggive.org.uk', $donationData['emailAddress']);
-    }
-
     public function testToHookModel(): void
     {
         $donation = $this->getTestDonation(
@@ -315,16 +306,6 @@ class DonationTest extends TestCase
 
         $this->assertIsString($donationData['collectedTime']);
         $this->assertIsString($donationData['refundedTime']);
-    }
-
-    public function testToHookModelTemporaryHack(): void
-    {
-        $donation = $this->getTestDonation();
-        $donation->setDonorEmailAddress('noel;;@thebiggive.org.uk');
-
-        $donationData = $donation->toHookModel();
-
-        $this->assertEquals('noel@thebiggive.org.uk', $donationData['emailAddress']);
     }
 
     public function testToClaimBotModelUK(): void
@@ -528,7 +509,7 @@ class DonationTest extends TestCase
 
         $this->assertSame('Test First Name', $donation->getDonorFirstName(true));
         $this->assertSame('Test Last Name', $donation->getDonorLastName(true));
-        $this->assertSame('donor@email.test', $donation->getDonorEmailAddress());
+        $this->assertEquals(EmailAddress::of('donor@email.test'), $donation->getDonorEmailAddress());
         $this->assertSame('Test First Name Test Last Name', $donation->getDonorFullName());
     }
 

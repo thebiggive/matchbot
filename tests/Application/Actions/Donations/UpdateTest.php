@@ -8,6 +8,7 @@ use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
 use Slim\Routing\Route;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
@@ -953,7 +954,7 @@ class UpdateTest extends TestCase
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorName(DonorName::of('Saul', 'Williams'));
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
@@ -1042,7 +1043,7 @@ class UpdateTest extends TestCase
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorName(DonorName::of('Saul', 'Williams'));
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
@@ -1137,7 +1138,7 @@ class UpdateTest extends TestCase
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorName(DonorName::of('Saul', 'Williams'));
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
@@ -1241,7 +1242,7 @@ class UpdateTest extends TestCase
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorName(DonorName::of('Saul', 'Williams'));
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
@@ -1338,7 +1339,7 @@ class UpdateTest extends TestCase
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorName(DonorName::of('Saul', 'Williams'));
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
@@ -1437,7 +1438,7 @@ class UpdateTest extends TestCase
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorName(DonorName::of('Saul', 'Williams'));
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
@@ -1533,7 +1534,7 @@ class UpdateTest extends TestCase
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
         $donation->setDonorName(DonorName::of('Saul', 'Williams'));
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);

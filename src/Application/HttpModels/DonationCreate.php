@@ -6,6 +6,7 @@ namespace MatchBot\Application\HttpModels;
 
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
 
@@ -17,6 +18,7 @@ readonly class DonationCreate
 {
     public readonly Salesforce18Id $projectId;
     public readonly ?DonorName $donorName;
+    public readonly ?EmailAddress $emailAddress;
 
     /**
      * @param string $donationAmount In full currency unit, e.g. whole pounds GBP, whole dollars USD
@@ -38,8 +40,12 @@ readonly class DonationCreate
         public ?string $tipAmount = '0.00',
         ?string $firstName = null,
         public ?string $lastName = null,
-        public ?string $emailAddress = null
+        ?string $emailAddress = null
     ) {
+        $this->emailAddress = (! is_null($emailAddress) && ! ($emailAddress === '')) ?
+            EmailAddress::of($emailAddress) :
+            null;
+
         $this->donorName = DonorName::maybeFromFirstAndLast($firstName, $this->lastName);
 
         $this->projectId = Salesforce18Id::of($projectId);

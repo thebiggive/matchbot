@@ -6,6 +6,7 @@ namespace MatchBot\Application\HttpModels;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
 
 /**
  * Donation Data as sent from Frontend for donation updates. Currently, this class is used only ever deserialized,
@@ -14,6 +15,7 @@ use MatchBot\Domain\DonorName;
 readonly class Donation
 {
     public ?DonorName $donorName;
+    public ?EmailAddress $emailAddress;
 
     /**
      * @psalm-suppress PossiblyUnusedMethod - this constructor is called bye the Symfony Serializer
@@ -31,7 +33,7 @@ readonly class Donation
         public ?bool $donationMatched = null,
         ?string $firstName = null,
         ?string $lastName = null,
-        public ?string $emailAddress = null,
+        ?string $emailAddress = null,
         public ?string $billingPostalAddress = null,
         public ?string $countryCode = null,
         public ?string $homeAddress = null,
@@ -43,6 +45,10 @@ readonly class Donation
         public ?float $tipAmount = null,
         public ?bool $tipGiftAid = null,
     ) {
+        $this->emailAddress = (! is_null($emailAddress) && ! ($emailAddress === ''))
+            ? EmailAddress::of($emailAddress)
+            : null;
+
         // we treat N/A as empty since we sometimes replace empty values with N/A to work around salesforce validation,
         // and at least in tests there's a possiblity of that getting fed back in to matchbot through an update.
         $donorName = DonorName::maybeFromFirstAndLast($firstName, $lastName);

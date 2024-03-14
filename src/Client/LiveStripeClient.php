@@ -55,7 +55,7 @@ class LiveStripeClient implements Stripe
             [
                 'billing_details' => [
                     'name' => $donation->getDonorFullName(),
-                    'email' => $donation->getDonorEmailAddress(),
+                    'email' => $donation->getDonorEmailAddress()?->email,
                 ],
             ],
         );

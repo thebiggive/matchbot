@@ -174,6 +174,10 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(type: 'string', length: 2, nullable: true)]
     protected ?string $donorCountryCode = null;
 
+    /**
+     * Ideally we would type this as ?EmailAddress instead of ?string but that will require changing
+     * the column name to match the property inside the VO. Might be easy and worth doing.
+     */
     #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorEmailAddress = null;
 
@@ -476,7 +480,7 @@ class Donation extends SalesforceWriteProxy
             'donationAmount' => (float) $this->getAmount(),
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
-            'emailAddress' => $this->getDonorEmailAddress(),
+            'emailAddress' => $this->getDonorEmailAddress()?->email,
             'feeCoverAmount' => (float) $this->getFeeCoverAmount(),
             'firstName' => $this->getDonorFirstName(true),
             'giftAid' => $this->hasGiftAid(),
@@ -551,14 +555,14 @@ class Donation extends SalesforceWriteProxy
         $this->campaign = $campaign;
     }
 
-    public function getDonorEmailAddress(): ?string
+    public function getDonorEmailAddress(): ?EmailAddress
     {
-        return $this->donorEmailAddress;
+        return ((bool) $this->donorEmailAddress) ? EmailAddress::of($this->donorEmailAddress) : null;
     }
 
-    public function setDonorEmailAddress(?string $donorEmailAddress): void
+    public function setDonorEmailAddress(?EmailAddress $donorEmailAddress): void
     {
-        $this->donorEmailAddress = $donorEmailAddress;
+        $this->donorEmailAddress = $donorEmailAddress?->email;
     }
 
     public function getCharityComms(): ?bool
@@ -1395,7 +1399,7 @@ class Donation extends SalesforceWriteProxy
         ?string $donorHomeAddressLine1 = null,
         ?string $donorHomePostcode = null,
         ?DonorName $donorName = null,
-        ?string $donorEmailAddress = null,
+        ?EmailAddress $donorEmailAddress = null,
         ?bool $tbgComms = false,
         ?bool $charityComms = false,
         ?bool $championComms = false,
