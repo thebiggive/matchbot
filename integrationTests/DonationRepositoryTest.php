@@ -62,7 +62,7 @@ class DonationRepositoryTest extends IntegrationTest
     {
         $campaign = new Campaign(charity: $charity);
         $campaign->setName('Campaign Name');
-        $campaign->setSalesforceId('ccampaign123');
+        $campaign->setSalesforceId('ccampaign123456789');
         $campaign->setCurrencyCode('GBP');
         $campaign->setStartDate((new \DateTime())->sub(new \DateInterval('P16D')));
         $campaign->setEndDate((new \DateTime())->add(new \DateInterval('P15D')));
@@ -81,7 +81,7 @@ class DonationRepositoryTest extends IntegrationTest
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '300',
-            projectId: 'ccampaign123',
+            projectId: 'ccampaign123456789',
             psp: 'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
         ), $campaign);
@@ -154,7 +154,7 @@ class DonationRepositoryTest extends IntegrationTest
             donationData: new DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: '1',
-                projectId: 'projectID',
+                projectId: 'projectID123456789',
                 psp: 'stripe',
                 emailAddress: $randomEmailAddress,
             ),

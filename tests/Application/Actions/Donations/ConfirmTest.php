@@ -362,7 +362,12 @@ class ConfirmTest extends TestCase
         $donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
 
         $donation = Donation::fromApiModel(
-            new DonationCreate(currencyCode: 'GBP', donationAmount: '63.0', projectId: 'doesnt-matter', psp: 'stripe'),
+            new DonationCreate(
+                currencyCode: 'GBP',
+                donationAmount: '63.0',
+                projectId: 'doesnt0matter12345',
+                psp: 'stripe',
+            ),
             $this->getMinimalCampaign(),
         );
         $donation->setTransactionId('PAYMENT_INTENT_ID');

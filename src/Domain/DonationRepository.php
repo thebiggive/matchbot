@@ -128,7 +128,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ));
         }
 
-        $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId]);
+        $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId->value]);
 
         if (!$campaign) {
             // Fetch data for as-yet-unknown campaigns on-demand

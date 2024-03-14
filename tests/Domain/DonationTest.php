@@ -31,7 +31,7 @@ class DonationTest extends TestCase
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '1',
-            projectId: "any project",
+            projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::Card
         ), $this->getMinimalCampaign());
@@ -108,7 +108,7 @@ class DonationTest extends TestCase
         Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '25001',
-            projectId: "any project",
+            projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::Card
         ), $this->getMinimalCampaign());
@@ -119,7 +119,7 @@ class DonationTest extends TestCase
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '200000',
-            projectId: "any project",
+            projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
         ), $this->getMinimalCampaign());
@@ -135,7 +135,7 @@ class DonationTest extends TestCase
         Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '200001',
-            projectId: "any project",
+            projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
         ), $this->getMinimalCampaign());
@@ -159,7 +159,7 @@ class DonationTest extends TestCase
         Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '1',
-            projectId: "any project",
+            projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance,
             tipAmount: '0.01',
@@ -176,7 +176,7 @@ class DonationTest extends TestCase
             new DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: '63.0',
-                projectId: 'doesnt-matter',
+                projectId: 'doesnt0matter12345',
                 psp: 'paypal',
             ),
             new Campaign(TestCase::someCharity())
@@ -464,7 +464,7 @@ class DonationTest extends TestCase
             emailAddress: 'donor@email.test',
             currencyCode: 'GBP',
             donationAmount: '200000',
-            projectId: "any project",
+            projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
         ), $this->getMinimalCampaign());
@@ -571,7 +571,7 @@ class DonationTest extends TestCase
             new DonationCreate(
                 'GBP',
                 '1.00',
-                'project-id',
+                'projectid012345678',
                 'stripe',
             ),
             $this->getMinimalCampaign()
@@ -586,7 +586,7 @@ class DonationTest extends TestCase
         $donation = Donation::fromApiModel(new DonationCreate(
             'GBP',
             '1.00',
-            'project-id',
+            'projectid012345678',
             'stripe',
         ), $this->getMinimalCampaign());
         $donation->setDonationStatus(DonationStatus::Paid);
@@ -602,7 +602,7 @@ class DonationTest extends TestCase
         Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '10',
-            projectId: 'project-id',
+            projectId: 'projectid012345678',
             psp: 'stripe',
             tipAmount: '-0.01'
         ), $this->getMinimalCampaign());
@@ -617,7 +617,7 @@ class DonationTest extends TestCase
             countryCode: $apiCountryCode,
             currencyCode: 'GBP',
             donationAmount: '1.0',
-            projectId: 'project_id',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         ), new Campaign(TestCase::someCharity()));
 
@@ -634,7 +634,7 @@ class DonationTest extends TestCase
             countryCode: 'GB',
             currencyCode: 'GBP',
             donationAmount: '1.0',
-            projectId: 'project_id',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         ), new Campaign(TestCase::someCharity()));
 
@@ -652,7 +652,7 @@ class DonationTest extends TestCase
             countryCode: 'GB',
             currencyCode: 'GBP',
             donationAmount: '1.0',
-            projectId: 'project_id',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         ), new Campaign(TestCase::someCharity()));
 
@@ -671,7 +671,7 @@ class DonationTest extends TestCase
             countryCode: 'GB',
             currencyCode: 'GBP',
             donationAmount: '1.0',
-            projectId: 'project_id',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         ), new Campaign(TestCase::someCharity()));
 

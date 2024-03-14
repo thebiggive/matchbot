@@ -10,6 +10,7 @@ use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
@@ -65,7 +66,8 @@ class Create extends Action
         try {
             /** @var DonationCreate $donationData */
             $donationData = $this->serializer->deserialize($body, DonationCreate::class, 'json');
-        } catch (\TypeError | UnexpectedValueException $exception) { // UnexpectedValueException is the Serializer one,
+        } catch (\TypeError | UnexpectedValueException | AssertionFailedException $exception) {
+            // UnexpectedValueException is the Serializer one,
             // not the global one
 
             // Ideally rather than catching type error we would configure the seralizer use
@@ -111,7 +113,7 @@ class Create extends Action
             // buildFromApiRequest() should perform a fresh call to `CampaignRepository::findOneBy()`.
             $this->logger->info(sprintf(
                 'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
-                $donationData->projectId,
+                $donationData->projectId->value,
             ));
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
         }

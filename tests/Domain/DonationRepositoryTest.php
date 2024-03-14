@@ -20,6 +20,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
@@ -201,14 +202,14 @@ class DonationRepositoryTest extends TestCase
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject123'])
+        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject1234567'])
             ->willReturn($dummyCampaign);
 
         $createPayload = new DonationCreate(
             currencyCode: 'USD',
             donationAmount: '123.32',
             pspMethodType: PaymentMethodType::Card,
-            projectId: 'testProject123',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         );
 
@@ -228,13 +229,13 @@ class DonationRepositoryTest extends TestCase
 
         $dummyCampaign = new Campaign(TestCase::someCharity());
         $dummyCampaign->setCurrencyCode('GBP');
-        $dummyCampaign->setSalesforceId('testProject123');
+        $dummyCampaign->setSalesforceId('testProject1234567');
 
 
         // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject123'])
+        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject1234567'])
             ->willReturn(null);
-        $campaignRepoProphecy->pullNewFromSf('testProject123')->willReturn($dummyCampaign);
+        $campaignRepoProphecy->pullNewFromSf(Salesforce18Id::of('testProject1234567'))->willReturn($dummyCampaign);
 
         $fundRepositoryProphecy->pullForCampaign(Argument::type(Campaign::class))->shouldBeCalled();
 
@@ -242,7 +243,7 @@ class DonationRepositoryTest extends TestCase
             currencyCode: 'GBP',
             donationAmount: '123.32',
             pspMethodType: PaymentMethodType::Card,
-            projectId: 'testProject123',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         );
 
@@ -254,7 +255,7 @@ class DonationRepositoryTest extends TestCase
         $donation = $donationRepository
             ->buildFromApiRequest($createPayload);
 
-        $this->assertSame('testProject123', $donation->getCampaign()->getSalesforceId());
+        $this->assertSame('testProject1234567', $donation->getCampaign()->getSalesforceId());
     }
 
     public function testBuildFromApiRequestWithCurrencyMismatch(): void
@@ -274,7 +275,7 @@ class DonationRepositoryTest extends TestCase
             currencyCode: 'CAD',
             donationAmount: '144.44',
             pspMethodType: PaymentMethodType::Card,
-            projectId: 'testProject123',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         );
 
