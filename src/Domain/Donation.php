@@ -12,9 +12,11 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\LazyAssertionException;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -1421,5 +1423,24 @@ class Donation extends SalesforceWriteProxy
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
         $this->setDonorBillingAddress($donorPostalAddress);
+    }
+
+    /**
+     * Checks the donation is ready to be confirmed when the donor is ready to pay.
+     * @throws LazyAssertionException if not.
+     */
+    public function assertIsReadyToConfirm(): true
+    {
+        Assert::lazy()
+            ->that($this->donorFirstName, 'donorFirstName')->notNull('Missing Donor First Name')
+            ->that($this->donorLastName, 'donorLastName')->notNull('Missing Donor Last Name')
+            ->that($this->donationStatus, 'donationStatus')
+            ->eq(
+                DonationStatus::Pending,
+                "Donation status is '{$this->donationStatus->value}', must be 'Pending' to confirm payment"
+            )
+            ->verifyNow();
+
+        return true;
     }
 }

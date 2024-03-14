@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\LazyAssertionException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\ChampionFund;
@@ -443,6 +444,61 @@ class DonationTest extends TestCase
         $this->assertSame(DonationStatus::Refunded, $toHookModel['status']);
         $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
     }
+
+    public function testIsToConfirmWithDonorName(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: null,
+            lastName: null,
+        ), TestCase::someCampaign());
+
+        $donation->setDonorName(DonorName::of('First', 'Last'));
+
+        $this->assertTrue($donation->assertIsReadyToConfirm());
+    }
+
+    public function testIsNotReadyToConfirmWithoutDonorName(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: null,
+            lastName: null,
+        ), TestCase::someCampaign());
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing Donor First Name");
+        $this->expectExceptionMessage("Missing Donor Last Name");
+
+        $donation->assertIsReadyToConfirm();
+    }
+
+    public function testIsNotReadyToConfirmWhenCancelled(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'First',
+            lastName: 'Last',
+        ), TestCase::someCampaign());
+
+        $donation->cancel();
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Donation status is 'Cancelled', must be 'Pending'");
+
+        $donation->assertIsReadyToConfirm();
+    }
+
+
 
     public function testMarkingRefundTwiceOnSameDonationDoesNotUpdateRefundTime(): void
     {
