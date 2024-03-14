@@ -20,6 +20,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
@@ -201,14 +202,14 @@ class DonationRepositoryTest extends TestCase
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject123'])
+        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject1234567'])
             ->willReturn($dummyCampaign);
 
         $createPayload = new DonationCreate(
             currencyCode: 'USD',
             donationAmount: '123.32',
             pspMethodType: PaymentMethodType::Card,
-            projectId: 'testProject123',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         );
 
@@ -228,13 +229,13 @@ class DonationRepositoryTest extends TestCase
 
         $dummyCampaign = new Campaign(TestCase::someCharity());
         $dummyCampaign->setCurrencyCode('GBP');
-        $dummyCampaign->setSalesforceId('testProject123');
+        $dummyCampaign->setSalesforceId('testProject1234567');
 
 
         // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject123'])
+        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject1234567'])
             ->willReturn(null);
-        $campaignRepoProphecy->pullNewFromSf('testProject123')->willReturn($dummyCampaign);
+        $campaignRepoProphecy->pullNewFromSf(Salesforce18Id::of('testProject1234567'))->willReturn($dummyCampaign);
 
         $fundRepositoryProphecy->pullForCampaign(Argument::type(Campaign::class))->shouldBeCalled();
 
@@ -242,7 +243,7 @@ class DonationRepositoryTest extends TestCase
             currencyCode: 'GBP',
             donationAmount: '123.32',
             pspMethodType: PaymentMethodType::Card,
-            projectId: 'testProject123',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         );
 
@@ -254,7 +255,7 @@ class DonationRepositoryTest extends TestCase
         $donation = $donationRepository
             ->buildFromApiRequest($createPayload);
 
-        $this->assertSame('testProject123', $donation->getCampaign()->getSalesforceId());
+        $this->assertSame('testProject1234567', $donation->getCampaign()->getSalesforceId());
     }
 
     public function testBuildFromApiRequestWithCurrencyMismatch(): void
@@ -274,7 +275,7 @@ class DonationRepositoryTest extends TestCase
             currencyCode: 'CAD',
             donationAmount: '144.44',
             pspMethodType: PaymentMethodType::Card,
-            projectId: 'testProject123',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         );
 
@@ -341,31 +342,8 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals(949_49, $donation->getAmountForCharityFractional());
     }
 
-    /**
-     * Alt fee model campaign + fee cover selected.
-     */
-    public function testStripeAmountForCharityWithFeeCover(): void
-    {
-        // N.B. tip to TBG should not change the amount the charity receives, and the tip
-        // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');
-        ;
-        $donation->setTipAmount('0.00');
-        $donation->setFeeCoverAmount('44.44'); // 4.5% fee, inc. any VAT.
-        $donation->getCampaign()->setFeePercentage('4.5');
-        $donation->deriveFees(null, null);
-
-        // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
-        // Fixed fee        = £  0.00
-        // Total fee        = £ 44.44 – ADDED in this case, not taken from charity
-        // Amount after fee = £987.65
-
-        // Deduct *only* the TBG tip / fee cover.
-        $this->assertEquals(4_444, $donation->getAmountToDeductFractional());
-        $this->assertEquals(98_765, $donation->getAmountForCharityFractional());
-        // £987.65 + £44.44 fee cover = £1,032.09.
-        $this->assertEquals(103_209, $donation->getAmountFractionalIncTip());
-    }
+    // note we had testStripeAmountForCharityWithFeeCover() here - removed in this commit
+    // as part of MAT-356, may be worth finding and putting back if/when we introduce fee cover.
 
     public function testStripeAmountForCharityWithTip(): void
     {

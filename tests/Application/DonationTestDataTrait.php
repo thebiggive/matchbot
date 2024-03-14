@@ -34,7 +34,7 @@ trait DonationTestDataTrait
         string $amount = '123.45',
         string $currencyCode = 'GBP',
     ): Donation {
-        $campaignId = '567BgCampId';
+        $campaignId = 'testProject1234567';
         $campaign = new Campaign(charity: TestCase::someCharity());
         $campaign->setSalesforceId($campaignId);
         $campaign->setIsMatched(false);

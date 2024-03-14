@@ -153,6 +153,11 @@ class Update extends Action
                 }
 
                 return $this->addData($donation, $donationData, $args, $response, $request);
+            } catch (\UnexpectedValueException $e) {
+                return $this->validationError(
+                    $response,
+                    $e->getMessage()
+                );
             } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
                 $this->logger->warning(sprintf(
                     'Caught LockWaitTimeoutException in Update for donation %s, retry count %d',
@@ -206,6 +211,7 @@ class Update extends Action
      * Assumes it will be called only after starting a transaction pre-donation-select.
      * @throws InvalidRequestException
      * @throws ApiErrorException if confirm() fails other than because of a missing payment method.
+     * @throws \UnexpectedValueException
      */
     private function addData(
         Donation $donation,

@@ -93,7 +93,7 @@ class CreateTest extends TestCase
         $payload = (string) $response->getBody();
         $expectedPayload = new ActionPayload(400, ['error' => [
             'type' => 'BAD_REQUEST',
-            'description' => 'Campaign 123CampaignId is not open',
+            'description' => 'Campaign 123CampaignId12345 is not open',
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
@@ -275,7 +275,7 @@ class CreateTest extends TestCase
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
-                'campaignId' => '123CampaignId',
+                'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
@@ -343,7 +343,7 @@ class CreateTest extends TestCase
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
+        $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
         $this->assertEquals(DonationStatus::Pending->value, $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
         $this->assertEquals('pi_dummyIntent456_id', $payloadArray['donation']['transactionId']);
@@ -387,7 +387,7 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
-                'campaignId' => '123CampaignId',
+                'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
@@ -455,7 +455,7 @@ class CreateTest extends TestCase
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
+        $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
         $this->assertEquals(DonationStatus::Pending->value, $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
         $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
@@ -500,7 +500,7 @@ class CreateTest extends TestCase
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
-                'campaignId' => '123CampaignId',
+                'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
@@ -571,7 +571,7 @@ class CreateTest extends TestCase
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
+        $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
         $this->assertEquals(DonationStatus::Pending->value, $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
         $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
@@ -705,7 +705,7 @@ class CreateTest extends TestCase
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
-                'campaignId' => '123CampaignId',
+                'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
@@ -773,7 +773,7 @@ class CreateTest extends TestCase
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
+        $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
         $this->assertEquals(DonationStatus::Pending->value, $payloadArray['donation']['status']);
         $this->assertEquals('stripe', $payloadArray['donation']['psp']);
         $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
@@ -810,7 +810,7 @@ class CreateTest extends TestCase
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
-                'campaignId' => '123CampaignId',
+                'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
@@ -878,7 +878,7 @@ class CreateTest extends TestCase
         $this->assertFalse($payloadArray['donation']['optInTbgEmail']);
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
+        $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
     }
 
     /**
@@ -916,7 +916,7 @@ class CreateTest extends TestCase
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'metadata' => [
-                'campaignId' => '123CampaignId',
+                'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
@@ -985,7 +985,7 @@ class CreateTest extends TestCase
         $this->assertEquals('0', $payloadArray['donation']['matchReservedAmount']);
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
-        $this->assertEquals('123CampaignId', $payloadArray['donation']['projectId']);
+        $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
     }
 
     private function encode(Donation $donation): string
@@ -1019,7 +1019,7 @@ class CreateTest extends TestCase
         $campaign = new Campaign(charity: $charity);
         $campaign->setName('123CampaignName');
         $campaign->setIsMatched($campaignMatched);
-        $campaign->setSalesforceId('123CampaignId');
+        $campaign->setSalesforceId('123CampaignId12345');
         $campaign->setStartDate((new \DateTime())->sub(new \DateInterval('P2D')));
         if ($campaignOpen) {
             $campaign->setEndDate((new \DateTime())->add(new \DateInterval('P1D')));

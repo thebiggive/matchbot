@@ -182,7 +182,7 @@ class RedistibuteMatchFundsTest extends TestCase
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: $donationAmount,
-            projectId: 'project-id',
+            projectId: 'projectid012345678',
             psp: 'stripe',
         ), $this->getMinimalCampaign());
 

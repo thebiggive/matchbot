@@ -48,10 +48,10 @@ EOT
         return $qb->getQuery()->getResult();
     }
 
-    public function pullNewFromSf(string $salesforceId): Campaign
+    public function pullNewFromSf(Salesforce18Id $salesforceId): Campaign
     {
         $campaign = new Campaign(charity: null);
-        $campaign->setSalesforceId($salesforceId);
+        $campaign->setSalesforceId($salesforceId->value);
 
         $this->updateFromSf($campaign);
 

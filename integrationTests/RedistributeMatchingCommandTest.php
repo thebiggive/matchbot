@@ -154,7 +154,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: (string) $amount,
-            projectId: 'any project',
+            projectId: 'projectid012345678',
             psp: 'stripe',
             pspMethodType: PaymentMethodType::Card,
         ), $campaign);
