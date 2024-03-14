@@ -369,6 +369,7 @@ class ConfirmTest extends TestCase
                 psp: 'stripe',
                 firstName: 'Charlie',
                 lastName: 'The Charitable',
+                emailAddress: 'user@example.com',
             ),
             $this->getMinimalCampaign(),
         );

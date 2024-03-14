@@ -1443,6 +1443,7 @@ class Donation extends SalesforceWriteProxy
         Assert::lazy()
             ->that($this->donorFirstName, 'donorFirstName')->notNull('Missing Donor First Name')
             ->that($this->donorLastName, 'donorLastName')->notNull('Missing Donor Last Name')
+            ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
             ->that($this->donationStatus, 'donationStatus')
             ->eq(
                 DonationStatus::Pending,

@@ -426,7 +426,7 @@ class DonationTest extends TestCase
         $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
     }
 
-    public function testIsToConfirmWithDonorName(): void
+    public function testReadyIsToConfirmWithDonorName(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBB',
@@ -435,6 +435,7 @@ class DonationTest extends TestCase
             psp: 'stripe',
             firstName: null,
             lastName: null,
+            emailAddress: 'user@example.com',
         ), TestCase::someCampaign());
 
         $donation->setDonorName(DonorName::of('First', 'Last'));
@@ -456,6 +457,23 @@ class DonationTest extends TestCase
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing Donor First Name");
         $this->expectExceptionMessage("Missing Donor Last Name");
+
+        $donation->assertIsReadyToConfirm();
+    }
+
+    public function testIsNotReadyToConfirmWithoutDonorEmail(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'First',
+            lastName: 'Last',
+        ), TestCase::someCampaign());
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing Donor Email Address");
 
         $donation->assertIsReadyToConfirm();
     }
