@@ -708,36 +708,13 @@ class DonationTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider APIFeeCoverToModelFeeCover
-     */
-    public function testItTakesFeeCoverAmountFromApiModel(?string $feeCoverAmount, ?string $expected): void
+    public function testItRejectsNonZeroFeeCoverAmount(): void
     {
-        $donation = Donation::fromApiModel(new DonationCreate(
-            feeCoverAmount: $feeCoverAmount,
-            currencyCode: 'GBP',
-            donationAmount: '1.0',
-            projectId: 'project_id',
-            psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        $donation = $this->getTestDonation();
 
-        $this->assertSame($expected, $donation->getFeeCoverAmount());
+        $this->expectExceptionMessage('Fee cover amount must be "0"');
+        $donation->setFeeCoverAmount('1');
     }
-
-    /**
-     * @return array<array{0: ?string, 1: ?string}>
-     */
-    public function APIFeeCoverToModelFeeCover()
-    {
-        return [
-            [null, '0.00'],
-            ['', ''],
-            ['3', '3'],
-            ['3.123', '3.123'],
-            ['non-numeric string', 'non-numeric string'],
-        ];
-    }
-
     public function testItThrowsIfAmountUpdatedByORM(): void
     {
         $donation = $this->getTestDonation();

@@ -323,6 +323,10 @@ class Donation extends SalesforceWriteProxy
         $this->paymentMethodType = $paymentMethodType;
     }
 
+    /**
+     * @throws \Assert\AssertionFailedException
+     * @throws \UnexpectedValueException
+     */
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
     {
         $psp = $donationData->psp;
@@ -832,9 +836,16 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @param string $feeCoverAmount
+     * @throws \UnexpectedValueException if amount is non-zero
      */
     public function setFeeCoverAmount(string $feeCoverAmount): void
     {
+        if ($feeCoverAmount !== '0' && $feeCoverAmount !== '0.00') {
+            // We do not currently offer fee cover. If/when we do offer it we will need to add code here to allow
+            // appropriate non-zero cover - I expect it will need to exactly match the fee being covered.
+            throw new \UnexpectedValueException('Fee cover amount must be "0"');
+        }
+
         $this->feeCoverAmount = $feeCoverAmount;
     }
 

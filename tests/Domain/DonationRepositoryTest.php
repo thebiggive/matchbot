@@ -341,31 +341,8 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals(949_49, $donation->getAmountForCharityFractional());
     }
 
-    /**
-     * Alt fee model campaign + fee cover selected.
-     */
-    public function testStripeAmountForCharityWithFeeCover(): void
-    {
-        // N.B. tip to TBG should not change the amount the charity receives, and the tip
-        // is not included in the core donation amount set by `setAmount()`.
-        $donation = $this->getTestDonation('987.65');
-        ;
-        $donation->setTipAmount('0.00');
-        $donation->setFeeCoverAmount('44.44'); // 4.5% fee, inc. any VAT.
-        $donation->getCampaign()->setFeePercentage('4.5');
-        $donation->deriveFees(null, null);
-
-        // £987.65 * 4.5%   = £ 44.44 (to 2 d.p.)
-        // Fixed fee        = £  0.00
-        // Total fee        = £ 44.44 – ADDED in this case, not taken from charity
-        // Amount after fee = £987.65
-
-        // Deduct *only* the TBG tip / fee cover.
-        $this->assertEquals(4_444, $donation->getAmountToDeductFractional());
-        $this->assertEquals(98_765, $donation->getAmountForCharityFractional());
-        // £987.65 + £44.44 fee cover = £1,032.09.
-        $this->assertEquals(103_209, $donation->getAmountFractionalIncTip());
-    }
+    // note we had testStripeAmountForCharityWithFeeCover() here - removed in this commit
+    // as part of MAT-356, may be worth finding and putting back if/when we introduce fee cover.
 
     public function testStripeAmountForCharityWithTip(): void
     {
