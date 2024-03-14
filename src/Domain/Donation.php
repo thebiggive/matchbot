@@ -354,8 +354,7 @@ class Donation extends SalesforceWriteProxy
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setPspCustomerId($donationData->pspCustomerId);
         $donation->setTbgComms($donationData->optInTbgEmail);
-        $donation->setDonorFirstName($donationData->firstName);
-        $donation->setDonorLastName($donationData->lastName);
+        $donation->setDonorName($donationData->donorName);
         $donation->setDonorEmailAddress($donationData->emailAddress);
 
         if (!empty($donationData->countryCode)) {
@@ -591,9 +590,15 @@ class Donation extends SalesforceWriteProxy
         return $firstName;
     }
 
-    public function setDonorFirstName(?string $donorFirstName): void
+    public function setDonorName(?DonorName $donorName): void
     {
-        $this->donorFirstName = $donorFirstName;
+        if ($donorName) {
+            $this->donorFirstName = $donorName->first;
+            $this->donorLastName = $donorName->last;
+        } else {
+            $this->donorFirstName = null;
+            $this->donorLastName = null;
+        }
     }
 
     public function getDonorLastName(bool $salesforceSafe = false): ?string
@@ -605,11 +610,6 @@ class Donation extends SalesforceWriteProxy
         }
 
         return $lastName;
-    }
-
-    public function setDonorLastName(?string $donorLastName): void
-    {
-        $this->donorLastName = $donorLastName;
     }
 
     public function getDonorBillingAddress(): ?string
@@ -1392,8 +1392,7 @@ class Donation extends SalesforceWriteProxy
         ?bool $tipGiftAid = null,
         ?string $donorHomeAddressLine1 = null,
         ?string $donorHomePostcode = null,
-        ?string $donorFirstName = '',
-        ?string $donorLastName = '',
+        ?DonorName $donorName = null,
         ?string $donorEmailAddress = null,
         ?bool $tbgComms = false,
         ?bool $charityComms = false,
@@ -1416,8 +1415,7 @@ class Donation extends SalesforceWriteProxy
         $this->setTbgShouldProcessGiftAid($this->getCampaign()->getCharity()->isTbgClaimingGiftAid());
         $this->setDonorHomePostcode($donorHomePostcode);
         $this->setDonorHomeAddressLine1($donorHomeAddressLine1);
-        $this->setDonorFirstName($donorFirstName);
-        $this->setDonorLastName($donorLastName);
+        $this->setDonorName($donorName);
         $this->setDonorEmailAddress($donorEmailAddress);
         $this->setTbgComms($tbgComms);
         $this->setCharityComms($charityComms);

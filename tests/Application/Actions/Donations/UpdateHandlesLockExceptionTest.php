@@ -15,6 +15,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\DonorName;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -114,8 +115,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setCampaign($campaign);
         $donation->setUuid(Uuid::uuid4());
-        $donation->setDonorFirstName('Donor first name');
-        $donation->setDonorLastName('Donor last name');
+        $donation->setDonorName(DonorName::of('Donor first name', 'Donor last name'));
         $donation->setTransactionId('pi_dummyIntent_id');
 
         return $donation;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\HttpModels;
 
 use MatchBot\Application\AssertionFailedException;
+use MatchBot\Domain\DonorName;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
 
@@ -12,9 +13,10 @@ use MatchBot\Domain\Salesforce18Id;
  * @psalm-immutable
  * Request-only payload for setting up new donations.
  */
-class DonationCreate
+readonly class DonationCreate
 {
     public readonly Salesforce18Id $projectId;
+    public readonly ?DonorName $donorName;
 
     /**
      * @param string $donationAmount In full currency unit, e.g. whole pounds GBP, whole dollars USD
@@ -22,22 +24,24 @@ class DonationCreate
      * @throws AssertionFailedException
      */
     public function __construct(
-        public readonly string $currencyCode,
-        public readonly string $donationAmount,
+        public string $currencyCode,
+        public string $donationAmount,
         string $projectId,
-        public readonly string $psp,
-        public readonly PaymentMethodType $pspMethodType = PaymentMethodType::Card,
-        public readonly ?string $countryCode = null,
-        public readonly ?string $feeCoverAmount = '0.00',
-        public readonly ?bool $optInCharityEmail = null,
-        public readonly ?bool $optInChampionEmail = null,
-        public readonly ?bool $optInTbgEmail = null,
-        public readonly ?string $pspCustomerId = null,
-        public readonly ?string $tipAmount = '0.00',
-        public readonly ?string $firstName = null,
-        public readonly ?string $lastName = null,
-        public readonly ?string $emailAddress = null
+        public string $psp,
+        public PaymentMethodType $pspMethodType = PaymentMethodType::Card,
+        public ?string $countryCode = null,
+        public ?string $feeCoverAmount = '0.00',
+        public ?bool $optInCharityEmail = null,
+        public ?bool $optInChampionEmail = null,
+        public ?bool $optInTbgEmail = null,
+        public ?string $pspCustomerId = null,
+        public ?string $tipAmount = '0.00',
+        ?string $firstName = null,
+        public ?string $lastName = null,
+        public ?string $emailAddress = null
     ) {
+        $this->donorName = DonorName::maybeFromFirstAndLast($firstName, $this->lastName);
+
         $this->projectId = Salesforce18Id::of($projectId);
     }
 }

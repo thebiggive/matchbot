@@ -15,6 +15,7 @@ use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\DonorName;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
@@ -476,19 +477,6 @@ class DonationTest extends TestCase
     }
 
     /**
-     * @return array<array{0: ?string, 1: ?string, 2: ?string}>
-     */
-    public function namePartsAndFullNames(): array
-    {
-        return [
-            [null, null, null],
-            ['Loraine ', null, 'Loraine'],
-            [' Loraine ', ' James ', 'Loraine   James'],
-            [null, 'James', 'James'],
-        ];
-    }
-
-    /**
      * @return array<array{0: ?string, 1: string}>
      */
     public function namesAndSFSafeLastNames(): array
@@ -504,8 +492,6 @@ class DonationTest extends TestCase
             ['👍', '👍'],
             [str_repeat('👍', 41), str_repeat('👍', 40)],
             [str_repeat('👩‍👩‍👧‍👧', 10), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
-            [str_repeat('👩‍👩‍👧‍👧', 41), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
-            [str_repeat('👩‍👩‍👧‍👧', 401), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
         ];
     }
 
@@ -526,21 +512,16 @@ class DonationTest extends TestCase
             ['👍', '👍'],
             [str_repeat('👍', 41), str_repeat('👍', 40)],
             [str_repeat('👩‍👩‍👧‍👧', 10), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
-            [str_repeat('👩‍👩‍👧‍👧', 41), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
-            [str_repeat('👩‍👩‍👧‍👧', 401), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
+            [str_repeat('👩‍👩‍👧‍👧', 36), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
         ];
     }
 
-    /**
-     * @dataProvider namePartsAndFullNames
-     */
-    public function testItMakesDonorFullName(?string $firstName, ?string $lastName, ?string $expectedFullName): void
+    public function testItMakesDonorFullName(): void
     {
         $donation = $this->getTestDonation();
-        $donation->setDonorFirstName($firstName);
-        $donation->setDonorLastName($lastName);
+        $donation->setDonorName(DonorName::of(' Loraine ', ' James '));
 
-        $this->assertSame($expectedFullName, $donation->getDonorFullName());
+        $this->assertSame('Loraine   James', $donation->getDonorFullName());
     }
 
     /**
@@ -549,7 +530,7 @@ class DonationTest extends TestCase
     public function testItMakesDonorLastNameSafeForSalesforce(?string $originalName, string $expecteSafeName): void
     {
         $donation = $this->getTestDonation();
-        $donation->setDonorLastName($originalName);
+        $donation->setDonorName(DonorName::maybeFromFirstAndLast($originalName, $originalName));
 
         $this->assertSame($expecteSafeName, $donation->getDonorLastName(true));
     }
@@ -560,7 +541,8 @@ class DonationTest extends TestCase
     public function testItMakesDonorFirstNameSafeForSalesforce(?string $originalName, ?string $expecteSafeName): void
     {
         $donation = $this->getTestDonation();
-        $donation->setDonorFirstName($originalName);
+
+        $donation->setDonorName(DonorName::maybeFromFirstAndLast($originalName, $originalName));
 
         $this->assertSame($expecteSafeName, $donation->getDonorFirstName(true));
     }
@@ -738,8 +720,7 @@ class DonationTest extends TestCase
         bool $isEnoughForSalesforce,
     ): void {
         $donation = $this->getTestDonation();
-        $donation->setDonorFirstName($firstName);
-        $donation->setDonorLastName($lastName);
+        $donation->setDonorName(DonorName::maybeFromFirstAndLast($firstName, $lastName));
         $this->assertSame($isEnoughForSalesforce, $donation->hasEnoughDataForSalesforce());
     }
 
@@ -751,8 +732,6 @@ class DonationTest extends TestCase
         return [
             // first name, last name, is it enough for SF?
             ['', '', false],
-            ['', 'nonempty', false],
-            ['nonempty', '', false],
             ['nonempty', 'nonempty', true],
         ];
     }

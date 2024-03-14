@@ -88,9 +88,12 @@ class Update extends Action
             );
         }
 
-        if (getenv('APP_ENV') !== 'production' && str_starts_with($donationData->firstName ?? '', 'Please throw')) {
+        if (
+            getenv('APP_ENV') !== 'production' &&
+            str_starts_with($donationData->donorName?->first ?? '', 'Please throw')
+        ) {
             $this->logger->critical("Testing a critical log message for BG2-2297");
-            throw new \Exception("$donationData->firstName requested an exception for test purposes");
+            throw new \Exception("{$donationData->donorName?->first} requested an exception for test purposes");
         }
 
         if (!isset($donationData->status)) {
@@ -297,8 +300,7 @@ class Update extends Action
                 tipGiftAid: $donationData->tipGiftAid ?? $donationData->giftAid,
                 donorHomeAddressLine1: $donationData->homeAddress,
                 donorHomePostcode: $donationData->homePostcode,
-                donorFirstName: $donationData->firstName,
-                donorLastName: $donationData->lastName,
+                donorName: $donationData->donorName,
                 donorEmailAddress: $donationData->emailAddress,
                 tbgComms: $donationData->optInTbgEmail,
                 charityComms: $donationData->optInCharityEmail,
