@@ -189,10 +189,18 @@ class Donation extends SalesforceWriteProxy
     protected ?string $donorLastName = null;
 
     /**
-     * @var string|null Assumed to be billing address going forward.
+     * Previously known as donor postal address,
+     * and may still be called that in other systems,
+     * but now used for billing postcode only. Some old
+     * donations from 2022 or earlier have full addresses here.
+     *
+     * May be a post code or equivilent from anywhere in the world,
+     * so we allow up to 10 chars which has been enough for all donors in the last 12 months.
+     *
+     * @var string|null
      */
-    #[ORM\Column(type: 'string', nullable: true)]
-    protected ?string $donorPostalAddress = null;
+    #[ORM\Column(type: 'string', nullable: true, name: 'donorPostalAddress')]
+    protected ?string $donorBillingPostcode = null;
 
     /**
      * @var string|null From residential address, if donor is claiming Gift Aid.
@@ -616,12 +624,12 @@ class Donation extends SalesforceWriteProxy
 
     public function getDonorBillingAddress(): ?string
     {
-        return $this->donorPostalAddress;
+        return $this->donorBillingPostcode;
     }
 
     public function setDonorBillingAddress(?string $donorPostalAddress): void
     {
-        $this->donorPostalAddress = $donorPostalAddress;
+        $this->donorBillingPostcode = $donorPostalAddress;
     }
 
     public function hasGiftAid(): ?bool
