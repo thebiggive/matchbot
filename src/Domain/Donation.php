@@ -598,13 +598,8 @@ class Donation extends SalesforceWriteProxy
 
     public function setDonorName(?DonorName $donorName): void
     {
-        if ($donorName) {
-            $this->donorFirstName = $donorName->first;
-            $this->donorLastName = $donorName->last;
-        } else {
-            $this->donorFirstName = null;
-            $this->donorLastName = null;
-        }
+        $this->donorFirstName = $donorName?->first;
+        $this->donorLastName = $donorName?->last;
     }
 
     public function getDonorLastName(bool $salesforceSafe = false): ?string
