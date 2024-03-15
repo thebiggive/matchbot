@@ -52,6 +52,17 @@ readonly class DonationCreate
         $this->projectId = Salesforce18Id::of($projectId);
 
         Assertion::maxLength($this->donationAmount, 9); // more than we need, allows up to 999k ;
-        Assertion::regex($this->donationAmount, '/^[0-9]+(\.00?)?$/'); // must be an integer, with optional .00 or .0 suffix
+        Assertion::regex(
+            $this->donationAmount,
+            '/^[0-9]+(\.00?)?$/',
+            "Donation amount should be a whole number"
+        ); // must be an integer, with optional .00 or .0 suffix
+
+        Assertion::nullOrMaxLength($this->tipAmount, 9);
+        Assertion::nullOrRegex(
+            $this->tipAmount,
+            '/^[0-9]+(\.\d\d?)?$/',
+            "Tip amount should be number with up to two decimals"
+        );
     }
 }

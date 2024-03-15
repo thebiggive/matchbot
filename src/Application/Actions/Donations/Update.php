@@ -279,7 +279,7 @@ class Update extends Action
         }
         if (isset($donationData->tipAmount)) {
             try {
-                $donation->setTipAmount((string) $donationData->tipAmount);
+                $donation->setTipAmount($donationData->tipAmount);
             } catch (\UnexpectedValueException $exception) {
                 $this->entityManager->rollback();
 

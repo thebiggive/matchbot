@@ -42,7 +42,7 @@ readonly class Donation
         public ?bool $optInCharityEmail = null,
         public ?bool $optInChampionEmail = null,
         public ?string $projectId = null,
-        public ?float $tipAmount = null,
+        public ?string $tipAmount = null,
         public ?bool $tipGiftAid = null,
     ) {
         $this->emailAddress = (! is_null($emailAddress) && ! ($emailAddress === ''))
@@ -54,5 +54,12 @@ readonly class Donation
         $donorName = DonorName::maybeFromFirstAndLast($firstName, $lastName);
 
         $this->donorName = $donorName;
+
+        Assertion::nullOrMaxLength($this->tipAmount, 9);
+        Assertion::nullOrRegex(
+            $this->tipAmount,
+            '/^[0-9]+(\.\d\d?)?$/',
+            "Tip amount should be number with up to two decimals"
+        );
     }
 }
