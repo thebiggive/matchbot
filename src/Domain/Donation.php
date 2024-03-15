@@ -1467,6 +1467,7 @@ class Donation extends SalesforceWriteProxy
             ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
             ->that($this->donorCountryCode)->notNull('Missing Billing Country')
             ->that($this->donorBillingPostcode)->notNull('Missing Billing Postcode')
+            ->that($this->tbgComms)->notNull('Missing tbgComms preference')
             ->that($this->donationStatus, 'donationStatus')
             ->eq(
                 DonationStatus::Pending,
