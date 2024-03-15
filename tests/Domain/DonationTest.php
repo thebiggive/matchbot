@@ -426,7 +426,7 @@ class DonationTest extends TestCase
         $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
     }
 
-    public function testReadyIsToConfirmWithDonorName(): void
+    public function testReadyIsToConfirmWithRequiredFieldsSet(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBB',
@@ -439,9 +439,40 @@ class DonationTest extends TestCase
             countryCode: 'GB',
         ), TestCase::someCampaign());
 
-        $donation->setDonorName(DonorName::of('First', 'Last'));
+        $donation->update(
+            giftAid: false,
+            donorBillingPostcode: 'SW1 1AA',
+            donorName: DonorName::of('Charlie', 'The Charitable'),
+            donorEmailAddress: EmailAddress::of('user@example.com'),
+        );
 
         $this->assertTrue($donation->assertIsReadyToConfirm());
+    }
+
+    public function testReadyIsNotReadyToConfirmWithoutBillingPostcode(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'Chelsea',
+            lastName: 'Charitable',
+            emailAddress: 'user@example.com',
+            countryCode: 'GB',
+        ), TestCase::someCampaign());
+
+        $donation->update(
+            giftAid: false,
+            donorBillingPostcode: null,
+            donorName: DonorName::of('Charlie', 'The Charitable'),
+            donorEmailAddress: EmailAddress::of('user@example.com'),
+        );
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing Billing Postcode");
+
+        $donation->assertIsReadyToConfirm();
     }
 
     public function testReadyIsNotReadyToConfirmWithoutBillingCountry(): void
@@ -457,7 +488,7 @@ class DonationTest extends TestCase
         ), TestCase::someCampaign());
 
         $this->expectException(LazyAssertionException::class);
-        $this->expectExceptionMessage("Missing Billing Country");
+        $this->expectExceptionMessage("Missing Billing Postcode");
 
         $donation->assertIsReadyToConfirm();
     }
