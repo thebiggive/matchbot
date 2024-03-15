@@ -272,7 +272,7 @@ class Update extends Action
         // to support setting later. The frontend will probably leave these set and do a no-op update
         // when it makes the PUT call.
         if (isset($donationData->countryCode)) {
-            $donation->setDonorCountryCode($donationData->countryCode);
+            $donation->setDonorCountryCode(strtoupper($donationData->countryCode));
         }
         if (isset($donationData->feeCoverAmount)) {
             $donation->setFeeCoverAmount((string) $donationData->feeCoverAmount);
@@ -305,7 +305,7 @@ class Update extends Action
                 tbgComms: $donationData->optInTbgEmail,
                 charityComms: $donationData->optInCharityEmail,
                 championComms: $donationData->optInChampionEmail,
-                donorPostalAddress: $donationData->billingPostalAddress
+                donorBillingPostcode: $donationData->billingPostalAddress
             );
         } catch (\UnexpectedValueException $exception) {
             return $this->validationError(

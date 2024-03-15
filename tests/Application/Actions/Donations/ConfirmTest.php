@@ -10,6 +10,8 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -367,16 +369,24 @@ class ConfirmTest extends TestCase
                 donationAmount: '63.0',
                 projectId: 'doesnt0matter12345',
                 psp: 'stripe',
-                firstName: 'Charlie',
-                lastName: 'The Charitable',
-                emailAddress: 'user@example.com',
+                countryCode: 'GB',
             ),
             $this->getMinimalCampaign(),
         );
+
+        $donation->update(
+            giftAid: false,
+            donorBillingPostcode: 'SW1 1AA',
+            donorName: DonorName::of('Charlie', 'The Charitable'),
+            donorEmailAddress: EmailAddress::of('user@example.com'),
+        );
+
         $donation->setTransactionId('PAYMENT_INTENT_ID');
         if ($donationIsCancelled) {
             $donation->cancel();
         }
+
+
 
         $donationRepositoryProphecy->findAndLockOneBy(['uuid' => 'DONATION_ID'])->willReturn(
             $donation

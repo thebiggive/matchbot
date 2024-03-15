@@ -91,7 +91,8 @@ trait DonationTestDataTrait
         $donation->update(
             giftAid: true,
             donorHomeAddressLine1: '1 Main St, London',  // Frontend typically includes town for now
-            charityComms: $charityComms
+            charityComms: $charityComms,
+            donorBillingPostcode: 'N1 1AA',
         );
 
         $donation->setCharityFee('2.05');
@@ -113,7 +114,6 @@ trait DonationTestDataTrait
         $donation->setDonorCountryCode('GB');
         $donation->setDonorEmailAddress(EmailAddress::of('john.doe@example.com'));
         $donation->setDonorName(DonorName::of('John', 'Doe'));
-        $donation->setDonorBillingAddress('1 Main St, London N1 1AA');
         $donation->setDonorHomePostcode('N1 1AA');
         $donation->setSalesforceId('sfDonation369');
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);

@@ -14,6 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
@@ -188,10 +189,18 @@ class Donation extends SalesforceWriteProxy
     protected ?string $donorLastName = null;
 
     /**
-     * @var string|null Assumed to be billing address going forward.
+     * Previously known as donor postal address,
+     * and may still be called that in other systems,
+     * but now used for billing postcode only. Some old
+     * donations from 2022 or earlier have full addresses here.
+     *
+     * May be a post code or equivilent from anywhere in the world,
+     * so we allow up to 15 chars which has been enough for all donors in the last 12 months.
+     *
+     * @var string|null
      */
-    #[ORM\Column(type: 'string', nullable: true)]
-    protected ?string $donorPostalAddress = null;
+    #[ORM\Column(type: 'string', nullable: true, name: 'donorPostalAddress')]
+    protected ?string $donorBillingPostcode = null;
 
     /**
      * @var string|null From residential address, if donor is claiming Gift Aid.
@@ -364,7 +373,7 @@ class Donation extends SalesforceWriteProxy
         $donation->setDonorEmailAddress($donationData->emailAddress);
 
         if (!empty($donationData->countryCode)) {
-            $donation->setDonorCountryCode($donationData->countryCode);
+            $donation->setDonorCountryCode(strtoupper($donationData->countryCode));
         }
 
         if (isset($donationData->feeCoverAmount)) {
@@ -468,7 +477,7 @@ class Donation extends SalesforceWriteProxy
     public function toApiModel(): array
     {
         $data = [
-            'billingPostalAddress' => $this->getDonorBillingAddress(),
+            'billingPostalAddress' => $this->donorBillingPostcode,
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
             'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
@@ -611,16 +620,6 @@ class Donation extends SalesforceWriteProxy
         }
 
         return $lastName;
-    }
-
-    public function getDonorBillingAddress(): ?string
-    {
-        return $this->donorPostalAddress;
-    }
-
-    public function setDonorBillingAddress(?string $donorPostalAddress): void
-    {
-        $this->donorPostalAddress = $donorPostalAddress;
     }
 
     public function hasGiftAid(): ?bool
@@ -800,10 +799,19 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @param string $donorCountryCode
+     * @param string $donorCountryCode Two letter upper case code
+     * @throws \UnexpectedValueException if code is does not match format.
+     *
      */
     public function setDonorCountryCode(string $donorCountryCode): void
     {
+        try {
+            Assertion::length($donorCountryCode, 2);
+            Assertion::regex($donorCountryCode, '/^[A-Z][A-Z]$/');
+        } catch (AssertionFailedException $e) {
+            throw new \UnexpectedValueException(message: $e->getMessage(), previous: $e);
+        }
+
         $this->donorCountryCode = $donorCountryCode;
     }
 
@@ -900,11 +908,6 @@ class Donation extends SalesforceWriteProxy
     private function getDonorHomeAddressLine1(): ?string
     {
         return $this->donorHomeAddressLine1;
-    }
-
-    private function setDonorHomeAddressLine1(?string $donorHomeAddressLine1): void
-    {
-        $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
     }
 
     private function getDonorHomePostcode(): ?string
@@ -1398,30 +1401,55 @@ class Donation extends SalesforceWriteProxy
         ?bool $tbgComms = false,
         ?bool $charityComms = false,
         ?bool $championComms = false,
-        ?string $donorPostalAddress = null,
+        ?string $donorBillingPostcode = null,
     ): void {
         if ($this->donationStatus !== DonationStatus::Pending) {
             throw new \UnexpectedValueException("Update only allowed for pending donation");
         }
 
-        if (
-            $giftAid &&
-            ($donorHomeAddressLine1 === null || trim($donorHomeAddressLine1) === '')
-        ) {
+        if (trim($donorHomeAddressLine1 ?? '') === '') {
+            $donorHomeAddressLine1 = null;
+        }
+
+        if (trim($donorBillingPostcode ?? '') === '') {
+            $donorBillingPostcode = null;
+        }
+
+        if ($giftAid && $donorHomeAddressLine1 === null) {
             throw new \UnexpectedValueException("Cannot Claim Gift Aid Without Home Address");
         }
+
+        try {
+            $lazyAssertion = Assert::lazy();
+
+            $lazyAssertion
+                ->that($donorHomeAddressLine1, 'donorHomeAddressLine1')
+                ->nullOr()->betweenLength(1, 255);
+
+            // postcode should either be a UK postcode or the word 'OVERSEAS' - either way length will be between 5 and
+            // 8. Could consider adding a regex validation.
+            $lazyAssertion->that($donorHomePostcode, 'donorHomePostcode')->nullOr()->betweenLength(5, 8);
+
+            // allow up to 15 chars to account for post / zip codes worldwide
+            $lazyAssertion->that($donorBillingPostcode, 'donorBillingPostcode')->nullOr()->betweenLength(1, 15);
+
+            $lazyAssertion->verifyNow();
+        } catch (LazyAssertionException $e) {
+            throw new \UnexpectedValueException($e->getMessage(), previous: $e);
+        }
+
+        $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
+        $this->donorBillingPostcode = $donorBillingPostcode;
 
         $this->setGiftAid($giftAid);
         $this->setTipGiftAid($tipGiftAid);
         $this->setTbgShouldProcessGiftAid($this->getCampaign()->getCharity()->isTbgClaimingGiftAid());
         $this->setDonorHomePostcode($donorHomePostcode);
-        $this->setDonorHomeAddressLine1($donorHomeAddressLine1);
         $this->setDonorName($donorName);
         $this->setDonorEmailAddress($donorEmailAddress);
         $this->setTbgComms($tbgComms);
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
-        $this->setDonorBillingAddress($donorPostalAddress);
     }
 
     /**
@@ -1439,6 +1467,8 @@ class Donation extends SalesforceWriteProxy
             ->that($this->donorFirstName, 'donorFirstName')->notNull('Missing Donor First Name')
             ->that($this->donorLastName, 'donorLastName')->notNull('Missing Donor Last Name')
             ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
+            ->that($this->donorCountryCode)->notNull('Missing Billing Country')
+            ->that($this->donorBillingPostcode)->notNull('Missing Billing Postcode')
             ->that($this->donationStatus, 'donationStatus')
             ->eq(
                 DonationStatus::Pending,

@@ -426,7 +426,7 @@ class DonationTest extends TestCase
         $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
     }
 
-    public function testReadyIsToConfirmWithDonorName(): void
+    public function testReadyIsToConfirmWithRequiredFieldsSet(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBB',
@@ -436,11 +436,61 @@ class DonationTest extends TestCase
             firstName: null,
             lastName: null,
             emailAddress: 'user@example.com',
+            countryCode: 'GB',
         ), TestCase::someCampaign());
 
-        $donation->setDonorName(DonorName::of('First', 'Last'));
+        $donation->update(
+            giftAid: false,
+            donorBillingPostcode: 'SW1 1AA',
+            donorName: DonorName::of('Charlie', 'The Charitable'),
+            donorEmailAddress: EmailAddress::of('user@example.com'),
+        );
 
         $this->assertTrue($donation->assertIsReadyToConfirm());
+    }
+
+    public function testReadyIsNotReadyToConfirmWithoutBillingPostcode(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'Chelsea',
+            lastName: 'Charitable',
+            emailAddress: 'user@example.com',
+            countryCode: 'GB',
+        ), TestCase::someCampaign());
+
+        $donation->update(
+            giftAid: false,
+            donorBillingPostcode: null,
+            donorName: DonorName::of('Charlie', 'The Charitable'),
+            donorEmailAddress: EmailAddress::of('user@example.com'),
+        );
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing Billing Postcode");
+
+        $donation->assertIsReadyToConfirm();
+    }
+
+    public function testReadyIsNotReadyToConfirmWithoutBillingCountry(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'Chelsea',
+            lastName: 'Charitable',
+            emailAddress: 'user@example.com',
+        ), TestCase::someCampaign());
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing Billing Postcode");
+
+        $donation->assertIsReadyToConfirm();
     }
 
     public function testIsNotReadyToConfirmWithoutDonorName(): void
@@ -731,6 +781,29 @@ class DonationTest extends TestCase
         );
     }
 
+    public function testCannotSetTooLongHomeAddress(): void
+    {
+        $donation = $this->getTestDonation(collected: false);
+
+        $this->expectExceptionMessage('too long, it should have no more than 255 characters, but has 256 characters');
+        $donation->update(
+            giftAid: false,
+            donorHomeAddressLine1: str_repeat('a', 256),
+        );
+    }
+
+    public function testCannotSetTooLongPostcode(): void
+    {
+        $donation = $this->getTestDonation(collected: false);
+
+        $this->expectExceptionMessage('too long, it should have no more than 8 characters, but has 43 characters');
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: 'a pretty how town',
+            donorHomePostcode: 'This is too long to be a plausible postcode'
+        );
+    }
+
     /**
      * @return array<array{0: ?string, 1: ?string}>
      */
@@ -741,7 +814,7 @@ class DonationTest extends TestCase
             ['0', null],
             [null, null],
             ['BE', 'BE'],
-            ['be', 'be']
+            ['be', 'BE']
         ];
     }
 
