@@ -1409,16 +1409,20 @@ class Donation extends SalesforceWriteProxy
             throw new \UnexpectedValueException("Update only allowed for pending donation");
         }
 
-        if (
-            $giftAid &&
-            ($donorHomeAddressLine1 === null || trim($donorHomeAddressLine1) === '')
-        ) {
+        if (trim($donorHomeAddressLine1 ?? '') === '') {
+            $donorHomeAddressLine1 = null;
+        }
+
+        if ($giftAid && $donorHomeAddressLine1 === null) {
             throw new \UnexpectedValueException("Cannot Claim Gift Aid Without Home Address");
         }
 
         try {
-            Assertion::nullOrBetweenLength($donorHomeAddressLine1, 1, 255);
-        } catch (AssertionFailedException $e) {
+            Assert::lazy()
+                ->that($donorHomeAddressLine1, 'donorHomeAddressLine1')
+                ->nullOr()->betweenLength(1, 255)
+                ->verifyNow();
+        } catch (LazyAssertionException $e) {
             throw new \UnexpectedValueException($e->getMessage(), previous: $e);
         }
 

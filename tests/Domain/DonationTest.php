@@ -750,6 +750,16 @@ class DonationTest extends TestCase
         );
     }
 
+    public function testCannotSetTooLongHomeAddress() {
+        $donation = $this->getTestDonation(collected: false);
+
+        $this->expectExceptionMessage('too long, it should have no more than 255 characters, but has 256 characters');
+        $donation->update(
+            giftAid: false,
+            donorHomeAddressLine1: str_repeat('a', 256),
+        );
+    }
+
     /**
      * @return array<array{0: ?string, 1: ?string}>
      */
