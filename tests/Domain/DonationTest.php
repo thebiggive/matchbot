@@ -444,6 +444,7 @@ class DonationTest extends TestCase
             donorBillingPostcode: 'SW1 1AA',
             donorName: DonorName::of('Charlie', 'The Charitable'),
             donorEmailAddress: EmailAddress::of('user@example.com'),
+            tbgComms: false,
         );
 
         $this->assertTrue($donation->assertIsReadyToConfirm());
@@ -471,6 +472,61 @@ class DonationTest extends TestCase
 
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing Billing Postcode");
+
+        $donation->assertIsReadyToConfirm();
+    }
+
+    public function testReadyIsNotReadyToConfirmWithoutTBGComsPreference(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'Chelsea',
+            lastName: 'Charitable',
+            emailAddress: 'user@example.com',
+            countryCode: 'GB',
+        ), TestCase::someCampaign());
+
+        $donation->update(
+            giftAid: false,
+            donorBillingPostcode: 'SW1A 1AA',
+            donorName: DonorName::of('Charlie', 'The Charitable'),
+            donorEmailAddress: EmailAddress::of('user@example.com'),
+            tbgComms: null,
+        );
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing tbgComms preference");
+
+        $donation->assertIsReadyToConfirm();
+    }
+
+    public function testReadyIsNotReadyToConfirmWithoutCharityComsPreference(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'Chelsea',
+            lastName: 'Charitable',
+            emailAddress: 'user@example.com',
+            countryCode: 'GB',
+        ), TestCase::someCampaign());
+
+        $donation->update(
+            giftAid: false,
+            donorBillingPostcode: 'SW1A 1AA',
+            donorName: DonorName::of('Charlie', 'The Charitable'),
+            donorEmailAddress: EmailAddress::of('user@example.com'),
+            tbgComms: false,
+            charityComms: null,
+        );
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing charityComms preference");
 
         $donation->assertIsReadyToConfirm();
     }

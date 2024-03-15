@@ -669,7 +669,7 @@ class UpdateTest extends TestCase
 
         $payloadArray = json_decode($payload, true);
         $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
-        $this->assertNull($payloadArray['giftAid']);
+        $this->assertFalse($payloadArray['giftAid']);
         $this->assertEquals(124.56, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertEquals(0, $payloadArray['matchedAmount']);
         $this->assertEquals(2.00, $payloadArray['tipAmount']);

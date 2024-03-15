@@ -152,10 +152,11 @@ class Donation extends SalesforceWriteProxy
     protected ?bool $charityComms = null;
 
     /**
+     * Whether the Donor has asked for Gift Aid to be claimed about this donation.
      * @var bool
      */
-    #[ORM\Column(type: 'boolean', nullable: true)]
-    protected ?bool $giftAid = null;
+    #[ORM\Column()]
+    protected bool $giftAid = false;
 
     /**
      * @var bool    Whether the donor opted to receive email from the Big Give
@@ -357,10 +358,7 @@ class Donation extends SalesforceWriteProxy
         $donation->setUuid(Uuid::uuid4());
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
 
-        // Gift Aid is always set to false at donation creation time. It can only be set to true if the donor supplies
-        // their address later.
-        $donation->setGiftAid(false);
-        // `DonationCreate` doesn't support a distinct property yet & we only ask once about GA.
+        // `DonationCreate` doesn't support a distinct property for tip gift aid yet & we only ask once about GA.
         $donation->setTipGiftAid(false);
 
         $donation->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
@@ -622,12 +620,12 @@ class Donation extends SalesforceWriteProxy
         return $lastName;
     }
 
-    public function hasGiftAid(): ?bool
+    public function hasGiftAid(): bool
     {
         return $this->giftAid;
     }
 
-    private function setGiftAid(?bool $giftAid): void
+    private function setGiftAid(bool $giftAid): void
     {
         $this->giftAid = $giftAid;
 
@@ -1392,7 +1390,7 @@ class Donation extends SalesforceWriteProxy
      * Updates a pending donation to reflect changes made in the donation form.
      */
     public function update(
-        ?bool $giftAid,
+        bool $giftAid,
         ?bool $tipGiftAid = null,
         ?string $donorHomeAddressLine1 = null,
         ?string $donorHomePostcode = null,
@@ -1469,6 +1467,8 @@ class Donation extends SalesforceWriteProxy
             ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
             ->that($this->donorCountryCode)->notNull('Missing Billing Country')
             ->that($this->donorBillingPostcode)->notNull('Missing Billing Postcode')
+            ->that($this->tbgComms)->notNull('Missing tbgComms preference')
+            ->that($this->charityComms)->notNull('Missing charityComms preference')
             ->that($this->donationStatus, 'donationStatus')
             ->eq(
                 DonationStatus::Pending,
