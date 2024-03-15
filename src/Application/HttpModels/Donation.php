@@ -55,7 +55,7 @@ readonly class Donation
 
         $this->donorName = $donorName;
 
-        Assertion::nullOrMaxLength($this->tipAmount, 9);
+        Assertion::nullOrBetweenLength($this->tipAmount, 1, 9);
         Assertion::nullOrRegex(
             $this->tipAmount,
             '/^[0-9]+(\.\d\d?)?$/',
