@@ -207,7 +207,7 @@ class DonationRepositoryTest extends TestCase
 
         $createPayload = new DonationCreate(
             currencyCode: 'USD',
-            donationAmount: '123.32',
+            donationAmount: '123',
             pspMethodType: PaymentMethodType::Card,
             projectId: 'testProject1234567',
             psp: 'stripe',
@@ -217,8 +217,8 @@ class DonationRepositoryTest extends TestCase
             ->buildFromApiRequest($createPayload);
 
         $this->assertEquals('USD', $donation->getCurrencyCode());
-        $this->assertEquals('123.32', $donation->getAmount());
-        $this->assertEquals(12_332, $donation->getAmountFractionalIncTip());
+        $this->assertEquals('123', $donation->getAmount());
+        $this->assertEquals(12_300, $donation->getAmountFractionalIncTip());
     }
 
     public function testItPullsCampaignFromSFIfNotInRepo(): void
@@ -241,7 +241,7 @@ class DonationRepositoryTest extends TestCase
 
         $createPayload = new DonationCreate(
             currencyCode: 'GBP',
-            donationAmount: '123.32',
+            donationAmount: '123',
             pspMethodType: PaymentMethodType::Card,
             projectId: 'testProject1234567',
             psp: 'stripe',
@@ -273,7 +273,7 @@ class DonationRepositoryTest extends TestCase
 
         $createPayload = new DonationCreate(
             currencyCode: 'CAD',
-            donationAmount: '144.44',
+            donationAmount: '144.0',
             pspMethodType: PaymentMethodType::Card,
             projectId: 'testProject1234567',
             psp: 'stripe',

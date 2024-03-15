@@ -740,7 +740,7 @@ class DonationTest extends TestCase
 
     public function testCannotCreateDonationWithNegativeTip(): void
     {
-        $this->expectException(UnexpectedValueException::class);
+        $this->expectException(AssertionFailedException::class);
 
         Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
