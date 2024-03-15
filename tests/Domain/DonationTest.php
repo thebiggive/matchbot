@@ -760,7 +760,7 @@ class DonationTest extends TestCase
             ['0', null],
             [null, null],
             ['BE', 'BE'],
-            ['be', 'be']
+            ['be', 'BE']
         ];
     }
 

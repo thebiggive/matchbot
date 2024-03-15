@@ -14,6 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
@@ -364,7 +365,7 @@ class Donation extends SalesforceWriteProxy
         $donation->setDonorEmailAddress($donationData->emailAddress);
 
         if (!empty($donationData->countryCode)) {
-            $donation->setDonorCountryCode($donationData->countryCode);
+            $donation->setDonorCountryCode(strtoupper($donationData->countryCode));
         }
 
         if (isset($donationData->feeCoverAmount)) {
@@ -800,10 +801,19 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @param string $donorCountryCode
+     * @param string $donorCountryCode Two letter upper case code
+     * @throws \UnexpectedValueException if code is does not match format.
+     *
      */
     public function setDonorCountryCode(string $donorCountryCode): void
     {
+        try {
+            Assertion::length($donorCountryCode, 2);
+            Assertion::regex($donorCountryCode, '/^[A-Z][A-Z]$/');
+        } catch (AssertionFailedException $e) {
+            throw new \UnexpectedValueException(message: $e->getMessage(), previous: $e);
+        }
+
         $this->donorCountryCode = $donorCountryCode;
     }
 
