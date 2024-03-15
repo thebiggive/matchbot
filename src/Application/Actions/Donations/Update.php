@@ -305,7 +305,7 @@ class Update extends Action
                 tbgComms: $donationData->optInTbgEmail,
                 charityComms: $donationData->optInCharityEmail,
                 championComms: $donationData->optInChampionEmail,
-                donorPostalAddress: $donationData->billingPostalAddress
+                donorBillingPostcode: $donationData->billingPostalAddress
             );
         } catch (\UnexpectedValueException $exception) {
             return $this->validationError(

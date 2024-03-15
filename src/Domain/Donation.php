@@ -477,7 +477,7 @@ class Donation extends SalesforceWriteProxy
     public function toApiModel(): array
     {
         $data = [
-            'billingPostalAddress' => $this->getDonorBillingAddress(),
+            'billingPostalAddress' => $this->donorBillingPostcode,
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
             'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
@@ -620,16 +620,6 @@ class Donation extends SalesforceWriteProxy
         }
 
         return $lastName;
-    }
-
-    public function getDonorBillingAddress(): ?string
-    {
-        return $this->donorBillingPostcode;
-    }
-
-    public function setDonorBillingAddress(?string $donorPostalAddress): void
-    {
-        $this->donorBillingPostcode = $donorPostalAddress;
     }
 
     public function hasGiftAid(): ?bool
@@ -1411,7 +1401,7 @@ class Donation extends SalesforceWriteProxy
         ?bool $tbgComms = false,
         ?bool $charityComms = false,
         ?bool $championComms = false,
-        ?string $donorPostalAddress = null,
+        ?string $donorBillingPostcode = null,
     ): void {
         if ($this->donationStatus !== DonationStatus::Pending) {
             throw new \UnexpectedValueException("Update only allowed for pending donation");
@@ -1442,6 +1432,7 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
+        $this->donorBillingPostcode = $donorBillingPostcode;
 
         $this->setGiftAid($giftAid);
         $this->setTipGiftAid($tipGiftAid);
@@ -1452,7 +1443,6 @@ class Donation extends SalesforceWriteProxy
         $this->setTbgComms($tbgComms);
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
-        $this->setDonorBillingAddress($donorPostalAddress);
     }
 
     /**
