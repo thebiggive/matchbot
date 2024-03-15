@@ -39,14 +39,14 @@ readonly class DonationCreate
         public ?string $pspCustomerId = null,
         public ?string $tipAmount = '0.00',
         ?string $firstName = null,
-        public ?string $lastName = null,
+        ?string $lastName = null,
         ?string $emailAddress = null
     ) {
         $this->emailAddress = (! is_null($emailAddress) && ! ($emailAddress === '')) ?
             EmailAddress::of($emailAddress) :
             null;
 
-        $this->donorName = DonorName::maybeFromFirstAndLast($firstName, $this->lastName);
+        $this->donorName = DonorName::maybeFromFirstAndLast($firstName, $lastName);
 
         $this->projectId = Salesforce18Id::of($projectId);
     }
