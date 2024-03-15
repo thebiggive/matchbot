@@ -973,7 +973,7 @@ class CreateTest extends TestCase
         $this->assertNotEmpty($payloadArray['jwt']);
         $this->assertIsArray($payloadArray['donation']);
         $this->assertNotEmpty($payloadArray['donation']['createdTime']);
-        $this->assertNull($payloadArray['donation']['giftAid']);
+        $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertNull($payloadArray['donation']['optInCharityEmail']);
         $this->assertNull($payloadArray['donation']['optInChampionEmail']);
         $this->assertNull($payloadArray['donation']['optInTbgEmail']);

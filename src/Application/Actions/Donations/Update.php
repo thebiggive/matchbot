@@ -296,7 +296,7 @@ class Update extends Action
         // method every time they `addData()`.
         try {
             $donation->update(
-                giftAid: $donationData->giftAid,
+                giftAid: $donationData->giftAid ?? false,
                 tipGiftAid: $donationData->tipGiftAid ?? $donationData->giftAid,
                 donorHomeAddressLine1: $donationData->homeAddress,
                 donorHomePostcode: $donationData->homePostcode,

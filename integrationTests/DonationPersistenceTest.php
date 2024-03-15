@@ -66,7 +66,7 @@ class DonationPersistenceTest extends IntegrationTest
             'amount' => '1.00',
             'donationStatus' => DonationStatus::Refunded->value,
             'charityComms' => null,
-            'giftAid' => null,
+            'giftAid' => 0,
             'tbgComms' => null,
             'donorCountryCode' => null,
             'donorEmailAddress' => null,
