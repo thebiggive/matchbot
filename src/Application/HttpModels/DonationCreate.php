@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\HttpModels;
 
+use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
@@ -49,5 +50,8 @@ readonly class DonationCreate
         $this->donorName = DonorName::maybeFromFirstAndLast($firstName, $lastName);
 
         $this->projectId = Salesforce18Id::of($projectId);
+
+        Assertion::maxLength($this->donationAmount, 9); // more than we need, allows up to 999k ;
+        Assertion::regex($this->donationAmount, '/^[0-9]+(\.00?)?$/'); // must be an integer, with optional .00 or .0 suffix
     }
 }

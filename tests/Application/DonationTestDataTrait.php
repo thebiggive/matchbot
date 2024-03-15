@@ -33,7 +33,7 @@ trait DonationTestDataTrait
      * @param numeric-string $amount
      */
     protected function getPendingBigGiveGeneralCustomerBalanceDonation(
-        string $amount = '123.45',
+        string $amount = '123.00',
         string $currencyCode = 'GBP',
     ): Donation {
         $campaignId = 'testProject1234567';
