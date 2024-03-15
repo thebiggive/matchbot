@@ -11,7 +11,7 @@ use MatchBot\Application\Assertion;
  * @psalm-immutable
  */
 #[Embeddable]
-class EmailAddress
+readonly class EmailAddress
 {
     #[Column(type: 'string')]
     public readonly string $email;

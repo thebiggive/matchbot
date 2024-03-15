@@ -370,6 +370,7 @@ class ConfirmTest extends TestCase
                 firstName: 'Charlie',
                 lastName: 'The Charitable',
                 emailAddress: 'user@example.com',
+                countryCode: 'GB',
             ),
             $this->getMinimalCampaign(),
         );

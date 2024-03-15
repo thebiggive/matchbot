@@ -436,11 +436,30 @@ class DonationTest extends TestCase
             firstName: null,
             lastName: null,
             emailAddress: 'user@example.com',
+            countryCode: 'GB',
         ), TestCase::someCampaign());
 
         $donation->setDonorName(DonorName::of('First', 'Last'));
 
         $this->assertTrue($donation->assertIsReadyToConfirm());
+    }
+
+    public function testReadyIsNotReadyToConfirmWithoutBillingCountry(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'Chelsea',
+            lastName: 'Charitable',
+            emailAddress: 'user@example.com',
+        ), TestCase::someCampaign());
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing Billing Country");
+
+        $donation->assertIsReadyToConfirm();
     }
 
     public function testIsNotReadyToConfirmWithoutDonorName(): void
