@@ -12,9 +12,11 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\LazyAssertionException;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -172,6 +174,10 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(type: 'string', length: 2, nullable: true)]
     protected ?string $donorCountryCode = null;
 
+    /**
+     * Ideally we would type this as ?EmailAddress instead of ?string but that will require changing
+     * the column name to match the property inside the VO. Might be easy and worth doing.
+     */
     #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorEmailAddress = null;
 
@@ -354,8 +360,7 @@ class Donation extends SalesforceWriteProxy
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setPspCustomerId($donationData->pspCustomerId);
         $donation->setTbgComms($donationData->optInTbgEmail);
-        $donation->setDonorFirstName($donationData->firstName);
-        $donation->setDonorLastName($donationData->lastName);
+        $donation->setDonorName($donationData->donorName);
         $donation->setDonorEmailAddress($donationData->emailAddress);
 
         if (!empty($donationData->countryCode)) {
@@ -475,7 +480,7 @@ class Donation extends SalesforceWriteProxy
             'donationAmount' => (float) $this->getAmount(),
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
-            'emailAddress' => $this->getDonorEmailAddress(),
+            'emailAddress' => $this->getDonorEmailAddress()?->email,
             'feeCoverAmount' => (float) $this->getFeeCoverAmount(),
             'firstName' => $this->getDonorFirstName(true),
             'giftAid' => $this->hasGiftAid(),
@@ -550,14 +555,14 @@ class Donation extends SalesforceWriteProxy
         $this->campaign = $campaign;
     }
 
-    public function getDonorEmailAddress(): ?string
+    public function getDonorEmailAddress(): ?EmailAddress
     {
-        return $this->donorEmailAddress;
+        return ((bool) $this->donorEmailAddress) ? EmailAddress::of($this->donorEmailAddress) : null;
     }
 
-    public function setDonorEmailAddress(?string $donorEmailAddress): void
+    public function setDonorEmailAddress(?EmailAddress $donorEmailAddress): void
     {
-        $this->donorEmailAddress = $donorEmailAddress;
+        $this->donorEmailAddress = $donorEmailAddress?->email;
     }
 
     public function getCharityComms(): ?bool
@@ -591,9 +596,10 @@ class Donation extends SalesforceWriteProxy
         return $firstName;
     }
 
-    public function setDonorFirstName(?string $donorFirstName): void
+    public function setDonorName(?DonorName $donorName): void
     {
-        $this->donorFirstName = $donorFirstName;
+        $this->donorFirstName = $donorName?->first;
+        $this->donorLastName = $donorName?->last;
     }
 
     public function getDonorLastName(bool $salesforceSafe = false): ?string
@@ -605,11 +611,6 @@ class Donation extends SalesforceWriteProxy
         }
 
         return $lastName;
-    }
-
-    public function setDonorLastName(?string $donorLastName): void
-    {
-        $this->donorLastName = $donorLastName;
     }
 
     public function getDonorBillingAddress(): ?string
@@ -1392,9 +1393,8 @@ class Donation extends SalesforceWriteProxy
         ?bool $tipGiftAid = null,
         ?string $donorHomeAddressLine1 = null,
         ?string $donorHomePostcode = null,
-        ?string $donorFirstName = '',
-        ?string $donorLastName = '',
-        ?string $donorEmailAddress = null,
+        ?DonorName $donorName = null,
+        ?EmailAddress $donorEmailAddress = null,
         ?bool $tbgComms = false,
         ?bool $charityComms = false,
         ?bool $championComms = false,
@@ -1416,12 +1416,36 @@ class Donation extends SalesforceWriteProxy
         $this->setTbgShouldProcessGiftAid($this->getCampaign()->getCharity()->isTbgClaimingGiftAid());
         $this->setDonorHomePostcode($donorHomePostcode);
         $this->setDonorHomeAddressLine1($donorHomeAddressLine1);
-        $this->setDonorFirstName($donorFirstName);
-        $this->setDonorLastName($donorLastName);
+        $this->setDonorName($donorName);
         $this->setDonorEmailAddress($donorEmailAddress);
         $this->setTbgComms($tbgComms);
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
         $this->setDonorBillingAddress($donorPostalAddress);
+    }
+
+    /**
+     * Checks the donation is ready to be confirmed if and when the donor is ready to pay - i.e. that all required
+     * fields are filled in.
+     *
+     * @throws LazyAssertionException if not.
+     *
+     * This method returning true does *NOT* indicate that the donor has chosen to definitely donate - that must be
+     * established based on other info (e.g. because they sent a confirmation request).
+     */
+    public function assertIsReadyToConfirm(): true
+    {
+        Assert::lazy()
+            ->that($this->donorFirstName, 'donorFirstName')->notNull('Missing Donor First Name')
+            ->that($this->donorLastName, 'donorLastName')->notNull('Missing Donor Last Name')
+            ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
+            ->that($this->donationStatus, 'donationStatus')
+            ->eq(
+                DonationStatus::Pending,
+                "Donation status is '{$this->donationStatus->value}', must be 'Pending' to confirm payment"
+            )
+            ->verifyNow();
+
+        return true;
     }
 }

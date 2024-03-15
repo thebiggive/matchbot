@@ -8,6 +8,8 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\TestCase;
@@ -109,9 +111,8 @@ trait DonationTestDataTrait
 
 
         $donation->setDonorCountryCode('GB');
-        $donation->setDonorEmailAddress('john.doe@example.com');
-        $donation->setDonorFirstName('John');
-        $donation->setDonorLastName('Doe');
+        $donation->setDonorEmailAddress(EmailAddress::of('john.doe@example.com'));
+        $donation->setDonorName(DonorName::of('John', 'Doe'));
         $donation->setDonorBillingAddress('1 Main St, London N1 1AA');
         $donation->setDonorHomePostcode('N1 1AA');
         $donation->setSalesforceId('sfDonation369');

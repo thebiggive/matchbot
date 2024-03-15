@@ -160,6 +160,11 @@ class TestCase extends PHPUnitTestCase
         );
     }
 
+    public static function someCampaign(): Campaign
+    {
+        return new Campaign(self::someCharity());
+    }
+
     /**
      * @param positive-int $num_bytes
      */

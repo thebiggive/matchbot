@@ -5,6 +5,7 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Embeddable;
 use MatchBot\Application\Assert;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\LazyAssertionException;
 
 /**
@@ -17,7 +18,7 @@ class DonorName
     public string $first;
 
     #[Column(type: 'string')]
-    private string $last;
+    public string $last;
 
     /**
      * @psalm-suppress ImpureMethodCall - \Assert\Assert::lazy etc could probably be marked as pure but is not.
@@ -40,6 +41,25 @@ class DonorName
     public static function of(string $first, string $last): self
     {
         return new self($first, $last);
+    }
+
+    /**
+     * @param string|null $firstName
+     * @param string|null $lastName
+     * @return DonorName|null
+     * @throws \Assert\AssertionFailedException
+     */
+    public static function maybeFromFirstAndLast(?string $firstName, ?string $lastName): ?self
+    {
+        $hasFirstName = !is_null($firstName) && $firstName !== '' && $firstName !== 'N/A';
+        $hasLastName = !is_null($lastName) && $lastName !== '' && $lastName !== 'N/A';
+        Assertion::same(
+            $hasFirstName,
+            $hasLastName,
+            "First and last names must be supplied together or not at all."
+        );
+
+        return ($hasFirstName && $hasLastName) ? DonorName::of($firstName, $lastName) : null;
     }
 
     /**

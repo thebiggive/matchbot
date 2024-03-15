@@ -11,6 +11,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
@@ -126,7 +127,10 @@ class DonationRepositoryTest extends IntegrationTest
         // assert
         $expiredDonationStatuses = array_map(
             fn(Donation $donation) => $donation->getDonationStatus(),
-            array_filter($expiredDonations, fn(Donation $dn) => $dn->getDonorEmailAddress() === $randomEmailAddress)
+            array_filter(
+                $expiredDonations,
+                fn(Donation $dn) => $dn->getDonorEmailAddress() == EmailAddress::of($randomEmailAddress)
+            )
         );
 
         $this->assertEqualsCanonicalizing(

@@ -9,10 +9,6 @@ namespace MatchBot\Application\HttpModels;
  */
 class DonationCreatedResponse
 {
-    /**
-     * @var array $donation Properties are as per `Donation` but internal type is always `array`
-     * @see Donation
-     */
     public array $donation;
     public string $jwt;
 }

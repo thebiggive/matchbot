@@ -92,7 +92,7 @@ class ConfirmTest extends TestCase
 
         // assert
         $this->expectException(HttpBadRequestException::class);
-        $this->expectExceptionMessage('Donation has been cancelled, so cannot be confirmed');
+        $this->expectExceptionMessage("Donation status is 'Cancelled', must be 'Pending' to confirm payment");
 
         // act
         $this->callConfirm($sut);
@@ -367,6 +367,9 @@ class ConfirmTest extends TestCase
                 donationAmount: '63.0',
                 projectId: 'doesnt0matter12345',
                 psp: 'stripe',
+                firstName: 'Charlie',
+                lastName: 'The Charitable',
+                emailAddress: 'user@example.com',
             ),
             $this->getMinimalCampaign(),
         );
