@@ -1418,10 +1418,17 @@ class Donation extends SalesforceWriteProxy
         }
 
         try {
-            Assert::lazy()
+            $lazyAssertion = Assert::lazy();
+
+            $lazyAssertion
                 ->that($donorHomeAddressLine1, 'donorHomeAddressLine1')
-                ->nullOr()->betweenLength(1, 255)
-                ->verifyNow();
+                ->nullOr()->betweenLength(1, 255);
+
+            // postcode should either be a UK postcode or the word 'OVERSEAS' - either way length will be between 5 and
+            // 8. Could consider adding a regex validation.
+            $lazyAssertion->that($donorHomePostcode, 'donorHomePostcode')->nullOr()->betweenLength(5, 8);
+
+            $lazyAssertion->verifyNow();
         } catch (LazyAssertionException $e) {
             throw new \UnexpectedValueException($e->getMessage(), previous: $e);
         }
