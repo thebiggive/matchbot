@@ -391,7 +391,7 @@ class UpdateTest extends TestCase
 
         $payloadArray = json_decode($payload, true);
         $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
-        $this->assertEquals('1 Main St, London N1 1AA', $payloadArray['billingPostalAddress']);
+        $this->assertEquals('N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
         $this->assertTrue($payloadArray['optInCharityEmail']);
         $this->assertFalse($payloadArray['optInTbgEmail']);
@@ -463,7 +463,7 @@ class UpdateTest extends TestCase
 
         $payloadArray = json_decode($payload, true);
         $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
-        $this->assertEquals('1 Main St, London N1 1AA', $payloadArray['billingPostalAddress']);
+        $this->assertEquals('N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
         $this->assertTrue($payloadArray['optInCharityEmail']);
         $this->assertFalse($payloadArray['optInTbgEmail']);

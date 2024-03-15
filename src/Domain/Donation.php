@@ -195,7 +195,7 @@ class Donation extends SalesforceWriteProxy
      * donations from 2022 or earlier have full addresses here.
      *
      * May be a post code or equivilent from anywhere in the world,
-     * so we allow up to 10 chars which has been enough for all donors in the last 12 months.
+     * so we allow up to 15 chars which has been enough for all donors in the last 12 months.
      *
      * @var string|null
      */
@@ -1411,6 +1411,10 @@ class Donation extends SalesforceWriteProxy
             $donorHomeAddressLine1 = null;
         }
 
+        if (trim($donorBillingPostcode ?? '') === '') {
+            $donorBillingPostcode = null;
+        }
+
         if ($giftAid && $donorHomeAddressLine1 === null) {
             throw new \UnexpectedValueException("Cannot Claim Gift Aid Without Home Address");
         }
@@ -1425,6 +1429,9 @@ class Donation extends SalesforceWriteProxy
             // postcode should either be a UK postcode or the word 'OVERSEAS' - either way length will be between 5 and
             // 8. Could consider adding a regex validation.
             $lazyAssertion->that($donorHomePostcode, 'donorHomePostcode')->nullOr()->betweenLength(5, 8);
+
+            // allow up to 15 chars to account for post / zip codes worldwide
+            $lazyAssertion->that($donorBillingPostcode, 'donorBillingPostcode')->nullOr()->betweenLength(1, 15);
 
             $lazyAssertion->verifyNow();
         } catch (LazyAssertionException $e) {

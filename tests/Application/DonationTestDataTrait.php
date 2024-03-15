@@ -92,7 +92,7 @@ trait DonationTestDataTrait
             giftAid: true,
             donorHomeAddressLine1: '1 Main St, London',  // Frontend typically includes town for now
             charityComms: $charityComms,
-            donorBillingPostcode: '1 Main St, London N1 1AA',
+            donorBillingPostcode: 'N1 1AA',
         );
 
         $donation->setCharityFee('2.05');
