@@ -912,11 +912,6 @@ class Donation extends SalesforceWriteProxy
         return $this->donorHomeAddressLine1;
     }
 
-    private function setDonorHomeAddressLine1(?string $donorHomeAddressLine1): void
-    {
-        $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
-    }
-
     private function getDonorHomePostcode(): ?string
     {
         return $this->donorHomePostcode;
@@ -1421,11 +1416,18 @@ class Donation extends SalesforceWriteProxy
             throw new \UnexpectedValueException("Cannot Claim Gift Aid Without Home Address");
         }
 
+        try {
+            Assertion::nullOrBetweenLength($donorHomeAddressLine1, 1, 255);
+        } catch (AssertionFailedException $e) {
+            throw new \UnexpectedValueException($e->getMessage(), previous: $e);
+        }
+
+        $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
+
         $this->setGiftAid($giftAid);
         $this->setTipGiftAid($tipGiftAid);
         $this->setTbgShouldProcessGiftAid($this->getCampaign()->getCharity()->isTbgClaimingGiftAid());
         $this->setDonorHomePostcode($donorHomePostcode);
-        $this->setDonorHomeAddressLine1($donorHomeAddressLine1);
         $this->setDonorName($donorName);
         $this->setDonorEmailAddress($donorEmailAddress);
         $this->setTbgComms($tbgComms);
