@@ -168,14 +168,14 @@
             "php matchbot-cli.php messenger:consume -vv --time-limit=7080"
         ],
         "start": "php -S localhost:8080 -t public",
-        "test": "XDEBUG_MODE=coverage phpunit --order-by=random",
+        "test": "XDEBUG_MODE=coverage phpunit --order-by=random --log-junit reports/unit-test.xml",
         "integration-test": [
             "APP_ENV=test doctrine orm:clear-cache:metadata",
             "APP_ENV=test doctrine orm:clear-cache:query",
             "APP_ENV=test doctrine orm:clear-cache:result",
             "APP_ENV=test doctrine-migrations migrate --no-interaction --allow-no-migration",
             "APP_ENV=test doctrine orm:generate-proxies",
-            "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random"
+            "XDEBUG_MODE=coverage phpunit --config=phpunit-integration.xml --order-by=random  --log-junit reports/integration-test.xml"
         ],
         "mutation-test": [
             "Composer\\Config::disableProcessTimeout",
