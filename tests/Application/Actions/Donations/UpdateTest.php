@@ -30,6 +30,8 @@ use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
 use Stripe\StripeObject;
+use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Clock\MockClock;
 
 class UpdateTest extends TestCase
 {
@@ -1290,7 +1292,7 @@ class UpdateTest extends TestCase
                 false
             ));
 
-
+        $container->set(ClockInterface::class, new MockClock());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -1387,6 +1389,7 @@ class UpdateTest extends TestCase
                 false,
             ));
 
+        $container->set(ClockInterface::class, new MockClock());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -1490,6 +1493,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
+        $container->set(ClockInterface::class, new MockClock());
 
         $request = $this->createRequest(
             'PUT',

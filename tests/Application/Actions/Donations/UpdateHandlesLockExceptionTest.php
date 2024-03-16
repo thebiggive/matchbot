@@ -25,6 +25,7 @@ use Ramsey\Uuid\Uuid;
 use Slim\Psr7\Response;
 use Stripe\Service\PaymentIntentService;
 use Stripe\StripeClient;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -60,7 +61,8 @@ class UpdateHandlesLockExceptionTest extends TestCase
             $this->entityManagerProphecy->reveal(),
             new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
             $this->createStub(Stripe::class),
-            new NullLogger()
+            new NullLogger(),
+            new MockClock(),
         );
 
         $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Pending"));
@@ -89,7 +91,8 @@ class UpdateHandlesLockExceptionTest extends TestCase
             $this->entityManagerProphecy->reveal(),
             new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
             $this->createStub(Stripe::class),
-            new NullLogger()
+            new NullLogger(),
+            new MockClock(),
         );
 
         $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Cancelled"));
