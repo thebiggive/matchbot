@@ -21,6 +21,7 @@ use Slim\Psr7\Factory\StreamFactory;
 use Slim\Psr7\Headers;
 use Slim\Psr7\Request as SlimRequest;
 use Slim\Psr7\Uri;
+use Symfony\Component\Clock\ClockInterface;
 
 class TestCase extends PHPUnitTestCase
 {
@@ -81,6 +82,22 @@ class TestCase extends PHPUnitTestCase
 
         // By default, tests don't get a real logger.
         $container->set(LoggerInterface::class, new NullLogger());
+
+        $container->set(ClockInterface::class, new class implements ClockInterface
+        {
+            #[\Override] public function sleep(float|int $seconds): never
+            {
+                throw new \Exception("Please provide fake clock for your test");
+            }
+            #[\Override] public function now(): never
+            {
+                throw new \Exception("Please provide fake clock for your test");
+            }
+            #[\Override] public function withTimeZone(\DateTimeZone|string $timezone): never
+            {
+                throw new \Exception("Please provide fake clock for your test");
+            }
+        });
 
         // Instantiate the app
         AppFactory::setContainer($container);
