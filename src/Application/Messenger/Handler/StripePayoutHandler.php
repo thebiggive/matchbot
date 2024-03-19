@@ -207,7 +207,7 @@ class StripePayoutHandler implements MessageHandlerInterface
                     retryDepth: 0,
                 );
                 // Include all previously delayed payouts' charge IDs in the handler's main list.
-                $paidChargeIds = [...$ids['chargeIds'], ...$extraPayoutInfo['chargeIds']];
+                $paidChargeIds = [...$paidChargeIds, ...$extraPayoutInfo['chargeIds']];
             }
         }
 
