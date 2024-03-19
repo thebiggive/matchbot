@@ -110,9 +110,6 @@ class DonationPersistenceTest extends IntegrationTest
      */
     public function makeDonationObject(): Donation
     {
-        $donation = Donation::emptyTestDonation('1');
-        $donation->setUuid(Uuid::uuid4());
-
-        return $donation;
+        return Donation::emptyTestDonation('1');
     }
 }
