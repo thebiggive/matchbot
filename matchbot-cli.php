@@ -86,10 +86,6 @@ $commands = [
         $chatter,
     ),
     new PushDonations(now: $now, donationRepository: $psr11App->get(DonationRepository::class)),
-    new \MatchBot\Application\Commands\ReconcilePastPayouts(
-        $psr11App->get(RoutableMessageBus::class),
-        $psr11App->get(LoggerInterface::class),
-    ),
     new ResetMatching(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(Matching\Adapter::class)

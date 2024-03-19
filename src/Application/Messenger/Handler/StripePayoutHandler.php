@@ -85,12 +85,6 @@ class StripePayoutHandler implements MessageHandlerInterface
                 $payoutId,
                 $connectAccountId,
             ));
-            // Temporary log lots of detail to help diagnose payout reconciliation edge cases.
-            $this->logger->info(sprintf(
-                'Used created datetime %s and charge IDs list: %s',
-                $payoutInfo['created']->format('r'),
-                implode(',', $payoutInfo['chargeIds']),
-            ));
 
             return;
         }
