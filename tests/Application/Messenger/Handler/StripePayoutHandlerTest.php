@@ -373,7 +373,7 @@ class StripePayoutHandlerTest extends TestCase
         return [
             // Based on the date range from our standard test data payout (donation time -60D and +1D days).
             'created' => [
-                'gt' => 1593351656,
+                'gt' => 1535377256,
                 'lt' => 1598622056,
             ],
             'limit' => 100
