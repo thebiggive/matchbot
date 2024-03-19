@@ -88,7 +88,7 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce();
         $loggerProphecy->log('INFO', 'Payout: Donation not found with Charge ID ch_invalidId_123')
             ->shouldBeCalledOnce();
-        $loggerProphecy->info('Payout: Finished getting original Charge IDs, found 1')
+        $loggerProphecy->info('Payout: Finished getting original Charge IDs, found 1 (from 1 source transfer IDs and 1 donations whose transfer IDs matched)')
             ->shouldBeCalledOnce();
         $loggerProphecy->info(
             'Payout: Updating paid donations complete for stripe payout #po_externalId_123, persisted 0'
