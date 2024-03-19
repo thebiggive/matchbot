@@ -349,7 +349,8 @@ class StripePayoutHandler implements MessageHandlerInterface
                     // source is the `py_...` charge ID from the connected account txns.
                     $paidChargeIds[] = (string) $balanceTransaction->source;
                     break;
-                case BalanceTransaction::TYPE_PAYOUT_FAILURE:
+                case BalanceTransaction::TYPE_PAYOUT_FAILURE: // fallthru, these 2 are handled the same
+                case BalanceTransaction::TYPE_PAYOUT_CANCEL:
                     // source is the previous failed payout `po_...` ID.
                     $extraPayoutIdsToMap[] = (string) $balanceTransaction->source;
                     break;
