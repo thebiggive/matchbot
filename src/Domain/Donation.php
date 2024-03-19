@@ -200,8 +200,8 @@ class Donation extends SalesforceWriteProxy
      *
      * @var string|null
      */
-    #[ORM\Column(type: 'string', nullable: true, name: 'donorPostalAddress')]
-    protected ?string $donorBillingPostcode = null;
+    #[ORM\Column(type: 'string', nullable: true)]
+    protected ?string $donorPostalAddress = null;
 
     /**
      * @var string|null From residential address, if donor is claiming Gift Aid.
@@ -475,7 +475,7 @@ class Donation extends SalesforceWriteProxy
     public function toApiModel(): array
     {
         $data = [
-            'billingPostalAddress' => $this->donorBillingPostcode,
+            'billingPostalAddress' => $this->donorPostalAddress,
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
             'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
@@ -1437,7 +1437,7 @@ class Donation extends SalesforceWriteProxy
         }
 
         $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
-        $this->donorBillingPostcode = $donorBillingPostcode;
+        $this->donorPostalAddress = $donorBillingPostcode;
 
         $this->setGiftAid($giftAid);
         $this->setTipGiftAid($tipGiftAid);
@@ -1466,7 +1466,7 @@ class Donation extends SalesforceWriteProxy
             ->that($this->donorLastName, 'donorLastName')->notNull('Missing Donor Last Name')
             ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
             ->that($this->donorCountryCode)->notNull('Missing Billing Country')
-            ->that($this->donorBillingPostcode)->notNull('Missing Billing Postcode')
+            ->that($this->donorPostalAddress)->notNull('Missing Billing Postcode')
             ->that($this->tbgComms)->notNull('Missing tbgComms preference')
             ->that($this->charityComms)->notNull('Missing charityComms preference')
             ->that($this->donationStatus, 'donationStatus')
