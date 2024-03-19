@@ -52,7 +52,7 @@ class ReconcilePastPayoutsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:reconcile-payouts starting!',
-            'Processing 5 payouts...',
+            'Processing 1 payouts...',
             'Completed past payout processing',
             'matchbot:reconcile-payouts complete!',
         ];

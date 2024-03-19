@@ -21,11 +21,7 @@ use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 class ReconcilePastPayouts extends LockingCommand
 {
     public const PAYOUT_INFO_CSV = <<<EOT
-"acct_1J3KglQM8t45YFB3","po_1KR4d2QM8t45YFB30OjQdQLL"
-"acct_1JQuDb4C6qcJMpK8","po_1NaTrP4C6qcJMpK8OATx9n5u"
 "acct_1IuusP3ZvDix6HgX","po_1LKu4v3ZvDix6HgXsVUHZ6pn"
-"acct_1JKj2g4EM6tmvjBM","po_1Or9BV4EM6tmvjBMg46KaC2L"
-"acct_1LGk5zQTxjVUP6NH","po_1OobuYQTxjVUP6NHfdGxPCsI"
 EOT;
 
     protected static $defaultName = 'matchbot:reconcile-payouts';
