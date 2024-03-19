@@ -85,6 +85,12 @@ class StripePayoutHandler implements MessageHandlerInterface
                 $payoutId,
                 $connectAccountId,
             ));
+            // Temporary log lots of detail to help diagnose payout reconciliation edge cases.
+            $this->logger->info(sprintf(
+                'Used created datetime %s and charge IDs list: %s',
+                $payoutInfo['created']->format('r'),
+                implode(',', $payoutInfo['chargeIds']),
+            ));
 
             return;
         }
@@ -280,7 +286,7 @@ class StripePayoutHandler implements MessageHandlerInterface
 
         $this->logger->info(
             sprintf(
-                'Payout: Getting all Connect account paid Charge IDs for *earlier& Payout ID %s complete, found %s',
+                'Payout: Getting all Connect account paid Charge IDs for *earlier* Payout ID %s complete, found %s',
                 $payoutId,
                 count($ids['chargeIds']),
             )
@@ -420,7 +426,13 @@ class StripePayoutHandler implements MessageHandlerInterface
         $originalChargeIds = array_map(static fn(Donation $donation) => $donation->getChargeId(), $donations);
 
         $this->logger->info(
-            sprintf('Payout: Finished getting original Charge IDs, found %s', count($originalChargeIds))
+            sprintf(
+                'Payout: Finished getting original Charge IDs, found %d ' .
+                    '(from %d source transfer IDs and %d donations whose transfer IDs matched)',
+                count($originalChargeIds),
+                count($sourceTransferIds),
+                count($donations),
+            )
         );
 
         return $originalChargeIds;
