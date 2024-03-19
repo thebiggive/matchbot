@@ -18,7 +18,7 @@ readonly class Donation
     public ?EmailAddress $emailAddress;
 
     /**
-     * @psalm-suppress PossiblyUnusedMethod - this constructor is called bye the Symfony Serializer
+     * @psalm-suppress PossiblyUnusedMethod - this constructor is called by the Symfony Serializer
      */
     public function __construct(
         public float $donationAmount,
