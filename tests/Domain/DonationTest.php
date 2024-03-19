@@ -426,7 +426,7 @@ class DonationTest extends TestCase
         $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
     }
 
-    public function testReadyIsToConfirmWithRequiredFieldsSet(): void
+    public function testIsReadyToConfirmWithRequiredFieldsSet(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBB',
@@ -450,7 +450,7 @@ class DonationTest extends TestCase
         $this->assertTrue($donation->assertIsReadyToConfirm());
     }
 
-    public function testReadyIsNotReadyToConfirmWithoutBillingPostcode(): void
+    public function testIsNotReadyToConfirmWithoutBillingPostcode(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBB',
@@ -476,7 +476,7 @@ class DonationTest extends TestCase
         $donation->assertIsReadyToConfirm();
     }
 
-    public function testReadyIsNotReadyToConfirmWithoutTBGComsPreference(): void
+    public function testIsNotReadyToConfirmWithoutTBGComsPreference(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBB',
@@ -503,7 +503,7 @@ class DonationTest extends TestCase
         $donation->assertIsReadyToConfirm();
     }
 
-    public function testReadyIsNotReadyToConfirmWithoutCharityComsPreference(): void
+    public function testIsNotReadyToConfirmWithoutCharityComsPreference(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBB',
@@ -531,7 +531,7 @@ class DonationTest extends TestCase
         $donation->assertIsReadyToConfirm();
     }
 
-    public function testReadyIsNotReadyToConfirmWithoutBillingCountry(): void
+    public function testIsNotReadyToConfirmWithoutBillingCountry(): void
     {
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBB',
