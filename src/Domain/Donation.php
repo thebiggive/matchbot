@@ -198,6 +198,9 @@ class Donation extends SalesforceWriteProxy
      * May be a post code or equivilent from anywhere in the world,
      * so we allow up to 15 chars which has been enough for all donors in the last 12 months.
      *
+     * @todo when production traffic is low change property name to donorBillingPostcode,
+     * i.e. revert commit 061839c, maybe rename column in DB at same time.
+     *
      * @var string|null
      */
     #[ORM\Column(type: 'string', nullable: true)]
