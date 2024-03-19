@@ -349,7 +349,8 @@ class StripePayoutHandler implements MessageHandlerInterface
                     // source is the `py_...` charge ID from the connected account txns.
                     $paidChargeIds[] = (string) $balanceTransaction->source;
                     break;
-                case BalanceTransaction::TYPE_PAYOUT_FAILURE:
+                case BalanceTransaction::TYPE_PAYOUT_FAILURE: // fallthru, these 2 are handled the same
+                case BalanceTransaction::TYPE_PAYOUT_CANCEL:
                     // source is the previous failed payout `po_...` ID.
                     $extraPayoutIdsToMap[] = (string) $balanceTransaction->source;
                     break;
@@ -379,7 +380,7 @@ class StripePayoutHandler implements MessageHandlerInterface
         // Once historic donations are reconciled in March 2024, we'll reduce this to 60 days again.
 
         $tz = new \DateTimeZone('Europe/London');
-        $fromDate = $payoutCreated->sub(new \DateInterval('P2Y'))->setTimezone($tz);
+        $fromDate = $payoutCreated->sub(new \DateInterval('P3Y'))->setTimezone($tz);
         $toDate = $payoutCreated->add(new \DateInterval('P1D'))->setTimezone($tz);
 
         // Get all charges (`py_...`) related to the charity's Connect account, then list
