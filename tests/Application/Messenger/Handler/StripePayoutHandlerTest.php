@@ -391,7 +391,7 @@ class StripePayoutHandlerTest extends TestCase
             ['stripe_account' => self::CONNECTED_ACCOUNT_ID],
         )
             ->shouldBeCalledOnce()
-            ->willReturn(json_decode($chargeResponse));
+            ->willReturn($this->buildAutoIterableCollection($chargeResponse));
 
         return $stripeChargeProphecy->reveal();
     }

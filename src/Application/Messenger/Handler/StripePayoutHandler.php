@@ -346,7 +346,7 @@ class StripePayoutHandler implements MessageHandlerInterface
         foreach ($balanceTransactions->autoPagingIterator() as $balanceTransaction) {
             switch ($balanceTransaction->type) {
                 case BalanceTransaction::TYPE_PAYMENT:
-                    // source is the `ch_...` charge ID from the connected account txns.
+                    // source is the `py_...` charge ID from the connected account txns.
                     $paidChargeIds[] = (string) $balanceTransaction->source;
                     break;
                 case BalanceTransaction::TYPE_PAYOUT_FAILURE:
@@ -361,8 +361,9 @@ class StripePayoutHandler implements MessageHandlerInterface
     }
 
     /**
-     * @param string[]  $paidChargeIds  Original charge IDs from balance txn lines.
-     * @return string[] Original TBG Charge IDs (`ch_...`).
+     * @param string[]  $paidChargeIds  Connect acct charge IDs (`py_...`) from `source` property of
+     *                                  balance txn `"type": "payment"` lines.
+     * @return string[] Original platform charge IDs (`ch_...`).
      */
     private function getOriginalDonationChargeIds(
         array $paidChargeIds,
@@ -381,11 +382,8 @@ class StripePayoutHandler implements MessageHandlerInterface
         $fromDate = $payoutCreated->sub(new \DateInterval('P2Y'))->setTimezone($tz);
         $toDate = $payoutCreated->add(new \DateInterval('P1D'))->setTimezone($tz);
 
-
-        // Get charges (`ch_...`) related to the charity's Connect account and then get
-        // their corresponding transfers (`tr_...`).
-        $moreCharges = true;
-        $lastChargeId = null;
+        // Get all charges (`py_...`) related to the charity's Connect account, then list
+        // their corresponding transfers (`tr_...`) iff the ID is in `$paidChargeIds`.
         $sourceTransferIds = [];
 
         $chargeListParams = [
@@ -396,29 +394,14 @@ class StripePayoutHandler implements MessageHandlerInterface
             'limit' => 100,
         ];
 
-        while ($moreCharges) {
-            $charges = $this->stripeClient->charges->all(
-                $chargeListParams,
-                ['stripe_account' => $connectAccountId],
-            );
+        $charges = $this->stripeClient->charges->all(
+            $chargeListParams,
+            ['stripe_account' => $connectAccountId],
+        );
 
-            foreach ($charges->data as $charge) {
-                $lastChargeId = $charge->id;
-
-                if (!in_array($charge->id, $paidChargeIds, true)) {
-                    continue;
-                }
-
+        foreach ($charges->autoPagingIterator() as $charge) {
+            if (in_array($charge->id, $paidChargeIds, true)) {
                 $sourceTransferIds[] = $charge->source_transfer;
-            }
-
-            $moreCharges = $charges->has_more;
-
-            // We get a Stripe exception if we start this with a null or empty value,
-            // so we only include this once we've iterated the first time and captured
-            // a transaction Id.
-            if ($moreCharges && $lastChargeId !== null) {
-                $chargeListParams['starting_after'] = $lastChargeId;
             }
         }
 
