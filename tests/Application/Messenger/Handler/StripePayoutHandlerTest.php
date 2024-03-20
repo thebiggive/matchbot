@@ -88,7 +88,8 @@ class StripePayoutHandlerTest extends TestCase
             ->shouldBeCalledOnce();
         $loggerProphecy->log('INFO', 'Payout: Donation not found with Charge ID ch_invalidId_123')
             ->shouldBeCalledOnce();
-        $loggerProphecy->info('Payout: Finished getting original Charge IDs, found 1')
+        $loggerProphecy->info('Payout: Finished getting original Charge IDs, found 1 (from ' .
+            '1 source transfer IDs and 1 donations whose transfer IDs matched)')
             ->shouldBeCalledOnce();
         $loggerProphecy->info(
             'Payout: Updating paid donations complete for stripe payout #po_externalId_123, persisted 0'
@@ -373,7 +374,7 @@ class StripePayoutHandlerTest extends TestCase
         return [
             // Based on the date range from our standard test data payout (donation time -60D and +1D days).
             'created' => [
-                'gt' => 1535377256,
+                'gt' => 1503841256,
                 'lt' => 1598622056,
             ],
             'limit' => 100
@@ -391,7 +392,7 @@ class StripePayoutHandlerTest extends TestCase
             ['stripe_account' => self::CONNECTED_ACCOUNT_ID],
         )
             ->shouldBeCalledOnce()
-            ->willReturn(json_decode($chargeResponse));
+            ->willReturn($this->buildAutoIterableCollection($chargeResponse));
 
         return $stripeChargeProphecy->reveal();
     }

@@ -85,6 +85,12 @@ class StripePayoutHandler implements MessageHandlerInterface
                 $payoutId,
                 $connectAccountId,
             ));
+            // Temporary log lots of detail to help diagnose payout reconciliation edge cases.
+            $this->logger->info(sprintf(
+                'Used created datetime %s and charge IDs list: %s',
+                $payoutInfo['created']->format('r'),
+                implode(',', $payoutInfo['chargeIds']),
+            ));
 
             return;
         }
@@ -201,7 +207,7 @@ class StripePayoutHandler implements MessageHandlerInterface
                     retryDepth: 0,
                 );
                 // Include all previously delayed payouts' charge IDs in the handler's main list.
-                $paidChargeIds = [...$ids['chargeIds'], ...$extraPayoutInfo['chargeIds']];
+                $paidChargeIds = [...$paidChargeIds, ...$extraPayoutInfo['chargeIds']];
             }
         }
 
@@ -280,7 +286,7 @@ class StripePayoutHandler implements MessageHandlerInterface
 
         $this->logger->info(
             sprintf(
-                'Payout: Getting all Connect account paid Charge IDs for *earlier& Payout ID %s complete, found %s',
+                'Payout: Getting all Connect account paid Charge IDs for *earlier* Payout ID %s complete, found %s',
                 $payoutId,
                 count($ids['chargeIds']),
             )
@@ -340,10 +346,11 @@ class StripePayoutHandler implements MessageHandlerInterface
         foreach ($balanceTransactions->autoPagingIterator() as $balanceTransaction) {
             switch ($balanceTransaction->type) {
                 case BalanceTransaction::TYPE_PAYMENT:
-                    // source is the `ch_...` charge ID from the connected account txns.
+                    // source is the `py_...` charge ID from the connected account txns.
                     $paidChargeIds[] = (string) $balanceTransaction->source;
                     break;
-                case BalanceTransaction::TYPE_PAYOUT_FAILURE:
+                case BalanceTransaction::TYPE_PAYOUT_FAILURE: // fallthru, these 2 are handled the same
+                case BalanceTransaction::TYPE_PAYOUT_CANCEL:
                     // source is the previous failed payout `po_...` ID.
                     $extraPayoutIdsToMap[] = (string) $balanceTransaction->source;
                     break;
@@ -355,8 +362,9 @@ class StripePayoutHandler implements MessageHandlerInterface
     }
 
     /**
-     * @param string[]  $paidChargeIds  Original charge IDs from balance txn lines.
-     * @return string[] Original TBG Charge IDs (`ch_...`).
+     * @param string[]  $paidChargeIds  Connect acct charge IDs (`py_...`) from `source` property of
+     *                                  balance txn `"type": "payment"` lines.
+     * @return string[] Original platform charge IDs (`ch_...`).
      */
     private function getOriginalDonationChargeIds(
         array $paidChargeIds,
@@ -372,14 +380,11 @@ class StripePayoutHandler implements MessageHandlerInterface
         // Once historic donations are reconciled in March 2024, we'll reduce this to 60 days again.
 
         $tz = new \DateTimeZone('Europe/London');
-        $fromDate = $payoutCreated->sub(new \DateInterval('P2Y'))->setTimezone($tz);
+        $fromDate = $payoutCreated->sub(new \DateInterval('P3Y'))->setTimezone($tz);
         $toDate = $payoutCreated->add(new \DateInterval('P1D'))->setTimezone($tz);
 
-
-        // Get charges (`ch_...`) related to the charity's Connect account and then get
-        // their corresponding transfers (`tr_...`).
-        $moreCharges = true;
-        $lastChargeId = null;
+        // Get all charges (`py_...`) related to the charity's Connect account, then list
+        // their corresponding transfers (`tr_...`) iff the ID is in `$paidChargeIds`.
         $sourceTransferIds = [];
 
         $chargeListParams = [
@@ -390,29 +395,14 @@ class StripePayoutHandler implements MessageHandlerInterface
             'limit' => 100,
         ];
 
-        while ($moreCharges) {
-            $charges = $this->stripeClient->charges->all(
-                $chargeListParams,
-                ['stripe_account' => $connectAccountId],
-            );
+        $charges = $this->stripeClient->charges->all(
+            $chargeListParams,
+            ['stripe_account' => $connectAccountId],
+        );
 
-            foreach ($charges->data as $charge) {
-                $lastChargeId = $charge->id;
-
-                if (!in_array($charge->id, $paidChargeIds, true)) {
-                    continue;
-                }
-
+        foreach ($charges->autoPagingIterator() as $charge) {
+            if (in_array($charge->id, $paidChargeIds, true)) {
                 $sourceTransferIds[] = $charge->source_transfer;
-            }
-
-            $moreCharges = $charges->has_more;
-
-            // We get a Stripe exception if we start this with a null or empty value,
-            // so we only include this once we've iterated the first time and captured
-            // a transaction Id.
-            if ($moreCharges && $lastChargeId !== null) {
-                $chargeListParams['starting_after'] = $lastChargeId;
             }
         }
 
@@ -420,7 +410,13 @@ class StripePayoutHandler implements MessageHandlerInterface
         $originalChargeIds = array_map(static fn(Donation $donation) => $donation->getChargeId(), $donations);
 
         $this->logger->info(
-            sprintf('Payout: Finished getting original Charge IDs, found %s', count($originalChargeIds))
+            sprintf(
+                'Payout: Finished getting original Charge IDs, found %d ' .
+                    '(from %d source transfer IDs and %d donations whose transfer IDs matched)',
+                count($originalChargeIds),
+                count($sourceTransferIds),
+                count($donations),
+            )
         );
 
         return $originalChargeIds;
