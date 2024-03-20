@@ -47,10 +47,9 @@ class Donation extends SalesforceWriteProxy
      * The donation ID for PSPs and public APIs. Not the same as the internal auto-increment $id used
      * by Doctrine internally for fast joins.
      *
-     * @var UuidInterface|null
      */
     #[ORM\Column(type: 'uuid', unique: true)]
-    protected ?UuidInterface $uuid = null;
+    protected UuidInterface $uuid;
 
     /**
      * @var Campaign
@@ -322,6 +321,7 @@ class Donation extends SalesforceWriteProxy
      */
     private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
     {
+        $this->setUuid(Uuid::uuid4());
         $this->fundingWithdrawals = new ArrayCollection();
         $this->currencyCode = $currencyCode;
         $maximumAmount = self::maximumAmount($paymentMethodType);
@@ -358,7 +358,6 @@ class Donation extends SalesforceWriteProxy
         );
 
         $donation->setPsp($psp);
-        $donation->setUuid(Uuid::uuid4());
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
 
         // `DonationCreate` doesn't support a distinct property for tip gift aid yet & we only ask once about GA.
