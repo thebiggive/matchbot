@@ -782,7 +782,8 @@ class Donation extends SalesforceWriteProxy
      */
     public function setUuid(UuidInterface $uuid): void
     {
-        $this->uuid = $uuid;
+        $id = $uuid;
+        $this->uuid = $id;
     }
 
     public function addFundingWithdrawal(FundingWithdrawal $fundingWithdrawal): void
