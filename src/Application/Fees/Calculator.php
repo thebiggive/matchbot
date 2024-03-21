@@ -44,7 +44,11 @@ class Calculator
         'main_percentage_standard' => '1.5',
         'main_percentage_amex_or_non_uk_eu' => '3.2',
         // The rate at which VAT is either being or is about to be charged.
-        'vat_percentage' => '20',
+        'vat_percentage_live' => '20',
+        // The rate at which VAT is being charged if before the switch date.
+        'vat_percentage_old' => '0',
+        // DateTime constructor-ready string: when the live VAT rate replaces the old one.
+        'vat_live_date' => ' 2021-04-01',
     ];
 
     /**
@@ -192,7 +196,12 @@ class Calculator
             return '0';
         }
 
-        return self::STRIPE_FEES['vat_percentage'];
+        $switchDate = new \DateTime(self::STRIPE_FEES['vat_live_date']);
+        if (new \DateTime('now') >= $switchDate) {
+            return self::STRIPE_FEES['vat_percentage_live'];
+        }
+
+        return self::STRIPE_FEES['vat_percentage_old'];
     }
 
     /**
