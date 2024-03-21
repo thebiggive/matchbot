@@ -66,6 +66,12 @@ jobs:
 
       - run: composer run integration-test
 
+      - run:
+          name: Mutation Test only changed and added files in PR
+          command: |
+            vendor/bin/infection --git-diff-filter=AM --git-diff-base=develop
+            mv reports/mutation-testing reports/mutation-testing-changed-files
+
       - store_test_results:
           path: reports
 
