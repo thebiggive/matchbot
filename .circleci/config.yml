@@ -122,7 +122,7 @@ jobs:
           name: Mutation Test only changed and added files in PR
           command: |
             vendor/bin/infection --git-diff-filter=AM --git-diff-base=develop
-            mv reports/mutation-testing reports/mutation-testing-changed-files
+            mv reports/mutation-testing reports/mutation-testing-changed-files || true # there may be no changed files, hence no report
 
       - run:
           name: Mutation Test all files
