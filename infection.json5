@@ -12,11 +12,11 @@
         "@default": true
     },
     "logs": {
-        "text": "reports/infection.log",
-        "html": "reports/infection.html",
-        "summary": "reports/summary.log",
-        "json": "reports/infection-log.json",
-        "perMutator": "reports/per-mutator.md.txt",
+        "text": "reports/mutation-testing/infection.log",
+        "html": "reports/mutation-testing/infection.html",
+        "summary": "reports/mutation-testing/summary.log",
+        "json": "reports/mutation-testing/infection-log.json",
+        "perMutator": "reports/mutation-testing/per-mutator.md.txt",
         "stryker": {
             "badge": "/^release-.*$/"
         },
