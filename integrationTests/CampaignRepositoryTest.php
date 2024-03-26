@@ -49,7 +49,7 @@ class CampaignRepositoryTest extends IntegrationTest
         $this->assertSame('Charity Name', $firstCampaign->getCharity()->getName());
     }
 
-    public function testItFindsNoTenWeekOldCampaignEvenIfCharityAwaitingGiftAidApproval(): void
+    public function testItFindsNoTwentyWeekOldCampaignEvenIfCharityAwaitingGiftAidApproval(): void
     {
         // arrange
         $sut = $this->getService(CampaignRepository::class);
@@ -58,8 +58,8 @@ class CampaignRepositoryTest extends IntegrationTest
         $campaign->setIsMatched(true);
         $campaign->setName('Campaign Name');
         $campaign->setCurrencyCode('GBP');
-        $campaign->setStartDate(new \DateTimeImmutable('-12 weeks'));
-        $campaign->setEndDate(new \DateTimeImmutable('-10 weeks'));
+        $campaign->setStartDate(new \DateTimeImmutable('-22 weeks'));
+        $campaign->setEndDate(new \DateTimeImmutable('-20 weeks'));
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($campaign);
