@@ -16,7 +16,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
 {
     /**
      * Gets those campaigns which are live now or recently closed (in the last week),
-     * based on their last known end time. This allows for campaigns to receive updates
+     * based on their last known end time, and those closed semi-recently where we are
+     * awaiting HMRC agent approval for Gift Aid claims. This allows for campaigns to receive updates
      * shortly after closure if a decision is made to reopen them soon after the end date,
      * while keeping the number of API calls for regular update runs under control long-term.
      * Technically future campaigns are also included if they are already known to MatchBot,
@@ -28,7 +29,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function findRecentLiveAndPendingGiftAidApproval(): array
     {
         $oneWeekAgo = (new DateTime('now'))->sub(new \DateInterval('P7D'));
-        $twoMonthsAgo = (new DateTime('now'))->sub(new \DateInterval('P2M'));
+        $fourMonthsAgo = (new DateTime('now'))->sub(new \DateInterval('P4M'));
 
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('c')
@@ -38,12 +39,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
             ->orWhere(<<<EOT
                 charity.tbgClaimingGiftAid = 1 AND
                 charity.tbgApprovedToClaimGiftAid = 0 AND
-                c.endDate >= :twoMonthsAgo
+                c.endDate >= :fourMonthsAgo
 EOT
             )
             ->orderBy('c.createdAt', 'ASC')
             ->setParameter('oneWeekAgo', $oneWeekAgo)
-            ->setParameter('twoMonthsAgo', $twoMonthsAgo);
+            ->setParameter('fourMonthsAgo', $fourMonthsAgo);
 
         return $qb->getQuery()->getResult();
     }
