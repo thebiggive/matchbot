@@ -15,6 +15,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\DonorName;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -24,6 +25,7 @@ use Ramsey\Uuid\Uuid;
 use Slim\Psr7\Response;
 use Stripe\Service\PaymentIntentService;
 use Stripe\StripeClient;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -59,7 +61,8 @@ class UpdateHandlesLockExceptionTest extends TestCase
             $this->entityManagerProphecy->reveal(),
             new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
             $this->createStub(Stripe::class),
-            new NullLogger()
+            new NullLogger(),
+            new MockClock(),
         );
 
         $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Pending"));
@@ -88,7 +91,8 @@ class UpdateHandlesLockExceptionTest extends TestCase
             $this->entityManagerProphecy->reveal(),
             new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
             $this->createStub(Stripe::class),
-            new NullLogger()
+            new NullLogger(),
+            new MockClock(),
         );
 
         $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Cancelled"));
@@ -114,8 +118,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setCampaign($campaign);
         $donation->setUuid(Uuid::uuid4());
-        $donation->setDonorFirstName('Donor first name');
-        $donation->setDonorLastName('Donor last name');
+        $donation->setDonorName(DonorName::of('Donor first name', 'Donor last name'));
         $donation->setTransactionId('pi_dummyIntent_id');
 
         return $donation;

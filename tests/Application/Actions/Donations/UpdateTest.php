@@ -7,6 +7,8 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Stripe;
+use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
 use Slim\Routing\Route;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Auth\DonationToken;
@@ -28,6 +30,8 @@ use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
 use Stripe\StripeObject;
+use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Clock\MockClock;
 
 class UpdateTest extends TestCase
 {
@@ -389,7 +393,7 @@ class UpdateTest extends TestCase
 
         $payloadArray = json_decode($payload, true);
         $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
-        $this->assertEquals('1 Main St, London N1 1AA', $payloadArray['billingPostalAddress']);
+        $this->assertEquals('N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
         $this->assertTrue($payloadArray['optInCharityEmail']);
         $this->assertFalse($payloadArray['optInTbgEmail']);
@@ -461,7 +465,7 @@ class UpdateTest extends TestCase
 
         $payloadArray = json_decode($payload, true);
         $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
-        $this->assertEquals('1 Main St, London N1 1AA', $payloadArray['billingPostalAddress']);
+        $this->assertEquals('N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
         $this->assertTrue($payloadArray['optInCharityEmail']);
         $this->assertFalse($payloadArray['optInTbgEmail']);
@@ -667,7 +671,7 @@ class UpdateTest extends TestCase
 
         $payloadArray = json_decode($payload, true);
         $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
-        $this->assertNull($payloadArray['giftAid']);
+        $this->assertFalse($payloadArray['giftAid']);
         $this->assertEquals(124.56, $payloadArray['donationAmount']); // Attempt to patch this is ignored
         $this->assertEquals(0, $payloadArray['matchedAmount']);
         $this->assertEquals(2.00, $payloadArray['tipAmount']);
@@ -951,13 +955,11 @@ class UpdateTest extends TestCase
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
-        $donation->setDonorFirstName('Saul');
-        $donation->setDonorLastName('Williams');
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorName(DonorName::of('Saul', 'Williams'));
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
-        $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -1041,13 +1043,11 @@ class UpdateTest extends TestCase
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
-        $donation->setDonorFirstName('Saul');
-        $donation->setDonorLastName('Williams');
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorName(DonorName::of('Saul', 'Williams'));
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
-        $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -1137,13 +1137,11 @@ class UpdateTest extends TestCase
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
-        $donation->setDonorFirstName('Saul');
-        $donation->setDonorLastName('Williams');
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorName(DonorName::of('Saul', 'Williams'));
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
-        $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -1242,13 +1240,11 @@ class UpdateTest extends TestCase
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
-        $donation->setDonorFirstName('Saul');
-        $donation->setDonorLastName('Williams');
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorName(DonorName::of('Saul', 'Williams'));
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
-        $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -1296,7 +1292,7 @@ class UpdateTest extends TestCase
                 false
             ));
 
-
+        $container->set(ClockInterface::class, new MockClock());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -1340,13 +1336,11 @@ class UpdateTest extends TestCase
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
-        $donation->setDonorFirstName('Saul');
-        $donation->setDonorLastName('Williams');
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorName(DonorName::of('Saul', 'Williams'));
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
-        $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -1395,6 +1389,7 @@ class UpdateTest extends TestCase
                 false,
             ));
 
+        $container->set(ClockInterface::class, new MockClock());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -1440,13 +1435,11 @@ class UpdateTest extends TestCase
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
-        $donation->setDonorFirstName('Saul');
-        $donation->setDonorLastName('Williams');
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorName(DonorName::of('Saul', 'Williams'));
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
-        $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -1500,6 +1493,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
+        $container->set(ClockInterface::class, new MockClock());
 
         $request = $this->createRequest(
             'PUT',
@@ -1531,19 +1525,18 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false);
         $donation->update(
             giftAid: true,
-            donorHomeAddressLine1: '99 Updated St'
+            donorHomeAddressLine1: '99 Updated St',
+            donorBillingPostcode: 'Y1 1YX',
         );
         $donation->setDonorCountryCode('US');
         $donation->setTipAmount('3.21');
         $donation->setTipGiftAid(false);
         $donation->setDonorHomePostcode('X1 1XY');
-        $donation->setDonorFirstName('Saul');
-        $donation->setDonorLastName('Williams');
-        $donation->setDonorEmailAddress('saul@example.com');
+        $donation->setDonorName(DonorName::of('Saul', 'Williams'));
+        $donation->setDonorEmailAddress(EmailAddress::of('saul@example.com'));
         $donation->setTbgComms(true);
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
-        $donation->setDonorBillingAddress('Y1 1YX');
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
@@ -1597,34 +1590,35 @@ class UpdateTest extends TestCase
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
 
         $response = $app->handle($request->withAttribute('route', $route));
-        $payload = (string) $response->getBody();
+        $responseBody = (string) $response->getBody();
 
-        $this->assertJson($payload);
+        $this->assertJson($responseBody);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $payloadArray = json_decode($payload, true);
+        $payload = json_decode($responseBody, true);
+        \assert(is_array($payload));
 
         // These two values are unchanged but still returned.
-        $this->assertEquals(123.45, $payloadArray['donationAmount']);
-        $this->assertEquals(DonationStatus::Pending->value, $payloadArray['status']);
+        $this->assertEquals(123.45, $payload['donationAmount']);
+        $this->assertEquals(DonationStatus::Pending->value, $payload['status']);
 
         // Remaining properties should be updated.
-        $this->assertEquals('US', $payloadArray['countryCode']);
-        $this->assertEquals('USD', $payloadArray['currencyCode']);
+        $this->assertEquals('US', $payload['countryCode']);
+        $this->assertEquals('USD', $payload['currencyCode']);
         // 1.9% + 20p. cardCountry from Stripe payment method ≠ donor country.
-        $this->assertEquals(3.08, $payloadArray['charityFee']);
-        $this->assertEquals(0, $payloadArray['charityFeeVat']);
-        $this->assertEquals('3.21', $payloadArray['tipAmount']);
-        $this->assertTrue($payloadArray['giftAid']);
-        $this->assertFalse($payloadArray['tipGiftAid']);
-        $this->assertEquals('99 Updated St', $payloadArray['homeAddress']);
-        $this->assertEquals('X1 1XY', $payloadArray['homePostcode']);
-        $this->assertEquals('Saul', $payloadArray['firstName']);
-        $this->assertEquals('Williams', $payloadArray['lastName']);
-        $this->assertEquals('saul@example.com', $payloadArray['emailAddress']);
-        $this->assertTrue($payloadArray['optInTbgEmail']);
-        $this->assertFalse($payloadArray['optInCharityEmail']);
-        $this->assertEquals('Y1 1YX', $payloadArray['billingPostalAddress']);
+        $this->assertEquals(3.08, $payload['charityFee']);
+        $this->assertEquals(0, $payload['charityFeeVat']);
+        $this->assertEquals('3.21', $payload['tipAmount']);
+        $this->assertTrue($payload['giftAid']);
+        $this->assertFalse($payload['tipGiftAid']);
+        $this->assertEquals('99 Updated St', $payload['homeAddress']);
+        $this->assertEquals('X1 1XY', $payload['homePostcode']);
+        $this->assertEquals('Saul', $payload['firstName']);
+        $this->assertEquals('Williams', $payload['lastName']);
+        $this->assertEquals('saul@example.com', $payload['emailAddress']);
+        $this->assertTrue($payload['optInTbgEmail']);
+        $this->assertFalse($payload['optInCharityEmail']);
+        $this->assertEquals('Y1 1YX', $payload['billingPostalAddress']);
     }
 
     public function testAddDataSuccessWithCashBalanceAutoconfirm(): void

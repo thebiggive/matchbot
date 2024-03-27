@@ -9,12 +9,15 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\LazyAssertionException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
@@ -31,7 +34,7 @@ class DonationTest extends TestCase
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '1',
-            projectId: "any project",
+            projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::Card
         ), $this->getMinimalCampaign());
@@ -108,7 +111,7 @@ class DonationTest extends TestCase
         Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '25001',
-            projectId: "any project",
+            projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::Card
         ), $this->getMinimalCampaign());
@@ -119,7 +122,7 @@ class DonationTest extends TestCase
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '200000',
-            projectId: "any project",
+            projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
         ), $this->getMinimalCampaign());
@@ -135,7 +138,7 @@ class DonationTest extends TestCase
         Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '200001',
-            projectId: "any project",
+            projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
         ), $this->getMinimalCampaign());
@@ -159,7 +162,7 @@ class DonationTest extends TestCase
         Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '1',
-            projectId: "any project",
+            projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance,
             tipAmount: '0.01',
@@ -176,7 +179,7 @@ class DonationTest extends TestCase
             new DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: '63.0',
-                projectId: 'doesnt-matter',
+                projectId: 'doesnt0matter12345',
                 psp: 'paypal',
             ),
             new Campaign(TestCase::someCharity())
@@ -214,16 +217,6 @@ class DonationTest extends TestCase
         $this->assertEquals('john.doe@example.com', $donationData['emailAddress']);
         $this->assertEquals('1.23', $donationData['matchedAmount']);
         $this->assertIsString($donationData['collectedTime']);
-    }
-
-    public function testToApiModelTemporaryHackHasNoImpact(): void
-    {
-        $donation = $this->getTestDonation();
-        $donation->setDonorEmailAddress('noel;;@thebiggive.org.uk');
-
-        $donationData = $donation->toApiModel();
-
-        $this->assertEquals('noel;;@thebiggive.org.uk', $donationData['emailAddress']);
     }
 
     public function testToHookModel(): void
@@ -313,16 +306,6 @@ class DonationTest extends TestCase
 
         $this->assertIsString($donationData['collectedTime']);
         $this->assertIsString($donationData['refundedTime']);
-    }
-
-    public function testToHookModelTemporaryHack(): void
-    {
-        $donation = $this->getTestDonation();
-        $donation->setDonorEmailAddress('noel;;@thebiggive.org.uk');
-
-        $donationData = $donation->toHookModel();
-
-        $this->assertEquals('noel@thebiggive.org.uk', $donationData['emailAddress']);
     }
 
     public function testToClaimBotModelUK(): void
@@ -443,6 +426,185 @@ class DonationTest extends TestCase
         $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
     }
 
+    public function testIsReadyToConfirmWithRequiredFieldsSet(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: null,
+            lastName: null,
+            emailAddress: 'user@example.com',
+            countryCode: 'GB',
+        ), TestCase::someCampaign());
+
+        $donation->update(
+            giftAid: false,
+            donorBillingPostcode: 'SW1 1AA',
+            donorName: DonorName::of('Charlie', 'The Charitable'),
+            donorEmailAddress: EmailAddress::of('user@example.com'),
+            tbgComms: false,
+        );
+
+        $this->assertTrue($donation->assertIsReadyToConfirm());
+    }
+
+    public function testIsNotReadyToConfirmWithoutBillingPostcode(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'Chelsea',
+            lastName: 'Charitable',
+            emailAddress: 'user@example.com',
+            countryCode: 'GB',
+        ), TestCase::someCampaign());
+
+        $donation->update(
+            giftAid: false,
+            donorBillingPostcode: null,
+            donorName: DonorName::of('Charlie', 'The Charitable'),
+            donorEmailAddress: EmailAddress::of('user@example.com'),
+        );
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing Billing Postcode");
+
+        $donation->assertIsReadyToConfirm();
+    }
+
+    public function testIsNotReadyToConfirmWithoutTBGComsPreference(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'Chelsea',
+            lastName: 'Charitable',
+            emailAddress: 'user@example.com',
+            countryCode: 'GB',
+        ), TestCase::someCampaign());
+
+        $donation->update(
+            giftAid: false,
+            donorBillingPostcode: 'SW1A 1AA',
+            donorName: DonorName::of('Charlie', 'The Charitable'),
+            donorEmailAddress: EmailAddress::of('user@example.com'),
+            tbgComms: null,
+        );
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing tbgComms preference");
+
+        $donation->assertIsReadyToConfirm();
+    }
+
+    public function testIsNotReadyToConfirmWithoutCharityComsPreference(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'Chelsea',
+            lastName: 'Charitable',
+            emailAddress: 'user@example.com',
+            countryCode: 'GB',
+        ), TestCase::someCampaign());
+
+        $donation->update(
+            giftAid: false,
+            donorBillingPostcode: 'SW1A 1AA',
+            donorName: DonorName::of('Charlie', 'The Charitable'),
+            donorEmailAddress: EmailAddress::of('user@example.com'),
+            tbgComms: false,
+            charityComms: null,
+        );
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing charityComms preference");
+
+        $donation->assertIsReadyToConfirm();
+    }
+
+    public function testIsNotReadyToConfirmWithoutBillingCountry(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'Chelsea',
+            lastName: 'Charitable',
+            emailAddress: 'user@example.com',
+        ), TestCase::someCampaign());
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing Billing Postcode");
+
+        $donation->assertIsReadyToConfirm();
+    }
+
+    public function testIsNotReadyToConfirmWithoutDonorName(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: null,
+            lastName: null,
+        ), TestCase::someCampaign());
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing Donor First Name");
+        $this->expectExceptionMessage("Missing Donor Last Name");
+
+        $donation->assertIsReadyToConfirm();
+    }
+
+    public function testIsNotReadyToConfirmWithoutDonorEmail(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'First',
+            lastName: 'Last',
+        ), TestCase::someCampaign());
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Missing Donor Email Address");
+
+        $donation->assertIsReadyToConfirm();
+    }
+
+    public function testIsNotReadyToConfirmWhenCancelled(): void
+    {
+        $donation = Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBB',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: 'First',
+            lastName: 'Last',
+        ), TestCase::someCampaign());
+
+        $donation->cancel();
+
+        $this->expectException(LazyAssertionException::class);
+        $this->expectExceptionMessage("Donation status is 'Cancelled', must be 'Pending'");
+
+        $donation->assertIsReadyToConfirm();
+    }
+
+
+
     public function testMarkingRefundTwiceOnSameDonationDoesNotUpdateRefundTime(): void
     {
         $donation = $this->getTestDonation();
@@ -464,28 +626,15 @@ class DonationTest extends TestCase
             emailAddress: 'donor@email.test',
             currencyCode: 'GBP',
             donationAmount: '200000',
-            projectId: "any project",
+            projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
         ), $this->getMinimalCampaign());
 
         $this->assertSame('Test First Name', $donation->getDonorFirstName(true));
         $this->assertSame('Test Last Name', $donation->getDonorLastName(true));
-        $this->assertSame('donor@email.test', $donation->getDonorEmailAddress());
+        $this->assertEquals(EmailAddress::of('donor@email.test'), $donation->getDonorEmailAddress());
         $this->assertSame('Test First Name Test Last Name', $donation->getDonorFullName());
-    }
-
-    /**
-     * @return array<array{0: ?string, 1: ?string, 2: ?string}>
-     */
-    public function namePartsAndFullNames(): array
-    {
-        return [
-            [null, null, null],
-            ['Loraine ', null, 'Loraine'],
-            [' Loraine ', ' James ', 'Loraine   James'],
-            [null, 'James', 'James'],
-        ];
     }
 
     /**
@@ -504,8 +653,6 @@ class DonationTest extends TestCase
             ['👍', '👍'],
             [str_repeat('👍', 41), str_repeat('👍', 40)],
             [str_repeat('👩‍👩‍👧‍👧', 10), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
-            [str_repeat('👩‍👩‍👧‍👧', 41), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
-            [str_repeat('👩‍👩‍👧‍👧', 401), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
         ];
     }
 
@@ -526,21 +673,16 @@ class DonationTest extends TestCase
             ['👍', '👍'],
             [str_repeat('👍', 41), str_repeat('👍', 40)],
             [str_repeat('👩‍👩‍👧‍👧', 10), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
-            [str_repeat('👩‍👩‍👧‍👧', 41), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
-            [str_repeat('👩‍👩‍👧‍👧', 401), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
+            [str_repeat('👩‍👩‍👧‍👧', 36), '👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧‍👧👩‍👩‍👧'],
         ];
     }
 
-    /**
-     * @dataProvider namePartsAndFullNames
-     */
-    public function testItMakesDonorFullName(?string $firstName, ?string $lastName, ?string $expectedFullName): void
+    public function testItMakesDonorFullName(): void
     {
         $donation = $this->getTestDonation();
-        $donation->setDonorFirstName($firstName);
-        $donation->setDonorLastName($lastName);
+        $donation->setDonorName(DonorName::of(' Loraine ', ' James '));
 
-        $this->assertSame($expectedFullName, $donation->getDonorFullName());
+        $this->assertSame('Loraine   James', $donation->getDonorFullName());
     }
 
     /**
@@ -549,7 +691,7 @@ class DonationTest extends TestCase
     public function testItMakesDonorLastNameSafeForSalesforce(?string $originalName, string $expecteSafeName): void
     {
         $donation = $this->getTestDonation();
-        $donation->setDonorLastName($originalName);
+        $donation->setDonorName(DonorName::maybeFromFirstAndLast($originalName, $originalName));
 
         $this->assertSame($expecteSafeName, $donation->getDonorLastName(true));
     }
@@ -560,7 +702,8 @@ class DonationTest extends TestCase
     public function testItMakesDonorFirstNameSafeForSalesforce(?string $originalName, ?string $expecteSafeName): void
     {
         $donation = $this->getTestDonation();
-        $donation->setDonorFirstName($originalName);
+
+        $donation->setDonorName(DonorName::maybeFromFirstAndLast($originalName, $originalName));
 
         $this->assertSame($expecteSafeName, $donation->getDonorFirstName(true));
     }
@@ -571,7 +714,7 @@ class DonationTest extends TestCase
             new DonationCreate(
                 'GBP',
                 '1.00',
-                'project-id',
+                'projectid012345678',
                 'stripe',
             ),
             $this->getMinimalCampaign()
@@ -586,7 +729,7 @@ class DonationTest extends TestCase
         $donation = Donation::fromApiModel(new DonationCreate(
             'GBP',
             '1.00',
-            'project-id',
+            'projectid012345678',
             'stripe',
         ), $this->getMinimalCampaign());
         $donation->setDonationStatus(DonationStatus::Paid);
@@ -597,12 +740,12 @@ class DonationTest extends TestCase
 
     public function testCannotCreateDonationWithNegativeTip(): void
     {
-        $this->expectException(UnexpectedValueException::class);
+        $this->expectException(AssertionFailedException::class);
 
         Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '10',
-            projectId: 'project-id',
+            projectId: 'projectid012345678',
             psp: 'stripe',
             tipAmount: '-0.01'
         ), $this->getMinimalCampaign());
@@ -617,7 +760,7 @@ class DonationTest extends TestCase
             countryCode: $apiCountryCode,
             currencyCode: 'GBP',
             donationAmount: '1.0',
-            projectId: 'project_id',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         ), new Campaign(TestCase::someCharity()));
 
@@ -634,7 +777,7 @@ class DonationTest extends TestCase
             countryCode: 'GB',
             currencyCode: 'GBP',
             donationAmount: '1.0',
-            projectId: 'project_id',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         ), new Campaign(TestCase::someCharity()));
 
@@ -652,7 +795,7 @@ class DonationTest extends TestCase
             countryCode: 'GB',
             currencyCode: 'GBP',
             donationAmount: '1.0',
-            projectId: 'project_id',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         ), new Campaign(TestCase::someCharity()));
 
@@ -671,7 +814,7 @@ class DonationTest extends TestCase
             countryCode: 'GB',
             currencyCode: 'GBP',
             donationAmount: '1.0',
-            projectId: 'project_id',
+            projectId: 'testProject1234567',
             psp: 'stripe',
         ), new Campaign(TestCase::someCharity()));
 
@@ -694,6 +837,29 @@ class DonationTest extends TestCase
         );
     }
 
+    public function testCannotSetTooLongHomeAddress(): void
+    {
+        $donation = $this->getTestDonation(collected: false);
+
+        $this->expectExceptionMessage('too long, it should have no more than 255 characters, but has 256 characters');
+        $donation->update(
+            giftAid: false,
+            donorHomeAddressLine1: str_repeat('a', 256),
+        );
+    }
+
+    public function testCannotSetTooLongPostcode(): void
+    {
+        $donation = $this->getTestDonation(collected: false);
+
+        $this->expectExceptionMessage('too long, it should have no more than 8 characters, but has 43 characters');
+        $donation->update(
+            giftAid: true,
+            donorHomeAddressLine1: 'a pretty how town',
+            donorHomePostcode: 'This is too long to be a plausible postcode'
+        );
+    }
+
     /**
      * @return array<array{0: ?string, 1: ?string}>
      */
@@ -704,40 +870,17 @@ class DonationTest extends TestCase
             ['0', null],
             [null, null],
             ['BE', 'BE'],
-            ['be', 'be']
+            ['be', 'BE']
         ];
     }
 
-    /**
-     * @dataProvider APIFeeCoverToModelFeeCover
-     */
-    public function testItTakesFeeCoverAmountFromApiModel(?string $feeCoverAmount, ?string $expected): void
+    public function testItRejectsNonZeroFeeCoverAmount(): void
     {
-        $donation = Donation::fromApiModel(new DonationCreate(
-            feeCoverAmount: $feeCoverAmount,
-            currencyCode: 'GBP',
-            donationAmount: '1.0',
-            projectId: 'project_id',
-            psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        $donation = $this->getTestDonation();
 
-        $this->assertSame($expected, $donation->getFeeCoverAmount());
+        $this->expectExceptionMessage('Fee cover amount must be "0"');
+        $donation->setFeeCoverAmount('1');
     }
-
-    /**
-     * @return array<array{0: ?string, 1: ?string}>
-     */
-    public function APIFeeCoverToModelFeeCover()
-    {
-        return [
-            [null, '0.00'],
-            ['', ''],
-            ['3', '3'],
-            ['3.123', '3.123'],
-            ['non-numeric string', 'non-numeric string'],
-        ];
-    }
-
     public function testItThrowsIfAmountUpdatedByORM(): void
     {
         $donation = $this->getTestDonation();
@@ -761,8 +904,7 @@ class DonationTest extends TestCase
         bool $isEnoughForSalesforce,
     ): void {
         $donation = $this->getTestDonation();
-        $donation->setDonorFirstName($firstName);
-        $donation->setDonorLastName($lastName);
+        $donation->setDonorName(DonorName::maybeFromFirstAndLast($firstName, $lastName));
         $this->assertSame($isEnoughForSalesforce, $donation->hasEnoughDataForSalesforce());
     }
 
@@ -774,8 +916,6 @@ class DonationTest extends TestCase
         return [
             // first name, last name, is it enough for SF?
             ['', '', false],
-            ['', 'nonempty', false],
-            ['nonempty', '', false],
             ['nonempty', 'nonempty', true],
         ];
     }

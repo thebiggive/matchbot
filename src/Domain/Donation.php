@@ -12,9 +12,12 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\LazyAssertionException;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -44,10 +47,9 @@ class Donation extends SalesforceWriteProxy
      * The donation ID for PSPs and public APIs. Not the same as the internal auto-increment $id used
      * by Doctrine internally for fast joins.
      *
-     * @var UuidInterface|null
      */
     #[ORM\Column(type: 'uuid', unique: true)]
-    protected ?UuidInterface $uuid = null;
+    protected UuidInterface $uuid;
 
     /**
      * @var Campaign
@@ -149,10 +151,11 @@ class Donation extends SalesforceWriteProxy
     protected ?bool $charityComms = null;
 
     /**
+     * Whether the Donor has asked for Gift Aid to be claimed about this donation.
      * @var bool
      */
-    #[ORM\Column(type: 'boolean', nullable: true)]
-    protected ?bool $giftAid = null;
+    #[ORM\Column()]
+    protected bool $giftAid = false;
 
     /**
      * @var bool    Whether the donor opted to receive email from the Big Give
@@ -172,6 +175,10 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(type: 'string', length: 2, nullable: true)]
     protected ?string $donorCountryCode = null;
 
+    /**
+     * Ideally we would type this as ?EmailAddress instead of ?string but that will require changing
+     * the column name to match the property inside the VO. Might be easy and worth doing.
+     */
     #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorEmailAddress = null;
 
@@ -182,7 +189,18 @@ class Donation extends SalesforceWriteProxy
     protected ?string $donorLastName = null;
 
     /**
-     * @var string|null Assumed to be billing address going forward.
+     * Previously known as donor postal address,
+     * and may still be called that in other systems,
+     * but now used for billing postcode only. Some old
+     * donations from 2022 or earlier have full addresses here.
+     *
+     * May be a post code or equivilent from anywhere in the world,
+     * so we allow up to 15 chars which has been enough for all donors in the last 12 months.
+     *
+     * @todo when production traffic is low change property name to donorBillingPostcode,
+     * i.e. revert commit 061839c, maybe rename column in DB at same time.
+     *
+     * @var string|null
      */
     #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorPostalAddress = null;
@@ -303,6 +321,7 @@ class Donation extends SalesforceWriteProxy
      */
     private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
     {
+        $this->setUuid(Uuid::uuid4());
         $this->fundingWithdrawals = new ArrayCollection();
         $this->currencyCode = $currencyCode;
         $maximumAmount = self::maximumAmount($paymentMethodType);
@@ -323,6 +342,10 @@ class Donation extends SalesforceWriteProxy
         $this->paymentMethodType = $paymentMethodType;
     }
 
+    /**
+     * @throws \Assert\AssertionFailedException
+     * @throws \UnexpectedValueException
+     */
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
     {
         $psp = $donationData->psp;
@@ -335,13 +358,9 @@ class Donation extends SalesforceWriteProxy
         );
 
         $donation->setPsp($psp);
-        $donation->setUuid(Uuid::uuid4());
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
 
-        // Gift Aid is always set to false at donation creation time. It can only be set to true if the donor supplies
-        // their address later.
-        $donation->setGiftAid(false);
-        // `DonationCreate` doesn't support a distinct property yet & we only ask once about GA.
+        // `DonationCreate` doesn't support a distinct property for tip gift aid yet & we only ask once about GA.
         $donation->setTipGiftAid(false);
 
         $donation->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
@@ -350,12 +369,11 @@ class Donation extends SalesforceWriteProxy
         $donation->setChampionComms($donationData->optInChampionEmail);
         $donation->setPspCustomerId($donationData->pspCustomerId);
         $donation->setTbgComms($donationData->optInTbgEmail);
-        $donation->setDonorFirstName($donationData->firstName);
-        $donation->setDonorLastName($donationData->lastName);
+        $donation->setDonorName($donationData->donorName);
         $donation->setDonorEmailAddress($donationData->emailAddress);
 
         if (!empty($donationData->countryCode)) {
-            $donation->setDonorCountryCode($donationData->countryCode);
+            $donation->setDonorCountryCode(strtoupper($donationData->countryCode));
         }
 
         if (isset($donationData->feeCoverAmount)) {
@@ -459,7 +477,7 @@ class Donation extends SalesforceWriteProxy
     public function toApiModel(): array
     {
         $data = [
-            'billingPostalAddress' => $this->getDonorBillingAddress(),
+            'billingPostalAddress' => $this->donorPostalAddress,
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
             'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
@@ -471,7 +489,7 @@ class Donation extends SalesforceWriteProxy
             'donationAmount' => (float) $this->getAmount(),
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
-            'emailAddress' => $this->getDonorEmailAddress(),
+            'emailAddress' => $this->getDonorEmailAddress()?->email,
             'feeCoverAmount' => (float) $this->getFeeCoverAmount(),
             'firstName' => $this->getDonorFirstName(true),
             'giftAid' => $this->hasGiftAid(),
@@ -546,14 +564,14 @@ class Donation extends SalesforceWriteProxy
         $this->campaign = $campaign;
     }
 
-    public function getDonorEmailAddress(): ?string
+    public function getDonorEmailAddress(): ?EmailAddress
     {
-        return $this->donorEmailAddress;
+        return ((bool) $this->donorEmailAddress) ? EmailAddress::of($this->donorEmailAddress) : null;
     }
 
-    public function setDonorEmailAddress(?string $donorEmailAddress): void
+    public function setDonorEmailAddress(?EmailAddress $donorEmailAddress): void
     {
-        $this->donorEmailAddress = $donorEmailAddress;
+        $this->donorEmailAddress = $donorEmailAddress?->email;
     }
 
     public function getCharityComms(): ?bool
@@ -587,9 +605,10 @@ class Donation extends SalesforceWriteProxy
         return $firstName;
     }
 
-    public function setDonorFirstName(?string $donorFirstName): void
+    public function setDonorName(?DonorName $donorName): void
     {
-        $this->donorFirstName = $donorFirstName;
+        $this->donorFirstName = $donorName?->first;
+        $this->donorLastName = $donorName?->last;
     }
 
     public function getDonorLastName(bool $salesforceSafe = false): ?string
@@ -603,27 +622,12 @@ class Donation extends SalesforceWriteProxy
         return $lastName;
     }
 
-    public function setDonorLastName(?string $donorLastName): void
-    {
-        $this->donorLastName = $donorLastName;
-    }
-
-    public function getDonorBillingAddress(): ?string
-    {
-        return $this->donorPostalAddress;
-    }
-
-    public function setDonorBillingAddress(?string $donorPostalAddress): void
-    {
-        $this->donorPostalAddress = $donorPostalAddress;
-    }
-
-    public function hasGiftAid(): ?bool
+    public function hasGiftAid(): bool
     {
         return $this->giftAid;
     }
 
-    private function setGiftAid(?bool $giftAid): void
+    private function setGiftAid(bool $giftAid): void
     {
         $this->giftAid = $giftAid;
 
@@ -795,10 +799,19 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @param string $donorCountryCode
+     * @param string $donorCountryCode Two letter upper case code
+     * @throws \UnexpectedValueException if code is does not match format.
+     *
      */
     public function setDonorCountryCode(string $donorCountryCode): void
     {
+        try {
+            Assertion::length($donorCountryCode, 2);
+            Assertion::regex($donorCountryCode, '/^[A-Z][A-Z]$/');
+        } catch (AssertionFailedException $e) {
+            throw new \UnexpectedValueException(message: $e->getMessage(), previous: $e);
+        }
+
         $this->donorCountryCode = $donorCountryCode;
     }
 
@@ -832,9 +845,16 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @param string $feeCoverAmount
+     * @throws \UnexpectedValueException if amount is non-zero
      */
     public function setFeeCoverAmount(string $feeCoverAmount): void
     {
+        if ($feeCoverAmount !== '0' && $feeCoverAmount !== '0.00') {
+            // We do not currently offer fee cover. If/when we do offer it we will need to add code here to allow
+            // appropriate non-zero cover - I expect it will need to exactly match the fee being covered.
+            throw new \UnexpectedValueException('Fee cover amount must be "0"');
+        }
+
         $this->feeCoverAmount = $feeCoverAmount;
     }
 
@@ -888,11 +908,6 @@ class Donation extends SalesforceWriteProxy
     private function getDonorHomeAddressLine1(): ?string
     {
         return $this->donorHomeAddressLine1;
-    }
-
-    private function setDonorHomeAddressLine1(?string $donorHomeAddressLine1): void
-    {
-        $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
     }
 
     private function getDonorHomePostcode(): ?string
@@ -1377,40 +1392,92 @@ class Donation extends SalesforceWriteProxy
      * Updates a pending donation to reflect changes made in the donation form.
      */
     public function update(
-        ?bool $giftAid,
+        bool $giftAid,
         ?bool $tipGiftAid = null,
         ?string $donorHomeAddressLine1 = null,
         ?string $donorHomePostcode = null,
-        ?string $donorFirstName = '',
-        ?string $donorLastName = '',
-        ?string $donorEmailAddress = null,
+        ?DonorName $donorName = null,
+        ?EmailAddress $donorEmailAddress = null,
         ?bool $tbgComms = false,
         ?bool $charityComms = false,
         ?bool $championComms = false,
-        ?string $donorPostalAddress = null,
+        ?string $donorBillingPostcode = null,
     ): void {
         if ($this->donationStatus !== DonationStatus::Pending) {
             throw new \UnexpectedValueException("Update only allowed for pending donation");
         }
 
-        if (
-            $giftAid &&
-            ($donorHomeAddressLine1 === null || trim($donorHomeAddressLine1) === '')
-        ) {
+        if (trim($donorHomeAddressLine1 ?? '') === '') {
+            $donorHomeAddressLine1 = null;
+        }
+
+        if (trim($donorBillingPostcode ?? '') === '') {
+            $donorBillingPostcode = null;
+        }
+
+        if ($giftAid && $donorHomeAddressLine1 === null) {
             throw new \UnexpectedValueException("Cannot Claim Gift Aid Without Home Address");
         }
+
+        try {
+            $lazyAssertion = Assert::lazy();
+
+            $lazyAssertion
+                ->that($donorHomeAddressLine1, 'donorHomeAddressLine1')
+                ->nullOr()->betweenLength(1, 255);
+
+            // postcode should either be a UK postcode or the word 'OVERSEAS' - either way length will be between 5 and
+            // 8. Could consider adding a regex validation.
+            $lazyAssertion->that($donorHomePostcode, 'donorHomePostcode')->nullOr()->betweenLength(5, 8);
+
+            // allow up to 15 chars to account for post / zip codes worldwide
+            $lazyAssertion->that($donorBillingPostcode, 'donorBillingPostcode')->nullOr()->betweenLength(1, 15);
+
+            $lazyAssertion->verifyNow();
+        } catch (LazyAssertionException $e) {
+            throw new \UnexpectedValueException($e->getMessage(), previous: $e);
+        }
+
+        $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
+        $this->donorPostalAddress = $donorBillingPostcode;
 
         $this->setGiftAid($giftAid);
         $this->setTipGiftAid($tipGiftAid);
         $this->setTbgShouldProcessGiftAid($this->getCampaign()->getCharity()->isTbgClaimingGiftAid());
         $this->setDonorHomePostcode($donorHomePostcode);
-        $this->setDonorHomeAddressLine1($donorHomeAddressLine1);
-        $this->setDonorFirstName($donorFirstName);
-        $this->setDonorLastName($donorLastName);
+        $this->setDonorName($donorName);
         $this->setDonorEmailAddress($donorEmailAddress);
         $this->setTbgComms($tbgComms);
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
-        $this->setDonorBillingAddress($donorPostalAddress);
+    }
+
+    /**
+     * Checks the donation is ready to be confirmed if and when the donor is ready to pay - i.e. that all required
+     * fields are filled in.
+     *
+     * @throws LazyAssertionException if not.
+     *
+     * This method returning true does *NOT* indicate that the donor has chosen to definitely donate - that must be
+     * established based on other info (e.g. because they sent a confirmation request).
+     */
+    public function assertIsReadyToConfirm(): true
+    {
+        Assert::lazy()
+            ->that($this->donorFirstName, 'donorFirstName')->notNull('Missing Donor First Name')
+            ->that($this->donorLastName, 'donorLastName')->notNull('Missing Donor Last Name')
+            ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
+            ->that($this->donorCountryCode)->notNull('Missing Billing Country')
+            ->that($this->donorPostalAddress)->notNull('Missing Billing Postcode')
+            ->that($this->tbgComms)->notNull('Missing tbgComms preference')
+            ->that($this->charityComms)->notNull('Missing charityComms preference')
+            ->that($this->donationStatus, 'donationStatus')
+            ->eq(
+                DonationStatus::Pending,
+                "Donation status is '{$this->donationStatus->value}', must be 'Pending' to confirm payment"
+            )
+            ->verifyNow();
+
+        return true;
     }
 }

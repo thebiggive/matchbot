@@ -7,11 +7,8 @@ use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Embeddable;
 use MatchBot\Application\Assertion;
 
-/**
- * @psalm-immutable
- */
 #[Embeddable]
-class EmailAddress
+readonly class EmailAddress
 {
     #[Column(type: 'string')]
     public readonly string $email;

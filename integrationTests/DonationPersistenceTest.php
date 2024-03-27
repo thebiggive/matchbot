@@ -66,7 +66,7 @@ class DonationPersistenceTest extends IntegrationTest
             'amount' => '1.00',
             'donationStatus' => DonationStatus::Refunded->value,
             'charityComms' => null,
-            'giftAid' => null,
+            'giftAid' => 0,
             'tbgComms' => null,
             'donorCountryCode' => null,
             'donorEmailAddress' => null,
@@ -110,9 +110,6 @@ class DonationPersistenceTest extends IntegrationTest
      */
     public function makeDonationObject(): Donation
     {
-        $donation = Donation::emptyTestDonation('1');
-        $donation->setUuid(Uuid::uuid4());
-
-        return $donation;
+        return Donation::emptyTestDonation('1');
     }
 }
