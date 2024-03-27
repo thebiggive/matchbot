@@ -372,9 +372,9 @@ class StripePayoutHandlerTest extends TestCase
     private function getCommonCalloutArgs(): array
     {
         return [
-            // Based on the date range from our standard test data payout (donation time -60D and +1D days).
+            // Based on the date range from our standard test data payout (donation time -6M and +1D).
             'created' => [
-                'gt' => 1503841256,
+                'gt' => 1582810856,
                 'lt' => 1598622056,
             ],
             'limit' => 100
