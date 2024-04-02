@@ -10,6 +10,8 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -92,7 +94,7 @@ class ConfirmTest extends TestCase
 
         // assert
         $this->expectException(HttpBadRequestException::class);
-        $this->expectExceptionMessage('Donation has been cancelled, so cannot be confirmed');
+        $this->expectExceptionMessage("Donation status is 'Cancelled', must be 'Pending' to confirm payment");
 
         // act
         $this->callConfirm($sut);
@@ -362,13 +364,29 @@ class ConfirmTest extends TestCase
         $donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
 
         $donation = Donation::fromApiModel(
-            new DonationCreate(currencyCode: 'GBP', donationAmount: '63.0', projectId: 'doesnt-matter', psp: 'stripe'),
+            new DonationCreate(
+                currencyCode: 'GBP',
+                donationAmount: '63.0',
+                projectId: 'doesnt0matter12345',
+                psp: 'stripe',
+                countryCode: 'GB',
+            ),
             $this->getMinimalCampaign(),
         );
+
+        $donation->update(
+            giftAid: false,
+            donorBillingPostcode: 'SW1 1AA',
+            donorName: DonorName::of('Charlie', 'The Charitable'),
+            donorEmailAddress: EmailAddress::of('user@example.com'),
+        );
+
         $donation->setTransactionId('PAYMENT_INTENT_ID');
         if ($donationIsCancelled) {
             $donation->cancel();
         }
+
+
 
         $donationRepositoryProphecy->findAndLockOneBy(['uuid' => 'DONATION_ID'])->willReturn(
             $donation

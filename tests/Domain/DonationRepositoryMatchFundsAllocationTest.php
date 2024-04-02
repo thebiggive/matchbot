@@ -76,7 +76,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             new \MatchBot\Application\HttpModels\DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: '1',
-                projectId: "any project",
+                projectId: 'projectid012345678',
                 psp: 'stripe',
                 pspMethodType: PaymentMethodType::Card
             ),
@@ -112,7 +112,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             new \MatchBot\Application\HttpModels\DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: '1',
-                projectId: "any project",
+                projectId: 'projectid012345678',
                 psp: 'stripe',
                 pspMethodType: PaymentMethodType::Card
             ),
@@ -196,7 +196,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             new \MatchBot\Application\HttpModels\DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: $donationAmount,
-                projectId: "any project",
+                projectId: 'projectid012345678',
                 psp: 'stripe',
                 pspMethodType: PaymentMethodType::Card
             ),
@@ -239,7 +239,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             new \MatchBot\Application\HttpModels\DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: '2.00',
-                projectId: "any project",
+                projectId: 'projectid012345678',
                 psp: 'stripe',
                 pspMethodType: PaymentMethodType::Card
             ),
@@ -277,7 +277,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             new \MatchBot\Application\HttpModels\DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: '1',
-                projectId: "any project",
+                projectId: 'projectid012345678',
                 psp: 'stripe',
                 pspMethodType: PaymentMethodType::Card
             ),

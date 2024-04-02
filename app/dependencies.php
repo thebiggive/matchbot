@@ -38,6 +38,7 @@ use Stripe\StripeClient;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Psr16Cache;
+use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\DoctrineDbalStore;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsTransportFactory;
@@ -385,5 +386,7 @@ return function (ContainerBuilder $containerBuilder) {
         Connection::class => static function (ContainerInterface $c): Connection {
             return $c->get(EntityManagerInterface::class)->getConnection();
         },
+
+        \Symfony\Component\Clock\ClockInterface::class => fn() => new NativeClock(),
     ]);
 };
