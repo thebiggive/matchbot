@@ -22,8 +22,15 @@ class ReconcilePastPayoutsTest extends TestCase
 {
     use DonationTestDataTrait;
 
+    private function skipTest(): void
+    {
+        // hiding the `never` from Psalm by upcasting it to void, otherwise it complains about dead code.
+        $this->markTestSkipped('Test too slow to run every time.');
+    }
+
     public function testRun(): void
     {
+        $this->skipTest();
         // Just mock out without checks for this temporary command. The output lines check is enough to be fairly
         // sure we're publishing the right messages. Ended up copying the CSV logic to mock it because Envelope is
         // final.

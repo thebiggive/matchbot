@@ -8,6 +8,8 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\TestCase;
@@ -31,10 +33,10 @@ trait DonationTestDataTrait
      * @param numeric-string $amount
      */
     protected function getPendingBigGiveGeneralCustomerBalanceDonation(
-        string $amount = '123.45',
+        string $amount = '123.00',
         string $currencyCode = 'GBP',
     ): Donation {
-        $campaignId = '567BgCampId';
+        $campaignId = 'testProject1234567';
         $campaign = new Campaign(charity: TestCase::someCharity());
         $campaign->setSalesforceId($campaignId);
         $campaign->setIsMatched(false);
@@ -89,7 +91,8 @@ trait DonationTestDataTrait
         $donation->update(
             giftAid: true,
             donorHomeAddressLine1: '1 Main St, London',  // Frontend typically includes town for now
-            charityComms: $charityComms
+            charityComms: $charityComms,
+            donorBillingPostcode: 'N1 1AA',
         );
 
         $donation->setCharityFee('2.05');
@@ -109,10 +112,8 @@ trait DonationTestDataTrait
 
 
         $donation->setDonorCountryCode('GB');
-        $donation->setDonorEmailAddress('john.doe@example.com');
-        $donation->setDonorFirstName('John');
-        $donation->setDonorLastName('Doe');
-        $donation->setDonorBillingAddress('1 Main St, London N1 1AA');
+        $donation->setDonorEmailAddress(EmailAddress::of('john.doe@example.com'));
+        $donation->setDonorName(DonorName::of('John', 'Doe'));
         $donation->setDonorHomePostcode('N1 1AA');
         $donation->setSalesforceId('sfDonation369');
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);

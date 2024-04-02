@@ -22,6 +22,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Ramsey\Uuid\Uuid;
+use Random\Randomizer;
 use Slim\App;
 use Slim\Factory\AppFactory;
 use Stripe\PaymentIntent;
@@ -318,7 +319,11 @@ abstract class IntegrationTest extends TestCase
 
     public function randomString(): string
     {
-        return substr(Uuid::uuid4()->toString(), 0, 18);
+        $randomString = (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
+
+        \assert(is_string($randomString)); // not sure why Psalm said it was mixed.
+
+        return $randomString;
     }
 
     protected function getApp(): App

@@ -66,6 +66,9 @@ jobs:
 
       - run: composer run integration-test
 
+      - store_test_results:
+          path: reports
+
       - store_artifacts:
           path: reports
 
@@ -115,7 +118,17 @@ jobs:
             - vendor
           key: composer-v1-{{ checksum "composer.lock" }}
 
-      - run: composer run mutation-test
+      - run:
+          name: Mutation Test only changed and added files in PR
+          command: |
+            vendor/bin/infection --git-diff-filter=AM --git-diff-base=develop
+            mv reports/mutation-testing reports/mutation-testing-changed-files || true # there may be no changed PHP files, hence no report
+
+      - run:
+          name: Mutation Test all files
+          command: |
+            composer run mutation-test
+            mv reports/mutation-testing reports/mutation-testing-all-files
 
       - store_artifacts:
           path: reports

@@ -39,7 +39,8 @@ class Donation extends Common
             }
 
             $this->logger->error(sprintf(
-                'Donation create exception %s: %s. Body: %s',
+                'Donation create exception for donation UUID %s %s: %s. Body: %s',
+                $donation->getUuid(),
                 get_class($ex),
                 $ex->getMessage(),
                 $ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A',

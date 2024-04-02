@@ -26,6 +26,7 @@ use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
 use Stripe\PaymentIntent;
+use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 use TypeError;
@@ -46,7 +47,8 @@ class Update extends Action
         private EntityManagerInterface $entityManager,
         private SerializerInterface $serializer,
         private Stripe $stripe,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        private ClockInterface $clock,
     ) {
         parent::__construct($logger);
     }
@@ -88,9 +90,12 @@ class Update extends Action
             );
         }
 
-        if (getenv('APP_ENV') !== 'production' && str_starts_with($donationData->firstName ?? '', 'Please throw')) {
+        if (
+            getenv('APP_ENV') !== 'production' &&
+            str_starts_with($donationData->donorName?->first ?? '', 'Please throw')
+        ) {
             $this->logger->critical("Testing a critical log message for BG2-2297");
-            throw new \Exception("$donationData->firstName requested an exception for test purposes");
+            throw new \Exception("{$donationData->donorName?->first} requested an exception for test purposes");
         }
 
         if (!isset($donationData->status)) {
@@ -153,6 +158,11 @@ class Update extends Action
                 }
 
                 return $this->addData($donation, $donationData, $args, $response, $request);
+            } catch (\UnexpectedValueException $e) {
+                return $this->validationError(
+                    $response,
+                    $e->getMessage()
+                );
             } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
                 $this->logger->warning(sprintf(
                     'Caught LockWaitTimeoutException in Update for donation %s, retry count %d',
@@ -161,9 +171,8 @@ class Update extends Action
                 ));
 
                 // pause for 0.1, 0.2, 0.4 and then 0.8s before giving up.
-                $microseconds = (int)(100_000 * (2 ** $retryCount));
-                \assert($microseconds >= 0);
-                \usleep($microseconds);
+                $seconds = (0.1 * (2 ** $retryCount));
+                $this->clock->sleep($seconds);
                 $retryCount++;
 
                 $this->entityManager->rollback();
@@ -206,6 +215,7 @@ class Update extends Action
      * Assumes it will be called only after starting a transaction pre-donation-select.
      * @throws InvalidRequestException
      * @throws ApiErrorException if confirm() fails other than because of a missing payment method.
+     * @throws \UnexpectedValueException
      */
     private function addData(
         Donation $donation,
@@ -263,14 +273,14 @@ class Update extends Action
         // to support setting later. The frontend will probably leave these set and do a no-op update
         // when it makes the PUT call.
         if (isset($donationData->countryCode)) {
-            $donation->setDonorCountryCode($donationData->countryCode);
+            $donation->setDonorCountryCode(strtoupper($donationData->countryCode));
         }
         if (isset($donationData->feeCoverAmount)) {
             $donation->setFeeCoverAmount((string) $donationData->feeCoverAmount);
         }
         if (isset($donationData->tipAmount)) {
             try {
-                $donation->setTipAmount((string) $donationData->tipAmount);
+                $donation->setTipAmount($donationData->tipAmount);
             } catch (\UnexpectedValueException $exception) {
                 $this->entityManager->rollback();
 
@@ -287,17 +297,16 @@ class Update extends Action
         // method every time they `addData()`.
         try {
             $donation->update(
-                giftAid: $donationData->giftAid,
+                giftAid: $donationData->giftAid ?? false,
                 tipGiftAid: $donationData->tipGiftAid ?? $donationData->giftAid,
                 donorHomeAddressLine1: $donationData->homeAddress,
                 donorHomePostcode: $donationData->homePostcode,
-                donorFirstName: $donationData->firstName,
-                donorLastName: $donationData->lastName,
+                donorName: $donationData->donorName,
                 donorEmailAddress: $donationData->emailAddress,
                 tbgComms: $donationData->optInTbgEmail,
                 charityComms: $donationData->optInCharityEmail,
                 championComms: $donationData->optInChampionEmail,
-                donorPostalAddress: $donationData->billingPostalAddress
+                donorBillingPostcode: $donationData->billingPostalAddress
             );
         } catch (\UnexpectedValueException $exception) {
             return $this->validationError(
@@ -327,7 +336,7 @@ class Update extends Action
                     'Stripe lock "rate limit" hit while updating payment intent for donation %s – retrying in 1s...',
                     $donation->getUuid(),
                 ));
-                sleep(1);
+                $this->clock->sleep(1);
 
                 try {
                     $this->updatePaymentIntent($donation);

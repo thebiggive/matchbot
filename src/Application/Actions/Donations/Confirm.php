@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Fees\Calculator;
+use MatchBot\Application\LazyAssertionException;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
@@ -92,12 +93,13 @@ class Confirm extends Action
             throw new NotFoundException();
         }
 
-        if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
-            $this->logger->warning(sprintf(
-                'We declined to Confirm as donations was cancelled. Donation UUID %s',
-                $donation->getUuid(),
-            ));
-            throw new HttpBadRequestException($request, 'Donation has been cancelled, so cannot be confirmed');
+        try {
+            $donation->assertIsReadyToConfirm();
+        } catch (LazyAssertionException $exception) {
+            $message = $exception->getMessage();
+            $this->logger->warning($message);
+
+            throw new HttpBadRequestException($request, $message);
         }
 
         $paymentIntentId = $donation->getTransactionId();
