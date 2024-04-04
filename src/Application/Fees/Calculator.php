@@ -17,7 +17,9 @@ class Calculator
 
     private const string STRIPE_FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU = '3.2';
 
-    /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
+    private const string STRIPE_FEE_GIFT_AID_PERCENTAGE = '0.75'; // 3% of Gift Aid amount.
+
+        /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
     private const EU_COUNTRY_CODES = [
         'AT', 'BE', 'BG', 'CY', 'CZ', 'DK', 'EE',
         'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT',
@@ -44,7 +46,6 @@ class Calculator
             'USD' => '0.3',
             'default' => '0.2',
         ],
-        'gift_aid_percentage' => '0.75', // 3% of Gift Aid amount.
         'main_percentage_standard' => '1.5',
     ];
 
@@ -130,7 +131,7 @@ class Calculator
             if ($this->hasGiftAid) {
                 // 4 points needed to handle overall percentages of GA fee like 0.75% == 0.0075 ratio.
                 $giftAidFee = bcmul(
-                    bcdiv(self::STRIPE_FEES['gift_aid_percentage'], '100', 4),
+                    bcdiv(self::STRIPE_FEE_GIFT_AID_PERCENTAGE, '100', 4),
                     $this->amount,
                     3,
                 );
