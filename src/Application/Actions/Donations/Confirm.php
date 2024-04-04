@@ -11,7 +11,6 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
-use MatchBot\Domain\DonationStatus;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -115,15 +114,24 @@ class Confirm extends Action
                 paymentIntentId: $paymentIntentId,
             );
         } catch (ApiErrorException $exception) {
-            $this->logger->error(sprintf(
-                'Stripe %s on Confirm updatePaymentMethodBillingDetail for donation %s (%s): %s',
-                get_class($exception),
-                $donation->getUuid(),
-                $paymentIntentId,
-                $exception->getMessage(),
-            ));
-
             $this->entityManager->rollback();
+
+            if (str_contains($exception->getMessage(), "You must collect the security code (CVC) for this card")) {
+                $this->logger->warning(sprintf(
+                    'Stripe %s on Confirm updatePaymentMethodBillingDetail for donation %s (%s): %s',
+                    get_class($exception),
+                    $donation->getUuid(),
+                    $paymentIntentId,
+                    $exception->getMessage(),
+                ));
+
+                return new JsonResponse([
+                    'error' => [
+                        'message' => 'Cannot confirm donation; card security code not collected',
+                        'code' => $exception->getStripeCode()
+                    ],
+                ], 402);
+            }
 
             throw $exception;
         }
