@@ -21,6 +21,17 @@ class Calculator
 
     private const string STRIPE_FEE_MAIN_PERCENTAGE_STANDARD = '1.5';
 
+    private const array STRIPE_FEES_FIXED = [
+        // Based on Stripe support email 9/4/21.
+        'CHF' => '0.3',
+        'DKK' => '1.8',
+        'EUR' => '0.25',
+        'GBP' => '0.2', // Baseline fee in pounds
+        'NOK' => '1.8',
+        'SEK' => '1.8',
+        'USD' => '0.3',
+        'default' => '0.2',
+    ];
 
     /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
     private const EU_COUNTRY_CODES = [
@@ -36,19 +47,6 @@ class Calculator
      */
     public const STRIPE_CARD_BRANDS = [
         'amex', 'diners', 'discover', 'eftpos_au', 'jcb', 'mastercard', 'unionpay', 'visa', 'unknown'
-    ];
-    private const STRIPE_FEES = [
-        // Based on Stripe support email 9/4/21.
-        'fixed' => [
-            'CHF' => '0.3',
-            'DKK' => '1.8',
-            'EUR' => '0.25',
-            'GBP' => '0.2', // Baseline fee in pounds
-            'NOK' => '1.8',
-            'SEK' => '1.8',
-            'USD' => '0.3',
-            'default' => '0.2',
-        ],
     ];
 
     /**
@@ -119,10 +117,10 @@ class Calculator
             // a fee on Gift Aid. May vary by card type & country.
 
             $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
-            if (array_key_exists($currencyCode, self::STRIPE_FEES['fixed'])) {
-                $feeAmountFixed = self::STRIPE_FEES['fixed'][$currencyCode];
+            if (array_key_exists($currencyCode, self::STRIPE_FEES_FIXED)) {
+                $feeAmountFixed = self::STRIPE_FEES_FIXED[$currencyCode];
             } else {
-                $feeAmountFixed = self::STRIPE_FEES['fixed']['default'];
+                $feeAmountFixed = self::STRIPE_FEES_FIXED['default'];
             }
 
             $feeRatio = bcdiv(self::STRIPE_FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
