@@ -43,8 +43,7 @@ class Calculator
         'gift_aid_percentage' => '0.75', // 3% of Gift Aid amount.
         'main_percentage_standard' => '1.5',
         'main_percentage_amex_or_non_uk_eu' => '3.2',
-        // The rate at which VAT is either being or is about to be charged.
-        'vat_percentage_live' => '20',
+        'vat_percentage' => '20',
     ];
 
     /**
@@ -192,7 +191,7 @@ class Calculator
             return '0';
         }
 
-        return self::STRIPE_FEES['vat_percentage_live'];
+        return self::STRIPE_FEES['vat_percentage'];
     }
 
     /**
