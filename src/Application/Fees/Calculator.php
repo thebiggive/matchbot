@@ -30,8 +30,9 @@ class Calculator
         'NOK' => '1.8',
         'SEK' => '1.8',
         'USD' => '0.3',
-        'default' => '0.2',
     ];
+
+    private const string STRIPE_FEES_DEFAULT = '0.2';
 
     /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
     private const EU_COUNTRY_CODES = [
@@ -120,7 +121,7 @@ class Calculator
             if (array_key_exists($currencyCode, self::STRIPE_FEES_FIXED)) {
                 $feeAmountFixed = self::STRIPE_FEES_FIXED[$currencyCode];
             } else {
-                $feeAmountFixed = self::STRIPE_FEES_FIXED['default'];
+                $feeAmountFixed = self::STRIPE_FEES_DEFAULT;
             }
 
             $feeRatio = bcdiv(self::STRIPE_FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
