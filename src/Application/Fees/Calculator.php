@@ -45,8 +45,6 @@ class Calculator
         'main_percentage_amex_or_non_uk_eu' => '3.2',
         // The rate at which VAT is either being or is about to be charged.
         'vat_percentage_live' => '20',
-        // The rate at which VAT is being charged if before the switch date.
-        'vat_percentage_old' => '0',
     ];
 
     /**
