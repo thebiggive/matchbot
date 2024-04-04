@@ -13,6 +13,8 @@ use MatchBot\Application\Assertion;
  */
 class Calculator
 {
+    private const string VAT_PERCENTAGE = '20';
+
     /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
     private const EU_COUNTRY_CODES = [
         'AT', 'BE', 'BG', 'CY', 'CZ', 'DK', 'EE',
@@ -43,7 +45,6 @@ class Calculator
         'gift_aid_percentage' => '0.75', // 3% of Gift Aid amount.
         'main_percentage_standard' => '1.5',
         'main_percentage_amex_or_non_uk_eu' => '3.2',
-        'vat_percentage' => '20',
     ];
 
     /**
@@ -191,7 +192,7 @@ class Calculator
             return '0';
         }
 
-        return self::STRIPE_FEES['vat_percentage'];
+        return self::VAT_PERCENTAGE;
     }
 
     /**
