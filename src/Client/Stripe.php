@@ -4,6 +4,7 @@ namespace MatchBot\Client;
 
 use MatchBot\Domain\Donation;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
 
@@ -39,6 +40,7 @@ interface Stripe
 
     /**
      * @throws ApiErrorException
+     * @throws InvalidRequestException - e.g. if the CVC wasn't collected, presumably due to bots accessing the system.
      */
     public function createPaymentIntent(array $createPayload): PaymentIntent;
 
