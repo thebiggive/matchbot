@@ -19,7 +19,10 @@ class Calculator
 
     private const string STRIPE_FEE_GIFT_AID_PERCENTAGE = '0.75'; // 3% of Gift Aid amount.
 
-        /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
+    private const string STRIPE_FEE_MAIN_PERCENTAGE_STANDARD = '1.5';
+
+
+    /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
     private const EU_COUNTRY_CODES = [
         'AT', 'BE', 'BG', 'CY', 'CZ', 'DK', 'EE',
         'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT',
@@ -46,7 +49,6 @@ class Calculator
             'USD' => '0.3',
             'default' => '0.2',
         ],
-        'main_percentage_standard' => '1.5',
     ];
 
     /**
@@ -123,7 +125,7 @@ class Calculator
                 $feeAmountFixed = self::STRIPE_FEES['fixed']['default'];
             }
 
-            $feeRatio = bcdiv(self::STRIPE_FEES['main_percentage_standard'], '100', 3);
+            $feeRatio = bcdiv(self::STRIPE_FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
             if ($this->cardBrand === 'amex' || !$this->isEU($this->cardCountry)) {
                 $feeRatio = bcdiv(self::STRIPE_FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU, '100', 3);
             }
