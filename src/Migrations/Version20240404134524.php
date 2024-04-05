@@ -17,7 +17,8 @@ final class Version20240404134524 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $this->addSql(<<<SQL
-                UPDATE Donation SET donorEmailAddress = REGEXP_REPLACE(donorEmailAddress, '[0-9]+$', '')
+                UPDATE Donation SET donorEmailAddress = REGEXP_REPLACE(donorEmailAddress, '[0-9]+$', ''),
+                                    salesforcePushStatus = 'pending-update'
                 WHERE Donation.donorEmailAddress RLIKE "[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]$"
                 AND Donation.createdAt < '2022-01-01'
                 AND Donation.createdAt > '2021-11-01'
