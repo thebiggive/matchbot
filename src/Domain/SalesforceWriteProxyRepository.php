@@ -107,7 +107,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
      * @param int $limit    Maximum of each type of pending object to process
      * @return int  Number of objects pushed
      */
-    public function pushSalesforcePending(\DateTimeImmutable $now, int $limit = 200): int
+    public function pushSalesforcePending(\DateTimeImmutable $now, int $limit = 400): int
     {
         // We don't want to push donations that were created or modified in the last 5 minutes,
         // to avoid collisions with other pushes.
