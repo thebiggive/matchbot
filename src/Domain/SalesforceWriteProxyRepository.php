@@ -116,7 +116,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
         /** @var SalesforceWriteProxy[] $proxiesToCreate */
         $proxiesToCreate = $this->findBy(
             ['salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE],
-            ['id' => 'ASC'],
+            ['updatedAt' => 'ASC'],
             $limit,
         );
 
@@ -133,7 +133,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 
         $proxiesToUpdate = $this->findBy(
             ['salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE],
-            ['id' => 'ASC'],
+            ['updatedAt' => 'ASC'],
             $limit,
         );
 
