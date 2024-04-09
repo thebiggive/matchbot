@@ -13,6 +13,27 @@ use MatchBot\Application\Assertion;
  */
 class Calculator
 {
+    private const VAT_PERCENTAGE = '20';
+
+    private const STRIPE_FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU = '3.2';
+
+    private const STRIPE_FEE_GIFT_AID_PERCENTAGE = '0.75'; // 3% of Gift Aid amount.
+
+    private const STRIPE_FEE_MAIN_PERCENTAGE_STANDARD = '1.5';
+
+    private const STRIPE_FEES_FIXED = [
+        // Based on Stripe support email 9/4/21.
+        'CHF' => '0.3',
+        'DKK' => '1.8',
+        'EUR' => '0.25',
+        'GBP' => '0.2', // Baseline fee in pounds
+        'NOK' => '1.8',
+        'SEK' => '1.8',
+        'USD' => '0.3',
+    ];
+
+    private const STRIPE_FEES_DEFAULT = '0.2';
+
     /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
     private const EU_COUNTRY_CODES = [
         'AT', 'BE', 'BG', 'CY', 'CZ', 'DK', 'EE',
@@ -27,28 +48,6 @@ class Calculator
      */
     public const STRIPE_CARD_BRANDS = [
         'amex', 'diners', 'discover', 'eftpos_au', 'jcb', 'mastercard', 'unionpay', 'visa', 'unknown'
-    ];
-    private const STRIPE_FEES = [
-        // Based on Stripe support email 9/4/21.
-        'fixed' => [
-            'CHF' => '0.3',
-            'DKK' => '1.8',
-            'EUR' => '0.25',
-            'GBP' => '0.2', // Baseline fee in pounds
-            'NOK' => '1.8',
-            'SEK' => '1.8',
-            'USD' => '0.3',
-            'default' => '0.2',
-        ],
-        'gift_aid_percentage' => '0.75', // 3% of Gift Aid amount.
-        'main_percentage_standard' => '1.5',
-        'main_percentage_amex_or_non_uk_eu' => '3.2',
-        // The rate at which VAT is either being or is about to be charged.
-        'vat_percentage_live' => '20',
-        // The rate at which VAT is being charged if before the switch date.
-        'vat_percentage_old' => '0',
-        // DateTime constructor-ready string: when the live VAT rate replaces the old one.
-        'vat_live_date' => ' 2021-04-01',
     ];
 
     /**
@@ -119,24 +118,21 @@ class Calculator
             // a fee on Gift Aid. May vary by card type & country.
 
             $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
-            if (array_key_exists($currencyCode, self::STRIPE_FEES['fixed'])) {
-                $feeAmountFixed = self::STRIPE_FEES['fixed'][$currencyCode];
+            if (array_key_exists($currencyCode, self::STRIPE_FEES_FIXED)) {
+                $feeAmountFixed = self::STRIPE_FEES_FIXED[$currencyCode];
             } else {
-                $feeAmountFixed = self::STRIPE_FEES['fixed']['default'];
+                $feeAmountFixed = self::STRIPE_FEES_DEFAULT;
             }
 
-            $feeRatio = bcdiv(self::STRIPE_FEES['main_percentage_standard'], '100', 3);
-            if (
-                isset(self::STRIPE_FEES['main_percentage_amex_or_non_uk_eu']) &&
-                ($this->cardBrand === 'amex' || !$this->isEU($this->cardCountry))
-            ) {
-                $feeRatio = bcdiv(self::STRIPE_FEES['main_percentage_amex_or_non_uk_eu'], '100', 3);
+            $feeRatio = bcdiv(self::STRIPE_FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
+            if ($this->cardBrand === 'amex' || !$this->isEU($this->cardCountry)) {
+                $feeRatio = bcdiv(self::STRIPE_FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU, '100', 3);
             }
 
             if ($this->hasGiftAid) {
                 // 4 points needed to handle overall percentages of GA fee like 0.75% == 0.0075 ratio.
                 $giftAidFee = bcmul(
-                    bcdiv(self::STRIPE_FEES['gift_aid_percentage'], '100', 4),
+                    bcdiv(self::STRIPE_FEE_GIFT_AID_PERCENTAGE, '100', 4),
                     $this->amount,
                     3,
                 );
@@ -196,12 +192,7 @@ class Calculator
             return '0';
         }
 
-        $switchDate = new \DateTime(self::STRIPE_FEES['vat_live_date']);
-        if (new \DateTime('now') >= $switchDate) {
-            return self::STRIPE_FEES['vat_percentage_live'];
-        }
-
-        return self::STRIPE_FEES['vat_percentage_old'];
+        return self::VAT_PERCENTAGE;
     }
 
     /**

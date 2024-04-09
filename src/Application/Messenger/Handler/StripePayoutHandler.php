@@ -80,16 +80,14 @@ class StripePayoutHandler implements MessageHandlerInterface
         );
 
         if ($chargeIds === []) {
-            $this->logger->error(sprintf(
+            // Outside of production we expect Stripe to combine things from multiple test environments
+            // (staging & regtest) into one, so we may get pings re payouts where we don't recognise any
+            // donations.
+            $logLevel = (getenv('APP_ENV') === 'production') ? LogLevel::ERROR : LogLevel::INFO;
+            $this->logger->log($logLevel, sprintf(
                 'Payout: Exited with no original donation charge IDs for Payout ID %s, account %s',
                 $payoutId,
                 $connectAccountId,
-            ));
-            // Temporary log lots of detail to help diagnose payout reconciliation edge cases.
-            $this->logger->info(sprintf(
-                'Used created datetime %s and charge IDs list: %s',
-                $payoutInfo['created']->format('r'),
-                implode(',', $payoutInfo['chargeIds']),
             ));
 
             return;
@@ -373,14 +371,14 @@ class StripePayoutHandler implements MessageHandlerInterface
     ): array {
         $this->logger->info("Payout: Getting original TBG charge IDs related to payout's Charge IDs");
 
-        // Payouts' usual scheduled as of 2022 is a 2 week minimum offset (give or take a calendar day)
-        // with a fixed day of the week for payouts, making the maximum normal lag 21 days. However we
-        // have had edge cases with bank details problems taking a couple of weeks to resolve, so we now
-        // look back up to 2 years in order to still catch charges for status updates if this happens.
-        // Once historic donations are reconciled in March 2024, we'll reduce this to 60 days again.
-
+        // Payouts' usual scheduled as of 2024 is a 2 week minimum offset (give or take a calendar day)
+        // with a fixed day of the week for payouts, making the maximum normal lag 21 days (or a bit less
+        // sometimes when donation funds were used).
+        // However we not uncommonly see delays up to a few months after a big campaign, before a small minority of
+        // charities complete Stripe-required info and make themselves eligible to receive a payout. For now
+        // we leave 6 months before we start firing alarms for devs in situations like that.
         $tz = new \DateTimeZone('Europe/London');
-        $fromDate = $payoutCreated->sub(new \DateInterval('P3Y'))->setTimezone($tz);
+        $fromDate = $payoutCreated->sub(new \DateInterval('P6M'))->setTimezone($tz);
         $toDate = $payoutCreated->add(new \DateInterval('P1D'))->setTimezone($tz);
 
         // Get all charges (`py_...`) related to the charity's Connect account, then list
