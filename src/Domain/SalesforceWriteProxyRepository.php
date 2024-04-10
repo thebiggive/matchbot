@@ -15,7 +15,7 @@ use MatchBot\Application\Commands\PushDonations;
 abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 {
     /** Maximum of each type of pending object to process */
-    private const int MAX_PER_BULK_PUSH = 400;
+    private const MAX_PER_BULK_PUSH = 400;
 
     abstract public function doCreate(SalesforceWriteProxy $proxy): bool;
     abstract public function doUpdate(SalesforceWriteProxy $proxy): bool;
