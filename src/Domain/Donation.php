@@ -28,6 +28,7 @@ use function sprintf;
 #[ORM\Table]
 #[ORM\Index(name: 'campaign_and_status', columns: ['campaign_id', 'donationStatus'])]
 #[ORM\Index(name: 'date_and_status', columns: ['createdAt', 'donationStatus'])]
+#[ORM\Index(name: 'updated_date_and_status', columns: ['updatedAt', 'donationStatus'])]
 #[ORM\Index(name: 'salesforcePushStatus', columns: ['salesforcePushStatus'])]
 #[ORM\Entity(repositoryClass: DonationRepository::class)]
 #[ORM\HasLifecycleCallbacks]
