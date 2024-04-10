@@ -14,6 +14,9 @@ use MatchBot\Application\Commands\PushDonations;
  */
 abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 {
+    /** Maximum of each type of pending object to process */
+    private const int MAX_PER_BULK_PUSH = 400;
+
     abstract public function doCreate(SalesforceWriteProxy $proxy): bool;
     abstract public function doUpdate(SalesforceWriteProxy $proxy): bool;
 
@@ -104,10 +107,9 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
      * sequentially from *one* place in a batch process we shouldn't usually have the same problem except when
      * these pushes clash with synchronous, on-demand update attempts.
      *
-     * @param int $limit    Maximum of each type of pending object to process
      * @return int  Number of objects pushed
      */
-    public function pushSalesforcePending(\DateTimeImmutable $now, int $limit = 400): int
+    public function pushSalesforcePending(\DateTimeImmutable $now): int
     {
         // We don't want to push donations that were created or modified in the last 5 minutes,
         // to avoid collisions with other pushes.
@@ -117,7 +119,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
         $proxiesToCreate = $this->findBy(
             ['salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE],
             ['updatedAt' => 'ASC'],
-            $limit,
+            self::MAX_PER_BULK_PUSH,
         );
 
         foreach ($proxiesToCreate as $proxy) {
@@ -134,7 +136,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
         $proxiesToUpdate = $this->findBy(
             ['salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE],
             ['updatedAt' => 'ASC'],
-            $limit,
+            self::MAX_PER_BULK_PUSH,
         );
 
         foreach ($proxiesToUpdate as $proxy) {
