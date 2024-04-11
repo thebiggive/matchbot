@@ -17,6 +17,7 @@ class UpdatePaymentMethod extends Action
     public const EXPECTED_STRIPE_NEW_CARD_MESSAGES = [
         "Your card's security code is incorrect.",
         'Your card was declined.',
+        'Your card has expired.',
         'Your card does not support this type of purchase.',
     ];
 
