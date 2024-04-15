@@ -125,6 +125,18 @@ class AdapterTest extends TestCase
             // todo - work out where the -100_00 figure here comes from. Message below is just pasted in from
             // see ticket MAT-332
             // result of running the test.
+
+         // We initially subtract £30, leaving £20 in fund.
+         // Then we try to subtract another £30, leaving £-10 in fund.
+         //
+        // Each of the 5 auto retries does the same thing, removing another -10 from the fund. Combined with the 30 removed by the other process that leaves
+        // total of 6*10 + 30 = 100 to release.
+
+        // As a test I changed the retry limit in Adapter::$maxPartialAllocateTries from 5 to 500.
+        // That means it has to release -14950_00 at the end. Actually still sort of confused.
+
+
+
             $this->expectExceptionMessage("Fund 53 balance sub-zero after 6 attempts. Releasing final -10000 'cents'");
             $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
     }
