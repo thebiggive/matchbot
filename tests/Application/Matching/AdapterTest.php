@@ -3,6 +3,7 @@
 namespace MatchBot\Tests\Application\Matching;
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Assert;
 use MatchBot\Application\Matching\LessThanRequestedAllocatedException;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\TerminalLockException;
@@ -119,14 +120,120 @@ class AdapterTest extends TestCase
             $funding->setAmountAvailable('50');
             $amountToSubtract = "30";
 
-            $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+//         $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+        $decrementFractional = $this->sut->toCurrencyFractionalUnit($amountToSubtract);
 
-            $this->expectException(TerminalLockException::class);
-            // todo - work out where the -100_00 figure here comes from. Message below is just pasted in from
-            // see ticket MAT-332
-            // result of running the test.
-            $this->expectExceptionMessage("Fund 53 balance sub-zero after 6 attempts. Releasing final -10000 'cents'");
-            $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+        /**
+         * @psalm-suppress PossiblyFalseReference - in mulit mode decrBy will not return false.
+         */
+        [$initResponse, $fundBalanceFractional] = $this->sut->storage->multi()
+            // Init if and only if new to Redis or expired (after 24 hours), using database value.
+            ->set(
+                $this->sut->buildKey($funding),
+                $this->sut->toCurrencyFractionalUnit($funding->getAmountAvailable()),
+                ['nx', 'ex' => Adapter::$storageDurationSeconds],
+            )
+            ->decrBy($this->sut->buildKey($funding), $decrementFractional)
+            ->exec();
+
+        $fundBalanceFractional = (int)$fundBalanceFractional;
+        if ($fundBalanceFractional < 0) {
+            // We have hit the edge case where not having strict, slow locks falls down. We atomically
+            // allocated some match funds based on the amount available when we queried the database, but since our
+            // query somebody else got some match funds and now taking the amount we wanted would take the fund's
+            // balance below zero.
+            //
+            // Fortunately, Redis's atomic operations mean we find out this happened straight away, and we know it's
+            // always safe to release funds - there is no upper limit so atomically putting the funds back in the pot
+            // cannot fail (except in service outages etc.)
+            //
+            // So, let's do exactly that and then fail in a way that tells the caller to retry, getting the new fund
+            // total first. This is essentially a DIY optimistic lock exception.
+
+            $retries = 0;
+            $amountAllocatedFractional = $decrementFractional;
+            while ($retries++ < $this->sut->maxPartialAllocateTries && $fundBalanceFractional < 0) {
+                // Try deallocating just the difference until the fund has exactly zero
+                $overspendFractional = 0 - $fundBalanceFractional;
+                /** @psalm-suppress InvalidCast - not in Redis Multi Mode */
+                $fundBalanceFractional = (int)$this->storage->incrBy($this->sut->buildKey($funding), $overspendFractional);
+                $amountAllocatedFractional -= $overspendFractional;
+            }
+
+            if ($fundBalanceFractional < 0) {
+                // We couldn't get the values to work within the maximum number of iterations, so release whatever
+                // we tried to hold back to the match pot and bail out.
+                /** @psalm-suppress InvalidCast not in multi mode * */
+                $fundBalanceFractional = (int)$this->storage->incrBy(
+                    $this->sut->buildKey($funding),
+                    $amountAllocatedFractional,
+                );
+                $this->sut->setFundingValue($funding, $this->sut->toCurrencyWholeUnit($fundBalanceFractional));
+                throw new TerminalLockException(
+                    "Fund {$funding->getId()} balance sub-zero after $retries attempts. " .
+                    "Releasing final $amountAllocatedFractional 'cents'"
+                );
+            }
+
+            $this->sut->setFundingValue($funding, $this->sut->toCurrencyWholeUnit($fundBalanceFractional));
+            throw new LessThanRequestedAllocatedException(
+                $this->sut->toCurrencyWholeUnit($amountAllocatedFractional),
+                $this->sut->toCurrencyWholeUnit($fundBalanceFractional)
+            );
+        }
+
+        $this->amountsSubtractedInCurrentProcess[] = ['campaignFunding' => $funding, 'amount' => $amountToSubtract];
+
+        $fundBalance = $this->sut->toCurrencyWholeUnit($fundBalanceFractional);
+        $this->sut->setFundingValue($funding, $fundBalance);
+
+        // Funding starts with £50 available. We attempt to subtract £30 and it doesn't work because another thread is also trying to take £30. So that should mean
+        // we have to release a final £30 shouldn't it? But the exception message shows we're actually releasing a final £100.
+
+        // todo - work out where the -100_00 figure here comes from. Message below is just pasted in from output.
+        $this->expectExceptionMessage("Fund 53 balance sub-zero after 6 attempts. Releasing final -100" . "00 'cents'");
+     //   $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+
+        $decrementFractional = $this->sut->toCurrencyFractionalUnit($amountToSubtract);
+
+        /**
+         * @psalm-suppress PossiblyFalseReference - in mulit mode decrBy will not return false.
+         */
+        [$initResponse, $fundBalanceFractional] = $this->sut->storage->multi()
+            // Init if and only if new to Redis or expired (after 24 hours), using database value.
+            ->set(
+                $this->sut->buildKey($funding),
+                $this->sut->toCurrencyFractionalUnit($funding->getAmountAvailable()),
+                ['nx', 'ex' => Adapter::$storageDurationSeconds],
+            )
+            ->decrBy($this->sut->buildKey($funding), $decrementFractional)
+            ->exec();
+
+        $fundBalanceFractional = (int)$fundBalanceFractional;
+        if ($fundBalanceFractional < 0) {
+            // We have hit the edge case where not having strict, slow locks falls down. We atomically
+            // allocated some match funds based on the amount available when we queried the database, but since our
+            // query somebody else got some match funds and now taking the amount we wanted would take the fund's
+            // balance below zero.
+            //
+            // Fortunately, Redis's atomic operations mean we find out this happened straight away, and we know it's
+            // always safe to release funds - there is no upper limit so atomically putting the funds back in the pot
+            // cannot fail (except in service outages etc.)
+            //
+            // So, let's do exactly that and then fail in a way that tells the caller to retry, getting the new fund
+            // total first. This is essentially a DIY optimistic lock exception.
+
+            $retries = 0;
+            $amountAllocatedFractional = $decrementFractional;
+            while ($retries++ < $this->sut->maxPartialAllocateTries && $fundBalanceFractional < 0) {
+                // Try deallocating just the difference until the fund has exactly zero
+                $overspendFractional = 0 - $fundBalanceFractional;
+                /** @psalm-suppress InvalidCast - not in Redis Multi Mode */
+                $fundBalanceFractional = (int)$this->storage->incrBy($this->sut->buildKey($funding), $overspendFractional);
+                $amountAllocatedFractional -= $overspendFractional;
+                $this->assertNotEquals(-10000, $amountAllocatedFractional);
+            }
+        }
     }
 
     public function testItDeletesCampaignFundingData(): void

@@ -28,14 +28,14 @@ class Adapter
     /** @var CampaignFunding[] */
     private array $fundingsToPersist = [];
     /** @var int Number of times to immediately try to allocate a smaller amount if the fund's running low */
-    private int $maxPartialAllocateTries = 5;
+    public int $maxPartialAllocateTries = 5;
     /**
      * @var int How many seconds the authoritative source for real-time match funds should keep data, as a minimum.
      *          Because Redis sets an updated value on each change to the balance, the case where using the database
      *          value could be problematic (race conditions with high volume access) should not overlap with the case
      *          where Redis copies of available fund balances are expired and have to be re-fetched.
      */
-    private static int $storageDurationSeconds = 86_400; // 1 day
+    public static int $storageDurationSeconds = 86_400; // 1 day
 
     /**
      * @var list<array{campaignFunding: CampaignFunding, amount:string}>
@@ -43,9 +43,9 @@ class Adapter
     private array $amountsSubtractedInCurrentProcess = [];
 
     public function __construct(
-        private RealTimeMatchingStorage $storage,
+        public RealTimeMatchingStorage $storage,
         private EntityManagerInterface $entityManager,
-        private LoggerInterface $logger,
+        private LoggerInterface        $logger,
     ) {
     }
 
@@ -203,7 +203,7 @@ class Adapter
      * @param string $wholeUnit e.g. pounds, dollars.
      * @return int  e.g. pence, cents.
      */
-    private function toCurrencyFractionalUnit(string $wholeUnit): int
+    public function toCurrencyFractionalUnit(string $wholeUnit): int
     {
         return (int) bcmul($wholeUnit, '100', 0);
     }
@@ -215,12 +215,12 @@ class Adapter
      * @param int $fractionalUnit   e.g. pence, cents.
      * @psalm-return numeric-string   e.g. pounds, dollars.
      */
-    private function toCurrencyWholeUnit(int $fractionalUnit): string
+    public function toCurrencyWholeUnit(int $fractionalUnit): string
     {
         return bcdiv((string) $fractionalUnit, '100', 2);
     }
 
-    private function buildKey(CampaignFunding $funding): string
+    public function buildKey(CampaignFunding $funding): string
     {
         return "fund-{$funding->getId()}-available-opt";
     }
@@ -242,7 +242,7 @@ class Adapter
     /**
      * @psalm-param numeric-string $newValue
      */
-    private function setFundingValue(CampaignFunding $funding, string $newValue): void
+    public function setFundingValue(CampaignFunding $funding, string $newValue): void
     {
         $funding->setAmountAvailable($newValue);
         if (!in_array($funding, $this->fundingsToPersist, true)) {
