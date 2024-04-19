@@ -112,8 +112,9 @@ class AdapterTest extends TestCase
 
     public function testItBailsOutAndReleasesFundsIfRetryingDoesntWorkDueToConcurrentRequests(): void
     {
-        // let's assume another thread is causing the funds to reduce by 30 pounds just
-        // after each time we increase it by 30 pounds.
+        // let's assume another thread is causing the funds to reduce by 40 pounds just
+        // after each time we increase it by 30 pounds – via `subtractAmountWithoutSavingToDB()`
+        // recovery calling `incrBy()` with overspent amount.
         $this->storage->setPreIncrCallBack(function (string $key) {
             return $this->storage->decrBy($key, 40_00);
         });
