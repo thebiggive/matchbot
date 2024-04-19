@@ -42,10 +42,6 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
         }
 
         $newValue = (float)($this->storage[$key] ?? 0) + $increment;
-
-        $str = "incr $key by $increment, from {$this->storage[$key]} to {$newValue}\n";
-        echo $str;
-
         $this->storage[$key] = (string) $newValue;
         if (! $this->multiMode) {
             return (string)$newValue;
@@ -59,9 +55,6 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
     public function decrBy(string $key, int $decrement): self
     {
         $newValue = (float)($this->storage[$key] ?? 0) - $decrement;
-        $str = "decrBy $key by $decrement, from {$this->storage[$key]} to {$newValue}\n";
-        echo $str;
-
 
         $this->storage[$key] = (string) $newValue;
         $this->responses[] = (string) $newValue;
@@ -76,12 +69,7 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
 
     public function set(string $key, string|int $value, array $options): bool|static
     {
-        if (!in_array('nx', $options, true) || !isset($this->storage[$key])
-        ) {
-            echo "set $key to $value\n";
-            $this->storage[$key] = (string)$value;
-        }
-
+        $this->storage[$key] = (string)$value;
         $this->responses[] = true;
 
         return $this;

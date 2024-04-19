@@ -108,14 +108,10 @@ class AdapterTest extends TestCase
 
     public function testItBailsOutAndReleasesFundsIfRetryingDoesntWorkDueToConcurrentRequests(): void
     {
-        echo "\n";
         // let's assume another thread is causing the funds to reduce by 30 pounds just
         // after each time we increase it by 30 pounds.
         $this->storage->setPreIncrCallBack(function (string $key) {
-            echo "in preIncrCallback\n            ";
-            $ret = $this->storage->decrBy($key, 30_00);
-            echo "out of preIncrCallback\n";
-            return $ret;
+            return $this->storage->decrBy($key, 30_00);
         });
 
             $funding = new CampaignFunding();
@@ -125,6 +121,7 @@ class AdapterTest extends TestCase
 
             $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
 
+            $this->expectException(TerminalLockException::class);
             // todo - work out where the -100_00 figure here comes from. Message below is just pasted in from
             // see ticket MAT-332
             // result of running the test.
@@ -139,15 +136,9 @@ class AdapterTest extends TestCase
         // That means it has to release -14950_00 at the end. Actually still sort of confused.
 
 
-         try {
-                $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
-                $this->fail("should have thrown");
-            } catch (TerminalLockException $exception) {
-                $this->assertSame("Fund 53 balance sub-zero after 6 attempts. Releasing final -10000 'cents'", $exception->getMessage());
-            }
 
-            echo "remaining in fund: " . $this->storage->get('fund-53-available-opt'). "\n";
-
+            $this->expectExceptionMessage("Fund 53 balance sub-zero after 6 attempts. Releasing final -10000 'cents'");
+            $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
     }
 
     public function testItDeletesCampaignFundingData(): void
