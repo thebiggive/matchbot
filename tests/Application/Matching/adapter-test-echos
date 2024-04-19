@@ -1,0 +1,39 @@
+There was 1 risky test:
+
+1) MatchBot\Tests\Application\Matching\AdapterTest::testItBailsOutAndReleasesFundsIfRetryingDoesntWorkDueToConcurrentRequests
+This test printed output: 
+set fund-53-available-opt to 50_00
+decrBy fund-53-available-opt by 30_00, from 50_00 to 20_00
+decrBy fund-53-available-opt by 30_00, from 20_00 to -10_00
+in preIncrCallback
+            decrBy fund-53-available-opt by 30_00, from -10_00 to -40_00
+out of preIncrCallback
+incr fund-53-available-opt by 10_00, from -40_00 to -30_00
+in preIncrCallback
+            decrBy fund-53-available-opt by 30_00, from -30_00 to -60_00
+out of preIncrCallback
+incr fund-53-available-opt by 30_00, from -60_00 to -30_00
+in preIncrCallback
+            decrBy fund-53-available-opt by 30_00, from -30_00 to -60_00
+out of preIncrCallback
+incr fund-53-available-opt by 30_00, from -60_00 to -30_00
+in preIncrCallback
+            decrBy fund-53-available-opt by 30_00, from -30_00 to -60_00
+out of preIncrCallback
+incr fund-53-available-opt by 30_00, from -60_00 to -30_00
+in preIncrCallback
+            decrBy fund-53-available-opt by 30_00, from -30_00 to -60_00
+out of preIncrCallback
+incr fund-53-available-opt by 30_00, from -60_00 to -30_00
+about to release final -100_00 cents
+in preIncrCallback
+            decrBy fund-53-available-opt by 30_00, from -30_00 to -60_00
+out of preIncrCallback
+incr fund-53-available-opt by -100_00, from -60_00 to -160_00
+remaining in fund: -160_00   ## -160_00 is equal to the 50_00 that the fund started with, as it was a fund with £50,
+minus 7 * 30_00 because the callback (representing another process) took out 30_00 seven times, and as that is another
+process its not our responsibility to replace it. Except logs above show callback only taking 30_00 six times, plus the
+first call to subtractAmountWithoutSavingToDB in our thread did not fail, so took out 30_00 that does not get returned.
+
+If the other thread returned its 30*6 then the fund would be at 20, which is correct since we started at 50 and had
+a successful withdrawal of 30.

@@ -140,6 +140,7 @@ class Adapter
                 // We couldn't get the values to work within the maximum number of iterations, so release whatever
                 // we tried to hold back to the match pot and bail out.
                 /** @psalm-suppress InvalidCast not in multi mode * */
+                echo "about to release final $amountAllocatedFractional cents\n";
                 $fundBalanceFractional = (int)$this->storage->incrBy(
                     $this->buildKey($funding),
                     $amountAllocatedFractional,
