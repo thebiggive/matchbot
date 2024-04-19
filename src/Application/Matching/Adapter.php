@@ -222,7 +222,10 @@ class Adapter
 
     private function buildKey(CampaignFunding $funding): string
     {
-        return "fund-{$funding->getId()}-available-opt";
+        $id = $funding->getId();
+        Assertion::notNull($id, "Funding ID must be non-null to build key");
+
+        return "fund-{$id}-available-opt";
     }
 
     /**
