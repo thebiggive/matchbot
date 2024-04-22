@@ -147,7 +147,8 @@ class Create extends Action
                     try {
                         $this->donationRepository->allocateMatchFunds($donation);
                     } catch (\Throwable $t) {
-                        $this->logger->error(sprintf('Allocation got error: %s', $t->getMessage()));
+                        // warning indicates that we *may* retry, as it depends on whether this is in the last retry or not.
+                        $this->logger->warning(sprintf('Allocation got error, may retry: %s', $t->getMessage()));
 
                         $this->matchingAdapter->releaseNewlyAllocatedFunds();
 
