@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Donations;
 
+use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\Exception\ORMException;
 use JetBrains\PhpStorm\Pure;
@@ -319,7 +320,7 @@ class Create extends Action
             try {
                 $retryable();
                 return;
-            } catch (ORMException $exception) {
+            } catch (ORMException | DBALServerException $exception) {
                 $retryCount++;
                 $this->logger->info(
                     sprintf(
