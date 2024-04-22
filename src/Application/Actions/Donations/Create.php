@@ -27,7 +27,9 @@ use Monolog\Logger;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
+use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -43,7 +45,8 @@ class Create extends Action
         private SerializerInterface $serializer,
         private Stripe $stripe,
         private Adapter $matchingAdapter,
-        LoggerInterface $logger
+        private ClockInterface $clock,
+        LoggerInterface $logger,
     ) {
         parent::__construct($logger);
     }
@@ -326,7 +329,7 @@ class Create extends Action
                     )
                 );
 
-                usleep(random_int(100_000, 1_100_000)); // Wait between 0.1 and 1.1 seconds before retrying
+                $this->clock->sleep((new Randomizer())->getFloat(0.1, 1.1));
             }
         }
     }
