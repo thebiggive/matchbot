@@ -130,8 +130,7 @@ class AdapterTest extends TestCase
          // Then we try to subtract another £30, leaving £-10 in fund.
          //
         // Each of the 5 auto retries does the same thing, removing another -10 from the fund. Combined with the 30
-        // removed by the other process that leaves
-        // total of 6*10 + 30 = 100 to release.
+        // removed by the other process that leaves total of 6*10 + 30 = 100 to release.
 
         // As a test I changed the retry limit in Adapter::$maxPartialAllocateTries from 5 to 500.
         // That means it has to release -14950_00 at the end. Actually still sort of confused.
