@@ -330,7 +330,9 @@ class Create extends Action
                     )
                 );
 
-                $this->clock->sleep((new Randomizer())->getFloat(0.1, 1.1));
+                $seconds = (new Randomizer())->getFloat(0.1, 1.1);
+                \assert(is_float($seconds)); // See https://github.com/vimeo/psalm/issues/10830
+                $this->clock->sleep($seconds);
             }
         }
     }
