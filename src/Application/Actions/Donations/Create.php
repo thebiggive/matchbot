@@ -136,11 +136,14 @@ class Create extends Action
         }
 
         // Must persist before Stripe work to have ID available.
-        $this->persistDonationWithRetry($donation);
+        $this->runWithPossibleRetry(function () use ($donation) {
+            $this->entityManager->persistWithoutRetries($donation);
+            $this->entityManager->flush();
+        }, 'Donation Create persist');
 
         if ($donation->getCampaign()->isMatched()) {
             try {
-                $this->donationRepository->allocateMatchFunds($donation);
+                $this->donationRepository->allocateMatchFunds($donation); // add withRetry here
             } catch (\Throwable $t) {
                 $this->logger->error(sprintf('Allocation got error: %s', $t->getMessage()));
 
@@ -246,7 +249,13 @@ class Create extends Action
 
             $donation->setTransactionId($intent->id);
 
-            $this->persistDonationWithRetry($donation);
+            $this->runWithPossibleRetry(
+                function () use ($donation) {
+                    $this->entityManager->persistWithoutRetries($donation);
+                    $this->entityManager->flush();
+                },
+                'Donation Create persist '
+            );
         }
 
         $data = new DonationCreatedResponse();
@@ -282,25 +291,29 @@ class Create extends Action
      * but non-zero minority of Create attempts at the start of a big campaign which get a closed Entity Manager
      * and then don't know about the connected #campaign on persist and crash when RetrySafeEntityManager tries again.
      *
+     * The same applies to allocating match funds, which in rare cases can fail with a lock timeout exception. It could
+     * also fail simply because another thread keeps changing the values of funds in redis.
+     *
      * If the EM "goes away" for any reason but only does so once, `flush()` should still replace the underlying
      * EM with a new one and then the next persist should succeed.
      *
      * If the persist itself fails, we do not replace the underlying entity manager. This means if it's still usable
      * then we still have any required related new entities in the Unit of Work.
+     * @param \Closure $retryable The action to be executed and then retried if necassary
+     * @param string $actionName The name of the action, used in logs.
      */
-    private function persistDonationWithRetry(Donation $donation): void
+    private function runWithPossibleRetry(\Closure $retryable, string $actionName): void
     {
         $retryCount = 0;
         while ($retryCount < self::MAX_CREATE_RETRY_COUNT) {
             try {
-                $this->entityManager->persistWithoutRetries($donation);
-                $this->entityManager->flush();
+                $retryable();
                 return;
             } catch (ORMException $exception) {
                 $retryCount++;
                 $this->logger->info(
                     sprintf(
-                        'Donation Create persist error: %s. Retrying %d of %d.',
+                        $actionName . ' error: %s. Retrying %d of %d.',
                         $exception->getMessage(),
                         $retryCount,
                         self::MAX_CREATE_RETRY_COUNT,
