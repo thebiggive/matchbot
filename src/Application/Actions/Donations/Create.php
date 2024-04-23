@@ -36,7 +36,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class Create extends Action
 {
-    private const MAX_CREATE_RETRY_COUNT = 4;
+    private const MAX_RETRY_COUNT = 4;
 
     #[Pure]
     public function __construct(
@@ -316,7 +316,7 @@ class Create extends Action
     private function runWithPossibleRetry(\Closure $retryable, string $actionName): void
     {
         $retryCount = 0;
-        while ($retryCount < self::MAX_CREATE_RETRY_COUNT) {
+        while ($retryCount < self::MAX_RETRY_COUNT) {
             try {
                 $retryable();
                 return;
@@ -327,7 +327,7 @@ class Create extends Action
                         $actionName . ' error: %s. Retrying %d of %d.',
                         $exception->getMessage(),
                         $retryCount,
-                        self::MAX_CREATE_RETRY_COUNT,
+                        self::MAX_RETRY_COUNT,
                     )
                 );
 
