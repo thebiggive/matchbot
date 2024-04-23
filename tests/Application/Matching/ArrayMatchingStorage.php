@@ -69,7 +69,11 @@ class ArrayMatchingStorage implements RealTimeMatchingStorage
 
     public function set(string $key, string|int $value, array $options): bool|static
     {
-        $this->storage[$key] = (string)$value;
+        // see https://redis.io/docs/latest/commands/set/ for details of nx option.
+        if (!in_array('nx', $options, true) || !isset($this->storage[$key])) {
+            $this->storage[$key] = (string)$value;
+        }
+
         $this->responses[] = true;
 
         return $this;
