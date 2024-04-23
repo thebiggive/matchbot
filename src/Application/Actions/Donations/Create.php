@@ -143,7 +143,7 @@ class Create extends Action
         $this->runWithPossibleRetry(function () use ($donation) {
             $this->entityManager->persistWithoutRetries($donation);
             $this->entityManager->flush();
-        }, 'Donation Create persist');
+        }, 'Donation Create persist before stripe work');
 
         if ($donation->getCampaign()->isMatched()) {
             $this->runWithPossibleRetry(
@@ -265,7 +265,7 @@ class Create extends Action
                     $this->entityManager->persistWithoutRetries($donation);
                     $this->entityManager->flush();
                 },
-                'Donation Create persist '
+                'Donation Create persist after stripe work'
             );
         }
 
