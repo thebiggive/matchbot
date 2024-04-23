@@ -163,6 +163,12 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php messenger:consume -vv --time-limit=7080"
         ],
+        "save-build-commit-id": [
+            "echo '<?php \nreturn \"'`git rev-parse HEAD`'\";\n' > .build-commit-id.php"
+        ],
+        "post-install-cmd": [
+            "composer save-build-commit-id"
+        ],
         "start": "php -S localhost:8080 -t public",
         "test": "XDEBUG_MODE=coverage phpunit --order-by=random --log-junit reports/unit-test.xml",
         "integration-test": [

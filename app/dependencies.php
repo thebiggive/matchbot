@@ -255,6 +255,7 @@ return function (ContainerBuilder $containerBuilder) {
 
         ORM\Configuration::class => static function (ContainerInterface $c): ORM\Configuration {
             $settings = $c->get('settings');
+            $commitId = require __DIR__ . "/../.build-commit-id.php";
 
             // Must be a distinct instance from the one used for fund allocation maths, as Doctrine's PHP serialisation
             // is incompatible with that needed for Redis commands that modify integer values in place. This injected
@@ -263,7 +264,10 @@ return function (ContainerBuilder $containerBuilder) {
             $redis = new Redis();
             try {
                 $redis->connect($settings['redis']['host']);
-                $cacheAdapter = new RedisAdapter(redis: $redis, namespace: "matchbot-{$settings['appEnv']}");
+                $cacheAdapter = new RedisAdapter(
+                    redis: $redis,
+                    namespace: "matchbot-{$settings['appEnv']}-{$commitId}"
+                );
             } catch (RedisException $exception) {
                 // This essentially means Doctrine is not using a cache. `/ping` should fail separately based on
                 // Redis being down whenever this happens, so we should find out without relying on this warning log.
