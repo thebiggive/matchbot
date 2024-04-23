@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Donations;
 
+use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\Exception\ORMException;
 use JetBrains\PhpStorm\Pure;
@@ -27,13 +28,15 @@ use Monolog\Logger;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
+use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class Create extends Action
 {
-    private const MAX_CREATE_RETRY_COUNT = 4;
+    private const MAX_RETRY_COUNT = 4;
 
     #[Pure]
     public function __construct(
@@ -43,7 +46,8 @@ class Create extends Action
         private SerializerInterface $serializer,
         private Stripe $stripe,
         private Adapter $matchingAdapter,
-        LoggerInterface $logger
+        private ClockInterface $clock,
+        LoggerInterface $logger,
     ) {
         parent::__construct($logger);
     }
@@ -136,22 +140,32 @@ class Create extends Action
         }
 
         // Must persist before Stripe work to have ID available.
-        $this->persistDonationWithRetry($donation);
+        $this->runWithPossibleRetry(function () use ($donation) {
+            $this->entityManager->persistWithoutRetries($donation);
+            $this->entityManager->flush();
+        }, 'Donation Create persist before stripe work');
 
         if ($donation->getCampaign()->isMatched()) {
-            try {
-                $this->donationRepository->allocateMatchFunds($donation);
-            } catch (\Throwable $t) {
-                $this->logger->error(sprintf('Allocation got error: %s', $t->getMessage()));
+            $this->runWithPossibleRetry(
+                function () use ($donation) {
+                    try {
+                        $this->donationRepository->allocateMatchFunds($donation);
+                    } catch (\Throwable $t) {
+                        // warning indicates that we *may* retry, as it depends on whether this is in the last retry or
+                        // not.
+                        $this->logger->warning(sprintf('Allocation got error, may retry: %s', $t->getMessage()));
 
-                $this->matchingAdapter->releaseNewlyAllocatedFunds();
+                        $this->matchingAdapter->releaseNewlyAllocatedFunds();
 
-                // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
-                // would be reduced again when the donation expires.
-                $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
+                        // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
+                        // would be reduced again when the donation expires.
+                        $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
 
-                throw $t;
-            }
+                        throw $t;
+                    }
+                },
+                'allocate match funds'
+            );
         }
 
         if ($donation->getPsp() === 'stripe') {
@@ -246,7 +260,13 @@ class Create extends Action
 
             $donation->setTransactionId($intent->id);
 
-            $this->persistDonationWithRetry($donation);
+            $this->runWithPossibleRetry(
+                function () use ($donation) {
+                    $this->entityManager->persistWithoutRetries($donation);
+                    $this->entityManager->flush();
+                },
+                'Donation Create persist after stripe work'
+            );
         }
 
         $data = new DonationCreatedResponse();
@@ -282,32 +302,38 @@ class Create extends Action
      * but non-zero minority of Create attempts at the start of a big campaign which get a closed Entity Manager
      * and then don't know about the connected #campaign on persist and crash when RetrySafeEntityManager tries again.
      *
+     * The same applies to allocating match funds, which in rare cases can fail with a lock timeout exception. It could
+     * also fail simply because another thread keeps changing the values of funds in redis.
+     *
      * If the EM "goes away" for any reason but only does so once, `flush()` should still replace the underlying
      * EM with a new one and then the next persist should succeed.
      *
      * If the persist itself fails, we do not replace the underlying entity manager. This means if it's still usable
      * then we still have any required related new entities in the Unit of Work.
+     * @param \Closure $retryable The action to be executed and then retried if necassary
+     * @param string $actionName The name of the action, used in logs.
      */
-    private function persistDonationWithRetry(Donation $donation): void
+    private function runWithPossibleRetry(\Closure $retryable, string $actionName): void
     {
         $retryCount = 0;
-        while ($retryCount < self::MAX_CREATE_RETRY_COUNT) {
+        while ($retryCount < self::MAX_RETRY_COUNT) {
             try {
-                $this->entityManager->persistWithoutRetries($donation);
-                $this->entityManager->flush();
+                $retryable();
                 return;
-            } catch (ORMException $exception) {
+            } catch (ORMException | DBALServerException $exception) {
                 $retryCount++;
                 $this->logger->info(
                     sprintf(
-                        'Donation Create persist error: %s. Retrying %d of %d.',
+                        $actionName . ' error: %s. Retrying %d of %d.',
                         $exception->getMessage(),
                         $retryCount,
-                        self::MAX_CREATE_RETRY_COUNT,
+                        self::MAX_RETRY_COUNT,
                     )
                 );
 
-                usleep(random_int(100_000, 1_100_000)); // Wait between 0.1 and 1.1 seconds before retrying
+                $seconds = (new Randomizer())->getFloat(0.1, 1.1);
+                \assert(is_float($seconds)); // See https://github.com/vimeo/psalm/issues/10830
+                $this->clock->sleep($seconds);
             }
         }
     }
