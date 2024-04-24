@@ -329,7 +329,7 @@ class Donation extends SalesforceWriteProxy
             bccomp($amount, (string)$maximumAmount, 2) === 1
         ) {
             throw new \UnexpectedValueException(sprintf(
-                'Amount %d is out of allowed range %d-%d %s',
+                'Amount %s is out of allowed range %d-%d %s',
                 $amount,
                 self::MINUMUM_AMOUNT,
                 $maximumAmount,
