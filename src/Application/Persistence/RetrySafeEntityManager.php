@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Persistence;
 
-use closure;
+use Closure;
 use Doctrine\DBAL\Exception\RetryableException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM;
@@ -31,7 +31,7 @@ class RetrySafeEntityManager extends EntityManagerDecorator
     /**
      * @var Closure():EntityManagerInterface
      */
-    private closure $entityManagerFactory;
+    private Closure $entityManagerFactory;
 
     /**
      * @param Closure():\Doctrine\ORM\EntityManagerInterface $entityManagerFactory
