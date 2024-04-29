@@ -6,6 +6,7 @@ namespace MatchBot\Client;
 
 use GuzzleHttp\Client;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Clock\ClockInterface;
 
 abstract class Common
 {
@@ -14,7 +15,8 @@ abstract class Common
 
     public function __construct(
         array $settings,
-        protected LoggerInterface $logger
+        protected LoggerInterface $logger,
+        protected ClockInterface $clock,
     ) {
         $this->clientSettings = $settings['apiClient'];
     }

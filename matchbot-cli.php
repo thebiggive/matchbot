@@ -24,6 +24,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
 use MatchBot\Domain\FundRepository;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Stripe\StripeClient;
 use Symfony\Component\Console\Application;

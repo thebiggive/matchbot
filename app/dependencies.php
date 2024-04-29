@@ -38,6 +38,7 @@ use Stripe\StripeClient;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Psr16Cache;
+use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\DoctrineDbalStore;
@@ -131,21 +132,37 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Client\Campaign::class => function (ContainerInterface $c): Client\Campaign {
-            return new Client\Campaign($c->get('settings'), $c->get(LoggerInterface::class));
+            return new Client\Campaign(
+                $c->get('settings'),
+                $c->get(LoggerInterface::class),
+                $c->get(ClockInterface::class)
+            );
         },
 
         Client\Donation::class => function (ContainerInterface $c): Client\Donation {
-            return new Client\Donation($c->get('settings'), $c->get(LoggerInterface::class));
+            return new Client\Donation(
+                $c->get('settings'),
+                $c->get(LoggerInterface::class),
+                $c->get(ClockInterface::class)
+            );
         },
 
         Client\Fund::class => function (ContainerInterface $c): Client\Fund {
-            return new Client\Fund($c->get('settings'), $c->get(LoggerInterface::class));
+            return new Client\Fund(
+                $c->get('settings'),
+                $c->get(LoggerInterface::class),
+                $c->get(ClockInterface::class)
+            );
         },
 
         Client\Mailer::class => function (ContainerInterface $c): Client\Mailer {
             $settings = $c->get('settings');
             \assert(is_array($settings));
-            return new Client\Mailer($settings, $c->get(LoggerInterface::class));
+            return new Client\Mailer(
+                $settings,
+                $c->get(LoggerInterface::class),
+                $c->get(ClockInterface::class)
+            );
         },
 
         Client\Stripe::class => function (ContainerInterface $c): Client\Stripe {

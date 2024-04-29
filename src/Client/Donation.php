@@ -7,6 +7,7 @@ namespace MatchBot\Client;
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Domain\Donation as DonationModel;
 use MatchBot\Domain\DonationRepository;
+use Psr\Log\LogLevel;
 
 class Donation extends Common
 {
@@ -38,13 +39,22 @@ class Donation extends Common
                 throw new NotFoundException();
             }
 
-            $this->logger->error(sprintf(
-                'Donation create exception for donation UUID %s %s: %s. Body: %s',
+            // We only actually run pushes to SF when donation is modified and then on a 30-minute cycle - so
+            // the 5 minute number below doesn't really matter, effectively we're just going to alarm if a donation
+            // fails to push direction on modification time and then also fails to push on the following scheduled push
+            // or the one after that if the scheduled push happened to be with 5 mins.
+            $logLevel = $donation->getUpdatedDate() < $this->clock->now()->modify('-5 minute') ?
+                LogLevel::ERROR : LogLevel::WARNING;
+
+            $this->logger->log($logLevel, (sprintf(
+                'Donation create exception for donation UUID %s updated %s (%d minutes ago) %s: %s. Body: %s',
                 $donation->getUuid(),
+                $donation->getUpdatedDate()->format('Y-m-d H:i'),
+                ($this->clock->now()->getTimestamp() - $donation->getUpdatedDate()->getTimestamp()) / 60,
                 get_class($ex),
                 $ex->getMessage(),
                 $ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A',
-            ));
+            )));
 
             throw new BadRequestException('Donation not created');
         }
