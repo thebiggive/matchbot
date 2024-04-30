@@ -3,6 +3,7 @@
 namespace MatchBot\Client;
 
 use MatchBot\Domain\Donation;
+use Stripe\Exception\InvalidArgumentException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
 use Stripe\StripeClient;
