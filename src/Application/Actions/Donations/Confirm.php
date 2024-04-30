@@ -93,10 +93,10 @@ class Confirm extends Action
         }
 
         if (trim($paymentMethodId) === '') {
-            $donationID = $donation->getId();
+            $donationUUID = $donation->getId();
             $this->logger->error(
                 <<<EOF
-Donation Confirmation attempted with blank payment method id "$paymentMethodId" for Donation #$donationID 
+Donation Confirmation attempted with blank payment method id "$paymentMethodId" for Donation $donationUUID 
 EOF
             );
             throw new HttpBadRequestException($request, "stripePaymentMethodId required");
