@@ -49,7 +49,7 @@ class CampaignRepositoryTest extends IntegrationTest
         $this->assertSame('Charity Name', $firstCampaign->getCharity()->getName());
     }
 
-    public function testItFinds10MonthOldCampaignEvenIfCharityAwaitingGiftAidApproval(): void
+    public function testItFindsNo10MonthOldCampaignEvenIfCharityAwaitingGiftAidApproval(): void
     {
         // arrange
         $sut = $this->getService(CampaignRepository::class);
