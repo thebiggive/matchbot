@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<files psalm-version="5.22.0@fe2c67ec89f358940f90db05efd2d663388b45a6">
+<files psalm-version="5.23.1@8471a896ccea3526b26d082f4461eeea467f10a4">
   <file src="app/dependencies.php">
     <MixedArgument>
       <code><![CDATA[$c->get('settings')]]></code>
@@ -147,9 +147,6 @@
       <code><![CDATA[$exception->getStripeCode()]]></code>
       <code><![CDATA[$retryException->getStripeCode()]]></code>
     </PossiblyNullArgument>
-    <TypeDoesNotContainType>
-      <code><![CDATA[isset($donationData->status)]]></code>
-    </TypeDoesNotContainType>
   </file>
   <file src="src/Application/Actions/GetPaymentMethods.php">
     <MixedArgument>
@@ -350,15 +347,6 @@
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Application/HttpModels/Donation.php">
-    <MissingConstructor>
-      <code><![CDATA[$charityId]]></code>
-      <code><![CDATA[$donationAmount]]></code>
-      <code><![CDATA[$donationMatched]]></code>
-      <code><![CDATA[$giftAid]]></code>
-      <code><![CDATA[$optInTbgEmail]]></code>
-      <code><![CDATA[$projectId]]></code>
-      <code><![CDATA[$status]]></code>
-    </MissingConstructor>
     <PossiblyUnusedProperty>
       <code><![CDATA[$charityId]]></code>
       <code><![CDATA[$donationMatched]]></code>
@@ -420,12 +408,7 @@
     <DeprecatedInterface>
       <code><![CDATA[StripePayoutHandler]]></code>
     </DeprecatedInterface>
-    <DocblockTypeContradiction>
-      <code><![CDATA[!$donation]]></code>
-      <code><![CDATA[$donation]]></code>
-    </DocblockTypeContradiction>
     <InvalidArgument>
-      <code><![CDATA[$paidChargeIds]]></code>
       <code><![CDATA[$sourceTransferIds]]></code>
     </InvalidArgument>
     <InvalidReturnStatement>
@@ -437,9 +420,6 @@
     <PossiblyNullArgument>
       <code><![CDATA[$exception->getStripeCode()]]></code>
     </PossiblyNullArgument>
-    <UnnecessaryVarAnnotation>
-      <code><![CDATA[\Stripe\Payout]]></code>
-    </UnnecessaryVarAnnotation>
   </file>
   <file src="src/Application/Messenger/StripePayout.php">
     <MissingConstructor>
@@ -633,10 +613,6 @@
     <MixedAssignment>
       <code><![CDATA[$campaignData]]></code>
     </MixedAssignment>
-    <MixedReturnTypeCoercion>
-      <code><![CDATA[$qb->getQuery()->getResult()]]></code>
-      <code><![CDATA[Campaign[]]]></code>
-    </MixedReturnTypeCoercion>
     <ParamNameMismatch>
       <code><![CDATA[$campaign]]></code>
     </ParamNameMismatch>
@@ -675,18 +651,11 @@
       <code><![CDATA[$this->getTipAmount()]]></code>
       <code><![CDATA[$this->getTipAmount()]]></code>
     </ArgumentTypeCoercion>
-    <MixedArgument>
-      <code><![CDATA[$data['emailAddress']]]></code>
-    </MixedArgument>
     <PossiblyNullPropertyAssignmentValue>
       <code><![CDATA[$this->donorFirstName]]></code>
       <code><![CDATA[$this->donorLastName]]></code>
       <code><![CDATA[$this->getCollectedAt()?->format('Y-m-d')]]></code>
     </PossiblyNullPropertyAssignmentValue>
-    <PossiblyNullReference>
-      <code><![CDATA[toString]]></code>
-      <code><![CDATA[toString]]></code>
-    </PossiblyNullReference>
     <PossiblyUnusedMethod>
       <code><![CDATA[getTbgGiftAidRequestQueuedAt]]></code>
     </PossiblyUnusedMethod>
@@ -1178,22 +1147,15 @@
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
-      <code><![CDATA[$payloadArray['countryCode']]]></code>
-      <code><![CDATA[$payloadArray['currencyCode']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
-      <code><![CDATA[$payloadArray['emailAddress']]]></code>
-      <code><![CDATA[$payloadArray['firstName']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
-      <code><![CDATA[$payloadArray['homeAddress']]]></code>
-      <code><![CDATA[$payloadArray['homePostcode']]]></code>
-      <code><![CDATA[$payloadArray['lastName']]]></code>
       <code><![CDATA[$payloadArray['matchedAmount']]]></code>
       <code><![CDATA[$payloadArray['matchedAmount']]]></code>
       <code><![CDATA[$payloadArray['matchedAmount']]]></code>
@@ -1213,7 +1175,6 @@
       <code><![CDATA[$payloadArray['tipAmount']]]></code>
       <code><![CDATA[$payloadArray['tipAmount']]]></code>
       <code><![CDATA[$payloadArray['tipAmount']]]></code>
-      <code><![CDATA[$payloadArray['tipGiftAid']]]></code>
     </MixedArrayAccess>
     <MixedAssignment>
       <code><![CDATA[$payloadArray]]></code>
@@ -1369,27 +1330,6 @@
     <DeprecatedMethod>
       <code><![CDATA[Donation::emptyTestDonation('124.56')]]></code>
     </DeprecatedMethod>
-  </file>
-  <file src="tests/Application/Messenger/Handler/StripePayoutHandlerTest.php">
-    <PossiblyUndefinedMethod>
-      <code><![CDATA[balanceTransactions]]></code>
-      <code><![CDATA[balanceTransactions]]></code>
-      <code><![CDATA[balanceTransactions]]></code>
-      <code><![CDATA[charges]]></code>
-      <code><![CDATA[charges]]></code>
-      <code><![CDATA[charges]]></code>
-      <code><![CDATA[reveal]]></code>
-      <code><![CDATA[reveal]]></code>
-      <code><![CDATA[reveal]]></code>
-    </PossiblyUndefinedMethod>
-    <UndefinedPropertyAssignment>
-      <code><![CDATA[$stripeClientProphecy->balanceTransactions]]></code>
-      <code><![CDATA[$stripeClientProphecy->balanceTransactions]]></code>
-      <code><![CDATA[$stripeClientProphecy->balanceTransactions]]></code>
-      <code><![CDATA[$stripeClientProphecy->charges]]></code>
-      <code><![CDATA[$stripeClientProphecy->charges]]></code>
-      <code><![CDATA[$stripeClientProphecy->charges]]></code>
-    </UndefinedPropertyAssignment>
   </file>
   <file src="tests/Application/Persistence/RetrySafeEntityManagerTest.php">
     <DeprecatedMethod>
