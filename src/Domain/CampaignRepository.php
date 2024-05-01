@@ -28,25 +28,27 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function findRecentLiveAndPendingGiftAidApproval(): array
     {
-        $oneWeekAgo = (new DateTime('now'))->sub(new \DateInterval('P7D'));
-        $fourMonthsAgo = (new DateTime('now'))->sub(new \DateInterval('P4M'));
+        $shortLookBackDate = (new DateTime('now'))->sub(new \DateInterval('P7D'));
+        $extendedLookBackDate = (new DateTime('now'))->sub(new \DateInterval('P9M'));
 
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('c')
             ->from(Campaign::class, 'c')
             ->innerJoin('c.charity', 'charity')
-            ->where('c.endDate >= :oneWeekAgo')
+            ->where('c.endDate >= :shortLookBackDate')
             ->orWhere(<<<EOT
                 charity.tbgClaimingGiftAid = 1 AND
                 charity.tbgApprovedToClaimGiftAid = 0 AND
-                c.endDate >= :fourMonthsAgo
+                c.endDate >= :extendedLookbackDate
 EOT
             )
             ->orderBy('c.createdAt', 'ASC')
-            ->setParameter('oneWeekAgo', $oneWeekAgo)
-            ->setParameter('fourMonthsAgo', $fourMonthsAgo);
+            ->setParameter('shortLookBackDate', $shortLookBackDate)
+            ->setParameter('extendedLookbackDate', $extendedLookBackDate);
 
-        return $qb->getQuery()->getResult();
+        /** @var Campaign[] $campaigns */
+        $campaigns = $qb->getQuery()->getResult();
+        return $campaigns;
     }
 
     public function pullNewFromSf(Salesforce18Id $salesforceId): Campaign
