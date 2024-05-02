@@ -30,7 +30,7 @@ final class Version20240502101845 extends AbstractMigration
             -- reduce amount from 20_000 to 10_000, reduce amountAvailable from 9952 to 0
             UPDATE CampaignFunding SET amount = amount - 10000, amountAvailable = amountAvailable - 9952 WHERE id = 29116 LIMIT 1;
 
-            -- reduce amount from 10_000 to zero
+            -- reduce amount from 10_000 to 48
             UPDATE FundingWithdrawal set amount = amount - 9952 where id = 709467 LIMIT 1;
             SQL);
 
