@@ -20,8 +20,7 @@ abstract class Fund extends SalesforceReadProxy
     public const DISCRIMINATOR_VALUE = 'unknownFund';
 
     /**
-     * - do we want to get rid of this along with amount
-     * @var string  ISO 4217 code for the currency of amount, and in which FundingWithdrawals are denominated.
+     * @var string  ISO 4217 code for the currency used with this fund, and in which FundingWithdrawals are denominated.
      */
     #[ORM\Column(type: 'string', length: 3)]
     protected string $currencyCode;
