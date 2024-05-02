@@ -19,6 +19,12 @@ abstract class Fund extends SalesforceReadProxy
     /** @var 'championFund'|'pledge'|'unknownFund' */
     public const DISCRIMINATOR_VALUE = 'unknownFund';
 
+    /**
+     * @deprecated - this is not used anywhere in matchbot. Kept for now because the ORM expects it.
+     * @psalm-suppress UnusedProperty
+     */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
+    private string $amount = '0.00';
 
     /**
      * - do we want to get rid of this along with amount
