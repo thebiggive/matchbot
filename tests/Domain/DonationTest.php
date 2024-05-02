@@ -78,7 +78,7 @@ class DonationTest extends TestCase
     public function testAmountTooLowNotPersisted(): void
     {
         $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Amount must be 1-25000 GBP');
+        $this->expectExceptionMessage('Amount 0.99 is out of allowed range 1-25000 GBP');
 
         $this->getTestDonation('0.99');
     }
@@ -86,7 +86,7 @@ class DonationTest extends TestCase
     public function testAmountVerySlightlyTooLowNotPersisted(): void
     {
         $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Amount must be 1-25000 GBP');
+        $this->expectExceptionMessage('Amount 0.99999999999999999 is out of allowed range 1-25000 GBP');
 
         // PHP floating point math doesn't distinguish between this and 1, but as we use BC Math we can reject it as
         // too small:
@@ -98,7 +98,7 @@ class DonationTest extends TestCase
     public function testAmountTooHighNotPersisted(): void
     {
         $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Amount must be 1-25000 GBP');
+        $this->expectExceptionMessage('Amount 25000.01 is out of allowed range 1-25000 GBP');
 
         $this->getTestDonation('25000.01');
     }
@@ -106,7 +106,7 @@ class DonationTest extends TestCase
     public function test25k1CardIsTooHigh(): void
     {
         $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Amount must be 1-25000 GBP');
+        $this->expectExceptionMessage('Amount 25001 is out of allowed range 1-25000 GBP');
 
         Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
@@ -133,7 +133,7 @@ class DonationTest extends TestCase
     public function test200k1CustomerBalanceDonationIsTooHigh(): void
     {
         $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Amount must be 1-200000 GBP');
+        $this->expectExceptionMessage('Amount 200001 is out of allowed range 1-200000 GBP');
 
         Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',

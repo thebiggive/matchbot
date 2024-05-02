@@ -46,6 +46,7 @@ class AdapterTest extends TestCase
     public function testItReturnsAmountAvailableFromAFundingNotInStorage(): void
     {
         $funding = new CampaignFunding();
+        $funding->setId(1);
         $funding->setAmountAvailable('12.53');
 
         $amountAvaialble = $this->sut->getAmountAvailable($funding);
@@ -56,6 +57,7 @@ class AdapterTest extends TestCase
     public function testItAddsAmountForFunding(): void
     {
         $funding = new CampaignFunding();
+        $funding->setId(1);
         $funding->setAmountAvailable('50');
         $this->sut->addAmount($funding, '12.53');
         $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
@@ -71,6 +73,7 @@ class AdapterTest extends TestCase
     public function testItSubtractsAmountForFunding(): void
     {
             $funding = new CampaignFunding();
+            $funding->setId(1);
             $funding->setAmountAvailable('50');
             $amountToSubtract = "10.10";
 
@@ -86,6 +89,7 @@ class AdapterTest extends TestCase
     public function testItReleasesFundsInCaseOfRaceCondition(): void
     {
                 $funding = new CampaignFunding();
+                $funding->setId(1);
                 $funding->setAmountAvailable('50');
                 $amountToSubtract = "30";
 
@@ -108,30 +112,47 @@ class AdapterTest extends TestCase
 
     public function testItBailsOutAndReleasesFundsIfRetryingDoesntWorkDueToConcurrentRequests(): void
     {
-        // let's assume another thread is causing the funds to reduce by 30 pounds just
-        // after each time we increase it by 30 pounds.
+        // let's assume another thread is causing the funds to reduce by 40 pounds just
+        // after each time we increase it by 30 pounds – via `subtractAmountWithoutSavingToDB()`
+        // recovery calling `incrBy()` with overspent amount.
         $this->storage->setPreIncrCallBack(function (string $key) {
-            return $this->storage->decrBy($key, 30_00);
+            return $this->storage->decrBy($key, 40_00);
         });
 
-            $funding = new CampaignFunding();
-            $funding->setId(53);
-            $funding->setAmountAvailable('50');
-            $amountToSubtract = "30";
+        $funding = new CampaignFunding();
+        $funding->setId(53);
+        $funding->setAmountAvailable('50');
+        $amountToSubtract = "30";
 
-            $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+        $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
 
-            $this->expectException(TerminalLockException::class);
-            // todo - work out where the -100_00 figure here comes from. Message below is just pasted in from
-            // see ticket MAT-332
-            // result of running the test.
-            $this->expectExceptionMessage("Fund 53 balance sub-zero after 6 attempts. Releasing final -10000 'cents'");
+        try {
             $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+            $this->fail("should have thrown exception on attempt to allocate more than available");
+        } catch (TerminalLockException $exception) {
+            // this -140_00 number is not very important - we already released part of the funds earlier,
+            // so this is just whatever happened to be left to release at the end. It's influenced by what happened
+            // in the callback (simulated other process) because that influences how much we tried to release earlier,
+            // and so this has to balance it out. If we released more earlier in the attempt to get the fund to zero
+            // we would release less here and vice versa.
+            //
+            $this->assertSame(
+                "Fund 53 balance sub-zero after 6 attempts. Releasing final -14000 'cents'",
+                $exception->getMessage()
+            );
+        }
+
+        // fund started with 50, we successfully removed 30, and the callback removed 40 six times. We cleared up after
+        // our unsuccessful attempts to withdraw more, not cleared up after the callback as would be the responsibility
+        // of the other process.
+        \assert(50 - 30 - 40 * 6 === -220);
+        $this->assertSame('-220.00', $this->sut->getAmountAvailable($funding));
     }
 
     public function testItDeletesCampaignFundingData(): void
     {
         $funding = new CampaignFunding();
+        $funding->setId(1);
         $funding->setAmountAvailable('1');
         $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
         $this->sut->addAmount($funding, '5');
@@ -147,6 +168,7 @@ class AdapterTest extends TestCase
     {
         // arrange
         $funding = new CampaignFunding();
+        $funding->setId(1);
         $funding->setAmountAvailable('50');
         $amountToSubtract = "10.10";
 

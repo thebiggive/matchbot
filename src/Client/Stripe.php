@@ -45,6 +45,7 @@ interface Stripe
     public function createPaymentIntent(array $createPayload): PaymentIntent;
 
     /**
+     * @param non-empty-string $paymentMethodId
      * @throws ApiErrorException
      */
     public function updatePaymentMethodBillingDetail(string $paymentMethodId, Donation $donation): PaymentMethod;

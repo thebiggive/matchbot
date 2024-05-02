@@ -101,6 +101,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setCurrencyCode('GBP');
         $campaignFunding->setAmountAvailable('1.0');
+        $campaignFunding->setId(1);
 
         $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
             $campaignFunding
@@ -178,10 +179,12 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $campaignFunding0 = new CampaignFunding();
         $campaignFunding0->setCurrencyCode('GBP');
         $campaignFunding0->setAmountAvailable($funding0Available);
+        $campaignFunding0->setId(0);
 
         $campaignFunding1 = new CampaignFunding();
         $campaignFunding1->setCurrencyCode('GBP');
         $campaignFunding1->setAmountAvailable($funding1Available);
+        $campaignFunding1->setId(1);
 
 
         $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
@@ -228,6 +231,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setCurrencyCode('GBP');
         $campaignFunding->setAmountAvailable('1.0');
+        $campaignFunding->setId(1);
 
         $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
             $campaignFunding

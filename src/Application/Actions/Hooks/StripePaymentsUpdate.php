@@ -8,7 +8,6 @@ use Assert\Assertion;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
