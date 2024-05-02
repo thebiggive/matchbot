@@ -19,14 +19,9 @@ abstract class Fund extends SalesforceReadProxy
     /** @var 'championFund'|'pledge'|'unknownFund' */
     public const DISCRIMINATOR_VALUE = 'unknownFund';
 
-    /**
-     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
-     * @see Fund::$currencyCode
-     */
-    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
-    protected string $amount;
 
     /**
+     * - do we want to get rid of this along with amount
      * @var string  ISO 4217 code for the currency of amount, and in which FundingWithdrawals are denominated.
      */
     #[ORM\Column(type: 'string', length: 3)]
@@ -37,14 +32,6 @@ abstract class Fund extends SalesforceReadProxy
      */
     #[ORM\Column(type: 'string')]
     protected string $name;
-
-    /**
-     * @param string $amount
-     */
-    public function setAmount(string $amount): void
-    {
-        $this->amount = $amount;
-    }
 
     /**
      * @param string $name
@@ -60,14 +47,6 @@ abstract class Fund extends SalesforceReadProxy
     public function getName(): string
     {
         return $this->name;
-    }
-
-    /**
-     * @return string
-     */
-    public function getAmount(): string
-    {
-        return $this->amount;
     }
 
     public function setCurrencyCode(string $currencyCode): void

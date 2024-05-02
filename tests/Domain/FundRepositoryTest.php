@@ -49,7 +49,6 @@ class FundRepositoryTest extends TestCase
         $repo->updateFromSf($fund, false); // Don't auto-save as non-DB-backed tests can't persist
 
         $this->assertEquals('API Fund Name', $fund->getName());
-        $this->assertEquals('123.45', $fund->getAmount());
     }
 
     public function testPullForCampaignAllNew(): void
@@ -74,13 +73,6 @@ class FundRepositoryTest extends TestCase
                 }
             )
         ;
-
-        // This is not mututally exclusive with the above call expectations. It's a quick way to double check
-        // that both persists are setting their respective object's amount to £500, even when the pre-existing
-        // Fund we simulate had a £400 total balance before.
-        $entityManagerProphecy
-            ->persist(Argument::which('getAmount', '500'))
-            ->shouldBeCalledTimes(2);
 
         $entityManagerProphecy->flush()->shouldBeCalledTimes(4);
 
@@ -117,7 +109,6 @@ class FundRepositoryTest extends TestCase
         $this->assertInstanceOf(ChampionFund::class, $fund);
         $this->assertSame('sfFundId456', $fund->getSalesforceId());
         $this->assertSame('GBP', $fund->getCurrencyCode());
-        $this->assertSame('1500', $fund->getAmount());
     }
 
     public function testPullForCampaignExistingFundButNewToCampaign(): void
@@ -131,13 +122,6 @@ class FundRepositoryTest extends TestCase
             ->shouldBeCalledTimes(2);
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
-            ->shouldBeCalledTimes(2);
-
-        // This is not mututally exclusive with the above call expectations. It's a quick way to double check
-        // that both persists are setting their respective object's amount to £500, even when the pre-existing
-        // Fund we simulate had a £400 total balance before.
-        $entityManagerProphecy
-            ->persist(Argument::which('getAmount', '500'))
             ->shouldBeCalledTimes(2);
 
         $entityManagerProphecy->flush()->shouldBeCalledTimes(4);
@@ -177,13 +161,6 @@ class FundRepositoryTest extends TestCase
             ->shouldBeCalledTimes(2);
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
-            ->shouldBeCalledTimes(2);
-
-        // This is not mututally exclusive with the above call expectations. It's a quick way to double check
-        // that both persists are setting their respective object's amount to £500, even when the pre-existing
-        // Fund we simulate had a £400 total balance before.
-        $entityManagerProphecy
-            ->persist(Argument::which('getAmount', '500'))
             ->shouldBeCalledTimes(2);
 
         $entityManagerProphecy->flush()->shouldBeCalledTimes(4);
@@ -288,7 +265,6 @@ class FundRepositoryTest extends TestCase
         $existingFund->setId($shared ? 456456 : 123123);
         $existingFund->setSalesforceId($shared ? 'sfFundId456' : 'sfFundId123');
         $existingFund->setSalesforceLastPull(new \DateTime());
-        $existingFund->setAmount($shared ? '1500' : '400');
         $existingFund->setCurrencyCode('GBP');
         $existingFund->setName($shared ? 'Test Shared Champion Fund 456' : 'Test Champion Fund 123');
 

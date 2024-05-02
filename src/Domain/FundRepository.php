@@ -151,8 +151,6 @@ class FundRepository extends SalesforceReadProxyRepository
 
             throw new DomainCurrencyMustNotChangeException();
         }
-
-        $fund->setAmount($fundData['totalAmount'] === null ? '0.00' : (string) $fundData['totalAmount']);
         $fund->setCurrencyCode($fundData['currencyCode'] ?? 'GBP');
         $fund->setName($fundData['name'] ?? '');
         $fund->setSalesforceLastPull(new DateTime('now'));
@@ -183,8 +181,6 @@ class FundRepository extends SalesforceReadProxyRepository
     protected function doUpdateFromSf(SalesforceReadProxy $fund): void
     {
         $fundData = $this->getClient()->getById($fund->getSalesforceId());
-
-        $fund->setAmount($fundData['totalAmount']);
         $fund->setName($fundData['name'] ?? '');
     }
 }
