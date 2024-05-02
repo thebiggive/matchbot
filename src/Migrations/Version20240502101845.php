@@ -24,8 +24,8 @@ final class Version20240502101845 extends AbstractMigration
             -- reduce amount from 5_000 to 2_500, reduce amountAvailable from 1_890 to 0
             UPDATE CampaignFunding SET amount = amount - 2500, amountAvailable = amountAvailable - 1890 WHERE id = 29101 LIMIT 1;
 
-            -- reduce amount from 2_500 to 1890;
-            UPDATE FundingWithdrawal set amount = amount - 610 where id = 717813;
+            -- reduce amount from 2_500 to 610;
+            UPDATE FundingWithdrawal set amount = amount - 1890 where id = 717813;
             
             -- reduce amount from 20_000 to 10_000, reduce amountAvailable from 9952 to 0
             UPDATE CampaignFunding SET amount = amount - 10000, amountAvailable = amountAvailable - 9952 WHERE id = 29116 LIMIT 1;
@@ -53,11 +53,11 @@ final class Version20240502101845 extends AbstractMigration
     public function down(Schema $schema): void
     {
         $this->addSql(<<<SQL
-            UPDATE CampaignFunding SET amount = amount + 2500, amountAvailable = amountAvailable - 1890 WHERE id = 29101 LIMIT 1;
+            UPDATE CampaignFunding SET amount = amount + 2500, amountAvailable = amountAvailable + 1890 WHERE id = 29101 LIMIT 1;
 
-            UPDATE FundingWithdrawal set amount = amount + 610 where id = 717813;
+            UPDATE FundingWithdrawal set amount = amount + 1890 where id = 717813;
             
-            UPDATE CampaignFunding SET amount = amount + 10000, amountAvailable = amountAvailable - 9952 WHERE id = 29116 LIMIT 1;
+            UPDATE CampaignFunding SET amount = amount + 10000, amountAvailable = amountAvailable + 9952 WHERE id = 29116 LIMIT 1;
 
             UPDATE FundingWithdrawal set amount = amount + 9952 where id = 709467 LIMIT 1;
             SQL);
