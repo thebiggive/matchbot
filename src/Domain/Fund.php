@@ -20,13 +20,6 @@ abstract class Fund extends SalesforceReadProxy
     public const DISCRIMINATOR_VALUE = 'unknownFund';
 
     /**
-     * @deprecated - this is not used anywhere in matchbot. Kept for now because the ORM expects it.
-     * @psalm-suppress UnusedProperty
-     */
-    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
-    private string $amount = '0.00';
-
-    /**
      * - do we want to get rid of this along with amount
      * @var string  ISO 4217 code for the currency of amount, and in which FundingWithdrawals are denominated.
      */
