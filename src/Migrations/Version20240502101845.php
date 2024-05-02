@@ -25,7 +25,7 @@ final class Version20240502101845 extends AbstractMigration
             UPDATE CampaignFunding SET amount = amount - 2500, amountAvailable = amountAvailable - 1890 WHERE id = 29101 LIMIT 1;
 
             -- reduce amount from 2_500 to 610;
-            UPDATE FundingWithdrawal set amount = amount - 1890 where id = 717813;
+            UPDATE FundingWithdrawal set amount = amount - 1890 where id = 717813 LIMIT 1;
             
             -- reduce amount from 20_000 to 10_000, reduce amountAvailable from 9952 to 0
             UPDATE CampaignFunding SET amount = amount - 10000, amountAvailable = amountAvailable - 9952 WHERE id = 29116 LIMIT 1;
@@ -55,7 +55,7 @@ final class Version20240502101845 extends AbstractMigration
         $this->addSql(<<<SQL
             UPDATE CampaignFunding SET amount = amount + 2500, amountAvailable = amountAvailable + 1890 WHERE id = 29101 LIMIT 1;
 
-            UPDATE FundingWithdrawal set amount = amount + 1890 where id = 717813;
+            UPDATE FundingWithdrawal set amount = amount + 1890 where id = 717813 LIMIT 1;
             
             UPDATE CampaignFunding SET amount = amount + 10000, amountAvailable = amountAvailable + 9952 WHERE id = 29116 LIMIT 1;
 
