@@ -62,9 +62,9 @@ jobs:
 
       - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose
 
-      - run: vendor/bin/doctrine-migrations diff --allow-empty-diff # check that this works
-
       - run: composer run integration-test
+
+      - run: vendor/bin/doctrine-migrations diff --allow-empty-diff # check that this works
 
       - store_test_results:
           path: reports
