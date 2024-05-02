@@ -11,9 +11,6 @@ use MatchBot\Application\RealTimeMatchingStorage;
 use MatchBot\Domain\CampaignRepository;
 use Psr\Container\ContainerInterface;
 
-/**
- * Auto-generated Migration: Please modify to your needs!
- */
 final class Version20240502101845 extends AbstractMigration
 {
     public function getDescription(): string
@@ -51,12 +48,18 @@ final class Version20240502101845 extends AbstractMigration
         //
         //        $storage->decrBy('fund-29101-available-opt', 1_890);
         //        $storage->decrBy('fund-29116-available-opt', 9952);
-
     }
 
     public function down(Schema $schema): void
     {
-        // this down() migration is auto-generated, please modify it to your needs
+        $this->addSql(<<<SQL
+            UPDATE CampaignFunding SET amount = amount + 2500, amountAvailable = amountAvailable - 1890 WHERE id = 29101 LIMIT 1;
 
+            UPDATE FundingWithdrawal set amount = amount + 610 where id = 717813;
+            
+            UPDATE CampaignFunding SET amount = amount + 10000, amountAvailable = amountAvailable - 9952 WHERE id = 29116 LIMIT 1;
+
+            UPDATE FundingWithdrawal set amount = amount + 9952 where id = 709467 LIMIT 1;
+            SQL);
     }
 }
