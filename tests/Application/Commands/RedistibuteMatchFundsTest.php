@@ -166,7 +166,6 @@ class RedistibuteMatchFundsTest extends TestCase
     {
         $pledgeAmount = '101.00';
         $pledge = new Pledge();
-        $pledge->setAmount($pledgeAmount);
         $pledgeFunding = new CampaignFunding();
         $pledgeFunding->setAmount($pledgeAmount);
         $pledgeFunding->setAmountAvailable($pledgeAmount);
@@ -187,7 +186,6 @@ class RedistibuteMatchFundsTest extends TestCase
         ), $this->getMinimalCampaign());
 
         $championFund = new ChampionFund();
-        $championFund->setAmount($donationAmount);
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setAmount($donationAmount);
         // We're bypassing normal allocation helpers and will set up the FundingWithdrawal to the test donation below.

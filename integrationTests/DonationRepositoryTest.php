@@ -171,7 +171,6 @@ class DonationRepositoryTest extends IntegrationTest
         }
 
         $pledge = new Pledge();
-        $pledge->setAmount('1.0');
         $pledge->setCurrencyCode('GBP');
         $pledge->setName('');
         $campaignFunding = new CampaignFunding();
