@@ -271,9 +271,9 @@ abstract class IntegrationTest extends TestCase
         $nyd = '2023-01-01'; // specific date doesn't matter.
 
         $db->executeStatement(<<<SQL
-            INSERT INTO Fund (amount, name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
+            INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
                               currencyCode) VALUES 
-                (100000, 'Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '$fundType',
+                ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '$fundType',
                  'GBP')
         SQL
         );
