@@ -25,7 +25,6 @@ class ResetMatchingTest extends TestCase
         $fund = new ChampionFund();
         $fund->setSalesforceId('sfFundId123');
         $fund->setSalesforceLastPull(new \DateTime());
-        $fund->setAmount('400');
         $fund->setName('Test Champion Fund 123');
 
         $campaignFunding = new CampaignFunding();
