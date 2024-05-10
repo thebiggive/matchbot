@@ -111,6 +111,9 @@ jobs:
           paths:
             - vendor
           key: composer-v1-{{ checksum "composer.lock" }}
+      - run:
+          name: Wait for MySQL & redis to start up
+          command: sleep 5
 
       - run:
           name: Combined test to get joint coverage report
