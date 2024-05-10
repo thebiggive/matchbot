@@ -36,7 +36,6 @@ class Status extends Action
      */
     protected function action(Request $request, Response $response, array $args): Response
     {
-        /** @var string|null $errorMessage */
         $errorMessage = null;
 
         if ($this->redis === null || !$this->redis->isConnected()) {
