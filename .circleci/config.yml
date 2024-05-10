@@ -115,6 +115,8 @@ jobs:
           name: Wait for MySQL & redis to start up
           command: sleep 5
 
+      - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose
+
       - run:
           name: Combined test to get joint coverage report
           command: XDEBUG_MODE=coverage  vendor/bin/phpunit --testsuite unit,integration --coverage-html=reports/combined-coverage --log-junit reports/combined-test.xml
