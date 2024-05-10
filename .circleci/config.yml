@@ -113,7 +113,7 @@ jobs:
           key: composer-v1-{{ checksum "composer.lock" }}
       - run:
           name: Wait for MySQL & redis to start up
-          command: sleep 5
+          command: sleep 10
 
       - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose
 
