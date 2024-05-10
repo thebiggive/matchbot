@@ -79,7 +79,7 @@ jobs:
 
       - run:
           name: Merge Test Coverage results
-          command: ./tools/phpcov merge --clover reports/coverage-merged.xml --html/reports/combined-coverage
+          command: ./tools/phpcov merge --clover reports/coverage-merged.xml --html reports/combined-coverage reports
 
       - run: vendor/bin/doctrine-migrations diff --allow-empty-diff # check that this works
 

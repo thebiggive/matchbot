@@ -9,4 +9,5 @@
 stripe_cli.env
 /.build-commit-id.php
 /reports
+/reports/index.html
 /tools
