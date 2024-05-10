@@ -202,7 +202,7 @@
             "APP_ENV=test doctrine orm:clear-cache:result",
             "APP_ENV=test doctrine-migrations migrate --no-interaction --allow-no-migration",
             "APP_ENV=test doctrine orm:generate-proxies",
-            "vendor/bin/infection --threads=4 --test-framework-options=\"--testsuite unit,integration\""
+            "vendor/bin/infection --threads=4 --test-framework-options=\"--testsuite=unit,integration\""
         ]
     }
 }
