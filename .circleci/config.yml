@@ -48,6 +48,20 @@ jobs:
 
       - run: composer check-platform-reqs
 
+      - run:
+          name: Install Phive
+          # from https://phar.io/#Install but with 'wget -O' replaced with 'curl -Lo' as the image doesn't have wget
+          command: |
+            curl -Lo phive.phar https://phar.io/releases/phive.phar
+            curl -Lo phive.phar.asc https://phar.io/releases/phive.phar.asc
+            gpg --keyserver hkps://keys.openpgp.org --recv-keys 0x9D8A98B29B2D5D79
+            gpg --verify phive.phar.asc phive.phar
+            chmod +x phive.phar
+            mv phive.phar /usr/local/bin/phive
+
+      # Key below is of Sebastian Bergmann
+      - run: phive install --trust-gpg-keys D8406D0D82947747293778314AA394086372C20A
+
       - save_cache:
           paths:
             - vendor
