@@ -65,17 +65,13 @@ jobs:
 
       - run: vendor/bin/doctrine-migrations diff --allow-empty-diff # check that this works
 
-      - run:
-          name: Combined test to get joint coverage report
-          command: XDEBUG_MODE=coverage  vendor/bin/phpunit --testsuite unit,integration --coverage-html=reports/combined-coverage --log-junit reports/combined-test.xml
-
       - store_test_results:
           path: reports/combined-test.xml
 
       - store_artifacts:
           path: reports
 
-  mutation_coverage:
+  test-coverage:
     resource_class: large
     working_directory: /var/www/html
     docker:
@@ -115,6 +111,10 @@ jobs:
           paths:
             - vendor
           key: composer-v1-{{ checksum "composer.lock" }}
+
+      - run:
+          name: Combined test to get joint coverage report
+          command: XDEBUG_MODE=coverage  vendor/bin/phpunit --testsuite unit,integration --coverage-html=reports/combined-coverage --log-junit reports/combined-test.xml
 
       - run:
           name: Mutation Test only changed and added files in PR
