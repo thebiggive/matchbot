@@ -71,7 +71,7 @@ jobs:
       - store_artifacts:
           path: reports
 
-  test-coverage:
+  test_coverage:
     resource_class: large
     working_directory: /var/www/html
     docker:
@@ -145,7 +145,7 @@ workflows:
             - slack/notify:
                 event: fail
                 template: basic_fail_1
-      - mutation_coverage:
+      - test_coverage:
           context:
             - docker-hub-creds
           requires:
