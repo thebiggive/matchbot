@@ -9,6 +9,7 @@
     </exclude>
     <report>
       <clover outputFile="coverage-integration.xml" />
+      <html outputDirectory="reports/integration-coverage"/>
     </report>
   </coverage>
   <testsuites>

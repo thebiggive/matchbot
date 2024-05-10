@@ -25,7 +25,8 @@
       <directory suffix=".php">./src/Migrations</directory>
     </exclude>
     <report>
-      <clover outputFile="coverage.xml" />
+      <clover outputFile="reports/coverage.xml" />
+      <html outputDirectory="reports/unit-coverage"/>
     </report>
   </coverage>
   <testsuites>
