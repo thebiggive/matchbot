@@ -51,7 +51,7 @@ class AwsTraceIdProcessorTest extends TestCase
         );
         $app->handle($request);
 
-        $app->getContainer()->get(LoggerInterface::class)->debug('hello');
+        $logger->debug('hello');
 
         $this->assertEquals('amz-trace-id-123', $handler->getRecords()[0]['extra']['x-amzn-trace-id']);
     }
@@ -71,7 +71,7 @@ class AwsTraceIdProcessorTest extends TestCase
         $request = $this->createRequest('GET', '/ping');
         $app->handle($request);
 
-        $app->getContainer()->get(LoggerInterface::class)->debug('hello');
+        $logger->debug('hello');
 
         $this->assertArrayNotHasKey('x-amzn-trace-id', $handler->getRecords()[0]['extra']);
     }
