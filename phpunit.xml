@@ -12,6 +12,7 @@
          convertWarningsToExceptions="true"
          processIsolation="false"
          defaultTestSuite="unit"
+         executionOrder="random"
          stopOnFailure="false"
          bootstrap="integrationTests/bootstrap.php">
   <coverage processUncoveredFiles="true">
