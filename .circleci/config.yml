@@ -117,6 +117,8 @@ jobs:
 
       - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose
 
+      - run: vendor/bin/doctrine orm:generate-proxies
+
       - run:
           name: Combined test to get joint coverage report
           command: XDEBUG_MODE=coverage  vendor/bin/phpunit --testsuite unit,integration --coverage-html=reports/combined-coverage --log-junit reports/combined-test.xml
