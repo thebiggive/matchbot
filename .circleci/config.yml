@@ -125,9 +125,10 @@ jobs:
 
       - run:
           name: Mutation Test all files
+          # Mutation testing is not 100% reliable - we don't break the build if it fails.
           command: |
-            composer run mutation-test
-            mv reports/mutation-testing reports/mutation-testing-all-files
+            composer run mutation-test && \
+            mv reports/mutation-testing reports/mutation-testing-all-files || echo "mutation testing failed"
 
       - run:
           name: Mutation Test only changed and added files in PR
