@@ -124,16 +124,16 @@ jobs:
           command: XDEBUG_MODE=coverage  vendor/bin/phpunit --testsuite unit,integration --coverage-html=reports/combined-coverage --log-junit reports/combined-test.xml
 
       - run:
-          name: Mutation Test only changed and added files in PR
-          command: |
-            vendor/bin/infection --test-framework-options="--testsuite=unit,integration" --git-diff-filter=AM --git-diff-base=develop || true # there may be no changed covered PHP files.
-            mv reports/mutation-testing reports/mutation-testing-changed-files || true # in which case the mv would also fail but we don't care.
-
-      - run:
           name: Mutation Test all files
           command: |
             composer run mutation-test
             mv reports/mutation-testing reports/mutation-testing-all-files
+
+      - run:
+          name: Mutation Test only changed and added files in PR
+          command: |
+            vendor/bin/infection --test-framework-options="--testsuite=unit,integration" --git-diff-filter=AM --git-diff-base=develop || true # there may be no changed covered PHP files.
+            mv reports/mutation-testing reports/mutation-testing-changed-files || true # in which case the mv would also fail but we don't care.
 
       - store_artifacts:
           path: reports
