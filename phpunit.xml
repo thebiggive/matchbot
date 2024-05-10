@@ -1,22 +1,19 @@
 <?xml version="1.0"?>
-<phpunit
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
-        backupGlobals="false"
-        backupStaticAttributes="false"
-        beStrictAboutTestsThatDoNotTestAnything="true"
-        beStrictAboutChangesToGlobalState="true"
-        beStrictAboutOutputDuringTests="true"
-        colors="true"
-        convertErrorsToExceptions="true"
-        convertNoticesToExceptions="true"
-        convertWarningsToExceptions="true"
-        processIsolation="false"
-        stopOnFailure="false"
-        bootstrap="tests/bootstrap.php"
-
->
-
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
+         backupGlobals="false"
+         backupStaticAttributes="false"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         beStrictAboutChangesToGlobalState="true"
+         beStrictAboutOutputDuringTests="true"
+         colors="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         processIsolation="false"
+         defaultTestSuite="unit"
+         stopOnFailure="false"
+         bootstrap="integrationTests/bootstrap.php">
   <coverage processUncoveredFiles="true">
     <include>
       <directory suffix=".php">./src</directory>
@@ -25,34 +22,36 @@
       <directory suffix=".php">./src/Migrations</directory>
     </exclude>
     <report>
-      <clover outputFile="reports/coverage.xml" />
-      <html outputDirectory="reports/unit-coverage"/>
+      <html outputDirectory="reports/coverage"/>
     </report>
   </coverage>
   <testsuites>
-    <testsuite name="Test Suite">
+    <testsuite name="integration">
+      <directory>./integrationTests/</directory>
+    </testsuite>
+    <testsuite name="unit">
       <directory>./tests/</directory>
     </testsuite>
   </testsuites>
   <php>
-    <env name="APP_ENV" value="test" force="true" />
+    <env name="APP_ENV" value="test" force="true"/>
     <env name="BASE_URI" value="https://unit-test-fake-subdomain.thebiggive.org.uk" force="true"/>
     <env name="ID_BASE_URI" value="https://unit-test-fake-id-sub.thebiggivetest.org.uk" force="true"/>
     <env name="JWT_DONATION_SECRET" value="unitTestJWTSecret" force="true"/>
     <env name="JWT_ID_SECRET" value="unitTestJWTSecret" force="true"/>
-    <env name="MAX_CREATES_PER_IP_PER_5M" value="1" force="true" />
-    <env name="MYSQL_HOST" value="dummy-mysql-hostname" force="true"/>
-    <env name="REDIS_HOST" value="dummy-redis-hostname" force="true"/>
-    <env name="SLACK_API_TOKEN" value="xoxb-**-test" />
-    <env name="STRIPE_API_VERSION" value="2022-08-01" />
+    <env name="MAX_CREATES_PER_IP_PER_5M" value="1" force="true"/>
+    <env name="SLACK_API_TOKEN" value="xoxb-**-test"/>
+    <env name="STRIPE_API_VERSION" value="2022-08-01"/>
     <env name="STRIPE_SECRET_KEY" value="sk_test_unitTestFakeKey" force="true"/>
     <env name="STRIPE_WEBHOOK_SIGNING_SECRET" value="whsec_test_unitTestFakeKey" force="true"/>
     <env name="STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET" value="whsec_test_unitTestFakeConnectKey" force="true"/>
-    <env name="VAT_PERCENTAGE_OLD" value="0" force="true" />
-    <env name="VAT_PERCENTAGE_NEW" value="2" force="true" />
+    <env name="VAT_PERCENTAGE_OLD" value="0" force="true"/>
+    <env name="REDIS_HOST" value="dummy-redis-hostname" force="false"/>
+
+    <env name="VAT_PERCENTAGE_NEW" value="2" force="true"/>
     <!-- Env vars default to VAT only applying in the future. Unit tests use DI config to
     override as appropriate for VAT-enabled tests. -->
-    <env name="VAT_LIVE_DATE" value="2100-01-01" force="true" />
+    <env name="VAT_LIVE_DATE" value="2100-01-01" force="true"/>
     <env name="WEBHOOK_DONATION_SECRET" value="unitTestCchSecret" force="true"/>
   </php>
 </phpunit>

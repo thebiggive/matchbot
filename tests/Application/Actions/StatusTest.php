@@ -50,6 +50,7 @@ class StatusTest extends TestCase
 
     public function testRedisErrorWithDummyHostname(): void
     {
+        putenv('REDIS_HOST=dummy');
         $app = $this->getAppInstance(true); // Use real Redis for this test
 
         $entityManager = $this->getConnectedMockEntityManager();

@@ -65,8 +65,12 @@ jobs:
 
       - run: vendor/bin/doctrine-migrations diff --allow-empty-diff # check that this works
 
+      - run:
+          name: Combined test to get joint coverage report
+          command: XDEBUG_MODE=coverage  vendor/bin/phpunit --testsuite unit,integration --coverage-html=reports/combined-coverage --log-junit reports/combined-test.xml
+
       - store_test_results:
-          path: reports/unit-test.xml
+          path: reports/combined-test.xml
 
       - store_artifacts:
           path: reports

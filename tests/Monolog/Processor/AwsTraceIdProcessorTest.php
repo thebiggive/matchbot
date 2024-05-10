@@ -51,14 +51,8 @@ class AwsTraceIdProcessorTest extends TestCase
         );
         $app->handle($request);
 
-        // This warning *already* happens in fully bootstrapped app unit tests, because there is no Redis cache
-        // for Doctrine. So we just inspect the handler's record for that log to check the `extra` param is set,
-        // rather than simulating a new log within the test.
-        $this->assertEquals(
-            'Doctrine falling back to array cache - Redis host dummy-redis-hostname',
-            $handler->getRecords()[0]['message'],
-        );
-        $this->assertEquals(300, $handler->getRecords()[0]['level']);
+        $app->getContainer()->get(LoggerInterface::class)->debug('hello');
+
         $this->assertEquals('amz-trace-id-123', $handler->getRecords()[0]['extra']['x-amzn-trace-id']);
     }
 
@@ -77,11 +71,8 @@ class AwsTraceIdProcessorTest extends TestCase
         $request = $this->createRequest('GET', '/ping');
         $app->handle($request);
 
-        $this->assertEquals(
-            'Doctrine falling back to array cache - Redis host dummy-redis-hostname',
-            $handler->getRecords()[0]['message'],
-        );
-        $this->assertEquals(300, $handler->getRecords()[0]['level']);
+        $app->getContainer()->get(LoggerInterface::class)->debug('hello');
+
         $this->assertArrayNotHasKey('x-amzn-trace-id', $handler->getRecords()[0]['extra']);
     }
 
