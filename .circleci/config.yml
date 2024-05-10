@@ -77,6 +77,10 @@ jobs:
 
       - run: composer run integration-test
 
+      - run:
+          name: Merge Test Coverage results
+          command: ./tools/phpcov merge --clover reports/coverage-merged.xml --html/reports/combined-coverage
+
       - run: vendor/bin/doctrine-migrations diff --allow-empty-diff # check that this works
 
       - store_test_results:
