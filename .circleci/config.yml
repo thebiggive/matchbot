@@ -66,15 +66,10 @@ jobs:
       - run: vendor/bin/doctrine-migrations diff --allow-empty-diff # check that this works
 
       - store_test_results:
-          path: reports
+          path: reports/unit-test.xml
 
       - store_artifacts:
           path: reports
-
-#      - codecov/upload:
-#          file: 'coverage.xml'
-#      - codecov/upload:
-#          file: 'coverage-integration.xml'
 
   mutation_coverage:
     resource_class: large
