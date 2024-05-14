@@ -271,8 +271,8 @@ class Create extends Action
                 $this->logger->log($level, $failureMessage);
 
                 if ($accountLacksCapabilities) {
-                    /** @var string $env */
                     $env = getenv('APP_ENV');
+                    \assert(is_string($env));
                     $failureMessageWithContext = sprintf(
                         '[%s] %s',
                         $env,
