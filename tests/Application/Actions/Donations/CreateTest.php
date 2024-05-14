@@ -8,6 +8,7 @@ use DI\Container;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
@@ -24,7 +25,9 @@ use Prophecy\Argument;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpUnauthorizedException;
+use Stripe\Exception\PermissionException;
 use Stripe\PaymentIntent;
+use Symfony\Component\Notifier\Message\ChatMessage;
 use UnexpectedValueException;
 
 class CreateTest extends TestCase
@@ -800,38 +803,6 @@ class CreateTest extends TestCase
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
-        $expectedPaymentIntentArgs = [
-            'amount' => 1311, // Pence including tip
-            'currency' => 'gbp',
-            'automatic_payment_methods' => [
-                'enabled' => true,
-                'allow_redirects' => 'never',
-            ],
-            'customer' => 'cus_aaaaaaaaaaaa11',
-            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
-            'metadata' => [
-                'campaignId' => '123CampaignId12345',
-                'campaignName' => '123CampaignName',
-                'charityId' => '567CharitySFID',
-                'charityName' => 'Create test charity',
-                'donationId' => '12345678-1234-1234-1234-1234567890ab',
-                'environment' => getenv('APP_ENV'),
-                'feeCoverAmount' => '0.00',
-                'matchedAmount' => '0.00',
-                'stripeFeeRechargeGross' => '0.43', // Includes Gift Aid processing fee
-                'stripeFeeRechargeNet' => '0.43',
-                'stripeFeeRechargeVat' => '0.00',
-                'tipAmount' => '1.11',
-            ],
-            'setup_future_usage' => 'on_session',
-            'statement_descriptor' => 'Big Give Create test c',
-            'application_fee_amount' => 154,
-            'on_behalf_of' => 'unitTest_stripeAccount_123',
-            'transfer_data' => [
-                'destination' => 'unitTest_stripeAccount_123',
-            ],
-        ];
-
         // Most properites we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
         $paymentIntentMockResult = new PaymentIntent([
@@ -844,7 +815,7 @@ class CreateTest extends TestCase
         ]);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
-        $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
+        $stripeProphecy->createPaymentIntent(static::somePaymentIntentArgs())
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
 
@@ -906,38 +877,6 @@ class CreateTest extends TestCase
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
-        $expectedPaymentIntentArgs = [
-            'amount' => 1311, // Pence including tip
-            'currency' => 'gbp',
-            'automatic_payment_methods' => [
-                'enabled' => true,
-                'allow_redirects' => 'never',
-            ],
-            'customer' => 'cus_aaaaaaaaaaaa11',
-            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
-            'metadata' => [
-                'campaignId' => '123CampaignId12345',
-                'campaignName' => '123CampaignName',
-                'charityId' => '567CharitySFID',
-                'charityName' => 'Create test charity',
-                'donationId' => '12345678-1234-1234-1234-1234567890ab',
-                'environment' => getenv('APP_ENV'),
-                'feeCoverAmount' => '0.00',
-                'matchedAmount' => '0.00',
-                'stripeFeeRechargeGross' => '0.43', // Includes Gift Aid processing fee
-                'stripeFeeRechargeNet' => '0.43',
-                'stripeFeeRechargeVat' => '0.00',
-                'tipAmount' => '1.11',
-            ],
-            'setup_future_usage' => 'on_session',
-            'statement_descriptor' => 'Big Give Create test c',
-            'application_fee_amount' => 154,
-            'on_behalf_of' => 'unitTest_stripeAccount_123',
-            'transfer_data' => [
-                'destination' => 'unitTest_stripeAccount_123',
-            ],
-        ];
-
         // Most properites we don't use omitted.
         // See https://stripe.com/docs/api/payment_intents/object
         $paymentIntentMockResult = new PaymentIntent([
@@ -950,7 +889,7 @@ class CreateTest extends TestCase
         ]);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
-        $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
+        $stripeProphecy->createPaymentIntent(static::somePaymentIntentArgs())
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
 
@@ -986,6 +925,66 @@ class CreateTest extends TestCase
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
         $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
+    }
+
+    public function testCharityLackingCapabilities(): void
+    {
+        $donation = $this->getTestDonation(true, false, true);
+
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->willReturn($donation);
+        $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
+
+        $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
+        $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
+
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+
+        $transfersOffError = new PermissionException(
+            'Your destination account needs to have at least one of the following capabilities ' .
+            'enabled: transfers, crypto_transfers, legacy_payments'
+        );
+
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->createPaymentIntent(static::somePaymentIntentArgs())
+            ->willThrow($transfersOffError)
+            ->shouldBeCalledOnce();
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+        $container->set(Stripe::class, $stripeProphecy->reveal());
+
+        $data = $this->encode($donation);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+
+        $chatterProphecy->send(
+            new ChatMessage(
+                '[test] Stripe Payment Intent create error on 12345678-1234-1234-1234-1234567890ab' .
+                ', unknown [Stripe\Exception\PermissionException]: ' .
+                'Your destination account needs to have at least one of the following capabilities enabled: ' .
+                'transfers, crypto_transfers, legacy_payments. Charity: ' .
+                'Create test charity [unitTest_stripeAccount_123].'
+            )
+        )
+            ->shouldBeCalledOnce();
+        $response = $app->handle($this->addDummyPersonAuth($request));
+
+        $payload = (string) $response->getBody();
+        $this->assertJson($payload);
+        $this->assertEquals(409, $response->getStatusCode());
+
+        $expectedPayload = new ActionPayload(409, ['error' => [
+            'type' => 'VERIFICATION_ERROR',
+            'description' => 'Could not make Stripe Payment Intent (B)',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $this->assertEquals($expectedSerialised, $payload);
     }
 
     private function encode(Donation $donation): string
@@ -1071,5 +1070,40 @@ class CreateTest extends TestCase
         $campaignFunding->setCurrencyCode('GBP');
 
         return $campaignFunding;
+    }
+
+    private static function somePaymentIntentArgs(): array
+    {
+        return [
+            'amount' => 1311, // Pence including tip
+            'currency' => 'gbp',
+            'automatic_payment_methods' => [
+                'enabled' => true,
+                'allow_redirects' => 'never',
+            ],
+            'customer' => 'cus_aaaaaaaaaaaa11',
+            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'metadata' => [
+                'campaignId' => '123CampaignId12345',
+                'campaignName' => '123CampaignName',
+                'charityId' => '567CharitySFID',
+                'charityName' => 'Create test charity',
+                'donationId' => '12345678-1234-1234-1234-1234567890ab',
+                'environment' => getenv('APP_ENV'),
+                'feeCoverAmount' => '0.00',
+                'matchedAmount' => '0.00',
+                'stripeFeeRechargeGross' => '0.43', // Includes Gift Aid processing fee
+                'stripeFeeRechargeNet' => '0.43',
+                'stripeFeeRechargeVat' => '0.00',
+                'tipAmount' => '1.11',
+            ],
+            'setup_future_usage' => 'on_session',
+            'statement_descriptor' => 'Big Give Create test c',
+            'application_fee_amount' => 154,
+            'on_behalf_of' => 'unitTest_stripeAccount_123',
+            'transfer_data' => [
+                'destination' => 'unitTest_stripeAccount_123',
+            ],
+        ];
     }
 }
