@@ -1,4 +1,6 @@
 coverage:
+  notify:
+    manual_trigger: true
   status:
     project:
       default:
