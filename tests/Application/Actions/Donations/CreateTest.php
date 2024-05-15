@@ -32,9 +32,43 @@ use UnexpectedValueException;
 
 class CreateTest extends TestCase
 {
+    private static array $somePaymentIntentArgs;
+
     public function setUp(): void
     {
         parent::setUp();
+
+        static::$somePaymentIntentArgs = [
+            'amount' => 1311, // Pence including tip
+            'currency' => 'gbp',
+            'automatic_payment_methods' => [
+                'enabled' => true,
+                'allow_redirects' => 'never',
+            ],
+            'customer' => 'cus_aaaaaaaaaaaa11',
+            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'metadata' => [
+                'campaignId' => '123CampaignId12345',
+                'campaignName' => '123CampaignName',
+                'charityId' => '567CharitySFID',
+                'charityName' => 'Create test charity',
+                'donationId' => '12345678-1234-1234-1234-1234567890ab',
+                'environment' => getenv('APP_ENV'),
+                'feeCoverAmount' => '0.00',
+                'matchedAmount' => '0.00',
+                'stripeFeeRechargeGross' => '0.43', // Includes Gift Aid processing fee
+                'stripeFeeRechargeNet' => '0.43',
+                'stripeFeeRechargeVat' => '0.00',
+                'tipAmount' => '1.11',
+            ],
+            'setup_future_usage' => 'on_session',
+            'statement_descriptor' => 'Big Give Create test c',
+            'application_fee_amount' => 154,
+            'on_behalf_of' => 'unitTest_stripeAccount_123',
+            'transfer_data' => [
+                'destination' => 'unitTest_stripeAccount_123',
+            ],
+        ];
 
         $app = $this->getAppInstance();
 
@@ -815,7 +849,7 @@ class CreateTest extends TestCase
         ]);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
-        $stripeProphecy->createPaymentIntent(static::somePaymentIntentArgs())
+        $stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
 
@@ -889,7 +923,7 @@ class CreateTest extends TestCase
         ]);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
-        $stripeProphecy->createPaymentIntent(static::somePaymentIntentArgs())
+        $stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
 
@@ -951,7 +985,7 @@ class CreateTest extends TestCase
         );
 
         $stripeProphecy = $this->prophesize(Stripe::class);
-        $stripeProphecy->createPaymentIntent(static::somePaymentIntentArgs())
+        $stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
             ->willThrow($transfersOffError)
             ->shouldBeCalledOnce();
 
@@ -1070,40 +1104,5 @@ class CreateTest extends TestCase
         $campaignFunding->setCurrencyCode('GBP');
 
         return $campaignFunding;
-    }
-
-    private static function somePaymentIntentArgs(): array
-    {
-        return [
-            'amount' => 1311, // Pence including tip
-            'currency' => 'gbp',
-            'automatic_payment_methods' => [
-                'enabled' => true,
-                'allow_redirects' => 'never',
-            ],
-            'customer' => 'cus_aaaaaaaaaaaa11',
-            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
-            'metadata' => [
-                'campaignId' => '123CampaignId12345',
-                'campaignName' => '123CampaignName',
-                'charityId' => '567CharitySFID',
-                'charityName' => 'Create test charity',
-                'donationId' => '12345678-1234-1234-1234-1234567890ab',
-                'environment' => getenv('APP_ENV'),
-                'feeCoverAmount' => '0.00',
-                'matchedAmount' => '0.00',
-                'stripeFeeRechargeGross' => '0.43', // Includes Gift Aid processing fee
-                'stripeFeeRechargeNet' => '0.43',
-                'stripeFeeRechargeVat' => '0.00',
-                'tipAmount' => '1.11',
-            ],
-            'setup_future_usage' => 'on_session',
-            'statement_descriptor' => 'Big Give Create test c',
-            'application_fee_amount' => 154,
-            'on_behalf_of' => 'unitTest_stripeAccount_123',
-            'transfer_data' => [
-                'destination' => 'unitTest_stripeAccount_123',
-            ],
-        ];
     }
 }
