@@ -20,10 +20,10 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
-use PHPUnit\Util\Test;
 use Prophecy\Argument;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
+use Slim\App;
 use Slim\Exception\HttpUnauthorizedException;
 use Stripe\Exception\PermissionException;
 use Stripe\PaymentIntent;
@@ -33,6 +33,11 @@ use UnexpectedValueException;
 class CreateTest extends TestCase
 {
     private static array $somePaymentIntentArgs;
+    /**
+     * @var PaymentIntent Mock result, most properites we don't use omitted.
+     * @link https://stripe.com/docs/api/payment_intents/object
+     */
+    private static PaymentIntent $somePaymentIntentResult;
 
     public function setUp(): void
     {
@@ -69,6 +74,15 @@ class CreateTest extends TestCase
                 'destination' => 'unitTest_stripeAccount_123',
             ],
         ];
+
+        static::$somePaymentIntentResult = new PaymentIntent([
+            'id' => 'pi_dummyIntent_id',
+            'object' => 'payment_intent',
+            'amount' => 1311,
+            'client_secret' => 'pi_dummySecret_123',
+            'confirmation_method' => 'automatic',
+            'currency' => 'gbp',
+        ]);
 
         $app = $this->getAppInstance();
 
@@ -272,15 +286,15 @@ class CreateTest extends TestCase
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
-        $app = $this->getAppInstance();
-        /** @var Container $container */
+        $app = $this->getAppWithCommonPersistenceDeps(
+            donationPersisted: true,
+            donationPushed: true,
+            donationMatched: true,
+            donation: $donationToReturn,
+            skipEmExpectations: true,
+        );
         $container = $app->getContainer();
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
-            ->willReturn($donationToReturn);
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
+        \assert($container instanceof Container);
 
         // Cloning & use of new objects is necessary here, so we don't set
         // the Stripe value on the copy of the object which is meant to be
@@ -296,9 +310,9 @@ class CreateTest extends TestCase
              */                fn (array $args) => $args[0]->setCharity($charityWhichNowHasStripeAccountID)
             );
 
+        // Need to override stock EM to get campaign repo behaviour
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
-        // These are called once after initial ID setup and once after Stripe fields added.
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
@@ -349,7 +363,6 @@ class CreateTest extends TestCase
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
 
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
@@ -399,20 +412,14 @@ class CreateTest extends TestCase
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal($fundingWithdrawalForMatch);
 
-        $app = $this->getAppInstance();
-        /** @var Container $container */
+        $app = $this->getAppWithCommonPersistenceDeps(
+            donationPersisted: true,
+            donationPushed: true,
+            donationMatched: true,
+            donation: $donationToReturn,
+        );
         $container = $app->getContainer();
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
-            ->willReturn($donationToReturn);
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
-
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        // These are called once after initial ID setup and once after Stripe fields added.
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
-        $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
+        \assert($container instanceof Container);
 
         $expectedPaymentIntentArgs = [
             'automatic_payment_methods' => [
@@ -445,24 +452,12 @@ class CreateTest extends TestCase
             'customer' => 'cus_aaaaaaaaaaaa11',
             'setup_future_usage' => 'on_session'
         ];
-        // Most properites we don't use omitted.
-        // See https://stripe.com/docs/api/payment_intents/object
-        $paymentIntentMockResult = new PaymentIntent([
-            'id' => 'pi_dummyIntent_id',
-            'object' => 'payment_intent',
-            'amount' => 1311,
-            'client_secret' => 'pi_dummySecret_123',
-            'confirmation_method' => 'automatic',
-            'currency' => 'gbp',
-        ]);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
-            ->willReturn($paymentIntentMockResult)
+            ->willReturn(self::$somePaymentIntentResult)
             ->shouldBeCalledOnce();
 
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encode($donation);
@@ -512,20 +507,14 @@ class CreateTest extends TestCase
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
-        $app = $this->getAppInstance();
-        /** @var Container $container */
+        $app = $this->getAppWithCommonPersistenceDeps(
+            donationPersisted: true,
+            donationPushed: true,
+            donationMatched: true,
+            donation: $donationToReturn,
+        );
         $container = $app->getContainer();
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
-            ->willReturn($donationToReturn);
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
-
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        // These are called once after initial ID setup and once after Stripe fields added.
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
-        $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
+        \assert($container instanceof Container);
 
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
@@ -558,24 +547,12 @@ class CreateTest extends TestCase
                 'destination' => 'unitTest_stripeAccount_123',
             ],
         ];
-        // Most properites we don't use omitted.
-        // See https://stripe.com/docs/api/payment_intents/object
-        $paymentIntentMockResult = new PaymentIntent([
-            'id' => 'pi_dummyIntent_id',
-            'object' => 'payment_intent',
-            'amount' => 1311,
-            'client_secret' => 'pi_dummySecret_123',
-            'confirmation_method' => 'automatic',
-            'currency' => 'gbp',
-        ]);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
-            ->willReturn($paymentIntentMockResult)
+            ->willReturn(self::$somePaymentIntentResult)
             ->shouldBeCalledOnce();
 
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
@@ -627,26 +604,19 @@ class CreateTest extends TestCase
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
-        $app = $this->getAppInstance();
-        /** @var Container $container */
+        $app = $this->getAppWithCommonPersistenceDeps(
+            donationPersisted: false,
+            donationPushed: false,
+            donationMatched: false,
+            donation: $donationToReturn,
+        );
         $container = $app->getContainer();
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
-            ->willReturn($donationToReturn);
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldNotBeCalled();
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
-
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
-        $entityManagerProphecy->flush()->shouldNotBeCalled();
+        \assert($container instanceof Container);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
 
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
@@ -665,26 +635,19 @@ class CreateTest extends TestCase
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
         $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
-        $app = $this->getAppInstance();
-        /** @var Container $container */
+        $app = $this->getAppWithCommonPersistenceDeps(
+            donationPersisted: false,
+            donationPushed: false,
+            donationMatched: false,
+            donation: $donationToReturn,
+        );
         $container = $app->getContainer();
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
-            ->willReturn($donationToReturn);
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldNotBeCalled();
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
-
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
-        $entityManagerProphecy->flush()->shouldNotBeCalled();
+        \assert($container instanceof Container);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
 
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
@@ -763,20 +726,10 @@ class CreateTest extends TestCase
                 'destination' => 'unitTest_stripeAccount_123',
             ],
         ];
-        // Most properites we don't use omitted.
-        // See https://stripe.com/docs/api/payment_intents/object
-        $paymentIntentMockResult = new PaymentIntent([
-            'id' => 'pi_dummyIntent_id',
-            'object' => 'payment_intent',
-            'amount' => 1311,
-            'client_secret' => 'pi_dummySecret_123',
-            'confirmation_method' => 'automatic',
-            'currency' => 'gbp',
-        ]);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
-            ->willReturn($paymentIntentMockResult)
+            ->willReturn(self::$somePaymentIntentResult)
             ->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -820,41 +773,20 @@ class CreateTest extends TestCase
     {
         $donation = $this->getTestDonation(true, false);
 
-        $app = $this->getAppInstance();
-        /** @var Container $container */
+        $app = $this->getAppWithCommonPersistenceDeps(
+            donationPersisted: true,
+            donationPushed: true,
+            donationMatched: false,
+            donation: $donation,
+        );
         $container = $app->getContainer();
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
-            ->willReturn($donation);
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
-
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-
-        // Persist + flush happens twice. See code by comment "Must persist
-        // before Stripe work to have ID available."
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
-        $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
-
-        // Most properites we don't use omitted.
-        // See https://stripe.com/docs/api/payment_intents/object
-        $paymentIntentMockResult = new PaymentIntent([
-            'id' => 'pi_dummyIntent_id',
-            'object' => 'payment_intent',
-            'amount' => 1311,
-            'client_secret' => 'pi_dummySecret_123',
-            'confirmation_method' => 'automatic',
-            'currency' => 'gbp',
-        ]);
+        \assert($container instanceof Container);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
-            ->willReturn($paymentIntentMockResult)
+            ->willReturn(self::$somePaymentIntentResult)
             ->shouldBeCalledOnce();
 
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encode($donation);
@@ -893,42 +825,20 @@ class CreateTest extends TestCase
     public function testSuccessWithMinimalData(): void
     {
         $donation = $this->getTestDonation(true, false, true);
-
-        $app = $this->getAppInstance();
-        /** @var Container $container */
+        $app = $this->getAppWithCommonPersistenceDeps(
+            donationPersisted: true,
+            donationPushed: true,
+            donationMatched: false,
+            donation: $donation,
+        );
         $container = $app->getContainer();
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
-            ->willReturn($donation);
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
-
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-
-        // Persist + flush happens twice. See code by comment "Must persist
-        // before Stripe work to have ID available."
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
-        $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
-
-        // Most properites we don't use omitted.
-        // See https://stripe.com/docs/api/payment_intents/object
-        $paymentIntentMockResult = new PaymentIntent([
-            'id' => 'pi_dummyIntent_id',
-            'object' => 'payment_intent',
-            'amount' => 1311,
-            'client_secret' => 'pi_dummySecret_123',
-            'confirmation_method' => 'automatic',
-            'currency' => 'gbp',
-        ]);
+        \assert($container instanceof Container);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
-            ->willReturn($paymentIntentMockResult)
+            ->willReturn(self::$somePaymentIntentResult)
             ->shouldBeCalledOnce();
 
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encode($donation);
@@ -963,39 +873,29 @@ class CreateTest extends TestCase
 
     public function testCharityLackingCapabilities(): void
     {
+        // arrange
         $donation = $this->getTestDonation(true, false, true);
-
-        $app = $this->getAppInstance();
-        /** @var Container $container */
+        $data = $this->encode($donation);
+        $app = $this->getAppWithCommonPersistenceDeps(
+            donationPersisted: true,
+            donationPushed: false,
+            donationMatched: false,
+            donation: $donation,
+        );
         $container = $app->getContainer();
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
-            ->willReturn($donation);
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
-
-        $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
-        $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
-
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        \assert($container instanceof Container);
 
         $transfersOffError = new PermissionException(
             'Your destination account needs to have at least one of the following capabilities ' .
             'enabled: transfers, crypto_transfers, legacy_payments'
         );
-
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
             ->willThrow($transfersOffError)
             ->shouldBeCalledOnce();
-
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = $this->encode($donation);
-        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
-
+        $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
         $chatterProphecy->send(
             new ChatMessage(
                 '[test] Stripe Payment Intent create error on 12345678-1234-1234-1234-1234567890ab' .
@@ -1006,8 +906,13 @@ class CreateTest extends TestCase
             )
         )
             ->shouldBeCalledOnce();
+        $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
+
+        // act
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
         $response = $app->handle($this->addDummyPersonAuth($request));
 
+        // assert
         $payload = (string) $response->getBody();
         $this->assertJson($payload);
         $this->assertEquals(409, $response->getStatusCode());
@@ -1019,6 +924,65 @@ class CreateTest extends TestCase
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
         $this->assertEquals($expectedSerialised, $payload);
+    }
+
+    /**
+     * Get app with standard EM & repo set. Callers in this class typically set a prophesised Stripe client
+     * on the container.
+     *
+     * @param bool $skipEmExpectations  Whether to bypass monitoring calls on the entity manager,
+     *                                  e.g. because the test will replace it with a more specific one.
+     */
+    private function getAppWithCommonPersistenceDeps(
+        bool $donationPersisted,
+        bool $donationPushed,
+        bool $donationMatched,
+        Donation $donation,
+        bool $skipEmExpectations = false,
+    ): App {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->willReturn($donation);
+
+        if ($donationPushed) {
+            $donationRepoProphecy->push($donation, true)->shouldBeCalledOnce();
+        } else {
+            $donationRepoProphecy->push($donation, true)->shouldNotBeCalled();
+        }
+
+        if ($donationMatched) {
+            $donationRepoProphecy->allocateMatchFunds($donation)->shouldBeCalledOnce();
+        } else {
+            $donationRepoProphecy->allocateMatchFunds($donation)->shouldNotBeCalled();
+        }
+
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+
+        if ($donationPersisted) {
+            if (!$skipEmExpectations) {
+                if ($donationPushed) {
+                    // Persist + flush happens twice. See code by comment "Must persist
+                    // before Stripe work to have ID available."
+                    $entityManagerProphecy->persistWithoutRetries($donation)->shouldBeCalledTimes(2);
+                    $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
+                } else {
+                    $entityManagerProphecy->persistWithoutRetries($donation)->shouldBeCalledOnce();
+                    $entityManagerProphecy->flush()->shouldBeCalledOnce();
+                }
+            }
+        } else {
+            $entityManagerProphecy->persistWithoutRetries($donation)->shouldNotBeCalled();
+            $entityManagerProphecy->flush()->shouldNotBeCalled();
+        }
+
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+
+        return $app;
     }
 
     private function encode(Donation $donation): string
