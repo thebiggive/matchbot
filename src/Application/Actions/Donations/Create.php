@@ -83,6 +83,7 @@ class Create extends Action
         // in `PersonManagementAuthMiddleware`. If the legacy route was used or if no such ID was in the
         // JWS, this is null.
         $customerId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PSP_ATTRIBUTE_NAME);
+        \assert(is_string($customerId) || is_null($customerId));
 
         $body = (string) $request->getBody();
 

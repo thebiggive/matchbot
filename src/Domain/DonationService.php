@@ -38,7 +38,13 @@ readonly class DonationService
     ) {
     }
 
-    public function createDonation(DonationCreate $donationData, mixed $customerId): Donation
+    /**
+      * Creates a new pending donation
+     *
+     * @param DonationCreate $donationData Details of the desired donation, as sent from the browser
+     * @param string|null $pspCustomerId The existing Stripe customer ID of the donor, if any
+     */
+    public function createDonation(DonationCreate $donationData, ?string $pspCustomerId): Donation
     {
         try {
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
@@ -61,10 +67,10 @@ readonly class DonationService
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
         }
 
-        if ($customerId !== $donation->getPspCustomerId()) {
+        if ($pspCustomerId !== $donation->getPspCustomerId()) {
             throw new \UnexpectedValueException(sprintf(
                 'Route customer ID %s did not match %s in donation body',
-                $customerId,
+                $pspCustomerId ?? 'null',
                 $donation->getPspCustomerId()
             ));
         }
@@ -159,8 +165,8 @@ readonly class DonationService
             // For now 'customer' may be omitted – and an automatic, guest customer used by Stripe –
             // depending on the frontend mode. If there *is* a customer, we want to be able to offer them
             // card reuse.
-            if ($customerId !== null) {
-                $createPayload['customer'] = $customerId;
+            if ($pspCustomerId !== null) {
+                $createPayload['customer'] = $pspCustomerId;
 
                 if ($donation->supportsSavingPaymentMethod()) {
                     $createPayload['setup_future_usage'] = 'on_session';
@@ -216,6 +222,7 @@ readonly class DonationService
                 'Donation Create persist after stripe work'
             );
         }
+
         return $donation;
     }
 
