@@ -87,7 +87,7 @@ class DonationServiceTest extends TestCase
             ));
 
         try {
-            $this->sut->createDonation($donationCreate, '', $customerId);
+            $this->sut->createDonation($donationCreate, $customerId);
             $this->fail('Expected exception: ' . CouldNotMakeStripePaymentIntent::class);
         } catch (CouldNotMakeStripePaymentIntent $e) {
             $this->assertTrue($e->accountLacksCapabilities);

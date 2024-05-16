@@ -115,7 +115,7 @@ class Create extends Action
         }
 
         try {
-            $donation = $this->donationService->createDonation($donationData, $body, $customerId);
+            $donation = $this->donationService->createDonation($donationData, $customerId);
         } catch (StripeAccountIdNotSetForAccount) {
             return $this->respond(
                 $response,

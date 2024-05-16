@@ -38,7 +38,7 @@ readonly class DonationService
     ) {
     }
 
-    public function createDonation(DonationCreate $donationData, string $body, mixed $customerId): Donation
+    public function createDonation(DonationCreate $donationData, mixed $customerId): Donation
     {
         try {
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
@@ -46,10 +46,7 @@ readonly class DonationService
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $e->getMessage());
 
-            throw new DonationCreateModelLoadFailure(
-                message: "Donation Create model load failure payload was: $body",
-                previous: $e
-            );
+            throw new DonationCreateModelLoadFailure(previous: $e);
         } catch (UniqueConstraintViolationException) {
             // If we get this, the most likely explanation is that another donation request
             // created the same campaign a very short time before this request tried to. We
