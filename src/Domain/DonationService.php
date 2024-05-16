@@ -11,6 +11,7 @@ use MatchBot\Client\Stripe;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
+use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
@@ -208,9 +209,11 @@ readonly class DonationService
                         $failureMessage,
                     );
                     $this->chatter->send(new ChatMessage($failureMessageWithContext));
+
+                    throw new CharityAccountLacksNeededCapaiblities();
                 }
 
-                throw new CouldNotMakeStripePaymentIntent($accountLacksCapabilities);
+                throw new CouldNotMakeStripePaymentIntent();
             }
 
             $donation->setTransactionId($intent->id);

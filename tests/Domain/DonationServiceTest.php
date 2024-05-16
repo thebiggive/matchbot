@@ -8,6 +8,7 @@ use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -91,11 +92,7 @@ class DonationServiceTest extends TestCase
                 'enabled: transfers, crypto_transfers, legacy_payments'
             ));
 
-        try {
-            $this->sut->createDonation($donationCreate, $customerId);
-            $this->fail('Expected exception: ' . CouldNotMakeStripePaymentIntent::class);
-        } catch (CouldNotMakeStripePaymentIntent $e) {
-            $this->assertTrue($e->accountLacksCapabilities);
-        }
+        $this->expectException(CharityAccountLacksNeededCapaiblities::class);
+        $this->sut->createDonation($donationCreate, $customerId);
     }
 }

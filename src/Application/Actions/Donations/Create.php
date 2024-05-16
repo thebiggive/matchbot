@@ -14,6 +14,7 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
+use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
@@ -108,15 +109,28 @@ class Create extends Action
                 null,
                 true, // Reduce to info log as some instances expected on campaign close
             );
-        } catch (CouldNotMakeStripePaymentIntent $e) {
+        } catch (CharityAccountLacksNeededCapaiblities) {
             return $this->respond(
                 $response,
                 new ActionPayload(
                 // HTTP 409 Conflict can cover when requests conflicts w/ server configuration.
-                    $e->accountLacksCapabilities ? 409 : 500,
+                    409,
                     null,
                     new ActionError(
-                        $e->accountLacksCapabilities ? ActionError::VERIFICATION_ERROR : ActionError::SERVER_ERROR,
+                        ActionError::VERIFICATION_ERROR,
+                        'Could not make Stripe Payment Intent (B)'
+                    ),
+                ),
+            );
+        } catch (CouldNotMakeStripePaymentIntent) {
+            return $this->respond(
+                $response,
+                new ActionPayload(
+                // HTTP 409 Conflict can cover when requests conflicts w/ server configuration.
+                    500,
+                    null,
+                    new ActionError(
+                        ActionError::SERVER_ERROR,
                         'Could not make Stripe Payment Intent (B)'
                     ),
                 ),

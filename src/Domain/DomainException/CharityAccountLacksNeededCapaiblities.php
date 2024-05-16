@@ -4,6 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain\DomainException;
 
-class CouldNotMakeStripePaymentIntent extends DomainException
+class CharityAccountLacksNeededCapaiblities extends DomainException
 {
 }
