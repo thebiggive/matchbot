@@ -20,6 +20,7 @@ use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Notifier\Chatter;
+use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
 readonly class DonationService
@@ -33,7 +34,7 @@ readonly class DonationService
         private RetrySafeEntityManager $entityManager,
         private Stripe $stripe,
         private MatchingAdapter $matchingAdapter,
-        private StripeChatterInterface|Chatter $chatter,
+        private StripeChatterInterface|ChatterInterface $chatter,
         private ClockInterface $clock,
     ) {
     }

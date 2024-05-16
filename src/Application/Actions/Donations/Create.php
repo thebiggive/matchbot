@@ -36,40 +36,15 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class Create extends Action
 {
-    private DonationService $donationService;
 
     public function __construct(
         private DonationRepository $donationRepository,
-        CampaignRepository $campaignRepository,
-        RetrySafeEntityManager $entityManager,
+        private DonationService $donationService,
         private SerializerInterface $serializer,
-        Stripe $stripe,
-        Adapter $matchingAdapter,
-        ClockInterface $clock,
-        ContainerInterface $container,
         LoggerInterface $logger,
     ) {
-        /**
-         * @var ChatterInterface $chatter
-         * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
-         * is final and does not implement our custom interface.
-         */
-        $chatter = $container->get(StripeChatterInterface::class);
-
         parent::__construct($logger);
-
-        $this->donationService = new DonationService(
-            $donationRepository,
-            $campaignRepository,
-            $logger,
-            $entityManager,
-            $stripe,
-            $matchingAdapter,
-            $chatter,
-            $clock
-        );
     }
-
 
     /**
      * @return Response

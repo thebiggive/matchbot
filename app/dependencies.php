@@ -41,6 +41,7 @@ use Stripe\StripeClient;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Psr16Cache;
+use Symfony\Component\Clock\ClockInterface as ClockInterfaceAlias;
 use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\DoctrineDbalStore;
@@ -394,6 +395,26 @@ return function (ContainerBuilder $containerBuilder) {
             return $c->get(EntityManagerInterface::class)->getConnection();
         },
 
-        \Symfony\Component\Clock\ClockInterface::class => fn() => new NativeClock(),
+        ClockInterfaceAlias::class => fn() => new NativeClock(),
+
+        DonationService::class => static function (ContainerInterface $c): DonationService {
+            /**
+             * @var ChatterInterface $chatter
+             * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
+             * is final and does not implement our custom interface.
+             */
+            $chatter = $c->get(StripeChatterInterface::class);
+
+            return new DonationService(
+                $c->get(DonationRepository::class),
+                $c->get(CampaignRepository::class),
+                $c->get(LoggerInterface::class),
+                $c->get(RetrySafeEntityManager::class),
+                $c->get(\MatchBot\Client\Stripe::class),
+                $c->get(Matching\Adapter::class),
+                $chatter,
+                $c->get(ClockInterfaceAlias::class),
+            );
+        }
     ]);
 };
