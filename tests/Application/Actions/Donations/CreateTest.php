@@ -882,18 +882,13 @@ class CreateTest extends TestCase
             donationMatched: false,
             donation: $donation,
         );
-        $container = $app->getContainer();
-        \assert($container instanceof Container);
-
-        $transfersOffError = new PermissionException(
-            'Your destination account needs to have at least one of the following capabilities ' .
-            'enabled: transfers, crypto_transfers, legacy_payments'
-        );
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
-            ->willThrow($transfersOffError)
-            ->shouldBeCalledOnce();
-        $container->set(Stripe::class, $stripeProphecy->reveal());
+            ->willThrow(new PermissionException(
+                'Your destination account needs to have at least one of the following capabilities ' .
+                'enabled: transfers, crypto_transfers, legacy_payments'
+            ));
+
 
         $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
         $chatterProphecy->send(
@@ -906,6 +901,10 @@ class CreateTest extends TestCase
             )
         )
             ->shouldBeCalledOnce();
+
+        $container = $app->getContainer();
+        \assert($container instanceof Container);
+        $container->set(Stripe::class, $stripeProphecy->reveal());
         $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
 
         // act
@@ -913,17 +912,16 @@ class CreateTest extends TestCase
         $response = $app->handle($this->addDummyPersonAuth($request));
 
         // assert
-        $payload = (string) $response->getBody();
-        $this->assertJson($payload);
         $this->assertEquals(409, $response->getStatusCode());
 
-        $expectedPayload = new ActionPayload(409, ['error' => [
-            'type' => 'VERIFICATION_ERROR',
-            'description' => 'Could not make Stripe Payment Intent (B)',
-        ]]);
-        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
-
-        $this->assertEquals($expectedSerialised, $payload);
+        $this->assertJsonStringEqualsJsonString(
+            json_encode([
+                'error' => [
+                    'type' => 'VERIFICATION_ERROR',
+                    'description' => 'Could not make Stripe Payment Intent (B)']
+                ]),
+            (string) $response->getBody()
+        );
     }
 
     /**
