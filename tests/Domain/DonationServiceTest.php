@@ -66,7 +66,12 @@ class DonationServiceTest extends TestCase
             psp: 'stripe',
             pspCustomerId: $customerId
         );
-        $donation = Donation::fromApiModel($donationCreate, TestCase::someCampaign(stripeAccountId: 'STRIPE-ACCOUNT-ID'));
+
+        $donation = Donation::fromApiModel(
+            $donationCreate,
+            TestCase::someCampaign(stripeAccountId: 'STRIPE-ACCOUNT-ID')
+        );
+
         $this->donationRepoProphecy->buildFromApiRequest(Argument::any())->willReturn($donation);
 
         $this->chatterProphecy->send(
