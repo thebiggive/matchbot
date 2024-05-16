@@ -94,7 +94,7 @@ class Confirm extends Action
 
         if (trim($paymentMethodId) === '') {
             $donationUUID = $donation->getId();
-            $this->logger->error(
+            $this->logger->warning(
                 <<<EOF
 Donation Confirmation attempted with blank payment method id "$paymentMethodId" for Donation $donationUUID 
 EOF

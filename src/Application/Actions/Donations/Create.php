@@ -18,27 +18,30 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
-use Monolog\Logger;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\Notifier\Message\ChatMessage;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class Create extends Action
 {
     private const MAX_RETRY_COUNT = 4;
+    private ChatterInterface $chatter;
 
-    #[Pure]
     public function __construct(
         private DonationRepository $donationRepository,
         private CampaignRepository $campaignRepository,
@@ -47,8 +50,17 @@ class Create extends Action
         private Stripe $stripe,
         private Adapter $matchingAdapter,
         private ClockInterface $clock,
+        ContainerInterface $container,
         LoggerInterface $logger,
     ) {
+        /**
+         * @var ChatterInterface $chatter
+         * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
+         * is final and does not implement our custom interface.
+         */
+        $chatter = $container->get(StripeChatterInterface::class);
+        $this->chatter = $chatter;
+
         parent::__construct($logger);
     }
 
@@ -238,14 +250,14 @@ class Create extends Action
             } catch (ApiErrorException $exception) {
                 $message = $exception->getMessage();
 
-                $level = str_contains(
+                $accountLacksCapabilities = str_contains(
                     $message,
                     // this message is an issue the charity needs to fix, we can't fix it for them.
+                    // We likely want to let the team know to hide the campaign from prominents views though.
                     'Your destination account needs to have at least one of the following capabilities enabled'
-                ) ?
-                    Logger::WARNING : Logger::ERROR;
+                );
 
-                $this->logger->log($level, sprintf(
+                $failureMessage = sprintf(
                     'Stripe Payment Intent create error on %s, %s [%s]: %s. Charity: %s [%s].',
                     $donation->getUuid(),
                     $exception->getStripeCode() ?? 'unknown',
@@ -253,9 +265,36 @@ class Create extends Action
                     $message,
                     $donation->getCampaign()->getCharity()->getName(),
                     $donation->getCampaign()->getCharity()->getStripeAccountId() ?? 'unknown',
-                ));
-                $error = new ActionError(ActionError::SERVER_ERROR, 'Could not make Stripe Payment Intent (B)');
-                return $this->respond($response, new ActionPayload(500, null, $error));
+                );
+
+                $level = $accountLacksCapabilities ? LogLevel::WARNING : LogLevel::ERROR;
+                $this->logger->log($level, $failureMessage);
+
+                if ($accountLacksCapabilities) {
+                    $env = getenv('APP_ENV');
+                    \assert(is_string($env));
+                    $failureMessageWithContext = sprintf(
+                        '[%s] %s',
+                        $env,
+                        $failureMessage,
+                    );
+                    $this->chatter->send(new ChatMessage($failureMessageWithContext));
+                }
+
+                $error = new ActionError(
+                    $accountLacksCapabilities ? ActionError::VERIFICATION_ERROR : ActionError::SERVER_ERROR,
+                    'Could not make Stripe Payment Intent (B)'
+                );
+
+                return $this->respond(
+                    $response,
+                    new ActionPayload(
+                        // HTTP 409 Conflict can cover when requests conflicts w/ server configuration.
+                        $accountLacksCapabilities ? 409 : 500,
+                        null,
+                        $error,
+                    ),
+                );
             }
 
             $donation->setTransactionId($intent->id);
