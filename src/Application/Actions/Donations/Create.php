@@ -13,32 +13,20 @@ use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
-use MatchBot\Application\Matching\Adapter;
-use MatchBot\Application\Notifier\StripeChatterInterface;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
-use MatchBot\Client\Stripe;
-use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
-use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
-use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Clock\ClockInterface;
-use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class Create extends Action
 {
-
     public function __construct(
-        private DonationRepository $donationRepository,
         private DonationService $donationService,
         private SerializerInterface $serializer,
         LoggerInterface $logger,
@@ -138,9 +126,6 @@ class Create extends Action
         $data = new DonationCreatedResponse();
         $data->donation = $donation->toApiModel();
         $data->jwt = DonationToken::create($donation->getUuid());
-
-        // Attempt immediate sync. Buffered for a future batch sync if the SF call fails.
-        $this->donationRepository->push($donation, true);
 
         return $this->respondWithData($response, $data, 201);
     }
