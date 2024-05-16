@@ -39,14 +39,12 @@ class DonationServiceTest extends TestCase
     public function setUp(): void
     {
         $this->donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $campaignRepository = $this->prophesize(CampaignRepository::class)->reveal();
-
         $this->stripeProphecy = $this->prophesize(Stripe::class);
-
         $this->chatterProphecy = $this->prophesize(StripeChatterInterface::class);
+
         $this->sut = new DonationService(
             $this->donationRepoProphecy->reveal(),
-            $campaignRepository,
+            $this->prophesize(CampaignRepository::class)->reveal(),
             new NullLogger(),
             $this->prophesize(RetrySafeEntityManager::class)->reveal(),
             $this->stripeProphecy->reveal(),
@@ -58,7 +56,7 @@ class DonationServiceTest extends TestCase
 
     public function testIdentifiesCharityLackingCapabilities(): void
     {
-        $customerId = 'xdw3453';
+        $customerId = 'CUSTOMER_ID';
 
         $donationCreate = new DonationCreate(
             currencyCode: 'GBP',
@@ -73,7 +71,7 @@ class DonationServiceTest extends TestCase
             TestCase::someCampaign(stripeAccountId: 'STRIPE-ACCOUNT-ID')
         );
 
-        $this->donationRepoProphecy->buildFromApiRequest(Argument::any())->willReturn($donation);
+        $this->donationRepoProphecy->buildFromApiRequest($donationCreate)->willReturn($donation);
 
         $this->chatterProphecy->send(
             new ChatMessage(
@@ -83,8 +81,7 @@ class DonationServiceTest extends TestCase
                 'transfers, crypto_transfers, legacy_payments. Charity: ' .
                 'Charity Name [STRIPE-ACCOUNT-ID].'
             )
-        )
-            ->shouldBeCalledOnce();
+        )->shouldBeCalledOnce();
 
         $this->stripeProphecy->createPaymentIntent(Argument::any())
             ->willThrow(new PermissionException(
@@ -93,6 +90,7 @@ class DonationServiceTest extends TestCase
             ));
 
         $this->expectException(CharityAccountLacksNeededCapaiblities::class);
+
         $this->sut->createDonation($donationCreate, $customerId);
     }
 }
