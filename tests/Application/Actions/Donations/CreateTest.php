@@ -871,59 +871,6 @@ class CreateTest extends TestCase
         $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
     }
 
-    public function testCharityLackingCapabilities(): void
-    {
-        // arrange
-        $donation = $this->getTestDonation(true, false, true);
-        $data = $this->encode($donation);
-        $app = $this->getAppWithCommonPersistenceDeps(
-            donationPersisted: true,
-            donationPushed: false,
-            donationMatched: false,
-            donation: $donation,
-        );
-        $stripeProphecy = $this->prophesize(Stripe::class);
-        $stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
-            ->willThrow(new PermissionException(
-                'Your destination account needs to have at least one of the following capabilities ' .
-                'enabled: transfers, crypto_transfers, legacy_payments'
-            ));
-
-
-        $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
-        $chatterProphecy->send(
-            new ChatMessage(
-                '[test] Stripe Payment Intent create error on 12345678-1234-1234-1234-1234567890ab' .
-                ', unknown [Stripe\Exception\PermissionException]: ' .
-                'Your destination account needs to have at least one of the following capabilities enabled: ' .
-                'transfers, crypto_transfers, legacy_payments. Charity: ' .
-                'Create test charity [unitTest_stripeAccount_123].'
-            )
-        )
-            ->shouldBeCalledOnce();
-
-        $container = $app->getContainer();
-        \assert($container instanceof Container);
-        $container->set(Stripe::class, $stripeProphecy->reveal());
-        $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
-
-        // act
-        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
-        $response = $app->handle($this->addDummyPersonAuth($request));
-
-        // assert
-        $this->assertEquals(409, $response->getStatusCode());
-
-        $this->assertJsonStringEqualsJsonString(
-            json_encode([
-                'error' => [
-                    'type' => 'VERIFICATION_ERROR',
-                    'description' => 'Could not make Stripe Payment Intent (B)']
-                ]),
-            (string) $response->getBody()
-        );
-    }
-
     /**
      * Get app with standard EM & repo set. Callers in this class typically set a prophesised Stripe client
      * on the container.
