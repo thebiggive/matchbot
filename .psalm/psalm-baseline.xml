@@ -114,14 +114,6 @@
       <code><![CDATA[get]]></code>
     </PossiblyNullReference>
   </file>
-  <file src="src/Application/Actions/Donations/Create.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$chatter]]></code>
-    </ArgumentTypeCoercion>
-    <MixedAssignment>
-      <code><![CDATA[$customerId]]></code>
-    </MixedAssignment>
-  </file>
   <file src="src/Application/Actions/Donations/Get.php">
     <DocblockTypeContradiction>
       <code><![CDATA[!$donation]]></code>
@@ -736,12 +728,6 @@
     </UndefinedMethod>
   </file>
   <file src="src/Domain/DonationService.php">
-    <MixedArgument>
-      <code><![CDATA[$customerId]]></code>
-    </MixedArgument>
-    <MixedAssignment>
-      <code><![CDATA[$createPayload['customer']]]></code>
-    </MixedAssignment>
     <PossiblyNullArgument>
       <code><![CDATA[$donation->getCampaign()->getCharity()->getSalesforceId()]]></code>
       <code><![CDATA[$donation->getPspCustomerId()]]></code>
