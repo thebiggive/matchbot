@@ -20,7 +20,6 @@ use Psr\Log\LogLevel;
 use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Symfony\Component\Clock\ClockInterface;
-use Symfony\Component\Notifier\Chatter;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
