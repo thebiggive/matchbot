@@ -118,7 +118,7 @@ class Create extends Action
                     null,
                     new ActionError(
                         ActionError::VERIFICATION_ERROR,
-                        'Could not make Stripe Payment Intent (B)'
+                        'Could not make Stripe Payment Intent (C)'
                     ),
                 ),
             );
@@ -126,7 +126,6 @@ class Create extends Action
             return $this->respond(
                 $response,
                 new ActionPayload(
-                // HTTP 409 Conflict can cover when requests conflicts w/ server configuration.
                     500,
                     null,
                     new ActionError(
