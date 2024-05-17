@@ -1,6 +1,6 @@
 <?php
 
-namespace Domain;
+namespace MatchBot\Tests\Domain;
 
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
@@ -9,18 +9,15 @@ use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
-use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
-use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 use Stripe\Exception\PermissionException;
 use Symfony\Component\Clock\ClockInterface;
-use Symfony\Component\Notifier\Chatter;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
 class DonationServiceTest extends TestCase
