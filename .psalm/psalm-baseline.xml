@@ -114,23 +114,6 @@
       <code><![CDATA[get]]></code>
     </PossiblyNullReference>
   </file>
-  <file src="src/Application/Actions/Donations/Create.php">
-    <MixedArgument>
-      <code><![CDATA[$customerId]]></code>
-    </MixedArgument>
-    <MixedAssignment>
-      <code><![CDATA[$createPayload['customer']]]></code>
-      <code><![CDATA[$customerId]]></code>
-    </MixedAssignment>
-    <PossiblyNullArgument>
-      <code><![CDATA[$donation->getCampaign()->getCharity()->getSalesforceId()]]></code>
-      <code><![CDATA[$donation->getPspCustomerId()]]></code>
-    </PossiblyNullArgument>
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[empty($campaign->getCharity()->getStripeAccountId())]]></code>
-      <code><![CDATA[empty($donation->getCampaign()->getCharity()->getStripeAccountId())]]></code>
-    </RiskyTruthyFalsyComparison>
-  </file>
   <file src="src/Application/Actions/Donations/Get.php">
     <DocblockTypeContradiction>
       <code><![CDATA[!$donation]]></code>
@@ -744,10 +727,18 @@
       <code><![CDATA[put]]></code>
     </UndefinedMethod>
   </file>
+  <file src="src/Domain/DonationService.php">
+    <PossiblyNullArgument>
+      <code><![CDATA[$donation->getCampaign()->getCharity()->getSalesforceId()]]></code>
+      <code><![CDATA[$donation->getPspCustomerId()]]></code>
+    </PossiblyNullArgument>
+    <RiskyTruthyFalsyComparison>
+      <code><![CDATA[empty($campaign->getCharity()->getStripeAccountId())]]></code>
+      <code><![CDATA[empty($donation->getCampaign()->getCharity()->getStripeAccountId())]]></code>
+    </RiskyTruthyFalsyComparison>
+  </file>
   <file src="src/Domain/Fund.php">
     <MissingConstructor>
-      <code><![CDATA[$amount]]></code>
-      <code><![CDATA[$amount]]></code>
       <code><![CDATA[$currencyCode]]></code>
       <code><![CDATA[$currencyCode]]></code>
       <code><![CDATA[$name]]></code>
@@ -776,12 +767,10 @@
       <code><![CDATA[$fundData['id']]]></code>
       <code><![CDATA[$fundData['name'] ?? '']]></code>
       <code><![CDATA[$fundData['name'] ?? '']]></code>
-      <code><![CDATA[$fundData['totalAmount']]]></code>
     </MixedArgument>
     <MixedArrayAccess>
       <code><![CDATA[$fundData['id']]]></code>
       <code><![CDATA[$fundData['name']]]></code>
-      <code><![CDATA[$fundData['totalAmount']]]></code>
     </MixedArrayAccess>
     <MixedAssignment>
       <code><![CDATA[$fundData]]></code>
@@ -1135,8 +1124,6 @@
     <MixedArrayAccess>
       <code><![CDATA[$payloadArray['billingPostalAddress']]]></code>
       <code><![CDATA[$payloadArray['billingPostalAddress']]]></code>
-      <code><![CDATA[$payloadArray['billingPostalAddress']]]></code>
-      <code><![CDATA[$payloadArray['charityFee']]]></code>
       <code><![CDATA[$payloadArray['charityFee']]]></code>
       <code><![CDATA[$payloadArray['charityFee']]]></code>
       <code><![CDATA[$payloadArray['charityFee']]]></code>
@@ -1146,13 +1133,10 @@
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
-      <code><![CDATA[$payloadArray['charityFeeVat']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
       <code><![CDATA[$payloadArray['donationAmount']]]></code>
-      <code><![CDATA[$payloadArray['donationAmount']]]></code>
-      <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
       <code><![CDATA[$payloadArray['giftAid']]]></code>
@@ -1161,23 +1145,18 @@
       <code><![CDATA[$payloadArray['matchedAmount']]]></code>
       <code><![CDATA[$payloadArray['optInCharityEmail']]]></code>
       <code><![CDATA[$payloadArray['optInCharityEmail']]]></code>
-      <code><![CDATA[$payloadArray['optInCharityEmail']]]></code>
       <code><![CDATA[$payloadArray['optInTbgEmail']]]></code>
       <code><![CDATA[$payloadArray['optInTbgEmail']]]></code>
-      <code><![CDATA[$payloadArray['optInTbgEmail']]]></code>
       <code><![CDATA[$payloadArray['status']]]></code>
       <code><![CDATA[$payloadArray['status']]]></code>
       <code><![CDATA[$payloadArray['status']]]></code>
       <code><![CDATA[$payloadArray['status']]]></code>
       <code><![CDATA[$payloadArray['status']]]></code>
-      <code><![CDATA[$payloadArray['status']]]></code>
-      <code><![CDATA[$payloadArray['tipAmount']]]></code>
       <code><![CDATA[$payloadArray['tipAmount']]]></code>
       <code><![CDATA[$payloadArray['tipAmount']]]></code>
       <code><![CDATA[$payloadArray['tipAmount']]]></code>
     </MixedArrayAccess>
     <MixedAssignment>
-      <code><![CDATA[$payloadArray]]></code>
       <code><![CDATA[$payloadArray]]></code>
       <code><![CDATA[$payloadArray]]></code>
       <code><![CDATA[$payloadArray]]></code>
