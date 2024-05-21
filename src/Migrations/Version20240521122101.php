@@ -18,7 +18,7 @@ final class Version20240521122101 extends AbstractMigration
     {
         $this->addSql(<<<SQL
             UPDATE Donation set giftAid = 0, tipGiftAid = 0, salesforcePushStatus = 'pending-update'
-            WHERE Donation.salesforcePushStatus IN ('a0669000020MEiaAAG', 'a0669000020M9saAAC', 'a0669000020LtFrAAK')
+            WHERE Donation.salesforceId IN ('a0669000020MEiaAAG', 'a0669000020M9saAAC', 'a0669000020LtFrAAK')
             LIMIT 3;
             SQL
         );
