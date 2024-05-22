@@ -163,12 +163,12 @@ class TestCase extends PHPUnitTestCase
      * Returns some random charity - use if you don't care about the details or will replace them with setters later.
      * Introduced to replace many old calls to instantiate Charity with zero arguments.
      */
-    public static function someCharity(): Charity
+    public static function someCharity(?string $stripeAccountId = null): Charity
     {
         return new Charity(
             salesforceId: '12CharityId_' .  self::randomHex(3),
             charityName: "Charity Name",
-            stripeAccountId: "stripe-account-id-" . self::randomHex(),
+            stripeAccountId: $stripeAccountId ?? "stripe-account-id-" . self::randomHex(),
             hmrcReferenceNumber: 'H' . self::randomHex(3),
             giftAidOnboardingStatus: 'Onboarded',
             regulator: 'CCEW',
@@ -177,9 +177,16 @@ class TestCase extends PHPUnitTestCase
         );
     }
 
-    public static function someCampaign(): Campaign
+    public static function someCampaign(?string $stripeAccountId = null): Campaign
     {
-        return new Campaign(self::someCharity());
+        $campaign = new Campaign(self::someCharity(stripeAccountId: $stripeAccountId));
+
+        $campaign->setIsMatched(false);
+        $campaign->setName('someCampaign');
+        $campaign->setStartDate(new \DateTimeImmutable('2020-01-01'));
+        $campaign->setEndDate(new \DateTimeImmutable('3000-01-01'));
+
+        return $campaign;
     }
 
     /**
