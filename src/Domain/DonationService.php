@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\Exception\ORMException;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
@@ -47,184 +48,35 @@ readonly class DonationService
      */
     public function createDonation(DonationCreate $donationData, ?string $pspCustomerId): Donation
     {
-        try {
-            $donation = $this->donationRepository->buildFromApiRequest($donationData);
-        } catch (\UnexpectedValueException $e) {
-            $message = 'Donation Create data initial model load';
-            $this->logger->warning($message . ': ' . $e->getMessage());
+        $donation = $this->buildDonation($donationData);
 
-            throw new DonationCreateModelLoadFailure(previous: $e);
-        } catch (UniqueConstraintViolationException) {
-            // If we get this, the most likely explanation is that another donation request
-            // created the same campaign a very short time before this request tried to. We
-            // saw this 3 times in the opening minutes of CC20 on 1 Dec 2020.
-            // If this happens, the latest campaign data should already have been pulled and
-            // persisted in the last second. So give the same call one more try, as
-            // buildFromApiRequest() should perform a fresh call to `CampaignRepository::findOneBy()`.
-            $this->logger->info(sprintf(
-                'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
-                $donationData->projectId->value,
-            ));
-            $donation = $this->donationRepository->buildFromApiRequest($donationData);
-        }
-
-        if ($pspCustomerId !== $donation->getPspCustomerId()) {
-            throw new \UnexpectedValueException(sprintf(
-                'Route customer ID %s did not match %s in donation body',
-                $pspCustomerId ?? 'null',
-                $donation->getPspCustomerId()
-            ));
-        }
-
-        if (!$donation->getCampaign()->isOpen()) {
-            throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
-        }
+        $this->checkCustomerIdMatches($donation, $pspCustomerId);
+        $this->checkCampaignIsOpen($donation);
+        Assertion::eq('stripe', $donation->getPsp());
 
         // Must persist before Stripe work to have ID available.
-        $this->runWithPossibleRetry(function () use ($donation) {
-            $this->entityManager->persistWithoutRetries($donation);
-            $this->entityManager->flush();
-        }, 'Donation Create persist before stripe work');
+        $this->persistDonation($donation, 'Donation Create persist before stripe work');
 
         if ($donation->getCampaign()->isMatched()) {
-            $this->runWithPossibleRetry(
-                function () use ($donation) {
-                    try {
-                        $this->donationRepository->allocateMatchFunds($donation);
-                    } catch (\Throwable $t) {
-                        // warning indicates that we *may* retry, as it depends on whether this is in the last retry or
-                        // not.
-                        $this->logger->warning(sprintf('Allocation got error, may retry: %s', $t->getMessage()));
-
-                        $this->matchingAdapter->releaseNewlyAllocatedFunds();
-
-                        // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
-                        // would be reduced again when the donation expires.
-                        $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
-
-                        throw $t;
-                    }
-                },
-                'allocate match funds'
-            );
+            $this->allocateMatchFunds($donation);
         }
 
-        if ($donation->getPsp() === 'stripe') {
-            if (empty($donation->getCampaign()->getCharity()->getStripeAccountId())) {
-                // Try re-pulling in case charity has very recently onboarded with for Stripe.
-                $campaign = $donation->getCampaign();
-                $this->campaignRepository->updateFromSf($campaign);
-
-                // If still empty, error out
-                if (empty($campaign->getCharity()->getStripeAccountId())) {
-                    $this->logger->error(sprintf(
-                        'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
-                        $donation->getCampaign()->getCharity()->getSalesforceId(),
-                    ));
-                    throw new StripeAccountIdNotSetForAccount(
-                    );
-                }
-
-                // Else we found new Stripe info and can proceed
-                $donation->setCampaign($campaign);
-            }
-
-            $createPayload = [
-                ...$donation->getStripeMethodProperties(),
-                ...$donation->getStripeOnBehalfOfProperties(),
-                // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
-                // See https://stripe.com/docs/api/payment_intents/object
-                'amount' => $donation->getAmountFractionalIncTip(),
-                'currency' => strtolower($donation->getCurrencyCode()),
-                'description' => $donation->getDescription(),
-                'metadata' => [
-                    /**
-                     * Keys like comms opt ins are set only later. See the counterpart
-                     * in {@see Update::addData()} too.
-                     */
-                    'campaignId' => $donation->getCampaign()->getSalesforceId(),
-                    'campaignName' => $donation->getCampaign()->getCampaignName(),
-                    'charityId' => $donation->getCampaign()->getCharity()->getSalesforceId(),
-                    'charityName' => $donation->getCampaign()->getCharity()->getName(),
-                    'donationId' => $donation->getUuid(),
-                    'environment' => getenv('APP_ENV'),
-                    'feeCoverAmount' => $donation->getFeeCoverAmount(),
-                    'matchedAmount' => $donation->getFundingWithdrawalTotal(),
-                    'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
-                    'stripeFeeRechargeNet' => $donation->getCharityFee(),
-                    'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
-                    'tipAmount' => $donation->getTipAmount(),
-                ],
-                'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
-                // See https://stripe.com/docs/connect/destination-charges#application-fee
-                'application_fee_amount' => $donation->getAmountToDeductFractional(),
-                'transfer_data' => [
-                    'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
-                ],
-            ];
-
-            // For now 'customer' may be omitted – and an automatic, guest customer used by Stripe –
-            // depending on the frontend mode. If there *is* a customer, we want to be able to offer them
-            // card reuse.
-            if ($pspCustomerId !== null) {
-                $createPayload['customer'] = $pspCustomerId;
-
-                if ($donation->supportsSavingPaymentMethod()) {
-                    $createPayload['setup_future_usage'] = 'on_session';
-                }
-            }
-
-            try {
-                $intent = $this->stripe->createPaymentIntent($createPayload);
-            } catch (ApiErrorException $exception) {
-                $message = $exception->getMessage();
-
-                $accountLacksCapabilities = str_contains(
-                    $message,
-                    // this message is an issue the charity needs to fix, we can't fix it for them.
-                    // We likely want to let the team know to hide the campaign from prominents views though.
-                    'Your destination account needs to have at least one of the following capabilities enabled'
-                );
-
-                $failureMessage = sprintf(
-                    'Stripe Payment Intent create error on %s, %s [%s]: %s. Charity: %s [%s].',
-                    $donation->getUuid(),
-                    $exception->getStripeCode() ?? 'unknown',
-                    get_class($exception),
-                    $message,
-                    $donation->getCampaign()->getCharity()->getName(),
-                    $donation->getCampaign()->getCharity()->getStripeAccountId() ?? 'unknown',
-                );
-
-                $level = $accountLacksCapabilities ? LogLevel::WARNING : LogLevel::ERROR;
-                $this->logger->log($level, $failureMessage);
-
-                if ($accountLacksCapabilities) {
-                    $env = getenv('APP_ENV');
-                    \assert(is_string($env));
-                    $failureMessageWithContext = sprintf(
-                        '[%s] %s',
-                        $env,
-                        $failureMessage,
-                    );
-                    $this->chatter->send(new ChatMessage($failureMessageWithContext));
-
-                    throw new CharityAccountLacksNeededCapaiblities();
-                }
-
-                throw new CouldNotMakeStripePaymentIntent();
-            }
-
-            $donation->setTransactionId($intent->id);
-
-            $this->runWithPossibleRetry(
-                function () use ($donation) {
-                    $this->entityManager->persistWithoutRetries($donation);
-                    $this->entityManager->flush();
-                },
-                'Donation Create persist after stripe work'
-            );
+        $stripeAccountId = $donation->getCampaign()->getCharity()->getStripeAccountId();
+        if (($stripeAccountId ?? '') === '') {
+            $this->updateCampaignFromSF($donation);
         }
+
+        $createPayload = $this->makeCreateIntentPayload($donation, $pspCustomerId);
+
+        try {
+            $intent = $this->stripe->createPaymentIntent($createPayload);
+        } catch (ApiErrorException $exception) {
+            $this->handleStripeApiError($exception, $donation);
+        }
+
+        $donation->setTransactionId($intent->id);
+
+        $this->persistDonation($donation, 'Donation Create persist after stripe work');
 
         // Attempt immediate sync. Buffered for a future batch sync if the SF call fails.
         $this->donationRepository->push($donation, true);
@@ -290,5 +142,202 @@ readonly class DonationService
                 $this->clock->sleep($seconds);
             }
         }
+    }
+
+    private function allocateMatchFunds(Donation $donation): void
+    {
+        $this->runWithPossibleRetry(
+            function () use ($donation) {
+                try {
+                    $this->donationRepository->allocateMatchFunds($donation);
+                } catch (\Throwable $t) {
+                    // warning indicates that we *may* retry, as it depends on whether this is in the last retry or
+                    // not.
+                    $this->logger->warning(sprintf('Allocation got error, may retry: %s', $t->getMessage()));
+
+                    $this->matchingAdapter->releaseNewlyAllocatedFunds();
+
+                    // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
+                    // would be reduced again when the donation expires.
+                    $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
+
+                    throw $t;
+                }
+            },
+            'allocate match funds'
+        );
+    }
+
+    private function persistDonation(Donation $donation, string $actionName): void
+    {
+        $this->runWithPossibleRetry(function () use ($donation) {
+            $this->entityManager->persistWithoutRetries($donation);
+            $this->entityManager->flush();
+        }, $actionName);
+    }
+
+    private function checkCampaignIsOpen(Donation $donation): void
+    {
+        if (!$donation->getCampaign()->isOpen()) {
+            throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
+        }
+    }
+
+    private function checkCustomerIdMatches(Donation $donation, ?string $pspCustomerId): void
+    {
+        if ($pspCustomerId !== $donation->getPspCustomerId()) {
+            throw new \UnexpectedValueException(sprintf(
+                'Route customer ID %s did not match %s in donation body',
+                $pspCustomerId ?? 'null',
+                $donation->getPspCustomerId() ?? 'null'
+            ));
+        }
+    }
+
+    /**
+     * @param DonationCreate $donationData
+     * @return Donation
+     * @throws DonationCreateModelLoadFailure
+     */
+    private function buildDonation(DonationCreate $donationData): Donation
+    {
+        try {
+            $donation = $this->donationRepository->buildFromApiRequest($donationData);
+        } catch (\UnexpectedValueException $e) {
+            $message = 'Donation Create data initial model load';
+            $this->logger->warning($message . ': ' . $e->getMessage());
+
+            throw new DonationCreateModelLoadFailure(previous: $e);
+        } catch (UniqueConstraintViolationException) {
+            // If we get this, the most likely explanation is that another donation request
+            // created the same campaign a very short time before this request tried to. We
+            // saw this 3 times in the opening minutes of CC20 on 1 Dec 2020.
+            // If this happens, the latest campaign data should already have been pulled and
+            // persisted in the last second. So give the same call one more try, as
+            // buildFromApiRequest() should perform a fresh call to `CampaignRepository::findOneBy()`.
+            $this->logger->info(sprintf(
+                'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
+                $donationData->projectId->value,
+            ));
+            $donation = $this->donationRepository->buildFromApiRequest($donationData);
+        }
+        return $donation;
+    }
+
+    /**
+     * @param Donation $donation
+     * @param string|null $pspCustomerId
+     * @return array
+     */
+    private function makeCreateIntentPayload(Donation $donation, ?string $pspCustomerId): array
+    {
+        $createPayload = [
+            ...$donation->getStripeMethodProperties(),
+            ...$donation->getStripeOnBehalfOfProperties(),
+            // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
+            // See https://stripe.com/docs/api/payment_intents/object
+            'amount' => $donation->getAmountFractionalIncTip(),
+            'currency' => strtolower($donation->getCurrencyCode()),
+            'description' => $donation->getDescription(),
+            'metadata' => [
+                /**
+                 * Keys like comms opt ins are set only later. See the counterpart
+                 * in {@see Update::addData()} too.
+                 */
+                'campaignId' => $donation->getCampaign()->getSalesforceId(),
+                'campaignName' => $donation->getCampaign()->getCampaignName(),
+                'charityId' => $donation->getCampaign()->getCharity()->getSalesforceId(),
+                'charityName' => $donation->getCampaign()->getCharity()->getName(),
+                'donationId' => $donation->getUuid(),
+                'environment' => getenv('APP_ENV'),
+                'feeCoverAmount' => $donation->getFeeCoverAmount(),
+                'matchedAmount' => $donation->getFundingWithdrawalTotal(),
+                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
+                'tipAmount' => $donation->getTipAmount(),
+            ],
+            'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
+            // See https://stripe.com/docs/connect/destination-charges#application-fee
+            'application_fee_amount' => $donation->getAmountToDeductFractional(),
+            'transfer_data' => [
+                'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
+            ],
+        ];
+
+        // For now 'customer' may be omitted – and an automatic, guest customer used by Stripe –
+        // depending on the frontend mode. If there *is* a customer, we want to be able to offer them
+        // card reuse.
+        if ($pspCustomerId !== null) {
+            $createPayload['customer'] = $pspCustomerId;
+
+            if ($donation->supportsSavingPaymentMethod()) {
+                $createPayload['setup_future_usage'] = 'on_session';
+            }
+        }
+        return $createPayload;
+    }
+
+    /**
+     * Try re-pulling in case charity has very recently onboarded with for Stripe.
+     * @throws StripeAccountIdNotSetForAccount
+     */
+    private function updateCampaignFromSF(Donation $donation): void
+    {
+        $campaign = $donation->getCampaign();
+        $this->campaignRepository->updateFromSf($campaign);
+
+        // If still empty, error out
+        $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
+        if (($stripeAccountId ?? '') === '') {
+            $this->logger->error(sprintf(
+                'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
+                $donation->getCampaign()->getCharity()->getSalesforceId() ?? '',
+            ));
+            throw new StripeAccountIdNotSetForAccount();
+        }
+
+        // Else we found new Stripe info and can proceed
+        $donation->setCampaign($campaign);
+    }
+
+    private function handleStripeApiError(ApiErrorException $exception, Donation $donation): never
+    {
+        $message = $exception->getMessage();
+
+        $accountLacksCapabilities = str_contains(
+            $message,
+            // this message is an issue the charity needs to fix, we can't fix it for them.
+            // We likely want to let the team know to hide the campaign from prominents views though.
+            'Your destination account needs to have at least one of the following capabilities enabled'
+        );
+
+        $failureMessage = sprintf(
+            'Stripe Payment Intent create error on %s, %s [%s]: %s. Charity: %s [%s].',
+            $donation->getUuid(),
+            $exception->getStripeCode() ?? 'unknown',
+            get_class($exception),
+            $message,
+            $donation->getCampaign()->getCharity()->getName(),
+            $donation->getCampaign()->getCharity()->getStripeAccountId() ?? 'unknown',
+        );
+
+        $level = $accountLacksCapabilities ? LogLevel::WARNING : LogLevel::ERROR;
+        $this->logger->log($level, $failureMessage);
+
+        if ($accountLacksCapabilities) {
+            $env = getenv('APP_ENV');
+            \assert(is_string($env));
+            $failureMessageWithContext = sprintf(
+                '[%s] %s',
+                $env,
+                $failureMessage,
+            );
+            $this->chatter->send(new ChatMessage($failureMessageWithContext));
+
+            throw new CharityAccountLacksNeededCapaiblities();
+        }
+
+        throw new CouldNotMakeStripePaymentIntent();
     }
 }
