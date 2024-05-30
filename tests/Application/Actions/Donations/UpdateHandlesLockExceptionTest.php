@@ -26,6 +26,8 @@ use Slim\Psr7\Response;
 use Stripe\Service\PaymentIntentService;
 use Stripe\StripeClient;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -56,6 +58,9 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Pending);
 
+        $routableMessageBusProphecy = $this->prophesize(RoutableMessageBus::class);
+        $routableMessageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
+
         $updateAction = new Update(
             $this->donationRepositoryProphecy->reveal(),
             $this->entityManagerProphecy->reveal(),
@@ -63,6 +68,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
             $this->createStub(Stripe::class),
             new NullLogger(),
             new MockClock(),
+            $routableMessageBusProphecy->reveal(),
         );
 
         $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Pending"));
@@ -86,6 +92,9 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $this->donationRepositoryProphecy->push($donation, false)->shouldBeCalled()->willReturn(true);
         $this->donationRepositoryProphecy->releaseMatchFunds($donation)->shouldBeCalled();
 
+        $routableMessageBusProphecy = $this->prophesize(RoutableMessageBus::class);
+        $routableMessageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
+
         $updateAction = new Update(
             $this->donationRepositoryProphecy->reveal(),
             $this->entityManagerProphecy->reveal(),
@@ -93,6 +102,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
             $this->createStub(Stripe::class),
             new NullLogger(),
             new MockClock(),
+            $routableMessageBusProphecy->reveal(),
         );
 
         $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Cancelled"));

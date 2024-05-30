@@ -24,6 +24,7 @@ use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
+use Symfony\Component\Messenger\RoutableMessageBus;
 
 class ConfirmTest extends TestCase
 {
@@ -57,11 +58,15 @@ class ConfirmTest extends TestCase
         $em->flush()->shouldBeCalledOnce();
         $em->commit()->shouldBeCalledOnce();
 
+        $messageBusStub = $this->createStub(RoutableMessageBus::class);
+        $messageBusStub->method('dispatch')->willReturnArgument(0);
+
         $sut = new Confirm(
             new NullLogger(),
             $this->getDonationRepository(),
             $stripeClientProphecy->reveal(),
             $em->reveal(),
+            $messageBusStub,
         );
 
         // act
@@ -89,7 +94,8 @@ class ConfirmTest extends TestCase
             new NullLogger(),
             $this->getDonationRepository(donationIsCancelled: true),
             $stripeClientProphecy->reveal(),
-            $this->prophesize(EntityManagerInterface::class)->reveal()
+            $this->prophesize(EntityManagerInterface::class)->reveal(),
+            $this->createStub(RoutableMessageBus::class)
         );
 
         // assert
@@ -129,7 +135,8 @@ class ConfirmTest extends TestCase
             new NullLogger(),
             $this->getDonationRepository(),
             $stripeClientProphecy->reveal(),
-            $this->prophesize(EntityManagerInterface::class)->reveal()
+            $this->prophesize(EntityManagerInterface::class)->reveal(),
+            $this->createStub(RoutableMessageBus::class)
         );
 
         // act
@@ -184,7 +191,8 @@ class ConfirmTest extends TestCase
             new NullLogger(),
             $this->getDonationRepository(),
             $stripeClientProphecy->reveal(),
-            $this->prophesize(EntityManagerInterface::class)->reveal()
+            $this->prophesize(EntityManagerInterface::class)->reveal(),
+            $this->createStub(RoutableMessageBus::class)
         );
 
         // act
@@ -232,7 +240,8 @@ class ConfirmTest extends TestCase
             new NullLogger(),
             $this->getDonationRepository(),
             $stripeClientProphecy->reveal(),
-            $this->prophesize(EntityManagerInterface::class)->reveal()
+            $this->prophesize(EntityManagerInterface::class)->reveal(),
+            $this->createStub(RoutableMessageBus::class)
         );
 
         // act

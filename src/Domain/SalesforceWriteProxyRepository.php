@@ -109,7 +109,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
      *
      * @return int  Number of objects pushed
      */
-    public function pushSalesforcePending(\DateTimeImmutable $now): int
+    public function pushSalesforcePending(\DateTimeImmutable $now): int // change how we use this definitely
     {
         // We don't want to push donations that were created or modified in the last 5 minutes,
         // to avoid collisions with other pushes.

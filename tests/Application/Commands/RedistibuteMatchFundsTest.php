@@ -21,17 +21,25 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 
 class RedistibuteMatchFundsTest extends TestCase
 {
     private \DateTimeImmutable $newYearsEveNoon;
     private \DateTimeImmutable $earlyNovemberNoon;
 
+    /** @var ObjectProphecy<RoutableMessageBus> */
+    private ObjectProphecy $messageBusProphecy;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->newYearsEveNoon = new \DateTimeImmutable('2023-12-31T12:00:00');
         $this->earlyNovemberNoon = new \DateTimeImmutable('2023-11-05T12:00:00');
+
+        $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
+        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
     }
 
     public function testNoEligibleDonations(): void
@@ -217,6 +225,7 @@ class RedistibuteMatchFundsTest extends TestCase
             $now,
             $donationRepoProphecy->reveal(),
             $loggerProphecy->reveal(),
+            $this->messageBusProphecy->reveal(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());

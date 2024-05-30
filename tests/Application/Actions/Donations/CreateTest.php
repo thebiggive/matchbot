@@ -8,6 +8,7 @@ use DI\Container;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Messenger\DonationStateUpdated;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
@@ -27,6 +28,8 @@ use Slim\App;
 use Slim\Exception\HttpUnauthorizedException;
 use Stripe\Exception\PermissionException;
 use Stripe\PaymentIntent;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Message\ChatMessage;
 use UnexpectedValueException;
 
@@ -91,6 +94,9 @@ class CreateTest extends TestCase
 
         $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
         $container->set(CampaignRepository::class, $campaignRepositoryProphecy->reveal());
+        $routableMessageBusProphecy = $this->prophesize(RoutableMessageBus::class);
+        $routableMessageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
+        $container->set(RoutableMessageBus::class, $routableMessageBusProphecy->reveal());
     }
 
     /**

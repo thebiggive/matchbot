@@ -32,11 +32,24 @@ use Stripe\PaymentIntent;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 
 class UpdateTest extends TestCase
 {
     use DonationTestDataTrait;
     use PublicJWTAuthTrait;
+
+    public function setUp(): void
+    {
+        $container = $this->getAppInstance()->getContainer();
+        \assert($container instanceof Container);
+
+        $routableMessageBusProphecy = $this->prophesize(RoutableMessageBus::class);
+        $routableMessageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
+
+        $container->set(RoutableMessageBus::class, $routableMessageBusProphecy->reveal());
+    }
 
     public function testMissingId(): void
     {

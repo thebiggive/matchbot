@@ -4,6 +4,7 @@
 declare(strict_types=1);
 
 $psr11App = require __DIR__ . '/bootstrap.php';
+//\assert($psr11App instanceof DI\Container);
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
@@ -73,12 +74,7 @@ $commands = [
         $psr11App->get(FundingWithdrawalRepository::class),
         $psr11App->get(Matching\Adapter::class)
     ),
-    new RedistributeMatchFunds(
-        $psr11App->get(CampaignFundingRepository::class),
-        $now,
-        $psr11App->get(DonationRepository::class),
-        $psr11App->get(LoggerInterface::class),
-    ),
+    $psr11App->get(RedistributeMatchFunds::class),
     new ScheduledOutOfSyncFundsCheck(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(FundingWithdrawalRepository::class),
@@ -90,10 +86,7 @@ $commands = [
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(Matching\Adapter::class)
     ),
-    new RetrospectivelyMatch(
-        $psr11App->get(DonationRepository::class),
-        $chatter,
-    ),
+    $psr11App->get(RetrospectivelyMatch::class),
     new UpdateCampaigns(
         $psr11App->get(CampaignRepository::class),
         $psr11App->get(EntityManagerInterface::class),

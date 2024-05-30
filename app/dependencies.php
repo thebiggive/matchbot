@@ -12,6 +12,7 @@ use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Messenger\DonationStateUpdated;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
@@ -238,6 +239,7 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     Messages\Donation::class => [ClaimBotTransport::class],
                     StripePayout::class => [TransportInterface::class],
+                    DonationStateUpdated::class => [TransportInterface::class],
                 ],
                 $c,
             ));
@@ -247,6 +249,7 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
                     StripePayout::class => [$c->get(StripePayoutHandler::class)],
+                //       DonationStateUpdated::class => [$c->get(DonationStateUpdatedHandler::class)],
                 ],
             ));
             $handleMiddleware->setLogger($logger);
@@ -354,11 +357,14 @@ return function (ContainerBuilder $containerBuilder) {
 
         RoutableMessageBus::class => static function (ContainerInterface $c): RoutableMessageBus {
             $busContainer = new Container();
-            $busContainer->set('claimbot.donation.claim', $c->get(MessageBusInterface::class));
-            $busContainer->set('claimbot.donation.result', $c->get(MessageBusInterface::class));
-            $busContainer->set(\Stripe\Event::PAYOUT_PAID, $c->get(MessageBusInterface::class));
+            $bus = $c->get(MessageBusInterface::class);
 
-            return new RoutableMessageBus($busContainer);
+            $busContainer->set('claimbot.donation.claim', $bus);
+            $busContainer->set('claimbot.donation.result', $bus);
+            $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
+
+            $routableMessageBus = new RoutableMessageBus($busContainer, $bus);
+            return $routableMessageBus;
         },
 
         SerializerInterface::class => static function (ContainerInterface $c): SerializerInterface {
@@ -384,6 +390,7 @@ return function (ContainerBuilder $containerBuilder) {
             $transportFactory = new TransportFactory([
                 new AmazonSqsTransportFactory(),
                 new RedisTransportFactory(),
+               // new Symfony\Component\Messenger\Transport\InMemory\InMemoryTransportFactory(), // only used
             ]);
             return $transportFactory->createTransport(
                 getenv('MESSENGER_TRANSPORT_DSN'),

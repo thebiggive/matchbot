@@ -11,9 +11,12 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 
 class RetrospectivelyMatchTest extends TestCase
@@ -22,10 +25,16 @@ class RetrospectivelyMatchTest extends TestCase
 
     private ChatterInterface $chatter;
 
+    /** @var ObjectProphecy<RoutableMessageBus> */
+    private ObjectProphecy $messageBusProphecy;
+
     public function setUp(): void
     {
         $chatterProphecy = $this->prophesize(ChatterInterface::class);
         $this->chatter = $chatterProphecy->reveal();
+
+        $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
+        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
     }
 
     /**
@@ -33,7 +42,11 @@ class RetrospectivelyMatchTest extends TestCase
      */
     public function testMissingDaysBackRunsInDefaultMode(): void
     {
-        $command = new RetrospectivelyMatch($this->getDonationRepo(true), $this->chatter);
+        $command = new RetrospectivelyMatch(
+            $this->getDonationRepo(true),
+            $this->chatter,
+            $this->messageBusProphecy->reveal()
+        );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
 
@@ -52,7 +65,11 @@ class RetrospectivelyMatchTest extends TestCase
 
     public function testNonWholeDaysBackIsRounded(): void
     {
-        $command = new RetrospectivelyMatch($this->getDonationRepo(false), $this->chatter);
+        $command = new RetrospectivelyMatch(
+            $this->getDonationRepo(false),
+            $this->chatter,
+            $this->messageBusProphecy->reveal()
+        );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
 
@@ -71,7 +88,11 @@ class RetrospectivelyMatchTest extends TestCase
 
     public function testWholeDaysBackProceeds(): void
     {
-        $command = new RetrospectivelyMatch($this->getDonationRepo(false), $this->chatter);
+        $command = new RetrospectivelyMatch(
+            $this->getDonationRepo(false),
+            $this->chatter,
+            $this->messageBusProphecy->reveal()
+        );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
 
