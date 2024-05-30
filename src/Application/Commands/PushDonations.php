@@ -8,7 +8,7 @@ use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class PushDonations extends LockingCommand // replace this perhaps
+class PushDonations extends LockingCommand
 {
     protected static $defaultName = 'matchbot:push-donations';
 
