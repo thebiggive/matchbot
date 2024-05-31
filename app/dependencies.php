@@ -364,8 +364,7 @@ return function (ContainerBuilder $containerBuilder) {
             $busContainer->set('claimbot.donation.result', $bus);
             $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
 
-            $routableMessageBus = new RoutableMessageBus($busContainer, $bus);
-            return $routableMessageBus;
+            return new RoutableMessageBus($busContainer, $bus);
         },
 
         SerializerInterface::class => static function (ContainerInterface $c): SerializerInterface {

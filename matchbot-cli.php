@@ -4,7 +4,6 @@
 declare(strict_types=1);
 
 $psr11App = require __DIR__ . '/bootstrap.php';
-//\assert($psr11App instanceof DI\Container);
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
