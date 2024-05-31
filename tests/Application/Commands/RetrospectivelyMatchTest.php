@@ -19,6 +19,8 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 
+use const true;
+
 class RetrospectivelyMatchTest extends TestCase
 {
     use DonationTestDataTrait;
@@ -42,15 +44,7 @@ class RetrospectivelyMatchTest extends TestCase
      */
     public function testMissingDaysBackRunsInDefaultMode(): void
     {
-        $command = new RetrospectivelyMatch(
-            $this->getDonationRepo(true),
-            $this->chatter,
-            $this->messageBusProphecy->reveal()
-        );
-        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
-        $command->setLogger(new NullLogger());
-
-        $commandTester = new CommandTester($command);
+        $commandTester = $this->getCommandTester(matchingIsAllocated: true);
         $commandTester->execute([]);
 
         $expectedOutputLines = [
@@ -65,15 +59,7 @@ class RetrospectivelyMatchTest extends TestCase
 
     public function testNonWholeDaysBackIsRounded(): void
     {
-        $command = new RetrospectivelyMatch(
-            $this->getDonationRepo(false),
-            $this->chatter,
-            $this->messageBusProphecy->reveal()
-        );
-        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
-        $command->setLogger(new NullLogger());
-
-        $commandTester = new CommandTester($command);
+        $commandTester = $this->getCommandTester(matchingIsAllocated: false);
         $commandTester->execute(['days-back' => '7.5']);
 
         $expectedOutputLines = [
@@ -88,15 +74,7 @@ class RetrospectivelyMatchTest extends TestCase
 
     public function testWholeDaysBackProceeds(): void
     {
-        $command = new RetrospectivelyMatch(
-            $this->getDonationRepo(false),
-            $this->chatter,
-            $this->messageBusProphecy->reveal()
-        );
-        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
-        $command->setLogger(new NullLogger());
-
-        $commandTester = new CommandTester($command);
+        $commandTester = $this->getCommandTester(matchingIsAllocated: false);
         $commandTester->execute(['days-back' => '8']);
 
         $expectedOutputLines = [
@@ -134,5 +112,18 @@ class RetrospectivelyMatchTest extends TestCase
         }
 
         return $donationRepo->reveal();
+    }
+
+    public function getCommandTester(bool $matchingIsAllocated): CommandTester
+    {
+        $command = new RetrospectivelyMatch(
+            $this->getDonationRepo($matchingIsAllocated),
+            $this->chatter,
+            $this->messageBusProphecy->reveal()
+        );
+        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
+
+        return new CommandTester($command);
     }
 }
