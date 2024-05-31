@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\DonationStateUpdated;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\DonationRepository;
@@ -22,6 +23,7 @@ class RedistributeMatchFunds extends LockingCommand
 
     public function __construct(
         private CampaignFundingRepository $campaignFundingRepository,
+        private EntityManagerInterface $entityManager,
         private \DateTimeImmutable $now,
         private DonationRepository $donationRepository,
         private LoggerInterface $logger,
@@ -99,6 +101,7 @@ class RedistributeMatchFunds extends LockingCommand
                 ));
             }
 
+            $this->entityManager->flush();
             $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
             $donationsAmended++;
         }

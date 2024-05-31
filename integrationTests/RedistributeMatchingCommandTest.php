@@ -53,6 +53,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
 
         $this->command = new RedistributeMatchFunds(
             $this->campaignFundingRepository,
+            $this->createStub(EntityManagerInterface::class),
             new \DateTimeImmutable('now'),
             $this->getService(DonationRepository::class),
             $this->getService(LoggerInterface::class),

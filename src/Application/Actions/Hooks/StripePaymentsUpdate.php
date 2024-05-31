@@ -181,7 +181,7 @@ class StripePaymentsUpdate extends Stripe
 
         $this->entityManager->persist($donation);
         $this->entityManager->commit();
-
+        $this->entityManager->flush();
         $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
 
 
@@ -482,6 +482,7 @@ class StripePaymentsUpdate extends Stripe
             $this->donationRepository->releaseMatchFunds($donation);
         }
 
+        $this->entityManager->flush();
         $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
     }
 

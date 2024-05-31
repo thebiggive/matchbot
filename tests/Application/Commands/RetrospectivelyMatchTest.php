@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Commands;
 
 use DateTime;
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -114,7 +115,8 @@ class RetrospectivelyMatchTest extends TestCase
         $command = new RetrospectivelyMatch(
             $this->getDonationRepo($matchingIsAllocated),
             $this->chatter,
-            $this->messageBusProphecy->reveal()
+            $this->messageBusProphecy->reveal(),
+            $this->createStub(EntityManagerInterface::class),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());

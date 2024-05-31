@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use DateTime;
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\DonationStateUpdated;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputArgument;
@@ -33,6 +34,7 @@ class RetrospectivelyMatch extends LockingCommand
         private DonationRepository $donationRepository,
         private ChatterInterface $chatter,
         private RoutableMessageBus $bus,
+        private EntityManagerInterface $entityManager,
     ) {
         parent::__construct();
     }
@@ -78,6 +80,7 @@ class RetrospectivelyMatch extends LockingCommand
             $amountAllocated = $this->donationRepository->allocateMatchFunds($donation);
 
             if (bccomp($amountAllocated, '0.00', 2) === 1) {
+                $this->entityManager->flush();
                 $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
                 $numWithMatchingAllocated++;
                 $totalNewMatching = bcadd($totalNewMatching, $amountAllocated, 2);
