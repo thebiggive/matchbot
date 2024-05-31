@@ -276,10 +276,6 @@ EOF
         $this->entityManager->flush();
         $this->entityManager->commit();
 
-        // Outside the main txn, tell Salesforce about the latest fee too. We log if this fails but don't worry the
-        // client about it. We'll re-try sending the updated status to Salesforce in a future batch sync.
-        $this->donationRepository->push($donation, false);
-
         $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
 
         return new JsonResponse([

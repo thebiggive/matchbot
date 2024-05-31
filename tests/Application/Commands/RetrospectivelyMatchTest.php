@@ -101,13 +101,8 @@ class RetrospectivelyMatchTest extends TestCase
             $donationRepo->allocateMatchFunds(Argument::type(Donation::class))
                 ->shouldBeCalledOnce()
                 ->willReturn('123.45');
-            $donationRepo->push(Argument::type(Donation::class), false)
-                ->shouldBeCalledOnce()
-                ->willReturn(true);
         } else {
             $donationRepo->allocateMatchFunds(Argument::type(Donation::class))
-                ->shouldNotBeCalled();
-            $donationRepo->push(Argument::type(Donation::class), false)
                 ->shouldNotBeCalled();
         }
 

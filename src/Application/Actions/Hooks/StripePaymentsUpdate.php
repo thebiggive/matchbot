@@ -182,10 +182,6 @@ class StripePaymentsUpdate extends Stripe
         $this->entityManager->persist($donation);
         $this->entityManager->commit();
 
-        // We log if this fails but don't worry the webhook-sending payment client
-        // about it. We'll re-try sending the updated status to Salesforce in a future
-        // batch sync.
-        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
         $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
 
 
@@ -390,7 +386,7 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->entityManager->flush();
-        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
+        $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
 
         return $this->respond($response, new ActionPayload(200));
     }
@@ -486,7 +482,7 @@ class StripePaymentsUpdate extends Stripe
             $this->donationRepository->releaseMatchFunds($donation);
         }
 
-        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
+        $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
     }
 
     private function handleCashBalanceUpdate(Event $event, Response $response): Response

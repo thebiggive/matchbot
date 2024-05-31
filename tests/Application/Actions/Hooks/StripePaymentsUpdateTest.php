@@ -29,7 +29,6 @@ class StripePaymentsUpdateTest extends StripeTest
         $container = $this->getAppInstance()->getContainer();
         \assert($container instanceof Container);
 
-
         $routableMessageBusProphecy = $this->prophesize(RoutableMessageBus::class);
         $routableMessageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
 
@@ -134,10 +133,6 @@ class StripePaymentsUpdateTest extends StripeTest
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -185,10 +180,6 @@ class StripePaymentsUpdateTest extends StripeTest
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -237,10 +228,6 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -367,10 +354,6 @@ class StripePaymentsUpdateTest extends StripeTest
         $donationRepoProphecy
             ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -463,10 +446,6 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -527,10 +506,6 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -576,10 +551,6 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldNotBeCalled();
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();

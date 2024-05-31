@@ -142,7 +142,6 @@ class Create extends Action
 
         $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation, isNew: true)));
 
-
         $data = new DonationCreatedResponse();
         $data->donation = $donation->toApiModel();
         $data->jwt = DonationToken::create($donation->getUuid());

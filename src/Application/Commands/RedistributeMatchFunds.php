@@ -100,7 +100,6 @@ class RedistributeMatchFunds extends LockingCommand
             }
 
             $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
-            $this->donationRepository->push($donation, false);
             $donationsAmended++;
         }
 

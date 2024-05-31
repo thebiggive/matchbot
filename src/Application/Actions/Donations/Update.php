@@ -525,9 +525,6 @@ class Update extends Action
             return;
         }
 
-        // We log if this fails but don't worry the client about it. We'll just re-try
-        // sending the updated status to Salesforce in a future batch sync.
-        $this->donationRepository->push($donation, false);
         $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
     }
 

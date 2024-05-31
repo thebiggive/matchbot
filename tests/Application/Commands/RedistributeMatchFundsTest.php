@@ -24,7 +24,7 @@ use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 
-class RedistibuteMatchFundsTest extends TestCase
+class RedistributeMatchFundsTest extends TestCase
 {
     private \DateTimeImmutable $newYearsEveNoon;
     private \DateTimeImmutable $earlyNovemberNoon;
@@ -85,8 +85,6 @@ class RedistibuteMatchFundsTest extends TestCase
         $donationRepoProphecy->allocateMatchFunds($donation)
             ->shouldBeCalledOnce()
             ->willReturn('10.00');
-        $donationRepoProphecy->push($donation, false)
-            ->shouldBeCalledOnce();
 
         $loggerProphecy = $this->prophesize(LoggerInterface::class);
         $loggerProphecy->error(Argument::type('string'))->shouldNotBeCalled();
@@ -141,8 +139,6 @@ class RedistibuteMatchFundsTest extends TestCase
         $donationRepoProphecy->allocateMatchFunds($donation)
             ->shouldBeCalledOnce()
             ->willReturn('5.00'); // Half the donation matched after redistribution.
-        $donationRepoProphecy->push($donation, false)
-            ->shouldBeCalledOnce();
 
         $uuid = $donation->getUuid();
         $loggerProphecy = $this->prophesize(LoggerInterface::class);

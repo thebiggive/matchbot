@@ -376,8 +376,6 @@ class ConfirmTest extends TestCase
             return $donation;
         });
 
-        $donationRepositoryProphecy->push(Argument::type(Donation::class), false)->willReturn(true);
-
         return $donationRepositoryProphecy->reveal();
     }
 

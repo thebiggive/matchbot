@@ -75,9 +75,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
@@ -102,9 +99,6 @@ class UpdateTest extends TestCase
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -134,9 +128,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
@@ -165,9 +156,6 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -207,9 +195,6 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -255,9 +240,6 @@ class UpdateTest extends TestCase
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -323,9 +305,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -375,12 +354,9 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
-        // Cancel is a no-op -> no fund release or push to SF
+        // Cancel is a no-op -> no fund release
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -441,11 +417,6 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
-            ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            // Cancel was a new change and names set -> expect a push to SF.
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -515,11 +486,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            // Cancel was a new change and names set -> expect a push to SF.
-            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -583,11 +549,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            // Cancel was a new change and names set -> expect a push to SF.
-            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -648,11 +609,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            // Cancel was a new change BUT donation never had enough
-            // data -> DO NOT expect a push to SF.
-            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -710,9 +666,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -757,9 +710,6 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -812,9 +762,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
@@ -863,9 +810,6 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -916,9 +860,6 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -981,9 +922,6 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1066,9 +1004,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donation)
-            ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
 
         // Persist as normal.
@@ -1163,9 +1098,6 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         // Internal persist still goes ahead.
@@ -1264,9 +1196,6 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldBeCalledOnce();
 
         // Persist as normal.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1363,9 +1292,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldNotBeCalled();
 
         // Internal persist still goes ahead.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1458,9 +1384,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donation)
-            ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
             ->shouldBeCalledOnce();
 
         // Persist as normal.
@@ -1559,9 +1482,6 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldBeCalledOnce(); // Updates pushed to Salesforce
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -1640,7 +1560,6 @@ class UpdateTest extends TestCase
             'app' => $app,
             'request' => $request,
             'route' => $route,
-            'donationRepoProphecy' => $donationRepoProphecy,
             'entityManagerProphecy' => $entityManagerProphecy,
         ] =
             $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
@@ -1649,9 +1568,6 @@ class UpdateTest extends TestCase
                 collectedDonation: false,
             );
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldBeCalledOnce(); // Updates pushed to Salesforce
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
@@ -1701,7 +1617,6 @@ class UpdateTest extends TestCase
             'app' => $app,
             'request' => $request,
             'route' => $route,
-            'donationRepoProphecy' => $donationRepoProphecy,
             'stripeProphecy' => $stripeProphecy,
             'entityManagerProphecy' => $entityManagerProphecy
         ] = $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
@@ -1728,10 +1643,6 @@ class UpdateTest extends TestCase
         // Stripe PI must be left pending ready for the bank transfer.
         $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldNotBeCalled();
 
-        // This reduced test donation will have false `hasEnoughDataForSalesforce()`.
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldNotBeCalled();
 
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalled();
@@ -1753,7 +1664,6 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy->flush()->shouldBeCalled();
         $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldBeCalled();
-
 
         $this->expectException(HttpBadRequestException::class);
         $this->expectExceptionMessage('Status was requires_action, expected succeeded');
@@ -1779,9 +1689,6 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldNotBeCalled(); // Updates pushed to Salesforce
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -1847,9 +1754,6 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldNotBeCalled(); // Updates pushed to Salesforce
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -1920,9 +1824,6 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->shouldNotBeCalled(); // Updates pushed to Salesforce
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
