@@ -27,20 +27,38 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
      */
     private function process(array $jobs): void
     {
+        $jobsByDonationUUID = [];
+
         foreach ($jobs as [$message, $ack]) {
             /**
              * @psalm-suppress UnnecessaryVarAnnotation - necessary for PHPStorm
              * @var \MatchBot\Application\Messenger\DonationStateUpdated $message
              * @var Acknowledger $ack
              */
-            $donation = $this->donationRepository->findOneBy(['uuid' => $message->donationUUID]);
+            $jobsByDonationUUID[$message->donationUUID][] = [$message, $ack];
+        }
+
+        foreach ($jobsByDonationUUID as $donationUUID => $jobsForThisDonation) {
+            $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
+
             if ($donation === null) {
-                $ack->nack(new \RuntimeException('Donation not found'));
+                foreach ($jobsForThisDonation as $job) {
+                    $job[1]->nack(new \RuntimeException('Donation not found'));
+                }
                 continue;
             }
 
-            $this->donationRepository->push($donation, $message->isNew);
-            $ack->ack();
+            $donationIsNew = array_reduce(
+                array_map(static fn ($job) => $job[0]->donationIsNew, $jobsForThisDonation),
+                static fn(bool $left, bool $right) => $left || $right,
+                false,
+            );
+
+            $this->donationRepository->push($donation, $donationIsNew);
+
+            foreach ($jobsForThisDonation as $job) {
+                $job[1]->ack();
+            }
         }
     }
 }

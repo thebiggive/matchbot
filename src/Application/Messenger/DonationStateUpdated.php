@@ -10,7 +10,7 @@ readonly class DonationStateUpdated
 {
     public function __construct(
         public string $donationUUID,
-        public bool $isNew
+        public bool $donationIsNew
     ) {
         Assertion::uuid($this->donationUUID);
     }

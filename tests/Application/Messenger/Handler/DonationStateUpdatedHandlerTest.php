@@ -34,12 +34,29 @@ class DonationStateUpdatedHandlerTest extends TestCase
 
         $message = DonationStateUpdated::fromDonation($donation);
 
-        $ack = new Acknowledger(DonationStateUpdatedHandler::class, $this->recieveAck(...));
-
-        $sut->__invoke($message, $ack);
+        $sut->__invoke($message, $this->getAcknowledger());
         $sut->flush(force: true);
 
         $this->assertTrue($this->acknowledged);
+    }
+
+    public function testItPushesDonationOnceToSfWhenCreatedAndUpdated(): void
+    {
+        $donation = \MatchBot\Tests\TestCase::someDonation();
+        $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn($donation);
+        $this->donationRepositoryProphecy->push($donation, true)->shouldBeCalledOnce();
+        $this->donationRepositoryProphecy->push($donation, false)->shouldNotBeCalled();
+
+        $sut = new DonationStateUpdatedHandler($this->donationRepositoryProphecy->reveal());
+
+        $sut->__invoke(DonationStateUpdated::fromDonation($donation, isNew: true), $this->getAcknowledger());
+        $sut->__invoke(DonationStateUpdated::fromDonation($donation), $this->getAcknowledger());
+        $sut->flush(force: true);
+    }
+
+    public function getAcknowledger(): Acknowledger
+    {
+        return new Acknowledger(DonationStateUpdatedHandler::class, $this->recieveAck(...));
     }
 
     private function recieveAck(\Throwable|null $e, mixed $_result = null): void
