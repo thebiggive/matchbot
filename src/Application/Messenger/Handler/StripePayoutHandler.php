@@ -3,6 +3,7 @@
 namespace MatchBot\Application\Messenger\Handler;
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -362,7 +363,7 @@ class StripePayoutHandler implements MessageHandlerInterface
     /**
      * @param string[]  $paidChargeIds  Connect acct charge IDs (`py_...`) from `source` property of
      *                                  balance txn `"type": "payment"` lines.
-     * @return string[] Original platform charge IDs (`ch_...`).
+     * @return array<string|null> Original platform charge IDs (`ch_...`).
      */
     private function getOriginalDonationChargeIds(
         array $paidChargeIds,
@@ -400,7 +401,12 @@ class StripePayoutHandler implements MessageHandlerInterface
 
         foreach ($charges->autoPagingIterator() as $charge) {
             if (in_array($charge->id, $paidChargeIds, true)) {
-                $sourceTransferIds[] = $charge->source_transfer;
+                /** @var string $source_transfer */
+                $source_transfer = $charge->source_transfer;
+                if (!is_string($source_transfer)) {
+                    $this->logger->error("source transfer not of expected type");
+                }
+                $sourceTransferIds[] = $source_transfer;
             }
         }
 

@@ -6,10 +6,12 @@ namespace MatchBot\Domain;
 
 use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use MatchBot\Client;
 
 /**
  * @template T of SalesforceReadProxy
- * @template-extends SalesforceProxyRepository<T>
+ * @template C of Client\Common
+ * @template-extends SalesforceProxyRepository<T, C>
  */
 abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
 {
