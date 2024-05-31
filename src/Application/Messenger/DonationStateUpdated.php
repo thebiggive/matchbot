@@ -10,12 +10,13 @@ readonly class DonationStateUpdated
 {
     public function __construct(
         public string $donationUUID,
+        public bool $isNew
     ) {
         Assertion::uuid($this->donationUUID);
     }
 
-    public static function fromDonation(Donation $donation): self
+    public static function fromDonation(Donation $donation, bool $isNew = false): self
     {
-        return new self($donation->getUuid());
+        return new self($donation->getUuid(), $isNew);
     }
 }

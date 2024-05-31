@@ -39,7 +39,7 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
                 continue;
             }
 
-            $this->donationRepository->push($donation, false);
+            $this->donationRepository->push($donation, $message->isNew);
             $ack->ack();
         }
     }

@@ -140,7 +140,7 @@ class Create extends Action
             );
         }
 
-        $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
+        $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation, isNew: true)));
 
 
         $data = new DonationCreatedResponse();
