@@ -18,6 +18,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
     private ObjectProphecy $donationRepositoryProphecy;
 
     private bool $acknowledged = true;
+    private ?\Throwable $exceptionFromLastAck;
 
     public function setUp(): void
     {
@@ -54,6 +55,33 @@ class DonationStateUpdatedHandlerTest extends TestCase
         $sut->flush(force: true);
     }
 
+    public function testItNacksMessageIfDonationCannotBeFound(): void
+    {
+        $donation = \MatchBot\Tests\TestCase::someDonation();
+        $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn(null);
+        $sut = new DonationStateUpdatedHandler($this->donationRepositoryProphecy->reveal());
+
+        $sut->__invoke(DonationStateUpdated::fromDonation($donation), $this->getAcknowledger());
+        $sut->flush(force: true);
+        $this->assertNotNull($this->exceptionFromLastAck);
+        $this->assertSame('Donation not found', $this->exceptionFromLastAck->getMessage());
+    }
+
+    public function testItNacksMessageIfDonationCannotBePushed(): void
+    {
+        $donation = \MatchBot\Tests\TestCase::someDonation();
+        $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn($donation);
+        $this->donationRepositoryProphecy->push($donation, false)->willThrow(new \Exception('Failed to push to SF'));;
+
+        $sut = new DonationStateUpdatedHandler($this->donationRepositoryProphecy->reveal());
+
+        $sut->__invoke(DonationStateUpdated::fromDonation($donation), $this->getAcknowledger());
+        $sut->flush(force: true);
+        $this->assertNotNull($this->exceptionFromLastAck);
+        $this->assertSame('Failed to push to SF', $this->exceptionFromLastAck->getMessage());
+    }
+
+
     public function getAcknowledger(): Acknowledger
     {
         return new Acknowledger(DonationStateUpdatedHandler::class, $this->recieveAck(...));
@@ -61,10 +89,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
 
     private function recieveAck(\Throwable|null $e, mixed $_result = null): void
     {
-        if ($e !== null) {
-            throw $e;
-        }
-
+        $this->exceptionFromLastAck = $e;
         $this->acknowledged = true;
     }
 }
