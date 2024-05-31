@@ -338,8 +338,6 @@ class ConfirmTest extends TestCase
         }
 
         $confirmation->shouldBeCalled();
-
-      //  return $this->stripeProphecy;
     }
 
     /**
