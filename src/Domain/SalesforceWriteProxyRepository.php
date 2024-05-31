@@ -124,7 +124,9 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 
         if ($proxiesToCreate !== []) {
             $count = count($proxiesToCreate);
-            $this->logger->error("Found $count pending items to push to SF, suggests push via Symfony Messenger failed");
+            $this->logger->error(
+                "Found $count pending items to push to SF, suggests push via Symfony Messenger failed"
+            );
         }
 
         foreach ($proxiesToCreate as $proxy) {
