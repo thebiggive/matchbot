@@ -13,6 +13,7 @@ use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationStateUpdated;
+use MatchBot\Application\Messenger\Handler\DonationStateUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
@@ -249,7 +250,7 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
                     StripePayout::class => [$c->get(StripePayoutHandler::class)],
-                //       DonationStateUpdated::class => [$c->get(DonationStateUpdatedHandler::class)],
+                    DonationStateUpdated::class => [$c->get(DonationStateUpdatedHandler::class)],
                 ],
             ));
             $handleMiddleware->setLogger($logger);
@@ -390,7 +391,6 @@ return function (ContainerBuilder $containerBuilder) {
             $transportFactory = new TransportFactory([
                 new AmazonSqsTransportFactory(),
                 new RedisTransportFactory(),
-               // new Symfony\Component\Messenger\Transport\InMemory\InMemoryTransportFactory(), // only used
             ]);
             return $transportFactory->createTransport(
                 getenv('MESSENGER_TRANSPORT_DSN'),
