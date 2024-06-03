@@ -10,7 +10,7 @@ use MatchBot\Client;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
 /**
- * @template-extends SalesforceReadProxyRepository<Campaign>
+ * @template-extends SalesforceReadProxyRepository<Campaign, Client\Campaign>
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
@@ -66,8 +66,10 @@ EOT
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
      */
-    protected function doUpdateFromSf(SalesforceReadProxy $campaign): void
+    protected function doUpdateFromSf(SalesforceReadProxy $proxy): void
     {
+        $campaign = $proxy;
+
         $client = $this->getClient();
         $campaignData = $client->getById($campaign->getSalesforceId());
 

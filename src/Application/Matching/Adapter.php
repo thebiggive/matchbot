@@ -179,6 +179,8 @@ class Adapter
     public function getAmountAvailable(CampaignFunding $funding): string
     {
         $redisFundBalanceFractional = $this->storage->get($this->buildKey($funding));
+        \assert(! $redisFundBalanceFractional instanceof RealTimeMatchingStorage); // not in multi mode
+
         if ($redisFundBalanceFractional === false) {
             // No value in Redis -> may well have expired after 24 hours. Consult the DB for the
             // stable value. This will often happen for old or slower moving campaigns.
