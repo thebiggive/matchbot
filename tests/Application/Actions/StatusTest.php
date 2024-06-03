@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Actions;
 
+use DI\Container;
 use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Platforms\MySQL80Platform;
@@ -21,6 +22,8 @@ use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\NullOutput;
 
+use function assert;
+
 class StatusTest extends TestCase
 {
     private const DOMAIN_DIR = __DIR__ . '/../../../src/Domain';
@@ -35,7 +38,9 @@ class StatusTest extends TestCase
         $app = $this->getAppInstance();
 
         $entityManager = $this->getConnectedMockEntityManager();
-        $app->getContainer()->set(EntityManagerInterface::class, $entityManager);
+        $container = $app->getContainer();
+        assert($container instanceof Container);
+        $container->set(EntityManagerInterface::class, $entityManager);
 
         $request = $this->createRequest('GET', '/ping');
         $response = $app->handle($request);
@@ -53,7 +58,9 @@ class StatusTest extends TestCase
         $app = $this->getAppInstance(true); // Use real Redis for this test
 
         $entityManager = $this->getConnectedMockEntityManager();
-        $app->getContainer()->set(EntityManagerInterface::class, $entityManager);
+        $container = $app->getContainer();
+        assert($container instanceof Container);
+        $container->set(EntityManagerInterface::class, $entityManager);
 
         $request = $this->createRequest('GET', '/ping');
         $response = $app->handle($request);
@@ -72,7 +79,9 @@ class StatusTest extends TestCase
 
         // Use a deliberately wrong path so proxies are absent.
         $entityManager = $this->getConnectedMockEntityManager('/tmp/not/this/dir/proxies');
-        $app->getContainer()->set(EntityManagerInterface::class, $entityManager);
+        $container = $app->getContainer();
+        assert($container instanceof Container);
+        $container->set(EntityManagerInterface::class, $entityManager);
 
         $request = $this->createRequest('GET', '/ping');
         $response = $app->handle($request);
@@ -159,6 +168,7 @@ class StatusTest extends TestCase
     {
         $app = $this->getAppInstance();
         $container = $app->getContainer();
+        assert($container instanceof Container);
 
         $container->set(EntityManagerInterface::class, $this->getConnectedMockEntityManager());
 

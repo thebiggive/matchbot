@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Monolog\Processor;
 
+use DI\Container;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use MatchBot\Tests\TestCase;
 use Monolog\Handler\HandlerInterface;
@@ -32,6 +33,7 @@ class AwsTraceIdProcessorTest extends TestCase
 
         $app = $this->getAppInstance();
         $container = $app->getContainer();
+        \assert($container instanceof Container);
         $container->set(LoggerInterface::class, $logger);
 
         // Because a Monolog Processor doesn't have, and shouldn't need, access to special DI container
@@ -71,6 +73,7 @@ class AwsTraceIdProcessorTest extends TestCase
 
         $app = $this->getAppInstance();
         $container = $app->getContainer();
+        \assert($container instanceof Container);
         $container->set(LoggerInterface::class, $logger);
 
         // No non-default headers. No $_SERVER key override.

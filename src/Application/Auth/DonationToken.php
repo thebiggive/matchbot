@@ -82,6 +82,12 @@ class DonationToken
     #[Pure]
     private static function getSecret(): string
     {
-        return getenv('JWT_DONATION_SECRET');
+        $secret = getenv('JWT_DONATION_SECRET');
+
+        if (! is_string($secret)) {
+            throw new \RuntimeException("JWT_DONATION_SECRET not set in environment");
+        }
+
+        return $secret;
     }
 }
