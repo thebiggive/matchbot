@@ -533,10 +533,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return count($donations);
     }
 
-    /**
-     * @param mixed $campaignRepository
-     */
-    public function setCampaignRepository($campaignRepository): void
+    public function setCampaignRepository(CampaignRepository $campaignRepository): void
     {
         $this->campaignRepository = $campaignRepository;
     }

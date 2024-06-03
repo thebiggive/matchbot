@@ -195,23 +195,11 @@
     </PossiblyNullReference>
   </file>
   <file src="src/Application/Auth/DonationToken.php">
-    <FalsableReturnStatement>
-      <code><![CDATA[getenv('JWT_DONATION_SECRET')]]></code>
-    </FalsableReturnStatement>
-    <InvalidFalsableReturnType>
-      <code><![CDATA[string]]></code>
-    </InvalidFalsableReturnType>
     <MixedPropertyFetch>
       <code><![CDATA[$decodedJwtBody->sub->donationId]]></code>
     </MixedPropertyFetch>
   </file>
   <file src="src/Application/Auth/IdentityToken.php">
-    <FalsableReturnStatement>
-      <code><![CDATA[getenv('JWT_ID_SECRET')]]></code>
-    </FalsableReturnStatement>
-    <InvalidFalsableReturnType>
-      <code><![CDATA[string]]></code>
-    </InvalidFalsableReturnType>
     <MissingParamType>
       <code><![CDATA[$jws]]></code>
     </MissingParamType>
@@ -638,9 +626,6 @@
       <code><![CDATA[$matchingAdapter]]></code>
       <code><![CDATA[$queuedForPersist]]></code>
     </MissingConstructor>
-    <MixedAssignment>
-      <code><![CDATA[$this->campaignRepository]]></code>
-    </MixedAssignment>
     <MixedReturnTypeCoercion>
       <code><![CDATA[$qb->getQuery()
             ->disableResultCache()
@@ -1141,19 +1126,6 @@
       <code><![CDATA[$config->getProxyDir()]]></code>
       <code><![CDATA[$config->getProxyNamespace()]]></code>
     </PossiblyNullArgument>
-    <PossiblyNullReference>
-      <code><![CDATA[get]]></code>
-      <code><![CDATA[set]]></code>
-      <code><![CDATA[set]]></code>
-      <code><![CDATA[set]]></code>
-      <code><![CDATA[set]]></code>
-    </PossiblyNullReference>
-    <UndefinedInterfaceMethod>
-      <code><![CDATA[set]]></code>
-      <code><![CDATA[set]]></code>
-      <code><![CDATA[set]]></code>
-      <code><![CDATA[set]]></code>
-    </UndefinedInterfaceMethod>
   </file>
   <file src="tests/Application/Auth/PersonManagementAuthMiddlewareTest.php">
     <PossiblyNullReference>
@@ -1277,16 +1249,6 @@
     <PossiblyNullReference>
       <code><![CDATA[get]]></code>
     </PossiblyNullReference>
-  </file>
-  <file src="tests/Monolog/Processor/AwsTraceIdProcessorTest.php">
-    <PossiblyNullReference>
-      <code><![CDATA[set]]></code>
-      <code><![CDATA[set]]></code>
-    </PossiblyNullReference>
-    <UndefinedInterfaceMethod>
-      <code><![CDATA[set]]></code>
-      <code><![CDATA[set]]></code>
-    </UndefinedInterfaceMethod>
   </file>
   <file src="tests/TestCase.php">
     <MixedArgument>

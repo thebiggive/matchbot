@@ -81,7 +81,13 @@ class IdentityToken
     #[Pure]
     private static function getSecret(): string
     {
-        return getenv('JWT_ID_SECRET');
+        $secret = getenv('JWT_ID_SECRET');
+
+        if (! is_string($secret)) {
+            throw new \RuntimeException("JWT_ID_SECRET not set in environment");
+        }
+
+        return $secret;
     }
 
     public function isComplete($jws): bool
