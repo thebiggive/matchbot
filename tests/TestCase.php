@@ -7,6 +7,7 @@ namespace MatchBot\Tests;
 use DI\ContainerBuilder;
 use Exception;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Messenger\Handler\DonationStateUpdatedHandler;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
@@ -65,6 +66,7 @@ class TestCase extends PHPUnitTestCase
 
         // Build PHP-DI Container instance
         $container = $containerBuilder->build();
+        $container->set(DonationStateUpdatedHandler::class, null); // temp, overrides need for real db for this in prod
 
         if (!$withRealRedis) {
             // For unit tests, we need to stub out Redis so that rate limiting middleware doesn't

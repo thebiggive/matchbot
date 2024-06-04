@@ -28,6 +28,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
@@ -259,6 +260,32 @@ return function (ContainerBuilder $containerBuilder) {
                 $sendMiddleware,
                 $handleMiddleware,
             ]);
+        },
+
+        DonationStateUpdatedHandler::class => function (ContainerInterface $c): DonationStateUpdatedHandler {
+            // for now constructing this handeler manually to avoid use of the RetrySafeEntityManager which
+            // is generating a slightly mysterious error. May not keep it like this once we know what the error is
+            //caused by
+
+            $em = new ORM\EntityManager(
+                conn: $c->get(Connection::class),
+                config: $c->get(ORM\Configuration::class),
+                eventManager: null
+            );
+
+            $donationRepo =  $em->getRepository(\MatchBot\Domain\Donation::class);
+            assert($donationRepo instanceof DonationRepository);
+
+            // lines below copied from repositories.php
+            $donationRepo->setCampaignRepository($c->get(CampaignRepository::class));
+            $donationRepo->setClient($c->get(Client\Donation::class));
+            $donationRepo->setFundRepository($c->get(FundRepository::class));
+            $donationRepo->setLockFactory($c->get(LockFactory::class));
+            $donationRepo->setLogger($c->get(LoggerInterface::class));
+            $donationRepo->setMatchingAdapter($c->get(Matching\Adapter::class));
+
+
+            return new DonationStateUpdatedHandler(donationRepository: $donationRepo);
         },
 
         ORM\Configuration::class => static function (ContainerInterface $c): ORM\Configuration {
