@@ -194,7 +194,7 @@ class TestCase extends PHPUnitTestCase
     public static function someDonation(): Donation
     {
         return Donation::fromApiModel(new DonationCreate(
-            currencyCode: 'GBB',
+            currencyCode: 'GBP',
             donationAmount: '1',
             projectId: '123456789012345678',
             psp: 'stripe',

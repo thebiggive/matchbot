@@ -20,7 +20,6 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 
-
 class RetrospectivelyMatchTest extends TestCase
 {
     use DonationTestDataTrait;
