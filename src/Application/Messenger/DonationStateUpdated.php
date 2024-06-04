@@ -4,7 +4,6 @@ namespace MatchBot\Application\Messenger;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\Donation;
-use Ramsey\Uuid\Uuid;
 
 readonly class DonationStateUpdated
 {
