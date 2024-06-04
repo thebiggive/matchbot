@@ -72,7 +72,6 @@ class DonationStateUpdatedHandlerTest extends TestCase
         $donation = \MatchBot\Tests\TestCase::someDonation();
         $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn($donation);
         $this->donationRepositoryProphecy->push($donation, false)->willThrow(new \Exception('Failed to push to SF'));
-        ;
 
         $sut = new DonationStateUpdatedHandler($this->donationRepositoryProphecy->reveal());
 
