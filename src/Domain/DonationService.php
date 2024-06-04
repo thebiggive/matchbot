@@ -226,6 +226,9 @@ readonly class DonationService
             );
         }
 
+        // Attempt immediate sync. Buffered for a future batch sync if the SF call fails.
+        $this->donationRepository->push($donation, true);
+
         return $donation;
     }
 
