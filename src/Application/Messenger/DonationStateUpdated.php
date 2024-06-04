@@ -8,7 +8,7 @@ use Ramsey\Uuid\Uuid;
 
 readonly class DonationStateUpdated
 {
-    public function __construct(
+    private function __construct(
         public string $donationUUID,
         public bool $donationIsNew
     ) {
