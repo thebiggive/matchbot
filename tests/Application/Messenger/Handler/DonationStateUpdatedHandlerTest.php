@@ -1,6 +1,6 @@
 <?php
 
-namespace Application\Messenger\Handler;
+namespace MatchBot\Tests\Application\Messenger\Handler;
 
 use MatchBot\Application\Messenger\DonationStateUpdated;
 use MatchBot\Application\Messenger\Handler\DonationStateUpdatedHandler;
