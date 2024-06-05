@@ -132,6 +132,7 @@ readonly class DonationService
             $createPayload = [
                 ...$donation->getStripeMethodProperties(),
                 ...$donation->getStripeOnBehalfOfProperties(),
+                'customer' => $pspCustomerId,
                 // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
                 // See https://stripe.com/docs/api/payment_intents/object
                 'amount' => $donation->getAmountFractionalIncTip(),
@@ -163,15 +164,8 @@ readonly class DonationService
                 ],
             ];
 
-            // For now 'customer' may be omitted – and an automatic, guest customer used by Stripe –
-            // depending on the frontend mode. If there *is* a customer, we want to be able to offer them
-            // card reuse.
-            if ($pspCustomerId !== null) {
-                $createPayload['customer'] = $pspCustomerId;
-
-                if ($donation->supportsSavingPaymentMethod()) {
-                    $createPayload['setup_future_usage'] = 'on_session';
-                }
+            if ($donation->supportsSavingPaymentMethod()) {
+                $createPayload['setup_future_usage'] = 'on_session';
             }
 
             try {
