@@ -14,18 +14,18 @@ class Calculator
 {
     private const string VAT_PERCENTAGE = '20';
 
-    private const string STRIPE_FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU = '3.2';
+    private const string FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU = '3.2';
 
-    private const string STRIPE_FEE_GIFT_AID_PERCENTAGE = '0.75'; // 3% of Gift Aid amount.
+    private const string FEE_GIFT_AID_PERCENTAGE = '0.75'; // 3% of Gift Aid amount.
 
-    private const string STRIPE_FEE_MAIN_PERCENTAGE_STANDARD = '1.5';
+    private const string FEE_MAIN_PERCENTAGE_STANDARD = '1.5';
 
     /** @var string[]   Major currency unit (e.g. pounds) fee charged *by us* for Stripe credit/debit
      *                  card donations. These values were chosen based on a Stripe support email about
      *                  their own core fees in mid 2021 BUT they don't necessarily reflect what Stripe
      *                  charge *us* due to special contract arrangements.
      */
-    private const array STRIPE_FEES_FIXED = [
+    private const array FEES_FIXED = [
         'CHF' => '0.3',
         'DKK' => '1.8',
         'EUR' => '0.25',
@@ -120,18 +120,18 @@ class Calculator
 
             $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
             // Currency code has been compulsory for some time.
-            Assertion::keyExists(self::STRIPE_FEES_FIXED, $currencyCode);
-            $feeAmountFixed = self::STRIPE_FEES_FIXED[$currencyCode];
+            Assertion::keyExists(self::FEES_FIXED, $currencyCode);
+            $feeAmountFixed = self::FEES_FIXED[$currencyCode];
 
-            $feeRatio = bcdiv(self::STRIPE_FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
+            $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
             if ($this->cardBrand === 'amex' || !$this->isEU($this->cardCountry)) {
-                $feeRatio = bcdiv(self::STRIPE_FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU, '100', 3);
+                $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU, '100', 3);
             }
 
             if ($this->hasGiftAid) {
                 // 4 points needed to handle overall percentages of GA fee like 0.75% == 0.0075 ratio.
                 $giftAidFee = bcmul(
-                    bcdiv(self::STRIPE_FEE_GIFT_AID_PERCENTAGE, '100', 4),
+                    bcdiv(self::FEE_GIFT_AID_PERCENTAGE, '100', 4),
                     $this->amount,
                     3,
                 );
