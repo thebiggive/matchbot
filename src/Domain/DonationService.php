@@ -80,6 +80,14 @@ readonly class DonationService
             throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
         }
 
+        // A closed EM can happen if the above tried to insert a campaign or fund, hit a duplicate error because
+        // another thread did it already, then successfully got the new copy. There's been no subsequent
+        // database persistence that needed an open manager, so none replaced the broken one. In that
+        // edge case, we need to handle that before `persistWithoutRetries()` has a chance of working.
+        if (!$this->entityManager->isOpen()) {
+            $this->entityManager->resetManager();
+        }
+
         // Must persist before Stripe work to have ID available.
         $this->runWithPossibleRetry(function () use ($donation) {
             $this->entityManager->persistWithoutRetries($donation);
