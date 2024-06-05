@@ -21,18 +21,20 @@ class Calculator
 
     private const string STRIPE_FEE_MAIN_PERCENTAGE_STANDARD = '1.5';
 
+    /** @var string[]   Whole currency unit (e.g. pounds) fee charged *by us* for Stripe credit/debit
+     *                  card donations. These values were chosen based on a Stripe support email about
+     *                  their own core fees in mid 2021 BUT they don't necessarily reflect what Stripe
+     *                  charge *us* due to special contract arrangements.
+     */
     private const array STRIPE_FEES_FIXED = [
-        // Based on Stripe support email 9/4/21.
         'CHF' => '0.3',
         'DKK' => '1.8',
         'EUR' => '0.25',
-        'GBP' => '0.2', // Baseline fee in pounds
+        'GBP' => '0.2', // Baseline fee in pounds for recharge; not necessarily exactly what Stripe charged BG.
         'NOK' => '1.8',
         'SEK' => '1.8',
         'USD' => '0.3',
     ];
-
-    private const string STRIPE_FEES_DEFAULT = '0.2';
 
     /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
     private const array EU_COUNTRY_CODES = [
@@ -118,11 +120,9 @@ class Calculator
             // a fee on Gift Aid. May vary by card type & country.
 
             $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
-            if (array_key_exists($currencyCode, self::STRIPE_FEES_FIXED)) {
-                $feeAmountFixed = self::STRIPE_FEES_FIXED[$currencyCode];
-            } else {
-                $feeAmountFixed = self::STRIPE_FEES_DEFAULT;
-            }
+            // Currency code has been compulsory for some time.
+            \assert(array_key_exists($currencyCode, self::STRIPE_FEES_FIXED));
+            $feeAmountFixed = self::STRIPE_FEES_FIXED[$currencyCode];
 
             $feeRatio = bcdiv(self::STRIPE_FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
             if ($this->cardBrand === 'amex' || !$this->isEU($this->cardCountry)) {
