@@ -68,7 +68,7 @@ class DonationServiceTest extends TestCase
             TestCase::someCampaign(stripeAccountId: 'STRIPE-ACCOUNT-ID')
         );
 
-        $this->donationRepoProphecy->buildFromApiRequest($donationCreate)->willReturn($donation);
+        $this->donationRepoProphecy->buildFromApiRequest($donationCreate, withResultCache: true)->willReturn($donation);
 
         $this->chatterProphecy->send(
             new ChatMessage(

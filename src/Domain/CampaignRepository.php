@@ -14,6 +14,23 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
+    public function getCampaignBySalesforceId(string $salesforceId, bool $withResultCache): ?Campaign
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('c')
+            ->from(Campaign::class, 'c')
+            ->where('c.salesforceId = :salesforceId')
+            ->setParameter('salesforceId', $salesforceId);
+
+        $qb->setCacheable($withResultCache);
+
+        /** @var Campaign|null $campaign */
+        $campaign = $qb->getQuery()->getOneOrNullResult();
+        Assertion::nullOrIsInstanceOf($campaign, Campaign::class);
+
+        return $campaign;
+    }
+
     /**
      * Gets those campaigns which are live now or recently closed (in the last week),
      * based on their last known end time, and those closed semi-recently where we are

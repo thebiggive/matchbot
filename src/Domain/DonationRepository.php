@@ -112,7 +112,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * @return Donation
      * @throws \UnexpectedValueException if inputs invalid, including projectId being unrecognised
      */
-    public function buildFromApiRequest(DonationCreate $donationData): Donation
+    public function buildFromApiRequest(DonationCreate $donationData, bool $withResultCache): Donation
     {
         if (!in_array($donationData->psp, ['stripe'], true)) {
             throw new \UnexpectedValueException(sprintf(
@@ -121,7 +121,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ));
         }
 
-        $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId->value]);
+        $campaign = $this->campaignRepository->getCampaignBySalesforceId(
+            salesforceId: $donationData->projectId->value,
+            withResultCache: $withResultCache,
+        );
 
         if (!$campaign) {
             // Fetch data for as-yet-unknown campaigns on-demand

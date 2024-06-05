@@ -48,7 +48,7 @@ readonly class DonationService
     public function createDonation(DonationCreate $donationData, string $pspCustomerId): Donation
     {
         try {
-            $donation = $this->donationRepository->buildFromApiRequest($donationData);
+            $donation = $this->donationRepository->buildFromApiRequest($donationData, withResultCache: true);
         } catch (\UnexpectedValueException $e) {
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $e->getMessage());
@@ -65,7 +65,7 @@ readonly class DonationService
                 'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
                 $donationData->projectId->value,
             ));
-            $donation = $this->donationRepository->buildFromApiRequest($donationData);
+            $donation = $this->donationRepository->buildFromApiRequest($donationData, withResultCache: false);
         }
 
         if ($pspCustomerId !== $donation->getPspCustomerId()) {

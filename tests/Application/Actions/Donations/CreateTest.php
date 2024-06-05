@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
@@ -132,7 +132,7 @@ class CreateTest extends TestCase
         $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), withResultCache: true)
             ->willReturn($donation);
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -165,7 +165,7 @@ class CreateTest extends TestCase
         $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), withResultCache: true)
             ->willReturn($donationToReturn);
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
         $donationRepoProphecy->push(Argument::type(Donation::class), Argument::type('bool'))->shouldNotBeCalled();
@@ -212,7 +212,7 @@ class CreateTest extends TestCase
         $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), withResultCache: true)
             ->willThrow(new UnexpectedValueException('Currency CAD is invalid for campaign'));
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
 
@@ -254,7 +254,7 @@ class CreateTest extends TestCase
         $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), withResultCache: true)
             ->shouldNotBeCalled();
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -681,11 +681,17 @@ class CreateTest extends TestCase
         $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
 
-        // Use a custom Prophecy Promise to vary the simulated behaviour.
+        // One exception, with result cache on.
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
-            ->will(new CreateDupeCampaignThrowThenSucceedPromise($donationToReturn))
-            ->shouldBeCalledTimes(2); // One exception, one success
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), withResultCache: true)
+            ->willThrow($this->prophesize(UniqueConstraintViolationException::class)->reveal())
+            ->shouldBeCalledOnce();
+
+        // One success, with result cache off.
+        $donationRepoProphecy
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), withResultCache: false)
+            ->willReturn($donationToReturn)
+            ->shouldBeCalledOnce();
 
         $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
@@ -890,7 +896,7 @@ class CreateTest extends TestCase
         $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), withResultCache: true)
             ->willReturn($donation);
 
         if ($donationPushed) {

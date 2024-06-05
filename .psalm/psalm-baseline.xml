@@ -392,9 +392,6 @@
     </MissingConstructor>
   </file>
   <file src="src/Application/Persistence/RetrySafeEntityManager.php">
-    <DeprecatedMethod>
-      <code><![CDATA[EntityManager::create($connectionSettings, $this->ormConfig)]]></code>
-    </DeprecatedMethod>
     <LessSpecificReturnStatement>
       <code><![CDATA[$this->ormConfig->getRepositoryFactory()->getRepository($this, $className)]]></code>
     </LessSpecificReturnStatement>
@@ -1162,12 +1159,6 @@
       <code><![CDATA[$this->getFundingUnderMatched()->getAmount()]]></code>
       <code><![CDATA[$this->getFundingUnderMatchedWithNothingAllocated()->getAmount()]]></code>
     </ArgumentTypeCoercion>
-    <MixedArgument>
-      <code><![CDATA[$this->getCampaignFundingRepoPropechy()->reveal()]]></code>
-      <code><![CDATA[$this->getCampaignFundingRepoPropechy()->reveal()]]></code>
-      <code><![CDATA[$this->getFundingWithdrawalRepoProphecy()->reveal()]]></code>
-      <code><![CDATA[$this->getFundingWithdrawalRepoProphecy()->reveal()]]></code>
-    </MixedArgument>
   </file>
   <file src="tests/Application/Commands/ResetMatchingTest.php">
     <InternalClass>

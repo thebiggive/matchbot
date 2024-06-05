@@ -202,7 +202,7 @@ class DonationRepositoryTest extends TestCase
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject1234567'])
+        $campaignRepoProphecy->getCampaignBySalesforceId('testProject1234567', withResultCache: true)
             ->willReturn($dummyCampaign);
 
         $createPayload = new DonationCreate(
@@ -214,7 +214,7 @@ class DonationRepositoryTest extends TestCase
         );
 
         $donation = $this->getRepo(null, false, $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload);
+            ->buildFromApiRequest($createPayload, withResultCache: true);
 
         $this->assertEquals('USD', $donation->getCurrencyCode());
         $this->assertEquals('123', $donation->getAmount());
@@ -233,7 +233,7 @@ class DonationRepositoryTest extends TestCase
 
 
         // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject1234567'])
+        $campaignRepoProphecy->getCampaignBySalesforceId('testProject1234567', withResultCache: true)
             ->willReturn(null);
         $campaignRepoProphecy->pullNewFromSf(Salesforce18Id::of('testProject1234567'))->willReturn($dummyCampaign);
 
@@ -253,7 +253,7 @@ class DonationRepositoryTest extends TestCase
         $donationRepository->setFundRepository($fundRepositoryProphecy->reveal());
 
         $donation = $donationRepository
-            ->buildFromApiRequest($createPayload);
+            ->buildFromApiRequest($createPayload, withResultCache: true);
 
         $this->assertSame('testProject1234567', $donation->getCampaign()->getSalesforceId());
     }
@@ -267,7 +267,7 @@ class DonationRepositoryTest extends TestCase
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->findOneBy(Argument::type('array'))
+        $campaignRepoProphecy->getCampaignBySalesforceId('testProject1234567', withResultCache: true)
             ->willReturn($dummyCampaign)
             ->shouldBeCalledOnce();
 
@@ -280,7 +280,7 @@ class DonationRepositoryTest extends TestCase
         );
 
         $this->getRepo(null, false, $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload);
+            ->buildFromApiRequest($createPayload, withResultCache: true);
     }
 
     public function testPushResponseError(): void
