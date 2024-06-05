@@ -77,7 +77,6 @@ $commands = [
     ),
     new ScheduledOutOfSyncFundsCheck(
         $psr11App->get(CampaignFundingRepository::class),
-        $psr11App->get(EntityManagerInterface::class),
         $psr11App->get(FundingWithdrawalRepository::class),
         $psr11App->get(Matching\Adapter::class),
         $chatter,
