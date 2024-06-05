@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Commands;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Domain\CampaignFunding;
@@ -21,11 +22,7 @@ class HandleOutOfSyncFundsTest extends TestCase
 {
     public function testCheck(): void
     {
-        $command = new HandleOutOfSyncFunds(
-            $this->getCampaignFundingRepoPropechy()->reveal(),
-            $this->getFundingWithdrawalRepoProphecy()->reveal(),
-            $this->getMatchingAdapterProphecy(false)->reveal(),
-        );
+        $command = $this->getCommand(expectFixes: false);
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
 
@@ -46,11 +43,7 @@ class HandleOutOfSyncFundsTest extends TestCase
 
     public function testFix(): void
     {
-        $command = new HandleOutOfSyncFunds(
-            $this->getCampaignFundingRepoPropechy()->reveal(),
-            $this->getFundingWithdrawalRepoProphecy()->reveal(),
-            $this->getMatchingAdapterProphecy(true)->reveal(),
-        );
+        $command = $this->getCommand(expectFixes: true);
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
 
@@ -78,11 +71,7 @@ class HandleOutOfSyncFundsTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Not enough arguments (missing: "mode").');
 
-        $command = new HandleOutOfSyncFunds(
-            $this->prophesize(CampaignFundingRepository::class)->reveal(),
-            $this->prophesize(FundingWithdrawalRepository::class)->reveal(),
-            $this->prophesize(Adapter::class)->reveal(),
-        );
+        $command = $this->getCommand(expectFixes: false, noopAdapter: true);
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
 
@@ -92,20 +81,14 @@ class HandleOutOfSyncFundsTest extends TestCase
 
     public function testWithModeInvalid(): void
     {
-        $command = new HandleOutOfSyncFunds(
-            $this->prophesize(CampaignFundingRepository::class)->reveal(),
-            $this->prophesize(FundingWithdrawalRepository::class)->reveal(),
-            $this->prophesize(Adapter::class)->reveal(),
-        );
-        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
-        $command->setLogger(new NullLogger());
+        $command = $this->getCommand(expectFixes: false, noopAdapter: true);
 
         $commandTester = new CommandTester($command);
         $commandTester->execute(['mode' => 'fixx']);
 
         $expectedOutputLines = [
             'matchbot:handle-out-of-sync-funds starting!',
-            'Please set the mode to "check" or "fix"',
+            'Please set the mode to "check" or "fix" or "2024-06-05-patch"',
             'matchbot:handle-out-of-sync-funds complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -248,5 +231,33 @@ class HandleOutOfSyncFundsTest extends TestCase
         $fundingUnderMatchedWithZero->setAmountAvailable('1000.00');
 
         return $fundingUnderMatchedWithZero;
+    }
+
+    private function getCommand(bool $expectFixes, bool $noopAdapter = false): HandleOutOfSyncFunds
+    {
+        $adapter = $noopAdapter
+            ? $this->prophesize(Adapter::class)->reveal()
+            : $this->getMatchingAdapterProphecy($expectFixes)->reveal();
+
+        $campaignRepo = $noopAdapter
+            ? $this->prophesize(CampaignFundingRepository::class)->reveal()
+            : $this->getCampaignFundingRepoPropechy()->reveal();
+        \assert($campaignRepo instanceof CampaignFundingRepository);
+
+        $withdrawalRepo = $noopAdapter
+            ? $this->prophesize(FundingWithdrawalRepository::class)->reveal()
+            : $this->getFundingWithdrawalRepoProphecy()->reveal();
+        \assert($withdrawalRepo instanceof FundingWithdrawalRepository);
+
+        $command = new HandleOutOfSyncFunds(
+            $campaignRepo,
+            $this->prophesize(EntityManagerInterface::class)->reveal(),
+            $withdrawalRepo,
+            $adapter,
+        );
+        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
+
+        return $command;
     }
 }
