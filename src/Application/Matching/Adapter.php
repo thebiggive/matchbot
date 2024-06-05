@@ -88,12 +88,12 @@ class Adapter
     }
 
     /**
-     *
+     * Acts on the `CampaignFunding` Doctrine entity, as well as the Redis fund store. But
+     * doesn't flush the database changes on its own.
      *
      * @param CampaignFunding $funding
      * @param string $amount
      * @return string New fund balance as bcmath-ready string
-     *
      */
     public function subtractAmountWithoutSavingToDB(CampaignFunding $funding, string $amount): string
     {
