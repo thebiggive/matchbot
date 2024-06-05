@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
@@ -119,7 +120,7 @@ class HandleOutOfSyncFunds extends LockingCommand
 
                 if ($mode === '2024-06-05-patch' && in_array($funding->getId(), $problemIds, true)) {
                     // Over match expected to be £300 but safest to drive it from live data and also assert.
-                    \assert(bccomp($overmatchAmount, '300.00', 2) === 0);
+                    Assertion::eq(bccomp($overmatchAmount, '300.00', 2), 0);
 
                     // This adapter fn already modifies the Doctrine $funding too, via `setAmountAvailable()`,
                     // just without flushing.
