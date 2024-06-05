@@ -43,9 +43,9 @@ readonly class DonationService
       * Creates a new pending donation
      *
      * @param DonationCreate $donationData Details of the desired donation, as sent from the browser
-     * @param string|null $pspCustomerId The existing Stripe customer ID of the donor, if any
+     * @param string $pspCustomerId The Stripe customer ID of the donor
      */
-    public function createDonation(DonationCreate $donationData, ?string $pspCustomerId): Donation
+    public function createDonation(DonationCreate $donationData, string $pspCustomerId): Donation
     {
         try {
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
@@ -71,7 +71,7 @@ readonly class DonationService
         if ($pspCustomerId !== $donation->getPspCustomerId()) {
             throw new \UnexpectedValueException(sprintf(
                 'Route customer ID %s did not match %s in donation body',
-                $pspCustomerId ?? 'null',
+                $pspCustomerId,
                 $donation->getPspCustomerId()
             ));
         }

@@ -48,6 +48,12 @@ class Create extends Action
         // JWS, this is null.
         $customerId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PSP_ATTRIBUTE_NAME);
         \assert(is_string($customerId) || is_null($customerId));
+        if (! (is_string($customerId) && trim($customerId) !== '')) {
+            return $this->validationError(
+                $response,
+                "Customer ID required to create donation",
+            );
+        }
 
         $body = (string) $request->getBody();
 
