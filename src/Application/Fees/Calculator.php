@@ -20,7 +20,7 @@ class Calculator
 
     private const string STRIPE_FEE_MAIN_PERCENTAGE_STANDARD = '1.5';
 
-    /** @var string[]   Whole currency unit (e.g. pounds) fee charged *by us* for Stripe credit/debit
+    /** @var string[]   Major currency unit (e.g. pounds) fee charged *by us* for Stripe credit/debit
      *                  card donations. These values were chosen based on a Stripe support email about
      *                  their own core fees in mid 2021 BUT they don't necessarily reflect what Stripe
      *                  charge *us* due to special contract arrangements.
