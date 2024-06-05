@@ -674,6 +674,7 @@ class DonationRepositoryTest extends TestCase
      * @param ObjectProphecy<Client\Donation> $donationClientProphecy
      * @param ObjectProphecy<Adapter> $matchingAdapterProphecy
      * @param ObjectProphecy<LockFactory> $lockFactoryProphecy
+     * @param ObjectProphecy<CampaignRepository> $campaignRepoProphecy
      */
     private function getRepo(
         ?ObjectProphecy $donationClientProphecy = null,

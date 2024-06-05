@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
@@ -38,6 +40,7 @@ class HandleOutOfSyncFunds extends LockingCommand
 
     public function __construct(
         private CampaignFundingRepository $campaignFundingRepository,
+        private EntityManagerInterface $entityManager,
         private FundingWithdrawalRepository $fundingWithdrawalRepository,
         private Matching\Adapter $matchingAdapter
     ) {
@@ -61,8 +64,8 @@ class HandleOutOfSyncFunds extends LockingCommand
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $mode = $input->getArgument('mode');
-        if (!in_array($mode, ['check', 'fix'], true)) {
-            $output->writeln('Please set the mode to "check" or "fix"');
+        if (!in_array($mode, ['check', 'fix', '2024-06-05-patch'], true)) {
+            $output->writeln('Please set the mode to "check" or "fix" or "2024-06-05-patch"');
             return 1;
         }
 
@@ -74,8 +77,17 @@ class HandleOutOfSyncFunds extends LockingCommand
         $numFundingsCorrect = 0;
         $numFundingsOvermatched = 0;
         $numFundingsUndermatched = 0;
+
+        $problemIds = [];
         /** @var CampaignFunding[] $fundings */
-        $fundings = $this->campaignFundingRepository->findAll();
+        if ($mode === '2024-06-05-patch') {
+            $problemIds = [29822];
+            $output->writeln('Running in 2024-06-05-patch mode');
+            // https://stackoverflow.com/a/52427915/2803757
+            $fundings = $this->campaignFundingRepository->findBy(['id' => $problemIds]);
+        } else {
+            $fundings = $this->campaignFundingRepository->findAll();
+        }
         $numFundings = count($fundings);
 
         foreach ($fundings as $funding) {
@@ -105,6 +117,26 @@ class HandleOutOfSyncFunds extends LockingCommand
                 $numFundingsOvermatched++;
                 $overmatchAmount = bcsub($fundingWithdrawalTotal, $campaignFundingAllocated, 2);
                 $output->writeln("Funding {$funding->getId()} is over-matched by $overmatchAmount. $details");
+
+                if ($mode === '2024-06-05-patch' && in_array($funding->getId(), $problemIds, true)) {
+                    // Over match expected to be £300 but safest to drive it from live data and also assert.
+                    Assertion::eq(bccomp($overmatchAmount, '300.00', 2), 0);
+
+                    // This adapter fn already modifies the Doctrine $funding too, via `setAmountAvailable()`,
+                    // just without flushing.
+                    $newTotal = $this->matchingAdapter->subtractAmountWithoutSavingToDB($funding, $overmatchAmount);
+                    $output->writeln(
+                        "PATCH: Released {$overmatchAmount} to funding ID {$funding->getId()}. New total: $newTotal"
+                    );
+
+                    // Funding withdrawals were already correct. `$funding` available balance change is handled
+                    // by matching adapter above. Just need to persist the change.
+                    $this->entityManager->persist($funding);
+                    $this->entityManager->flush();
+
+                    $output->writeln("PATCH: Persisted changes to funding ID {$funding->getId()}");
+                }
+
                 continue;
             }
 

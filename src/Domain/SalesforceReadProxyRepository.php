@@ -6,10 +6,12 @@ namespace MatchBot\Domain;
 
 use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use MatchBot\Client;
 
 /**
  * @template T of SalesforceReadProxy
- * @template-extends SalesforceProxyRepository<T>
+ * @template C of Client\Common
+ * @template-extends SalesforceProxyRepository<T, C>
  */
 abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
 {
@@ -26,7 +28,7 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
     /**
      * @psalm-param T $proxy
      */
-    public function updateFromSf(SalesforceReadProxy $proxy, $autoSave = true): void
+    public function updateFromSf(SalesforceReadProxy $proxy, bool $autoSave = true): void
     {
         // Make sure we update existing object if passed in a partial copy and we already have that Salesforce object
         // persisted, otherwise we'll try to insert a duplicate and get an ORM crash.

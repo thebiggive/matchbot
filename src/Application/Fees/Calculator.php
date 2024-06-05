@@ -13,15 +13,15 @@ use MatchBot\Application\Assertion;
  */
 class Calculator
 {
-    private const VAT_PERCENTAGE = '20';
+    private const string VAT_PERCENTAGE = '20';
 
-    private const STRIPE_FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU = '3.2';
+    private const string STRIPE_FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU = '3.2';
 
-    private const STRIPE_FEE_GIFT_AID_PERCENTAGE = '0.75'; // 3% of Gift Aid amount.
+    private const string STRIPE_FEE_GIFT_AID_PERCENTAGE = '0.75'; // 3% of Gift Aid amount.
 
-    private const STRIPE_FEE_MAIN_PERCENTAGE_STANDARD = '1.5';
+    private const string STRIPE_FEE_MAIN_PERCENTAGE_STANDARD = '1.5';
 
-    private const STRIPE_FEES_FIXED = [
+    private const array STRIPE_FEES_FIXED = [
         // Based on Stripe support email 9/4/21.
         'CHF' => '0.3',
         'DKK' => '1.8',
@@ -32,10 +32,10 @@ class Calculator
         'USD' => '0.3',
     ];
 
-    private const STRIPE_FEES_DEFAULT = '0.2';
+    private const string STRIPE_FEES_DEFAULT = '0.2';
 
     /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
-    private const EU_COUNTRY_CODES = [
+    private const array EU_COUNTRY_CODES = [
         'AT', 'BE', 'BG', 'CY', 'CZ', 'DK', 'EE',
         'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT',
         'LV', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL',
@@ -46,7 +46,7 @@ class Calculator
     /**
      * From https://stripe.com/docs/api/errors#errors-payment_method-card-brand
      */
-    public const STRIPE_CARD_BRANDS = [
+    public const array STRIPE_CARD_BRANDS = [
         'amex', 'diners', 'discover', 'eftpos_au', 'jcb', 'mastercard', 'unionpay', 'visa', 'unknown'
     ];
 

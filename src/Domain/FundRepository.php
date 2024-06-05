@@ -11,7 +11,7 @@ use MatchBot\Client;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
 /**
- * @template-extends SalesforceReadProxyRepository<Fund>
+ * @template-extends SalesforceReadProxyRepository<Fund, Client\Fund>
  */
 class FundRepository extends SalesforceReadProxyRepository
 {
@@ -176,11 +176,11 @@ class FundRepository extends SalesforceReadProxyRepository
      * Get live data for the object (which might be empty apart from the Salesforce ID) and return a full object.
      * No need to `setSalesforceLastPull()`, or EM `persist()` - just populate the fields specific to the object.
      *
-     * @param Fund $fund
+     * @param Fund $proxy
      */
-    protected function doUpdateFromSf(SalesforceReadProxy $fund): void
+    protected function doUpdateFromSf(SalesforceReadProxy $proxy): void
     {
-        $fundData = $this->getClient()->getById($fund->getSalesforceId());
-        $fund->setName($fundData['name'] ?? '');
+        $fundData = $this->getClient()->getById($proxy->getSalesforceId());
+        $proxy->setName($fundData['name'] ?? '');
     }
 }

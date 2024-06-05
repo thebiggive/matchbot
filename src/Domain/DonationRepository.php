@@ -19,7 +19,7 @@ use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 
 /**
- * @template-extends SalesforceWriteProxyRepository<Donation>
+ * @template-extends SalesforceWriteProxyRepository<Donation, \MatchBot\Client\Donation>
  */
 class DonationRepository extends SalesforceWriteProxyRepository
 {
@@ -43,12 +43,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->matchingAdapter = $adapter;
     }
 
-    /**
-     * @param Donation $donation
-     * @return bool
-     */
-    public function doCreate(SalesforceWriteProxy $donation): bool
+    public function doCreate(SalesforceWriteProxy $proxy): bool
     {
+        $donation = $proxy;
         try {
             $salesforceDonationId = $this->getClient()->create($donation);
             $donation->setSalesforceId($salesforceDonationId);
@@ -68,14 +65,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return true;
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedReturnValue . Not sure why Psalm thinks this is possibly unused.
-     *
-     * @param Donation $donation
-     * @return bool
-     */
-    public function doUpdate(SalesforceWriteProxy $donation): bool
+    public function doUpdate(SalesforceWriteProxy $proxy): bool
     {
+        $donation = $proxy;
+
         if ($donation->getPaymentMethodType() === null) {
             $donation->replaceNullPaymentMethodTypeWithCard();
             $this->getEntityManager()->persist($donation);
@@ -540,10 +533,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return count($donations);
     }
 
-    /**
-     * @param mixed $campaignRepository
-     */
-    public function setCampaignRepository($campaignRepository): void
+    public function setCampaignRepository(CampaignRepository $campaignRepository): void
     {
         $this->campaignRepository = $campaignRepository;
     }

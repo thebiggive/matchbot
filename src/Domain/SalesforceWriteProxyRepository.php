@@ -7,19 +7,29 @@ namespace MatchBot\Domain;
 use DateTime;
 use Doctrine\Common\Collections\Criteria;
 use MatchBot\Application\Commands\PushDonations;
+use MatchBot\Client;
 
 /**
  * @template T of SalesforceWriteProxy
- * @template-extends SalesforceProxyRepository<T>
+ * @template C of Client\Common
+ * @template-extends SalesforceProxyRepository<T, C>
  */
 abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 {
     /** Maximum of each type of pending object to process */
     private const MAX_PER_BULK_PUSH = 400;
 
+    /** @psalm-param T $proxy */
     abstract public function doCreate(SalesforceWriteProxy $proxy): bool;
+
+    /**
+     * @psalm-param T $proxy
+     */
     abstract public function doUpdate(SalesforceWriteProxy $proxy): bool;
 
+    /**
+     * @psalm-param T $proxy
+     */
     public function push(SalesforceWriteProxy $proxy, bool $isNew): bool
     {
         // This 'pre-`prePush()`' check protects us from trying to save the same Salesforce record twice at once.
@@ -115,7 +125,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
         // to avoid collisions with other pushes.
         $fiveMinutesAgo = $now->modify('-5 minutes');
 
-        /** @var SalesforceWriteProxy[] $proxiesToCreate */
+        /** @psalm-var T[] $proxiesToCreate */
         $proxiesToCreate = $this->findBy(
             ['salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE],
             ['updatedAt' => 'ASC'],
@@ -159,6 +169,9 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
         }
     }
 
+    /**
+     * @psalm-param T $proxy
+     */
     protected function postPush(bool $success, SalesforceWriteProxy $proxy): void
     {
         $shouldRePush = false;

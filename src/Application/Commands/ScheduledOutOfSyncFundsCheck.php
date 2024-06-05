@@ -2,6 +2,7 @@
 
 namespace MatchBot\Application\Commands;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
@@ -21,11 +22,12 @@ class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
 {
     public function __construct(
         CampaignFundingRepository $campaignFundingRepository,
+        EntityManagerInterface $entityManager,
         FundingWithdrawalRepository $fundingWithdrawalRepository,
         Matching\Adapter $matchingAdapter,
         private ChatterInterface $chatter,
     ) {
-        parent::__construct($campaignFundingRepository, $fundingWithdrawalRepository, $matchingAdapter);
+        parent::__construct($campaignFundingRepository, $entityManager, $fundingWithdrawalRepository, $matchingAdapter);
     }
 
     protected static $defaultName = 'matchbot:scheduled-out-of-sync-funds-check';

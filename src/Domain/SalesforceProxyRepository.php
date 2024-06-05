@@ -6,13 +6,18 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityRepository;
 use MatchBot\Client;
+use MatchBot\Client\Common;
 use Psr\Log\LoggerInterface;
 
 /**
  * @template T of SalesforceProxy
+ * @template C of Client\Common
  * @template-extends EntityRepository<T>
  */ abstract class SalesforceProxyRepository extends EntityRepository
 {
+    /**
+     * @psalm-var C
+     */
     protected Client\Common $client;
     protected LoggerInterface $logger;
 
@@ -31,6 +36,9 @@ use Psr\Log\LoggerInterface;
         $this->logger->info($message);
     }
 
+    /**
+     * @psalm-param C $client
+     */
     public function setClient(Client\Common $client): void
     {
         $this->client = $client;
@@ -41,6 +49,9 @@ use Psr\Log\LoggerInterface;
         $this->logger = $logger;
     }
 
+    /**
+     * @psalm-return C
+     */
     protected function getClient(): Client\Common
     {
         if (!$this->client) {

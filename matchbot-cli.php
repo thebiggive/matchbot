@@ -68,11 +68,7 @@ $commands = [
         $psr11App->get(StripeClient::class),
     ),
     new ExpireMatchFunds($psr11App->get(DonationRepository::class)),
-    new HandleOutOfSyncFunds(
-        $psr11App->get(CampaignFundingRepository::class),
-        $psr11App->get(FundingWithdrawalRepository::class),
-        $psr11App->get(Matching\Adapter::class)
-    ),
+    $psr11App->get(HandleOutOfSyncFunds::class),
     new RedistributeMatchFunds(
         $psr11App->get(CampaignFundingRepository::class),
         $now,
@@ -81,6 +77,7 @@ $commands = [
     ),
     new ScheduledOutOfSyncFundsCheck(
         $psr11App->get(CampaignFundingRepository::class),
+        $psr11App->get(EntityManagerInterface::class),
         $psr11App->get(FundingWithdrawalRepository::class),
         $psr11App->get(Matching\Adapter::class),
         $chatter,
