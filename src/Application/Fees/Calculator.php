@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Fees;
 
-use Assert\AssertionFailedException;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
 
@@ -121,7 +120,7 @@ class Calculator
 
             $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
             // Currency code has been compulsory for some time.
-            \assert(array_key_exists($currencyCode, self::STRIPE_FEES_FIXED));
+            Assertion::keyExists(self::STRIPE_FEES_FIXED, $currencyCode);
             $feeAmountFixed = self::STRIPE_FEES_FIXED[$currencyCode];
 
             $feeRatio = bcdiv(self::STRIPE_FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
