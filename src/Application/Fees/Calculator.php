@@ -120,6 +120,7 @@ class Calculator
 
             $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
             // Currency code has been compulsory for some time.
+            /** @psalm-suppress ImpureMethodCall */
             Assertion::keyExists(self::FEES_FIXED, $currencyCode);
             $feeAmountFixed = self::FEES_FIXED[$currencyCode];
 
