@@ -2,6 +2,7 @@
 
 namespace MatchBot\Tests\Domain;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -15,6 +16,7 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Stripe\Exception\PermissionException;
 use Symfony\Component\Clock\ClockInterface;
@@ -22,6 +24,7 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 
 class DonationServiceTest extends TestCase
 {
+    private const CUSTOMER_ID = 'CUSTOMER_ID';
     private DonationService $sut;
 
     /** @var \Prophecy\Prophecy\ObjectProphecy<Stripe> */
@@ -38,35 +41,14 @@ class DonationServiceTest extends TestCase
         $this->donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $this->stripeProphecy = $this->prophesize(Stripe::class);
         $this->chatterProphecy = $this->prophesize(StripeChatterInterface::class);
-
-        $this->sut = new DonationService(
-            $this->donationRepoProphecy->reveal(),
-            $this->prophesize(CampaignRepository::class)->reveal(),
-            new NullLogger(),
-            $this->prophesize(RetrySafeEntityManager::class)->reveal(),
-            $this->stripeProphecy->reveal(),
-            $this->prophesize(Adapter::class)->reveal(),
-            $this->chatterProphecy->reveal(),
-            $this->prophesize(ClockInterface::class)->reveal(),
-        );
     }
 
     public function testIdentifiesCharityLackingCapabilities(): void
     {
-        $customerId = 'CUSTOMER_ID';
+        $this->sut = $this->getDonationService(withAlwaysCrashingEntityManager: false);
 
-        $donationCreate = new DonationCreate(
-            currencyCode: 'GBP',
-            donationAmount: '1',
-            projectId: 'projectIDxxxxxxxxx',
-            psp: 'stripe',
-            pspCustomerId: $customerId
-        );
-
-        $donation = Donation::fromApiModel(
-            $donationCreate,
-            TestCase::someCampaign(stripeAccountId: 'STRIPE-ACCOUNT-ID')
-        );
+        $donationCreate = $this->getDonationCreate();
+        $donation = $this->getDonation();
 
         $this->donationRepoProphecy->buildFromApiRequest($donationCreate)->willReturn($donation);
 
@@ -88,6 +70,71 @@ class DonationServiceTest extends TestCase
 
         $this->expectException(CharityAccountLacksNeededCapaiblities::class);
 
-        $this->sut->createDonation($donationCreate, $customerId);
+        $this->sut->createDonation($donationCreate, self::CUSTOMER_ID);
+    }
+
+    public function testInitialPersistRunsOutOfRetries(): void
+    {
+        $logger = $this->prophesize(LoggerInterface::class);
+        $logger->info('Donation Create persist before stripe work error: . Retrying 1 of 3.')->shouldBeCalledOnce();
+        $logger->info(Argument::type('string'))->shouldBeCalled();
+        $logger->error('Donation Create persist before stripe work error: . Giving up after 3 retries.')
+            ->shouldBeCalledOnce();
+
+        $this->sut = $this->getDonationService(withAlwaysCrashingEntityManager: true, logger: $logger->reveal());
+
+        $donationCreate = $this->getDonationCreate();
+        $donation = $this->getDonation();
+
+        $this->donationRepoProphecy->buildFromApiRequest($donationCreate)->willReturn($donation);
+        $this->stripeProphecy->createPaymentIntent(Argument::any())
+            ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
+
+        $this->expectException(UniqueConstraintViolationException::class);
+
+        $this->sut->createDonation($donationCreate, self::CUSTOMER_ID);
+    }
+
+    private function getDonationService(
+        bool $withAlwaysCrashingEntityManager,
+        LoggerInterface $logger = null,
+    ): DonationService {
+        $emProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        if ($withAlwaysCrashingEntityManager) {
+            $exception = $this->prophesize(UniqueConstraintViolationException::class);
+            $emProphecy->persistWithoutRetries(Argument::type(Donation::class))->willThrow($exception->reveal());
+        }
+
+        $logger = $logger ?? new NullLogger();
+
+        return new DonationService(
+            $this->donationRepoProphecy->reveal(),
+            $this->prophesize(CampaignRepository::class)->reveal(),
+            $logger,
+            $emProphecy->reveal(),
+            $this->stripeProphecy->reveal(),
+            $this->prophesize(Adapter::class)->reveal(),
+            $this->chatterProphecy->reveal(),
+            $this->prophesize(ClockInterface::class)->reveal(),
+        );
+    }
+
+    private function getDonationCreate(): DonationCreate
+    {
+        return new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '1',
+            projectId: 'projectIDxxxxxxxxx',
+            psp: 'stripe',
+            pspCustomerId: self::CUSTOMER_ID
+        );
+    }
+
+    private function getDonation(): Donation
+    {
+        return Donation::fromApiModel(
+            $this->getDonationCreate(),
+            TestCase::someCampaign(stripeAccountId: 'STRIPE-ACCOUNT-ID')
+        );
     }
 }
