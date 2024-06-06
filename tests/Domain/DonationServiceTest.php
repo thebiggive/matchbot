@@ -2,6 +2,7 @@
 
 namespace MatchBot\Tests\Domain;
 
+use Doctrine\DBAL\Driver\PDO\Exception;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
@@ -76,9 +77,15 @@ class DonationServiceTest extends TestCase
     public function testInitialPersistRunsOutOfRetries(): void
     {
         $logger = $this->prophesize(LoggerInterface::class);
-        $logger->info('Donation Create persist before stripe work error: . Retrying 1 of 3.')->shouldBeCalledOnce();
+        $logger->info(
+            'Donation Create persist before stripe work error: ' .
+            'An exception occurred in the driver: EXCEPTION_MESSAGE. Retrying 1 of 3.'
+        )->shouldBeCalledOnce();
         $logger->info(Argument::type('string'))->shouldBeCalled();
-        $logger->error('Donation Create persist before stripe work error: . Giving up after 3 retries.')
+        $logger->error(
+            'Donation Create persist before stripe work error: ' .
+            'An exception occurred in the driver: EXCEPTION_MESSAGE. Giving up after 3 retries.'
+        )
             ->shouldBeCalledOnce();
 
         $this->sut = $this->getDonationService(withAlwaysCrashingEntityManager: true, logger: $logger->reveal());
@@ -101,8 +108,13 @@ class DonationServiceTest extends TestCase
     ): DonationService {
         $emProphecy = $this->prophesize(RetrySafeEntityManager::class);
         if ($withAlwaysCrashingEntityManager) {
-            $exception = $this->prophesize(UniqueConstraintViolationException::class);
-            $emProphecy->persistWithoutRetries(Argument::type(Donation::class))->willThrow($exception->reveal());
+            /**
+             * @psalm-suppress InternalMethod
+             * @psalm-suppress InternalClass Hard to simulate `final` exception otherwise
+             */
+            $emProphecy->persistWithoutRetries(Argument::type(Donation::class))->willThrow(
+                new UniqueConstraintViolationException(new Exception('EXCEPTION_MESSAGE'), null)
+            );
         }
 
         $logger = $logger ?? new NullLogger();
