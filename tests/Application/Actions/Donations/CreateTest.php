@@ -877,36 +877,23 @@ class CreateTest extends TestCase
     {
         $donation = $this->getTestDonation(true, true, true);
 
-        $app = $this->getAppInstance();
+        $app = $this->getAppWithCommonPersistenceDeps(
+            donationPersisted: false,
+            donationPushed: false,
+            donationMatched: false,
+            donation: $donation,
+        );
         $container = $app->getContainer();
         \assert($container instanceof Container);
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-
-        // Use a custom Prophecy Promise to vary the simulated behaviour.
-        $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
-            ->willReturn($donation)
-            ->shouldBeCalledOnce();
-
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldNotBeCalled();
-        // No allocation because earlier persist will throw every time in this test.
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        // These are called once after initial ID setup and once after Stripe fields added.
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))
             ->willThrow($this->prophesize(DBALServerException::class)->reveal())
             ->shouldBeCalledTimes(3); // DonationService::MAX_RETRY_COUNT
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
-        $stripeProphecy = $this->prophesize(Stripe::class);
-        $stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
-            ->shouldNotBeCalled();
-
         $container->set(ClockInterface::class, new MockClock());
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
