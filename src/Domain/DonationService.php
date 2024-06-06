@@ -25,7 +25,7 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 
 readonly class DonationService
 {
-    private const MAX_RETRY_COUNT = 4;
+    private const MAX_RETRY_COUNT = 3;
 
     public function __construct(
         private DonationRepository $donationRepository,
@@ -88,7 +88,7 @@ readonly class DonationService
             $this->entityManager->resetManager();
         }
 
-        // Must persist before Stripe work to have ID available.
+        // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
         $this->runWithPossibleRetry(function () use ($donation) {
             $this->entityManager->persistWithoutRetries($donation);
             $this->entityManager->flush();
@@ -268,6 +268,7 @@ readonly class DonationService
      * then we still have any required related new entities in the Unit of Work.
      * @param \Closure $retryable The action to be executed and then retried if necassary
      * @param string $actionName The name of the action, used in logs.
+     * @throws ORMException|DBALServerException if they're occurring when max retry count reached.
      */
     private function runWithPossibleRetry(\Closure $retryable, string $actionName): void
     {
@@ -290,6 +291,18 @@ readonly class DonationService
                 $seconds = (new Randomizer())->getFloat(0.1, 1.1);
                 \assert(is_float($seconds)); // See https://github.com/vimeo/psalm/issues/10830
                 $this->clock->sleep($seconds);
+
+                if ($retryCount === self::MAX_RETRY_COUNT) {
+                    $this->logger->error(
+                        sprintf(
+                            $actionName . ' error: %s. Giving up after %d retries.',
+                            $exception->getMessage(),
+                            self::MAX_RETRY_COUNT,
+                        )
+                    );
+
+                    throw $exception;
+                }
             }
         }
     }

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
+use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
@@ -27,6 +27,8 @@ use Slim\App;
 use Slim\Exception\HttpUnauthorizedException;
 use Stripe\Exception\PermissionException;
 use Stripe\PaymentIntent;
+use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Notifier\Message\ChatMessage;
 use UnexpectedValueException;
 
@@ -871,6 +873,46 @@ class CreateTest extends TestCase
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
         $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
+    }
+
+    public function testErrorWhenAllDbPersistCallsFail(): void
+    {
+        $donation = $this->getTestDonation(true, true, true);
+
+        $app = $this->getAppWithCommonPersistenceDeps(
+            donationPersisted: false,
+            donationPushed: false,
+            donationMatched: false,
+            donation: $donation,
+        );
+        $container = $app->getContainer();
+        \assert($container instanceof Container);
+
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))
+            ->willThrow($this->prophesize(DBALServerException::class)->reveal())
+            ->shouldBeCalledTimes(3); // DonationService::MAX_RETRY_COUNT
+        $entityManagerProphecy->flush()->shouldNotBeCalled();
+
+        $container->set(ClockInterface::class, new MockClock());
+        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+
+        $data = $this->encode($donation);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $response = $app->handle($this->addDummyPersonAuth($request));
+
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(500, $response->getStatusCode());
+
+        /** @var array $payloadArray */
+        $payloadArray = json_decode($payload, true);
+
+        $this->assertEquals(['error' => [
+            'type' => 'SERVER_ERROR',
+            'description' => 'Could not make Stripe Payment Intent (D)',
+        ]], $payloadArray);
     }
 
     /**
