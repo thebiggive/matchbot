@@ -889,6 +889,7 @@ class CreateTest extends TestCase
         \assert($container instanceof Container);
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy->isOpen()->willReturn(true);
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))
             ->willThrow($this->prophesize(DBALServerException::class)->reveal())
             ->shouldBeCalledTimes(3); // DonationService::MAX_RETRY_COUNT
