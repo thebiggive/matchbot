@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Commands;
 
-use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
@@ -22,25 +21,17 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
 
-class RedistributeMatchFundsTest extends TestCase
+class RedistibuteMatchFundsTest extends TestCase
 {
     private \DateTimeImmutable $newYearsEveNoon;
     private \DateTimeImmutable $earlyNovemberNoon;
-
-    /** @var ObjectProphecy<RoutableMessageBus> */
-    private ObjectProphecy $messageBusProphecy;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->newYearsEveNoon = new \DateTimeImmutable('2023-12-31T12:00:00');
         $this->earlyNovemberNoon = new \DateTimeImmutable('2023-11-05T12:00:00');
-
-        $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
-        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
     }
 
     public function testNoEligibleDonations(): void
@@ -86,6 +77,8 @@ class RedistributeMatchFundsTest extends TestCase
         $donationRepoProphecy->allocateMatchFunds($donation)
             ->shouldBeCalledOnce()
             ->willReturn('10.00');
+        $donationRepoProphecy->push($donation, false)
+            ->shouldBeCalledOnce();
 
         $loggerProphecy = $this->prophesize(LoggerInterface::class);
         $loggerProphecy->error(Argument::type('string'))->shouldNotBeCalled();
@@ -140,6 +133,8 @@ class RedistributeMatchFundsTest extends TestCase
         $donationRepoProphecy->allocateMatchFunds($donation)
             ->shouldBeCalledOnce()
             ->willReturn('5.00'); // Half the donation matched after redistribution.
+        $donationRepoProphecy->push($donation, false)
+            ->shouldBeCalledOnce();
 
         $uuid = $donation->getUuid();
         $loggerProphecy = $this->prophesize(LoggerInterface::class);
@@ -219,11 +214,9 @@ class RedistributeMatchFundsTest extends TestCase
     ): RedistributeMatchFunds {
         $command = new RedistributeMatchFunds(
             $campaignFundingRepository->reveal(),
-            $this->createStub(EntityManagerInterface::class),
             $now,
             $donationRepoProphecy->reveal(),
             $loggerProphecy->reveal(),
-            $this->messageBusProphecy->reveal(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());

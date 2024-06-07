@@ -319,9 +319,6 @@ class Donation extends SalesforceWriteProxy
      */
     private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
     {
-        // We only fully support GBP, however we have test cases covering the following currencies:
-        Assertion::inArray($currencyCode, ['GBP', 'CAD', 'USD', 'SEK']);
-
         $this->setUuid(Uuid::uuid4());
         $this->fundingWithdrawals = new ArrayCollection();
         $this->currencyCode = $currencyCode;

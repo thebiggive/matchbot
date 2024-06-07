@@ -26,8 +26,6 @@ use Slim\Psr7\Response;
 use Stripe\Service\PaymentIntentService;
 use Stripe\StripeClient;
 use Symfony\Component\Clock\MockClock;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -58,7 +56,14 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Pending);
 
-        $updateAction = $this->makeUpdateAction();
+        $updateAction = new Update(
+            $this->donationRepositoryProphecy->reveal(),
+            $this->entityManagerProphecy->reveal(),
+            new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
+            $this->createStub(Stripe::class),
+            new NullLogger(),
+            new MockClock(),
+        );
 
         $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Pending"));
 
@@ -78,9 +83,17 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Cancelled);
 
+        $this->donationRepositoryProphecy->push($donation, false)->shouldBeCalled()->willReturn(true);
         $this->donationRepositoryProphecy->releaseMatchFunds($donation)->shouldBeCalled();
 
-        $updateAction = $this->makeUpdateAction();
+        $updateAction = new Update(
+            $this->donationRepositoryProphecy->reveal(),
+            $this->entityManagerProphecy->reveal(),
+            new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
+            $this->createStub(Stripe::class),
+            new NullLogger(),
+            new MockClock(),
+        );
 
         $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Cancelled"));
 
@@ -169,21 +182,5 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))
             ->shouldBeCalledTimes(2); // One failure, one success
         $this->entityManagerProphecy->commit()->shouldBeCalledOnce();
-    }
-
-    public function makeUpdateAction(): Update
-    {
-        $routableMessageBusProphecy = $this->prophesize(RoutableMessageBus::class);
-        $routableMessageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
-
-        return new Update(
-            $this->donationRepositoryProphecy->reveal(),
-            $this->entityManagerProphecy->reveal(),
-            new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
-            $this->createStub(Stripe::class),
-            new NullLogger(),
-            new MockClock(),
-            $routableMessageBusProphecy->reveal(),
-        );
     }
 }
