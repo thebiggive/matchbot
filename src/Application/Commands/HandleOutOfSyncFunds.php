@@ -8,6 +8,7 @@ use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,10 +32,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  * taking action based on a reported mismatch, run the command a second time and check the same funds and amounts
  * are listed as the first time.
  */
+#[AsCommand(
+    name: 'matchbot:handle-out-of-sync-funds',
+    description: "Tries to match every fund's amount available to its FundingWithdrawals' total",
+)]
 class HandleOutOfSyncFunds extends LockingCommand
 {
     protected bool $outOfSyncFundFound = false;
-    protected static $defaultName = 'matchbot:handle-out-of-sync-funds';
 
     public function __construct(
         private CampaignFundingRepository $campaignFundingRepository,
@@ -46,7 +50,6 @@ class HandleOutOfSyncFunds extends LockingCommand
 
     protected function configure(): void
     {
-        $this->setDescription("Tries to match every fund's amount available to its FundingWithdrawals' total");
         $this->addArgument(
             'mode',
             InputArgument::REQUIRED,

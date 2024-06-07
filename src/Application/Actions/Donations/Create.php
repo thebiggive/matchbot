@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Donations;
 
+use Doctrine\DBAL\Exception\ServerException as DBALServerException;
+use Doctrine\ORM\Exception\ORMException;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
@@ -52,6 +54,12 @@ class Create extends Action
         // JWS, this is null.
         $customerId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PSP_ATTRIBUTE_NAME);
         \assert(is_string($customerId) || is_null($customerId));
+        if (! (is_string($customerId) && trim($customerId) !== '')) {
+            return $this->validationError(
+                $response,
+                "Customer ID required to create donation",
+            );
+        }
 
         $body = (string) $request->getBody();
 
@@ -135,6 +143,19 @@ class Create extends Action
                     new ActionError(
                         ActionError::SERVER_ERROR,
                         'Could not make Stripe Payment Intent (B)'
+                    ),
+                ),
+            );
+        } catch (ORMException | DBALServerException $ex) {
+            // '(D)' errors are DB persistence issues, typically ones that still exist after some retries.
+            return $this->respond(
+                $response,
+                new ActionPayload(
+                    500,
+                    null,
+                    new ActionError(
+                        ActionError::SERVER_ERROR,
+                        'Could not make Stripe Payment Intent (D)'
                     ),
                 ),
             );

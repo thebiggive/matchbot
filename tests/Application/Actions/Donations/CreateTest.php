@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
+use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Application\Messenger\DonationStateUpdated;
-use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
@@ -26,11 +25,11 @@ use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\App;
 use Slim\Exception\HttpUnauthorizedException;
-use Stripe\Exception\PermissionException;
 use Stripe\PaymentIntent;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Notifier\Message\ChatMessage;
+use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Clock\MockClock;
 use UnexpectedValueException;
 
 class CreateTest extends TestCase
@@ -181,14 +180,14 @@ class CreateTest extends TestCase
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
-
+        $entityManagerProphecy->isOpen()->willReturn(true);
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::any())->shouldNotBeCalled();
 
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
@@ -315,7 +314,7 @@ class CreateTest extends TestCase
 
         // Need to override stock EM to get campaign repo behaviour
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
+        $entityManagerProphecy->isOpen()->willReturn(true);
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
@@ -366,6 +365,7 @@ class CreateTest extends TestCase
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
 
+        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
@@ -693,6 +693,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy->isOpen()->willReturn(true);
         // These are called once after initial ID setup and once after Stripe fields added.
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
@@ -873,6 +874,47 @@ class CreateTest extends TestCase
         $this->assertEquals('123CampaignId12345', $payloadArray['donation']['projectId']);
     }
 
+    public function testErrorWhenAllDbPersistCallsFail(): void
+    {
+        $donation = $this->getTestDonation(true, true, true);
+
+        $app = $this->getAppWithCommonPersistenceDeps(
+            donationPersisted: false,
+            donationPushed: false,
+            donationMatched: false,
+            donation: $donation,
+        );
+        $container = $app->getContainer();
+        \assert($container instanceof Container);
+
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy->isOpen()->willReturn(true);
+        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))
+            ->willThrow($this->prophesize(DBALServerException::class)->reveal())
+            ->shouldBeCalledTimes(3); // DonationService::MAX_RETRY_COUNT
+        $entityManagerProphecy->flush()->shouldNotBeCalled();
+
+        $container->set(ClockInterface::class, new MockClock());
+        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+
+        $data = $this->encode($donation);
+        $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $response = $app->handle($this->addDummyPersonAuth($request));
+
+        $payload = (string) $response->getBody();
+
+        $this->assertJson($payload);
+        $this->assertEquals(500, $response->getStatusCode());
+
+        /** @var array $payloadArray */
+        $payloadArray = json_decode($payload, true);
+
+        $this->assertEquals(['error' => [
+            'type' => 'SERVER_ERROR',
+            'description' => 'Could not make Stripe Payment Intent (D)',
+        ]], $payloadArray);
+    }
+
     /**
      * Get app with standard EM & repo set. Callers in this class typically set a prophesised Stripe client
      * on the container.
@@ -902,6 +944,7 @@ class CreateTest extends TestCase
         }
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy->isOpen()->willReturn(true);
 
         if ($donationPersisted) {
             if (!$skipEmExpectations) {
