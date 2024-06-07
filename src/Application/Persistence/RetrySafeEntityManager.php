@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Persistence;
 
 use Closure;
+use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Exception\RetryableException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM;
@@ -35,7 +36,17 @@ class RetrySafeEntityManager extends EntityManagerDecorator
 
     /**
      * @param Closure():\Doctrine\ORM\EntityManagerInterface $entityManagerFactory
-     * @param array<string, mixed> $connectionSettings
+     * @param array{
+     *      driver: 'pdo_mysql',
+     *      host: string,
+     *      port: int,
+     *      dbname: string,
+     *      user: string,
+     *      password: string,
+     *      charset: string,
+     *      defaultTableOptions: array{collate: string},
+     *      driverOptions: array{1009: ?string}
+     * } $connectionSettings
      */
     public function __construct(
         private ORM\Configuration $ormConfig,
@@ -44,7 +55,10 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         \Closure $entityManagerFactory = null,
     ) {
         $this->entityManagerFactory = $entityManagerFactory ??
-            fn (): EntityManager => EntityManager::create($connectionSettings, $this->ormConfig);
+            fn (): EntityManager => new EntityManager(
+                DriverManager::getConnection($connectionSettings),
+                $this->ormConfig,
+            );
 
         $this->entityManager = $this->buildEntityManager();
         parent::__construct($this->entityManager);

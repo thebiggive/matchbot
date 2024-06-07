@@ -56,10 +56,10 @@ return function (ContainerBuilder $containerBuilder) {
                     'user' => getenv('MYSQL_USER'),
                     'password' => getenv('MYSQL_PASSWORD'),
                     'charset' => 'utf8mb4',
-                    'default_table_options' => [
+                    'defaultTableOptions' => [
                         'collate' => 'utf8mb4_unicode_ci',
                     ],
-                    'options' => $doctrineConnectionOptions,
+                    'driverOptions' => $doctrineConnectionOptions,
                 ],
             ],
 
