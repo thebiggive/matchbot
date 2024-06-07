@@ -24,41 +24,13 @@ use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
-use Symfony\Component\Messenger\RoutableMessageBus;
 
 class ConfirmTest extends TestCase
 {
-    private Confirm $sut;
-
-    /** @var ObjectProphecy<Stripe>  */
-    private ObjectProphecy $stripeProphecy;
-    private bool $donationIsCancelled = false;
-
-    /** @var ObjectProphecy<EntityManagerInterface>  */
-    private ObjectProphecy $entityManagerProphecy;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->stripeProphecy = $this->prophesize(Stripe::class);
-        $messageBusStub = $this->createStub(RoutableMessageBus::class);
-        $messageBusStub->method('dispatch')->willReturnArgument(0);
-
-        $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-
-        $this->sut = new Confirm(
-            new NullLogger(),
-            $this->getDonationRepository(),
-            $this->stripeProphecy->reveal(),
-            $this->entityManagerProphecy->reveal(),
-            $messageBusStub,
-        );
-    }
-
     public function testItConfirmsACardDonation(): void
     {
         // arrange
-        $this->fakeStripeClient(
+        $stripeClientProphecy = $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
             paymentMethodId: 'PAYMENT_METHOD_ID',
             updatedIntentData: [
@@ -80,12 +52,20 @@ class ConfirmTest extends TestCase
         );
 
         // Make sure the latest fees, based on card type, are saved to the database.
-        $this->entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $this->entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $this->entityManagerProphecy->commit()->shouldBeCalledOnce();
+        $em = $this->prophesize(EntityManagerInterface::class);
+        $em->beginTransaction()->shouldBeCalledOnce();
+        $em->flush()->shouldBeCalledOnce();
+        $em->commit()->shouldBeCalledOnce();
+
+        $sut = new Confirm(
+            new NullLogger(),
+            $this->getDonationRepository(),
+            $stripeClientProphecy->reveal(),
+            $em->reveal(),
+        );
 
         // act
-        $response = $this->callConfirm($this->sut);
+        $response = $this->callConfirm($sut);
 
         // assert
 
@@ -100,25 +80,31 @@ class ConfirmTest extends TestCase
     {
         // arrange
         $newCharityFee = '42.00';
-        $this->successReadyFakeStripeClient(
+        $stripeClientProphecy = $this->successReadyFakeStripeClient(
             amountInWholeUnits: $newCharityFee,
             confirmCallExpected: false,
         );
-        $this->donationIsCancelled = true;
+
+        $sut = new Confirm(
+            new NullLogger(),
+            $this->getDonationRepository(donationIsCancelled: true),
+            $stripeClientProphecy->reveal(),
+            $this->prophesize(EntityManagerInterface::class)->reveal()
+        );
 
         // assert
         $this->expectException(HttpBadRequestException::class);
         $this->expectExceptionMessage("Donation status is 'Cancelled', must be 'Pending' to confirm payment");
 
         // act
-        $this->callConfirm($this->sut);
+        $this->callConfirm($sut);
     }
 
     public function testItReturns402OnDecline(): void
     {
         // arrange
 
-        $this->fakeStripeClient(
+        $stripeClientProphecy = $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
             paymentMethodId: 'PAYMENT_METHOD_ID',
             updatedIntentData: [
@@ -139,9 +125,15 @@ class ConfirmTest extends TestCase
             confirmFailsWithPaymentMethodUsedError: false,
         );
 
+        $sut = new Confirm(
+            new NullLogger(),
+            $this->getDonationRepository(),
+            $stripeClientProphecy->reveal(),
+            $this->prophesize(EntityManagerInterface::class)->reveal()
+        );
 
         // act
-        $response = $this->callConfirm($this->sut);
+        $response = $this->callConfirm($sut);
 
         // assert
 
@@ -167,7 +159,7 @@ class ConfirmTest extends TestCase
         // in reality the fee would be calculated according to details of the card etc. The Calculator class is
         //tested separately. This is just a dummy value.
 
-        $this->fakeStripeClient(
+        $stripeClientProphecy = $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
             paymentMethodId: 'PAYMENT_METHOD_ID',
             updatedIntentData: [
@@ -188,8 +180,15 @@ class ConfirmTest extends TestCase
             confirmFailsWithPaymentMethodUsedError: true,
         );
 
+        $sut = new Confirm(
+            new NullLogger(),
+            $this->getDonationRepository(),
+            $stripeClientProphecy->reveal(),
+            $this->prophesize(EntityManagerInterface::class)->reveal()
+        );
+
         // act
-        $response = $this->callConfirm($this->sut);
+        $response = $this->callConfirm($sut);
 
         // assert
 
@@ -206,7 +205,9 @@ class ConfirmTest extends TestCase
     public function testItReturns500OnApiError(): void
     {
         // arrange
-        $this->fakeStripeClient(
+
+
+        $stripeClientProphecy = $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
             paymentMethodId: 'PAYMENT_METHOD_ID',
             updatedIntentData: [
@@ -227,8 +228,15 @@ class ConfirmTest extends TestCase
             confirmFailsWithPaymentMethodUsedError: false,
         );
 
+        $sut = new Confirm(
+            new NullLogger(),
+            $this->getDonationRepository(),
+            $stripeClientProphecy->reveal(),
+            $this->prophesize(EntityManagerInterface::class)->reveal()
+        );
+
         // act
-        $response = $this->callConfirm($this->sut);
+        $response = $this->callConfirm($sut);
 
         // assert
 
@@ -242,11 +250,14 @@ class ConfirmTest extends TestCase
         );
     }
 
+    /**
+     * @return ObjectProphecy<Stripe>
+     */
     private function successReadyFakeStripeClient(
         string $amountInWholeUnits,
         bool $confirmCallExpected
-    ): void {
-        $this->fakeStripeClient(
+    ): ObjectProphecy {
+        return $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
             paymentMethodId: 'PAYMENT_METHOD_ID',
             updatedIntentData: [
@@ -269,6 +280,9 @@ class ConfirmTest extends TestCase
         );
     }
 
+    /**
+     * @return ObjectProphecy<Stripe>
+     */
     private function fakeStripeClient(
         array $cardDetails,
         string $paymentMethodId,
@@ -279,35 +293,34 @@ class ConfirmTest extends TestCase
         bool $confirmFailsWithApiError,
         bool $confirmFailsWithPaymentMethodUsedError,
         bool $updatePaymentIntentAndConfirmExpected = true,
-    ): void {
+    ): ObjectProphecy {
         $paymentMethod = new PaymentMethod(['id' => 'id-doesnt-matter-for-test']);
         $paymentMethod->type = 'card';
 
         /** @psalm-suppress InvalidPropertyAssignmentValue */
         $paymentMethod->card = $cardDetails;
-        $this->stripeProphecy->updatePaymentMethodBillingDetail($paymentMethodId, Argument::type(Donation::class))
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $stripeProphecy->updatePaymentMethodBillingDetail($paymentMethodId, Argument::type(Donation::class))
             ->willReturn($paymentMethod);
 
         $updatedPaymentIntent = new PaymentIntent(['id' => 'id-doesnt-matter-for-test', ...$updatedIntentData]);
         $updatedPaymentIntent->status = $updatedIntentData['status'];
         $updatedPaymentIntent->client_secret = $updatedIntentData['client_secret']; // here
 
-        $this->stripeProphecy->retrievePaymentIntent($paymentIntentId)
+        $stripeProphecy->retrievePaymentIntent($paymentIntentId)
             ->willReturn($updatedPaymentIntent);
 
         if (!$updatePaymentIntentAndConfirmExpected) {
-            return; // $this->stripeProphecy;
+            return $stripeProphecy;
         }
 
-        $this->stripeProphecy->updatePaymentIntent(
+        $stripeProphecy->updatePaymentIntent(
             $paymentIntentId,
             $expectedMetadataUpdate
         )->shouldBeCalled();
 
-        $confirmation = $this->stripeProphecy->confirmPaymentIntent(
-            $paymentIntentId,
-            ["payment_method" => $paymentMethodId]
-        )->willReturn($updatedPaymentIntent);
+        $confirmation = $stripeProphecy->confirmPaymentIntent($paymentIntentId, ["payment_method" => $paymentMethodId])
+            ->willReturn($updatedPaymentIntent);
 
         if ($confirmFailsWithCardError) {
             $exception = CardException::factory(
@@ -338,43 +351,48 @@ class ConfirmTest extends TestCase
         }
 
         $confirmation->shouldBeCalled();
+
+        return $stripeProphecy;
     }
 
     /**
      * @return DonationRepository Really an ObjectProphecy<DonationRepository>, but psalm
      *                            complains about that.
      */
-    private function getDonationRepository(): DonationRepository
+    private function getDonationRepository(bool $donationIsCancelled = false): DonationRepository
     {
         $donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
 
-        $testCase = $this;
-        $donationRepositoryProphecy->findAndLockOneBy(['uuid' => 'DONATION_ID'])->will(function () use ($testCase) {
-            $donation = Donation::fromApiModel(
-                new DonationCreate(
-                    currencyCode: 'GBP',
-                    donationAmount: '63.0',
-                    projectId: 'doesnt0matter12345',
-                    psp: 'stripe',
-                    countryCode: 'GB',
-                ),
-                $testCase->getMinimalCampaign(),
-            );
+        $donation = Donation::fromApiModel(
+            new DonationCreate(
+                currencyCode: 'GBP',
+                donationAmount: '63.0',
+                projectId: 'doesnt0matter12345',
+                psp: 'stripe',
+                countryCode: 'GB',
+            ),
+            $this->getMinimalCampaign(),
+        );
 
-            $donation->update(
-                giftAid: false,
-                donorBillingPostcode: 'SW1 1AA',
-                donorName: DonorName::of('Charlie', 'The Charitable'),
-                donorEmailAddress: EmailAddress::of('user@example.com'),
-            );
+        $donation->update(
+            giftAid: false,
+            donorBillingPostcode: 'SW1 1AA',
+            donorName: DonorName::of('Charlie', 'The Charitable'),
+            donorEmailAddress: EmailAddress::of('user@example.com'),
+        );
 
-            $donation->setTransactionId('PAYMENT_INTENT_ID');
-            if ($testCase->donationIsCancelled) {
-                $donation->cancel();
-            }
+        $donation->setTransactionId('PAYMENT_INTENT_ID');
+        if ($donationIsCancelled) {
+            $donation->cancel();
+        }
 
-            return $donation;
-        });
+
+
+        $donationRepositoryProphecy->findAndLockOneBy(['uuid' => 'DONATION_ID'])->willReturn(
+            $donation
+        );
+
+        $donationRepositoryProphecy->push($donation, false)->willReturn(true);
 
         return $donationRepositoryProphecy->reveal();
     }
