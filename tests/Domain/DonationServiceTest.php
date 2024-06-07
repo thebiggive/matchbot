@@ -115,6 +115,7 @@ class DonationServiceTest extends TestCase
             $emProphecy->persistWithoutRetries(Argument::type(Donation::class))->willThrow(
                 new UniqueConstraintViolationException(new Exception('EXCEPTION_MESSAGE'), null)
             );
+            $emProphecy->isOpen()->willReturn(true);
         }
 
         $logger = $logger ?? new NullLogger();

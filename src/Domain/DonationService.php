@@ -40,7 +40,9 @@ readonly class DonationService
     }
 
     /**
-      * Creates a new pending donation
+     * Creates a new pending donation. In some edge cases (initial campaign data inserts hitting
+     * unique constraint violations), may reset the EntityManager; this could cause previously
+     * tracked entities in the Unit of Work to be lost.
      *
      * @param DonationCreate $donationData Details of the desired donation, as sent from the browser
      * @param string $pspCustomerId The Stripe customer ID of the donor
@@ -78,6 +80,14 @@ readonly class DonationService
 
         if (!$donation->getCampaign()->isOpen()) {
             throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
+        }
+
+        // A closed EM can happen if the above tried to insert a campaign or fund, hit a duplicate error because
+        // another thread did it already, then successfully got the new copy. There's been no subsequent
+        // database persistence that needed an open manager, so none replaced the broken one. In that
+        // edge case, we need to handle that before `persistWithoutRetries()` has a chance of working.
+        if (!$this->entityManager->isOpen()) {
+            $this->entityManager->resetManager();
         }
 
         // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
