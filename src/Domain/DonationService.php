@@ -25,7 +25,7 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 
 readonly class DonationService
 {
-    private const MAX_RETRY_COUNT = 4;
+    private const MAX_RETRY_COUNT = 3;
 
     public function __construct(
         private DonationRepository $donationRepository,
@@ -40,12 +40,14 @@ readonly class DonationService
     }
 
     /**
-      * Creates a new pending donation
+     * Creates a new pending donation. In some edge cases (initial campaign data inserts hitting
+     * unique constraint violations), may reset the EntityManager; this could cause previously
+     * tracked entities in the Unit of Work to be lost.
      *
      * @param DonationCreate $donationData Details of the desired donation, as sent from the browser
-     * @param string|null $pspCustomerId The existing Stripe customer ID of the donor, if any
+     * @param string $pspCustomerId The Stripe customer ID of the donor
      */
-    public function createDonation(DonationCreate $donationData, ?string $pspCustomerId): Donation
+    public function createDonation(DonationCreate $donationData, string $pspCustomerId): Donation
     {
         try {
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
@@ -71,7 +73,7 @@ readonly class DonationService
         if ($pspCustomerId !== $donation->getPspCustomerId()) {
             throw new \UnexpectedValueException(sprintf(
                 'Route customer ID %s did not match %s in donation body',
-                $pspCustomerId ?? 'null',
+                $pspCustomerId,
                 $donation->getPspCustomerId()
             ));
         }
@@ -80,7 +82,15 @@ readonly class DonationService
             throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
         }
 
-        // Must persist before Stripe work to have ID available.
+        // A closed EM can happen if the above tried to insert a campaign or fund, hit a duplicate error because
+        // another thread did it already, then successfully got the new copy. There's been no subsequent
+        // database persistence that needed an open manager, so none replaced the broken one. In that
+        // edge case, we need to handle that before `persistWithoutRetries()` has a chance of working.
+        if (!$this->entityManager->isOpen()) {
+            $this->entityManager->resetManager();
+        }
+
+        // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
         $this->runWithPossibleRetry(function () use ($donation) {
             $this->entityManager->persistWithoutRetries($donation);
             $this->entityManager->flush();
@@ -132,6 +142,7 @@ readonly class DonationService
             $createPayload = [
                 ...$donation->getStripeMethodProperties(),
                 ...$donation->getStripeOnBehalfOfProperties(),
+                'customer' => $pspCustomerId,
                 // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
                 // See https://stripe.com/docs/api/payment_intents/object
                 'amount' => $donation->getAmountFractionalIncTip(),
@@ -163,15 +174,8 @@ readonly class DonationService
                 ],
             ];
 
-            // For now 'customer' may be omitted – and an automatic, guest customer used by Stripe –
-            // depending on the frontend mode. If there *is* a customer, we want to be able to offer them
-            // card reuse.
-            if ($pspCustomerId !== null) {
-                $createPayload['customer'] = $pspCustomerId;
-
-                if ($donation->supportsSavingPaymentMethod()) {
-                    $createPayload['setup_future_usage'] = 'on_session';
-                }
+            if ($donation->supportsSavingPaymentMethod()) {
+                $createPayload['setup_future_usage'] = 'on_session';
             }
 
             try {
@@ -266,6 +270,7 @@ readonly class DonationService
      * then we still have any required related new entities in the Unit of Work.
      * @param \Closure $retryable The action to be executed and then retried if necassary
      * @param string $actionName The name of the action, used in logs.
+     * @throws ORMException|DBALServerException if they're occurring when max retry count reached.
      */
     private function runWithPossibleRetry(\Closure $retryable, string $actionName): void
     {
@@ -288,6 +293,18 @@ readonly class DonationService
                 $seconds = (new Randomizer())->getFloat(0.1, 1.1);
                 \assert(is_float($seconds)); // See https://github.com/vimeo/psalm/issues/10830
                 $this->clock->sleep($seconds);
+
+                if ($retryCount === self::MAX_RETRY_COUNT) {
+                    $this->logger->error(
+                        sprintf(
+                            $actionName . ' error: %s. Giving up after %d retries.',
+                            $exception->getMessage(),
+                            self::MAX_RETRY_COUNT,
+                        )
+                    );
+
+                    throw $exception;
+                }
             }
         }
     }

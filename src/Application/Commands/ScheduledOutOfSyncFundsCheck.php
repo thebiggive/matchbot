@@ -2,10 +2,10 @@
 
 namespace MatchBot\Application\Commands;
 
-use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -18,24 +18,25 @@ use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
+#[AsCommand(
+    name: 'matchbot:scheduled-out-of-sync-funds-check',
+    description: "For running via a cron job. Checks for out of sync funds but doesn't " .
+        "attempt to fix them. Sends output to Slack"
+)]
 class ScheduledOutOfSyncFundsCheck extends HandleOutOfSyncFunds
 {
     public function __construct(
         CampaignFundingRepository $campaignFundingRepository,
-        EntityManagerInterface $entityManager,
         FundingWithdrawalRepository $fundingWithdrawalRepository,
         Matching\Adapter $matchingAdapter,
         private ChatterInterface $chatter,
     ) {
-        parent::__construct($campaignFundingRepository, $entityManager, $fundingWithdrawalRepository, $matchingAdapter);
+        parent::__construct($campaignFundingRepository, $fundingWithdrawalRepository, $matchingAdapter);
     }
-
-    protected static $defaultName = 'matchbot:scheduled-out-of-sync-funds-check';
 
     protected function configure(): void
     {
-        $this->setDescription("For running via a cron job. Checks for out of sync funds but doesn't " .
-            "attempt to fix them. Sends output to Slack");
+        // Don't call parent which would add the `mode` argument.
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Commands;
 
-use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Domain\CampaignFunding;
@@ -88,7 +87,7 @@ class HandleOutOfSyncFundsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:handle-out-of-sync-funds starting!',
-            'Please set the mode to "check" or "fix" or "2024-06-05-patch"',
+            'Please set the mode to "check" or "fix"',
             'matchbot:handle-out-of-sync-funds complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -251,7 +250,6 @@ class HandleOutOfSyncFundsTest extends TestCase
 
         $command = new HandleOutOfSyncFunds(
             $campaignRepo,
-            $this->prophesize(EntityManagerInterface::class)->reveal(),
             $withdrawalRepo,
             $adapter,
         );
