@@ -40,7 +40,9 @@ readonly class DonationService
     }
 
     /**
-      * Creates a new pending donation
+     * Creates a new pending donation. In some edge cases (initial campaign data inserts hitting
+     * unique constraint violations), may reset the EntityManager; this could cause previously
+     * tracked entities in the Unit of Work to be lost.
      *
      * @param DonationCreate $donationData Details of the desired donation, as sent from the browser
      * @param string $pspCustomerId The Stripe customer ID of the donor
