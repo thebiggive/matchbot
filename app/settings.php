@@ -7,7 +7,7 @@ use Monolog\Logger;
 
 return function (ContainerBuilder $containerBuilder) {
     $doctrineConnectionOptions = [];
-    if (getenv('APP_ENV') !== 'local') {
+    if (!in_array(getenv('APP_ENV'), ['local', 'test'])) {
         $doctrineConnectionOptions[PDO::MYSQL_ATTR_SSL_CA] =
             dirname(__DIR__) . '/deploy/rds-ca-eu-west-1-bundle.pem';
     }
@@ -56,10 +56,10 @@ return function (ContainerBuilder $containerBuilder) {
                     'user' => getenv('MYSQL_USER'),
                     'password' => getenv('MYSQL_PASSWORD'),
                     'charset' => 'utf8mb4',
-                    'default_table_options' => [
+                    'defaultTableOptions' => [
                         'collate' => 'utf8mb4_unicode_ci',
                     ],
-                    'options' => $doctrineConnectionOptions,
+                    'driverOptions' => $doctrineConnectionOptions,
                 ],
             ],
 
