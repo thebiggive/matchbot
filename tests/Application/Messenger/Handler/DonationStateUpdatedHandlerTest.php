@@ -8,6 +8,7 @@ use MatchBot\Domain\DonationRepository;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Log\NullLogger;
 use Symfony\Component\Messenger\Handler\Acknowledger;
 
 class DonationStateUpdatedHandlerTest extends TestCase
@@ -31,7 +32,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
         $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn($donation);
         $this->donationRepositoryProphecy->push($donation, false)->shouldBeCalledOnce();
 
-        $sut = new DonationStateUpdatedHandler($this->donationRepositoryProphecy->reveal());
+        $sut = new DonationStateUpdatedHandler($this->donationRepositoryProphecy->reveal(), new NullLogger());
 
         $message = DonationStateUpdated::fromDonation($donation);
 
@@ -48,7 +49,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
         $this->donationRepositoryProphecy->push($donation, true)->shouldBeCalledOnce();
         $this->donationRepositoryProphecy->push($donation, false)->shouldNotBeCalled();
 
-        $sut = new DonationStateUpdatedHandler($this->donationRepositoryProphecy->reveal());
+        $sut = new DonationStateUpdatedHandler($this->donationRepositoryProphecy->reveal(), new NullLogger());
 
         $sut->__invoke(DonationStateUpdated::fromDonation($donation, isNew: true), $this->getAcknowledger());
         $sut->__invoke(DonationStateUpdated::fromDonation($donation), $this->getAcknowledger());
@@ -59,7 +60,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
     {
         $donation = \MatchBot\Tests\TestCase::someDonation();
         $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn(null);
-        $sut = new DonationStateUpdatedHandler($this->donationRepositoryProphecy->reveal());
+        $sut = new DonationStateUpdatedHandler($this->donationRepositoryProphecy->reveal(), new NullLogger());
 
         $sut->__invoke(DonationStateUpdated::fromDonation($donation), $this->getAcknowledger());
         $sut->flush(force: true);
@@ -73,7 +74,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
         $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn($donation);
         $this->donationRepositoryProphecy->push($donation, false)->willThrow(new \Exception('Failed to push to SF'));
 
-        $sut = new DonationStateUpdatedHandler($this->donationRepositoryProphecy->reveal());
+        $sut = new DonationStateUpdatedHandler($this->donationRepositoryProphecy->reveal(), new NullLogger());
 
         $sut->__invoke(DonationStateUpdated::fromDonation($donation), $this->getAcknowledger());
         $sut->flush(force: true);

@@ -5,6 +5,7 @@ namespace MatchBot\Application\Messenger\Handler;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationStateUpdated;
 use MatchBot\Domain\DonationRepository;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Handler\Acknowledger;
 use Symfony\Component\Messenger\Handler\BatchHandlerInterface;
 use Symfony\Component\Messenger\Handler\BatchHandlerTrait;
@@ -13,9 +14,10 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
 {
     use BatchHandlerTrait;
 
-    public function __construct(private DonationRepository $donationRepository)
-    {
-    }
+    public function __construct(
+        private DonationRepository $donationRepository,
+        private LoggerInterface $logger,
+    ) {}
 
     public function __invoke(DonationStateUpdated $donationStateUpdated, Acknowledger $ack = null)
     {
@@ -52,6 +54,12 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
         try {
             $this->donationRepository->push($donation, $donationIsNew);
         } catch (\Throwable $exception) {
+            $this->logger->error(sprintf(
+                '%s pushing donation: %s',
+                get_class($exception),
+                $exception->getMessage(),
+            ));
+
             foreach ($jobsForThisDonation as $job) {
                 $job[1]->nack($exception);
             }
