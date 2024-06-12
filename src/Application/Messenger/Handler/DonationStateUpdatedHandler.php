@@ -17,7 +17,8 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
     public function __construct(
         private DonationRepository $donationRepository,
         private LoggerInterface $logger,
-    ) {}
+    ) {
+    }
 
     public function __invoke(DonationStateUpdated $donationStateUpdated, Acknowledger $ack = null)
     {
