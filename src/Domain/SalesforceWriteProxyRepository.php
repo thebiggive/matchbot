@@ -132,13 +132,6 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             self::MAX_PER_BULK_PUSH,
         );
 
-        if ($proxiesToCreate !== []) {
-            $count = count($proxiesToCreate);
-            $this->logger->error(
-                "Found $count pending items to push to SF, suggests push via Symfony Messenger failed"
-            );
-        }
-
         foreach ($proxiesToCreate as $proxy) {
             if ($proxy->getUpdatedDate() > $fiveMinutesAgo) {
                 // fetching the proxy just to skip it here is a bit wasteful but the performance cost is low

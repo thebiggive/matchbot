@@ -15,8 +15,6 @@ use MatchBot\Domain\DonorAccountRepository;
 use Prophecy\Argument;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\StripeClient;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
 use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
@@ -24,17 +22,6 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 
 class StripePaymentsUpdateTest extends StripeTest
 {
-    public function setUp(): void
-    {
-        $container = $this->getAppInstance()->getContainer();
-        \assert($container instanceof Container);
-
-        $routableMessageBusProphecy = $this->prophesize(RoutableMessageBus::class);
-        $routableMessageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
-
-        $container->set(RoutableMessageBus::class, $routableMessageBusProphecy->reveal());
-    }
-
     public function testUnsupportedAction(): void
     {
         $app = $this->getAppInstance();
@@ -133,6 +120,10 @@ class StripePaymentsUpdateTest extends StripeTest
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -180,6 +171,10 @@ class StripePaymentsUpdateTest extends StripeTest
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -228,6 +223,10 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
 
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -354,6 +353,10 @@ class StripePaymentsUpdateTest extends StripeTest
         $donationRepoProphecy
             ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -446,6 +449,10 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
 
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -506,6 +513,10 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
 
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -551,12 +562,16 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldNotBeCalled();
 
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalled();
-        $entityManagerProphecy->commit()->shouldBeCalled();
+        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
