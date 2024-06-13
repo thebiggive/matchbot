@@ -36,6 +36,9 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
             static fn(array $job) => $job[0]->donationUUID === $donationUUID
         );
 
+        // Intentionally not locking. We will only patch Salesforce push status fields and we want
+        // to do that with locks that are as short as possible and do not wait for Salesforce. This
+        // is handled in `SalesforceWriteProxyRepository::push`.
         $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
 
         if ($donation === null) {

@@ -25,8 +25,10 @@ class GiftAidResultHandler
             $donationMessage->id,
         ));
 
+        $this->entityManager->beginTransaction();
+
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['uuid' => $donationMessage->id]);
+        $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $donationMessage->id]);
 
         if ($donationMessage->response_success === false) {
             $donation->setTbgGiftAidRequestFailedAt(new \DateTime());
@@ -48,5 +50,6 @@ class GiftAidResultHandler
 
         $this->entityManager->persist($donation);
         $this->entityManager->flush();
+        $this->entityManager->commit();
     }
 }

@@ -438,7 +438,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
 
         $donationRepoProphecy
-            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->findAndLockOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -498,7 +498,7 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->findAndLockOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -543,7 +543,7 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->findAndLockOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -621,7 +621,7 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['chargeId' => 'ch_externalId_123'])
+            ->findAndLockOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
