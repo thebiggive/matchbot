@@ -208,7 +208,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
                 $isNew ? 'Created' : 'Updated',
                 get_class($proxy),
                 $proxy->getId(),
-                $proxy->getSalesforceId(),
+                $proxy->getSalesforceId() ?? 'unknown',
             ));
 
             if ($shouldRePush) {
@@ -220,7 +220,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
                     $this->logError(sprintf(
                         '... with error on interim updates for %s %d',
                         get_class($proxy),
-                        $proxy->getId(),
+                        $proxy->getId() ?? -1,
                     ));
                 }
             }
@@ -233,6 +233,9 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
         }
     }
 
+    /**
+     * @psalm-param SalesforceWriteProxy::PUSH_STATUS_* $status
+     */
     private function safelySetPushStatus(SalesforceWriteProxy $proxy, string $status, bool $isNew): void
     {
         Assertion::inArray($status, SalesforceWriteProxy::POSSIBLE_PUSH_STATUSES);
