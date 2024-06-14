@@ -25,8 +25,6 @@ use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
-use PHP_CodeSniffer\Standards\PSR1\Sniffs\Methods\CamelCapsMethodNameSniff;
-use PhpParser\Node\Arg;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
@@ -703,11 +701,13 @@ class DonationRepositoryTest extends TestCase
 
     private function expectEntityManagerSalesforcePushCalls(): void
     {
-        $this->entityManagerProphecy->beginTransaction()->shouldBeCalled();
+        $this->entityManagerProphecy->transactional(Argument::type(\Closure::class))->will(function (array $args) {
+            $closure = $args[0];
+            \assert($closure instanceof \Closure);
+            $closure();
+        });
         $this->entityManagerProphecy->refresh(Argument::type(Donation::class), LockMode::PESSIMISTIC_WRITE)
             ->shouldBeCalled();
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalled();
-        $this->entityManagerProphecy->flush()->shouldBeCalled();
-        $this->entityManagerProphecy->commit()->shouldBeCalled();
     }
 }
