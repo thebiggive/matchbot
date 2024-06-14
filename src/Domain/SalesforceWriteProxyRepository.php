@@ -65,7 +65,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 
         if ($isNew) {
             $success = $this->doCreate($proxy);
-        } elseif (empty($proxy->getSalesforceId())) {
+        } elseif ($proxy->getSalesforceId() === null) {
             // We've been asked to update an object before we have confirmation back from Salesforce that
             // it was created in the first place. This is a bit different from the 'pending-additional-update'
             // double-update scenario above, since we need a Salesforce ID before any update can succeed and
@@ -240,16 +240,19 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
     {
         Assertion::inArray($status, SalesforceWriteProxy::POSSIBLE_PUSH_STATUSES);
 
-        $this->getEntityManager()->beginTransaction();
-
-        if (!$isNew) {
-            $this->getEntityManager()->refresh($proxy, LockMode::PESSIMISTIC_WRITE);
-        }
-
-        $proxy->setSalesforcePushStatus($status);
-        $proxy->setSalesforceLastPush(new \DateTime('now'));
-        $this->getEntityManager()->persist($proxy);
-        $this->getEntityManager()->flush();
-        $this->getEntityManager()->commit();
+        // Includes up to 3 retries for lock and EM reset/recovery when needed. Flushes and
+        // commits automatically.
+        /**
+         * @psalm-suppress DeprecatedMethod Our overridden method is the most concise way to get
+         * safe retries for now.
+         */
+        $this->getEntityManager()->transactional(function () use ($proxy, $status, $isNew): void {
+            if (!$isNew) {
+                $this->getEntityManager()->refresh($proxy, LockMode::PESSIMISTIC_WRITE);
+            }
+            $proxy->setSalesforcePushStatus($status);
+            $proxy->setSalesforceLastPush(new \DateTime('now'));
+            $this->getEntityManager()->persist($proxy);
+        });
     }
 }
