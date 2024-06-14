@@ -12,6 +12,8 @@ use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Messenger\DonationStateUpdated;
+use MatchBot\Application\Messenger\Handler\DonationStateUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
@@ -238,6 +240,7 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     Messages\Donation::class => [ClaimBotTransport::class],
                     StripePayout::class => [TransportInterface::class],
+                    DonationStateUpdated::class => [TransportInterface::class],
                 ],
                 $c,
             ));
@@ -247,6 +250,7 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
                     StripePayout::class => [$c->get(StripePayoutHandler::class)],
+                    DonationStateUpdated::class => [$c->get(DonationStateUpdatedHandler::class)],
                 ],
             ));
             $handleMiddleware->setLogger($logger);
@@ -354,11 +358,18 @@ return function (ContainerBuilder $containerBuilder) {
 
         RoutableMessageBus::class => static function (ContainerInterface $c): RoutableMessageBus {
             $busContainer = new Container();
-            $busContainer->set('claimbot.donation.claim', $c->get(MessageBusInterface::class));
-            $busContainer->set('claimbot.donation.result', $c->get(MessageBusInterface::class));
-            $busContainer->set(\Stripe\Event::PAYOUT_PAID, $c->get(MessageBusInterface::class));
+            $bus = $c->get(MessageBusInterface::class);
 
-            return new RoutableMessageBus($busContainer);
+            /**
+             * Every message defaults to our only bus, so we think these are technically redundant for
+             * now. This also means the list isn't exhaustive – we *know* we don't need
+             * {@see DonationStateUpdated} here. Removing `claimbot` items would require some more testing.
+             */
+            $busContainer->set('claimbot.donation.claim', $bus);
+            $busContainer->set('claimbot.donation.result', $bus);
+            $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
+
+            return new RoutableMessageBus($busContainer, $bus);
         },
 
         SerializerInterface::class => static function (ContainerInterface $c): SerializerInterface {

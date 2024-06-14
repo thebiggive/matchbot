@@ -69,12 +69,7 @@ $commands = [
     ),
     new ExpireMatchFunds($psr11App->get(DonationRepository::class)),
     $psr11App->get(HandleOutOfSyncFunds::class),
-    new RedistributeMatchFunds(
-        $psr11App->get(CampaignFundingRepository::class),
-        $now,
-        $psr11App->get(DonationRepository::class),
-        $psr11App->get(LoggerInterface::class),
-    ),
+    $psr11App->get(RedistributeMatchFunds::class),
     new ScheduledOutOfSyncFundsCheck(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(FundingWithdrawalRepository::class),
@@ -86,10 +81,7 @@ $commands = [
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(Matching\Adapter::class)
     ),
-    new RetrospectivelyMatch(
-        $psr11App->get(DonationRepository::class),
-        $chatter,
-    ),
+    $psr11App->get(RetrospectivelyMatch::class),
     new UpdateCampaigns(
         $psr11App->get(CampaignRepository::class),
         $psr11App->get(EntityManagerInterface::class),
