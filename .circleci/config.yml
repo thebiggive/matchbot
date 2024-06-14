@@ -206,6 +206,35 @@ workflows:
             - slack/notify:
                 event: fail
                 template: basic_fail_1
+      - aws-ecs/deploy-service-update:
+          context:
+            - ecs-deploys
+            - slack
+          requires:
+            - aws-ecr/build_and_push_image
+          family: 'tbg-regression-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}'
+          cluster: 'tbg-regression-${AWS_REGION}'
+          container-image-name-updates: 'container=matchbot_tasks,tag=regression-${CIRCLE_SHA1}'
+          post-steps:
+            - slack/notify:
+                event: fail
+                template: basic_fail_1
+            - slack/notify:
+                custom: |
+                  {
+                    "blocks": [
+                      {
+                        "type": "section",
+                        "fields": [
+                          {
+                            "type": "mrkdwn",
+                            "text": "*Regression: MatchBot consumer task deployed!*"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+
 
   deploy-staging:
     jobs:
@@ -261,6 +290,34 @@ workflows:
                       }
                     ]
                   }
+      - aws-ecs/deploy-service-update:
+          context:
+            - ecs-deploys
+            - slack
+          requires:
+            - aws-ecr/build_and_push_image
+          family: 'tbg-staging-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}'
+          cluster: 'tbg-staging-${AWS_REGION}'
+          container-image-name-updates: 'container=matchbot_tasks,tag=staging-${CIRCLE_SHA1}'
+          post-steps:
+            - slack/notify:
+                event: fail
+                template: basic_fail_1
+            - slack/notify:
+                custom: |
+                  {
+                    "blocks": [
+                      {
+                        "type": "section",
+                        "fields": [
+                          {
+                            "type": "mrkdwn",
+                            "text": "*Staging: MatchBot consumer task deployed!*"
+                          }
+                        ]
+                      }
+                    ]
+                  }
 
   deploy-production:
     jobs:
@@ -311,6 +368,34 @@ workflows:
                           {
                             "type": "mrkdwn",
                             "text": "*Production: Matchbot deployed!* All visitors should see the updated app version within 30 minutes."
+                          }
+                        ]
+                      }
+                    ]
+                  }
+      - aws-ecs/deploy-service-update:
+          context:
+            - ecs-deploys
+            - slack
+          requires:
+            - aws-ecr/build_and_push_image
+          family: 'tbg-production-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}'
+          cluster: 'tbg-production-${AWS_REGION}'
+          container-image-name-updates: 'container=matchbot_tasks,tag=production-${CIRCLE_SHA1}'
+          post-steps:
+            - slack/notify:
+                event: fail
+                template: basic_fail_1
+            - slack/notify:
+                custom: |
+                  {
+                    "blocks": [
+                      {
+                        "type": "section",
+                        "fields": [
+                          {
+                            "type": "mrkdwn",
+                            "text": "*Production: MatchBot consumer task deployed!*"
                           }
                         ]
                       }
