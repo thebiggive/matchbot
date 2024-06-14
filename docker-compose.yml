@@ -20,25 +20,6 @@ services:
       - redis
     networks:
       - matchbot
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
-  app-message-consumer:
-    image: thebiggive/php:dev-8.3
-    platform: linux/amd64
-    command:
-      - './consume-messages.sh'
-    volumes:
-      - .:/var/www/html
-    env_file:
-      - .env
-    depends_on:
-      - db
-      - redis
-    networks:
-      - matchbot
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   db:
     image: mysql:8.0

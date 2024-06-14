@@ -6,10 +6,8 @@ namespace MatchBot\Tests;
 
 use DI\ContainerBuilder;
 use Exception;
-use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
-use MatchBot\Domain\Donation;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -189,20 +187,6 @@ class TestCase extends PHPUnitTestCase
         $campaign->setEndDate(new \DateTimeImmutable('3000-01-01'));
 
         return $campaign;
-    }
-
-    public static function someDonation(): Donation
-    {
-        return Donation::fromApiModel(new DonationCreate(
-            currencyCode: 'GBP',
-            donationAmount: '1',
-            projectId: '123456789012345678',
-            psp: 'stripe',
-            firstName: null,
-            lastName: null,
-            emailAddress: 'user@example.com',
-            countryCode: 'GB',
-        ), TestCase::someCampaign());
     }
 
     /**
