@@ -177,7 +177,7 @@
         ],
         "messenger:consume": [
             "Composer\\Config::disableProcessTimeout",
-            "php matchbot-cli.php messenger:consume -vv --time-limit=86400"
+            "php matchbot-cli.php messenger:consume -vv --time-limit=7080"
         ],
         "save-build-commit-id": [
             "echo '<?php \nreturn \"'`git rev-parse HEAD`'\";\n' > .build-commit-id.php"
