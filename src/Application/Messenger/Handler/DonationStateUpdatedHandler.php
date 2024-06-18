@@ -30,6 +30,7 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
      */
     private function pushOneDonation(string $donationUUID, array $jobsForThisDonation): void
     {
+        $this->logger->info("pushing one donation $donationUUID");
         /** @psalm-suppress MixedPropertyFetch - allSatisfy isn't written with generics */
         Assertion::allSatisfy(
             $jobsForThisDonation,
@@ -53,7 +54,9 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
         );
 
         try {
+            $this->logger->info('about to push now');
             $this->donationRepository->push($donation, $donationIsNew);
+            $this->logger->info('push done');
         } catch (\Throwable $exception) {
             $this->logger->error(sprintf(
                 '%s pushing donation: %s',

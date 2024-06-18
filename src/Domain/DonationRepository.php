@@ -47,7 +47,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
     {
         $donation = $proxy;
         try {
-            $salesforceDonationId = $this->getClient()->create($donation);
+            $client = $this->getClient();
+            $salesforceDonationId = $client->create($donation);
             $donation->setSalesforceId($salesforceDonationId);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.

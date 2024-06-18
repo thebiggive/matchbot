@@ -32,6 +32,8 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
      */
     public function push(SalesforceWriteProxy $proxy, bool $isNew): bool
     {
+        $this->logInfo("isNew: " . var_export($isNew, true));
+        $this->logger->info("in write proxy push function");
         // This 'pre-`prePush()`' check protects us from trying to save the same Salesforce record twice at once.
         if (!$isNew && $proxy->getSalesforcePushStatus() === SalesforceWriteProxy::PUSH_STATUS_UPDATING) {
             /**
@@ -82,6 +84,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
                 ));
 
                 if ($this->doCreate($proxy)) { // Sets SF ID ready for update.
+                    $this->logger->info('sf write proxy 87');
                     $success = $this->doUpdate($proxy);
                 } else {
                     $success = false; // Create failed again -> still no SF ID -> don't try to update for now.
@@ -98,6 +101,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             }
         } else {
             // SF ID already set as expected -> normal update scenario
+            $this->logger->info("setting id already as expected");
             $success = $this->doUpdate($proxy);
         }
 
@@ -212,6 +216,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             ));
 
             if ($shouldRePush) {
+                $this->logger->info("in shouldrepush");
                 if ($this->doUpdate($proxy)) { // Make sure *not* to call push() again to avoid doing this recursively!
                     $this->safelySetPushStatus($proxy, SalesforceWriteProxy::PUSH_STATUS_COMPLETE, $isNew);
                     $this->logInfo('... plus interim updates for ' . get_class($proxy) . " {$proxy->getId()}");

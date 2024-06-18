@@ -116,6 +116,7 @@ abstract class SalesforceWriteProxy extends SalesforceProxy
      */
     public function isStable(): bool
     {
-        return $this->createdAt !== null && $this->createdAt < (new DateTime('-30 seconds'));
+        return true;
+      //  return $this->createdAt !== null && $this->createdAt < (new DateTime('-30 seconds'));
     }
 }
