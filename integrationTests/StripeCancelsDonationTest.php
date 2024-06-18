@@ -2,6 +2,8 @@
 
 namespace MatchBot\IntegrationTests;
 
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Tests\Application\Actions\Hooks\StripeTest;
@@ -19,6 +21,10 @@ class StripeCancelsDonationTest extends IntegrationTest
             true,
             flags: JSON_THROW_ON_ERROR
         )['donation'];
+
+        // We have to clear the EM before the act stage of the test as its not possible to lock a donation that is
+        // already in the EM's unit of work.
+        $this->getContainer()->get(EntityManagerInterface::class)->clear();
 
         $this->sendCancellationWebhookFromStripe($donation['transactionId']);
 

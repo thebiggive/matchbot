@@ -144,7 +144,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
         Donation $donation,
         DonationStatus $newStatus,
     ): void {
-        $this->donationRepositoryProphecy->findAndLockOneBy(['uuid' => $donationId])
+        $this->donationRepositoryProphecy->findAndLockOneByUUID($donationId)
             ->will(function () use ($donation) {
                 $donation->setDonationStatus(DonationStatus::Pending); // simulate loading pending donation from DB.
 

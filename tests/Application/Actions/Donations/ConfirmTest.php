@@ -349,7 +349,7 @@ class ConfirmTest extends TestCase
         $donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
 
         $testCase = $this;
-        $donationRepositoryProphecy->findAndLockOneBy(['uuid' => 'DONATION_ID'])->will(function () use ($testCase) {
+        $donationRepositoryProphecy->findAndLockOneByUUID('DONATION_ID')->will(function () use ($testCase) {
             $donation = Donation::fromApiModel(
                 new DonationCreate(
                     currencyCode: 'GBP',

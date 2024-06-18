@@ -28,7 +28,7 @@ class GiftAidResultHandler
         $this->entityManager->beginTransaction();
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $donationMessage->id]);
+        $donation = $this->donationRepository->findAndLockOneByUUID($donationMessage->id);
 
         if ($donationMessage->response_success === false) {
             $donation->setTbgGiftAidRequestFailedAt(new \DateTime());

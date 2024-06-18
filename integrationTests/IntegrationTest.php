@@ -4,6 +4,7 @@ namespace MatchBot\IntegrationTests;
 
 use ArrayAccess;
 use DI\Container;
+use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
@@ -66,6 +67,13 @@ abstract class IntegrationTest extends TestCase
         $routes($app);
 
         self::setApp($app);
+    }
+
+    public function tearDown(): void
+    {
+        parent::tearDown();
+        $em = $this->getContainer()->get(EntityManagerInterface::class);
+        $em->clear();
     }
 
     public static function setContainer(ContainerInterface $container): void
