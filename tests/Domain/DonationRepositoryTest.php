@@ -143,12 +143,8 @@ class DonationRepositoryTest extends TestCase
     }
 
 
-    /**
-     * @psalm-suppress UnevaluatedCode
-     */
     public function testExistingPushWithMissingProxyIdButPendingUpdateStatusNew(): void
     {
-        $this->markTestSkipped();
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
             ->create(Argument::type(Donation::class))
