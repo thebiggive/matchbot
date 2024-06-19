@@ -9,7 +9,6 @@ use MatchBot\Domain\DonationRepository;
 use PHPUnit\Framework\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
-use Psr\Log\NullLogger;
 use Symfony\Component\Messenger\Handler\Acknowledger;
 
 class DonationStateUpdatedHandlerTest extends TestCase
@@ -35,8 +34,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
 
         $sut = new DonationStateUpdatedHandler(
             $this->donationRepositoryProphecy->reveal(),
-            $this->createStub(RetrySafeEntityManager::class),
-            new NullLogger(),
+            $this->createStub(RetrySafeEntityManager::class)
         );
 
         $message = DonationStateUpdated::fromDonation($donation);
@@ -56,8 +54,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
 
         $sut = new DonationStateUpdatedHandler(
             $this->donationRepositoryProphecy->reveal(),
-            $this->createStub(RetrySafeEntityManager::class),
-            new NullLogger(),
+            $this->createStub(RetrySafeEntityManager::class)
         );
 
         $sut->__invoke(DonationStateUpdated::fromDonation($donation, isNew: true), $this->getAcknowledger());
@@ -71,8 +68,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
         $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn(null);
         $sut = new DonationStateUpdatedHandler(
             $this->donationRepositoryProphecy->reveal(),
-            $this->createStub(RetrySafeEntityManager::class),
-            new NullLogger(),
+            $this->createStub(RetrySafeEntityManager::class)
         );
 
         $sut->__invoke(DonationStateUpdated::fromDonation($donation), $this->getAcknowledger());
@@ -89,8 +85,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
 
         $sut = new DonationStateUpdatedHandler(
             $this->donationRepositoryProphecy->reveal(),
-            $this->createStub(RetrySafeEntityManager::class),
-            new NullLogger(),
+            $this->createStub(RetrySafeEntityManager::class)
         );
 
         $sut->__invoke(DonationStateUpdated::fromDonation($donation), $this->getAcknowledger());
