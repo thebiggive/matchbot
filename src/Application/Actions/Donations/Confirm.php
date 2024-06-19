@@ -7,6 +7,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\LazyAssertionException;
+use MatchBot\Application\Messenger\DonationStateUpdated;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
@@ -16,9 +17,12 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
+use Stripe\Event;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 
 class Confirm extends Action
 {
@@ -41,6 +45,7 @@ class Confirm extends Action
         private DonationRepository $donationRepository,
         private Stripe $stripe,
         private EntityManagerInterface $entityManager,
+        private RoutableMessageBus $bus,
     ) {
         parent::__construct($logger);
     }
@@ -269,9 +274,7 @@ EOF
         $this->entityManager->flush();
         $this->entityManager->commit();
 
-        // Outside the main txn, tell Salesforce about the latest fee too. We log if this fails but don't worry the
-        // client about it. We'll re-try sending the updated status to Salesforce in a future batch sync.
-        $this->donationRepository->push($donation, false);
+        $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
 
         return new JsonResponse([
             'paymentIntent' => [
