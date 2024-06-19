@@ -34,6 +34,7 @@ use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Processor\MemoryPeakUsageProcessor;
+use Monolog\Processor\MemoryUsageProcessor;
 use Monolog\Processor\UidProcessor;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -187,6 +188,9 @@ return function (ContainerBuilder $containerBuilder) {
 
         LoggerInterface::class => function (ContainerInterface $c): Logger {
 
+            $commitId = $c->get('commit-id');
+            \assert(is_string($commitId));
+
             $settings = $c->get('settings');
 
             $loggerSettings = $settings['logger'];
@@ -203,6 +207,18 @@ return function (ContainerBuilder $containerBuilder) {
 
             $handler = new StreamHandler($loggerSettings['path'], $loggerSettings['level']);
             $logger->pushHandler($handler);
+
+            $logger->pushProcessor(new class ($commitId) implements Monolog\Processor\ProcessorInterface
+            {
+                public function __construct(private string $commit_id)
+                {
+                }
+                public function __invoke(array $record)
+                {
+                    $record['extra']['commit'] = substr($this->commit_id, offset: 0, length: 7);
+                    return $record;
+                }
+            });
 
             $alarmChannelName = match (getenv('APP_ENV')) {
                 'production' => 'production-alarms',
@@ -261,9 +277,12 @@ return function (ContainerBuilder $containerBuilder) {
             ]);
         },
 
+        'commit-id' => static fn(ContainerInterface $_c): string => require __DIR__ . "/../.build-commit-id.php",
+
         ORM\Configuration::class => static function (ContainerInterface $c): ORM\Configuration {
             $settings = $c->get('settings');
-            $commitId = require __DIR__ . "/../.build-commit-id.php";
+            $commitId = $c->get('commit-id');
+            \assert(is_string($commitId));
 
             // Must be a distinct instance from the one used for fund allocation maths, as Doctrine's PHP serialisation
             // is incompatible with that needed for Redis commands that modify integer values in place. This injected
