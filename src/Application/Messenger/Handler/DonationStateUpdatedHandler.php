@@ -7,6 +7,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationStateUpdated;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Domain\DonationRepository;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Handler\Acknowledger;
 use Symfony\Component\Messenger\Handler\BatchHandlerInterface;
 use Symfony\Component\Messenger\Handler\BatchHandlerTrait;
@@ -15,12 +16,16 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
 {
     use BatchHandlerTrait;
 
-    public function __construct(private DonationRepository $donationRepository, private RetrySafeEntityManager $em)
-    {
+    public function __construct(
+        private DonationRepository $donationRepository,
+        private RetrySafeEntityManager $em,
+        private LoggerInterface $logger
+    ) {
     }
 
     public function __invoke(DonationStateUpdated $donationStateUpdated, Acknowledger $ack = null)
     {
+        $this->logger->debug("DSUH invoked for" . $donationStateUpdated->donationUUID);
         if (! $this->em->isOpen()) {
             // We assume this same EM is in use by the donation repository, so needs resetting to allow that to work.
             $this->em->resetManager();
@@ -33,6 +38,8 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
      */
     private function pushOneDonation(string $donationUUID, array $jobsForThisDonation): void
     {
+        $this->logger->debug("DSUH pushOneDonation invoked for $donationUUID");
+
         /** @psalm-suppress MixedPropertyFetch - allSatisfy isn't written with generics */
         Assertion::allSatisfy(
             $jobsForThisDonation,
@@ -41,12 +48,17 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
 
         $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
 
+
+
         if ($donation === null) {
+            $this->logger->debug("Null Donation found");
             foreach ($jobsForThisDonation as $job) {
                 $job[1]->nack(new \RuntimeException('Donation not found'));
             }
             return;
         }
+
+        $this->logger->debug("Real Donation found");
 
         // below can be replaced with array_find when we upgrade to PHP 8.4
         $donationIsNew = array_reduce(
@@ -55,9 +67,14 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
             false,
         );
 
+        $jobsForThisDonationCount = count($jobsForThisDonation);
+
         try {
             $this->donationRepository->push($donation, $donationIsNew);
         } catch (\Throwable $exception) {
+            $this->logger->error(
+                "Exception on attempt to push donation, will nack $jobsForThisDonationCount jobs" . $exception
+            );
             foreach ($jobsForThisDonation as $job) {
                 $job[1]->nack($exception);
             }
@@ -65,6 +82,7 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
         }
 
         foreach ($jobsForThisDonation as $job) {
+            $this->logger->debug("Acking $jobsForThisDonationCount jobs;");
             $job[1]->ack();
         }
     }
@@ -75,6 +93,8 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
      */
     private function process(array $jobs): void
     {
+        $jobCount = count($jobs);
+        $this->logger->debug("DSH attempting to process array of $jobCount jobs");
         $jobsByDonationUUID = [];
 
         foreach ($jobs as [$message, $ack]) {
