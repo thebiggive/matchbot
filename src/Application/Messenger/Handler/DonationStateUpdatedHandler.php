@@ -2,10 +2,8 @@
 
 namespace MatchBot\Application\Messenger\Handler;
 
-use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationStateUpdated;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Messenger\Handler\Acknowledger;
 use Symfony\Component\Messenger\Handler\BatchHandlerInterface;
@@ -15,16 +13,12 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
 {
     use BatchHandlerTrait;
 
-    public function __construct(private DonationRepository $donationRepository, private RetrySafeEntityManager $em)
+    public function __construct(private DonationRepository $donationRepository)
     {
     }
 
     public function __invoke(DonationStateUpdated $donationStateUpdated, Acknowledger $ack = null)
     {
-        if (! $this->em->isOpen()) {
-            // We assume this same EM is in use by the donation repository, so needs resetting to allow that to work.
-            $this->em->resetManager();
-        }
         return $this->handle($donationStateUpdated, $ack);
     }
 
