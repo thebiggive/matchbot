@@ -25,7 +25,7 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
 
     public function __invoke(DonationStateUpdated $donationStateUpdated, Acknowledger $ack = null)
     {
-        $this->logger->info("DSUH invoked for" . $donationStateUpdated->donationUUID);
+        $this->logger->debug("DSUH invoked for" . $donationStateUpdated->donationUUID);
         if (! $this->em->isOpen()) {
             // We assume this same EM is in use by the donation repository, so needs resetting to allow that to work.
             $this->em->resetManager();
@@ -38,7 +38,7 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
      */
     private function pushOneDonation(string $donationUUID, array $jobsForThisDonation): void
     {
-        $this->logger->info("DSUH pushOneDonation invoked for $donationUUID");
+        $this->logger->debug("DSUH pushOneDonation invoked for $donationUUID");
 
         /** @psalm-suppress MixedPropertyFetch - allSatisfy isn't written with generics */
         Assertion::allSatisfy(
@@ -51,14 +51,14 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
 
 
         if ($donation === null) {
-            $this->logger->info("Null Donation found");
+            $this->logger->debug("Null Donation found");
             foreach ($jobsForThisDonation as $job) {
                 $job[1]->nack(new \RuntimeException('Donation not found'));
             }
             return;
         }
 
-        $this->logger->info("Real Donation found");
+        $this->logger->debug("Real Donation found");
 
         // below can be replaced with array_find when we upgrade to PHP 8.4
         $donationIsNew = array_reduce(
@@ -82,7 +82,7 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
         }
 
         foreach ($jobsForThisDonation as $job) {
-            $this->logger->info("Acking $jobsForThisDonationCount jobs;");
+            $this->logger->debug("Acking $jobsForThisDonationCount jobs;");
             $job[1]->ack();
         }
     }
@@ -94,7 +94,7 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
     private function process(array $jobs): void
     {
         $jobCount = count($jobs);
-        $this->logger->info("DSH attempting to process array of $jobCount jobs");
+        $this->logger->debug("DSH attempting to process array of $jobCount jobs");
         $jobsByDonationUUID = [];
 
         foreach ($jobs as [$message, $ack]) {
