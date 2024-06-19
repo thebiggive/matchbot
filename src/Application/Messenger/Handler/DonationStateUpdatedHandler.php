@@ -72,12 +72,8 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
         try {
             $this->donationRepository->push($donation, $donationIsNew);
         } catch (\Throwable $exception) {
-            // getId() works on proxy object, does not trigger lazy loading
-            $campaginID = $donation->getCampaign()->getId();
             $this->logger->error(
-                "Exception on attempt to push donation $donationUUID, for campaign # $campaginID \n" .
-                "will nack $jobsForThisDonationCount jobs\n" .
-                $exception
+                "Exception on attempt to push donation, will nack $jobsForThisDonationCount jobs" . $exception
             );
             foreach ($jobsForThisDonation as $job) {
                 $job[1]->nack($exception);
