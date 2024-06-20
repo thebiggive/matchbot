@@ -46,9 +46,9 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
             static fn(array $job) => $job[0]->donationUUID === $donationUUID
         );
 
+        Assertion::uuid($donationUUID, 'Expected donationUUID to be a valid UUID');
+
         $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
-
-
 
         if ($donation === null) {
             $this->logger->info("Null Donation found");
