@@ -7,6 +7,7 @@ namespace MatchBot\Application\Commands;
 use Doctrine\DBAL\Exception\TableNotFoundException;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFundingRepository;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -14,20 +15,17 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Delete all fund data from the matching adapter. Typically called immediately prior to a full
  * Doctrine database reset, via the Composer `matchbot:reset` script.
  */
+#[AsCommand(
+    name: 'matchbot:reset-matching',
+    description: 'Delete fund balance data from the matching adapter'
+)]
 class ResetMatching extends LockingCommand
 {
-    protected static $defaultName = 'matchbot:reset-matching';
-
     public function __construct(
         private CampaignFundingRepository $campaignFundingRepository,
         private Matching\Adapter $matchingAdapter
     ) {
         parent::__construct();
-    }
-
-    protected function configure(): void
-    {
-        $this->setDescription('Delete fund balance data from the matching adapter');
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
