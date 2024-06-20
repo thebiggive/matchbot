@@ -35,7 +35,7 @@ class RetrospectivelyMatchTest extends TestCase
         $this->chatter = $chatterProphecy->reveal();
 
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
-        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class), Argument::cetera())->willReturnArgument();
+        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
     }
 
     /**

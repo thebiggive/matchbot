@@ -49,8 +49,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
 
 
         $messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
-        $messageBusProphecy->dispatch(Argument::type(Envelope::class), Argument::cetera())
-            ->willReturnArgument();
+        $messageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
 
         $this->command = new RedistributeMatchFunds(
             $this->campaignFundingRepository,

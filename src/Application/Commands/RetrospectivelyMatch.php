@@ -13,7 +13,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
 use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
@@ -82,12 +81,7 @@ class RetrospectivelyMatch extends LockingCommand
 
             if (bccomp($amountAllocated, '0.00', 2) === 1) {
                 $this->entityManager->flush();
-                $this->bus->dispatch(
-                    new Envelope(
-                        DonationStateUpdated::fromDonation($donation)
-                    ),
-                    [new DelayStamp(delay: 1_000 /*one second */)],
-                );
+                $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
                 $numWithMatchingAllocated++;
                 $totalNewMatching = bcadd($totalNewMatching, $amountAllocated, 2);
 

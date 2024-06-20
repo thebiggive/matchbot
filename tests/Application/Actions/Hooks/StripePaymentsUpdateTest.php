@@ -30,8 +30,7 @@ class StripePaymentsUpdateTest extends StripeTest
         \assert($container instanceof Container);
 
         $routableMessageBusProphecy = $this->prophesize(RoutableMessageBus::class);
-        $routableMessageBusProphecy->dispatch(Argument::type(Envelope::class), Argument::cetera())
-            ->willReturnArgument();
+        $routableMessageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
 
         $container->set(RoutableMessageBus::class, $routableMessageBusProphecy->reveal());
     }

@@ -23,7 +23,6 @@ use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Messenger\Stamp\DelayStamp;
 
 class Confirm extends Action
 {
@@ -275,12 +274,7 @@ EOF
         $this->entityManager->flush();
         $this->entityManager->commit();
 
-        $this->bus->dispatch(
-            new Envelope(
-                DonationStateUpdated::fromDonation($donation),
-                [new DelayStamp(delay: 1_000 /*one second */)]
-            ),
-        );
+        $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
 
         return new JsonResponse([
             'paymentIntent' => [

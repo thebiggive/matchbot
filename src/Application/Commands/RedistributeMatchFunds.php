@@ -13,7 +13,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Messenger\Stamp\DelayStamp;
 
 /**
  * Redistribute match funding allocations where possible, from lower to higher priority match fund pots.
@@ -103,12 +102,7 @@ class RedistributeMatchFunds extends LockingCommand
             }
 
             $this->entityManager->flush();
-            $this->bus->dispatch(
-                new Envelope(
-                    DonationStateUpdated::fromDonation($donation)
-                ),
-                [new DelayStamp(delay: 1_000 /*one second */)],
-            );
+            $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
             $donationsAmended++;
         }
 
