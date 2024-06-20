@@ -51,14 +51,14 @@ class DonationStateUpdatedHandler implements BatchHandlerInterface
         $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
 
         if ($donation === null) {
-            $this->logger->info("Null Donation found");
+            $this->logger->info("Null Donation found for UUID: " . $donationUUID);
             foreach ($jobsForThisDonation as $job) {
                 $job[1]->nack(new \RuntimeException('Donation not found'));
             }
             return;
         }
 
-        $this->logger->info("Real Donation found");
+        $this->logger->info("Real Donation found for UUID: " . $donationUUID);
 
         // below can be replaced with array_find when we upgrade to PHP 8.4
         $donationIsNew = array_reduce(
