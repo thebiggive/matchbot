@@ -6,7 +6,6 @@ namespace MatchBot\Tests\Domain;
 
 use DI\Container;
 use Doctrine\Common\Cache\CacheProvider;
-use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -55,7 +54,8 @@ class DonationRepositoryTest extends TestCase
             ->put(Argument::type(Donation::class))
             ->shouldBeCalledOnce()
             ->willReturn(true);
-        $this->expectEntityManagerSalesforcePushCalls();
+        $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalled();
+        $this->entityManagerProphecy->flush()->shouldBeCalled();
 
         $success = $this->getRepo($donationClientProphecy)->push($this->getTestDonation(), false);
 
@@ -94,7 +94,10 @@ class DonationRepositoryTest extends TestCase
 
         $pendingDonation = $this->getTestDonation();
         $pendingDonation->setDonationStatus(DonationStatus::Pending);
-        $this->expectEntityManagerSalesforcePushCalls();
+        $this->entityManagerProphecy->persist($pendingDonation)->shouldBeCalled();
+        $this->entityManagerProphecy->flush()->shouldBeCalled();
+
+
 
         $success = $this->getRepo($donationClientProphecy)->push($pendingDonation, false);
 
@@ -122,7 +125,7 @@ class DonationRepositoryTest extends TestCase
             ->put(Argument::type(Donation::class))
             ->shouldBeCalledOnce()
             ->willReturn(true);
-        $this->expectEntityManagerSalesforcePushCalls();
+
 
         $donation = $this->getTestDonation();
         $donationReflected = new ReflectionClass($donation);
@@ -134,6 +137,9 @@ class DonationRepositoryTest extends TestCase
         $sfIdProperty->setValue($donation, null); // Allowed property type but not allowed in public setter.
 
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
+
+        $this->entityManagerProphecy->persist($donation)->shouldBeCalled();
+        $this->entityManagerProphecy->flush()->shouldBeCalled();
 
         $success = $this->getRepo($donationClientProphecy)->push($donation, false);
 
@@ -151,7 +157,6 @@ class DonationRepositoryTest extends TestCase
         $donationClientProphecy
             ->put(Argument::type(Donation::class))
             ->shouldNotBeCalled();
-        $this->expectEntityManagerSalesforcePushCalls();
 
         $donation = $this->getTestDonation();
         $donationReflected = new ReflectionClass($donation);
@@ -160,6 +165,9 @@ class DonationRepositoryTest extends TestCase
         $sfIdProperty->setValue($donation, null); // Allowed property type but not allowed in public setter.
 
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
+
+        $this->entityManagerProphecy->persist($donation)->shouldBeCalled();
+        $this->entityManagerProphecy->flush()->shouldBeCalled();
 
         $success = $this->getRepo($donationClientProphecy)->push($donation, false);
 
@@ -176,9 +184,12 @@ class DonationRepositoryTest extends TestCase
             ->put(Argument::type(Donation::class))
             ->shouldBeCalledOnce()
             ->willThrow(Client\NotFoundException::class);
-        $this->expectEntityManagerSalesforcePushCalls();
 
         $donation = $this->getTestDonation();
+
+        $this->entityManagerProphecy->persist($donation)->shouldBeCalled();
+        $this->entityManagerProphecy->flush()->shouldBeCalled();
+
 
         $success = $this->getRepo($donationClientProphecy)->push($donation, false);
 
@@ -279,9 +290,13 @@ class DonationRepositoryTest extends TestCase
             ->put(Argument::type(Donation::class))
             ->shouldBeCalledOnce()
             ->willReturn(false);
-        $this->expectEntityManagerSalesforcePushCalls();
 
-        $success = $this->getRepo($donationClientProphecy)->push($this->getTestDonation(), false);
+        $donation = $this->getTestDonation();
+
+        $this->entityManagerProphecy->persist($donation)->shouldBeCalled();
+        $this->entityManagerProphecy->flush()->shouldBeCalled();
+
+        $success = $this->getRepo($donationClientProphecy)->push($donation, false);
 
         $this->assertFalse($success);
     }
@@ -699,15 +714,5 @@ class DonationRepositoryTest extends TestCase
         }
 
         return $repo;
-    }
-
-    private function expectEntityManagerSalesforcePushCalls(): void
-    {
-        $this->entityManagerProphecy->beginTransaction()->shouldBeCalled();
-        $this->entityManagerProphecy->refresh(Argument::type(Donation::class), LockMode::PESSIMISTIC_WRITE)
-            ->shouldBeCalled();
-        $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalled();
-        $this->entityManagerProphecy->flush()->shouldBeCalled();
-        $this->entityManagerProphecy->commit()->shouldBeCalled();
     }
 }
