@@ -88,9 +88,9 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
                 }
             } else {
                 // Leave state unchanged -> proxy should be deemed old/stable enough on the next
-                // scheduled re-try to trigger a create-then-update as per above logic branch.
-                $this->logError(sprintf(
-                    'Not create-updating new %s %s (missing Salesforce ID, probably errored earlier)',
+                // queued or scheduled re-try to trigger a create-then-update as per above logic branch.
+                $this->logInfo(sprintf(
+                    'Not create-updating new %s %s (missing Salesforce ID, errored or delayed earlier)',
                     get_class($proxy),
                     $proxy->getId(),
                 ));
