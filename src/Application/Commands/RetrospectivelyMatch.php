@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use DateTime;
+use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Messenger\DonationStateUpdated;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
 use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
@@ -29,6 +34,8 @@ class RetrospectivelyMatch extends LockingCommand
     public function __construct(
         private DonationRepository $donationRepository,
         private ChatterInterface $chatter,
+        private RoutableMessageBus $bus,
+        private EntityManagerInterface $entityManager,
     ) {
         parent::__construct();
     }
@@ -74,7 +81,13 @@ class RetrospectivelyMatch extends LockingCommand
             $amountAllocated = $this->donationRepository->allocateMatchFunds($donation);
 
             if (bccomp($amountAllocated, '0.00', 2) === 1) {
-                $this->donationRepository->push($donation, false);
+                $this->entityManager->flush();
+                $this->bus->dispatch(
+                    new Envelope(
+                        DonationStateUpdated::fromDonation($donation)
+                    ),
+                    [new DelayStamp(delay: 3_000 /*3 seconds */)],
+                );
                 $numWithMatchingAllocated++;
                 $totalNewMatching = bcadd($totalNewMatching, $amountAllocated, 2);
 
