@@ -83,7 +83,6 @@ class Confirm extends Action
         \assert(is_array($requestBody));
 
         $paymentMethodId = $requestBody['stripePaymentMethodId'];
-        \assert((is_string($paymentMethodId)));
 
         $this->entityManager->beginTransaction();
 
@@ -92,11 +91,11 @@ class Confirm extends Action
             throw new NotFoundException();
         }
 
-        if (trim($paymentMethodId) === '') {
+        if (!is_string($paymentMethodId) || trim($paymentMethodId) === '') {
             $donationUUID = $donation->getId();
             $this->logger->warning(
                 <<<EOF
-Donation Confirmation attempted with blank payment method id "$paymentMethodId" for Donation $donationUUID 
+Donation Confirmation attempted with missing payment method id "$paymentMethodId" for Donation $donationUUID
 EOF
             );
             throw new HttpBadRequestException($request, "stripePaymentMethodId required");
