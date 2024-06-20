@@ -30,6 +30,7 @@ use Stripe\PaymentIntent;
 use Stripe\StripeClient;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
 use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
@@ -182,7 +183,10 @@ class StripePaymentsUpdate extends Stripe
         $this->entityManager->persist($donation);
         $this->entityManager->commit();
         $this->entityManager->flush();
-        $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
+        $this->bus->dispatch(new Envelope(
+            DonationStateUpdated::fromDonation($donation),
+            [new DelayStamp(delay: 1_000 /*one second */)],
+        ));
 
 
         return $this->respondWithData($response, $charge);
@@ -386,7 +390,10 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->entityManager->flush();
-        $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
+        $this->bus->dispatch(new Envelope(
+            DonationStateUpdated::fromDonation($donation),
+            [new DelayStamp(delay: 1_000 /*one second */)],
+        ));
 
         return $this->respond($response, new ActionPayload(200));
     }
@@ -483,7 +490,12 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->entityManager->flush();
-        $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
+        $this->bus->dispatch(
+            new Envelope(
+                DonationStateUpdated::fromDonation($donation)
+            ),
+            [new DelayStamp(delay: 1_000 /*one second */)],
+        );
     }
 
     private function handleCashBalanceUpdate(Event $event, Response $response): Response

@@ -40,7 +40,7 @@ class RedistributeMatchFundsTest extends TestCase
         $this->earlyNovemberNoon = new \DateTimeImmutable('2023-11-05T12:00:00');
 
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
-        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
+        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class), Argument::cetera())->willReturnArgument();
     }
 
     public function testNoEligibleDonations(): void
