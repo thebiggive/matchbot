@@ -46,6 +46,17 @@ abstract class SalesforceWriteProxy extends SalesforceProxy
      */
     public const PUSH_STATUS_REMOVED = 'removed';
 
+    public const array POSSIBLE_PUSH_STATUSES = [
+        self::PUSH_STATUS_NOT_SENT,
+        self::PUSH_STATUS_PENDING_CREATE,
+        self::PUSH_STATUS_CREATING,
+        self::PUSH_STATUS_PENDING_UPDATE,
+        self::PUSH_STATUS_PENDING_ADDITIONAL_UPDATE,
+        self::PUSH_STATUS_UPDATING,
+        self::PUSH_STATUS_COMPLETE,
+        self::PUSH_STATUS_REMOVED,
+    ];
+
     /**
      * @return bool Whether the entity has been modified in MatchBot subsequently after its creation.
      */

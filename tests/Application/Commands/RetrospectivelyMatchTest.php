@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Commands;
 
 use DateTime;
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 
 class RetrospectivelyMatchTest extends TestCase
@@ -22,10 +26,16 @@ class RetrospectivelyMatchTest extends TestCase
 
     private ChatterInterface $chatter;
 
+    /** @var ObjectProphecy<RoutableMessageBus> */
+    private ObjectProphecy $messageBusProphecy;
+
     public function setUp(): void
     {
         $chatterProphecy = $this->prophesize(ChatterInterface::class);
         $this->chatter = $chatterProphecy->reveal();
+
+        $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
+        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
     }
 
     /**
@@ -33,11 +43,7 @@ class RetrospectivelyMatchTest extends TestCase
      */
     public function testMissingDaysBackRunsInDefaultMode(): void
     {
-        $command = new RetrospectivelyMatch($this->getDonationRepo(true), $this->chatter);
-        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
-        $command->setLogger(new NullLogger());
-
-        $commandTester = new CommandTester($command);
+        $commandTester = $this->getCommandTester(matchingIsAllocated: true);
         $commandTester->execute([]);
 
         $expectedOutputLines = [
@@ -52,11 +58,7 @@ class RetrospectivelyMatchTest extends TestCase
 
     public function testNonWholeDaysBackIsRounded(): void
     {
-        $command = new RetrospectivelyMatch($this->getDonationRepo(false), $this->chatter);
-        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
-        $command->setLogger(new NullLogger());
-
-        $commandTester = new CommandTester($command);
+        $commandTester = $this->getCommandTester(matchingIsAllocated: false);
         $commandTester->execute(['days-back' => '7.5']);
 
         $expectedOutputLines = [
@@ -71,11 +73,7 @@ class RetrospectivelyMatchTest extends TestCase
 
     public function testWholeDaysBackProceeds(): void
     {
-        $command = new RetrospectivelyMatch($this->getDonationRepo(false), $this->chatter);
-        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
-        $command->setLogger(new NullLogger());
-
-        $commandTester = new CommandTester($command);
+        $commandTester = $this->getCommandTester(matchingIsAllocated: false);
         $commandTester->execute(['days-back' => '8']);
 
         $expectedOutputLines = [
@@ -102,16 +100,25 @@ class RetrospectivelyMatchTest extends TestCase
             $donationRepo->allocateMatchFunds(Argument::type(Donation::class))
                 ->shouldBeCalledOnce()
                 ->willReturn('123.45');
-            $donationRepo->push(Argument::type(Donation::class), false)
-                ->shouldBeCalledOnce()
-                ->willReturn(true);
         } else {
             $donationRepo->allocateMatchFunds(Argument::type(Donation::class))
-                ->shouldNotBeCalled();
-            $donationRepo->push(Argument::type(Donation::class), false)
                 ->shouldNotBeCalled();
         }
 
         return $donationRepo->reveal();
+    }
+
+    public function getCommandTester(bool $matchingIsAllocated): CommandTester
+    {
+        $command = new RetrospectivelyMatch(
+            $this->getDonationRepo($matchingIsAllocated),
+            $this->chatter,
+            $this->messageBusProphecy->reveal(),
+            $this->createStub(EntityManagerInterface::class),
+        );
+        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->setLogger(new NullLogger());
+
+        return new CommandTester($command);
     }
 }
