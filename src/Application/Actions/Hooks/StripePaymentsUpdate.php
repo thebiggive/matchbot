@@ -111,11 +111,12 @@ class StripePaymentsUpdate extends Stripe
         $charge = $event->data->object;
 
         $intentId = $charge->payment_intent;
+        Assertion::string($intentId);
 
         $this->entityManager->beginTransaction();
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+        $donation = $this->donationRepository->findAndLockOneByTransactionId($intentId);
 
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
@@ -200,6 +201,7 @@ class StripePaymentsUpdate extends Stripe
         $dispute = $event->data->object;
 
         $intentId = $dispute->payment_intent;
+        Assertion::string($intentId);
 
         if ($dispute->status !== 'lost') {
             $this->logger->info(sprintf(
@@ -215,7 +217,7 @@ class StripePaymentsUpdate extends Stripe
         $this->entityManager->beginTransaction();
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+        $donation = $this->donationRepository->findAndLockOneByTransactionId($intentId);
 
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
@@ -282,7 +284,7 @@ class StripePaymentsUpdate extends Stripe
         $this->entityManager->beginTransaction();
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['chargeId' => $charge->id]);
+        $donation = $this->donationRepository->findAndLockOneByChargeId($charge->id);
 
         if (!$donation) {
             $this->logger->notice(sprintf('Donation not found with Charge ID %s', $charge->id));
@@ -357,7 +359,12 @@ class StripePaymentsUpdate extends Stripe
         $paymentIntent = $event->data->object;
         \assert($paymentIntent instanceof PaymentIntent);
 
-        $donation = $this->donationRepository->findOneBy(['transactionId' => $paymentIntent->id]);
+        $this->entityManager->beginTransaction();
+        // Locking this fails StripeCancelsDonationTest currently, probably because of
+        // https://github.com/doctrine/orm/issues/9505 combined with the test creating and
+        // then patching the donation in one thread? Doctrine doesn't recognise the donation
+        // to cancel as the same and gets an error trying to set the readonly $amount property.
+        $donation = $this->donationRepository->findAndLockOneByTransactionId($paymentIntent->id);
 
         if ($donation === null) {
             if (getenv('APP_ENV') !== 'production') {
@@ -386,6 +393,7 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->entityManager->flush();
+        $this->entityManager->commit();
         $this->bus->dispatch(new Envelope(DonationStateUpdated::fromDonation($donation)));
 
         return $this->respond($response, new ActionPayload(200));

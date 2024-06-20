@@ -97,7 +97,7 @@ class StripePayoutHandler implements MessageHandlerInterface
         foreach ($chargeIds as $chargeId) {
             $this->entityManager->beginTransaction();
 
-            $donation = $this->donationRepository->findAndLockOneBy(['chargeId' => $chargeId]);
+            $donation = $this->donationRepository->findAndLockOneByChargeId($chargeId);
 
             // If a donation was not found, then it's most likely from a different
             // sandbox and therefore we info log this. Typically this should happen for

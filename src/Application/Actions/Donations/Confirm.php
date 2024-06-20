@@ -5,6 +5,7 @@ namespace MatchBot\Application\Actions\Donations;
 use Doctrine\ORM\EntityManagerInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\LazyAssertionException;
 use MatchBot\Application\Messenger\DonationStateUpdated;
@@ -92,7 +93,11 @@ class Confirm extends Action
 
         $this->entityManager->beginTransaction();
 
-        $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $args['donationId']]);
+        $uuid = $args['donationId'];
+
+        Assertion::string($uuid);
+
+        $donation = $this->donationRepository->findAndLockOneByUUID($uuid);
         if (! $donation) {
             throw new NotFoundException();
         }

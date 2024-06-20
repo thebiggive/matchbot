@@ -70,7 +70,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -95,7 +95,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -123,7 +123,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -151,7 +151,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '87654321-1234-1234-1234-ba0987654321'])
+            ->findAndLockOneByUUID('87654321-1234-1234-1234-ba0987654321')
             ->willReturn(null)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -190,7 +190,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($this->getTestDonation()) // Get a new mock object so it's 'Collected'.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -236,7 +236,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(Argument::cetera())
+            ->findAndLockOneByUUID(Argument::cetera())
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -299,7 +299,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donationResponse)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -351,7 +351,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         // Cancel is a no-op -> no fund release
@@ -412,7 +412,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -480,7 +480,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -543,7 +543,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -603,7 +603,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ac'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ac')
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -660,7 +660,7 @@ class UpdateTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
 
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -705,7 +705,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -757,7 +757,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(Argument::cetera())
+            ->findAndLockOneByUUID(Argument::cetera())
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
@@ -805,7 +805,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -857,7 +857,7 @@ class UpdateTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationInRepo = $this->getTestDonation();  // Get a new mock object so it's £123.45.
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
 
@@ -917,7 +917,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -1002,7 +1002,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -1093,7 +1093,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -1193,7 +1193,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -1286,7 +1286,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -1382,7 +1382,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
@@ -1476,7 +1476,7 @@ class UpdateTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
@@ -1686,7 +1686,7 @@ class UpdateTest extends TestCase
         $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::Card);
 
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
 
@@ -1751,7 +1751,7 @@ class UpdateTest extends TestCase
         // for auto-confirms) "card".
 
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
 
@@ -1821,7 +1821,7 @@ class UpdateTest extends TestCase
         );
 
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
 
@@ -1905,7 +1905,7 @@ class UpdateTest extends TestCase
         );  // Get a new mock object so DB has old values.
 
         $donationRepoProphecy
-            ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findAndLockOneByUUID('12345678-1234-1234-1234-1234567890ab')
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy

@@ -630,23 +630,49 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
     }
 
-    /**
-     * Locks row in DB to prevent concurrent updates. See jira MAT-260
-     * @throws DBALException\LockWaitTimeoutException
-     */
-    public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation
+    public function findAndLockOneByUUID(string $uuid): ?Donation
     {
-        // We can't actually lock the row until we know the ID of the donation, so we fetch it first
-        // using the criteria, and then call find once we know the ID to lock.
-        $donation = $this->findOneBy($criteria, $orderBy);
+        $query = $this->getEntityManager()->createQuery(
+            'SELECT d.id FROM MatchBot\Domain\Donation d WHERE d.uuid = :uuid'
+        );
+        $query->setParameter('uuid', $uuid);
+        $ids = $query->getSingleColumnResult();
 
-        if ($donation === null) {
+        if ($ids === []) {
             return null;
         }
 
-        $this->getEntityManager()->refresh($donation, LockMode::PESSIMISTIC_WRITE);
+        return $this->find($ids[0], LockMode::PESSIMISTIC_WRITE);
+    }
 
-        return $donation;
+    public function findAndLockOneByTransactionId(string $transactionId): ?Donation
+    {
+        $query = $this->getEntityManager()->createQuery(
+            'SELECT d.id FROM MatchBot\Domain\Donation d WHERE d.transactionId = :transaction_id'
+        );
+        $query->setParameter('transaction_id', $transactionId);
+        $ids = $query->getSingleColumnResult();
+
+        if ($ids === []) {
+            return null;
+        }
+
+        return $this->find($ids[0], LockMode::PESSIMISTIC_WRITE);
+    }
+
+    public function findAndLockOneByChargeId(string $chargeId): ?Donation
+    {
+        $query = $this->getEntityManager()->createQuery(
+            'SELECT d.id FROM MatchBot\Domain\Donation d WHERE d.chargeId = :charge_id'
+        );
+        $query->setParameter('charge_id', $chargeId);
+        $ids = $query->getSingleColumnResult();
+
+        if ($ids === []) {
+            return null;
+        }
+
+        return $this->find($ids[0], LockMode::PESSIMISTIC_WRITE);
     }
 
     /**
