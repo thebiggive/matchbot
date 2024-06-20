@@ -11,7 +11,6 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels;
-use MatchBot\Application\Messenger\DonationStateUpdated;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
@@ -28,9 +27,6 @@ use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
 use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 use TypeError;
@@ -53,7 +49,6 @@ class Update extends Action
         private Stripe $stripe,
         LoggerInterface $logger,
         private ClockInterface $clock,
-        private RoutableMessageBus $bus,
     ) {
         parent::__construct($logger);
     }
@@ -526,10 +521,9 @@ class Update extends Action
             return;
         }
 
-        $this->bus->dispatch(new Envelope(
-            DonationStateUpdated::fromDonation($donation),
-            [new DelayStamp(delay: 1_000 /*one second */)],
-        ));
+        // We log if this fails but don't worry the client about it. We'll just re-try
+        // sending the updated status to Salesforce in a future batch sync.
+        $this->donationRepository->push($donation, false);
     }
 
     /**
