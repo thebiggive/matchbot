@@ -30,6 +30,7 @@ use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\Stamp\BusNameStamp;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
@@ -533,6 +534,7 @@ class Update extends Action
             [
                 new DelayStamp(delay: 3_000 /*3 seconds */),
                 new TransportMessageIdStamp("dsu.{$donation->getUuid()}.update.$stampSuffix"),
+                new BusNameStamp(DonationStateUpdated::class),
             ],
         ));
     }

@@ -23,6 +23,7 @@ use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\Stamp\BusNameStamp;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 
@@ -282,6 +283,7 @@ EOF
                 [
                     new DelayStamp(delay: 3_000 /*3 seconds */),
                     new TransportMessageIdStamp("dsu.{$donation->getUuid()}.confirm.$stampSuffix"),
+                    new BusNameStamp(DonationStateUpdated::class),
                 ]
             ),
         );
@@ -294,11 +296,6 @@ EOF
                     : null,
             ],
         ]);
-    }
-
-    public function randomString(): string
-    {
-        return substr(Uuid::uuid4()->toString(), 0, 15);
     }
 
     private function handleCardException(

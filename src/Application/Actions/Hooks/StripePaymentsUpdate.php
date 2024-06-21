@@ -30,6 +30,7 @@ use Stripe\PaymentIntent;
 use Stripe\StripeClient;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\Stamp\BusNameStamp;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
@@ -190,6 +191,7 @@ class StripePaymentsUpdate extends Stripe
             [
                 new DelayStamp(delay: 3_000 /*3 seconds */),
                 new TransportMessageIdStamp("dsu.{$donation->getUuid()}.charge_succeeded.$stampSuffix"),
+                new BusNameStamp(DonationStateUpdated::class),
             ],
         ));
 

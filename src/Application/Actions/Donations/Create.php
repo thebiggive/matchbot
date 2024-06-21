@@ -27,6 +27,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\Stamp\BusNameStamp;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
@@ -172,6 +173,7 @@ class Create extends Action
                 [
                     new DelayStamp(delay: 3_000 /*3 seconds */),
                     new TransportMessageIdStamp("dsu.{$donation->getUuid()}.create.$stampSuffix"),
+                    new BusNameStamp(DonationStateUpdated::class),
                 ]
             )
         );
