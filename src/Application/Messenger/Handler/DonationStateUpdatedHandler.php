@@ -49,6 +49,8 @@ class DonationStateUpdatedHandler
                     "DSUH: RetryableException on attempt to push donation $donationUUID, will retry \n" .
                     $retryableException
                 );
+                $this->donationRepository->rollbackAndReset();
+                usleep(random_int(0, 200000)); // Wait between 0 and 0.2 seconds before retrying
             } catch (\Throwable $exception) {
                 // getId() works on proxy object, does not trigger lazy loading
                 $campaginID = $donation->getCampaign()->getId();

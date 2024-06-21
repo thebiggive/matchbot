@@ -670,4 +670,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $em->resetManager();
         }
     }
+
+    public function rollbackAndReset(): void
+    {
+        $em = $this->getEntityManager();
+        Assertion::isInstanceOf($em, RetrySafeEntityManager::class);
+        $em->rollback();
+        $em->resetManager();
+    }
 }
