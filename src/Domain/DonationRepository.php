@@ -12,6 +12,7 @@ use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
@@ -659,5 +660,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $this->getEntityManager()->remove($fundingWithdrawal);
             }
         });
+    }
+
+    public function resetIfNecessary(): void
+    {
+        $em = $this->getEntityManager();
+        Assertion::isInstanceOf($em, RetrySafeEntityManager::class);
+        if (!$em->isOpen()) {
+            $em->resetManager();
+        }
     }
 }

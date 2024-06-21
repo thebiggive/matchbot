@@ -26,6 +26,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
     public function testItPushesOneDonationToSf(): void
     {
         $donation = \MatchBot\Tests\TestCase::someDonation();
+        $this->donationRepositoryProphecy->resetIfNecessary()->shouldBeCalledOnce();
         $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn($donation);
         $this->donationRepositoryProphecy->push($donation, false)->shouldBeCalledOnce();
 
@@ -43,6 +44,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
     {
         $donation = \MatchBot\Tests\TestCase::someDonation();
         $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn($donation);
+        $this->donationRepositoryProphecy->resetIfNecessary()->shouldBeCalledTimes(2);
         $this->donationRepositoryProphecy->push($donation, true)->shouldBeCalledOnce();
         $this->donationRepositoryProphecy->push($donation, false)->shouldBeCalledOnce();
 
@@ -61,6 +63,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
     public function testItThrowsIfDonationCannotBeFound(): void
     {
         $donation = \MatchBot\Tests\TestCase::someDonation();
+        $this->donationRepositoryProphecy->resetIfNecessary()->shouldBeCalledOnce();
         $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn(null);
         $sut = new DonationStateUpdatedHandler(
             $this->donationRepositoryProphecy->reveal(),
@@ -79,6 +82,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
     public function testItThrowsIfDonationCannotBePushed(): void
     {
         $donation = \MatchBot\Tests\TestCase::someDonation();
+        $this->donationRepositoryProphecy->resetIfNecessary()->shouldBeCalledOnce();
         $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn($donation);
         $this->donationRepositoryProphecy->push($donation, false)->willThrow(new \Exception('Failed to push to SF'));
 
