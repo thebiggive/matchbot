@@ -84,7 +84,6 @@ abstract class SalesforceWriteProxy extends SalesforceProxy
 
     /**
      * @param DateTime $salesforceLastPush
-     * @psalm-suppress PossiblyUnusedMethod Will bring back code using this soon probably
      */
     public function setSalesforceLastPush(DateTime $salesforceLastPush): void
     {
