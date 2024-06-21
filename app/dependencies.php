@@ -390,6 +390,8 @@ return function (ContainerBuilder $containerBuilder) {
             $busContainer->set('claimbot.donation.claim', $bus);
             $busContainer->set('claimbot.donation.result', $bus);
             $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
+            // This one is definitely needed for BusNameStamp use and tracing on the same.
+            $busContainer->set(DonationStateUpdated::class, $bus);
 
             return new RoutableMessageBus($busContainer, $bus);
         },

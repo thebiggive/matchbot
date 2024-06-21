@@ -249,12 +249,12 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
         Assertion::inArray($status, SalesforceWriteProxy::POSSIBLE_PUSH_STATUSES);
 
         $qb = new Query\QueryBuilder($this->getEntityManager()->getConnection());
-        $qb->update($this->getEntityName())
+        $qb->update('Donation') // TODO if keeping any DBAL, work out how to do this dynamically
             ->set('salesforcePushStatus', ':status')
             ->set('salesforceLastPush', ':now')
             ->where('id = :id')
             ->setParameter('status', $status)
-            ->setParameter('now', new \DateTime('now'))
+            ->setParameter('now', (new \DateTime('now'))->format('Y-m-d H:i:s'))
             ->setParameter('id', $proxy->getId());
 
         $this->runQueryWithRetry($qb);
