@@ -73,9 +73,9 @@ class RetrySafeEntityManager extends EntityManagerDecorator
     {
         $retries = 0;
         do {
-            $this->beginTransaction();
-
             try {
+                $this->beginTransaction();
+
                 $ret = $func();
 
                 $this->flush();
