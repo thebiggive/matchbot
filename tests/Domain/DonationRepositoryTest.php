@@ -701,11 +701,13 @@ class DonationRepositoryTest extends TestCase
 
     private function expectEntityManagerSalesforcePushCalls(): void
     {
+        $this->entityManagerProphecy->beginTransaction()->shouldBeCalled();
         $this->entityManagerProphecy->refresh(
             Argument::type(Donation::class),
             LockMode::PESSIMISTIC_WRITE,
         )->shouldBeCalled();
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalled();
         $this->entityManagerProphecy->flush()->shouldBeCalled();
+        $this->entityManagerProphecy->commit()->shouldBeCalled();
     }
 }

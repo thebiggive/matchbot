@@ -290,8 +290,10 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
     ): void {
         Assertion::inArray($status, SalesforceWriteProxy::POSSIBLE_PUSH_STATUSES);
 
+        $entityManager = $this->getEntityManager();
+        $entityManager->beginTransaction();
         if (!$isNew) {
-            $this->getEntityManager()->refresh($proxy, LockMode::PESSIMISTIC_WRITE);
+            $entityManager->refresh($proxy, LockMode::PESSIMISTIC_WRITE);
         }
         $proxy->setSalesforcePushStatus($status);
         $proxy->setSalesforceLastPush(new \DateTime('now'));
@@ -300,7 +302,8 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             $proxy->setSalesforceId($newSalesforceId);
         }
 
-        $this->getEntityManager()->persist($proxy);
-        $this->getEntityManager()->flush();
+        $entityManager->persist($proxy);
+        $entityManager->flush();
+        $entityManager->commit();
     }
 }
