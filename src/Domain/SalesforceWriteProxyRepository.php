@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use Doctrine\DBAL\Exception\RetryableException;
 use Doctrine\DBAL\LockMode;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Commands\PushDonations;
@@ -278,6 +279,8 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
      * @psalm-param SalesforceWriteProxy::PUSH_STATUS_* $status
      *
      * Also sets Salesforce ID if one has been newly assigned.
+     *
+     * @throws RetryableException if another thread has the lock. Callers of push handle retries.
      */
     private function safelySetPushStatus(
         SalesforceWriteProxy $proxy,
@@ -287,24 +290,17 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
     ): void {
         Assertion::inArray($status, SalesforceWriteProxy::POSSIBLE_PUSH_STATUSES);
 
-        // Includes up to 3 retries for lock and EM reset/recovery when needed. Flushes and
-        // commits automatically.
-        /**
-         * @psalm-suppress DeprecatedMethod Our overridden method is the most concise way to get
-         * safe retries for now.
-         */
-        $this->getEntityManager()->transactional(function () use ($proxy, $status, $isNew, $newSalesforceId): void {
-            if (!$isNew) {
-                $this->getEntityManager()->refresh($proxy, LockMode::PESSIMISTIC_WRITE);
-            }
-            $proxy->setSalesforcePushStatus($status);
-            $proxy->setSalesforceLastPush(new \DateTime('now'));
+        if (!$isNew) {
+            $this->getEntityManager()->refresh($proxy, LockMode::PESSIMISTIC_WRITE);
+        }
+        $proxy->setSalesforcePushStatus($status);
+        $proxy->setSalesforceLastPush(new \DateTime('now'));
 
-            if ($newSalesforceId !== null) {
-                $proxy->setSalesforceId($newSalesforceId);
-            }
+        if ($newSalesforceId !== null) {
+            $proxy->setSalesforceId($newSalesforceId);
+        }
 
-            $this->getEntityManager()->persist($proxy);
-        });
+        $this->getEntityManager()->persist($proxy);
+        $this->getEntityManager()->flush();
     }
 }
