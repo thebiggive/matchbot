@@ -27,7 +27,8 @@ class DonationStateUpdatedHandlerTest extends TestCase
     {
         $donation = \MatchBot\Tests\TestCase::someDonation();
         $this->donationRepositoryProphecy->resetIfNecessary()->shouldBeCalledOnce();
-        $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn($donation);
+        $this->donationRepositoryProphecy->findAndLockOneByUuidInStandaloneTxn($donation->getUuid())
+            ->willReturn($donation);
         $this->donationRepositoryProphecy->push($donation, false)->shouldBeCalledOnce();
 
         $sut = new DonationStateUpdatedHandler(
@@ -43,7 +44,8 @@ class DonationStateUpdatedHandlerTest extends TestCase
     public function testItPushesDonationTwiceToSfWhenCreatedAndUpdated(): void
     {
         $donation = \MatchBot\Tests\TestCase::someDonation();
-        $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn($donation);
+        $this->donationRepositoryProphecy->findAndLockOneByUuidInStandaloneTxn($donation->getUuid())
+            ->willReturn($donation);
         $this->donationRepositoryProphecy->resetIfNecessary()->shouldBeCalledTimes(2);
         $this->donationRepositoryProphecy->push($donation, true)->shouldBeCalledOnce();
         $this->donationRepositoryProphecy->push($donation, false)->shouldBeCalledOnce();
@@ -64,7 +66,8 @@ class DonationStateUpdatedHandlerTest extends TestCase
     {
         $donation = \MatchBot\Tests\TestCase::someDonation();
         $this->donationRepositoryProphecy->resetIfNecessary()->shouldBeCalledOnce();
-        $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn(null);
+        $this->donationRepositoryProphecy->findAndLockOneByUuidInStandaloneTxn($donation->getUuid())
+            ->willReturn(null);
         $sut = new DonationStateUpdatedHandler(
             $this->donationRepositoryProphecy->reveal(),
             new NullLogger(),
@@ -83,7 +86,8 @@ class DonationStateUpdatedHandlerTest extends TestCase
     {
         $donation = \MatchBot\Tests\TestCase::someDonation();
         $this->donationRepositoryProphecy->resetIfNecessary()->shouldBeCalledOnce();
-        $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn($donation);
+        $this->donationRepositoryProphecy->findAndLockOneByUuidInStandaloneTxn($donation->getUuid())
+            ->willReturn($donation);
         $this->donationRepositoryProphecy->push($donation, false)->willThrow(new \Exception('Failed to push to SF'));
 
         $sut = new DonationStateUpdatedHandler(
