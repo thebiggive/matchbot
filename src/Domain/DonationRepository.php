@@ -648,6 +648,15 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return $donation;
     }
 
+    public function findAndLockOneByUuidInStandaloneTxn(string $uuid): ?Donation
+    {
+        $this->getEntityManager()->beginTransaction();
+        $donation = $this->findAndLockOneBy(['uuid' => $uuid]);
+        $this->getEntityManager()->commit();
+
+        return $donation;
+    }
+
     /**
      * Normally called just as part of releaseMatchFunds which also releases the funds in Redis. But
      * used separately in case of a crash when we would need to release the funds in Redis whether or not

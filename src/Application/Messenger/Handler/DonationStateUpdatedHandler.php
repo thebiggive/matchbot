@@ -31,7 +31,7 @@ class DonationStateUpdatedHandler
         $tries = 0;
         do {
             $this->donationRepository->resetIfNecessary();
-            $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
+            $donation = $this->donationRepository->findAndLockOneByUuidInStandaloneTxn($donationUUID);
 
             if ($donation === null) {
                 $this->logger->info("DSUH: Null Donation found for UUID: " . $donationUUID);
