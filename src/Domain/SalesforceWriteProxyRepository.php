@@ -19,8 +19,11 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
     /** Maximum of each type of pending object to process */
     private const MAX_PER_BULK_PUSH = 400;
 
-    /** @psalm-param T $proxy */
-    abstract public function doCreate(SalesforceWriteProxy $proxy): bool;
+    /**
+     * @psalm-param T $proxy
+     * @return string|null  Salesforce ID on success; null otherwise
+     */
+    abstract public function doCreate(SalesforceWriteProxy $proxy): ?string;
 
     /**
      * @psalm-param T $proxy
@@ -46,7 +49,12 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
              * @see SalesforceWriteProxyRepository::postPush()
              * @see PushDonations
              */
-            $this->safelySetPushStatus($proxy, SalesforceWriteProxy::PUSH_STATUS_PENDING_ADDITIONAL_UPDATE, $isNew);
+            $this->safelySetPushStatus(
+                $proxy,
+                SalesforceWriteProxy::PUSH_STATUS_PENDING_ADDITIONAL_UPDATE,
+                $isNew,
+                null,
+            );
             $this->logInfo('Queued extra update for ' . get_class($proxy) . ' ' . $proxy->getId());
 
             // This is the best we can do in this scenario while awaiting the first Salesforce response,
@@ -61,10 +69,16 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
         $status = $isNew
             ? SalesforceWriteProxy::PUSH_STATUS_CREATING
             : SalesforceWriteProxy::PUSH_STATUS_UPDATING;
-        $this->safelySetPushStatus($proxy, $status, $isNew);
+        $this->safelySetPushStatus($proxy, $status, $isNew, null);
+
+        $success = false;
+        $newSalesforceId = null;
 
         if ($isNew) {
-            $success = $this->doCreate($proxy);
+            $newSalesforceId = $this->doCreate($proxy);
+            if ($newSalesforceId !== null) {
+                $success = true;
+            }
         } elseif ($proxy->getSalesforceId() === null) {
             // We've been asked to update an object before we have confirmation back from Salesforce that
             // it was created in the first place. This is a bit different from the 'pending-additional-update'
@@ -81,11 +95,9 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
                     $proxy->getId(),
                 ));
 
-                if ($this->doCreate($proxy)) { // Sets SF ID ready for update.
+                if (($newSalesforceId = $this->doCreate($proxy)) !== null) { // Sets SF ID ready for update.
                     $success = $this->doUpdate($proxy);
-                } else {
-                    $success = false; // Create failed again -> still no SF ID -> don't try to update for now.
-                }
+                } // else created failed again, still no SF ID. Leave $success false, don't try to update for now.
             } else {
                 // Leave state unchanged -> proxy should be deemed old/stable enough on the next
                 // queued or scheduled re-try to trigger a create-then-update as per above logic branch.
@@ -101,7 +113,7 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             $success = $this->doUpdate($proxy);
         }
 
-        $this->postPush($success, $proxy, $isNew);
+        $this->postPush($success, $proxy, $isNew, $newSalesforceId);
 
         return $success;
     }
@@ -170,30 +182,44 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
     protected function prePush(SalesforceWriteProxy $proxy, bool $isNew): void
     {
         if ($isNew || empty($proxy->getSalesforceId())) {
-            $this->safelySetPushStatus($proxy, SalesforceWriteProxy::PUSH_STATUS_CREATING, $isNew);
+            $this->safelySetPushStatus($proxy, SalesforceWriteProxy::PUSH_STATUS_CREATING, $isNew, null);
         } else {
-            $this->safelySetPushStatus($proxy, SalesforceWriteProxy::PUSH_STATUS_UPDATING, $isNew);
+            $this->safelySetPushStatus($proxy, SalesforceWriteProxy::PUSH_STATUS_UPDATING, $isNew, null);
         }
     }
 
     /**
      * @psalm-param T $proxy
      */
-    protected function postPush(bool $success, SalesforceWriteProxy $proxy, bool $isNew): void
-    {
+    protected function postPush(
+        bool $success,
+        SalesforceWriteProxy $proxy,
+        bool $isNew,
+        ?string $newSalesforceId,
+    ): void {
         $shouldRePush = false;
         if ($success) {
             if (
                 $proxy->getSalesforcePushStatus() === SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE &&
                 $proxy->hasPostCreateUpdates()
             ) {
-                $this->safelySetPushStatus($proxy, SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $isNew);
+                $this->safelySetPushStatus(
+                    $proxy,
+                    SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE,
+                    $isNew,
+                    $newSalesforceId,
+                );
                 $shouldRePush = true;
             } elseif (
                 $proxy->getSalesforcePushStatus() ===
                 SalesforceWriteProxy::PUSH_STATUS_PENDING_ADDITIONAL_UPDATE
             ) {
-                $this->safelySetPushStatus($proxy, SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $isNew);
+                $this->safelySetPushStatus(
+                    $proxy,
+                    SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE,
+                    $isNew,
+                    $newSalesforceId,
+                );
                 $this->logInfo(sprintf(
                     '... marking for additional later push %s %d: SF ID %s',
                     get_class($proxy),
@@ -201,7 +227,12 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
                     $proxy->getSalesforceId(),
                 ));
             } else {
-                $this->safelySetPushStatus($proxy, SalesforceWriteProxy::PUSH_STATUS_COMPLETE, $isNew);
+                $this->safelySetPushStatus(
+                    $proxy,
+                    SalesforceWriteProxy::PUSH_STATUS_COMPLETE,
+                    $isNew,
+                    $newSalesforceId,
+                );
             }
             $this->logInfo(sprintf(
                 '... %s %s %s : SF ID %s',
@@ -213,10 +244,20 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 
             if ($shouldRePush) {
                 if ($this->doUpdate($proxy)) { // Make sure *not* to call push() again to avoid doing this recursively!
-                    $this->safelySetPushStatus($proxy, SalesforceWriteProxy::PUSH_STATUS_COMPLETE, $isNew);
+                    $this->safelySetPushStatus(
+                        $proxy,
+                        SalesforceWriteProxy::PUSH_STATUS_COMPLETE,
+                        $isNew,
+                        $newSalesforceId,
+                    );
                     $this->logInfo('... plus interim updates for ' . get_class($proxy) . " {$proxy->getId()}");
                 } else {
-                    $this->safelySetPushStatus($proxy, SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE, $isNew);
+                    $this->safelySetPushStatus(
+                        $proxy,
+                        SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE,
+                        $isNew,
+                        $newSalesforceId,
+                    );
                     $this->logError(sprintf(
                         '... with error on interim updates for %s %d',
                         get_class($proxy),
@@ -228,16 +269,22 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
             $newStatus = $proxy->getSalesforcePushStatus() === SalesforceWriteProxy::PUSH_STATUS_CREATING
                 ? SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE
                 : SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE;
-            $this->safelySetPushStatus($proxy, $newStatus, $isNew);
+            $this->safelySetPushStatus($proxy, $newStatus, $isNew, $newSalesforceId);
             $this->logWarning('... error pushing ' . get_class($proxy) . ' ' . $proxy->getId());
         }
     }
 
     /**
      * @psalm-param SalesforceWriteProxy::PUSH_STATUS_* $status
+     *
+     * Also sets Salesforce ID if one has been newly assigned.
      */
-    private function safelySetPushStatus(SalesforceWriteProxy $proxy, string $status, bool $isNew): void
-    {
+    private function safelySetPushStatus(
+        SalesforceWriteProxy $proxy,
+        string $status,
+        bool $isNew,
+        ?string $newSalesforceId,
+    ): void {
         Assertion::inArray($status, SalesforceWriteProxy::POSSIBLE_PUSH_STATUSES);
 
         // Includes up to 3 retries for lock and EM reset/recovery when needed. Flushes and
@@ -246,12 +293,17 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
          * @psalm-suppress DeprecatedMethod Our overridden method is the most concise way to get
          * safe retries for now.
          */
-        $this->getEntityManager()->transactional(function () use ($proxy, $status, $isNew): void {
+        $this->getEntityManager()->transactional(function () use ($proxy, $status, $isNew, $newSalesforceId): void {
             if (!$isNew) {
                 $this->getEntityManager()->refresh($proxy, LockMode::PESSIMISTIC_WRITE);
             }
             $proxy->setSalesforcePushStatus($status);
             $proxy->setSalesforceLastPush(new \DateTime('now'));
+
+            if ($newSalesforceId !== null) {
+                $proxy->setSalesforceId($newSalesforceId);
+            }
+
             $this->getEntityManager()->persist($proxy);
         });
     }
