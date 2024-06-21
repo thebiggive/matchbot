@@ -34,8 +34,12 @@ class DonationStateUpdatedHandler
             $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
 
             if ($donation === null) {
-                $this->logger->info("DSUH: Null Donation found for UUID: " . $donationUUID);
-                throw new \RuntimeException('Donation not found');
+                // Possibly a side effect of another thread with a lock?
+                $this->logger->info("DSUH: Null Donation found [might retry] for UUID: " . $donationUUID);
+
+                usleep(random_int(500_000, 2_000_000)); // Wait 0.5 - 2 seconds
+                $tries++;
+                continue;
             }
 
             $this->logger->info("DSUH: Real Donation found for UUID: " . $donationUUID);
@@ -64,5 +68,6 @@ class DonationStateUpdatedHandler
         } while ($tries++ < self::MAX_PUSH_TRIES);
 
         $this->logger->error("DSUH: Donation push failed after $tries tries for UUID: " . $donationUUID);
+        throw new \RuntimeException("Donation push failed after $tries tries for UUID: $donationUUID");
     }
 }

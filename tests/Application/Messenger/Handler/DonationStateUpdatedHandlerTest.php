@@ -63,7 +63,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
     public function testItThrowsIfDonationCannotBeFound(): void
     {
         $donation = \MatchBot\Tests\TestCase::someDonation();
-        $this->donationRepositoryProphecy->resetIfNecessary()->shouldBeCalledOnce();
+        $this->donationRepositoryProphecy->resetIfNecessary()->shouldBeCalled();
         $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn(null);
         $sut = new DonationStateUpdatedHandler(
             $this->donationRepositoryProphecy->reveal(),
@@ -71,7 +71,7 @@ class DonationStateUpdatedHandlerTest extends TestCase
         );
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Donation not found');
+        $this->expectExceptionMessage('Donation push failed after 6 tries');
 
         $sut->__invoke(DonationStateUpdated::fromDonation($donation));
     }
