@@ -12,7 +12,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 class DonationStateUpdatedHandler
 {
-    const int MAX_PUSH_TRIES = 4;
+    private const int MAX_PUSH_TRIES = 4;
 
     public function __construct(
         private DonationRepository $donationRepository,
