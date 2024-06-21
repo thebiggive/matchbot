@@ -4,7 +4,6 @@ namespace MatchBot\Application\Messenger\Handler;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationStateUpdated;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -14,7 +13,6 @@ class DonationStateUpdatedHandler
 {
     public function __construct(
         private DonationRepository $donationRepository,
-        private RetrySafeEntityManager $em,
         private LoggerInterface $logger
     ) {
     }
@@ -26,10 +24,6 @@ class DonationStateUpdatedHandler
         Assertion::uuid($donationUUID, 'Expected donationUUID to be a valid UUID');
 
         $this->logger->info("DSUH invoked for UUID: $donationUUID");
-        if (! $this->em->isOpen()) {
-            // We assume this same EM is in use by the donation repository, so needs resetting to allow that to work.
-            $this->em->resetManager();
-        }
 
         $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
 
