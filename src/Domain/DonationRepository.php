@@ -10,7 +10,6 @@ use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Client\BadRequestException;
@@ -43,12 +42,11 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->matchingAdapter = $adapter;
     }
 
-    public function doCreate(SalesforceWriteProxy $proxy): bool
+    public function doCreate(SalesforceWriteProxy $proxy): ?string
     {
         $donation = $proxy;
         try {
             $salesforceDonationId = $this->getClient()->create($donation);
-            $donation->setSalesforceId($salesforceDonationId);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
             $this->logInfo(
@@ -57,12 +55,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_REMOVED);
             $this->getEntityManager()->persist($donation);
 
-            return true; // Report 'success' for simpler summaries and spotting of real errors.
+            return null;
         } catch (BadRequestException $exception) {
-            return false;
+            return null;
         }
 
-        return true;
+        return $salesforceDonationId;
     }
 
     public function doUpdate(SalesforceWriteProxy $proxy): bool
