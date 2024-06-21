@@ -31,7 +31,6 @@ class DonationStateUpdatedHandlerTest extends TestCase
 
         $sut = new DonationStateUpdatedHandler(
             $this->donationRepositoryProphecy->reveal(),
-            $this->createStub(RetrySafeEntityManager::class),
             new NullLogger(),
         );
 
@@ -49,7 +48,6 @@ class DonationStateUpdatedHandlerTest extends TestCase
 
         $sut = new DonationStateUpdatedHandler(
             $this->donationRepositoryProphecy->reveal(),
-            $this->createStub(RetrySafeEntityManager::class),
             new NullLogger(),
         );
 
@@ -66,7 +64,6 @@ class DonationStateUpdatedHandlerTest extends TestCase
         $this->donationRepositoryProphecy->findOneBy(['uuid' => $donation->getUuid()])->willReturn(null);
         $sut = new DonationStateUpdatedHandler(
             $this->donationRepositoryProphecy->reveal(),
-            $this->createStub(RetrySafeEntityManager::class),
             new NullLogger(),
         );
 
@@ -87,7 +84,6 @@ class DonationStateUpdatedHandlerTest extends TestCase
 
         $sut = new DonationStateUpdatedHandler(
             $this->donationRepositoryProphecy->reveal(),
-            $this->createStub(RetrySafeEntityManager::class),
             new NullLogger(),
         );
 
