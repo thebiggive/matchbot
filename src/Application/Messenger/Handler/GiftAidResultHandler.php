@@ -8,9 +8,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\SalesforceWriteProxy;
 use Messages;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-#[AsMessageHandler]
 class GiftAidResultHandler
 {
     public function __construct(

@@ -70,8 +70,7 @@ return function (ContainerBuilder $containerBuilder) {
             'logger' => [
                 'name' => 'matchbot',
                 'path' => 'php://stdout',
-//                'level' => getenv('APP_ENV') === 'local' ? Logger::DEBUG : Logger::INFO,
-                'level' => Logger::DEBUG,
+                'level' => getenv('APP_ENV') === 'local' ? Logger::DEBUG : Logger::INFO,
             ],
 
             'los_rate_limit' => [
