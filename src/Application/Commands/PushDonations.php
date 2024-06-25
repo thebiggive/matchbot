@@ -8,6 +8,7 @@ use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Messenger\RoutableMessageBus;
 
 #[AsCommand(
     name: 'matchbot:push-donations',
@@ -16,6 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class PushDonations extends LockingCommand
 {
     public function __construct(
+        private RoutableMessageBus $bus,
         private \DateTimeImmutable $now,
         private DonationRepository $donationRepository
     ) {
@@ -28,7 +30,7 @@ class PushDonations extends LockingCommand
             $output->writeln("Abandoned $numberAbandoned old Cancelled donations from Salesforce push");
         }
 
-        $numberPushed = $this->donationRepository->pushSalesforcePending(now: $this->now);
+        $numberPushed = $this->donationRepository->pushSalesforcePending(now: $this->now, bus: $this->bus);
         $output->writeln("Pushed $numberPushed donations to Salesforce");
 
         return 0;

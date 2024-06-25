@@ -31,7 +31,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /** Maximum of each type of pending object to process */
     private const MAX_PER_BULK_PUSH = 5_000;
 
-    private RoutableMessageBus $bus;
     private CampaignRepository $campaignRepository;
     private FundRepository $fundRepository;
     private LockFactory $lockFactory;
@@ -47,11 +46,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
     private Matching\Adapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
     private array $queuedForPersist;
-
-    public function setBus(RoutableMessageBus $bus): void
-    {
-        $this->bus = $bus;
-    }
 
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
@@ -652,9 +646,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * By using FIFO queues and deduplicating on UUID if there are multiple consumers, we should make it unlikely
      * that Salesforce hits Donation record lock contention issues.
      *
+     * @param RoutableMessageBus $bus   We had to not DI this to avoid a circular dependency.
      * @return int  Number of objects pushed
      */
-    public function pushSalesforcePending(\DateTimeImmutable $now): int
+    public function pushSalesforcePending(\DateTimeImmutable $now, RoutableMessageBus $bus): int
     {
         // We don't want to push donations that were created or modified in the last 5 minutes,
         // to avoid collisions with other pushes.
@@ -682,7 +677,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 continue;
             }
 
-            $this->bus->dispatch(new Envelope(DonationCreated::fromDonation($proxy)));
+            $bus->dispatch(new Envelope(DonationCreated::fromDonation($proxy)));
         }
 
         $proxiesToUpdate = $this->findBy(
@@ -696,7 +691,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 continue;
             }
 
-            $this->bus->dispatch(new Envelope(DonationUpdated::fromDonation($proxy)));
+            $bus->dispatch(new Envelope(DonationUpdated::fromDonation($proxy)));
         }
 
         return count($proxiesToCreate) + count($proxiesToUpdate);

@@ -62,7 +62,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             $this->emProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
-        $this->sut->setBus($this->prophesize(RoutableMessageBus::class)->reveal());
         $this->sut->setMatchingAdapter($matchingAdapter);
         $this->sut->setLogger(new NullLogger());
 

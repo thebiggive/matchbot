@@ -95,16 +95,14 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 
     private function setLastPush(string $uuid): void
     {
-        $qb = new QueryBuilder($this->getEntityManager()->getConnection());
-        $qb->update($this->getEntityName())
-            ->set('salesforcePushStatus', ':status')
-            ->set('salesforceLastPush', ':now')
-            ->where('uuid = :uuid')
-            ->setParameter('status', SalesforceWriteProxy::PUSH_STATUS_COMPLETE)
-            ->setParameter('now', (new \DateTime('now'))->format('Y-m-d H:i:s'))
-            ->setParameter('uuid', $uuid);
-
-        echo $qb->getSQL();
-        $qb->executeStatement();
+        $connection = $this->getEntityManager()->getConnection();
+        $connection->executeStatement(
+            <<<EOT
+                UPDATE Donation SET salesforcePushStatus = 'complete', salesforceLastPush = NOW()
+                WHERE uuid = :donationUUID
+                LIMIT 1;
+            EOT,
+            ['donationUUID' => $uuid],
+        );
     }
 }

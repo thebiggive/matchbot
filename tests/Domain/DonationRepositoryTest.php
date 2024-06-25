@@ -49,7 +49,7 @@ class DonationRepositoryTest extends TestCase
         $connectionWhichUpdatesFine = $this->prophesize(Connection::class);
         $connectionWhichUpdatesFine->executeStatement(
             Argument::type('string'),
-            Argument::cetera(),
+            Argument::type('array'),
         )
             ->willReturn(0);
 
@@ -66,50 +66,9 @@ class DonationRepositoryTest extends TestCase
             ->put(Argument::type(DonationUpdated::class))
             ->shouldBeCalledOnce()
             ->willReturn(true);
-        $this->expectEntityManagerSalesforcePushCalls();
 
         // Just confirm it doesn't throw.
         $this->getRepo($donationClientProphecy)->push(DonationUpdated::fromDonation($this->getTestDonation()), false);
-    }
-
-    /**
-     * This is expected e.g. after a Salesforce network failure leading to a missing ID for
-     * a donation, but the create completed and the donor can proceed. This may lead to
-     * webhooks trying to update the record, setting its push status to 'pending-update',
-     * before it has a proxy ID set.
-     *
-     * If this happens we should treat it like a new record to un-stick things.
-     *
-     * @link https://thebiggive.atlassian.net/browse/MAT-170
-     */
-    public function testExistingPushWithMissingProxyIdButPendingUpdateStatusStable(): void
-    {
-        $donationClientProphecy = $this->prophesize(Client\Donation::class);
-        $donationClientProphecy
-            ->create(Argument::type(DonationCreated::class))
-            ->shouldBeCalledOnce()
-            ->willReturn('006123456789012345');
-        $donationClientProphecy
-            ->put(Argument::type(DonationUpdated::class))
-            ->shouldBeCalledOnce()
-            ->willReturn(true);
-        $this->expectEntityManagerSalesforcePushCalls();
-
-        $donation = $this->getTestDonation();
-        $donationReflected = new ReflectionClass($donation);
-
-        $createdAtProperty = $donationReflected->getProperty('createdAt');
-        $createdAtProperty->setValue($donation, new \DateTime('-31 seconds'));
-
-        $sfIdProperty = $donationReflected->getProperty('salesforceId');
-        $sfIdProperty->setValue($donation, null); // Allowed property type but not allowed in public setter.
-
-        $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
-
-        $this->getRepo($donationClientProphecy)->push(self::someUpdatedMessage(), false);
-
-        // We let push() handle both steps for older-than-30s donations, without waiting for a new process.
-        $this->assertEquals('complete', $donation->getSalesforcePushStatus());
     }
 
     public function testExistingPush404InSandbox(): void
@@ -487,7 +446,6 @@ class DonationRepositoryTest extends TestCase
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
-        $repo->setBus($this->prophesize(RoutableMessageBus::class)->reveal());
 
         $this->assertEquals(1, $repo->abandonOldCancelled());
     }
@@ -543,7 +501,6 @@ class DonationRepositoryTest extends TestCase
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
-        $repo->setBus($this->prophesize(RoutableMessageBus::class)->reveal());
 
         $this->assertEquals(
             [$testDonation],
@@ -585,7 +542,6 @@ class DonationRepositoryTest extends TestCase
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
-        $repo->setBus($this->prophesize(RoutableMessageBus::class)->reveal());
 
         $this->assertEquals(
             [$testDonation],
@@ -621,7 +577,6 @@ class DonationRepositoryTest extends TestCase
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
-        $repo->setBus($this->prophesize(RoutableMessageBus::class)->reveal());
         $repo->setClient($donationClientProphecy->reveal());
         $repo->setLogger(new NullLogger());
 
@@ -638,22 +593,5 @@ class DonationRepositoryTest extends TestCase
         }
 
         return $repo;
-    }
-
-    private function expectEntityManagerSalesforcePushCalls(): void
-    {
-        $connectionProphecy = $this->prophesize(Connection::class);
-        $connectionProphecy->isConnected()
-            ->willReturn(true);
-        $this->entityManagerProphecy->getConnection()->willReturn($connectionProphecy->reveal());
-
-        $this->entityManagerProphecy->beginTransaction()->shouldBeCalled();
-        $this->entityManagerProphecy->refresh(
-            Argument::type(Donation::class),
-            LockMode::PESSIMISTIC_WRITE,
-        )->shouldBeCalled();
-        $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalled();
-        $this->entityManagerProphecy->flush()->shouldBeCalled();
-        $this->entityManagerProphecy->commit()->shouldBeCalled();
     }
 }

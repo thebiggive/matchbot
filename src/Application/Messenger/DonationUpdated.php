@@ -12,7 +12,10 @@ class DonationUpdated extends AbstractStateChanged
         public ?string $salesforceId,
         public array $json,
     ) {
-        Assertion::notNull($this->salesforceId);
+        // TODO Things like Stripe hooks could come back before pushing to Salesforce is complete, so we need to be
+        // able to queue jobs before it's known.
+        // This probably implies that the consumer needs a conditional DB re-query too.
+//        Assertion::notNull($this->salesforceId);
 
         parent::__construct($uuid, $salesforceId, $json);
     }

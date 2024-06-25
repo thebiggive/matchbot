@@ -76,7 +76,11 @@ $commands = [
         $psr11App->get(Matching\Adapter::class),
         $chatter,
     ),
-    new PushDonations(now: $now, donationRepository: $psr11App->get(DonationRepository::class)),
+    new PushDonations(
+        bus: $psr11App->get(RoutableMessageBus::class),
+        now: $now,
+        donationRepository: $psr11App->get(DonationRepository::class),
+    ),
     new ResetMatching(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(Matching\Adapter::class)

@@ -120,8 +120,6 @@ abstract class IntegrationTest extends TestCase
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
         $donationRepo = $container->get(DonationRepository::class);
-        // todo why's this circular?
-//        $donationRepo->setBus($this->prophesize(RoutableMessageBus::class)->reveal());
         $donationRepo->setClient($donationClientProphecy->reveal());
     }
 
