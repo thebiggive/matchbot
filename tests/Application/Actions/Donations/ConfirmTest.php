@@ -368,6 +368,7 @@ class ConfirmTest extends TestCase
                 donorEmailAddress: EmailAddress::of('user@example.com'),
             );
 
+            $donation->setSalesforceId('SF_ID');
             $donation->setTransactionId('PAYMENT_INTENT_ID');
             if ($testCase->donationIsCancelled) {
                 $donation->cancel();

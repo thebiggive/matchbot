@@ -7,7 +7,8 @@ use DI\Container;
 use GuzzleHttp\Psr7\ServerRequest;
 use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
-use MatchBot\Domain\Donation;
+use MatchBot\Application\Messenger\DonationCreated;
+use MatchBot\Application\Messenger\DonationUpdated;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\Pledge;
@@ -21,12 +22,12 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Ramsey\Uuid\Uuid;
 use Random\Randomizer;
 use Slim\App;
 use Slim\Factory\AppFactory;
 use Stripe\PaymentIntent;
 use Stripe\StripeClient;
+use Symfony\Component\Messenger\RoutableMessageBus;
 
 abstract class IntegrationTest extends TestCase
 {
@@ -104,7 +105,6 @@ abstract class IntegrationTest extends TestCase
     }
 
     /**
-     * @return void
      * @throws \DI\DependencyException
      * @throws \DI\NotFoundException
      * @throws \MatchBot\Client\BadRequestException
@@ -114,12 +114,14 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+        $donationClientProphecy->create(Argument::type(DonationCreated::class))->willReturn($this->randomString());
+        $donationClientProphecy->put(Argument::type(DonationUpdated::class))->willReturn(true);
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
         $donationRepo = $container->get(DonationRepository::class);
+        // todo why's this circular?
+//        $donationRepo->setBus($this->prophesize(RoutableMessageBus::class)->reveal());
         $donationRepo->setClient($donationClientProphecy->reveal());
     }
 
@@ -178,8 +180,8 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+        $donationClientProphecy->create(Argument::type(DonationCreated::class))->willReturn($this->randomString());
+        $donationClientProphecy->put(Argument::type(DonationUpdated::class))->willReturn(true);
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
@@ -399,8 +401,8 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+        $donationClientProphecy->create(Argument::type(DonationCreated::class))->willReturn($this->randomString());
+        $donationClientProphecy->put(Argument::type(DonationUpdated::class))->willReturn(true);
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 

@@ -7,7 +7,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\LazyAssertionException;
-use MatchBot\Application\Messenger\DonationStateUpdated;
+use MatchBot\Application\Messenger\DonationUpdated;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
@@ -15,17 +15,12 @@ use MatchBot\Domain\DonationRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
-use Stripe\Event;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Messenger\Stamp\BusNameStamp;
-use Symfony\Component\Messenger\Stamp\DelayStamp;
-use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 
 class Confirm extends Action
 {
@@ -276,17 +271,7 @@ EOF
         $this->entityManager->flush();
         $this->entityManager->commit();
 
-        $stampSuffix = bin2hex(random_bytes(8));
-        $this->bus->dispatch(
-            new Envelope(
-                DonationStateUpdated::fromDonation($donation),
-                [
-                    new DelayStamp(delay: 3_000 /*3 seconds */),
-                    new TransportMessageIdStamp("dsu.{$donation->getUuid()}.confirm.$stampSuffix"),
-                    new BusNameStamp(DonationStateUpdated::class),
-                ]
-            ),
-        );
+        $this->bus->dispatch(new Envelope(DonationUpdated::fromDonation($donation)));
 
         return new JsonResponse([
             'paymentIntent' => [

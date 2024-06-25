@@ -7,6 +7,8 @@ namespace MatchBot\Tests;
 use DI\ContainerBuilder;
 use Exception;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Messenger\DonationCreated;
+use MatchBot\Application\Messenger\DonationUpdated;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
@@ -152,13 +154,14 @@ class TestCase extends PHPUnitTestCase
         return new SlimRequest($method, $uri, $h, $cookies, $serverParams, $stream);
     }
 
-
-
     public static function getMinimalCampaign(): Campaign
     {
-        $charity = \MatchBot\Tests\TestCase::someCharity();
+        $charity = self::someCharity();
         $charity->setTbgClaimingGiftAid(false);
-        return new Campaign($charity);
+        $campaign = new Campaign($charity);
+        $campaign->setIsMatched(false);
+
+        return $campaign;
     }
 
     /**
@@ -203,6 +206,23 @@ class TestCase extends PHPUnitTestCase
             emailAddress: 'user@example.com',
             countryCode: 'GB',
         ), TestCase::someCampaign());
+    }
+
+    public static function someCreatedMessage(): DonationCreated
+    {
+        $donation = self::someDonation();
+        $donation->setTransactionId('pi_1234');
+
+        return DonationCreated::fromDonation($donation);
+    }
+
+    public static function someUpdatedMessage(): DonationUpdated
+    {
+        $donation = self::someDonation();
+        $donation->setSalesforceId('006123456789012345');
+        $donation->setTransactionId('pi_1234');
+
+        return DonationUpdated::fromDonation($donation);
     }
 
     /**

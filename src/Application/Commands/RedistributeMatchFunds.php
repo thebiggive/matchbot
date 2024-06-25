@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Messenger\DonationStateUpdated;
+use MatchBot\Application\Messenger\DonationUpdated;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
@@ -14,7 +14,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Messenger\Stamp\DelayStamp;
 
 #[AsCommand(
     name: 'matchbot:redistribute-match-funds',
@@ -98,12 +97,7 @@ class RedistributeMatchFunds extends LockingCommand
             }
 
             $this->entityManager->flush();
-            $this->bus->dispatch(
-                new Envelope(
-                    DonationStateUpdated::fromDonation($donation)
-                ),
-                [new DelayStamp(delay: 3_000 /*3 seconds */)],
-            );
+            $this->bus->dispatch(new Envelope(DonationUpdated::fromDonation($donation)));
             $donationsAmended++;
         }
 

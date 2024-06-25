@@ -12,8 +12,10 @@ use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
 use MatchBot\Application\Matching;
-use MatchBot\Application\Messenger\DonationStateUpdated;
-use MatchBot\Application\Messenger\Handler\DonationStateUpdatedHandler;
+use MatchBot\Application\Messenger\DonationCreated;
+use MatchBot\Application\Messenger\DonationUpdated;
+use MatchBot\Application\Messenger\Handler\DonationCreatedHandler;
+use MatchBot\Application\Messenger\Handler\DonationUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
@@ -34,7 +36,6 @@ use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Processor\MemoryPeakUsageProcessor;
-use Monolog\Processor\MemoryUsageProcessor;
 use Monolog\Processor\UidProcessor;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -55,7 +56,6 @@ use Symfony\Component\Messenger\MessageBus;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
 use Symfony\Component\Messenger\Middleware\SendMessageMiddleware;
-use Symfony\Component\Messenger\Middleware\TraceableMiddleware;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Messenger\Transport\Sender\SendersLocator;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
@@ -69,7 +69,6 @@ use Symfony\Component\Serializer\Normalizer\BackedEnumNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Stopwatch\Stopwatch;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -258,7 +257,8 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     Messages\Donation::class => [ClaimBotTransport::class],
                     StripePayout::class => [TransportInterface::class],
-                    DonationStateUpdated::class => [TransportInterface::class],
+                    DonationCreated::class => [TransportInterface::class],
+                    DonationUpdated::class => [TransportInterface::class],
                 ],
                 $c,
             ));
@@ -268,7 +268,8 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
                     StripePayout::class => [$c->get(StripePayoutHandler::class)],
-                    DonationStateUpdated::class => [$c->get(DonationStateUpdatedHandler::class)],
+                    DonationCreated::class => [$c->get(DonationCreatedHandler::class)],
+                    DonationUpdated::class => [$c->get(DonationUpdatedHandler::class)],
                 ],
             ));
             $handleMiddleware->setLogger($logger);
@@ -276,7 +277,6 @@ return function (ContainerBuilder $containerBuilder) {
             return new MessageBus([
                 $sendMiddleware,
                 $handleMiddleware,
-                new TraceableMiddleware(new Stopwatch(), DonationStateUpdated::class),
             ]);
         },
 
@@ -390,8 +390,8 @@ return function (ContainerBuilder $containerBuilder) {
             $busContainer->set('claimbot.donation.claim', $bus);
             $busContainer->set('claimbot.donation.result', $bus);
             $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
-            // This one is definitely needed for BusNameStamp use and tracing on the same.
-            $busContainer->set(DonationStateUpdated::class, $bus);
+            $busContainer->set(DonationCreated::class, $bus);
+            $busContainer->set(DonationUpdated::class, $bus);
 
             return new RoutableMessageBus($busContainer, $bus);
         },

@@ -23,6 +23,7 @@ use MatchBot\Domain\FundRepository;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Messenger\RoutableMessageBus;
 
 return static function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -55,6 +56,7 @@ return static function (ContainerBuilder $containerBuilder) {
 
             \assert($repo instanceof DonationRepository);
 
+            $repo->setBus($c->get(RoutableMessageBus::class));
             $repo->setCampaignRepository($c->get(CampaignRepository::class));
             $repo->setClient($c->get(Client\Donation::class));
             $repo->setFundRepository($c->get(FundRepository::class));

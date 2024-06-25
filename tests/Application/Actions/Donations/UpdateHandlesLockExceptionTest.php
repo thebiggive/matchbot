@@ -11,7 +11,6 @@ use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -23,8 +22,6 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
 use Slim\Psr7\Response;
-use Stripe\Service\PaymentIntentService;
-use Stripe\StripeClient;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
@@ -106,6 +103,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $donation->setCampaign($campaign);
         $donation->setUuid(Uuid::uuid4());
         $donation->setDonorName(DonorName::of('Donor first name', 'Donor last name'));
+        $donation->setSalesforceId('SALESFORCE_ID');
         $donation->setTransactionId('pi_dummyIntent_id');
 
         return $donation;

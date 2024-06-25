@@ -189,6 +189,8 @@ class RedistributeMatchFundsTest extends TestCase
             projectId: 'projectid012345678',
             psp: 'stripe',
         ), $this->getMinimalCampaign());
+        $donation->setSalesforceId('sf_1244');
+        $donation->setTransactionId('pi_tenPound123');
 
         $championFund = new ChampionFund();
         $campaignFunding = new CampaignFunding();

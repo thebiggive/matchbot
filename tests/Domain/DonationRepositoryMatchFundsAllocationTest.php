@@ -18,6 +18,7 @@ use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
+use Symfony\Component\Messenger\RoutableMessageBus;
 
 /**
  * Focused test class just for the part match fund allocation part of DonationRepository.
@@ -61,6 +62,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             $this->emProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
+        $this->sut->setBus($this->prophesize(RoutableMessageBus::class)->reveal());
         $this->sut->setMatchingAdapter($matchingAdapter);
         $this->sut->setLogger(new NullLogger());
 

@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Actions\Hooks;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Messenger\DonationUpdated;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -269,8 +270,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldNotBeCalled();
 
         $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
+            ->push(Argument::type(DonationUpdated::class), false)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -397,8 +397,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldNotBeCalled();
 
         $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
+            ->push(Argument::type(DonationUpdated::class), false)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -631,8 +630,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldNotBeCalled();
 
         $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
+            ->push(Argument::type(DonationUpdated::class), false)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);

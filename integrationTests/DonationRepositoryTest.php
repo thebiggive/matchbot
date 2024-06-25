@@ -5,6 +5,7 @@ namespace MatchBot\IntegrationTests;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Messenger\DonationCreated;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Charity;
@@ -229,7 +230,7 @@ class DonationRepositoryTest extends IntegrationTest
         \assert($simulatedNow instanceof \DateTimeImmutable);
 
         // assert
-        $method = $donationClientProphecy->create(Argument::type(Donation::class));
+        $method = $donationClientProphecy->create(Argument::type(DonationCreated::class));
         if ($shouldPush) {
             $method->shouldBeCalledOnce();
         } else {

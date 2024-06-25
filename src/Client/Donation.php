@@ -5,27 +5,26 @@ declare(strict_types=1);
 namespace MatchBot\Client;
 
 use GuzzleHttp\Exception\RequestException;
-use MatchBot\Domain\Donation as DonationModel;
+use MatchBot\Application\Messenger\AbstractStateChanged;
+use MatchBot\Application\Messenger\DonationUpdated;
 use MatchBot\Domain\DonationRepository;
 
 class Donation extends Common
 {
     /**
-     * @param DonationModel $donation
-     * @return string Salesforce donation ID
      * @throws BadRequestException
      */
-    public function create(DonationModel $donation): string
+    public function create(AbstractStateChanged $donationCreatedMessage): string
     {
         if (getenv('DISABLE_CLIENT_PUSH')) {
-            $this->logger->info("Client push off: Skipping create of donation {$donation->getUuid()}");
+            $this->logger->info("Client push off: Skipping create of donation {$donationCreatedMessage->uuid}");
             throw new BadRequestException('Client push is off');
         }
 
         try {
             $response = $this->getHttpClient()->post(
                 $this->getSetting('donation', 'baseUri'),
-                ['json' => $donation->toApiModel()]
+                ['json' => $donationCreatedMessage->json]
             );
         } catch (RequestException $ex) {
             // Sandboxes that 404 on POST may be trying to sync up donations for non-existent campaigns and
@@ -40,7 +39,7 @@ class Donation extends Common
 
             $this->logger->error(sprintf(
                 'Donation create exception for donation UUID %s %s: %s. Body: %s',
-                $donation->getUuid(),
+                $donationCreatedMessage->uuid,
                 get_class($ex),
                 $ex->getMessage(),
                 $ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A',
@@ -66,23 +65,20 @@ class Donation extends Common
      * the Salesforce certificate's private part in the right format to use for RS256 JWT signature
      * creation was pretty involved. By sticking with this we can use the faster HS256 algorithm
      * for MatchBot's JWTs and not worry about compatibility with Salesforce's JWTs.
-     *
-     * @param DonationModel $donation
-     * @return bool
      */
-    public function put(DonationModel $donation): bool
+    public function put(AbstractStateChanged $donationUpdatedMessage): bool
     {
         if (getenv('DISABLE_CLIENT_PUSH')) {
-            $this->logger->info("Client push off: Skipping update of donation {$donation->getUuid()}");
+            $this->logger->info("Client push off: Skipping update of donation {$donationUpdatedMessage->uuid}");
 
             return false;
         }
 
         try {
-            $requestBody = $donation->toHookModel();
+            $requestBody = $donationUpdatedMessage->json;
 
             $response = $this->getHttpClient()->put(
-                $this->getSetting('webhook', 'baseUri') . "/donation/{$donation->getSalesforceId()}",
+                $this->getSetting('webhook', 'baseUri') . "/donation/{$donationUpdatedMessage->salesforceId}",
                 [
                     'json' => $requestBody,
                     'headers' => [

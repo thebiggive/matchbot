@@ -11,7 +11,7 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels;
-use MatchBot\Application\Messenger\DonationStateUpdated;
+use MatchBot\Application\Messenger\DonationUpdated;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
@@ -528,15 +528,7 @@ class Update extends Action
             return;
         }
 
-        $stampSuffix = bin2hex(random_bytes(8));
-        $this->bus->dispatch(new Envelope(
-            DonationStateUpdated::fromDonation($donation),
-            [
-                new DelayStamp(delay: 3_000 /*3 seconds */),
-                new TransportMessageIdStamp("dsu.{$donation->getUuid()}.update.$stampSuffix"),
-                new BusNameStamp(DonationStateUpdated::class),
-            ],
-        ));
+        $this->bus->dispatch(new Envelope(DonationUpdated::fromDonation($donation)));
     }
 
     /**

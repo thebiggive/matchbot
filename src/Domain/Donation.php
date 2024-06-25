@@ -359,6 +359,7 @@ class Donation extends SalesforceWriteProxy
             $donationData->pspMethodType,
         );
 
+        $donation->createdNow(); // Mimic ORM persistence hook attribute, calling its fn explicitly instead.
         $donation->setPsp($psp);
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
 
@@ -435,14 +436,6 @@ class Donation extends SalesforceWriteProxy
         if ($args->getOldValue('amount') !== $args->getNewValue('amount')) {
             throw new \LogicException('Amount may not be changed after a donation is created');
         }
-    }
-
-    public function replaceNullPaymentMethodTypeWithCard(): void
-    {
-        if ($this->paymentMethodType !== null) {
-            throw new \Exception('Should only be called when payment method type is null');
-        }
-        $this->paymentMethodType = PaymentMethodType::Card;
     }
 
     /**
@@ -931,15 +924,6 @@ class Donation extends SalesforceWriteProxy
     public function setCharityFeeVat(string $charityFeeVat): void
     {
         $this->charityFeeVat = $charityFeeVat;
-    }
-
-    /**
-     * @return bool Whether the donation has a hook-updated status and should therefore be updated in Salesforce after
-     *              creation, if successful SF create doesn't happen before MatchBot processes the hook.
-     */
-    public function hasPostCreateUpdates(): bool
-    {
-        return $this->getDonationStatus() !== DonationStatus::Pending;
     }
 
     /**
