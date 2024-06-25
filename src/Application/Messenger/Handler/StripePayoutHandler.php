@@ -3,6 +3,7 @@
 namespace MatchBot\Application\Messenger\Handler;
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -13,15 +14,14 @@ use Psr\Log\LogLevel;
 use Stripe\BalanceTransaction;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
-use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
 /**
  * Takes `Payout` messages off the queue, calls back out to Stripe to find out which donations
  * to mark Paid, and marks updates for a *future* push to Salesforce. Large payouts are liable to run
  * over the time limit for SQS acks if we push to Salesforce immediately.
  */
-#[AsMessageHandler]
-class StripePayoutHandler
+class StripePayoutHandler implements MessageHandlerInterface
 {
     /**
      * @var int How many levels of previous payout to check. We know that when a payout takes 3 or more tries, the

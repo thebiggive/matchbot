@@ -10,9 +10,9 @@ use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
@@ -43,11 +43,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->matchingAdapter = $adapter;
     }
 
-    public function doCreate(SalesforceWriteProxy $proxy): ?string
+    public function doCreate(SalesforceWriteProxy $proxy): bool
     {
         $donation = $proxy;
         try {
             $salesforceDonationId = $this->getClient()->create($donation);
+            $donation->setSalesforceId($salesforceDonationId);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
             $this->logInfo(
@@ -56,12 +57,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_REMOVED);
             $this->getEntityManager()->persist($donation);
 
-            return null;
+            return true; // Report 'success' for simpler summaries and spotting of real errors.
         } catch (BadRequestException $exception) {
-            return null;
+            return false;
         }
 
-        return $salesforceDonationId;
+        return true;
     }
 
     public function doUpdate(SalesforceWriteProxy $proxy): bool
@@ -660,22 +661,5 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $this->getEntityManager()->remove($fundingWithdrawal);
             }
         });
-    }
-
-    public function resetIfNecessary(): void
-    {
-        $em = $this->getEntityManager();
-        Assertion::isInstanceOf($em, RetrySafeEntityManager::class);
-        if (!$em->isOpen()) {
-            $em->resetManager();
-        }
-    }
-
-    public function rollbackAndReset(): void
-    {
-        $em = $this->getEntityManager();
-        Assertion::isInstanceOf($em, RetrySafeEntityManager::class);
-        $em->rollback();
-        $em->resetManager();
     }
 }

@@ -8,7 +8,6 @@ use Assert\Assertion;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Application\Messenger\DonationStateUpdated;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
@@ -28,11 +27,6 @@ use Stripe\Dispute;
 use Stripe\Event;
 use Stripe\PaymentIntent;
 use Stripe\StripeClient;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Messenger\Stamp\BusNameStamp;
-use Symfony\Component\Messenger\Stamp\DelayStamp;
-use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
 use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
@@ -57,7 +51,6 @@ class StripePaymentsUpdate extends Stripe
         private DonationFundsNotifier $donationFundsNotifier,
         ContainerInterface $container,
         LoggerInterface $logger,
-        private RoutableMessageBus $bus,
     ) {
         /**
          * @var ChatterInterface $chatter
@@ -184,17 +177,11 @@ class StripePaymentsUpdate extends Stripe
 
         $this->entityManager->persist($donation);
         $this->entityManager->commit();
-        $this->entityManager->flush();
-        $stampSuffix = bin2hex(random_bytes(8));
-        $this->bus->dispatch(new Envelope(
-            DonationStateUpdated::fromDonation($donation),
-            [
-                new DelayStamp(delay: 3_000 /*3 seconds */),
-                new TransportMessageIdStamp("dsu.{$donation->getUuid()}.charge_succeeded.$stampSuffix"),
-                new BusNameStamp(DonationStateUpdated::class),
-            ],
-        ));
 
+        // We log if this fails but don't worry the webhook-sending payment client
+        // about it. We'll re-try sending the updated status to Salesforce in a future
+        // batch sync.
+        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
         return $this->respondWithData($response, $charge);
     }
@@ -397,10 +384,7 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->entityManager->flush();
-        $this->bus->dispatch(new Envelope(
-            DonationStateUpdated::fromDonation($donation),
-            [new DelayStamp(delay: 3_000 /*3 seconds */)],
-        ));
+        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
 
         return $this->respond($response, new ActionPayload(200));
     }
@@ -496,13 +480,7 @@ class StripePaymentsUpdate extends Stripe
             $this->donationRepository->releaseMatchFunds($donation);
         }
 
-        $this->entityManager->flush();
-        $this->bus->dispatch(
-            new Envelope(
-                DonationStateUpdated::fromDonation($donation)
-            ),
-            [new DelayStamp(delay: 3_000 /*3 seconds */)],
-        );
+        $this->donationRepository->push($donation, false); // Attempt immediate sync to Salesforce
     }
 
     private function handleCashBalanceUpdate(Event $event, Response $response): Response
