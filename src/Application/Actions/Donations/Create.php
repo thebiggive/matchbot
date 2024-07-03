@@ -92,16 +92,14 @@ class Create extends Action
         try {
             $donation = $this->donationService->createDonation($donationData, $customerId);
         } catch (RateLimitExceededException $e) {
+            $retryDelaySeconds = ($e->getRetryAfter()->getTimestamp() - time());
             return $this->respond(
-                $response->withHeader(
-                    'X-Donation-RateLimit-Retry-After',
-                    (string)($e->getRetryAfter()->getTimestamp() - time())
-                ),
+                $response,
                 new ActionPayload(
                     400,
-                    null,
+                    ['retry_in' => $retryDelaySeconds],
                     new ActionError(
-                        ActionError::BAD_REQUEST,
+                        'DONATION_RATE_LIMIT_EXCEEDED',
                         'Donation rate limit reached, please try later'
                     )
                 )
