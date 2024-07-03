@@ -167,14 +167,14 @@ class RetrySafeEntityManager extends EntityManagerDecorator
     public function flush($entity = null): void
     {
         try {
-            $this->entityManager->flush($entity);
+            $this->entityManager->flush();
         } catch (EntityManagerClosed $closedException) {
             $this->logger->error(
                 'EM closed. RetrySafeEntityManager::flush() trying with a new instance,' .
                 $closedException->__tostring()
             );
             $this->resetManager();
-            $this->entityManager->flush($entity);
+            $this->entityManager->flush();
         }
     }
 

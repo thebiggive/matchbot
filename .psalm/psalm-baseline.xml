@@ -140,9 +140,6 @@
     </MixedAssignment>
   </file>
   <file src="src/Application/Actions/Hooks/Stripe.php">
-    <ImplicitToStringCast>
-      <code><![CDATA[$request->getBody()]]></code>
-    </ImplicitToStringCast>
     <MixedArrayAccess>
       <code><![CDATA[$container->get('settings')['stripe']]]></code>
     </MixedArrayAccess>
@@ -392,19 +389,12 @@
     </MissingConstructor>
   </file>
   <file src="src/Application/Persistence/RetrySafeEntityManager.php">
-    <DeprecatedMethod>
-      <code><![CDATA[EntityManager::create($connectionSettings, $this->ormConfig)]]></code>
-    </DeprecatedMethod>
     <LessSpecificReturnStatement>
       <code><![CDATA[$this->ormConfig->getRepositoryFactory()->getRepository($this, $className)]]></code>
     </LessSpecificReturnStatement>
     <MoreSpecificReturnType>
       <code><![CDATA[getRepository]]></code>
     </MoreSpecificReturnType>
-    <TooManyArguments>
-      <code><![CDATA[flush]]></code>
-      <code><![CDATA[flush]]></code>
-    </TooManyArguments>
   </file>
   <file src="src/Client/Campaign.php">
     <MixedArrayAccess>
@@ -424,6 +414,9 @@
     </PossiblyNullReference>
   </file>
   <file src="src/Client/Common.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[Client]]></code>
+    </InvalidNullableReturnType>
     <MixedArrayAccess>
       <code><![CDATA[$this->clientSettings[$service][$property]]]></code>
       <code><![CDATA[$this->clientSettings['global']['timeout']]]></code>
@@ -437,12 +430,9 @@
     <MixedReturnStatement>
       <code><![CDATA[$this->clientSettings[$service][$property]]]></code>
     </MixedReturnStatement>
-    <PropertyNotSetInConstructor>
-      <code><![CDATA[$httpClient]]></code>
-    </PropertyNotSetInConstructor>
-    <RedundantPropertyInitializationCheck>
-      <code><![CDATA[isset($this->httpClient)]]></code>
-    </RedundantPropertyInitializationCheck>
+    <NullableReturnStatement>
+      <code><![CDATA[$this->httpClient]]></code>
+    </NullableReturnStatement>
   </file>
   <file src="src/Client/Donation.php">
     <MixedArrayAccess>
@@ -751,11 +741,6 @@
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[!$proxy->getSalesforceId()]]></code>
     </RiskyTruthyFalsyComparison>
-  </file>
-  <file src="src/Domain/SalesforceWriteProxy.php">
-    <RedundantCondition>
-      <code><![CDATA[$this->createdAt !== null]]></code>
-    </RedundantCondition>
   </file>
   <file src="src/Domain/SalesforceWriteProxyRepository.php">
     <PossiblyNullArgument>
@@ -1162,12 +1147,6 @@
       <code><![CDATA[$this->getFundingUnderMatched()->getAmount()]]></code>
       <code><![CDATA[$this->getFundingUnderMatchedWithNothingAllocated()->getAmount()]]></code>
     </ArgumentTypeCoercion>
-    <MixedArgument>
-      <code><![CDATA[$this->getCampaignFundingRepoPropechy()->reveal()]]></code>
-      <code><![CDATA[$this->getCampaignFundingRepoPropechy()->reveal()]]></code>
-      <code><![CDATA[$this->getFundingWithdrawalRepoProphecy()->reveal()]]></code>
-      <code><![CDATA[$this->getFundingWithdrawalRepoProphecy()->reveal()]]></code>
-    </MixedArgument>
   </file>
   <file src="tests/Application/Commands/ResetMatchingTest.php">
     <InternalClass>
