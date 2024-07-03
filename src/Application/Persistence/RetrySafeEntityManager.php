@@ -167,7 +167,11 @@ class RetrySafeEntityManager extends EntityManagerDecorator
     public function flush($entity = null): void
     {
         try {
-            $this->entityManager->flush();
+            /** @psalm-suppress TooManyArguments - passing non-null is depreacted, and
+             * \Doctrine\Persistence\ObjectManager::flush is declared with no args,
+             * but \Doctrine\ORM\EntityManager::flush still takes the arg for now.
+             */
+            $this->entityManager->flush($entity);
         } catch (EntityManagerClosed $closedException) {
             $this->logger->error(
                 'EM closed. RetrySafeEntityManager::flush() trying with a new instance,' .
