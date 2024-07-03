@@ -24,6 +24,8 @@ use MatchBot\Domain\DonationService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\RateLimiter\Exception\RateLimitExceededException;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -89,6 +91,21 @@ class Create extends Action
 
         try {
             $donation = $this->donationService->createDonation($donationData, $customerId);
+        } catch (RateLimitExceededException $e) {
+            return $this->respond(
+                $response->withHeader(
+                    'X-Donation-RateLimit-Retry-After',
+                    (string)($e->getRetryAfter()->getTimestamp() - time())
+                ),
+                new ActionPayload(
+                    400,
+                    null,
+                    new ActionError(
+                        ActionError::BAD_REQUEST,
+                        'Donation rate limit reached, please try later'
+                    )
+                )
+            );
         } catch (StripeAccountIdNotSetForAccount) {
             return $this->respond(
                 $response,

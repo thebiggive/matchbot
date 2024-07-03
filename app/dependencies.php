@@ -61,6 +61,8 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Notifier\Bridge\Slack\SlackTransport;
 use Symfony\Component\Notifier\Chatter;
 use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\CacheStorage;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\BackedEnumNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
@@ -68,6 +70,7 @@ use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 
 return function (ContainerBuilder $containerBuilder) {
+    $donationCreateRateLimiterKey = 'donation-creation-rate-limiter-factory';
     $containerBuilder->addDefinitions([
         Auth\DonationPublicAuthMiddleware::class =>
             function (ContainerInterface $c): Auth\DonationPublicAuthMiddleware {
@@ -232,6 +235,24 @@ return function (ContainerBuilder $containerBuilder) {
             }
 
             return $logger;
+        },
+
+        $donationCreateRateLimiterKey => function (ContainerInterface $c): RateLimiterFactory {
+            return new RateLimiterFactory(
+                config: [
+                    'id' => 'create-donation',
+                    'policy' => 'token_bucket',
+
+                    // how many donations a new user can create within their first second on the site
+                    // If they are creating these 5 manually over a few minutes then they should accrue
+                    // rate limit credits to make another 5 or so before they run out.
+                    'limit' => 5,
+
+                    // how often they can create new donations once the initial allowance is used up.
+                    'rate' => ['interval' => '30 seconds'],
+                ],
+                storage: new CacheStorage(new RedisAdapter($c->get(Redis::class)))
+            );
         },
 
         RealTimeMatchingStorage::class => static function (ContainerInterface $c): RealTimeMatchingStorage {
@@ -416,24 +437,29 @@ return function (ContainerBuilder $containerBuilder) {
 
         ClockInterfaceAlias::class => fn() => new NativeClock(),
 
-        DonationService::class => static function (ContainerInterface $c): DonationService {
+        DonationService::class =>
+            static function (ContainerInterface $c) use ($donationCreateRateLimiterKey): DonationService {
             /**
              * @var ChatterInterface $chatter
              * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
              * is final and does not implement our custom interface.
              */
-            $chatter = $c->get(StripeChatterInterface::class);
+                $chatter = $c->get(StripeChatterInterface::class);
 
-            return new DonationService(
-                $c->get(DonationRepository::class),
-                $c->get(CampaignRepository::class),
-                $c->get(LoggerInterface::class),
-                $c->get(RetrySafeEntityManager::class),
-                $c->get(\MatchBot\Client\Stripe::class),
-                $c->get(Matching\Adapter::class),
-                $chatter,
-                $c->get(ClockInterfaceAlias::class),
-            );
-        }
+                $rateLimiterFactory = $c->get($donationCreateRateLimiterKey);
+                \assert($rateLimiterFactory instanceof RateLimiterFactory);
+
+                return new DonationService(
+                    donationRepository: $c->get(DonationRepository::class),
+                    campaignRepository: $c->get(CampaignRepository::class),
+                    rateLimiterFactory: $rateLimiterFactory,
+                    logger: $c->get(LoggerInterface::class),
+                    entityManager: $c->get(RetrySafeEntityManager::class),
+                    stripe: $c->get(\MatchBot\Client\Stripe::class),
+                    matchingAdapter: $c->get(Matching\Adapter::class),
+                    chatter: $chatter,
+                    clock: $c->get(ClockInterfaceAlias::class),
+                );
+            }
     ]);
 };

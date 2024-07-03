@@ -27,6 +27,8 @@ use Slim\App;
 use Slim\Factory\AppFactory;
 use Stripe\PaymentIntent;
 use Stripe\StripeClient;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 abstract class IntegrationTest extends TestCase
 {
@@ -57,6 +59,11 @@ abstract class IntegrationTest extends TestCase
         \assert(is_array($settings));
         $settings['apiClient'] = $this->fakeApiClientSettingsThatAlwaysThrow();
         $container->set('settings', $settings);
+
+        $container->set(
+            'donation-creation-rate-limiter-factory',
+            new RateLimiterFactory(['id' => 'test', 'policy' => 'no_limit'], new InMemoryStorage())
+        );
 
 
         AppFactory::setContainer($container);
