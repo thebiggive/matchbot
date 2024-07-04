@@ -70,7 +70,6 @@ use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 
 return function (ContainerBuilder $containerBuilder) {
-    $donationCreateRateLimiterKey = 'donation-creation-rate-limiter-factory';
     $containerBuilder->addDefinitions([
         Auth\DonationPublicAuthMiddleware::class =>
             function (ContainerInterface $c): Auth\DonationPublicAuthMiddleware {
@@ -237,7 +236,7 @@ return function (ContainerBuilder $containerBuilder) {
             return $logger;
         },
 
-        $donationCreateRateLimiterKey => function (ContainerInterface $c): RateLimiterFactory {
+        'donation-creation-rate-limiter-factory' => function (ContainerInterface $c): RateLimiterFactory {
             return new RateLimiterFactory(
                 config: [
                     'id' => 'create-donation',
@@ -438,7 +437,7 @@ return function (ContainerBuilder $containerBuilder) {
         ClockInterfaceAlias::class => fn() => new NativeClock(),
 
         DonationService::class =>
-            static function (ContainerInterface $c) use ($donationCreateRateLimiterKey): DonationService {
+            static function (ContainerInterface $c): DonationService {
             /**
              * @var ChatterInterface $chatter
              * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
@@ -446,7 +445,7 @@ return function (ContainerBuilder $containerBuilder) {
              */
                 $chatter = $c->get(StripeChatterInterface::class);
 
-                $rateLimiterFactory = $c->get($donationCreateRateLimiterKey);
+                $rateLimiterFactory = $c->get('donation-creation-rate-limiter-factory');
                 \assert($rateLimiterFactory instanceof RateLimiterFactory);
 
                 return new DonationService(
