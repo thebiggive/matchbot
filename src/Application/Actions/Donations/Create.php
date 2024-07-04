@@ -25,7 +25,6 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\RateLimiter\Exception\RateLimitExceededException;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 

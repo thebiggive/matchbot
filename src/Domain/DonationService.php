@@ -14,7 +14,6 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
-use MatchBot\Domain\DomainException\RateLimitedException;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
