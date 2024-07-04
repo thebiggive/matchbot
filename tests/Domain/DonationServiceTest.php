@@ -22,6 +22,8 @@ use Psr\Log\NullLogger;
 use Stripe\Exception\PermissionException;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 class DonationServiceTest extends TestCase
 {
@@ -121,14 +123,15 @@ class DonationServiceTest extends TestCase
         $logger = $logger ?? new NullLogger();
 
         return new DonationService(
-            $this->donationRepoProphecy->reveal(),
-            $this->prophesize(CampaignRepository::class)->reveal(),
-            $logger,
-            $emProphecy->reveal(),
-            $this->stripeProphecy->reveal(),
-            $this->prophesize(Adapter::class)->reveal(),
-            $this->chatterProphecy->reveal(),
-            $this->prophesize(ClockInterface::class)->reveal(),
+            donationRepository: $this->donationRepoProphecy->reveal(),
+            campaignRepository: $this->prophesize(CampaignRepository::class)->reveal(),
+            logger: $logger,
+            entityManager: $emProphecy->reveal(),
+            stripe: $this->stripeProphecy->reveal(),
+            matchingAdapter: $this->prophesize(Adapter::class)->reveal(),
+            chatter: $this->chatterProphecy->reveal(),
+            clock: $this->prophesize(ClockInterface::class)->reveal(),
+            rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage())
         );
     }
 

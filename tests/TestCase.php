@@ -22,6 +22,8 @@ use Slim\Psr7\Headers;
 use Slim\Psr7\Request as SlimRequest;
 use Slim\Psr7\Uri;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 class TestCase extends PHPUnitTestCase
 {
@@ -63,6 +65,11 @@ class TestCase extends PHPUnitTestCase
 
         // Build PHP-DI Container instance
         $container = $containerBuilder->build();
+
+        $container->set(
+            'donation-creation-rate-limiter-factory',
+            new RateLimiterFactory(['id' => 'test', 'policy' => 'no_limit'], new InMemoryStorage())
+        );
 
         if (!$withRealRedis) {
             // For unit tests, we need to stub out Redis so that rate limiting middleware doesn't

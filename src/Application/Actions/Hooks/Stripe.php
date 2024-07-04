@@ -43,7 +43,7 @@ abstract class Stripe extends Action
         try {
             $headerLine = $request->getHeaderLine('stripe-signature');
             $this->event = \Stripe\Webhook::constructEvent(
-                $request->getBody(),
+                $request->getBody()->getContents(),
                 $headerLine,
                 $webhookSecret
             );

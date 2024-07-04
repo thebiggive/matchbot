@@ -10,7 +10,7 @@ use Psr\Log\LoggerInterface;
 abstract class Common
 {
     private array $clientSettings;
-    private Client $httpClient;
+    private ?Client $httpClient = null;
 
     public function __construct(
         array $settings,
@@ -26,7 +26,7 @@ abstract class Common
 
     protected function getHttpClient(): Client
     {
-        if (!isset($this->httpClient)) {
+        if ($this->httpClient === null) {
             $this->httpClient = new Client([
                 'timeout' => $this->clientSettings['global']['timeout'],
             ]);
