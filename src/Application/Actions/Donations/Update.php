@@ -374,7 +374,11 @@ class Update extends Action
                     /** @var string|null $nextActionType */
                     $nextActionType = null;
                     if ($confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
-                        $nextActionType = (string) $confirmedIntent->next_action?->type;
+                        $nextAction = $confirmedIntent->next_action;
+
+                        throw new \Exception(var_dump(compact('nextAction')));
+
+                        $nextActionType = (string) $nextAction?->type;
                     }
 
                     $isDonationToBGRequiringBankTransfer =

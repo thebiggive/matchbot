@@ -16,9 +16,11 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
+use Stripe\Card;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
+use Stripe\StripeObject;
 
 class Confirm extends Action
 {
@@ -146,18 +148,29 @@ EOF
             throw $exception;
         }
 
+        $card = $paymentMethod->card;
+
         if ($paymentMethod->type !== 'card') {
             throw new HttpBadRequestException($request, 'Confirm endpoint only supports card payments for now');
         }
 
+        if ($card === null) {
+            throw new HttpBadRequestException($request, 'Card missing on payment method');
+        }
+
+        /**
+         * This is not technically true - at runtime $card is an instance of StripeObject, not Card. But it
+         * appears to behave as described in the Card class.
+         * @var Card $card
+         */
+
         // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
         // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not 'Visa' or
         // 'American Express'
-        $cardBrand = $paymentMethod->card->brand;
-        \assert(is_string($cardBrand));
+        $cardBrand = $card->brand;
 
         // two letter upper string, e.g. 'GB', 'US'.
-        $cardCountry = $paymentMethod->card->country;
+        $cardCountry = $card->country;
         \assert(is_string($cardCountry));
         if (! in_array($cardBrand, Calculator::STRIPE_CARD_BRANDS, true)) {
             throw new HttpBadRequestException($request, "Unrecognised card brand");

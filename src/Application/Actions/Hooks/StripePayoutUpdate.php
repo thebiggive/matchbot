@@ -63,10 +63,15 @@ class StripePayoutUpdate extends Stripe
 
         $event = $this->event ?? throw new \RuntimeException("Stripe event not set");
 
+        $accountId = $event->account;
+        if ($accountId == null) {
+            throw new \RuntimeException("Account ID null for Stripe event " . $event->id);
+        }
+
         $this->logger->info(sprintf(
             'Received Stripe Connect app event type "%s" on account %s',
             $event->type,
-            $event->account,
+            $accountId,
         ));
 
 
@@ -79,7 +84,7 @@ class StripePayoutUpdate extends Stripe
                 $failureMessage = sprintf(
                     'payout.failed for ID %s, account %s',
                     $id,
-                    $event->account,
+                    $accountId,
                 );
 
                 $this->logger->warning($failureMessage);
@@ -113,8 +118,13 @@ class StripePayoutUpdate extends Stripe
             return $this->respond($response, new ActionPayload(204));
         }
 
+        $accountId = $event->account;
+        if ($accountId === null) {
+            throw new \RuntimeException('Account ID is null for event ' . $event->id);
+        }
+
         $message = (new StripePayout())
-            ->setConnectAccountId($event->account)
+            ->setConnectAccountId($accountId)
             ->setPayoutId($payoutId);
 
         $stamps = [
