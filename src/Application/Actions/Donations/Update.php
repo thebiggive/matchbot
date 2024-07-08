@@ -22,6 +22,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Slim\Exception\HttpBadRequestException;
+use Stripe\ErrorObject;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
@@ -374,7 +375,18 @@ class Update extends Action
                     /** @var string|null $nextActionType */
                     $nextActionType = null;
                     if ($confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
-                        $nextActionType = (string) $confirmedIntent->next_action?->type;
+                        /** @var ?ErrorObject $nextAction */
+                        $nextAction = $confirmedIntent->next_action;
+
+                        if ($nextAction && ! $nextAction instanceof ErrorObject) {
+                            $this->logger->error(sprintf(
+                                "\$nextActionType is not as expected, is %s, not %s",
+                                get_debug_type($nextAction),
+                                ErrorObject::class
+                            ));
+                        }
+
+                        $nextActionType = (string) $nextAction?->type;
                     }
 
                     $isDonationToBGRequiringBankTransfer =

@@ -17,6 +17,7 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\StripeCustomerId;
+use phpDocumentor\Reflection\Type;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -103,7 +104,10 @@ class StripePaymentsUpdate extends Stripe
 
     private function handleChargeSucceeded(Event $event, Response $response): Response
     {
-        /** @var Charge $charge */
+        /**
+         * @psalm-suppress UndefinedMagicPropertyFetch
+         * @var Charge $charge
+         */
         $charge = $event->data->object;
 
         $intentId = $charge->payment_intent;
@@ -194,7 +198,10 @@ class StripePaymentsUpdate extends Stripe
      */
     private function handleChargeDisputeClosed(Event $event, Response $response): Response
     {
-        /** @var Dispute $dispute */
+        /**
+         * @psalm-suppress UndefinedMagicPropertyFetch
+         * @var Dispute $dispute
+         */
         $dispute = $event->data->object;
 
         $intentId = $dispute->payment_intent;
@@ -265,7 +272,10 @@ class StripePaymentsUpdate extends Stripe
 
     private function handleChargeRefunded(Event $event, Response $response): Response
     {
-        /** @var Charge $charge */
+        /**
+         * @psalm-suppress UndefinedMagicPropertyFetch
+         * @var Charge $charge
+         */
         $charge = $event->data->object;
         $amountRefunded = $charge->amount_refunded; // int: pence.
 
@@ -352,6 +362,12 @@ class StripePaymentsUpdate extends Stripe
 
     private function handlePaymentIntentCancelled(Event $event, Response $response): Response
     {
+        /**
+         * https://docs.stripe.com/api/events/types?event_types-invoice.payment_succeeded=#event_types-payment_intent.canceled
+         * says "data.object is a payment intent" so:
+         *
+         * @psalm-suppress UndefinedMagicPropertyFetch $paymentIntent
+         */
         $paymentIntent = $event->data->object;
         \assert($paymentIntent instanceof PaymentIntent);
 
@@ -436,18 +452,24 @@ class StripePaymentsUpdate extends Stripe
             ));
         }
 
-        if ($txn->fee_details[0]->currency !== strtolower($expectedCurrencyCode)) {
+        /**
+         * See https://docs.stripe.com/api/balance_transactions/object#balance_transaction_object-fee_details
+         * @var object{currency: string, type: string} $feeDetail
+         */
+        $feeDetail = $txn->fee_details[0];
+
+        if ($feeDetail->currency !== strtolower($expectedCurrencyCode)) {
             // `fee` should presumably still be in parent account's currency, so don't bail out.
             $this->logger->warning(sprintf(
                 'StripeChargeUpdate::getFee: Unexpected fee currency %s',
-                $txn->fee_details[0]->currency,
+                $feeDetail->currency,
             ));
         }
 
-        if ($txn->fee_details[0]->type !== 'stripe_fee') {
+        if ($feeDetail->type !== 'stripe_fee') {
             $this->logger->warning(sprintf(
                 'StripeChargeUpdate::getFee: Unexpected type %s',
-                $txn->fee_details[0]->type,
+                $feeDetail->type,
             ));
         }
 
