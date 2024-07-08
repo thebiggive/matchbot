@@ -420,7 +420,8 @@ return function (ContainerBuilder $containerBuilder) {
         StripeClient::class => static function (ContainerInterface $c): StripeClient {
             return new StripeClient([
                 'api_key' => $c->get('settings')['stripe']['apiKey'],
-                'stripe_version' => '2023-08-16',
+                // Stripe version determined by defaults built into stripe-php library - upgrade the libary to get
+                // a new version.
             ]);
         },
 
