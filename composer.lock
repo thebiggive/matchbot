@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3e1cd3d14d1e98ad54a13485d8834de3",
+    "content-hash": "0235e41328849e26bfaa24665f99c1bf",
     "packages": [
         {
             "name": "async-aws/core",
@@ -3499,16 +3499,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v13.18.0",
+            "version": "v14.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "02abb043b103766f4ed920642ae56ffdc58c7467"
+                "reference": "7e1c4b5d2beadeaeddc42fd1f8a50fdb18b37f30"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/02abb043b103766f4ed920642ae56ffdc58c7467",
-                "reference": "02abb043b103766f4ed920642ae56ffdc58c7467",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/7e1c4b5d2beadeaeddc42fd1f8a50fdb18b37f30",
+                "reference": "7e1c4b5d2beadeaeddc42fd1f8a50fdb18b37f30",
                 "shasum": ""
             },
             "require": {
@@ -3552,9 +3552,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v13.18.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v14.10.0"
             },
-            "time": "2024-04-09T21:08:04+00:00"
+            "time": "2024-06-13T21:04:47+00:00"
         },
         {
             "name": "symfony/amazon-sqs-messenger",
