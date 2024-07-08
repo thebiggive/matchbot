@@ -54,6 +54,7 @@ class CreateTest extends TestCase
             ],
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
@@ -327,6 +328,7 @@ class CreateTest extends TestCase
             ],
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
@@ -433,6 +435,7 @@ class CreateTest extends TestCase
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
@@ -528,6 +531,7 @@ class CreateTest extends TestCase
             ],
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
@@ -708,6 +712,7 @@ class CreateTest extends TestCase
             ],
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',

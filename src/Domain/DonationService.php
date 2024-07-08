@@ -164,6 +164,8 @@ readonly class DonationService
                 'amount' => $donation->getAmountFractionalIncTip(),
                 'currency' => strtolower($donation->getCurrencyCode()),
                 'description' => $donation->getDescription(),
+                'capture_method' => 'automatic', // 'automatic' was default in previous API versions,
+                                                // default is now 'automatic_async'
                 'metadata' => [
                     /**
                      * Keys like comms opt ins are set only later. See the counterpart
