@@ -17,7 +17,6 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\StripeCustomerId;
-use phpDocumentor\Reflection\Type;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
