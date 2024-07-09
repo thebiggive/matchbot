@@ -372,20 +372,14 @@ class Update extends Action
                 try {
                     $confirmedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId());
 
-                    /** @var string|null $nextActionType */
+                    /* @var string|null $nextActionType */
                     $nextActionType = null;
                     if ($confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
-                        /** @var ?ErrorObject $nextAction */
                         $nextAction = $confirmedIntent->next_action;
 
-                        if ($nextAction && ! $nextAction instanceof ErrorObject) {
-                            $this->logger->error(sprintf(
-                                "\$nextActionType is not as expected, is %s, not %s",
-                                get_debug_type($nextAction),
-                                ErrorObject::class
-                            ));
-                        }
-
+                        /** @psalm-suppress UndefinedMagicPropertyFetch - type is not documented on StripeObject but
+                         * appears to work in this context
+                         */
                         $nextActionType = (string) $nextAction?->type;
                     }
 
