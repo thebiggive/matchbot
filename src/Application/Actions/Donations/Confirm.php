@@ -153,15 +153,13 @@ EOF
             throw new HttpBadRequestException($request, 'Confirm endpoint only supports card payments for now');
         }
 
-        /** @var Card $card */
+        /**
+         * This is not technically true - at runtime this is a StripeObject instance, but the behaviour seems to be as
+         * documented in the Card class. Stripe SDK is interesting. Without this annotation we would have SA errors on
+         * ->brand and ->country
+         * @var Card $card
+         */
         $card = $paymentMethod->card;
-        if (! $card instanceof Card) {
-            $this->logger->error(sprintf(
-                "\$card is not as expected, is %s, not %s",
-                get_debug_type($card),
-                Card::class
-            ));
-        }
 
         // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
         // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not 'Visa' or
