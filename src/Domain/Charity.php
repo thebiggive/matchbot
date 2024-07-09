@@ -248,4 +248,10 @@ class Charity extends SalesforceReadProxy
 
         $this->updateFromSFRequiredSince = null;
     }
+
+
+    public function setUpdateRequiredFromSFSince(\DateTimeImmutable $since): void
+    {
+        $this->updateFromSFRequiredSince = $since;
+    }
 }
