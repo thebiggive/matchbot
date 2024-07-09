@@ -22,6 +22,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Slim\Exception\HttpBadRequestException;
+use Stripe\ErrorObject;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
@@ -371,10 +372,15 @@ class Update extends Action
                 try {
                     $confirmedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId());
 
-                    /** @var string|null $nextActionType */
+                    /* @var string|null $nextActionType */
                     $nextActionType = null;
                     if ($confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
-                        $nextActionType = (string) $confirmedIntent->next_action?->type;
+                        $nextAction = $confirmedIntent->next_action;
+
+                        /** @psalm-suppress UndefinedMagicPropertyFetch - type is not documented on StripeObject but
+                         * appears to work in this context
+                         */
+                        $nextActionType = (string) $nextAction?->type;
                     }
 
                     $isDonationToBGRequiringBankTransfer =
