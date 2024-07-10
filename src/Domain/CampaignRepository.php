@@ -28,6 +28,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function findRecentLiveAndPendingGiftAidApproval(): array
     {
+        // make this include ones where charity needs update
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT c FROM MatchBot\Domain\Campaign c
             INNER JOIN c.charity charity

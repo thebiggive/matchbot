@@ -70,7 +70,8 @@ return function (App $app) {
         '/hooks/charities/{salesforceId:[a-zA-Z0-9]{18}}/update-required',
         MarkUpdateRequiredFromSF::class
     )
-        ->add(SalesforceAuthMiddleware::class);
+        ->add(SalesforceAuthMiddleware::class)
+    ;
 
     $app->options('/{routes:.+}', function ($request, $response, $args) {
         return $response;
