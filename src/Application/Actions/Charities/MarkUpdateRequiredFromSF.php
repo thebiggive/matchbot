@@ -7,11 +7,14 @@ namespace MatchBot\Application\Actions\Charities;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\AssertionFailedException;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
+use MatchBot\Domain\Salesforce18Id;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Slim\Exception\HttpNotFoundException;
 
 /**
  * @psalm-suppress UnusedClass - to be added to routes.php, need to think about authorization requirements.
@@ -29,19 +32,19 @@ class MarkUpdateRequiredFromSF extends Action
 
     protected function action(Request $request, Response $response, array $args): Response
     {
-        /** @var ?string $salesforceId */
         $salesforceId = $args['salesforceId'] ?? null;
-        Assertion::nullOrString($salesforceId);
 
-        if ($salesforceId === null) {
+        if (! is_string($salesforceId)) {
             throw new DomainRecordNotFoundException('Missing donation ID');
         }
 
-        $charity = $this->charityRepository->findOneBy(['salesforceId' => $salesforceId]);
-
-        if ($charity === null) {
-            throw new DomainRecordNotFoundException('Charity not found');
+        try {
+            $sfId = Salesforce18Id::of($salesforceId);
+        } catch (AssertionFailedException $e) {
+            throw new HttpNotFoundException($request, $e->getMessage());
         }
+
+        $charity = $this->charityRepository->findOneBySfIDOrThrow($sfId);
 
         $charity->setUpdateRequiredFromSFSince($this->now);
 
