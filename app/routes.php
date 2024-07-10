@@ -67,7 +67,7 @@ return function (App $app) {
     // Requests from Salesforce
 
     $app->post(
-        '/charities/{salesforceId:[a-zA-Z0-9]{18}}/update-required',
+        '/hooks/charities/{salesforceId:[a-zA-Z0-9]{18}}/update-required',
         MarkUpdateRequiredFromSF::class
     )
         ->add(SalesforceAuthMiddleware::class);
