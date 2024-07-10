@@ -49,6 +49,6 @@ class MarkUpdateRequiredFromSF extends Action
 
         $data = [];
 
-        return $this->respondWithData($response, $data, 201);
+        return $this->respondWithData($response, $data);
     }
 }
