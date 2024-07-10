@@ -445,6 +445,18 @@ return function (ContainerBuilder $containerBuilder) {
 
         ClockInterfaceAlias::class => fn() => new NativeClock(),
 
+        Auth\SalesforceAuthMiddleware::class =>
+            function (ContainerInterface $c) {
+               /**
+                * @psalm-suppress MixedArrayAccess
+                * @psalm-suppress MixedArgument
+                */
+                return new Auth\SalesforceAuthMiddleware(
+                    sfApiKey: $c->get('settings')['salesforce']['apiKey'],
+                    logger: $c->get(LoggerInterface::class)
+                );
+            },
+
         DonationService::class =>
             static function (ContainerInterface $c): DonationService {
             /**

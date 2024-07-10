@@ -16,7 +16,8 @@ use Slim\Psr7\Response;
 
 /**
  * This middleware requires that a request is from our own Salesforce instance, based on a shared secret. Salesforce
- * is a source of truth for much of our data so requests from it may be trusted with wide powers to modify matchbot state.
+ * is a source of truth for much of our data so requests from it may be trusted with wide powers to modify matchbot
+ * state.
  *
  * Based on \BigGive\Identity\Client\Mailer
  */
@@ -27,10 +28,8 @@ readonly class SalesforceAuthMiddleware implements MiddlewareInterface
         /** @var non-empty-string $sfApiKey */
         #[\SensitiveParameter]
         private string $sfApiKey,
-
         private LoggerInterface $logger,
-    )
-    {
+    ) {
         Assertion::notEmpty($this->sfApiKey);
     }
 

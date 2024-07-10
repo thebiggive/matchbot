@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Mailer\Tests\Application\Auth;
 
-
 use Laminas\Diactoros\Request;
 use MatchBot\Application\Auth\SalesforceAuthMiddleware;
 use MatchBot\Tests\TestCase;
