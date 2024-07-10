@@ -68,7 +68,8 @@ return function (App $app) {
 
     $app->post(
         '/charities/{salesforceId:[a-zA-Z0-9]{18}}/update-required',
-        MarkUpdateRequiredFromSF::class)
+        MarkUpdateRequiredFromSF::class
+    )
         ->add(SalesforceAuthMiddleware::class);
 
     $app->options('/{routes:.+}', function ($request, $response, $args) {

@@ -16,9 +16,6 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpNotFoundException;
 
-/**
- * @psalm-suppress UnusedClass - to be added to routes.php, need to think about authorization requirements.
- */
 class MarkUpdateRequiredFromSF extends Action
 {
     public function __construct(
