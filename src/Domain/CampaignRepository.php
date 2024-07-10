@@ -28,26 +28,25 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function findRecentLiveAndPendingGiftAidApproval(): array
     {
-        $shortLookBackDate = (new DateTime('now'))->sub(new \DateInterval('P7D'));
-        $extendedLookBackDate = (new DateTime('now'))->sub(new \DateInterval('P9M'));
-
-        $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('c')
-            ->from(Campaign::class, 'c')
-            ->innerJoin('c.charity', 'charity')
-            ->where('c.endDate >= :shortLookBackDate')
-            ->orWhere(<<<EOT
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT c FROM MatchBot\Domain\Campaign c
+            INNER JOIN c.charity charity
+            WHERE c.endDate >= :shortLookBackDate OR (
                 charity.tbgClaimingGiftAid = 1 AND
                 charity.tbgApprovedToClaimGiftAid = 0 AND
                 c.endDate >= :extendedLookbackDate
-EOT
             )
-            ->orderBy('c.createdAt', 'ASC')
-            ->setParameter('shortLookBackDate', $shortLookBackDate)
-            ->setParameter('extendedLookbackDate', $extendedLookBackDate);
+            ORDER BY c.createdAt ASC
+            DQL
+        );
+        $query->setParameters([
+            'shortLookBackDate' => (new DateTime('now'))->sub(new \DateInterval('P7D')),
+            'extendedLookbackDate' => (new DateTime('now'))->sub(new \DateInterval('P9M')),
+        ]);
 
         /** @var Campaign[] $campaigns */
-        $campaigns = $qb->getQuery()->getResult();
+        $campaigns = $query->getResult();
+
         return $campaigns;
     }
 
