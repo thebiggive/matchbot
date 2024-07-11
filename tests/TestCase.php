@@ -192,6 +192,8 @@ class TestCase extends PHPUnitTestCase
         $campaign->setName('someCampaign');
         $campaign->setStartDate(new \DateTimeImmutable('2020-01-01'));
         $campaign->setEndDate(new \DateTimeImmutable('3000-01-01'));
+        $campaign->setCurrencyCode('GBP');
+        $campaign->setSalesforceId('1CampaignId' .  self::randomHex(3));
 
         return $campaign;
     }

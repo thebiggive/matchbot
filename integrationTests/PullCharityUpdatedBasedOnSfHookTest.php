@@ -25,10 +25,12 @@ class PullCharityUpdatedBasedOnSfHookTest extends \MatchBot\IntegrationTests\Int
         // arrange
         $em = $this->getService(EntityManager::class);
 
-        $charity = TestCase::someCharity();
+        $campaign = TestCase::someCampaign();
+        $charity = $campaign->getCharity();
         $sfId = $charity->getSalesforceId();
         \assert(is_string($sfId));
 
+        $em->persist($campaign);
         $em->persist($charity);
         $em->flush();
 
@@ -37,6 +39,7 @@ class PullCharityUpdatedBasedOnSfHookTest extends \MatchBot\IntegrationTests\Int
         $fundClientRepository->getForCampaign(Argument::type('string'))->willReturn([]);
 
         $campaignClientProphecy = $this->prophesize(Client\Campaign::class);
+
         $campaignClientProphecy->getById(Argument::any())->willReturn([
             'currencyCode' => 'GBP',
             'endDate' => '2020-01-01',
