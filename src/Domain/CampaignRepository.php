@@ -84,13 +84,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
         }
 
         $charity = $this->pullCharity(
-            $campaignData['charity']['id'],
-            $campaignData['charity']['name'],
-            $campaignData['charity']['stripeAccountId'],
-            $campaignData['charity']['giftAidOnboardingStatus'],
-            $campaignData['charity']['hmrcReferenceNumber'],
-            $campaignData['charity']['regulatorRegion'],
-            $campaignData['charity']['regulatorNumber'],
+            salesforceCharityId: $campaignData['charity']['id'],
+            charityName: $campaignData['charity']['name'],
+            stripeAccountId: $campaignData['charity']['stripeAccountId'],
+            giftAidOnboardingStatus: $campaignData['charity']['giftAidOnboardingStatus'],
+            hmrcReferenceNumber: $campaignData['charity']['hmrcReferenceNumber'],
+            regulator: $campaignData['charity']['regulatorRegion'],
+            regulatorNumber: $campaignData['charity']['regulatorNumber'],
         );
 
         $campaign->setCharity($charity);

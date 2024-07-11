@@ -32,15 +32,29 @@ class PullCharityUpdatedBasedOnSfHookTest extends \MatchBot\IntegrationTests\Int
         $em->persist($charity);
         $em->flush();
 
+        $fundClientRepository = $this->prophesize(Client\Fund::class);
+        $this->getContainer()->set(Client\Fund::class, $fundClientRepository->reveal());
+        $fundClientRepository->getForCampaign(Argument::type('string'))->willReturn([]);
+
         $campaignClientProphecy = $this->prophesize(Client\Campaign::class);
         $campaignClientProphecy->getById(Argument::any())->willReturn([
             'currencyCode' => 'GBP',
+            'endDate' => '2020-01-01',
+            'startDate' => '2020-01-01',
+            'feePercentage' => null,
+            'isMatched' => true,
+            'title' => 'Campaign title not relavent',
             'charity' => [
-                'id' => $charity->getId(),
+                'id' => $sfId,
                 'name' => 'New Charity Name',
                 'stripeAccountId' => $charity->getStripeAccountId(),
+                'giftAidOnboardingStatus' => 'Onboarded',
+                'hmrcReferenceNumber' => null,
+                'regulatorRegion' => 'England and Wales',
+                'regulatorNumber' => null,
             ]
         ]);
+
         $this->getContainer()->set(Client\Campaign::class, $campaignClientProphecy->reveal());
         // act
         $body = 'body is ignored';
@@ -65,6 +79,8 @@ class PullCharityUpdatedBasedOnSfHookTest extends \MatchBot\IntegrationTests\Int
         $commandTester->execute([]);
 
         // to-do: Invoke `matchbot:update-campaigns` command and make a mocked SF give the new charity name.
+
+        $em->clear();
 
         // assert
         $charity = $this->getService(CharityRepository::class)->findOneBySfIDOrThrow(Salesforce18Id::of($sfId));
