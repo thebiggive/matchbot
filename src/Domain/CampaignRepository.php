@@ -36,7 +36,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 charity.tbgClaimingGiftAid = 1 AND
                 charity.tbgApprovedToClaimGiftAid = 0 AND
                 c.endDate >= :extendedLookbackDate
-            )
+            ) OR charity.updateFromSFRequiredSince IS NOT NULL
             ORDER BY c.createdAt ASC
             DQL
         );
