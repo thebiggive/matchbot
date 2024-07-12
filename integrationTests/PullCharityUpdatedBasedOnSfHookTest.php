@@ -4,7 +4,10 @@ namespace MatchBot\IntegrationTests;
 
 use Doctrine\ORM\EntityManager;
 use Laminas\Diactoros\ServerRequest;
+use MatchBot\Application\Commands\Command;
+use MatchBot\Application\Commands\LockingCommand;
 use MatchBot\Application\Commands\UpdateCampaigns;
+use MatchBot\Application\Commands\UpdateCharities;
 use MatchBot\Client;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityRepository;
@@ -12,6 +15,7 @@ use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 use Slim\Psr7\Request;
 use Slim\Psr7\Uri;
@@ -22,17 +26,12 @@ class PullCharityUpdatedBasedOnSfHookTest extends \MatchBot\IntegrationTests\Int
 {
     public function tearDown(): void
     {
-        $container = $this->getContainer();
-        $container->set(Client\Fund::class, null);
-        $container->set(Client\Campaign::class, null);
+        $this->getContainer()->set(Client\Fund::class, null);
+        $this->getContainer()->set(Client\Campaign::class, null);
     }
 
-    /**
-     * @psalm-suppress UnevaluatedCode
-     */
     public function testItPullsCharityUpdateAfterSalesforceSendsHook(): void
     {
-        $this->markTestSkipped();
         // arrange
         $em = $this->getService(EntityManager::class);
 
@@ -45,13 +44,32 @@ class PullCharityUpdatedBasedOnSfHookTest extends \MatchBot\IntegrationTests\Int
         $em->persist($charity);
         $em->flush();
 
-        $fundClientRepository = $this->prophesize(Client\Fund::class);
-        $this->getContainer()->set(Client\Fund::class, $fundClientRepository->reveal());
-        $fundClientRepository->getForCampaign(Argument::type('string'))->willReturn([]);
-
         $campaignClientProphecy = $this->prophesize(Client\Campaign::class);
 
-        $campaignClientProphecy->getById(Argument::any())->willReturn([
+        $campaignClientProphecy->getById($campaign->getSalesforceId())->willReturn(
+            $this->simulatedCampaignFromSFAPI(
+                $sfId,
+                'New Charity Name',
+                $charity->getStripeAccountId() ?? throw new \Exception('Missing Stripe ID')
+            )
+        );
+
+        $this->getContainer()->set(Client\Campaign::class, $campaignClientProphecy->reveal());
+
+        // act
+        $this->simulateRequestFromSFTo('/hooks/charities/' . $sfId . '/update-required');
+        $this->invokeCommand(UpdateCharities::class);
+
+        // assert
+        $em->clear();
+
+        $charity = $this->getService(CharityRepository::class)->findOneBySfIDOrThrow(Salesforce18Id::of($sfId));
+        $this->assertSame('New Charity Name', $charity->getName());
+    }
+
+    private function simulatedCampaignFromSFAPI(string $sfId, string $newCharityName, string $stripeAccountId): array
+    {
+        return [
             'currencyCode' => 'GBP',
             'endDate' => '2020-01-01',
             'startDate' => '2020-01-01',
@@ -60,44 +78,40 @@ class PullCharityUpdatedBasedOnSfHookTest extends \MatchBot\IntegrationTests\Int
             'title' => 'Campaign title not relavent',
             'charity' => [
                 'id' => $sfId,
-                'name' => 'New Charity Name',
-                'stripeAccountId' => $charity->getStripeAccountId(),
+                'name' => $newCharityName,
+                'stripeAccountId' => $stripeAccountId,
                 'giftAidOnboardingStatus' => 'Onboarded',
                 'hmrcReferenceNumber' => null,
                 'regulatorRegion' => 'England and Wales',
                 'regulatorNumber' => null,
             ]
-        ]);
+        ];
+    }
 
-        $this->getContainer()->set(Client\Campaign::class, $campaignClientProphecy->reveal());
-        // act
-        $body = 'body is ignored';
-
+    private function simulateRequestFromSFTo(string $URI): void
+    {
         $salesforceSecretKey = getenv('SALESFORCE_SECRET_KEY');
         \assert(is_string($salesforceSecretKey));
 
-        $response = $this->getApp()->handle(TestCase::createRequest(
+        $body = 'body is ignored';
+
+        $this->getApp()->handle(TestCase::createRequest(
             method: 'POST',
-            path: '/hooks/charities/' . $sfId . '/update-required',
+            path: $URI,
             bodyString: $body,
             headers: ['x-send-verify-hash' => hash_hmac('sha256', $body, $salesforceSecretKey)]
         ));
+    }
 
-        $this->assertSame(200, $response->getStatusCode());
-        $service = $this->getService(UpdateCampaigns::class);
+    /** @param class-string<LockingCommand> $commandClass */
+    private function invokeCommand(string $commandClass): void
+    {
+        $updateCharitiesCommand = $this->getService($commandClass);
 
-        $service->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
-        $service->setLogger(new NullLogger());
+        $updateCharitiesCommand->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $updateCharitiesCommand->setLogger(new NullLogger());
 
-        $commandTester = new CommandTester($service);
+        $commandTester = new CommandTester($updateCharitiesCommand);
         $commandTester->execute([]);
-
-        // to-do: Invoke `matchbot:update-campaigns` command and make a mocked SF give the new charity name.
-
-        $em->clear();
-
-        // assert
-        $charity = $this->getService(CharityRepository::class)->findOneBySfIDOrThrow(Salesforce18Id::of($sfId));
-        $this->assertSame("New Charity Name", $charity->getName());
     }
 }
