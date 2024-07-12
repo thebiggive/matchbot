@@ -103,10 +103,14 @@ return function (ContainerBuilder $containerBuilder) {
 
             'stripe' => [
                 'apiKey' => getenv('STRIPE_SECRET_KEY'),
-                'apiVersion' => getenv('STRIPE_API_VERSION'),
                 'accountWebhookSecret' => getenv('STRIPE_WEBHOOK_SIGNING_SECRET'),
                 'connectAppWebhookSecret' => getenv('STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET'),
             ],
+
+            'salesforce' => [
+                // authenticates requests originating from salesforce to matchbot:
+                'apiKey' => getenv('SALESFORCE_SECRET_KEY'),
+            ]
         ],
     ]);
 };

@@ -26,6 +26,7 @@ use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Exception\HttpUnauthorizedException;
 use Stripe\Charge;
+use Stripe\ErrorObject;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
@@ -2008,7 +2009,7 @@ class UpdateTest extends TestCase
         $updatedPaymentIntent->status = $newPaymentIntentStatus;
 
         if ($nextActionRequired !== null) {
-            $nextAction = new StripeObject();
+            $nextAction = new ErrorObject();
             $nextAction->type = $nextActionRequired;
             $updatedPaymentIntent->next_action = $nextAction;
         }

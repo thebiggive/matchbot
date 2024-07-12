@@ -167,6 +167,10 @@ class RetrySafeEntityManager extends EntityManagerDecorator
     public function flush($entity = null): void
     {
         try {
+            /** @psalm-suppress TooManyArguments - passing non-null is depreacted, and
+             * \Doctrine\Persistence\ObjectManager::flush is declared with no args,
+             * but \Doctrine\ORM\EntityManager::flush still takes the arg for now.
+             */
             $this->entityManager->flush($entity);
         } catch (EntityManagerClosed $closedException) {
             $this->logger->error(
@@ -174,6 +178,7 @@ class RetrySafeEntityManager extends EntityManagerDecorator
                 $closedException->__tostring()
             );
             $this->resetManager();
+            /** @psalm-suppress TooManyArguments */
             $this->entityManager->flush($entity);
         }
     }

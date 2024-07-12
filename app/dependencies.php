@@ -39,6 +39,7 @@ use Psr\Log\LoggerInterface;
 use Psr\SimpleCache\CacheInterface;
 use Slim\Psr7\Factory\ResponseFactory;
 use Stripe\StripeClient;
+use Stripe\Util\ApiVersion;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Psr16Cache;
@@ -61,6 +62,8 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Notifier\Bridge\Slack\SlackTransport;
 use Symfony\Component\Notifier\Chatter;
 use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\CacheStorage;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\BackedEnumNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
@@ -68,6 +71,11 @@ use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 
 return function (ContainerBuilder $containerBuilder) {
+    // When writing closures within this function do not use `use` to bring in variables - that works in the dev
+    // env where we use the non-compiled container but not in prod or prod-like envs where it causes an error
+    // "Cannot compile closures which import variables using the `use` keyword"
+    // https://github.com/PHP-DI/PHP-DI/blob/a7410e4ee4f61312183af2d7e26a9e6592d2d974/src/Compiler/Compiler.php#L389
+
     $containerBuilder->addDefinitions([
         Auth\DonationPublicAuthMiddleware::class =>
             function (ContainerInterface $c): Auth\DonationPublicAuthMiddleware {
@@ -234,6 +242,24 @@ return function (ContainerBuilder $containerBuilder) {
             return $logger;
         },
 
+        'donation-creation-rate-limiter-factory' => function (ContainerInterface $c): RateLimiterFactory {
+            return new RateLimiterFactory(
+                config: [
+                    'id' => 'create-donation',
+                    'policy' => 'token_bucket',
+
+                    // how many donations a new user can create within their first second on the site
+                    // If they are creating these 5 manually over a few minutes then they should accrue
+                    // rate limit credits to make another 5 or so before they run out.
+                    'limit' => 5,
+
+                    // how often they can create new donations once the initial allowance is used up.
+                    'rate' => ['interval' => '30 seconds'],
+                ],
+                storage: new CacheStorage(new RedisAdapter($c->get(Redis::class)))
+            );
+        },
+
         RealTimeMatchingStorage::class => static function (ContainerInterface $c): RealTimeMatchingStorage {
             return new RedisMatchingStorage($c->get(Redis::class));
         },
@@ -393,9 +419,12 @@ return function (ContainerBuilder $containerBuilder) {
         // StripeClientInterface doesn't have enough properties documented to keep
         // psalm happy.
         StripeClient::class => static function (ContainerInterface $c): StripeClient {
+            // Both hardcoding the version and using library default - see discussion at
+            // https://github.com/thebiggive/matchbot/pull/927/files/5fa930f3eee3b0c919bcc1027319dc7ae9d0be05#diff-c4fef49ee08946228bb39de898c8770a1a6a8610fc281627541ec2e49c67b118
+            \assert(ApiVersion::CURRENT === '2024-06-20');
             return new StripeClient([
                 'api_key' => $c->get('settings')['stripe']['apiKey'],
-                'stripe_version' => $c->get('settings')['stripe']['apiVersion'],
+                'stripe_version' => ApiVersion::CURRENT,
             ]);
         },
 
@@ -416,24 +445,41 @@ return function (ContainerBuilder $containerBuilder) {
 
         ClockInterfaceAlias::class => fn() => new NativeClock(),
 
-        DonationService::class => static function (ContainerInterface $c): DonationService {
+        Auth\SalesforceAuthMiddleware::class =>
+            function (ContainerInterface $c) {
+               /**
+                * @psalm-suppress MixedArrayAccess
+                * @psalm-suppress MixedArgument
+                */
+                return new Auth\SalesforceAuthMiddleware(
+                    sfApiKey: $c->get('settings')['salesforce']['apiKey'],
+                    logger: $c->get(LoggerInterface::class)
+                );
+            },
+
+        DonationService::class =>
+            static function (ContainerInterface $c): DonationService {
             /**
              * @var ChatterInterface $chatter
              * Injecting `StripeChatterInterface` directly doesn't work because `Chatter` itself
              * is final and does not implement our custom interface.
              */
-            $chatter = $c->get(StripeChatterInterface::class);
+                $chatter = $c->get(StripeChatterInterface::class);
 
-            return new DonationService(
-                $c->get(DonationRepository::class),
-                $c->get(CampaignRepository::class),
-                $c->get(LoggerInterface::class),
-                $c->get(RetrySafeEntityManager::class),
-                $c->get(\MatchBot\Client\Stripe::class),
-                $c->get(Matching\Adapter::class),
-                $chatter,
-                $c->get(ClockInterfaceAlias::class),
-            );
-        }
+                $rateLimiterFactory = $c->get('donation-creation-rate-limiter-factory');
+                \assert($rateLimiterFactory instanceof RateLimiterFactory);
+
+                return new DonationService(
+                    donationRepository: $c->get(DonationRepository::class),
+                    campaignRepository: $c->get(CampaignRepository::class),
+                    rateLimiterFactory: $rateLimiterFactory,
+                    logger: $c->get(LoggerInterface::class),
+                    entityManager: $c->get(RetrySafeEntityManager::class),
+                    stripe: $c->get(\MatchBot\Client\Stripe::class),
+                    matchingAdapter: $c->get(Matching\Adapter::class),
+                    chatter: $chatter,
+                    clock: $c->get(ClockInterfaceAlias::class),
+                );
+            }
     ]);
 };

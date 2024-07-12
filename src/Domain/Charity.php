@@ -10,6 +10,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table]
 #[ORM\Entity(repositoryClass: CharityRepository::class)]
 #[ORM\HasLifecycleCallbacks]
+#[ORM\Index(columns: ["salesforceId"])]
+#[ORM\Index(columns: ["updateFromSFRequiredSince"])]
 class Charity extends SalesforceReadProxy
 {
     use TimestampsTrait;
@@ -80,6 +82,12 @@ class Charity extends SalesforceReadProxy
      */
     #[ORM\Column(type: 'boolean')]
     private bool $tbgApprovedToClaimGiftAid = false;
+
+    /**
+     * @psalm-suppress UnusedProperty - will be used soon.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $updateFromSFRequiredSince = null;
 
     public function __construct(
         string $salesforceId,
@@ -237,5 +245,13 @@ class Charity extends SalesforceReadProxy
         $this->setRegulatorNumber($regulatorNumber);
 
         $this->setSalesforceLastPull($time);
+
+        $this->updateFromSFRequiredSince = null;
+    }
+
+
+    public function setUpdateRequiredFromSFSince(\DateTimeImmutable $since): void
+    {
+        $this->updateFromSFRequiredSince = $since;
     }
 }

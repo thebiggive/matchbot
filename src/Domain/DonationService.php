@@ -21,7 +21,10 @@ use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
+use Symfony\Component\RateLimiter\Exception\RateLimitExceededException;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 
 readonly class DonationService
 {
@@ -36,6 +39,7 @@ readonly class DonationService
         private MatchingAdapter $matchingAdapter,
         private StripeChatterInterface|ChatterInterface $chatter,
         private ClockInterface $clock,
+        private RateLimiterFactory $rateLimiterFactory,
     ) {
     }
 
@@ -46,9 +50,21 @@ readonly class DonationService
      *
      * @param DonationCreate $donationData Details of the desired donation, as sent from the browser
      * @param string $pspCustomerId The Stripe customer ID of the donor
+     *
+     * @throws CampaignNotOpen
+     * @throws CharityAccountLacksNeededCapaiblities
+     * @throws CouldNotMakeStripePaymentIntent
+     * @throws DBALServerException
+     * @throws DonationCreateModelLoadFailure
+     * @throws ORMException
+     * @throws StripeAccountIdNotSetForAccount
+     * @throws TransportExceptionInterface
+     * @throws RateLimitExceededException
      */
     public function createDonation(DonationCreate $donationData, string $pspCustomerId): Donation
     {
+        $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
+
         try {
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
         } catch (\UnexpectedValueException $e) {
@@ -148,6 +164,8 @@ readonly class DonationService
                 'amount' => $donation->getAmountFractionalIncTip(),
                 'currency' => strtolower($donation->getCurrencyCode()),
                 'description' => $donation->getDescription(),
+                'capture_method' => 'automatic', // 'automatic' was default in previous API versions,
+                                                // default is now 'automatic_async'
                 'metadata' => [
                     /**
                      * Keys like comms opt ins are set only later. See the counterpart

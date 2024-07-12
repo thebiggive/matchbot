@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions\Hooks;
 
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use Psr\Container\ContainerInterface;
@@ -63,10 +64,13 @@ class StripePayoutUpdate extends Stripe
 
         $event = $this->event ?? throw new \RuntimeException("Stripe event not set");
 
+        $connectedAccountId = $event->account;
+        Assertion::notNull($connectedAccountId, 'Connected Account ID should not be null');
+
         $this->logger->info(sprintf(
             'Received Stripe Connect app event type "%s" on account %s',
             $event->type,
-            $event->account,
+            $connectedAccountId,
         ));
 
 
@@ -74,12 +78,15 @@ class StripePayoutUpdate extends Stripe
             case Event::PAYOUT_PAID:
                 return $this->handlePayoutPaid($request, $event, $response);
             case Event::PAYOUT_FAILED:
+                /**
+                 * @var string $id
+                 * @psalm-suppress UndefinedMagicPropertyFetch
+                 */
                 $id = $event->data->object->id;
-                \assert(is_string($id));
                 $failureMessage = sprintf(
                     'payout.failed for ID %s, account %s',
                     $id,
-                    $event->account,
+                    $connectedAccountId,
                 );
 
                 $this->logger->warning($failureMessage);
@@ -101,7 +108,10 @@ class StripePayoutUpdate extends Stripe
 
     private function handlePayoutPaid(Request $request, Event $event, Response $response): Response
     {
-        /** @var object{id: string} $object */
+        /**
+         * @psalm-suppress UndefinedMagicPropertyFetch
+         * @var object{id: string} $object
+         */
         $object = $event->data->object;
         $payoutId = $object->id;
 
@@ -113,8 +123,11 @@ class StripePayoutUpdate extends Stripe
             return $this->respond($response, new ActionPayload(204));
         }
 
+        $connectAccountId = $event->account;
+        Assertion::notNull($connectAccountId, 'Connected Account ID should not be null');
+
         $message = (new StripePayout())
-            ->setConnectAccountId($event->account)
+            ->setConnectAccountId($connectAccountId)
             ->setPayoutId($payoutId);
 
         $stamps = [

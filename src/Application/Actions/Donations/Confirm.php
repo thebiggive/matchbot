@@ -5,6 +5,7 @@ namespace MatchBot\Application\Actions\Donations;
 use Doctrine\ORM\EntityManagerInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\LazyAssertionException;
 use MatchBot\Client\NotFoundException;
@@ -16,6 +17,8 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
+use Stripe\Card;
+use Stripe\ErrorObject;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
@@ -150,14 +153,21 @@ EOF
             throw new HttpBadRequestException($request, 'Confirm endpoint only supports card payments for now');
         }
 
+        /**
+         * This is not technically true - at runtime this is a StripeObject instance, but the behaviour seems to be as
+         * documented in the Card class. Stripe SDK is interesting. Without this annotation we would have SA errors on
+         * ->brand and ->country
+         * @var Card $card
+         */
+        $card = $paymentMethod->card;
+
         // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
         // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not 'Visa' or
         // 'American Express'
-        $cardBrand = $paymentMethod->card->brand;
-        \assert(is_string($cardBrand));
+        $cardBrand = $card->brand;
 
         // two letter upper string, e.g. 'GB', 'US'.
-        $cardCountry = $paymentMethod->card->country;
+        $cardCountry = $card->country;
         \assert(is_string($cardCountry));
         if (! in_array($cardBrand, Calculator::STRIPE_CARD_BRANDS, true)) {
             throw new HttpBadRequestException($request, "Unrecognised card brand");
