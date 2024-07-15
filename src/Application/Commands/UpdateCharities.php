@@ -4,20 +4,11 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
-use Doctrine\Common\Cache\CacheProvider;
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\EntityManagerInterface;
-use GuzzleHttp\Exception\TransferException;
-use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CharityRepository;
-use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
-use MatchBot\Domain\FundRepository;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
