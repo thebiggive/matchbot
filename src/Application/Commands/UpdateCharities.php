@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\CharityRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,30 +29,19 @@ class UpdateCharities extends LockingCommand
      */
     public function __construct(
         private CampaignRepository $campaignRepository,
-        private CharityRepository $charityRepository,
     ) {
         parent::__construct();
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
+        $campaignsToUpdate = $this->campaignRepository->findNeedingUpdateFromSf();
 
-        $charitiesNeedingUpdate = $this->charityRepository->findAllNeedingUpdateFromSf();
-
-        foreach ($charitiesNeedingUpdate as $charity) {
-            $campaign = $this->campaignRepository->findOneBy(['charity' => $charity->getId()]);
-
-            if (!$campaign instanceof Campaign) {
-                throw new \Exception(sprintf(
-                    "No campaign found for Charity %s %s",
-                    $charity->getName(),
-                    $charity->getSalesforceId() ?? '(SF ID missing)'
-                ));
-            }
+        foreach ($campaignsToUpdate as $campaign) {
+            $charity = $campaign->getCharity();
 
             // implicitly also updates the charity.
             $this->campaignRepository->updateFromSf($campaign);
-
             $output->writeln(
                 <<<EOF
                     Updated campaign {$campaign->getCampaignName()} {$campaign->getSalesforceId()} and 

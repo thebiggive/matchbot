@@ -24,19 +24,4 @@ class CharityRepository extends EntityRepository
         return $this->findOneBy(['salesforceId' => $sfId->value]) ??
             throw new DomainRecordNotFoundException('Charity not found');
     }
-
-    /**
-     * @return list<Charity>
-     */
-    public function findAllNeedingUpdateFromSf(): array
-    {
-        /** @var list<Charity> $result */
-        $result =  $this->getEntityManager()->createQuery(
-            <<<'DQL'
-            SELECT c FROM MatchBot\Domain\Charity c where c.updateFromSFRequiredSince IS NOT NULL
-            DQL
-        )->getResult();
-
-        return $result;
-    }
 }
