@@ -9,6 +9,9 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * Not currently used - consider deleting.
+ */
 #[AsCommand(
     name: 'matchbot:update-charities',
     description: <<<EOT

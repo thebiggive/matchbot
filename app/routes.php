@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Los\RateLimit\RateLimitMiddleware;
-use MatchBot\Application\Actions\Charities\MarkUpdateRequiredFromSF;
+use MatchBot\Application\Actions\Charities\UpdateCharityFromSalesforce;
 use MatchBot\Application\Actions\DeletePaymentMethod;
 use MatchBot\Application\Actions\UpdatePaymentMethod;
 use MatchBot\Application\Actions\Donations;
@@ -68,7 +68,7 @@ return function (App $app) {
 
     $app->post(
         '/hooks/charities/{salesforceId:[a-zA-Z0-9]{18}}/update-required',
-        MarkUpdateRequiredFromSF::class
+        UpdateCharityFromSalesforce::class
     )
         ->add(SalesforceAuthMiddleware::class)
     ;

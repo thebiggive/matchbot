@@ -58,7 +58,6 @@ class PullCharityUpdatedBasedOnSfHookTest extends \MatchBot\IntegrationTests\Int
 
         // act
         $this->simulateRequestFromSFTo('/hooks/charities/' . $sfId . '/update-required');
-        $this->invokeCommand(UpdateCharities::class);
 
         // assert
         $em->clear();
@@ -101,17 +100,5 @@ class PullCharityUpdatedBasedOnSfHookTest extends \MatchBot\IntegrationTests\Int
             bodyString: $body,
             headers: ['x-send-verify-hash' => hash_hmac('sha256', $body, $salesforceSecretKey)]
         ));
-    }
-
-    /** @param class-string<LockingCommand> $commandClass */
-    private function invokeCommand(string $commandClass): void
-    {
-        $updateCharitiesCommand = $this->getService($commandClass);
-
-        $updateCharitiesCommand->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
-        $updateCharitiesCommand->setLogger(new NullLogger());
-
-        $commandTester = new CommandTester($updateCharitiesCommand);
-        $commandTester->execute([]);
     }
 }

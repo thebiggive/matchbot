@@ -75,6 +75,31 @@ class CampaignRepository extends SalesforceReadProxyRepository
         return $result;
     }
 
+
+    /** @return list<Campaign> */
+    public function findUpdatableForCharity(Salesforce18Id $charitySfId): array
+    {
+        $query = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            SELECT campaign FROM MatchBot\Domain\Campaign campaign
+            JOIN campaign.charity charity
+            WHERE 
+             charity.salesforceId = :charityId AND 
+            campaign.endDate >= :eighteenMonthsAgo
+            DQL
+        );
+
+        $query->setParameters([
+            'charityId' => $charitySfId->value,
+            'eighteenMonthsAgo' => (new \DateTime('now'))->sub(new \DateInterval('P18M')),
+        ]);
+
+        /** @var list<Campaign> $result */
+        $result =  $query->getResult();
+
+        return $result;
+    }
+
     public function pullNewFromSf(Salesforce18Id $salesforceId): Campaign
     {
         $campaign = new Campaign(charity: null);
