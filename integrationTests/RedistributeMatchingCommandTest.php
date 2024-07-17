@@ -52,7 +52,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
             $this->closedCampaignChampionFunding,
             250,
         );
-        $hook = $donation->toHookModel();
+        $hook = $donation->toApiModel();
         $this->assertSame('250.00', $donation->getFundingWithdrawalTotal());
         $this->assertSame(250.00, $hook['amountMatchedByChampionFunds']);
         $this->assertSame(0.00, $hook['amountMatchedByPledges']);
@@ -72,7 +72,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $updatedDonation = $this->getService(DonationRepository::class)->find($donation->getId());
         Assertion::notNull($updatedDonation);
         $this->assertSame('250.00', $updatedDonation->getFundingWithdrawalTotal());
-        $hook = $updatedDonation->toHookModel();
+        $hook = $updatedDonation->toApiModel();
         $this->assertSame(0.00, $hook['amountMatchedByChampionFunds']);
         $this->assertSame(250.00, $hook['amountMatchedByPledges']);
 
@@ -96,7 +96,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
             $this->openCampaignChampionFunding,
             250,
         );
-        $hook = $donation->toHookModel();
+        $hook = $donation->toApiModel();
         $this->assertSame('250.00', $donation->getFundingWithdrawalTotal());
         $this->assertSame(250.00, $hook['amountMatchedByChampionFunds']);
         $this->assertSame(0.00, $hook['amountMatchedByPledges']);
@@ -116,7 +116,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $updatedDonation = $this->getService(DonationRepository::class)->find($donation->getId());
         Assertion::notNull($updatedDonation);
         $this->assertSame('250.00', $updatedDonation->getFundingWithdrawalTotal());
-        $hook = $updatedDonation->toHookModel();
+        $hook = $updatedDonation->toApiModel();
         $this->assertSame(250.00, $hook['amountMatchedByChampionFunds']);
         $this->assertSame(0.00, $hook['amountMatchedByPledges']);
 

@@ -217,28 +217,17 @@ class DonationTest extends TestCase
         $this->assertEquals('john.doe@example.com', $donationData['emailAddress']);
         $this->assertEquals('1.23', $donationData['matchedAmount']);
         $this->assertIsString($donationData['collectedTime']);
-    }
+        $this->assertArrayNotHasKey('originalPspFee', $donationData);
 
-    public function testToHookModel(): void
-    {
-        $donation = $this->getTestDonation(
-            tbgGiftAidRequestConfirmedCompleteAt: new DateTime('2000-01-01T00:00:00+00:00')
-        );
-
-        $donationData = $donation->toHookModel();
-
-        $this->assertEquals('john.doe@example.com', $donationData['emailAddress']);
-        $this->assertIsString($donationData['collectedTime']);
-        $this->assertNull($donationData['refundedTime']);
-        $this->assertEquals('card', $donationData['pspMethodType']);
-        $this->assertEquals('2000-01-01T00:00:00+00:00', $donationData['tbgGiftAidRequestConfirmedCompleteAt']);
+        $donationDataIncludingPrivate = $donation->toApiModel(forSalesforce: true);
+        $this->assertEquals(123, $donationDataIncludingPrivate['originalPspFee']);
     }
 
     public function testAmountMatchedByChampionDefaultsToZero(): void
     {
         $donation = $this->getTestDonation();
 
-        $amountMatchedByChampionFunds = $donation->toHookModel()['amountMatchedByChampionFunds'];
+        $amountMatchedByChampionFunds = $donation->toApiModel()['amountMatchedByChampionFunds'];
 
         $this->assertSame(0.0, $amountMatchedByChampionFunds);
     }
@@ -247,7 +236,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
 
-        $amountMatchedByPledges = $donation->toHookModel()['amountMatchedByChampionFunds'];
+        $amountMatchedByPledges = $donation->toApiModel()['amountMatchedByChampionFunds'];
 
         $this->assertSame(0.0, $amountMatchedByPledges);
     }
@@ -268,7 +257,7 @@ class DonationTest extends TestCase
         $donation->addFundingWithdrawal($withdrawal0);
         $donation->addFundingWithdrawal($withdrawal1);
 
-        $amountMatchedByPledges = $donation->toHookModel()['amountMatchedByChampionFunds'];
+        $amountMatchedByPledges = $donation->toApiModel()['amountMatchedByChampionFunds'];
 
         \assert(1 + 2 === 3);
         $this->assertSame(3.0, $amountMatchedByPledges);
@@ -297,12 +286,12 @@ class DonationTest extends TestCase
         $this->assertSame('3.00', $amountMatchedByPledges);
     }
 
-    public function testToHookModelWhenRefunded(): void
+    public function testToApiModelWhenRefunded(): void
     {
         $donation = $this->getTestDonation();
         $donation->recordRefundAt(new \DateTimeImmutable());
 
-        $donationData = $donation->toHookModel();
+        $donationData = $donation->toApiModel();
 
         $this->assertIsString($donationData['collectedTime']);
         $this->assertIsString($donationData['refundedTime']);
@@ -420,10 +409,10 @@ class DonationTest extends TestCase
 
         $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 15:00'));
 
-        $toHookModel = $donation->toHookModel();
+        $donationApiModel = $donation->toApiModel();
 
-        $this->assertSame(DonationStatus::Refunded, $toHookModel['status']);
-        $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
+        $this->assertSame(DonationStatus::Refunded, $donationApiModel['status']);
+        $this->assertSame('2023-06-22T15:00:00+00:00', $donationApiModel['refundedTime']);
     }
 
     public function testIsReadyToConfirmWithRequiredFieldsSet(): void
@@ -612,10 +601,10 @@ class DonationTest extends TestCase
         $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 15:00'));
         $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 16:00'));
 
-        $toHookModel = $donation->toHookModel();
+        $donationApiModel = $donation->toApiModel();
 
-        $this->assertSame(DonationStatus::Refunded, $toHookModel['status']);
-        $this->assertSame('2023-06-22T15:00:00+00:00', $toHookModel['refundedTime']);
+        $this->assertSame(DonationStatus::Refunded, $donationApiModel['status']);
+        $this->assertSame('2023-06-22T15:00:00+00:00', $donationApiModel['refundedTime']);
     }
 
     public function testCreateDonationModelWithDonorFields(): void

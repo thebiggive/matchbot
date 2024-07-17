@@ -810,7 +810,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $bodyArray = $donation->toHookModel();
+        $bodyArray = $donation->toApiModel();
         $bodyArray['homeAddress'] = ['123', 'Main St']; // Invalid array type.
 
         $body = json_encode($bodyArray);

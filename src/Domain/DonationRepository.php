@@ -10,7 +10,6 @@ use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Client\BadRequestException;
@@ -47,8 +46,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
     {
         $donation = $proxy;
         try {
-            $salesforceDonationId = $this->getClient()->create($donation);
-            $donation->setSalesforceId($salesforceDonationId);
+            $salesforceDonationId = $this->getClient()->createOrUpdate($donation);
+            $this->setSalesforceIdIfNeeded($donation, $salesforceDonationId);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
             $this->logInfo(
@@ -92,7 +91,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 return true;
             }
 
-            $result = $this->getClient()->put($donation);
+            $salesforceDonationId = $this->getClient()->createOrUpdate($donation);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push the removed donation.
             $this->logInfo(
@@ -104,7 +103,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
             return true; // Report 'success' for simpler summaries and spotting of real errors.
         }
 
-        return $result;
+        $this->setSalesforceIdIfNeeded($donation, $salesforceDonationId);
+
+        return true;
     }
 
     /**
@@ -661,5 +662,25 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $this->getEntityManager()->remove($fundingWithdrawal);
             }
         });
+    }
+
+    private function setSalesforceIdIfNeeded(Donation $donation, string $salesforceId): void
+    {
+        // If Salesforce ID wasn't set yet, try to lock the record to safely set it. If it
+        // fails, this should be safe to leave for a later update. Salesforce has UUIDs so
+        // we won't lose the ability to reconcile the records.
+        try {
+            if ($donation->getSalesforceId() === null) {
+                $donation = $this->findAndLockOneBy(['uuid' => $donation->getUuid()]);
+                $donation->setSalesforceId($salesforceId);
+            }
+        } catch (DBALException\LockWaitTimeoutException $exception) {
+            $this->logWarning(sprintf(
+                'Failed to lock donation %s for setting Salesforce ID, will leave for later – %s: %s',
+                $donation->getUuid(),
+                get_class($exception),
+                $exception->getMessage(),
+            ));
+        }
     }
 }

@@ -229,7 +229,7 @@ class DonationRepositoryTest extends IntegrationTest
         \assert($simulatedNow instanceof \DateTimeImmutable);
 
         // assert
-        $method = $donationClientProphecy->create(Argument::type(Donation::class));
+        $method = $donationClientProphecy->createOrUpdate(Argument::type(Donation::class));
         if ($shouldPush) {
             $method->shouldBeCalledOnce();
         } else {

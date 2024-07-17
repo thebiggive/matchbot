@@ -13,6 +13,7 @@ use Doctrine\ORM\QueryBuilder;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Client;
+use MatchBot\Client\BadRequestException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -51,9 +52,9 @@ class DonationRepositoryTest extends TestCase
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->put(Argument::type(Donation::class))
+            ->createOrUpdate(Argument::type(Donation::class))
             ->shouldBeCalledOnce()
-            ->willReturn(true);
+            ->willReturn('someNewSfId');
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalled();
         $this->entityManagerProphecy->flush()->shouldBeCalled();
 
@@ -66,7 +67,7 @@ class DonationRepositoryTest extends TestCase
     {
         // arrange
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
-        $donationClientProphecy->put(Argument::any())->willReturn(true);
+        $donationClientProphecy->createOrUpdate(Argument::any())->willReturn('someNewSfId');
         $sut = $this->getRepo($donationClientProphecy);
 
         // Simulate an old donation that was created in OCtober 22 or earlier,
@@ -89,15 +90,13 @@ class DonationRepositoryTest extends TestCase
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->put(Argument::type(Donation::class))
+            ->createOrUpdate(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $pendingDonation = $this->getTestDonation();
         $pendingDonation->setDonationStatus(DonationStatus::Pending);
         $this->entityManagerProphecy->persist($pendingDonation)->shouldBeCalled();
         $this->entityManagerProphecy->flush()->shouldBeCalled();
-
-
 
         $success = $this->getRepo($donationClientProphecy)->push($pendingDonation, false);
 
@@ -118,13 +117,13 @@ class DonationRepositoryTest extends TestCase
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->create(Argument::type(Donation::class))
+            ->createOrUpdate(Argument::type(Donation::class))
             ->shouldBeCalledOnce()
             ->willReturn(true);
         $donationClientProphecy
-            ->put(Argument::type(Donation::class))
+            ->createOrUpdate(Argument::type(Donation::class))
             ->shouldBeCalledOnce()
-            ->willReturn(true);
+            ->willReturn('someNewSfId');
 
 
         $donation = $this->getTestDonation();
@@ -152,10 +151,7 @@ class DonationRepositoryTest extends TestCase
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->create(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-        $donationClientProphecy
-            ->put(Argument::type(Donation::class))
+            ->createOrUpdate(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $donation = $this->getTestDonation();
@@ -181,7 +177,7 @@ class DonationRepositoryTest extends TestCase
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->put(Argument::type(Donation::class))
+            ->createOrUpdate(Argument::type(Donation::class))
             ->shouldBeCalledOnce()
             ->willThrow(Client\NotFoundException::class);
 
@@ -287,9 +283,9 @@ class DonationRepositoryTest extends TestCase
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->put(Argument::type(Donation::class))
+            ->createOrUpdate(Argument::type(Donation::class))
             ->shouldBeCalledOnce()
-            ->willReturn(false);
+            ->willThrow(new BadRequestException('Some error'));
 
         $donation = $this->getTestDonation();
 
