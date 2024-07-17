@@ -635,6 +635,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     /**
      * Locks row in DB to prevent concurrent updates. See jira MAT-260
+     * Requires an open transaction to be managed by the caller.
      * @throws DBALException\LockWaitTimeoutException
      */
     public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation
@@ -673,11 +674,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // we won't lose the ability to reconcile the records.
         try {
             if ($donation->getSalesforceId() === null) {
-                $donation = $this->findAndLockOneBy(['uuid' => $donation->getUuid()]);
-                if (!$donation) {
-                    return;
-                }
-                $donation->setSalesforceId($salesforceId);
+                $uuid = $donation->getUuid();
+                $this->getEntityManager()->wrapInTransaction(function () use ($uuid, $salesforceId) {
+                    $donation = $this->findAndLockOneBy(['uuid' => $uuid]);
+                    if (!$donation) {
+                        return;
+                    }
+                    $donation->setSalesforceId($salesforceId);
+                });
             }
         } catch (DBALException\LockWaitTimeoutException $exception) {
             $this->logWarning(sprintf(
