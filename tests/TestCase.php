@@ -129,7 +129,7 @@ class TestCase extends PHPUnitTestCase
      * @param array $cookies
      * @return Request
      */
-    protected function createRequest(
+    public static function createRequest(
         string $method,
         string $path,
         string $bodyString = '',
@@ -173,7 +173,7 @@ class TestCase extends PHPUnitTestCase
     public static function someCharity(?string $stripeAccountId = null): Charity
     {
         return new Charity(
-            salesforceId: '12CharityId_' .  self::randomHex(3),
+            salesforceId: '123CharityId' .  self::randomHex(3),
             charityName: "Charity Name",
             stripeAccountId: $stripeAccountId ?? "stripe-account-id-" . self::randomHex(),
             hmrcReferenceNumber: 'H' . self::randomHex(3),
@@ -192,6 +192,8 @@ class TestCase extends PHPUnitTestCase
         $campaign->setName('someCampaign');
         $campaign->setStartDate(new \DateTimeImmutable('2020-01-01'));
         $campaign->setEndDate(new \DateTimeImmutable('3000-01-01'));
+        $campaign->setCurrencyCode('GBP');
+        $campaign->setSalesforceId('1CampaignId' .  self::randomHex(3));
 
         return $campaign;
     }
