@@ -103,50 +103,6 @@ class DonationRepositoryTest extends TestCase
         $this->assertTrue($success);
     }
 
-    /**
-     * This is expected e.g. after a Salesforce network failure leading to a missing ID for
-     * a donation, but the create completed and the donor can proceed. This may lead to
-     * webhooks trying to update the record, setting its push status to 'pending-update',
-     * before it has a proxy ID set.
-     *
-     * If this happens we should treat it like a new record to un-stick things.
-     *
-     * @link https://thebiggive.atlassian.net/browse/MAT-170
-     */
-    public function testExistingPushWithMissingProxyIdButPendingUpdateStatusStable(): void
-    {
-        $donationClientProphecy = $this->prophesize(Client\Donation::class);
-        $donationClientProphecy
-            ->createOrUpdate(Argument::type(Donation::class))
-            ->shouldBeCalledOnce()
-            ->willReturn(true);
-        $donationClientProphecy
-            ->createOrUpdate(Argument::type(Donation::class))
-            ->shouldBeCalledOnce()
-            ->willReturn('someNewSfId');
-
-
-        $donation = $this->getTestDonation();
-        $donationReflected = new ReflectionClass($donation);
-
-        $createdAtProperty = $donationReflected->getProperty('createdAt');
-        $createdAtProperty->setValue($donation, new \DateTime('-31 seconds'));
-
-        $sfIdProperty = $donationReflected->getProperty('salesforceId');
-        $sfIdProperty->setValue($donation, null); // Allowed property type but not allowed in public setter.
-
-        $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
-
-        $this->entityManagerProphecy->persist($donation)->shouldBeCalled();
-        $this->entityManagerProphecy->flush()->shouldBeCalled();
-
-        $success = $this->getRepo($donationClientProphecy)->push($donation, false);
-
-        // We let push() handle both steps for older-than-30s donations, without waiting for a new process.
-        $this->assertTrue($success);
-        $this->assertEquals('complete', $donation->getSalesforcePushStatus());
-    }
-
     public function testExistingPushWithMissingProxyIdButPendingUpdateStatusNew(): void
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);

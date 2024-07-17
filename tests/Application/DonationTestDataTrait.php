@@ -66,7 +66,7 @@ trait DonationTestDataTrait
         DateTime $tbgGiftAidRequestConfirmedCompleteAt = null,
         bool $charityComms = false,
     ): Donation {
-        $charity = \MatchBot\Tests\TestCase::someCharity();
+        $charity = TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
         $charity->setName('Test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
@@ -105,11 +105,10 @@ trait DonationTestDataTrait
                 transferId: 'tr_externalId_123',
                 cardBrand: null,
                 cardCountry: null,
-                originalFeeFractional: '0',
+                originalFeeFractional: '122', // £1.22
                 chargeCreationTimestamp: (int)(new \DateTimeImmutable())->format('U'),
             );
         }
-
 
         $donation->setDonorCountryCode('GB');
         $donation->setDonorEmailAddress(EmailAddress::of('john.doe@example.com'));

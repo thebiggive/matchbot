@@ -86,10 +86,14 @@ class Donation extends Common
             throw new BadRequestException('Donation not upserted');
         }
 
+        /**
+         * @var array{'salesforceId': string} $donationCreatedResponse
+         */
         $donationCreatedResponse = json_decode((string) $response->getBody(), true);
 
         // todo add new property that SF now returns to API docs as distinct from donationId.
         // Semantics were unclear before and SF was sometimes putting its own IDs in `donationId` I think.
+
         return $donationCreatedResponse['salesforceId'];
     }
 }

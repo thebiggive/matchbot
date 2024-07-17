@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Domain;
 
-use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use MatchBot\Application\AssertionFailedException;
@@ -13,7 +12,6 @@ use MatchBot\Application\LazyAssertionException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\ChampionFund;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorName;
@@ -23,7 +21,6 @@ use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
-use UnexpectedValueException;
 
 class DonationTest extends TestCase
 {
@@ -203,9 +200,14 @@ class DonationTest extends TestCase
 
     public function testToApiModel(): void
     {
+        $pledge = new Pledge();
+        $pledge->setCurrencyCode('GBP');
+        $pledge->setName('');
+
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setCurrencyCode('GBP');
         $campaignFunding->setAmountAvailable('1.23');
+        $campaignFunding->setFund($pledge);
 
         $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawal->setAmount('1.23');
@@ -220,7 +222,7 @@ class DonationTest extends TestCase
         $this->assertArrayNotHasKey('originalPspFee', $donationData);
 
         $donationDataIncludingPrivate = $donation->toApiModel(forSalesforce: true);
-        $this->assertEquals(123, $donationDataIncludingPrivate['originalPspFee']);
+        $this->assertEquals('1.22', $donationDataIncludingPrivate['originalPspFee']);
     }
 
     public function testAmountMatchedByChampionDefaultsToZero(): void

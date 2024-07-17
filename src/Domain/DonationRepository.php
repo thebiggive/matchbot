@@ -73,24 +73,24 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $this->getEntityManager()->persist($donation);
         }
 
-        try {
-            if ($donation->getDonationStatus() === DonationStatus::Pending) {
-                // A pending status but an existing Salesforce ID suggests pushes might have ended up out
-                // of order due to race conditions pushing to Salesforce, variable and quite slow
-                // Salesforce performance characteristics, and both client (this) & server (SF) apps being
-                // multi-threaded. The safest thing is not to push a Pending donation to Salesforce a 2nd
-                // time, and just leave updates later in the process to get additional data there. As
-                // far as calling processes and retry logic goes, this should act like a[nother] successful
-                // push.
-                $this->logInfo(sprintf(
-                    'Skipping possible re-push of new-status donation %d, UUID %s, Salesforce ID %s',
-                    $donation->getId(),
-                    $donation->getUuid(),
-                    $donation->getSalesforceId(),
-                ));
-                return true;
-            }
+        if ($donation->getDonationStatus() === DonationStatus::Pending) {
+            // A pending status but an existing Salesforce ID suggests pushes might have ended up out
+            // of order due to race conditions pushing to Salesforce, variable and quite slow
+            // Salesforce performance characteristics, and both client (this) & server (SF) apps being
+            // multi-threaded. The safest thing is not to push a Pending donation to Salesforce a 2nd
+            // time, and just leave updates later in the process to get additional data there. As
+            // far as calling processes and retry logic goes, this should act like a[nother] successful
+            // push.
+            $this->logInfo(sprintf(
+                'Skipping possible re-push of new-status donation %d, UUID %s, Salesforce ID %s',
+                $donation->getId(),
+                $donation->getUuid(),
+                $donation->getSalesforceId(),
+            ));
+            return true;
+        }
 
+        try {
             $salesforceDonationId = $this->getClient()->createOrUpdate($donation);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push the removed donation.
@@ -101,6 +101,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $this->getEntityManager()->persist($donation);
 
             return true; // Report 'success' for simpler summaries and spotting of real errors.
+        } catch (BadRequestException $exception) {
+            return false;
         }
 
         $this->setSalesforceIdIfNeeded($donation, $salesforceDonationId);
@@ -672,6 +674,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
         try {
             if ($donation->getSalesforceId() === null) {
                 $donation = $this->findAndLockOneBy(['uuid' => $donation->getUuid()]);
+                if (!$donation) {
+                    return;
+                }
                 $donation->setSalesforceId($salesforceId);
             }
         } catch (DBALException\LockWaitTimeoutException $exception) {
