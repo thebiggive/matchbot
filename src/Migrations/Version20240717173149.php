@@ -38,7 +38,7 @@ final class Version20240717173149 extends AbstractMigration
                 UPDATE CampaignFunding
                 INNER JOIN `Campaign_CampaignFunding` ON `Campaign_CampaignFunding`.`campaignfunding_id` = `CampaignFunding`.`id`
                 INNER JOIN `Campaign` ON `Campaign`.`id` = `Campaign_CampaignFunding`.`campaign_id`
-                SET fund_id = $newFundNumericId
+                SET CampaignFunding.fund_id = $newFundNumericId
                 WHERE Campaign.salesforceId = '$campaignSFID'
             SQL
             );
