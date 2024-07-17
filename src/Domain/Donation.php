@@ -107,7 +107,7 @@ class Donation extends SalesforceWriteProxy
      * @see Donation::$currencyCode
      */
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
-    protected readonly string $amount;
+    protected string $amount; // todo remember how we made it readonly without breaking tests
 
     /**
      * Fee the charity takes on, in £. Excludes any tax if applicable.
