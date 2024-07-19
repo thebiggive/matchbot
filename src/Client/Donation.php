@@ -81,7 +81,8 @@ class Donation extends Common
             throw new BadRequestException('Donation not created');
         }
 
-        if ($response->getStatusCode() > 201 || $response->getStatusCode() < 200) {
+        if (! in_array($response->getStatusCode(), [200, 201], true)) {
+
             $this->logger->error('Donation upsert got non-success code ' . $response->getStatusCode());
             throw new BadRequestException('Donation not upserted');
         }
