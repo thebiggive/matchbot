@@ -256,11 +256,7 @@ class DonationRepositoryTest extends IntegrationTest
         return [
             [0, false],
             [299, false],
-            // TODO Even with a prophesised response, this last data set gives
-            // "TypeError: Double\Symfony\Component\Messenger\RoutableMessageBus\P5::dispatch(): Return
-            // value must be of type Symfony\Component\Messenger\Envelope, null returned"
-            // Not sure why yet.
-//            [300, true],
+            [300, true],
         ];
     }
 }
