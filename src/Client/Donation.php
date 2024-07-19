@@ -7,15 +7,14 @@ namespace MatchBot\Client;
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Domain\Donation as DonationModel;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\Salesforce18Id;
 
 class Donation extends Common
 {
     /**
-     * @param DonationModel $donation
-     * @return string Salesforce donation ID
      * @throws BadRequestException
      */
-    public function createOrUpdate(DonationModel $donation): string
+    public function createOrUpdate(DonationModel $donation): Salesforce18Id
     {
         if (getenv('DISABLE_CLIENT_PUSH')) {
             $this->logger->info("Client push off: Skipping create of donation {$donation->getUuid()}");
@@ -82,7 +81,6 @@ class Donation extends Common
         }
 
         if (! in_array($response->getStatusCode(), [200, 201], true)) {
-
             $this->logger->error('Donation upsert got non-success code ' . $response->getStatusCode());
             throw new BadRequestException('Donation not upserted');
         }
@@ -95,6 +93,6 @@ class Donation extends Common
         // todo add new property that SF now returns to API docs as distinct from donationId.
         // Semantics were unclear before and SF was sometimes putting its own IDs in `donationId` I think.
 
-        return $donationCreatedResponse['salesforceId'];
+        return Salesforce18Id::of($donationCreatedResponse['salesforceId']);
     }
 }

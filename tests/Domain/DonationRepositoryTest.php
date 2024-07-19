@@ -50,15 +50,18 @@ class DonationRepositoryTest extends TestCase
 
     public function testExistingPushOK(): void
     {
+        $donation = $this->getTestDonation();
+
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
             ->createOrUpdate(Argument::type(Donation::class))
             ->shouldBeCalledOnce()
-            ->willReturn('someNewSfId');
+            ->willReturn(Salesforce18Id::of($donation->getSalesforceId()));
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalled();
         $this->entityManagerProphecy->flush()->shouldBeCalled();
 
-        $success = $this->getRepo($donationClientProphecy)->push($this->getTestDonation(), false);
+
+        $success = $this->getRepo($donationClientProphecy)->push($donation, false);
 
         $this->assertTrue($success);
     }
@@ -67,7 +70,7 @@ class DonationRepositoryTest extends TestCase
     {
         // arrange
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
-        $donationClientProphecy->createOrUpdate(Argument::any())->willReturn('someNewSfId');
+        $donationClientProphecy->createOrUpdate(Argument::any())->willReturn(Salesforce18Id::of('someNewSfIdxxxxxxx'));
         $sut = $this->getRepo($donationClientProphecy);
 
         // Simulate an old donation that was created in OCtober 22 or earlier,

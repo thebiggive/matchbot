@@ -114,7 +114,7 @@ trait DonationTestDataTrait
         $donation->setDonorEmailAddress(EmailAddress::of('john.doe@example.com'));
         $donation->setDonorName(DonorName::of('John', 'Doe'));
         $donation->setDonorHomePostcode('N1 1AA');
-        $donation->setSalesforceId('sfDonation369');
+        $donation->setSalesforceId('sfDonation36912345');
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
         $donation->setTipAmount($tipAmount);
         $donation->setTransactionId('pi_externalId_123');

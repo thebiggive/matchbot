@@ -667,7 +667,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         });
     }
 
-    private function setSalesforceIdIfNeeded(Donation $donation, string $salesforceId): void
+    private function setSalesforceIdIfNeeded(Donation $donation, Salesforce18Id $salesforceId): void
     {
         if ($donation->getSalesforceId() !== null) {
             return;
@@ -696,7 +696,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      *
      * @throws DBALException\LockWaitTimeoutException if some other transaction is holding a lock
      */
-    private function safelySetSalesforceId(string $uuid, string $salesforceId): void
+    private function safelySetSalesforceId(string $uuid, Salesforce18Id $salesforceId): void
     {
         $query = $this->getEntityManager()->createQuery(
             <<<'DQL'
@@ -706,7 +706,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             DQL
         );
 
-        $query->setParameter('salesforceId', $salesforceId);
+        $query->setParameter('salesforceId', $salesforceId->value);
         $query->setParameter('uuid', $uuid);
         $query->execute();
     }
