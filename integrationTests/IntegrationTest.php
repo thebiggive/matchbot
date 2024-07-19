@@ -11,6 +11,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestData;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
@@ -121,8 +122,11 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+        $donationClientProphecy->createOrUpdate(Argument::type(Donation::class))->will(
+        /**
+         * @param array{0: Donation} $args
+         */            fn(array $args) => Salesforce18Id::of($args[0]->getSalesforceId() ?? $this->randomString())
+        );
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
@@ -185,8 +189,9 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+        $donationClientProphecy->createOrUpdate(Argument::type(Donation::class))->willReturn(
+            Salesforce18Id::of($this->randomString())
+        );
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
@@ -406,8 +411,9 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+        $donationClientProphecy->createOrUpdate(Argument::type(Donation::class))->willReturn(
+            Salesforce18Id::of($this->randomString())
+        );
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 

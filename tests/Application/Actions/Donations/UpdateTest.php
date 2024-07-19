@@ -168,7 +168,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             method: 'PUT',
             path: '/v1/donations/87654321-1234-1234-1234-ba0987654321',
-            bodyString: json_encode($this->getTestDonation()->toApiModel()),
+            bodyString: json_encode($this->getTestDonation()->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('87654321-1234-1234-1234-ba0987654321'));
         $route = $this->getRouteWithDonationId('put', '87654321-1234-1234-1234-ba0987654321');
@@ -210,7 +210,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -254,7 +254,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $donationData = $donation->toApiModel();
+        $donationData = $donation->toFrontEndApiModel();
         unset($donationData['status']); // Simulate an API client omitting the status JSON field
 
         $request = $this->createRequest(
@@ -325,7 +325,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -381,7 +381,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -453,7 +453,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -533,7 +533,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -602,7 +602,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -659,7 +659,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ac',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ac'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ac');
@@ -712,7 +712,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donationInRequest->toApiModel()),
+            json_encode($donationInRequest->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -758,7 +758,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         // Remove giftAid after converting to array, as it makes the internal HTTP model invalid.
-        $donationData = $donation->toApiModel();
+        $donationData = $donation->toFrontEndApiModel();
         unset($donationData['optInCharityEmail']);
 
         $request = $this->createRequest(
@@ -810,7 +810,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $bodyArray = $donation->toHookModel();
+        $bodyArray = $donation->toFrontEndApiModel();
         $bodyArray['homeAddress'] = ['123', 'Main St']; // Invalid array type.
 
         $body = json_encode($bodyArray);
@@ -864,7 +864,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         // Remove giftAid after converting to array, as it makes the internal HTTP model invalid.
-        $donationData = $donation->toApiModel();
+        $donationData = $donation->toFrontEndApiModel();
         unset($donationData['giftAid']);
 
         $request = $this->createRequest(
@@ -915,7 +915,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $putArray = $donation->toApiModel();
+        $putArray = $donation->toFrontEndApiModel();
         $putArray['tipAmount'] = '25000.01';
         $putJSON = json_encode($putArray);
 
@@ -990,7 +990,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -1009,7 +1009,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1087,7 +1087,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -1106,7 +1106,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1182,7 +1182,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -1201,7 +1201,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1278,7 +1278,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -1301,7 +1301,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1375,7 +1375,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -1398,7 +1398,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1476,7 +1476,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -1499,7 +1499,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1567,7 +1567,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -1585,7 +1585,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1788,7 +1788,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $requestPayload = $donation->toApiModel();
+        $requestPayload = $donation->toFrontEndApiModel();
         $requestPayload['autoConfirmFromCashBalance'] = true;
         $request = $this->createRequest(
             'PUT',
@@ -1854,7 +1854,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $requestPayload = $donation->toApiModel();
+        $requestPayload = $donation->toFrontEndApiModel();
         $requestPayload['autoConfirmFromCashBalance'] = true;
         $request = $this->createRequest(
             'PUT',
@@ -1930,7 +1930,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $requestPayload = $donation->toApiModel();
+        $requestPayload = $donation->toFrontEndApiModel();
         $requestPayload['autoConfirmFromCashBalance'] = true;
         $request = $this->createRequest(
             'PUT',
@@ -2023,7 +2023,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $requestPayload = $donation->toApiModel();
+        $requestPayload = $donation->toFrontEndApiModel();
         $requestPayload['autoConfirmFromCashBalance'] = true;
         $request = $this->createRequest(
             'PUT',

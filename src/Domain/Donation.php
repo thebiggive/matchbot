@@ -442,35 +442,22 @@ class Donation extends SalesforceWriteProxy
         $this->paymentMethodType = PaymentMethodType::Card;
     }
 
-    /**
-     * @return array A json encode-ready array representation of the donation, for sending to Salesforce.
-     */
-    public function toHookModel(): array
+    public function toSFApiModel(): array
     {
-        $data = $this->toApiModel();
+        $data = [...$this->toFrontEndApiModel(), 'originalPspFee' => (float) $this->getOriginalPspFee()];
 
-        $data['updatedTime'] = $this->getUpdatedDate()->format(DateTimeInterface::ATOM);
-        $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
-        $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
-        $data['originalPspFee'] = (float) $this->getOriginalPspFee();
-        $data['refundedTime'] = $this->refundedAt?->format(DateTimeInterface::ATOM);
-        $data['tbgGiftAidRequestConfirmedCompleteAt'] =
-            $this->tbgGiftAidRequestConfirmedCompleteAt?->format(DateTimeInterface::ATOM);
-        unset(
-            $data['charityName'],
-            $data['donationId'],
-            $data['matchReservedAmount'],
-            $data['matchedAmount'],
-            $data['cardBrand'],
-            $data['cardCountry'],
-        );
+        // As of mid 2024 only the actual donate frontend gets this value, to avoid
+        // confusion around values that are too temporary to be useful in a CRM anyway.
+        unset($data['matchReservedAmount']);
 
         return $data;
     }
 
-    public function toApiModel(): array
+    public function toFrontEndApiModel(): array
     {
         $data = [
+            'amountMatchedByChampionFunds' => (float) $this->getConfirmedChampionWithdrawalTotal(),
+            'amountMatchedByPledges' => (float) $this->getConfirmedPledgeWithdrawalTotal(),
             'billingPostalAddress' => $this->donorBillingPostcode,
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
@@ -501,10 +488,14 @@ class Donation extends SalesforceWriteProxy
             'psp' => $this->getPsp(),
             'pspCustomerId' => $this->getPspCustomerId(),
             'pspMethodType' => $this->getPaymentMethodType()?->value,
+            'refundedTime' => $this->refundedAt?->format(DateTimeInterface::ATOM),
             'status' => $this->getDonationStatus(),
+            'tbgGiftAidRequestConfirmedCompleteAt' =>
+                $this->tbgGiftAidRequestConfirmedCompleteAt?->format(DateTimeInterface::ATOM),
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
             'transactionId' => $this->getTransactionId(),
+            'updatedTime' => $this->getUpdatedDate()->format(DateTimeInterface::ATOM),
         ];
 
         if ($this->getDonationStatus() === DonationStatus::Pending) {

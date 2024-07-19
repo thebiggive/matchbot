@@ -15,6 +15,7 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 
@@ -229,9 +230,16 @@ class DonationRepositoryTest extends IntegrationTest
         \assert($simulatedNow instanceof \DateTimeImmutable);
 
         // assert
-        $method = $donationClientProphecy->create(Argument::type(Donation::class));
+        $method = $donationClientProphecy->createOrUpdate(Argument::type(Donation::class));
         if ($shouldPush) {
-            $method->shouldBeCalledOnce();
+            $method
+                ->shouldBeCalledOnce()
+                ->will(
+                /**
+                 * @param array{0: Donation} $args
+                 */
+                    fn (array $args) => Salesforce18Id::of($args[0]->getSalesforceId() ?? '123456789012345678')
+                );
         } else {
             $method->shouldNotBeCalled();
         }
