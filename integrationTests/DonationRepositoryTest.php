@@ -255,8 +255,8 @@ class DonationRepositoryTest extends IntegrationTest
     {
         // age in seconds, should be pushed to sf
         return [
-//            [0, false],
-//            [299, false],
+            [0, false],
+            [299, false],
             [300, true],
         ];
     }
