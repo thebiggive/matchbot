@@ -5,29 +5,27 @@ declare(strict_types=1);
 namespace MatchBot\Client;
 
 use GuzzleHttp\Exception\RequestException;
-use MatchBot\Application\Messenger\AbstractStateChanged;
-use MatchBot\Application\Messenger\DonationUpdated;
-use MatchBot\Domain\Donation as DonationModel;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Salesforce18Id;
 
 class Donation extends Common
 {
     /**
+     * @throws NotFoundException on missing campaign in a sandbox
      * @throws BadRequestException
      */
-    public function createOrUpdate(DonationModel $donation): Salesforce18Id
+    public function createOrUpdate(DonationUpserted $message): Salesforce18Id
     {
-        // TODO decide if we are best using `AbstractStateChanged` messages or Donation model directly.
         if (getenv('DISABLE_CLIENT_PUSH')) {
-            $this->logger->info("Client push off: Skipping create of donation {$donation->getUuid()}");
+            $this->logger->info("Client push off: Skipping upsert of donation {$message->uuid}}");
             throw new BadRequestException('Client push is off');
         }
 
         try {
             $response = $this->getHttpClient()->post(
-                $this->getSetting('donation', 'baseUri') . '/' . $donation->getUuid(),
-                ['json' => $donation->toSFApiModel()]
+                $this->getSetting('donation', 'baseUri') . '/' . $message->uuid,
+                ['json' => $message->json]
             );
         } catch (RequestException $ex) {
             // Sandboxes that 404 on POST may be trying to sync up donations for non-existent campaigns and
@@ -74,18 +72,18 @@ class Donation extends Common
 
             $this->logger->error(sprintf(
                 'Donation upsert exception for donation UUID %s %s: %s. Body: %s',
-                $donation->getUuid(),
+                $message->uuid,
                 get_class($ex),
                 $ex->getMessage(),
                 $ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A',
             ));
 
-            throw new BadRequestException('Donation not created');
+            throw new BadRequestException('Donation not upserted');
         }
 
         if (! in_array($response->getStatusCode(), [200, 201], true)) {
             $this->logger->error('Donation upsert got non-success code ' . $response->getStatusCode());
-            throw new BadRequestException('Donation not upserted');
+            throw new BadRequestException('Donation not upserted, response code ' . $response->getStatusCode());
         }
 
         /**

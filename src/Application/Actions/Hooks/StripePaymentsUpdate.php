@@ -8,7 +8,7 @@ use Assert\Assertion;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
-use MatchBot\Application\Messenger\DonationUpdated;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
@@ -185,7 +185,7 @@ class StripePaymentsUpdate extends Stripe
         $this->entityManager->persist($donation);
         $this->entityManager->commit();
         $this->entityManager->flush();
-        $this->bus->dispatch(new Envelope(DonationUpdated::fromDonation($donation)));
+        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
 
         return $this->respondWithData($response, $charge);
     }
@@ -400,7 +400,7 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->entityManager->flush();
-        $this->bus->dispatch(new Envelope(DonationUpdated::fromDonation($donation)));
+        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
 
         return $this->respond($response, new ActionPayload(200));
     }
@@ -503,7 +503,7 @@ class StripePaymentsUpdate extends Stripe
         }
 
         $this->entityManager->flush();
-        $this->bus->dispatch(new Envelope(DonationUpdated::fromDonation($donation)));
+        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
     }
 
     private function handleCashBalanceUpdate(Event $event, Response $response): Response

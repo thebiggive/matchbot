@@ -12,10 +12,8 @@ use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
 use MatchBot\Application\Matching;
-use MatchBot\Application\Messenger\DonationCreated;
-use MatchBot\Application\Messenger\DonationUpdated;
-use MatchBot\Application\Messenger\Handler\DonationCreatedHandler;
-use MatchBot\Application\Messenger\Handler\DonationUpdatedHandler;
+use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
@@ -283,8 +281,7 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     Messages\Donation::class => [ClaimBotTransport::class],
                     StripePayout::class => [TransportInterface::class],
-                    DonationCreated::class => [TransportInterface::class],
-                    DonationUpdated::class => [TransportInterface::class],
+                    DonationUpserted::class => [TransportInterface::class],
                 ],
                 $c,
             ));
@@ -294,8 +291,7 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
                     StripePayout::class => [$c->get(StripePayoutHandler::class)],
-                    DonationCreated::class => [$c->get(DonationCreatedHandler::class)],
-                    DonationUpdated::class => [$c->get(DonationUpdatedHandler::class)],
+                    DonationUpserted::class => [$c->get(DonationUpsertedHandler::class)],
                 ],
             ));
             $handleMiddleware->setLogger($logger);
@@ -420,8 +416,7 @@ return function (ContainerBuilder $containerBuilder) {
             $busContainer->set('claimbot.donation.claim', $bus);
             $busContainer->set('claimbot.donation.result', $bus);
             $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
-            $busContainer->set(DonationCreated::class, $bus);
-            $busContainer->set(DonationUpdated::class, $bus);
+            $busContainer->set(DonationUpserted::class, $bus);
 
             return new RoutableMessageBus($busContainer, $bus);
         },
@@ -492,13 +487,13 @@ return function (ContainerBuilder $containerBuilder) {
                 return new DonationService(
                     donationRepository: $c->get(DonationRepository::class),
                     campaignRepository: $c->get(CampaignRepository::class),
-                    rateLimiterFactory: $rateLimiterFactory,
                     logger: $c->get(LoggerInterface::class),
                     entityManager: $c->get(RetrySafeEntityManager::class),
                     stripe: $c->get(\MatchBot\Client\Stripe::class),
                     matchingAdapter: $c->get(Matching\Adapter::class),
                     chatter: $chatter,
                     clock: $c->get(ClockInterfaceAlias::class),
+                    rateLimiterFactory: $rateLimiterFactory,
                 );
             }
     ]);

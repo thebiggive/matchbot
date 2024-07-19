@@ -6,6 +6,7 @@ namespace MatchBot\Tests\Application\Messenger\Handler;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Domain\Donation;
@@ -412,7 +413,7 @@ class StripePayoutHandlerTest extends TestCase
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
+            ->push(Argument::type(DonationUpserted::class), false)
             ->shouldNotBeCalled();
 
         return $donationRepoProphecy->reveal();

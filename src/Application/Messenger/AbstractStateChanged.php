@@ -10,11 +10,14 @@ use MatchBot\Application\Assertion;
  */
 abstract class AbstractStateChanged
 {
-    protected function __construct(
-        public string $uuid,
-        public ?string $salesforceId,
-        public array $json,
-    ) {
+    /**
+     * @psalm-suppress PossiblyUnusedProperty Plan is to use `$json` with mandates
+     */
+    public array $json;
+
+    protected function __construct(public string $uuid, array $json)
+    {
         Assertion::uuid($this->uuid);
+        $this->json = $json;
     }
 }

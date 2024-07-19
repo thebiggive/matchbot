@@ -7,8 +7,7 @@ use DI\Container;
 use GuzzleHttp\Psr7\ServerRequest;
 use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Messenger\DonationCreated;
-use MatchBot\Application\Messenger\DonationUpdated;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
@@ -122,7 +121,7 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->createOrUpdate(Argument::type(DonationCreated::class))->will(
+        $donationClientProphecy->createOrUpdate(Argument::type(DonationUpserted::class))->will(
         /**
          * @param array{0: Donation} $args
          */            fn(array $args) => Salesforce18Id::of($args[0]->getSalesforceId() ?? $this->randomString())
@@ -189,7 +188,7 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->createOrUpdate(Argument::type(Donation::class))->willReturn(
+        $donationClientProphecy->createOrUpdate(Argument::type(DonationUpserted::class))->willReturn(
             Salesforce18Id::of($this->randomString())
         );
 
@@ -411,7 +410,7 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->createOrUpdate(Argument::type(Donation::class))->willReturn(
+        $donationClientProphecy->createOrUpdate(Argument::type(DonationUpserted::class))->willReturn(
             Salesforce18Id::of($this->randomString())
         );
 

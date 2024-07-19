@@ -7,10 +7,10 @@ namespace MatchBot\Tests;
 use DI\ContainerBuilder;
 use Exception;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Application\Messenger\DonationCreated;
-use MatchBot\Application\Messenger\DonationUpdated;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\Donation;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -216,21 +216,12 @@ class TestCase extends PHPUnitTestCase
         ), TestCase::someCampaign());
     }
 
-    public static function someCreatedMessage(): DonationCreated
+    public static function someUpsertedMessage(): DonationUpserted
     {
         $donation = self::someDonation();
         $donation->setTransactionId('pi_1234');
 
-        return DonationCreated::fromDonation($donation);
-    }
-
-    public static function someUpdatedMessage(): DonationUpdated
-    {
-        $donation = self::someDonation();
-        $donation->setSalesforceId('006123456789012345');
-        $donation->setTransactionId('pi_1234');
-
-        return DonationUpdated::fromDonation($donation);
+        return DonationUpserted::fromDonation($donation);
     }
 
     /**

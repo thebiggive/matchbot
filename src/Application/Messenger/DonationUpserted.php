@@ -4,14 +4,18 @@ namespace MatchBot\Application\Messenger;
 
 use MatchBot\Domain\Donation;
 
-class DonationCreated extends AbstractStateChanged
+class DonationUpserted extends AbstractStateChanged
 {
+    private function __construct(public string $uuid, public array $json)
+    {
+        parent::__construct($uuid, $json);
+    }
+
     public static function fromDonation(Donation $donation): self
     {
         return new self(
             uuid: $donation->getUuid(),
-            salesforceId: null,
-            json: $donation->toApiModel(),
+            json: $donation->toSFApiModel(),
         );
     }
 }

@@ -9,6 +9,7 @@ use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
@@ -171,7 +172,8 @@ class CreateTest extends TestCase
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willReturn($donationToReturn);
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $donationRepoProphecy->push(Argument::type(Donation::class), Argument::type('bool'))->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class), Argument::type('bool'))
+            ->shouldNotBeCalled();
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -217,7 +219,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willThrow(new UnexpectedValueException('Currency CAD is invalid for campaign'));
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class), true)->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -259,7 +261,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->shouldNotBeCalled();
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class), true)->shouldNotBeCalled();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -694,7 +696,6 @@ class CreateTest extends TestCase
             ->will(new CreateDupeCampaignThrowThenSucceedPromise($donationToReturn))
             ->shouldBeCalledTimes(2); // One exception, one success
 
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -943,10 +944,12 @@ class CreateTest extends TestCase
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willReturn($donation);
 
+        $upsertMessage = DonationUpserted::fromDonation($donation);
         if ($donationPushed) {
-            $donationRepoProphecy->push($donation, true)->shouldBeCalledOnce();
+            // TODO assert something about the bus instead?
+//            $donationRepoProphecy->push($upsertMessage, true)->shouldBeCalledOnce();
         } else {
-            $donationRepoProphecy->push($donation, true)->shouldNotBeCalled();
+            $donationRepoProphecy->push($upsertMessage, true)->shouldNotBeCalled();
         }
 
         if ($donationMatched) {

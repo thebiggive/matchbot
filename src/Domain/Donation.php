@@ -435,14 +435,6 @@ class Donation extends SalesforceWriteProxy
         }
     }
 
-    public function replaceNullPaymentMethodTypeWithCard(): void
-    {
-        if ($this->paymentMethodType !== null) {
-            throw new \Exception('Should only be called when payment method type is null');
-        }
-        $this->paymentMethodType = PaymentMethodType::Card;
-    }
-
     public function toSFApiModel(): array
     {
         $data = [...$this->toFrontEndApiModel(), 'originalPspFee' => (float) $this->getOriginalPspFee()];

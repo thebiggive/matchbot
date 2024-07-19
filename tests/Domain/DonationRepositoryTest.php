@@ -13,7 +13,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
-use MatchBot\Application\Messenger\DonationUpdated;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -51,32 +51,36 @@ class DonationRepositoryTest extends TestCase
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $this->entityManagerProphecy->getConnection()->willReturn($connectionWhichUpdatesFine->reveal());
 
+        $salesforceIdSettingQuery = $this->prophesize(AbstractQuery::class);
+        $salesforceIdSettingQuery->setParameter(Argument::type('string'), Argument::type('string'));
+        $salesforceIdSettingQuery->execute();
+        $this->entityManagerProphecy->createQuery(Argument::type('string'))
+            ->willReturn($salesforceIdSettingQuery->reveal());
+
         parent::setUp();
     }
 
     public function testExistingPushOK(): void
     {
-        $donation = $this->getTestDonation();
-
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->put(Argument::type(DonationUpdated::class))
+            ->createOrUpdate(Argument::type(DonationUpserted::class))
             ->shouldBeCalledOnce()
-            ->willReturn(true);
+            ->willReturn(Salesforce18Id::of('sfDonation36912345'));
 
         // Just confirm it doesn't throw.
-        $this->getRepo($donationClientProphecy)->push(DonationUpdated::fromDonation($this->getTestDonation()), false);
+        $this->getRepo($donationClientProphecy)->push(DonationUpserted::fromDonation($this->getTestDonation()), false);
     }
 
     public function testExistingPush404InSandbox(): void
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->put(Argument::type(DonationUpdated::class))
+            ->createOrUpdate(Argument::type(DonationUpserted::class))
             ->shouldBeCalledOnce()
             ->willThrow(Client\NotFoundException::class);
 
-        $this->getRepo($donationClientProphecy)->push(self::someUpdatedMessage(), false);
+        $this->getRepo($donationClientProphecy)->push(self::someUpsertedMessage(), false);
     }
 
     public function testBuildFromApiRequestSuccess(): void
@@ -168,13 +172,15 @@ class DonationRepositoryTest extends TestCase
 
     public function testPushResponseError(): void
     {
+        $this->expectException(Client\BadRequestException::class); // This kind's left unhandled
+
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->put(Argument::type(DonationUpdated::class))
+            ->createOrUpdate(Argument::type(DonationUpserted::class))
             ->shouldBeCalledOnce()
-            ->willReturn(false); // Return when there's an HTTP exception
+            ->willThrow(Client\BadRequestException::class);
 
-        $this->getRepo($donationClientProphecy)->push(self::someUpdatedMessage(), false);
+        $this->getRepo($donationClientProphecy)->push(self::someUpsertedMessage(), false);
     }
 
     public function testStripeAmountForCharityWithTipUsingAmex(): void

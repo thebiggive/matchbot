@@ -42,14 +42,6 @@ abstract class SalesforceWriteProxy extends SalesforceProxy
     protected string $salesforcePushStatus = self::PUSH_STATUS_PENDING_CREATE;
 
     /**
-     * @param DateTime $salesforceLastPush
-     */
-    public function setSalesforceLastPush(DateTime $salesforceLastPush): void
-    {
-        $this->salesforceLastPush = $salesforceLastPush;
-    }
-
-    /**
      * @return string
      */
     public function getSalesforcePushStatus(): string

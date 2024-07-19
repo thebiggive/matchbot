@@ -14,16 +14,19 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
-use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
+use Prophecy\Argument;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Random\Randomizer;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 
 class RedistributeMatchingCommandTest extends IntegrationTest
 {
@@ -32,6 +35,8 @@ class RedistributeMatchingCommandTest extends IntegrationTest
     private Campaign $closedCampaign;
     private CampaignFunding $openCampaignChampionFunding;
     private CampaignFunding $closedCampaignChampionFunding;
+    /** @var ObjectProphecy<RoutableMessageBus> */
+    private ObjectProphecy $messageBusProphecy;
 
     public function setUp(): void
     {
@@ -42,6 +47,10 @@ class RedistributeMatchingCommandTest extends IntegrationTest
 
         [$this->openCampaign, $this->openCampaignChampionFunding] = $this->prepareCampaign(true);
         [$this->closedCampaign, $this->closedCampaignChampionFunding] = $this->prepareCampaign(false);
+
+        $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
+        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class), Argument::cetera())
+            ->willReturnArgument();
     }
 
     public function testCommandRedistributesMatchingToUsePledges(): void
@@ -61,9 +70,11 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         // act
         $command = new RedistributeMatchFunds(
             $this->campaignFundingRepository,
+            $this->createStub(EntityManagerInterface::class),
             new \DateTimeImmutable('now'),
             $this->getService(DonationRepository::class),
-            $this->getService(LoggerInterface::class)
+            $this->getService(LoggerInterface::class),
+            $this->messageBusProphecy->reveal(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->run(new ArrayInput([]), $output);
@@ -105,9 +116,11 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         // act
         $command = new RedistributeMatchFunds(
             $this->campaignFundingRepository,
+            $this->createStub(EntityManagerInterface::class),
             new \DateTimeImmutable('now'),
             $this->getService(DonationRepository::class),
-            $this->getService(LoggerInterface::class)
+            $this->getService(LoggerInterface::class),
+            $this->messageBusProphecy->reveal(),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->run(new ArrayInput([]), $output);

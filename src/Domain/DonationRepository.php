@@ -13,8 +13,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\AbstractStateChanged;
-use MatchBot\Application\Messenger\DonationCreated;
-use MatchBot\Application\Messenger\DonationUpdated;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
@@ -52,10 +51,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->matchingAdapter = $adapter;
     }
 
-    public function doCreate(AbstractStateChanged $changeMessage): ?string
+    public function doCreate(AbstractStateChanged $changeMessage): bool
     {
+        Assertion::isInstanceOf($changeMessage, DonationUpserted::class);
+
         try {
-            $salesforceDonationId = $this->getClient()->create($changeMessage);
+            $salesforceDonationId = $this->getClient()->createOrUpdate($changeMessage);
             $this->setSalesforceIdIfNeeded($changeMessage, $salesforceDonationId);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
@@ -63,18 +64,20 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 "Marking Salesforce donation {$changeMessage->uuid} as campaign removed; will not try to push again."
             );
 
-            return null;
+            return false;
         } catch (BadRequestException $exception) {
-            return null;
+            return false;
         }
 
-        return $salesforceDonationId;
+        return true;
     }
 
     public function doUpdate(AbstractStateChanged $changeMessage): bool
     {
+        Assertion::isInstanceOf($changeMessage, DonationUpserted::class);
+
         try {
-            $salesforceDonationId = $this->getClient()->put($changeMessage);
+            $salesforceDonationId = $this->getClient()->createOrUpdate($changeMessage);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push the removed donation.
             $this->logInfo(
@@ -683,7 +686,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 continue;
             }
 
-            $bus->dispatch(new Envelope(DonationCreated::fromDonation($proxy)));
+            $bus->dispatch(new Envelope(DonationUpserted::fromDonation($proxy)));
         }
 
         $proxiesToUpdate = $this->findBy(
@@ -697,7 +700,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 continue;
             }
 
-            $bus->dispatch(new Envelope(DonationUpdated::fromDonation($proxy)));
+            $bus->dispatch(new Envelope(DonationUpserted::fromDonation($proxy)));
         }
 
         return count($proxiesToCreate) + count($proxiesToUpdate);
@@ -737,24 +740,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             WHERE donation.uuid = :uuid
             DQL
         );
-
         $query->setParameter('salesforceId', $salesforceId->value);
         $query->setParameter('uuid', $uuid);
         $query->execute();
-        $proxiesToUpdate = $this->findBy(
-            ['salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE],
-            ['updatedAt' => 'ASC'],
-            self::MAX_PER_BULK_PUSH,
-        );
-
-        foreach ($proxiesToUpdate as $proxy) {
-            if ($proxy->getUpdatedDate() > $fiveMinutesAgo) {
-                continue;
-            }
-
-            $bus->dispatch(new Envelope(DonationUpdated::fromDonation($proxy)));
-        }
-
-        return count($proxiesToCreate) + count($proxiesToUpdate);
     }
 }

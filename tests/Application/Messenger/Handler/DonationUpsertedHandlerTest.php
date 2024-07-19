@@ -2,8 +2,8 @@
 
 namespace MatchBot\Tests\Application\Messenger\Handler;
 
-use MatchBot\Application\Messenger\DonationUpdated;
-use MatchBot\Application\Messenger\Handler\DonationUpdatedHandler;
+use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -12,7 +12,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
-class DonationUpdatedHandlerTest extends TestCase
+class DonationUpsertedHandlerTest extends TestCase
 {
     use ProphecyTrait;
 
@@ -26,14 +26,14 @@ class DonationUpdatedHandlerTest extends TestCase
 
     public function testItPushesOneDonationToSf(): void
     {
-        $this->donationRepositoryProphecy->push(Argument::type(DonationUpdated::class), false)->shouldBeCalledOnce();
+        $this->donationRepositoryProphecy->push(Argument::type(DonationUpserted::class), false)->shouldBeCalledOnce();
 
-        $sut = new DonationUpdatedHandler(
+        $sut = new DonationUpsertedHandler(
             $this->donationRepositoryProphecy->reveal(),
             new NullLogger(),
         );
 
-        $sut->__invoke(self::someUpdatedMessage());
+        $sut->__invoke(self::someUpsertedMessage());
     }
 
     /**
@@ -41,18 +41,18 @@ class DonationUpdatedHandlerTest extends TestCase
      */
     public function testItLogsErrorIfDonationCannotBePushed(): void
     {
-        $this->donationRepositoryProphecy->push(Argument::type(DonationUpdated::class), false)
+        $this->donationRepositoryProphecy->push(Argument::type(DonationUpserted::class), false)
             ->willThrow(new \Exception('Failed to push to SF'));
 
         $loggerWithOneError = $this->prophesize(LoggerInterface::class);
         $loggerWithOneError->info(Argument::type('string'));
         $loggerWithOneError->error(Argument::type('string'))->shouldBeCalledOnce();
 
-        $sut = new DonationUpdatedHandler(
+        $sut = new DonationUpsertedHandler(
             $this->donationRepositoryProphecy->reveal(),
             $loggerWithOneError->reveal(),
         );
 
-        $sut->__invoke(self::someUpdatedMessage());
+        $sut->__invoke(self::someUpsertedMessage());
     }
 }
