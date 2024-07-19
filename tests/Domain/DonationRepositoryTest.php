@@ -70,13 +70,16 @@ class DonationRepositoryTest extends TestCase
     {
         // arrange
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
-        $donationClientProphecy->createOrUpdate(Argument::any())->willReturn(Salesforce18Id::of('someNewSfIdxxxxxxx'));
+        $donation = $this->getTestDonation();
+        $donationClientProphecy->createOrUpdate(Argument::any())->willReturn(
+            Salesforce18Id::of($donation->getSalesforceId() ?? throw new \Exception('missing SF ID'))
+        );
         $sut = $this->getRepo($donationClientProphecy);
 
         // Simulate an old donation that was created in OCtober 22 or earlier,
         // before we forced every donation to have a Payment Method Type set.
         // May want to make the property non-nullalble but will require updating DB records.
-        $donation = $this->getTestDonation();
+
         $paymentMethodTypeProperty = new \ReflectionProperty(Donation::class, 'paymentMethodType');
         $paymentMethodTypeProperty->setValue($donation, null);
 
