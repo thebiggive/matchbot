@@ -76,8 +76,6 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Cancelled);
 
-        $upsertMessage = DonationUpserted::fromDonation($donation);
-
         // TODO expect something on bus instead
 //        $this->donationRepositoryProphecy->push($upsertMessage, false)->shouldBeCalled();
         $this->donationRepositoryProphecy->releaseMatchFunds($donation)->shouldBeCalled();

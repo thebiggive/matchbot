@@ -6,7 +6,6 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
@@ -1549,7 +1548,6 @@ class UpdateTest extends TestCase
             'app' => $app,
             'request' => $request,
             'route' => $route,
-            'donationRepoProphecy' => $donationRepoProphecy,
             'entityManagerProphecy' => $entityManagerProphecy,
         ] =
             $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
@@ -1607,7 +1605,6 @@ class UpdateTest extends TestCase
             'app' => $app,
             'request' => $request,
             'route' => $route,
-            'donationRepoProphecy' => $donationRepoProphecy,
             'stripeProphecy' => $stripeProphecy,
             'entityManagerProphecy' => $entityManagerProphecy
         ] = $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
