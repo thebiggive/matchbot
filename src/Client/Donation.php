@@ -88,7 +88,7 @@ class Donation extends Common
         /**
          * @var array{'salesforceId': string} $donationCreatedResponse
          */
-        $donationCreatedResponse = json_decode((string) $response->getBody(), true);
+        $donationCreatedResponse = json_decode($response->getBody()->getContents(), true);
 
         // todo add new property that SF now returns to API docs as distinct from donationId.
         // Semantics were unclear before and SF was sometimes putting its own IDs in `donationId` I think.
