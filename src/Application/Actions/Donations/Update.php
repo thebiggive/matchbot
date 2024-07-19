@@ -434,7 +434,7 @@ class Update extends Action
 
         $this->save($donation);
 
-        return $this->respondWithData($response, $donation->toApiModel());
+        return $this->respondWithData($response, $donation->toFrontEndApiModel());
     }
 
     private function cancel(Donation $donation, Response $response, array $args): Response
@@ -443,7 +443,7 @@ class Update extends Action
             $this->logger->info("Donation ID {$args['donationId']} was already Cancelled");
             $this->entityManager->rollback();
 
-            return $this->respondWithData($response, $donation->toApiModel());
+            return $this->respondWithData($response, $donation->toFrontEndApiModel());
         }
 
         if ($donation->getDonationStatus()->isSuccessful()) {
@@ -503,7 +503,7 @@ class Update extends Action
             }
         }
 
-        return $this->respondWithData($response, $donation->toApiModel());
+        return $this->respondWithData($response, $donation->toFrontEndApiModel());
     }
 
     /**

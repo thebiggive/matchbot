@@ -442,7 +442,18 @@ class Donation extends SalesforceWriteProxy
         $this->paymentMethodType = PaymentMethodType::Card;
     }
 
-    public function toApiModel(bool $forSalesforce = false): array
+    public function toSFApiModel(): array
+    {
+        $data = [...$this->toFrontEndApiModel(), 'originalPspFee' => (float) $this->getOriginalPspFee()];
+
+        // As of mid 2024 only the actual donate frontend gets this value, to avoid
+        // confusion around values that are too temporary to be useful in a CRM anyway.
+        unset($data['matchReservedAmount']);
+
+        return $data;
+    }
+
+    public function toFrontEndApiModel(): array
     {
         $data = [
             'amountMatchedByChampionFunds' => (float) $this->getConfirmedChampionWithdrawalTotal(),
@@ -487,11 +498,7 @@ class Donation extends SalesforceWriteProxy
             'updatedTime' => $this->getUpdatedDate()->format(DateTimeInterface::ATOM),
         ];
 
-        if ($forSalesforce) {
-            $data['originalPspFee'] = (float) $this->getOriginalPspFee();
-        } elseif ($this->getDonationStatus() === DonationStatus::Pending) {
-            // As of mid 2024 only the actual donate frontend gets this value, to avoid
-            // confusion around values that are too temporary to be useful in a CRM anyway.
+        if ($this->getDonationStatus() === DonationStatus::Pending) {
             $data['matchReservedAmount'] = (float) $this->getFundingWithdrawalTotal();
         }
 

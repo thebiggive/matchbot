@@ -198,7 +198,7 @@ class DonationTest extends TestCase
         $this->assertEquals('1.23', $donation->getOriginalPspFee());
     }
 
-    public function testToApiModel(): void
+    public function testtoFrontEndApiModel(): void
     {
         $pledge = new Pledge();
         $pledge->setCurrencyCode('GBP');
@@ -214,14 +214,14 @@ class DonationTest extends TestCase
         $donation = $this->getTestDonation();
         $donation->addFundingWithdrawal($fundingWithdrawal);
 
-        $donationData = $donation->toApiModel();
+        $donationData = $donation->toFrontEndApiModel();
 
         $this->assertEquals('john.doe@example.com', $donationData['emailAddress']);
         $this->assertEquals('1.23', $donationData['matchedAmount']);
         $this->assertIsString($donationData['collectedTime']);
         $this->assertArrayNotHasKey('originalPspFee', $donationData);
 
-        $donationDataIncludingPrivate = $donation->toApiModel(forSalesforce: true);
+        $donationDataIncludingPrivate = $donation->toSFApiModel();
         $this->assertEquals('1.22', $donationDataIncludingPrivate['originalPspFee']);
     }
 
@@ -229,7 +229,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
 
-        $amountMatchedByChampionFunds = $donation->toApiModel()['amountMatchedByChampionFunds'];
+        $amountMatchedByChampionFunds = $donation->toFrontEndApiModel()['amountMatchedByChampionFunds'];
 
         $this->assertSame(0.0, $amountMatchedByChampionFunds);
     }
@@ -238,7 +238,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
 
-        $amountMatchedByPledges = $donation->toApiModel()['amountMatchedByChampionFunds'];
+        $amountMatchedByPledges = $donation->toFrontEndApiModel()['amountMatchedByChampionFunds'];
 
         $this->assertSame(0.0, $amountMatchedByPledges);
     }
@@ -259,7 +259,7 @@ class DonationTest extends TestCase
         $donation->addFundingWithdrawal($withdrawal0);
         $donation->addFundingWithdrawal($withdrawal1);
 
-        $amountMatchedByPledges = $donation->toApiModel()['amountMatchedByChampionFunds'];
+        $amountMatchedByPledges = $donation->toFrontEndApiModel()['amountMatchedByChampionFunds'];
 
         \assert(1 + 2 === 3);
         $this->assertSame(3.0, $amountMatchedByPledges);
@@ -288,12 +288,12 @@ class DonationTest extends TestCase
         $this->assertSame('3.00', $amountMatchedByPledges);
     }
 
-    public function testToApiModelWhenRefunded(): void
+    public function testtoFrontEndApiModelWhenRefunded(): void
     {
         $donation = $this->getTestDonation();
         $donation->recordRefundAt(new \DateTimeImmutable());
 
-        $donationData = $donation->toApiModel();
+        $donationData = $donation->toFrontEndApiModel();
 
         $this->assertIsString($donationData['collectedTime']);
         $this->assertIsString($donationData['refundedTime']);
@@ -411,7 +411,7 @@ class DonationTest extends TestCase
 
         $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 15:00'));
 
-        $donationApiModel = $donation->toApiModel();
+        $donationApiModel = $donation->toFrontEndApiModel();
 
         $this->assertSame(DonationStatus::Refunded, $donationApiModel['status']);
         $this->assertSame('2023-06-22T15:00:00+00:00', $donationApiModel['refundedTime']);
@@ -603,7 +603,7 @@ class DonationTest extends TestCase
         $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 15:00'));
         $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 16:00'));
 
-        $donationApiModel = $donation->toApiModel();
+        $donationApiModel = $donation->toFrontEndApiModel();
 
         $this->assertSame(DonationStatus::Refunded, $donationApiModel['status']);
         $this->assertSame('2023-06-22T15:00:00+00:00', $donationApiModel['refundedTime']);
