@@ -669,27 +669,45 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     private function setSalesforceIdIfNeeded(Donation $donation, string $salesforceId): void
     {
-        // If Salesforce ID wasn't set yet, try to lock the record to safely set it. If it
+        if ($donation->getSalesforceId() !== null) {
+            return;
+        }
+
+        // If Salesforce ID wasn't set yet, try to safely set it. If it
         // fails, this should be safe to leave for a later update. Salesforce has UUIDs so
         // we won't lose the ability to reconcile the records.
+        $uuid = $donation->getUuid();
         try {
-            if ($donation->getSalesforceId() === null) {
-                $uuid = $donation->getUuid();
-                $this->getEntityManager()->wrapInTransaction(function () use ($uuid, $salesforceId) {
-                    $donation = $this->findAndLockOneBy(['uuid' => $uuid]);
-                    if (!$donation) {
-                        return;
-                    }
-                    $donation->setSalesforceId($salesforceId);
-                });
-            }
+            $this->safelySetSalesforceId($uuid, $salesforceId);
         } catch (DBALException\LockWaitTimeoutException $exception) {
             $this->logWarning(sprintf(
-                'Failed to lock donation %s for setting Salesforce ID, will leave for later – %s: %s',
-                $donation->getUuid(),
-                get_class($exception),
+                'Lock unavailable to give donation %s Salesforce ID %s, will leave for later: %s',
+                $uuid,
+                $salesforceId,
                 $exception->getMessage(),
             ));
         }
+    }
+
+    /**
+     * Sets a Salesforce ID without its own lock and importantly without the ORM, using
+     * a raw DQL `UPDATE` that should make it safe irrespective of ORM work that could
+     * also be happening on the record.
+     *
+     * @throws DBALException\LockWaitTimeoutException if some other transaction is holding a lock
+     */
+    private function safelySetSalesforceId(string $uuid, string $salesforceId): void
+    {
+        $query = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            UPDATE Matchbot\Domain\Donation donation
+            SET donation.salesforceId = :salesforceId
+            WHERE donation.uuid = :uuid
+            DQL
+        );
+
+        $query->setParameter('salesforceId', $salesforceId);
+        $query->setParameter('uuid', $uuid);
+        $query->execute();
     }
 }
