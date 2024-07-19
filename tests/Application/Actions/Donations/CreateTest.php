@@ -26,11 +26,9 @@ use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\App;
 use Slim\Exception\HttpUnauthorizedException;
-use Stripe\Exception\PermissionException;
 use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\MockClock;
-use Symfony\Component\Notifier\Message\ChatMessage;
 use UnexpectedValueException;
 
 class CreateTest extends TestCase
@@ -1042,8 +1040,6 @@ class CreateTest extends TestCase
         $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
         $donation->setCharityFee('0.43');
-
-
 
         return $donation;
     }

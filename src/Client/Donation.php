@@ -25,7 +25,12 @@ class Donation extends Common
         try {
             $response = $this->getHttpClient()->post(
                 $this->getSetting('donation', 'baseUri') . '/' . $message->uuid,
-                ['json' => $message->json]
+                [
+                    'json' => $message->json,
+                    'headers' => [
+                        'X-Webhook-Verify-Hash' => $this->hash(json_encode($message->json)),
+                    ],
+                ]
             );
         } catch (RequestException $ex) {
             // Sandboxes that 404 on POST may be trying to sync up donations for non-existent campaigns and
@@ -95,5 +100,10 @@ class Donation extends Common
         // Semantics were unclear before and SF was sometimes putting its own IDs in `donationId` I think.
 
         return Salesforce18Id::of($donationCreatedResponse['salesforceId']);
+    }
+
+    private function hash(string $body): string
+    {
+        return hash_hmac('sha256', trim($body), getenv('WEBHOOK_DONATION_SECRET'));
     }
 }
