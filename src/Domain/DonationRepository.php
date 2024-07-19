@@ -10,6 +10,7 @@ use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Client\BadRequestException;
@@ -46,8 +47,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
     {
         $donation = $proxy;
         try {
-            $salesforceDonationId = $this->getClient()->createOrUpdate($donation);
-            $this->setSalesforceIdIfNeeded($donation, $salesforceDonationId);
+            $salesforceDonationId = $this->getClient()->create($donation);
+            $donation->setSalesforceId($salesforceDonationId);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
             $this->logInfo(
@@ -73,25 +74,25 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $this->getEntityManager()->persist($donation);
         }
 
-        if ($donation->getDonationStatus() === DonationStatus::Pending) {
-            // A pending status but an existing Salesforce ID suggests pushes might have ended up out
-            // of order due to race conditions pushing to Salesforce, variable and quite slow
-            // Salesforce performance characteristics, and both client (this) & server (SF) apps being
-            // multi-threaded. The safest thing is not to push a Pending donation to Salesforce a 2nd
-            // time, and just leave updates later in the process to get additional data there. As
-            // far as calling processes and retry logic goes, this should act like a[nother] successful
-            // push.
-            $this->logInfo(sprintf(
-                'Skipping possible re-push of new-status donation %d, UUID %s, Salesforce ID %s',
-                $donation->getId(),
-                $donation->getUuid(),
-                $donation->getSalesforceId(),
-            ));
-            return true;
-        }
-
         try {
-            $salesforceDonationId = $this->getClient()->createOrUpdate($donation);
+            if ($donation->getDonationStatus() === DonationStatus::Pending) {
+                // A pending status but an existing Salesforce ID suggests pushes might have ended up out
+                // of order due to race conditions pushing to Salesforce, variable and quite slow
+                // Salesforce performance characteristics, and both client (this) & server (SF) apps being
+                // multi-threaded. The safest thing is not to push a Pending donation to Salesforce a 2nd
+                // time, and just leave updates later in the process to get additional data there. As
+                // far as calling processes and retry logic goes, this should act like a[nother] successful
+                // push.
+                $this->logInfo(sprintf(
+                    'Skipping possible re-push of new-status donation %d, UUID %s, Salesforce ID %s',
+                    $donation->getId(),
+                    $donation->getUuid(),
+                    $donation->getSalesforceId(),
+                ));
+                return true;
+            }
+
+            $result = $this->getClient()->put($donation);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push the removed donation.
             $this->logInfo(
@@ -101,13 +102,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $this->getEntityManager()->persist($donation);
 
             return true; // Report 'success' for simpler summaries and spotting of real errors.
-        } catch (BadRequestException $exception) {
-            return false;
         }
 
-        $this->setSalesforceIdIfNeeded($donation, $salesforceDonationId);
-
-        return true;
+        return $result;
     }
 
     /**
@@ -635,7 +632,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     /**
      * Locks row in DB to prevent concurrent updates. See jira MAT-260
-     * Requires an open transaction to be managed by the caller.
      * @throws DBALException\LockWaitTimeoutException
      */
     public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation
@@ -665,57 +661,5 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $this->getEntityManager()->remove($fundingWithdrawal);
             }
         });
-    }
-
-    private function setSalesforceIdIfNeeded(Donation $donation, Salesforce18Id $salesforceId): void
-    {
-        $oldSFID = $donation->getSalesforceId();
-        Assertion::nullOrEq(
-            $oldSFID,
-            $salesforceId->value,
-            "Refusing to change already set SF ID from {$oldSFID} to {$salesforceId} on donation " .
-            ($donation->getId() ?? 'no id')
-        );
-
-        if ($oldSFID !== null) {
-            return;
-        }
-
-        // If Salesforce ID wasn't set yet, try to safely set it. If it
-        // fails, this should be safe to leave for a later update. Salesforce has UUIDs so
-        // we won't lose the ability to reconcile the records.
-        $uuid = $donation->getUuid();
-        try {
-            $this->safelySetSalesforceId($uuid, $salesforceId);
-        } catch (DBALException\LockWaitTimeoutException $exception) {
-            $this->logWarning(sprintf(
-                'Lock unavailable to give donation %s Salesforce ID %s, will leave for later: %s',
-                $uuid,
-                $salesforceId,
-                $exception->getMessage(),
-            ));
-        }
-    }
-
-    /**
-     * Sets a Salesforce ID without its own lock and importantly without the ORM, using
-     * a raw DQL `UPDATE` that should make it safe irrespective of ORM work that could
-     * also be happening on the record.
-     *
-     * @throws DBALException\LockWaitTimeoutException if some other transaction is holding a lock
-     */
-    private function safelySetSalesforceId(string $uuid, Salesforce18Id $salesforceId): void
-    {
-        $query = $this->getEntityManager()->createQuery(
-            <<<'DQL'
-            UPDATE Matchbot\Domain\Donation donation
-            SET donation.salesforceId = :salesforceId
-            WHERE donation.uuid = :uuid
-            DQL
-        );
-
-        $query->setParameter('salesforceId', $salesforceId->value);
-        $query->setParameter('uuid', $uuid);
-        $query->execute();
     }
 }

@@ -32,6 +32,9 @@ return function (ContainerBuilder $containerBuilder) {
                     'baseUri' => getenv('MAILER_BASE_URI'),
                     'sendSecret' => getenv('MAILER_SEND_SECRET'),
                 ],
+                'webhook' => [
+                    'baseUri' => getenv('SALESFORCE_WEBHOOK_RECEIVER'),
+                ],
             ],
 
             'appEnv' => getenv('APP_ENV'),

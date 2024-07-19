@@ -172,7 +172,7 @@ class Create extends Action
         }
 
         $data = new DonationCreatedResponse();
-        $data->donation = $donation->toFrontEndApiModel();
+        $data->donation = $donation->toApiModel();
         $data->jwt = DonationToken::create($donation->getUuid());
 
         return $this->respondWithData($response, $data, 201);
