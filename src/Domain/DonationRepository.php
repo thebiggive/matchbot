@@ -669,13 +669,15 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     private function setSalesforceIdIfNeeded(Donation $donation, Salesforce18Id $salesforceId): void
     {
+        $oldSFID = $donation->getSalesforceId();
         Assertion::nullOrEq(
-            $donation->getSalesforceId(),
+            $oldSFID,
             $salesforceId->value,
-            'Refusing to change already set SF ID on donation ' . ($donation->getId() ?? 'no id')
+            "Refusing to change already set SF ID from {$oldSFID} to {$salesforceId} on donation " .
+            ($donation->getId() ?? 'no id')
         );
 
-        if ($donation->getSalesforceId() !== null) {
+        if ($oldSFID !== null) {
             return;
         }
 
