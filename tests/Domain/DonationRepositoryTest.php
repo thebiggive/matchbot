@@ -56,7 +56,7 @@ class DonationRepositoryTest extends TestCase
         $donationClientProphecy
             ->createOrUpdate(Argument::type(Donation::class))
             ->shouldBeCalledOnce()
-            ->willReturn(Salesforce18Id::of($donation->getSalesforceId()));
+            ->willReturn(Salesforce18Id::of($donation->getSalesforceId() ?? throw new \Exception('missing SF ID')));
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalled();
         $this->entityManagerProphecy->flush()->shouldBeCalled();
 
