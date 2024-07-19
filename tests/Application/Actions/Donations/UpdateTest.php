@@ -26,30 +26,18 @@ use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Exception\HttpUnauthorizedException;
 use Stripe\Charge;
+use Stripe\ErrorObject;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\MockClock;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
 
 class UpdateTest extends TestCase
 {
     use DonationTestDataTrait;
     use PublicJWTAuthTrait;
-
-    public function setUp(): void
-    {
-        $container = $this->getAppInstance()->getContainer();
-        \assert($container instanceof Container);
-
-        $routableMessageBusProphecy = $this->prophesize(RoutableMessageBus::class);
-        $routableMessageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
-
-        $container->set(RoutableMessageBus::class, $routableMessageBusProphecy->reveal());
-    }
 
     public function testMissingId(): void
     {
@@ -75,6 +63,9 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
@@ -99,6 +90,9 @@ class UpdateTest extends TestCase
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -127,6 +121,9 @@ class UpdateTest extends TestCase
             ->shouldNotBeCalled();
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -157,6 +154,9 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -168,7 +168,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             method: 'PUT',
             path: '/v1/donations/87654321-1234-1234-1234-ba0987654321',
-            bodyString: json_encode($this->getTestDonation()->toApiModel()),
+            bodyString: json_encode($this->getTestDonation()->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('87654321-1234-1234-1234-ba0987654321'));
         $route = $this->getRouteWithDonationId('put', '87654321-1234-1234-1234-ba0987654321');
@@ -196,6 +196,9 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -207,7 +210,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -241,6 +244,9 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
@@ -248,7 +254,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $donationData = $donation->toApiModel();
+        $donationData = $donation->toFrontEndApiModel();
         unset($donationData['status']); // Simulate an API client omitting the status JSON field
 
         $request = $this->createRequest(
@@ -305,6 +311,9 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -316,7 +325,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -354,9 +363,12 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
-        // Cancel is a no-op -> no fund release
+        // Cancel is a no-op -> no fund release or push to SF
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -369,7 +381,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -418,6 +430,11 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            // Cancel was a new change and names set -> expect a push to SF.
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -436,7 +453,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -486,6 +503,11 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            // Cancel was a new change and names set -> expect a push to SF.
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -511,7 +533,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -549,6 +571,11 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->willReturn(true)
+            // Cancel was a new change and names set -> expect a push to SF.
+            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -575,7 +602,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -609,6 +636,11 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            // Cancel was a new change BUT donation never had enough
+            // data -> DO NOT expect a push to SF.
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -627,7 +659,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ac',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ac'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ac');
@@ -666,6 +698,9 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -677,7 +712,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donationInRequest->toApiModel()),
+            json_encode($donationInRequest->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -711,6 +746,9 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -720,7 +758,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         // Remove giftAid after converting to array, as it makes the internal HTTP model invalid.
-        $donationData = $donation->toApiModel();
+        $donationData = $donation->toFrontEndApiModel();
         unset($donationData['optInCharityEmail']);
 
         $request = $this->createRequest(
@@ -762,6 +800,9 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
@@ -769,7 +810,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $bodyArray = $donation->toHookModel();
+        $bodyArray = $donation->toFrontEndApiModel();
         $bodyArray['homeAddress'] = ['123', 'Main St']; // Invalid array type.
 
         $body = json_encode($bodyArray);
@@ -811,6 +852,9 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -820,7 +864,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         // Remove giftAid after converting to array, as it makes the internal HTTP model invalid.
-        $donationData = $donation->toApiModel();
+        $donationData = $donation->toFrontEndApiModel();
         unset($donationData['giftAid']);
 
         $request = $this->createRequest(
@@ -860,6 +904,9 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -868,7 +915,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
-        $putArray = $donation->toApiModel();
+        $putArray = $donation->toFrontEndApiModel();
         $putArray['tipAmount'] = '25000.01';
         $putJSON = json_encode($putArray);
 
@@ -923,6 +970,9 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -940,7 +990,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -959,7 +1009,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1005,6 +1055,9 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldBeCalledOnce();
 
         // Persist as normal.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1034,7 +1087,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -1053,7 +1106,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1099,6 +1152,9 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         // Internal persist still goes ahead.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1126,7 +1182,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -1145,7 +1201,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1196,6 +1252,9 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldBeCalledOnce();
 
         // Persist as normal.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1219,7 +1278,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -1242,7 +1301,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1292,6 +1351,9 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         // Internal persist still goes ahead.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1313,7 +1375,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -1336,7 +1398,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1385,6 +1447,9 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldBeCalledOnce();
 
         // Persist as normal.
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -1411,7 +1476,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -1434,7 +1499,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1482,6 +1547,9 @@ class UpdateTest extends TestCase
         $donationRepoProphecy
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldBeCalledOnce(); // Updates pushed to Salesforce
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -1499,7 +1567,7 @@ class UpdateTest extends TestCase
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
-                'salesforceId' => 'sfDonation369',
+                'salesforceId' => 'sfDonation36912345',
                 'stripeFeeRechargeGross' => '3.08',
                 'stripeFeeRechargeNet' => '3.08',
                 'stripeFeeRechargeVat' => '0.00',
@@ -1517,7 +1585,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ab',
-            json_encode($donation->toApiModel()),
+            json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ab');
@@ -1560,6 +1628,7 @@ class UpdateTest extends TestCase
             'app' => $app,
             'request' => $request,
             'route' => $route,
+            'donationRepoProphecy' => $donationRepoProphecy,
             'entityManagerProphecy' => $entityManagerProphecy,
         ] =
             $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
@@ -1568,6 +1637,9 @@ class UpdateTest extends TestCase
                 collectedDonation: false,
             );
 
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldBeCalledOnce(); // Updates pushed to Salesforce
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
@@ -1617,6 +1689,7 @@ class UpdateTest extends TestCase
             'app' => $app,
             'request' => $request,
             'route' => $route,
+            'donationRepoProphecy' => $donationRepoProphecy,
             'stripeProphecy' => $stripeProphecy,
             'entityManagerProphecy' => $entityManagerProphecy
         ] = $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
@@ -1643,6 +1716,10 @@ class UpdateTest extends TestCase
         // Stripe PI must be left pending ready for the bank transfer.
         $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldNotBeCalled();
 
+        // This reduced test donation will have false `hasEnoughDataForSalesforce()`.
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled();
 
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalled();
@@ -1664,6 +1741,7 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy->flush()->shouldBeCalled();
         $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldBeCalled();
+
 
         $this->expectException(HttpBadRequestException::class);
         $this->expectExceptionMessage('Status was requires_action, expected succeeded');
@@ -1689,6 +1767,9 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled(); // Updates pushed to Salesforce
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -1707,7 +1788,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $requestPayload = $donation->toApiModel();
+        $requestPayload = $donation->toFrontEndApiModel();
         $requestPayload['autoConfirmFromCashBalance'] = true;
         $request = $this->createRequest(
             'PUT',
@@ -1754,6 +1835,9 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled(); // Updates pushed to Salesforce
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -1770,7 +1854,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $requestPayload = $donation->toApiModel();
+        $requestPayload = $donation->toFrontEndApiModel();
         $requestPayload['autoConfirmFromCashBalance'] = true;
         $request = $this->createRequest(
             'PUT',
@@ -1824,6 +1908,9 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
+        $donationRepoProphecy
+            ->push(Argument::type(Donation::class), false)
+            ->shouldNotBeCalled(); // Updates pushed to Salesforce
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
@@ -1843,7 +1930,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $requestPayload = $donation->toApiModel();
+        $requestPayload = $donation->toFrontEndApiModel();
         $requestPayload['autoConfirmFromCashBalance'] = true;
         $request = $this->createRequest(
             'PUT',
@@ -1922,7 +2009,7 @@ class UpdateTest extends TestCase
         $updatedPaymentIntent->status = $newPaymentIntentStatus;
 
         if ($nextActionRequired !== null) {
-            $nextAction = new StripeObject();
+            $nextAction = new ErrorObject();
             $nextAction->type = $nextActionRequired;
             $updatedPaymentIntent->next_action = $nextAction;
         }
@@ -1936,7 +2023,7 @@ class UpdateTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $requestPayload = $donation->toApiModel();
+        $requestPayload = $donation->toFrontEndApiModel();
         $requestPayload['autoConfirmFromCashBalance'] = true;
         $request = $this->createRequest(
             'PUT',

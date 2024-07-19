@@ -32,9 +32,6 @@ return function (ContainerBuilder $containerBuilder) {
                     'baseUri' => getenv('MAILER_BASE_URI'),
                     'sendSecret' => getenv('MAILER_SEND_SECRET'),
                 ],
-                'webhook' => [
-                    'baseUri' => getenv('SALESFORCE_WEBHOOK_RECEIVER'),
-                ],
             ],
 
             'appEnv' => getenv('APP_ENV'),
@@ -70,8 +67,7 @@ return function (ContainerBuilder $containerBuilder) {
             'logger' => [
                 'name' => 'matchbot',
                 'path' => 'php://stdout',
-//                'level' => getenv('APP_ENV') === 'local' ? Logger::DEBUG : Logger::INFO,
-                'level' => Logger::DEBUG,
+                'level' => getenv('APP_ENV') === 'local' ? Logger::DEBUG : Logger::INFO,
             ],
 
             'los_rate_limit' => [
@@ -104,10 +100,14 @@ return function (ContainerBuilder $containerBuilder) {
 
             'stripe' => [
                 'apiKey' => getenv('STRIPE_SECRET_KEY'),
-                'apiVersion' => getenv('STRIPE_API_VERSION'),
                 'accountWebhookSecret' => getenv('STRIPE_WEBHOOK_SIGNING_SECRET'),
                 'connectAppWebhookSecret' => getenv('STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET'),
             ],
+
+            'salesforce' => [
+                // authenticates requests originating from salesforce to matchbot:
+                'apiKey' => getenv('SALESFORCE_SECRET_KEY'),
+            ]
         ],
     ]);
 };

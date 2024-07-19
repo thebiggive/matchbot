@@ -7,14 +7,12 @@ namespace MatchBot\Tests\Domain;
 use DI\Container;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
-use MatchBot\Application\Messenger\DonationCreated;
 use MatchBot\Application\Messenger\DonationUpdated;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
@@ -25,17 +23,14 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
-use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
-use ReflectionClass;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
-use Symfony\Component\Messenger\RoutableMessageBus;
 
 class DonationRepositoryTest extends TestCase
 {
@@ -61,6 +56,8 @@ class DonationRepositoryTest extends TestCase
 
     public function testExistingPushOK(): void
     {
+        $donation = $this->getTestDonation();
+
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
             ->put(Argument::type(DonationUpdated::class))

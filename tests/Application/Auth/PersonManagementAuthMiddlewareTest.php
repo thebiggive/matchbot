@@ -56,7 +56,7 @@ class PersonManagementAuthMiddlewareTest extends TestCase
         $this->expectExceptionMessage('Unauthorised');
 
         $donationObject = $this->getTestDonation();
-        $donation = $donationObject->toApiModel();
+        $donation = $donationObject->toFrontEndApiModel();
         $donation['personId'] = 'cus_aaaaaaaaaaaa11';
         $body = json_encode($donation);
 

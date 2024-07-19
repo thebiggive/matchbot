@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Los\RateLimit\RateLimitMiddleware;
+use MatchBot\Application\Actions\Charities\UpdateCharityFromSalesforce;
 use MatchBot\Application\Actions\DeletePaymentMethod;
 use MatchBot\Application\Actions\UpdatePaymentMethod;
 use MatchBot\Application\Actions\Donations;
@@ -13,6 +14,7 @@ use MatchBot\Application\Actions\Status;
 use MatchBot\Application\Auth\DonationPublicAuthMiddleware;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
+use MatchBot\Application\Auth\SalesforceAuthMiddleware;
 use Middlewares\ClientIp;
 use Slim\App;
 use Slim\Exception\HttpNotFoundException;
@@ -61,6 +63,15 @@ return function (App $app) {
     // Authenticated through Stripe's SDK signature verification
     $app->post('/hooks/stripe', Hooks\StripePaymentsUpdate::class);
     $app->post('/hooks/stripe-connect', Hooks\StripePayoutUpdate::class);
+
+    // Requests from Salesforce
+
+    $app->post(
+        '/hooks/charities/{salesforceId:[a-zA-Z0-9]{18}}/update-required',
+        UpdateCharityFromSalesforce::class
+    )
+        ->add(SalesforceAuthMiddleware::class)
+    ;
 
     $app->options('/{routes:.+}', function ($request, $response, $args) {
         return $response;

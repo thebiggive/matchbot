@@ -7,24 +7,27 @@ namespace MatchBot\Client;
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Application\Messenger\DonationUpdated;
+use MatchBot\Domain\Donation as DonationModel;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\Salesforce18Id;
 
 class Donation extends Common
 {
     /**
      * @throws BadRequestException
      */
-    public function create(AbstractStateChanged $donationCreatedMessage): string
+    public function createOrUpdate(DonationModel $donation): Salesforce18Id
     {
+        // TODO decide if we are best using `AbstractStateChanged` messages or Donation model directly.
         if (getenv('DISABLE_CLIENT_PUSH')) {
-            $this->logger->info("Client push off: Skipping create of donation {$donationCreatedMessage->uuid}");
+            $this->logger->info("Client push off: Skipping create of donation {$donation->getUuid()}");
             throw new BadRequestException('Client push is off');
         }
 
         try {
             $response = $this->getHttpClient()->post(
-                $this->getSetting('donation', 'baseUri'),
-                ['json' => $donationCreatedMessage->json]
+                $this->getSetting('donation', 'baseUri') . '/' . $donation->getUuid(),
+                ['json' => $donation->toSFApiModel()]
             );
         } catch (RequestException $ex) {
             // Sandboxes that 404 on POST may be trying to sync up donations for non-existent campaigns and
@@ -37,56 +40,6 @@ class Donation extends Common
                 throw new NotFoundException();
             }
 
-            $this->logger->error(sprintf(
-                'Donation create exception for donation UUID %s %s: %s. Body: %s',
-                $donationCreatedMessage->uuid,
-                get_class($ex),
-                $ex->getMessage(),
-                $ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A',
-            ));
-
-            throw new BadRequestException('Donation not created');
-        }
-
-        // For now, support created response codes of 200 (behaviour as of 3/5/22) or 201 (as documented).
-        if ($response->getStatusCode() > 201 || $response->getStatusCode() < 200) {
-            $this->logger->error('Donation create got non-success code ' . $response->getStatusCode());
-            throw new BadRequestException('Donation not created');
-        }
-
-        $donationCreatedResponse = json_decode((string) $response->getBody(), true);
-
-        return $donationCreatedResponse['donation']['donationId'];
-    }
-
-    /**
-     * For now, updates with Salesforce use the webhook receiver and not the Donations API
-     * with JWT auth. As a server app there's no huge downside to using a fixed key, and getting
-     * the Salesforce certificate's private part in the right format to use for RS256 JWT signature
-     * creation was pretty involved. By sticking with this we can use the faster HS256 algorithm
-     * for MatchBot's JWTs and not worry about compatibility with Salesforce's JWTs.
-     */
-    public function put(AbstractStateChanged $donationUpdatedMessage): bool
-    {
-        if (getenv('DISABLE_CLIENT_PUSH')) {
-            $this->logger->info("Client push off: Skipping update of donation {$donationUpdatedMessage->uuid}");
-
-            return false;
-        }
-
-        try {
-            $requestBody = $donationUpdatedMessage->json;
-
-            $response = $this->getHttpClient()->put(
-                $this->getSetting('webhook', 'baseUri') . "/donation/{$donationUpdatedMessage->salesforceId}",
-                [
-                    'json' => $requestBody,
-                    'headers' => [
-                        'X-Webhook-Verify-Hash' => $this->hash(json_encode($requestBody)),
-                    ],
-                ]
-            );
-        } catch (RequestException $ex) {
             // Sandboxes that 404 on PUT have probably just been refreshed. In this case we want to
             // update the local state of play to stop them getting pushed, instead of treating this
             // as an error. So throw this for appropriate handling in the caller without an error level
@@ -119,23 +72,30 @@ class Donation extends Common
                 throw new NotFoundException();
             }
 
-            // All other errors should be logged so we get a notification and the app left to retry the
-            // push at a later date.
-            $this->logger->warning(sprintf(
-                'Donation update exception %s: %s. Body: %s',
+            $this->logger->error(sprintf(
+                'Donation upsert exception for donation UUID %s %s: %s. Body: %s',
+                $donation->getUuid(),
                 get_class($ex),
                 $ex->getMessage(),
                 $ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A',
             ));
 
-            return false;
+            throw new BadRequestException('Donation not created');
         }
 
-        return ($response->getStatusCode() === 200);
-    }
+        if (! in_array($response->getStatusCode(), [200, 201], true)) {
+            $this->logger->error('Donation upsert got non-success code ' . $response->getStatusCode());
+            throw new BadRequestException('Donation not upserted');
+        }
 
-    private function hash(string $body): string
-    {
-        return hash_hmac('sha256', trim($body), getenv('WEBHOOK_DONATION_SECRET'));
+        /**
+         * @var array{'salesforceId': string} $donationCreatedResponse
+         */
+        $donationCreatedResponse = json_decode($response->getBody()->getContents(), true);
+
+        // todo add new property that SF now returns to API docs as distinct from donationId.
+        // Semantics were unclear before and SF was sometimes putting its own IDs in `donationId` I think.
+
+        return Salesforce18Id::of($donationCreatedResponse['salesforceId']);
     }
 }

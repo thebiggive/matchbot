@@ -9,7 +9,6 @@ use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Application\Messenger\DonationStateUpdated;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
@@ -30,8 +29,6 @@ use Stripe\Exception\PermissionException;
 use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\MockClock;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Message\ChatMessage;
 use UnexpectedValueException;
 
@@ -57,6 +54,7 @@ class CreateTest extends TestCase
             ],
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
@@ -96,9 +94,6 @@ class CreateTest extends TestCase
 
         $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
         $container->set(CampaignRepository::class, $campaignRepositoryProphecy->reveal());
-        $routableMessageBusProphecy = $this->prophesize(RoutableMessageBus::class);
-        $routableMessageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
-        $container->set(RoutableMessageBus::class, $routableMessageBusProphecy->reveal());
     }
 
     /**
@@ -176,6 +171,7 @@ class CreateTest extends TestCase
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willReturn($donationToReturn);
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $donationRepoProphecy->push(Argument::type(Donation::class), Argument::type('bool'))->shouldNotBeCalled();
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -221,6 +217,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willThrow(new UnexpectedValueException('Currency CAD is invalid for campaign'));
+        $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -262,6 +259,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -330,6 +328,7 @@ class CreateTest extends TestCase
             ],
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
@@ -436,6 +435,7 @@ class CreateTest extends TestCase
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
@@ -531,6 +531,7 @@ class CreateTest extends TestCase
             ],
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
@@ -625,7 +626,7 @@ class CreateTest extends TestCase
 
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
+        $data = json_encode($donation->toFrontEndApiModel(), JSON_THROW_ON_ERROR);
         // Don't match default test customer ID from body, in this path.
         $request = $this->createRequest('POST', '/v1/people/99999999-1234-1234-1234-1234567890zz/donations', $data);
         $app->handle($this->addDummyPersonAuth($request)); // Throws HttpUnauthorizedException.
@@ -656,7 +657,7 @@ class CreateTest extends TestCase
 
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
+        $data = json_encode($donation->toFrontEndApiModel(), JSON_THROW_ON_ERROR);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
 
         $response = $app->handle($this->addDummyPersonAuth($request));
@@ -693,6 +694,7 @@ class CreateTest extends TestCase
             ->will(new CreateDupeCampaignThrowThenSucceedPromise($donationToReturn))
             ->shouldBeCalledTimes(2); // One exception, one success
 
+        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -710,6 +712,7 @@ class CreateTest extends TestCase
             ],
             'customer' => 'cus_aaaaaaaaaaaa11',
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
@@ -940,6 +943,12 @@ class CreateTest extends TestCase
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willReturn($donation);
 
+        if ($donationPushed) {
+            $donationRepoProphecy->push($donation, true)->shouldBeCalledOnce();
+        } else {
+            $donationRepoProphecy->push($donation, true)->shouldNotBeCalled();
+        }
+
         if ($donationMatched) {
             $donationRepoProphecy->allocateMatchFunds($donation)->shouldBeCalledOnce();
         } else {
@@ -974,7 +983,7 @@ class CreateTest extends TestCase
 
     private function encode(Donation $donation): string
     {
-        $donationArray = $donation->toApiModel();
+        $donationArray = $donation->toFrontEndApiModel();
 
         return json_encode($donationArray);
     }

@@ -23,16 +23,12 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Slim\Exception\HttpBadRequestException;
+use Stripe\ErrorObject;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
 use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Messenger\Stamp\BusNameStamp;
-use Symfony\Component\Messenger\Stamp\DelayStamp;
-use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 use TypeError;
@@ -55,7 +51,6 @@ class Update extends Action
         private Stripe $stripe,
         LoggerInterface $logger,
         private ClockInterface $clock,
-        private RoutableMessageBus $bus,
     ) {
         parent::__construct($logger);
     }
@@ -378,10 +373,15 @@ class Update extends Action
                 try {
                     $confirmedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId());
 
-                    /** @var string|null $nextActionType */
+                    /* @var string|null $nextActionType */
                     $nextActionType = null;
                     if ($confirmedIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
-                        $nextActionType = (string) $confirmedIntent->next_action?->type;
+                        $nextAction = $confirmedIntent->next_action;
+
+                        /** @psalm-suppress UndefinedMagicPropertyFetch - type is not documented on StripeObject but
+                         * appears to work in this context
+                         */
+                        $nextActionType = (string) $nextAction?->type;
                     }
 
                     $isDonationToBGRequiringBankTransfer =
@@ -435,7 +435,7 @@ class Update extends Action
 
         $this->save($donation);
 
-        return $this->respondWithData($response, $donation->toApiModel());
+        return $this->respondWithData($response, $donation->toFrontEndApiModel());
     }
 
     private function cancel(Donation $donation, Response $response, array $args): Response
@@ -444,7 +444,7 @@ class Update extends Action
             $this->logger->info("Donation ID {$args['donationId']} was already Cancelled");
             $this->entityManager->rollback();
 
-            return $this->respondWithData($response, $donation->toApiModel());
+            return $this->respondWithData($response, $donation->toFrontEndApiModel());
         }
 
         if ($donation->getDonationStatus()->isSuccessful()) {
@@ -504,7 +504,7 @@ class Update extends Action
             }
         }
 
-        return $this->respondWithData($response, $donation->toApiModel());
+        return $this->respondWithData($response, $donation->toFrontEndApiModel());
     }
 
     /**

@@ -287,6 +287,15 @@ contracts, including:
 * [TBG-Campaigns](https://app.swaggerhub.com/apis/Noel/TBG-Campaigns)
 * [TBG-Funds](https://app.swaggerhub.com/apis/Noel/TBG-Funds)
 
+## Rate limits
+
+There are two types of rate limiting used in the app to help protect against abuse:
+
+| Library              | Where in stack                                      | Keyed on                | Used for                                |
+|----------------------|-----------------------------------------------------|-------------------------|-----------------------------------------|
+| los/los-rate-limit   | Middlewares in [app/routes.php](./app/routes.php)   | LB-forwarded IP address | Several donation and account operations |
+| symfony/rate-limiter | [DonationService](./src/Domain/DonationService.php) | Stripe Customer ID      | Donation & Payment Intent creation      |
+
 ## Documentation
 
 Further docs available at [docs](./docs).

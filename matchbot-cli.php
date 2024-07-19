@@ -18,6 +18,7 @@ use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
 use MatchBot\Application\Commands\UpdateCampaigns;
+use MatchBot\Application\Commands\UpdateCharities;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
@@ -69,7 +70,12 @@ $commands = [
     ),
     new ExpireMatchFunds($psr11App->get(DonationRepository::class)),
     $psr11App->get(HandleOutOfSyncFunds::class),
-    $psr11App->get(RedistributeMatchFunds::class),
+    new RedistributeMatchFunds(
+        $psr11App->get(CampaignFundingRepository::class),
+        $now,
+        $psr11App->get(DonationRepository::class),
+        $psr11App->get(LoggerInterface::class),
+    ),
     new ScheduledOutOfSyncFundsCheck(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(FundingWithdrawalRepository::class),
@@ -85,13 +91,17 @@ $commands = [
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(Matching\Adapter::class)
     ),
-    $psr11App->get(RetrospectivelyMatch::class),
+    new RetrospectivelyMatch(
+        $psr11App->get(DonationRepository::class),
+        $chatter,
+    ),
     new UpdateCampaigns(
         $psr11App->get(CampaignRepository::class),
         $psr11App->get(EntityManagerInterface::class),
         $psr11App->get(FundRepository::class),
         $psr11App->get(LoggerInterface::class),
     ),
+    $psr11App->get(UpdateCharities::class),
 ];
 
 foreach ($commands as $command) {

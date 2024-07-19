@@ -56,6 +56,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     {
         try {
             $salesforceDonationId = $this->getClient()->create($changeMessage);
+            $this->setSalesforceIdIfNeeded($changeMessage, $salesforceDonationId);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
             $this->logInfo(
@@ -73,7 +74,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     public function doUpdate(AbstractStateChanged $changeMessage): bool
     {
         try {
-            return $this->getClient()->put($changeMessage);
+            $salesforceDonationId = $this->getClient()->put($changeMessage);
         } catch (NotFoundException $ex) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push the removed donation.
             $this->logInfo(
@@ -83,6 +84,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
             return false;
         }
+
+        $this->setSalesforceIdIfNeeded($changeMessage, $salesforceDonationId);
+
+        return true;
     }
 
     /**
@@ -609,6 +614,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     /**
      * Locks row in DB to prevent concurrent updates. See jira MAT-260
+     * Requires an open transaction to be managed by the caller.
      * @throws DBALException\LockWaitTimeoutException
      */
     public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation
@@ -680,6 +686,61 @@ class DonationRepository extends SalesforceWriteProxyRepository
             $bus->dispatch(new Envelope(DonationCreated::fromDonation($proxy)));
         }
 
+        $proxiesToUpdate = $this->findBy(
+            ['salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE],
+            ['updatedAt' => 'ASC'],
+            self::MAX_PER_BULK_PUSH,
+        );
+
+        foreach ($proxiesToUpdate as $proxy) {
+            if ($proxy->getUpdatedDate() > $fiveMinutesAgo) {
+                continue;
+            }
+
+            $bus->dispatch(new Envelope(DonationUpdated::fromDonation($proxy)));
+        }
+
+        return count($proxiesToCreate) + count($proxiesToUpdate);
+    }
+
+    private function setSalesforceIdIfNeeded(AbstractStateChanged $changeMessage, Salesforce18Id $salesforceId): void
+    {
+        // If Salesforce ID wasn't set yet, try to safely set it. If it
+        // fails, this should be safe to leave for a later update. Salesforce has UUIDs so
+        // we won't lose the ability to reconcile the records.
+        $uuid = $changeMessage->uuid;
+        try {
+            $this->safelySetSalesforceId($uuid, $salesforceId);
+        } catch (DBALException\LockWaitTimeoutException $exception) {
+            $this->logWarning(sprintf(
+                'Lock unavailable to give donation %s Salesforce ID %s, will leave for later: %s',
+                $uuid,
+                $salesforceId,
+                $exception->getMessage(),
+            ));
+        }
+    }
+
+    /**
+     * Sets a Salesforce ID without its own lock and importantly without the ORM, using
+     * a raw DQL `UPDATE` that should make it safe irrespective of ORM work that could
+     * also be happening on the record.
+     *
+     * @throws DBALException\LockWaitTimeoutException if some other transaction is holding a lock
+     */
+    private function safelySetSalesforceId(string $uuid, Salesforce18Id $salesforceId): void
+    {
+        $query = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            UPDATE Matchbot\Domain\Donation donation
+            SET donation.salesforceId = :salesforceId
+            WHERE donation.uuid = :uuid
+            DQL
+        );
+
+        $query->setParameter('salesforceId', $salesforceId->value);
+        $query->setParameter('uuid', $uuid);
+        $query->execute();
         $proxiesToUpdate = $this->findBy(
             ['salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE],
             ['updatedAt' => 'ASC'],

@@ -28,27 +28,76 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function findRecentLiveAndPendingGiftAidApproval(): array
     {
-        $shortLookBackDate = (new DateTime('now'))->sub(new \DateInterval('P7D'));
-        $extendedLookBackDate = (new DateTime('now'))->sub(new \DateInterval('P9M'));
-
-        $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('c')
-            ->from(Campaign::class, 'c')
-            ->innerJoin('c.charity', 'charity')
-            ->where('c.endDate >= :shortLookBackDate')
-            ->orWhere(<<<EOT
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT c FROM MatchBot\Domain\Campaign c
+            INNER JOIN c.charity charity
+            WHERE c.endDate >= :shortLookBackDate OR (
                 charity.tbgClaimingGiftAid = 1 AND
                 charity.tbgApprovedToClaimGiftAid = 0 AND
                 c.endDate >= :extendedLookbackDate
-EOT
             )
-            ->orderBy('c.createdAt', 'ASC')
-            ->setParameter('shortLookBackDate', $shortLookBackDate)
-            ->setParameter('extendedLookbackDate', $extendedLookBackDate);
+            ORDER BY c.createdAt ASC
+            DQL
+        );
+        $query->setParameters([
+            'shortLookBackDate' => (new DateTime('now'))->sub(new \DateInterval('P7D')),
+            'extendedLookbackDate' => (new DateTime('now'))->sub(new \DateInterval('P9M')),
+        ]);
 
         /** @var Campaign[] $campaigns */
-        $campaigns = $qb->getQuery()->getResult();
+        $campaigns = $query->getResult();
+
         return $campaigns;
+    }
+
+    /**
+     * @return list<Campaign> All campaigns from charities that have been updated in salesforce, and that end 18
+     * months ago or later (therefore including open campaigns),
+     */
+    public function findNeedingUpdateFromSf(): array
+    {
+        $query = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            SELECT campaign FROM MatchBot\Domain\Campaign campaign
+            JOIN campaign.charity charity
+            WHERE charity.updateFromSFRequiredSince IS NOT NULL
+            AND campaign.endDate >= :eighteenMonthsAgo
+            DQL
+        );
+
+        $query->setParameters([
+            'eighteenMonthsAgo' => (new DateTime('now'))->sub(new \DateInterval('P18M')),
+        ]);
+
+        /** @var list<Campaign> $result */
+        $result =  $query->getResult();
+
+        return $result;
+    }
+
+
+    /** @return list<Campaign> */
+    public function findUpdatableForCharity(Salesforce18Id $charitySfId): array
+    {
+        $query = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            SELECT campaign FROM MatchBot\Domain\Campaign campaign
+            JOIN campaign.charity charity
+            WHERE 
+             charity.salesforceId = :charityId AND 
+            campaign.endDate >= :eighteenMonthsAgo
+            DQL
+        );
+
+        $query->setParameters([
+            'charityId' => $charitySfId->value,
+            'eighteenMonthsAgo' => (new \DateTime('now'))->sub(new \DateInterval('P18M')),
+        ]);
+
+        /** @var list<Campaign> $result */
+        $result =  $query->getResult();
+
+        return $result;
     }
 
     public function pullNewFromSf(Salesforce18Id $salesforceId): Campaign
@@ -84,13 +133,13 @@ EOT
         }
 
         $charity = $this->pullCharity(
-            $campaignData['charity']['id'],
-            $campaignData['charity']['name'],
-            $campaignData['charity']['stripeAccountId'],
-            $campaignData['charity']['giftAidOnboardingStatus'],
-            $campaignData['charity']['hmrcReferenceNumber'],
-            $campaignData['charity']['regulatorRegion'],
-            $campaignData['charity']['regulatorNumber'],
+            salesforceCharityId: $campaignData['charity']['id'],
+            charityName: $campaignData['charity']['name'],
+            stripeAccountId: $campaignData['charity']['stripeAccountId'],
+            giftAidOnboardingStatus: $campaignData['charity']['giftAidOnboardingStatus'],
+            hmrcReferenceNumber: $campaignData['charity']['hmrcReferenceNumber'],
+            regulator: $campaignData['charity']['regulatorRegion'],
+            regulatorNumber: $campaignData['charity']['regulatorNumber'],
         );
 
         $campaign->setCharity($charity);

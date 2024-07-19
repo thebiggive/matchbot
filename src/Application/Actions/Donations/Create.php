@@ -26,7 +26,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\RateLimiter\Exception\RateLimitExceededException;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -36,7 +36,6 @@ class Create extends Action
         private DonationService $donationService,
         private SerializerInterface $serializer,
         LoggerInterface $logger,
-        private RoutableMessageBus $bus,
     ) {
         parent::__construct($logger);
     }
@@ -93,6 +92,19 @@ class Create extends Action
 
         try {
             $donation = $this->donationService->createDonation($donationData, $customerId);
+        } catch (RateLimitExceededException $e) {
+            $retryDelaySeconds = ($e->getRetryAfter()->getTimestamp() - time());
+            return $this->respond(
+                $response,
+                new ActionPayload(
+                    400,
+                    ['retry_in' => $retryDelaySeconds],
+                    new ActionError(
+                        'DONATION_RATE_LIMIT_EXCEEDED',
+                        'Donation rate limit reached, please try later'
+                    )
+                )
+            );
         } catch (StripeAccountIdNotSetForAccount) {
             return $this->respond(
                 $response,
@@ -164,7 +176,7 @@ class Create extends Action
         $this->bus->dispatch(new Envelope(DonationCreated::fromDonation($donation)));
 
         $data = new DonationCreatedResponse();
-        $data->donation = $donation->toApiModel();
+        $data->donation = $donation->toFrontEndApiModel();
         $data->jwt = DonationToken::create($donation->getUuid());
 
         return $this->respondWithData($response, $data, 201);

@@ -9,9 +9,11 @@ use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationCreated;
 use MatchBot\Application\Messenger\DonationUpdated;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestData;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
@@ -27,7 +29,8 @@ use Slim\App;
 use Slim\Factory\AppFactory;
 use Stripe\PaymentIntent;
 use Stripe\StripeClient;
-use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 abstract class IntegrationTest extends TestCase
 {
@@ -58,6 +61,11 @@ abstract class IntegrationTest extends TestCase
         \assert(is_array($settings));
         $settings['apiClient'] = $this->fakeApiClientSettingsThatAlwaysThrow();
         $container->set('settings', $settings);
+
+        $container->set(
+            'donation-creation-rate-limiter-factory',
+            new RateLimiterFactory(['id' => 'test', 'policy' => 'no_limit'], new InMemoryStorage())
+        );
 
 
         AppFactory::setContainer($container);
@@ -114,8 +122,11 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(DonationCreated::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(DonationUpdated::class))->willReturn(true);
+        $donationClientProphecy->createOrUpdate(Argument::type(DonationCreated::class))->will(
+        /**
+         * @param array{0: Donation} $args
+         */            fn(array $args) => Salesforce18Id::of($args[0]->getSalesforceId() ?? $this->randomString())
+        );
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
@@ -178,8 +189,9 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(DonationCreated::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(DonationUpdated::class))->willReturn(true);
+        $donationClientProphecy->createOrUpdate(Argument::type(Donation::class))->willReturn(
+            Salesforce18Id::of($this->randomString())
+        );
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
@@ -399,8 +411,9 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(DonationCreated::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(DonationUpdated::class))->willReturn(true);
+        $donationClientProphecy->createOrUpdate(Argument::type(Donation::class))->willReturn(
+            Salesforce18Id::of($this->randomString())
+        );
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 

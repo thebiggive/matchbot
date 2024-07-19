@@ -11,7 +11,6 @@ use MatchBot\Application\Messenger\DonationCreated;
 use MatchBot\Application\Messenger\DonationUpdated;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
-use MatchBot\Domain\Donation;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -26,6 +25,8 @@ use Slim\Psr7\Headers;
 use Slim\Psr7\Request as SlimRequest;
 use Slim\Psr7\Uri;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 class TestCase extends PHPUnitTestCase
 {
@@ -67,6 +68,11 @@ class TestCase extends PHPUnitTestCase
 
         // Build PHP-DI Container instance
         $container = $containerBuilder->build();
+
+        $container->set(
+            'donation-creation-rate-limiter-factory',
+            new RateLimiterFactory(['id' => 'test', 'policy' => 'no_limit'], new InMemoryStorage())
+        );
 
         if (!$withRealRedis) {
             // For unit tests, we need to stub out Redis so that rate limiting middleware doesn't
@@ -126,7 +132,7 @@ class TestCase extends PHPUnitTestCase
      * @param array $cookies
      * @return Request
      */
-    protected function createRequest(
+    public static function createRequest(
         string $method,
         string $path,
         string $bodyString = '',
@@ -171,7 +177,7 @@ class TestCase extends PHPUnitTestCase
     public static function someCharity(?string $stripeAccountId = null): Charity
     {
         return new Charity(
-            salesforceId: '12CharityId_' .  self::randomHex(3),
+            salesforceId: '123CharityId' .  self::randomHex(3),
             charityName: "Charity Name",
             stripeAccountId: $stripeAccountId ?? "stripe-account-id-" . self::randomHex(),
             hmrcReferenceNumber: 'H' . self::randomHex(3),
@@ -190,6 +196,8 @@ class TestCase extends PHPUnitTestCase
         $campaign->setName('someCampaign');
         $campaign->setStartDate(new \DateTimeImmutable('2020-01-01'));
         $campaign->setEndDate(new \DateTimeImmutable('3000-01-01'));
+        $campaign->setCurrencyCode('GBP');
+        $campaign->setSalesforceId('1CampaignId' .  self::randomHex(3));
 
         return $campaign;
     }
