@@ -5,26 +5,32 @@ declare(strict_types=1);
 namespace MatchBot\Client;
 
 use GuzzleHttp\Exception\RequestException;
-use MatchBot\Domain\Donation as DonationModel;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Salesforce18Id;
 
 class Donation extends Common
 {
     /**
+     * @throws NotFoundException on missing campaign in a sandbox
      * @throws BadRequestException
      */
-    public function createOrUpdate(DonationModel $donation): Salesforce18Id
+    public function createOrUpdate(DonationUpserted $message): Salesforce18Id
     {
         if (getenv('DISABLE_CLIENT_PUSH')) {
-            $this->logger->info("Client push off: Skipping create of donation {$donation->getUuid()}");
+            $this->logger->info("Client push off: Skipping upsert of donation {$message->uuid}}");
             throw new BadRequestException('Client push is off');
         }
 
         try {
             $response = $this->getHttpClient()->post(
-                $this->getSetting('donation', 'baseUri') . '/' . $donation->getUuid(),
-                ['json' => $donation->toSFApiModel()]
+                $this->getSetting('donation', 'baseUri') . '/' . $message->uuid,
+                [
+                    'json' => $message->json,
+                    'headers' => [
+                        'X-Webhook-Verify-Hash' => $this->hash(json_encode($message->json)),
+                    ],
+                ]
             );
         } catch (RequestException $ex) {
             // Sandboxes that 404 on POST may be trying to sync up donations for non-existent campaigns and
@@ -71,18 +77,18 @@ class Donation extends Common
 
             $this->logger->error(sprintf(
                 'Donation upsert exception for donation UUID %s %s: %s. Body: %s',
-                $donation->getUuid(),
+                $message->uuid,
                 get_class($ex),
                 $ex->getMessage(),
                 $ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A',
             ));
 
-            throw new BadRequestException('Donation not created');
+            throw new BadRequestException('Donation not upserted');
         }
 
         if (! in_array($response->getStatusCode(), [200, 201], true)) {
             $this->logger->error('Donation upsert got non-success code ' . $response->getStatusCode());
-            throw new BadRequestException('Donation not upserted');
+            throw new BadRequestException('Donation not upserted, response code ' . $response->getStatusCode());
         }
 
         /**
@@ -94,5 +100,10 @@ class Donation extends Common
         // Semantics were unclear before and SF was sometimes putting its own IDs in `donationId` I think.
 
         return Salesforce18Id::of($donationCreatedResponse['salesforceId']);
+    }
+
+    private function hash(string $body): string
+    {
+        return hash_hmac('sha256', trim($body), getenv('WEBHOOK_DONATION_SECRET'));
     }
 }

@@ -37,28 +37,11 @@ class DonationTest extends TestCase
         ), $this->getMinimalCampaign());
 
         $this->assertFalse($donation->getDonationStatus()->isSuccessful());
-        $this->assertEquals('not-sent', $donation->getSalesforcePushStatus());
-        $this->assertNull($donation->getSalesforceLastPush());
+        $this->assertEquals('pending-create', $donation->getSalesforcePushStatus());
         $this->assertNull($donation->getSalesforceId());
         $this->assertFalse($donation->hasGiftAid());
         $this->assertNull($donation->getCharityComms());
         $this->assertNull($donation->getTbgComms());
-    }
-
-    public function testPendingDonationDoesNotHavePostCreateUpdates(): void
-    {
-        $donation = $this->getTestDonation();
-        $donation->setDonationStatus(DonationStatus::Pending);
-
-        $this->assertFalse($donation->hasPostCreateUpdates());
-    }
-
-    public function testPaidDonationHasPostCreateUpdates(): void
-    {
-        $donation = $this->getTestDonation();
-        $donation->setDonationStatus(DonationStatus::Paid);
-
-        $this->assertTrue($donation->hasPostCreateUpdates());
     }
 
     public function testValidDataPersisted(): void

@@ -5,6 +5,7 @@ namespace MatchBot\IntegrationTests;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Charity;
@@ -15,9 +16,10 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
-use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 
 class DonationRepositoryTest extends IntegrationTest
 {
@@ -214,7 +216,9 @@ class DonationRepositoryTest extends IntegrationTest
 
         $sut = $this->getService(DonationRepository::class);
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        /** @var Donation $donationInDB */
+
+        $busProphecy = $this->prophesize(RoutableMessageBus::class);
+        $dummyEnvelope = new Envelope(new \stdClass()); // Final so can't prophesise.
 
         $pendingCreate = \MatchBot\Domain\SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE;
         $connection->executeStatement(<<<SQL
@@ -230,22 +234,16 @@ class DonationRepositoryTest extends IntegrationTest
         \assert($simulatedNow instanceof \DateTimeImmutable);
 
         // assert
-        $method = $donationClientProphecy->createOrUpdate(Argument::type(Donation::class));
+        $busDispatchMethod = $busProphecy->dispatch(Argument::type(Envelope::class))
+            ->willReturn($dummyEnvelope);
         if ($shouldPush) {
-            $method
-                ->shouldBeCalledOnce()
-                ->will(
-                /**
-                 * @param array{0: Donation} $args
-                 */
-                    fn (array $args) => Salesforce18Id::of($args[0]->getSalesforceId() ?? '123456789012345678')
-                );
+            $busDispatchMethod->shouldBeCalledOnce();
         } else {
-            $method->shouldNotBeCalled();
+            $busDispatchMethod->shouldNotBeCalled();
         }
 
         // act
-        $sut->pushSalesforcePending(now: $simulatedNow);
+        $sut->pushSalesforcePending(now: $simulatedNow, bus: $busProphecy->reveal());
     }
 
     /**

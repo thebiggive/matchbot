@@ -15,6 +15,7 @@ use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
@@ -24,6 +25,8 @@ use MatchBot\Domain\DonationService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\RateLimiter\Exception\RateLimitExceededException;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -34,6 +37,7 @@ class Create extends Action
         private DonationService $donationService,
         private SerializerInterface $serializer,
         LoggerInterface $logger,
+        private RoutableMessageBus $bus,
     ) {
         parent::__construct($logger);
     }
@@ -170,6 +174,8 @@ class Create extends Action
                 ),
             );
         }
+
+        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
 
         $data = new DonationCreatedResponse();
         $data->donation = $donation->toFrontEndApiModel();

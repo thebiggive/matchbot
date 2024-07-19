@@ -6,14 +6,15 @@ namespace MatchBot\Tests\Domain;
 
 use DI\Container;
 use Doctrine\Common\Cache\CacheProvider;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client;
-use MatchBot\Client\BadRequestException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -22,15 +23,11 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
-use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
-use PHP_CodeSniffer\Standards\PSR1\Sniffs\Methods\CamelCapsMethodNameSniff;
-use PhpParser\Node\Arg;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
-use ReflectionClass;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
@@ -44,114 +41,46 @@ class DonationRepositoryTest extends TestCase
 
     public function setUp(): void
     {
+        $connectionWhichUpdatesFine = $this->prophesize(Connection::class);
+        $connectionWhichUpdatesFine->executeStatement(
+            Argument::type('string'),
+            Argument::type('array'),
+        )
+            ->willReturn(0);
+
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $this->entityManagerProphecy->getConnection()->willReturn($connectionWhichUpdatesFine->reveal());
+
+        $salesforceIdSettingQuery = $this->prophesize(AbstractQuery::class);
+        $salesforceIdSettingQuery->setParameter(Argument::type('string'), Argument::type('string'));
+        $salesforceIdSettingQuery->execute();
+        $this->entityManagerProphecy->createQuery(Argument::type('string'))
+            ->willReturn($salesforceIdSettingQuery->reveal());
+
         parent::setUp();
     }
 
     public function testExistingPushOK(): void
     {
-        $donation = $this->getTestDonation();
-
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->createOrUpdate(Argument::type(Donation::class))
+            ->createOrUpdate(Argument::type(DonationUpserted::class))
             ->shouldBeCalledOnce()
-            ->willReturn(Salesforce18Id::of($donation->getSalesforceId() ?? throw new \Exception('missing SF ID')));
-        $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalled();
-        $this->entityManagerProphecy->flush()->shouldBeCalled();
+            ->willReturn(Salesforce18Id::of('sfDonation36912345'));
 
-
-        $success = $this->getRepo($donationClientProphecy)->push($donation, false);
-
-        $this->assertTrue($success);
-    }
-
-    public function testItReplacesNullDonationTypeWithCardOnUpdate(): void
-    {
-        // arrange
-        $donationClientProphecy = $this->prophesize(Client\Donation::class);
-        $donation = $this->getTestDonation();
-        $donationClientProphecy->createOrUpdate(Argument::any())->willReturn(
-            Salesforce18Id::of($donation->getSalesforceId() ?? throw new \Exception('missing SF ID'))
-        );
-        $sut = $this->getRepo($donationClientProphecy);
-
-        // Simulate an old donation that was created in OCtober 22 or earlier,
-        // before we forced every donation to have a Payment Method Type set.
-        // May want to make the property non-nullalble but will require updating DB records.
-
-        $paymentMethodTypeProperty = new \ReflectionProperty(Donation::class, 'paymentMethodType');
-        $paymentMethodTypeProperty->setValue($donation, null);
-
-        $this->entityManagerProphecy->persist($donation)->shouldBeCalled();
-
-        // act
-        $sut->doUpdate($donation);
-
-        // assert
-        $this->assertSame(PaymentMethodType::Card, $donation->getPaymentMethodType());
-    }
-
-    public function testExistingButPendingNotRePushed(): void
-    {
-        $donationClientProphecy = $this->prophesize(Client\Donation::class);
-        $donationClientProphecy
-            ->createOrUpdate(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-
-        $pendingDonation = $this->getTestDonation();
-        $pendingDonation->setDonationStatus(DonationStatus::Pending);
-        $this->entityManagerProphecy->persist($pendingDonation)->shouldBeCalled();
-        $this->entityManagerProphecy->flush()->shouldBeCalled();
-
-        $success = $this->getRepo($donationClientProphecy)->push($pendingDonation, false);
-
-        $this->assertTrue($success);
-    }
-
-    public function testExistingPushWithMissingProxyIdButPendingUpdateStatusNew(): void
-    {
-        $donationClientProphecy = $this->prophesize(Client\Donation::class);
-        $donationClientProphecy
-            ->createOrUpdate(Argument::type(Donation::class))
-            ->shouldNotBeCalled();
-
-        $donation = $this->getTestDonation();
-        $donationReflected = new ReflectionClass($donation);
-
-        $sfIdProperty = $donationReflected->getProperty('salesforceId');
-        $sfIdProperty->setValue($donation, null); // Allowed property type but not allowed in public setter.
-
-        $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
-
-        $this->entityManagerProphecy->persist($donation)->shouldBeCalled();
-        $this->entityManagerProphecy->flush()->shouldBeCalled();
-
-        $success = $this->getRepo($donationClientProphecy)->push($donation, false);
-
-        // For brand new donations, push() should do nothing here and leave the donation to be picked up
-        // by a later scheduled run, remaining in 'pending-update' push status.
-        $this->assertFalse($success);
-        $this->assertEquals('pending-update', $donation->getSalesforcePushStatus());
+        // Just confirm it doesn't throw.
+        $this->getRepo($donationClientProphecy)->push(DonationUpserted::fromDonation($this->getTestDonation()), false);
     }
 
     public function testExistingPush404InSandbox(): void
     {
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->createOrUpdate(Argument::type(Donation::class))
+            ->createOrUpdate(Argument::type(DonationUpserted::class))
             ->shouldBeCalledOnce()
             ->willThrow(Client\NotFoundException::class);
 
-        $donation = $this->getTestDonation();
-
-        $this->entityManagerProphecy->persist($donation)->shouldBeCalled();
-        $this->entityManagerProphecy->flush()->shouldBeCalled();
-
-
-        $success = $this->getRepo($donationClientProphecy)->push($donation, false);
-
-        $this->assertTrue($success);
+        $this->getRepo($donationClientProphecy)->push(self::someUpsertedMessage(), false);
     }
 
     public function testBuildFromApiRequestSuccess(): void
@@ -243,20 +172,15 @@ class DonationRepositoryTest extends TestCase
 
     public function testPushResponseError(): void
     {
+        $this->expectException(Client\BadRequestException::class); // This kind's left unhandled
+
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
-            ->createOrUpdate(Argument::type(Donation::class))
+            ->createOrUpdate(Argument::type(DonationUpserted::class))
             ->shouldBeCalledOnce()
-            ->willThrow(new BadRequestException('Some error'));
+            ->willThrow(Client\BadRequestException::class);
 
-        $donation = $this->getTestDonation();
-
-        $this->entityManagerProphecy->persist($donation)->shouldBeCalled();
-        $this->entityManagerProphecy->flush()->shouldBeCalled();
-
-        $success = $this->getRepo($donationClientProphecy)->push($donation, false);
-
-        $this->assertFalse($success);
+        $this->getRepo($donationClientProphecy)->push(self::someUpsertedMessage(), false);
     }
 
     public function testStripeAmountForCharityWithTipUsingAmex(): void

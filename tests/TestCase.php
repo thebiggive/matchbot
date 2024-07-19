@@ -6,8 +6,11 @@ namespace MatchBot\Tests;
 
 use DI\ContainerBuilder;
 use Exception;
+use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\Donation;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -157,13 +160,14 @@ class TestCase extends PHPUnitTestCase
         return new SlimRequest($method, $uri, $h, $cookies, $serverParams, $stream);
     }
 
-
-
     public static function getMinimalCampaign(): Campaign
     {
-        $charity = \MatchBot\Tests\TestCase::someCharity();
+        $charity = self::someCharity();
         $charity->setTbgClaimingGiftAid(false);
-        return new Campaign($charity);
+        $campaign = new Campaign($charity);
+        $campaign->setIsMatched(false);
+
+        return $campaign;
     }
 
     /**
@@ -196,6 +200,28 @@ class TestCase extends PHPUnitTestCase
         $campaign->setSalesforceId('1CampaignId' .  self::randomHex(3));
 
         return $campaign;
+    }
+
+    public static function someDonation(): Donation
+    {
+        return Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: null,
+            lastName: null,
+            emailAddress: 'user@example.com',
+            countryCode: 'GB',
+        ), TestCase::someCampaign());
+    }
+
+    public static function someUpsertedMessage(): DonationUpserted
+    {
+        $donation = self::someDonation();
+        $donation->setTransactionId('pi_1234');
+
+        return DonationUpserted::fromDonation($donation);
     }
 
     /**

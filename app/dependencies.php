@@ -12,6 +12,8 @@ use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
@@ -32,7 +34,6 @@ use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Processor\MemoryPeakUsageProcessor;
-use Monolog\Processor\MemoryUsageProcessor;
 use Monolog\Processor\UidProcessor;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -55,6 +56,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
 use Symfony\Component\Messenger\Middleware\SendMessageMiddleware;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransportFactory;
 use Symfony\Component\Messenger\Transport\Sender\SendersLocator;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 use Symfony\Component\Messenger\Transport\TransportFactory;
@@ -280,6 +282,7 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     Messages\Donation::class => [ClaimBotTransport::class],
                     StripePayout::class => [TransportInterface::class],
+                    DonationUpserted::class => [TransportInterface::class],
                 ],
                 $c,
             ));
@@ -289,6 +292,7 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
                     StripePayout::class => [$c->get(StripePayoutHandler::class)],
+                    DonationUpserted::class => [$c->get(DonationUpsertedHandler::class)],
                 ],
             ));
             $handleMiddleware->setLogger($logger);
@@ -399,11 +403,23 @@ return function (ContainerBuilder $containerBuilder) {
 
         RoutableMessageBus::class => static function (ContainerInterface $c): RoutableMessageBus {
             $busContainer = new Container();
+            $bus = $c->get(MessageBusInterface::class);
+
             $busContainer->set('claimbot.donation.claim', $c->get(MessageBusInterface::class));
             $busContainer->set('claimbot.donation.result', $c->get(MessageBusInterface::class));
             $busContainer->set(\Stripe\Event::PAYOUT_PAID, $c->get(MessageBusInterface::class));
 
-            return new RoutableMessageBus($busContainer);
+            /**
+             * Every message defaults to our only bus, so we think these are technically redundant for
+             * now. This also means the list isn't exhaustive – we *know* we don't need
+             * {@see DonationStateUpdated} here. Removing `claimbot` items would require some more testing.
+             */
+            $busContainer->set('claimbot.donation.claim', $bus);
+            $busContainer->set('claimbot.donation.result', $bus);
+            $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
+            $busContainer->set(DonationUpserted::class, $bus);
+
+            return new RoutableMessageBus($busContainer, $bus);
         },
 
         SerializerInterface::class => static function (ContainerInterface $c): SerializerInterface {
@@ -431,6 +447,7 @@ return function (ContainerBuilder $containerBuilder) {
         TransportInterface::class => static function (ContainerInterface $c): TransportInterface {
             $transportFactory = new TransportFactory([
                 new AmazonSqsTransportFactory(),
+                new InMemoryTransportFactory(), // For unit tests.
                 new RedisTransportFactory(),
             ]);
             return $transportFactory->createTransport(
@@ -472,13 +489,13 @@ return function (ContainerBuilder $containerBuilder) {
                 return new DonationService(
                     donationRepository: $c->get(DonationRepository::class),
                     campaignRepository: $c->get(CampaignRepository::class),
-                    rateLimiterFactory: $rateLimiterFactory,
                     logger: $c->get(LoggerInterface::class),
                     entityManager: $c->get(RetrySafeEntityManager::class),
                     stripe: $c->get(\MatchBot\Client\Stripe::class),
                     matchingAdapter: $c->get(Matching\Adapter::class),
                     chatter: $chatter,
                     clock: $c->get(ClockInterfaceAlias::class),
+                    rateLimiterFactory: $rateLimiterFactory,
                 );
             }
     ]);
