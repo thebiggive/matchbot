@@ -16,7 +16,6 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
-use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Symfony\Component\Messenger\Envelope;
@@ -235,7 +234,7 @@ class DonationRepositoryTest extends IntegrationTest
         \assert($simulatedNow instanceof \DateTimeImmutable);
 
         // assert
-        $busDispatchMethod = $busProphecy->dispatch(Argument::type(AbstractStateChanged::class))
+        $busDispatchMethod = $busProphecy->dispatch(Argument::type(Envelope::class))
             ->willReturn($dummyEnvelope);
         if ($shouldPush) {
             $busDispatchMethod->shouldBeCalledOnce();
