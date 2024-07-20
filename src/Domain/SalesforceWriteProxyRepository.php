@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Client;
 
@@ -36,13 +37,24 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
     private function setLastPush(string $uuid): void
     {
         $connection = $this->getEntityManager()->getConnection();
-        $connection->executeStatement(
-            <<<EOT
+        try {
+            $connection->executeStatement(
+                <<<EOT
                 UPDATE Donation SET salesforcePushStatus = 'complete', salesforceLastPush = NOW()
                 WHERE uuid = :donationUUID
                 LIMIT 1;
             EOT,
-            ['donationUUID' => $uuid],
-        );
+                ['donationUUID' => $uuid],
+            );
+        } catch (LockWaitTimeoutException $ex) {
+            // A later thread can pick up the push if necessary.
+            // TODO maybe build a generalised retry for the two non-critical SF DB patches.
+            // And/or possibly consider not storing last push in the database? Queueing should
+            // make this largely redundant.
+            $this->logInfo(sprintf(
+                'Lock unavailable to set donation %s Salesforce push status fields, will try later',
+                $uuid,
+            ));
+        }
     }
 }
