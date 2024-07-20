@@ -715,11 +715,20 @@ class DonationRepository extends SalesforceWriteProxyRepository
         try {
             $this->safelySetSalesforceId($uuid, $salesforceId);
         } catch (DBALException\LockWaitTimeoutException $exception) {
-            $this->logWarning(sprintf(
+            // Initial checks on Regression suggest that this happens semi-regularly and that recovery
+            // from later calls is very possibly good enough without retrying here. So for now the level
+            // is `.INFO` only, and we also need to avoid logging the 'An exception occurred...' bit of
+            // the message to stop a sensitive log metric pattern from interpreting the event as an error.
+            $messageWithoutPrefix = str_replace(
+                'An exception occurred while executing a query: ',
+                '',
+                $exception->getMessage(),
+            );
+            $this->logInfo(sprintf(
                 'Lock unavailable to give donation %s Salesforce ID %s, will leave for later: %s',
                 $uuid,
                 $salesforceId,
-                $exception->getMessage(),
+                $messageWithoutPrefix,
             ));
         }
     }
