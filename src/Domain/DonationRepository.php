@@ -768,6 +768,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             SELECT donation from Matchbot\Domain\Donation donation
             WHERE donation.pspCustomerId = :pspCustomerId
             AND donation.donationStatus IN (:succcessStatus)
+            ORDER BY donation.createdAt DESC
         DQL
         );
 
