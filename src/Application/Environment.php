@@ -8,6 +8,7 @@ enum Environment
     case Staging;
     case Regression;
     case Local;
+    case Test;
 
     public function isFeatureEnabledListPastDonations(): bool
     {
@@ -21,6 +22,7 @@ enum Environment
             'staging' => self::Staging,
             'regression' => self::Regression,
             'local' => self::Local,
+            'test' => self::Test,
             default => throw new \Exception("Unknown environment \"$name\""),
         };
     }

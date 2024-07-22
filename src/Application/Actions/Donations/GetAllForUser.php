@@ -43,6 +43,7 @@ class GetAllForUser extends Action
             throw new HttpBadRequestException($request, 'Missing customer ID');
         }
 
+
         $stripeCustomerId = StripeCustomerId::of($customerId);
 
         if (! $this->environment->isFeatureEnabledListPastDonations()) {
