@@ -46,6 +46,10 @@ return function (App $app) {
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
+        $versionGroup->get('/people/{personId:[a-z0-9-]{36}}/donations', Donations\GetAllForUser::class)
+            ->add(PersonWithPasswordAuthMiddleware::class)
+            ->add($ipMiddleware);
+
         $versionGroup->group(
             '/people/{personId:[a-z0-9-]{36}}/payment_methods',
             function (RouteCollectorProxy $paymentMethodsGroup) {

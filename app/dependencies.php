@@ -11,6 +11,7 @@ use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
+use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
@@ -77,6 +78,11 @@ return function (ContainerBuilder $containerBuilder) {
     // env where we use the non-compiled container but not in prod or prod-like envs where it causes an error
     // "Cannot compile closures which import variables using the `use` keyword"
     // https://github.com/PHP-DI/PHP-DI/blob/a7410e4ee4f61312183af2d7e26a9e6592d2d974/src/Compiler/Compiler.php#L389
+
+    $app_env = getenv('APP_ENV');
+    if ($app_env === false) {
+        throw new \Exception("APP_ENV environment variable not set");
+    }
 
     $containerBuilder->addDefinitions([
         Auth\DonationPublicAuthMiddleware::class =>
@@ -243,6 +249,8 @@ return function (ContainerBuilder $containerBuilder) {
 
             return $logger;
         },
+
+        Environment::class => fn(ContainerInterface $_c): Environment => Environment::fromAppEnv($app_env),
 
         'donation-creation-rate-limiter-factory' => function (ContainerInterface $c): RateLimiterFactory {
             return new RateLimiterFactory(

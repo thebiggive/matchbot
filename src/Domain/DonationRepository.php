@@ -753,4 +753,30 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $query->setParameter('uuid', $uuid);
         $query->execute();
     }
+
+    /**
+     * Finds all successful donations from the donor with the given stripe customer ID.
+     *
+     * In principle, we would probably prefer to the user ID's we've assigned to donors here
+     * instead of the Stripe Customer ID, so we're less tied into stripe, but we don't have those currently in
+     * the Donation table. Considering adding that column and writing a script to fill in on all old donations.
+     * @return list<Donation>
+     */
+    public function findAllCompleteForCustomer(StripeCustomerId $stripeCustomerId): array
+    {
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT donation from Matchbot\Domain\Donation donation
+            WHERE donation.pspCustomerId = :pspCustomerId
+            AND donation.donationStatus IN (:succcessStatus)
+            ORDER BY donation.createdAt DESC
+        DQL
+        );
+
+        $query->setParameter('pspCustomerId', $stripeCustomerId->stripeCustomerId);
+        $query->setParameter('succcessStatus', DonationStatus::SUCCESS_STATUSES);
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
 }
