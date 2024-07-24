@@ -9,7 +9,6 @@ use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\Donations\Update;
-use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Donation;
