@@ -246,7 +246,10 @@ return function (ContainerBuilder $containerBuilder) {
             return $logger;
         },
 
-        Environment::class => fn(ContainerInterface $_c): Environment => Environment::fromAppEnv(getenv('APP_ENV')),
+        Environment::class => function (ContainerInterface $_c): Environment {
+            /** @psalm-suppress PossiblyFalseArgument - we expect APP_ENV to be set everywhere */
+            return Environment::fromAppEnv(getenv('APP_ENV'));
+        },
 
         'donation-creation-rate-limiter-factory' => function (ContainerInterface $c): RateLimiterFactory {
             return new RateLimiterFactory(
