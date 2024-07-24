@@ -22,6 +22,7 @@ use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
 use Prophecy\Argument;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\App;
@@ -29,6 +30,8 @@ use Slim\Exception\HttpUnauthorizedException;
 use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use UnexpectedValueException;
 
 class CreateTest extends TestCase
@@ -39,6 +42,9 @@ class CreateTest extends TestCase
      * @link https://stripe.com/docs/api/payment_intents/object
      */
     private static PaymentIntent $somePaymentIntentResult;
+
+    /** @var ObjectProphecy<RoutableMessageBus> */
+    private ObjectProphecy $messageBusProphecy;
 
     public function setUp(): void
     {
@@ -93,6 +99,8 @@ class CreateTest extends TestCase
 
         $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
         $container->set(CampaignRepository::class, $campaignRepositoryProphecy->reveal());
+
+        $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
     }
 
     /**
@@ -942,12 +950,17 @@ class CreateTest extends TestCase
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willReturn($donation);
 
-        $upsertMessage = DonationUpserted::fromDonation($donation);
+        /**
+         * @see \MatchBot\IntegrationTests\DonationRepositoryTest for more granular checks of what's
+         * in the envelope. There isn't much variation in what we dispatch so it's not critical to
+         * repeat these checks in every test, but we do want to check we are dispatching the
+         * expected number of times.
+         */
         if ($donationPushed) {
-            // TODO assert something about the bus instead?
-//            $donationRepoProphecy->push($upsertMessage, true)->shouldBeCalledOnce();
+            $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->shouldBeCalledOnce()
+                ->willReturnArgument();
         } else {
-            $donationRepoProphecy->push($upsertMessage, true)->shouldNotBeCalled();
+            $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->shouldNotBeCalled();
         }
 
         if ($donationMatched) {
@@ -978,6 +991,7 @@ class CreateTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+        $container->set(RoutableMessageBus::class, $this->messageBusProphecy->reveal());
 
         return $app;
     }
