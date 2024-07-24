@@ -5,6 +5,7 @@ namespace MatchBot\IntegrationTests;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Charity;
@@ -233,7 +234,15 @@ class DonationRepositoryTest extends IntegrationTest
 
         // assert
         $busDispatchMethod = $busProphecy->dispatch(Argument::type(Envelope::class))
-            ->willReturn(new Envelope(new \stdClass()));
+            ->will(function (array $args) use ($donationUUID) {
+                /** @var Envelope $envelope */
+                $envelope = $args[0];
+                $message = $envelope->getMessage();
+                \assert($message instanceof DonationUpserted);
+                \assert($message->uuid === $donationUUID);
+                return $envelope;
+            });
+
         if ($shouldPush) {
             $busDispatchMethod->shouldBeCalledOnce();
         } else {
