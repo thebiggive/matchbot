@@ -170,10 +170,12 @@ class DonationRepositoryTest extends TestCase
             ->buildFromApiRequest($createPayload);
     }
 
-    public function testPushResponseError(): void
+    /**
+     * Logs an error too – but for the purposes of this test just verify it doesn't crash unhandled
+     * for now.
+     */
+    public function testPushResponseBadRequestErrorIsHandled(): void
     {
-        $this->expectException(Client\BadRequestException::class); // This kind's left unhandled
-
         $donationClientProphecy = $this->prophesize(Client\Donation::class);
         $donationClientProphecy
             ->createOrUpdate(Argument::type(DonationUpserted::class))
