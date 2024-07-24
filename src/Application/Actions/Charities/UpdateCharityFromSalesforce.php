@@ -7,6 +7,8 @@ namespace MatchBot\Application\Actions\Charities;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\AssertionFailedException;
+use MatchBot\Application\Environment;
+use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Salesforce18Id;
@@ -21,6 +23,7 @@ class UpdateCharityFromSalesforce extends Action
         private CampaignRepository $campaignRepository,
         LoggerInterface $logger,
         private EntityManagerInterface $em,
+        private Environment $environment,
     ) {
         parent::__construct($logger);
     }
@@ -42,7 +45,14 @@ class UpdateCharityFromSalesforce extends Action
         $campaignsToUpdate = $this->campaignRepository->findUpdatableForCharity($sfId);
         foreach ($campaignsToUpdate as $campaign) {
             // also implicitly updates the charity every time.
-            $this->campaignRepository->updateFromSf($campaign);
+            try {
+                $this->campaignRepository->updateFromSf($campaign);
+            } catch (NotFoundException $e) {
+                if ($this->environment === Environment::Production) {
+                    // we don't expect to delete campaigns in prod
+                    throw $e;
+                }
+            }
         }
 
         $this->em->flush();
