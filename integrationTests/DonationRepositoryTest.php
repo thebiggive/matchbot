@@ -217,7 +217,6 @@ class DonationRepositoryTest extends IntegrationTest
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
 
         $busProphecy = $this->prophesize(RoutableMessageBus::class);
-        $dummyEnvelope = new Envelope(new \stdClass()); // Final so can't prophesise.
 
         $pendingCreate = \MatchBot\Domain\SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE;
         $connection->executeStatement(<<<SQL
@@ -234,7 +233,7 @@ class DonationRepositoryTest extends IntegrationTest
 
         // assert
         $busDispatchMethod = $busProphecy->dispatch(Argument::type(Envelope::class))
-            ->willReturn($dummyEnvelope);
+            ->willReturn(new Envelope(new \stdClass()));
         if ($shouldPush) {
             $busDispatchMethod->shouldBeCalledOnce();
         } else {

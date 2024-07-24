@@ -22,7 +22,7 @@ use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
 use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class Confirm extends Action
 {
@@ -45,7 +45,7 @@ class Confirm extends Action
         private DonationRepository $donationRepository,
         private Stripe $stripe,
         private EntityManagerInterface $entityManager,
-        private RoutableMessageBus $bus,
+        private MessageBusInterface $bus,
     ) {
         parent::__construct($logger);
     }

@@ -26,9 +26,9 @@ class Donation extends Common
             $response = $this->getHttpClient()->post(
                 $this->getSetting('donation', 'baseUri') . '/' . $message->uuid,
                 [
-                    'json' => $message->json,
+                    'json' => $message->jsonSnapshot,
                     'headers' => [
-                        'X-Webhook-Verify-Hash' => $this->hash(json_encode($message->json)),
+                        'X-Webhook-Verify-Hash' => $this->hash(json_encode($message->jsonSnapshot)),
                     ],
                 ]
             );

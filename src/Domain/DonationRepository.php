@@ -19,7 +19,7 @@ use MatchBot\Client\NotFoundException;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * @template-extends SalesforceWriteProxyRepository<Donation, \MatchBot\Client\Donation>
@@ -655,10 +655,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * By using FIFO queues and deduplicating on UUID if there are multiple consumers, we should make it unlikely
      * that Salesforce hits Donation record lock contention issues.
      *
-     * @param RoutableMessageBus $bus   We had to not DI this to avoid a circular dependency.
      * @return int  Number of objects pushed
      */
-    public function pushSalesforcePending(\DateTimeImmutable $now, RoutableMessageBus $bus): int
+    public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus): int
     {
         // We don't want to push donations that were created or modified in the last 5 minutes,
         // to avoid collisions with other pushes.
