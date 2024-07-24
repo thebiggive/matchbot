@@ -27,6 +27,7 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
 
     /**
      * @psalm-param T $proxy
+     * @throws Client\NotFoundException
      */
     public function updateFromSf(SalesforceReadProxy $proxy, bool $autoSave = true): void
     {
