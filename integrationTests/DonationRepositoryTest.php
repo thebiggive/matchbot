@@ -234,12 +234,13 @@ class DonationRepositoryTest extends IntegrationTest
 
         // assert
         $busDispatchMethod = $busProphecy->dispatch(Argument::type(Envelope::class))
-            ->will(function (array $args) use ($donationUUID) {
-                /** @var Envelope $envelope */
+            ->will(/**
+             * @param array{0: Envelope} $args
+             */ function (array $args) use ($donationUUID) {
                 $envelope = $args[0];
                 $message = $envelope->getMessage();
-                \assert($message instanceof DonationUpserted);
-                \assert($message->uuid === $donationUUID);
+                TestCase::assertInstanceOf(DonationUpserted::class, $message);
+                TestCase::assertSame($donationUUID, $message->uuid);
                 return $envelope;
             });
 
