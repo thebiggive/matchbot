@@ -715,16 +715,18 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     private function setSalesforceFields(string $uuid, ?Salesforce18Id $salesforceId): void
     {
+        $now = new \DateTimeImmutable('now');
         $query = $this->getEntityManager()->createQuery(
             <<<'DQL'
             UPDATE Matchbot\Domain\Donation donation
             SET
                 donation.salesforceId = :salesforceId,
                 donation.salesforcePushStatus = 'complete',
-                donation.salesforceLastPush = NOW()
+                donation.salesforceLastPush = :now
             WHERE donation.uuid = :uuid
             DQL
         );
+        $query->setParameter('now', $now);
         $query->setParameter('salesforceId', $salesforceId?->value);
         $query->setParameter('uuid', $uuid);
         $query->execute();
