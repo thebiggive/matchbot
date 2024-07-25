@@ -19,7 +19,7 @@ use MatchBot\Client\NotFoundException;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * @template-extends SalesforceWriteProxyRepository<Donation, \MatchBot\Client\Donation>
@@ -29,6 +29,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
 {
     /** Maximum of each type of pending object to process */
     private const MAX_PER_BULK_PUSH = 5_000;
+
+    private const int MAX_SALEFORCE_FIELD_UPDATE_TRIES = 3;
 
     private CampaignRepository $campaignRepository;
     private FundRepository $fundRepository;
@@ -51,46 +53,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->matchingAdapter = $adapter;
     }
 
-    public function doCreate(AbstractStateChanged $changeMessage): bool
+    public function doCreate(AbstractStateChanged $changeMessage): void
     {
-        Assertion::isInstanceOf($changeMessage, DonationUpserted::class);
-
-        try {
-            $salesforceDonationId = $this->getClient()->createOrUpdate($changeMessage);
-            $this->setSalesforceIdIfNeeded($changeMessage, $salesforceDonationId);
-        } catch (NotFoundException $ex) {
-            // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
-            $this->logInfo(
-                "Marking Salesforce donation {$changeMessage->uuid} as campaign removed; will not try to push again."
-            );
-
-            return false;
-        } catch (BadRequestException $exception) {
-            return false;
-        }
-
-        return true;
+        $this->upsert($changeMessage);
     }
 
-    public function doUpdate(AbstractStateChanged $changeMessage): bool
+    public function doUpdate(AbstractStateChanged $changeMessage): void
     {
-        Assertion::isInstanceOf($changeMessage, DonationUpserted::class);
-
-        try {
-            $salesforceDonationId = $this->getClient()->createOrUpdate($changeMessage);
-        } catch (NotFoundException $ex) {
-            // Thrown only for *sandbox* 404s -> quietly stop trying to push the removed donation.
-            $this->logInfo(
-                "Marking 404 campaign Salesforce donation {$changeMessage->uuid} as complete; " .
-                'will not try to push again.'
-            );
-
-            return false;
-        }
-
-        $this->setSalesforceIdIfNeeded($changeMessage, $salesforceDonationId);
-
-        return true;
+        $this->upsert($changeMessage);
     }
 
     /**
@@ -655,10 +625,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * By using FIFO queues and deduplicating on UUID if there are multiple consumers, we should make it unlikely
      * that Salesforce hits Donation record lock contention issues.
      *
-     * @param RoutableMessageBus $bus   We had to not DI this to avoid a circular dependency.
      * @return int  Number of objects pushed
      */
-    public function pushSalesforcePending(\DateTimeImmutable $now, RoutableMessageBus $bus): int
+    public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus): int
     {
         // We don't want to push donations that were created or modified in the last 5 minutes,
         // to avoid collisions with other pushes.
@@ -706,52 +675,85 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return count($proxiesToCreate) + count($proxiesToUpdate);
     }
 
-    private function setSalesforceIdIfNeeded(AbstractStateChanged $changeMessage, Salesforce18Id $salesforceId): void
-    {
-        // If Salesforce ID wasn't set yet, try to safely set it. If it
-        // fails, this should be safe to leave for a later update. Salesforce has UUIDs so
-        // we won't lose the ability to reconcile the records.
+    private function setSalesforceFieldsWithRetry(
+        AbstractStateChanged $changeMessage,
+        ?Salesforce18Id $salesforceId
+    ): void {
+        $tries = 0;
+
+        // Try to safely set Salesforce ID, and other push tracking fields. If it
+        // fails repeatedly, this should be safe to leave for a later update.
+        // Salesforce has UUIDs so we won't lose the ability to reconcile the records.
         $uuid = $changeMessage->uuid;
-        try {
-            $this->safelySetSalesforceId($uuid, $salesforceId);
-        } catch (DBALException\LockWaitTimeoutException $exception) {
-            // Initial checks on Regression suggest that this happens semi-regularly and that recovery
-            // from later calls is very possibly good enough without retrying here. So for now the level
-            // is `.INFO` only, and we also need to avoid logging the 'An exception occurred...' bit of
-            // the message to stop a sensitive log metric pattern from interpreting the event as an error.
-            $messageWithoutPrefix = str_replace(
-                'An exception occurred while executing a query: ',
-                '',
-                $exception->getMessage(),
-            );
-            $this->logInfo(sprintf(
-                'Lock unavailable to give donation %s Salesforce ID %s, will leave for later: %s',
-                $uuid,
-                $salesforceId,
-                $messageWithoutPrefix,
-            ));
-        }
+
+        do {
+            try {
+                $this->setSalesforceFields($uuid, $salesforceId);
+                return;
+            } catch (DBALException\RetryableException $exception) {
+                $tries++;
+                $this->logInfo(sprintf(
+                    '%s: Lock unavailable to set Salesforce fields on donation %s with Salesforce ID %s on try #%d',
+                    get_class($exception),
+                    $uuid,
+                    $salesforceId?->value ?? 'null',
+                    $tries,
+                ));
+            }
+        } while ($tries < self::MAX_SALEFORCE_FIELD_UPDATE_TRIES);
+
+        $this->logWarning(
+            "Failed to set Salesforce fields for donation $uuid after $tries tries"
+        );
     }
 
     /**
-     * Sets a Salesforce ID without its own lock and importantly without the ORM, using
-     * a raw DQL `UPDATE` that should make it safe irrespective of ORM work that could
-     * also be happening on the record.
+     * Sets a Salesforce ID (and general status things)without its own lock and importantly without the ORM, using
+     * a raw DQL `UPDATE` that should make it safe irrespective of ORM work that could also be happening on the record.
      *
      * @throws DBALException\LockWaitTimeoutException if some other transaction is holding a lock
      */
-    private function safelySetSalesforceId(string $uuid, Salesforce18Id $salesforceId): void
+    private function setSalesforceFields(string $uuid, ?Salesforce18Id $salesforceId): void
     {
         $query = $this->getEntityManager()->createQuery(
             <<<'DQL'
             UPDATE Matchbot\Domain\Donation donation
-            SET donation.salesforceId = :salesforceId
+            SET
+                donation.salesforceId = :salesforceId,
+                donation.salesforcePushStatus = 'complete',
+                donation.salesforceLastPush = NOW()
             WHERE donation.uuid = :uuid
             DQL
         );
-        $query->setParameter('salesforceId', $salesforceId->value);
+        $query->setParameter('salesforceId', $salesforceId?->value);
         $query->setParameter('uuid', $uuid);
         $query->execute();
+    }
+
+    private function upsert(AbstractStateChanged $changeMessage): void
+    {
+        Assertion::isInstanceOf($changeMessage, DonationUpserted::class);
+
+        try {
+            $salesforceDonationId = $this->getClient()->createOrUpdate($changeMessage);
+        } catch (NotFoundException $ex) {
+            // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
+            $this->logInfo(
+                "Marking 404 campaign Salesforce donation {$changeMessage->uuid} as complete; " .
+                'will not try to push again.'
+            );
+            $this->setSalesforceFieldsWithRetry($changeMessage, null);
+
+            return;
+        } catch (BadRequestException $exception) {
+            $this->logError(
+                "Pushing Salesforce donation {$changeMessage->uuid} got 400: {$exception->getMessage()}"
+            );
+
+            return;
+        }
+
+        $this->setSalesforceFieldsWithRetry($changeMessage, $salesforceDonationId);
     }
 
     /**

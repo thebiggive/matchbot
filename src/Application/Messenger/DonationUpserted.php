@@ -6,16 +6,16 @@ use MatchBot\Domain\Donation;
 
 class DonationUpserted extends AbstractStateChanged
 {
-    private function __construct(public string $uuid, public array $json)
+    private function __construct(public string $uuid, public array $jsonSnapshot)
     {
-        parent::__construct($uuid, $json);
+        parent::__construct($uuid, $jsonSnapshot);
     }
 
     public static function fromDonation(Donation $donation): self
     {
         return new self(
             uuid: $donation->getUuid(),
-            json: $donation->toSFApiModel(),
+            jsonSnapshot: $donation->toSFApiModel(),
         );
     }
 }

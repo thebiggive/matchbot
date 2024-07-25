@@ -9,7 +9,6 @@ use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\Donations\Update;
-use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Donation;
@@ -41,10 +40,14 @@ class UpdateHandlesLockExceptionTest extends TestCase
     /** @var ObjectProphecy<EntityManagerInterface>  */
     private ObjectProphecy $entityManagerProphecy;
 
+    /** @var ObjectProphecy<RoutableMessageBus> */
+    private ObjectProphecy $messageBusProphecy;
+
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
     }
 
     public function testRetriesOnUpdateStillPendingLockException(): void
@@ -76,8 +79,6 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Cancelled);
 
-        // TODO expect something on bus instead
-//        $this->donationRepositoryProphecy->push($upsertMessage, false)->shouldBeCalled();
         $this->donationRepositoryProphecy->releaseMatchFunds($donation)->shouldBeCalled();
 
         $updateAction = $this->makeUpdateAction();
@@ -170,13 +171,19 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))
             ->shouldBeCalledTimes(2); // One failure, one success
         $this->entityManagerProphecy->commit()->shouldBeCalledOnce();
+
+        /**
+         * @see \MatchBot\IntegrationTests\DonationRepositoryTest for more granular checks of what's
+         * in the envelope. There isn't much variation in what we dispatch so it's not critical to
+         * repeat these checks in every test, but we do want to check we are dispatching the
+         * expected number of times.
+         */
+        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->shouldBeCalledOnce()
+            ->willReturnArgument();
     }
 
     private function makeUpdateAction(): Update
     {
-        $routableMessageBusProphecy = $this->prophesize(RoutableMessageBus::class);
-        $routableMessageBusProphecy->dispatch(Argument::type(Envelope::class))->willReturnArgument();
-
         return new Update(
             $this->donationRepositoryProphecy->reveal(),
             $this->entityManagerProphecy->reveal(),
@@ -184,7 +191,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
             $this->createStub(Stripe::class),
             new NullLogger(),
             new MockClock(),
-            $routableMessageBusProphecy->reveal(),
+            $this->messageBusProphecy->reveal(),
         );
     }
 }

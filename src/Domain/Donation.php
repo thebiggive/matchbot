@@ -1415,7 +1415,9 @@ class Donation extends SalesforceWriteProxy
         $this->setTipGiftAid($tipGiftAid);
         $this->setTbgShouldProcessGiftAid($this->getCampaign()->getCharity()->isTbgClaimingGiftAid());
         $this->setDonorHomePostcode($donorHomePostcode);
-        $this->setDonorName($donorName);
+        if ($donorName) {
+            $this->setDonorName($donorName);
+        }
         $this->setDonorEmailAddress($donorEmailAddress);
         $this->setTbgComms($tbgComms);
         $this->setCharityComms($charityComms);

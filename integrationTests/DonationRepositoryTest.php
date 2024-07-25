@@ -5,6 +5,7 @@ namespace MatchBot\IntegrationTests;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Charity;
@@ -217,7 +218,6 @@ class DonationRepositoryTest extends IntegrationTest
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
 
         $busProphecy = $this->prophesize(RoutableMessageBus::class);
-        $dummyEnvelope = new Envelope(new \stdClass()); // Final so can't prophesise.
 
         $pendingCreate = \MatchBot\Domain\SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE;
         $connection->executeStatement(<<<SQL
@@ -234,7 +234,19 @@ class DonationRepositoryTest extends IntegrationTest
 
         // assert
         $busDispatchMethod = $busProphecy->dispatch(Argument::type(Envelope::class))
-            ->willReturn($dummyEnvelope);
+            ->will(
+                /**
+                 * @param array{0: Envelope} $args
+                 */
+                function (array $args) use ($donationUUID) {
+                    $envelope = $args[0];
+                    $message = $envelope->getMessage();
+                    TestCase::assertInstanceOf(DonationUpserted::class, $message);
+                    TestCase::assertSame($donationUUID, $message->uuid);
+                    return $envelope;
+                }
+            );
+
         if ($shouldPush) {
             $busDispatchMethod->shouldBeCalledOnce();
         } else {

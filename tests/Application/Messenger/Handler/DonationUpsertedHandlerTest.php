@@ -26,14 +26,16 @@ class DonationUpsertedHandlerTest extends TestCase
 
     public function testItPushesOneDonationToSf(): void
     {
-        $this->donationRepositoryProphecy->push(Argument::type(DonationUpserted::class), false)->shouldBeCalledOnce();
+        $message = self::someUpsertedMessage();
+
+        $this->donationRepositoryProphecy->push($message, false)->shouldBeCalledOnce();
 
         $sut = new DonationUpsertedHandler(
             $this->donationRepositoryProphecy->reveal(),
             new NullLogger(),
         );
 
-        $sut->__invoke(self::someUpsertedMessage());
+        $sut->__invoke($message);
     }
 
     /**
@@ -41,7 +43,9 @@ class DonationUpsertedHandlerTest extends TestCase
      */
     public function testItLogsErrorIfDonationCannotBePushed(): void
     {
-        $this->donationRepositoryProphecy->push(Argument::type(DonationUpserted::class), false)
+        $message = self::someUpsertedMessage();
+
+        $this->donationRepositoryProphecy->push($message, false)
             ->willThrow(new \Exception('Failed to push to SF'));
 
         $loggerWithOneError = $this->prophesize(LoggerInterface::class);
@@ -53,6 +57,6 @@ class DonationUpsertedHandlerTest extends TestCase
             $loggerWithOneError->reveal(),
         );
 
-        $sut->__invoke(self::someUpsertedMessage());
+        $sut->__invoke($message);
     }
 }
