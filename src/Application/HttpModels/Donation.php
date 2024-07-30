@@ -11,6 +11,7 @@ use MatchBot\Domain\EmailAddress;
 /**
  * Donation Data as sent from Frontend for donation updates. Currently, this class is used only ever deserialized,
  * never serialised. Used in Actions\Donations\Update
+ *
  */
 readonly class Donation
 {
@@ -19,18 +20,18 @@ readonly class Donation
 
     /**
      * @psalm-suppress PossiblyUnusedMethod - this constructor is called by the Symfony Serializer
+     *
+     * @psalm-suppress PossiblyUnusedParam - some params here are included to document that FE sends them, even though
+     * we don't do anything with them currently in matchbot.
      */
     public function __construct(
         public float $donationAmount,
-        public ?string $transactionId = null,
         public ?string $status = null,
-        public ?string $charityId = null,
         /** @var bool|null Used only to tell credit donations to complete; not persisted. */
         public ?bool $autoConfirmFromCashBalance = null,
         public ?string $currencyCode = null,
         public ?float $feeCoverAmount = null,
         public ?bool $giftAid = null,
-        public ?bool $donationMatched = null,
         ?string $firstName = null,
         ?string $lastName = null,
         ?string $emailAddress = null,
@@ -41,9 +42,11 @@ readonly class Donation
         public ?bool $optInTbgEmail = null,
         public ?bool $optInCharityEmail = null,
         public ?bool $optInChampionEmail = null,
-        public ?string $projectId = null,
         public ?string $tipAmount = null,
         public ?bool $tipGiftAid = null,
+        ?bool $donationMatched = null,
+        ?string $charityId = null,
+        ?string $transactionId = null,
     ) {
         $this->emailAddress = (! is_null($emailAddress) && ! ($emailAddress === ''))
             ? EmailAddress::of($emailAddress)

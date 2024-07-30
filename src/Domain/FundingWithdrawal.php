@@ -18,6 +18,7 @@ class FundingWithdrawal extends Model
 
     /**
      * @var Donation
+     * @psalm-suppress PossiblyUnusedProperty - probably used in DB queries
      */
     #[ORM\ManyToOne(targetEntity: Donation::class, inversedBy: 'fundingWithdrawals', fetch: 'EAGER')]
     protected Donation $donation;

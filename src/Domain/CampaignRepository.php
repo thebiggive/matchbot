@@ -111,7 +111,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * @param Campaign $campaign
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
      */

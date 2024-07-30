@@ -70,31 +70,6 @@
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[getenv('BYPASS_PSP')]]></code>
     </RiskyTruthyFalsyComparison>
-    <UnusedClosureParam>
-      <code><![CDATA[$c]]></code>
-      <code><![CDATA[$c]]></code>
-      <code><![CDATA[$c]]></code>
-      <code><![CDATA[$c]]></code>
-    </UnusedClosureParam>
-  </file>
-  <file src="app/routes.php">
-    <MissingClosureParamType>
-      <code><![CDATA[$args]]></code>
-      <code><![CDATA[$request]]></code>
-      <code><![CDATA[$request]]></code>
-      <code><![CDATA[$response]]></code>
-      <code><![CDATA[$response]]></code>
-    </MissingClosureParamType>
-    <MissingClosureReturnType>
-      <code><![CDATA[function ($request, $response, $args) {]]></code>
-    </MissingClosureReturnType>
-    <MixedArgument>
-      <code><![CDATA[$request]]></code>
-    </MixedArgument>
-    <UnusedClosureParam>
-      <code><![CDATA[$args]]></code>
-      <code><![CDATA[$response]]></code>
-    </UnusedClosureParam>
   </file>
   <file src="app/settings.php">
     <RiskyTruthyFalsyComparison>
@@ -158,8 +133,6 @@
     </DocblockTypeContradiction>
     <MixedArgument>
       <code><![CDATA[$event->data->object]]></code>
-      <code><![CDATA[$txn->fee_details[0]->currency]]></code>
-      <code><![CDATA[$txn->fee_details[0]->type]]></code>
     </MixedArgument>
     <PossiblyNullArgument>
       <code><![CDATA[$intentId]]></code>
@@ -226,12 +199,6 @@
     <PossiblyNullReference>
       <code><![CDATA[getArgument]]></code>
     </PossiblyNullReference>
-    <PossiblyUnusedMethod>
-      <code><![CDATA[__construct]]></code>
-    </PossiblyUnusedMethod>
-    <PossiblyUnusedReturnValue>
-      <code><![CDATA[ResponseInterface]]></code>
-    </PossiblyUnusedReturnValue>
   </file>
   <file src="src/Application/Commands/Command.php">
     <PossiblyNullOperand>
@@ -314,23 +281,11 @@
       <code><![CDATA[HttpErrorHandler]]></code>
     </PropertyNotSetInConstructor>
   </file>
-  <file src="src/Application/HttpModels/Donation.php">
-    <PossiblyUnusedProperty>
-      <code><![CDATA[$charityId]]></code>
-      <code><![CDATA[$donationMatched]]></code>
-      <code><![CDATA[$projectId]]></code>
-      <code><![CDATA[$transactionId]]></code>
-    </PossiblyUnusedProperty>
-  </file>
   <file src="src/Application/HttpModels/DonationCreatedResponse.php">
     <MissingConstructor>
       <code><![CDATA[$donation]]></code>
       <code><![CDATA[$jwt]]></code>
     </MissingConstructor>
-    <PossiblyUnusedProperty>
-      <code><![CDATA[$donation]]></code>
-      <code><![CDATA[$jwt]]></code>
-    </PossiblyUnusedProperty>
   </file>
   <file src="src/Application/Matching/Adapter.php">
     <ArgumentTypeCoercion>
@@ -339,12 +294,6 @@
     <DeprecatedMethod>
       <code><![CDATA[transactional]]></code>
     </DeprecatedMethod>
-    <PossiblyInvalidArrayAccess>
-      <code><![CDATA[$fundBalanceFractional]]></code>
-      <code><![CDATA[$fundBalanceFractional]]></code>
-      <code><![CDATA[$initResponse]]></code>
-      <code><![CDATA[$initResponse]]></code>
-    </PossiblyInvalidArrayAccess>
     <PossiblyInvalidMethodCall>
       <code><![CDATA[decrBy]]></code>
       <code><![CDATA[exec]]></code>
@@ -353,15 +302,6 @@
       <code><![CDATA[set]]></code>
       <code><![CDATA[set]]></code>
     </PossiblyInvalidMethodCall>
-    <UnusedVariable>
-      <code><![CDATA[$initResponse]]></code>
-      <code><![CDATA[$initResponse]]></code>
-    </UnusedVariable>
-  </file>
-  <file src="src/Application/Matching/LessThanRequestedAllocatedException.php">
-    <UnusedProperty>
-      <code><![CDATA[$fundRemainingAmount]]></code>
-    </UnusedProperty>
   </file>
   <file src="src/Application/Messenger/Handler/GiftAidResultHandler.php">
     <RiskyTruthyFalsyComparison>
@@ -414,9 +354,6 @@
     </PossiblyNullReference>
   </file>
   <file src="src/Client/Common.php">
-    <InvalidNullableReturnType>
-      <code><![CDATA[Client]]></code>
-    </InvalidNullableReturnType>
     <MixedArrayAccess>
       <code><![CDATA[$this->clientSettings[$service][$property]]]></code>
       <code><![CDATA[$this->clientSettings['global']['timeout']]]></code>
@@ -430,24 +367,8 @@
     <MixedReturnStatement>
       <code><![CDATA[$this->clientSettings[$service][$property]]]></code>
     </MixedReturnStatement>
-    <NullableReturnStatement>
-      <code><![CDATA[$this->httpClient]]></code>
-    </NullableReturnStatement>
   </file>
   <file src="src/Client/Donation.php">
-    <MixedArrayAccess>
-      <code><![CDATA[$donationCreatedResponse['donation']]]></code>
-      <code><![CDATA[$donationCreatedResponse['donation']['donationId']]]></code>
-    </MixedArrayAccess>
-    <MixedAssignment>
-      <code><![CDATA[$donationCreatedResponse]]></code>
-    </MixedAssignment>
-    <MixedInferredReturnType>
-      <code><![CDATA[string]]></code>
-    </MixedInferredReturnType>
-    <MixedReturnStatement>
-      <code><![CDATA[$donationCreatedResponse['donation']['donationId']]]></code>
-    </MixedReturnStatement>
     <PossiblyFalseArgument>
       <code><![CDATA[getenv('WEBHOOK_DONATION_SECRET')]]></code>
     </PossiblyFalseArgument>
@@ -484,9 +405,6 @@
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Domain/CampaignFunding.php">
-    <PossiblyUnusedMethod>
-      <code><![CDATA[isShared]]></code>
-    </PossiblyUnusedMethod>
     <PropertyNotSetInConstructor>
       <code><![CDATA[$allocationOrder]]></code>
       <code><![CDATA[$amount]]></code>
@@ -540,9 +458,6 @@
     <PossiblyNullArgument>
       <code><![CDATA[$campaign->getSalesforceId()]]></code>
     </PossiblyNullArgument>
-    <UnusedDocblockParam>
-      <code><![CDATA[$campaign]]></code>
-    </UnusedDocblockParam>
   </file>
   <file src="src/Domain/Charity.php">
     <RiskyTruthyFalsyComparison>
@@ -556,9 +471,6 @@
       <code><![CDATA[$key_id]]></code>
       <code><![CDATA[$key_token]]></code>
     </MissingConstructor>
-    <UnusedClass>
-      <code><![CDATA[CommandLockKeys]]></code>
-    </UnusedClass>
   </file>
   <file src="src/Domain/Donation.php">
     <ArgumentTypeCoercion>
@@ -580,9 +492,6 @@
       <code><![CDATA[$this->donorLastName]]></code>
       <code><![CDATA[$this->getCollectedAt()?->format('Y-m-d')]]></code>
     </PossiblyNullPropertyAssignmentValue>
-    <PossiblyUnusedMethod>
-      <code><![CDATA[getTbgGiftAidRequestQueuedAt]]></code>
-    </PossiblyUnusedMethod>
     <PropertyNotSetInConstructor>
       <code><![CDATA[$campaign]]></code>
       <code><![CDATA[$psp]]></code>
@@ -609,13 +518,6 @@
       <code><![CDATA[getResultCacheImpl]]></code>
       <code><![CDATA[transactional]]></code>
     </DeprecatedMethod>
-    <MissingConstructor>
-      <code><![CDATA[$campaignRepository]]></code>
-      <code><![CDATA[$fundRepository]]></code>
-      <code><![CDATA[$lockFactory]]></code>
-      <code><![CDATA[$matchingAdapter]]></code>
-      <code><![CDATA[$queuedForPersist]]></code>
-    </MissingConstructor>
     <MixedReturnTypeCoercion>
       <code><![CDATA[$qb->getQuery()
             ->disableResultCache()
@@ -632,18 +534,11 @@
       <code><![CDATA[Donation[]]]></code>
       <code><![CDATA[Donation[]]]></code>
     </MixedReturnTypeCoercion>
-    <PossiblyNullArgument>
-      <code><![CDATA[$donation->getId()]]></code>
-      <code><![CDATA[$donation->getSalesforceId()]]></code>
-    </PossiblyNullArgument>
     <PossiblyUndefinedVariable>
       <code><![CDATA[$lockStartTime]]></code>
       <code><![CDATA[$lockStartTime]]></code>
       <code><![CDATA[$newTotal]]></code>
     </PossiblyUndefinedVariable>
-    <PossiblyUnusedReturnValue>
-      <code><![CDATA[bool]]></code>
-    </PossiblyUnusedReturnValue>
   </file>
   <file src="src/Domain/DonationService.php">
     <PossiblyNullArgument>
@@ -708,11 +603,6 @@
       <code><![CDATA[!$campaign->getSalesforceId()]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
-  <file src="src/Domain/FundingWithdrawal.php">
-    <PossiblyUnusedProperty>
-      <code><![CDATA[$donation]]></code>
-    </PossiblyUnusedProperty>
-  </file>
   <file src="src/Domain/SalesforceProxyRepository.php">
     <DocblockTypeContradiction>
       <code><![CDATA[!$this->client]]></code>
@@ -727,11 +617,6 @@
       <code><![CDATA[$logger]]></code>
     </MissingConstructor>
   </file>
-  <file src="src/Domain/SalesforceReadProxy.php">
-    <PossiblyUnusedMethod>
-      <code><![CDATA[getSalesforceLastPull]]></code>
-    </PossiblyUnusedMethod>
-  </file>
   <file src="src/Domain/SalesforceReadProxyRepository.php">
     <PossiblyNullOperand>
       <code><![CDATA[$proxy->getSalesforceId()]]></code>
@@ -740,24 +625,6 @@
     </PossiblyNullOperand>
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[!$proxy->getSalesforceId()]]></code>
-    </RiskyTruthyFalsyComparison>
-  </file>
-  <file src="src/Domain/SalesforceWriteProxyRepository.php">
-    <PossiblyNullArgument>
-      <code><![CDATA[$proxy->getId()]]></code>
-      <code><![CDATA[$proxy->getId()]]></code>
-      <code><![CDATA[$proxy->getId()]]></code>
-      <code><![CDATA[$proxy->getId()]]></code>
-      <code><![CDATA[$proxy->getSalesforceId()]]></code>
-    </PossiblyNullArgument>
-    <PossiblyNullOperand>
-      <code><![CDATA[$proxy->getId()]]></code>
-      <code><![CDATA[$proxy->getId()]]></code>
-      <code><![CDATA[$proxy->getId()]]></code>
-    </PossiblyNullOperand>
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[empty($proxy->getSalesforceId())]]></code>
-      <code><![CDATA[empty($proxy->getSalesforceId())]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Domain/TimestampsTrait.php">

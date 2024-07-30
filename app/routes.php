@@ -16,6 +16,9 @@ use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Auth\SalesforceAuthMiddleware;
 use Middlewares\ClientIp;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Slim\App;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Routing\RouteCollectorProxy;
@@ -74,14 +77,16 @@ return function (App $app) {
         '/hooks/charities/{salesforceId:[a-zA-Z0-9]{18}}/update-required',
         UpdateCharityFromSalesforce::class
     )
-        ->add(SalesforceAuthMiddleware::class)
-    ;
+        ->add(SalesforceAuthMiddleware::class);
 
-    $app->options('/{routes:.+}', function ($request, $response, $args) {
-        return $response;
-    });
+    $app->options(
+        '/{routes:.+}',
+        fn (RequestInterface $_req, ResponseInterface $resp, array $_args): ResponseInterface => $resp
+    );
 
-    $app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], '/{routes:.+}', function ($request, $response) {
-        throw new HttpNotFoundException($request);
-    });
+    $app->map(
+        ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+        '/{routes:.+}',
+        fn (ServerRequestInterface $req, ResponseInterface $_resp) => throw new HttpNotFoundException($req)
+    );
 };

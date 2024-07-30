@@ -249,6 +249,7 @@ class Donation extends SalesforceWriteProxy
     protected ?bool $tbgShouldProcessGiftAid = null;
 
     /**
+     * @psalm-suppress PossiblyUnusedProperty - used in DB queries
      * @var ?DateTime   When a queued message that should lead to a Gift Aid claim was sent.
      */
     #[ORM\Column(type: 'datetime', nullable: true)]
@@ -1019,14 +1020,6 @@ class Donation extends SalesforceWriteProxy
     public function setTbgShouldProcessGiftAid(?bool $tbgShouldProcessGiftAid): void
     {
         $this->tbgShouldProcessGiftAid = $tbgShouldProcessGiftAid;
-    }
-
-    /**
-     * @return DateTime|null
-     */
-    public function getTbgGiftAidRequestQueuedAt(): ?DateTime
-    {
-        return $this->tbgGiftAidRequestQueuedAt;
     }
 
     /**

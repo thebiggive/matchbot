@@ -14,16 +14,11 @@ use Doctrine\ORM\Mapping as ORM;
  */
 abstract class SalesforceReadProxy extends SalesforceProxy
 {
+    /**
+     * @psalm-suppress PossiblyUnusedProperty - used in DB queries
+     */
     #[ORM\Column(type: 'datetime', nullable: true)]
     protected ?DateTime $salesforceLastPull = null;
-
-    /**
-     * @return DateTime
-     */
-    public function getSalesforceLastPull(): ?DateTime
-    {
-        return $this->salesforceLastPull;
-    }
 
     /**
      * @param DateTime $salesforceLastPull

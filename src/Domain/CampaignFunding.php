@@ -71,11 +71,6 @@ class CampaignFunding extends Model
             "of fund SF ID {$this->fund->getSalesforceId()}";
     }
 
-    public function isShared(): bool
-    {
-        return (count($this->campaigns) > 1);
-    }
-
     /**
      * @return string
      */
