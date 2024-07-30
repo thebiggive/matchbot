@@ -47,6 +47,7 @@ readonly class Donation
         ?bool $donationMatched = null,
         ?string $charityId = null,
         ?string $transactionId = null,
+        ?string $projectId = null,
     ) {
         $this->emailAddress = (! is_null($emailAddress) && ! ($emailAddress === ''))
             ? EmailAddress::of($emailAddress)

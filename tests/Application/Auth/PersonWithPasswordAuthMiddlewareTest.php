@@ -43,7 +43,7 @@ class PersonWithPasswordAuthMiddlewareTest extends TestCase
         // It's simplest to directly invoke the middleware because a whole app run would require
         // re-configuration (modifying the test `getAppInstance()` substantially) in order to set
         // up diverging test routes and not just throw `HttpNotFoundException`.
-        $middleware = $this->getAppInstance()->getContainer()->get(PersonWithPasswordAuthMiddleware::class);
+        $middleware = $this->getContainer()->get(PersonWithPasswordAuthMiddleware::class);
         $middleware->process($request, $this->getSuccessHandler());
     }
 

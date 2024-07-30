@@ -11,9 +11,11 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
+use MatchBot\Tests\Application\Commands\UpdateCampaignsTest;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -37,6 +39,14 @@ class TestCase extends PHPUnitTestCase
      *                       initialised up to once per test.
      */
     private array $appInstance = [0 => null, 1 => null];
+
+    public function getContainer(): ContainerInterface
+    {
+        $container = $this->getAppInstance()->getContainer();
+        \assert($container !== null);
+
+        return $container;
+    }
 
     /**
      * @return App

@@ -1202,12 +1202,21 @@ class Donation extends SalesforceWriteProxy
 
     public function toClaimBotModel(): Messages\Donation
     {
+        $lastName = $this->donorLastName;
+        $firstName = $this->donorFirstName;
+        if ($lastName === null) {
+            throw new \Exception("Missing donor last name; cannot send donation to claimbot");
+        }
+        if ($firstName === null) {
+            throw new \Exception("Missing donor first name; cannot send donation to claimbot");
+        }
+
         $donationMessage = new Messages\Donation();
         $donationMessage->id = $this->uuid->toString();
         $donationMessage->donation_date = $this->getCollectedAt()?->format('Y-m-d');
         $donationMessage->title = '';
-        $donationMessage->first_name = $this->donorFirstName;
-        $donationMessage->last_name = $this->donorLastName;
+        $donationMessage->first_name = $firstName;
+        $donationMessage->last_name = $lastName;
 
         $donationMessage->overseas = $this->donorHomePostcode === 'OVERSEAS';
         $donationMessage->postcode = $donationMessage->overseas ? '' : ($this->donorHomePostcode ?? '');

@@ -57,7 +57,7 @@ class StripePayoutHandler implements MessageHandlerInterface
                 'Stripe Balance Transaction lookup error for Payout ID %s, %s [%s]: %s',
                 $payoutId,
                 get_class($exception),
-                $exception->getStripeCode(),
+                $exception->getStripeCode() ?? 'null-stripe-code',
                 $exception->getMessage(),
             ));
 
@@ -108,7 +108,11 @@ class StripePayoutHandler implements MessageHandlerInterface
             if (!$donation) {
                 $logLevel = (getenv('APP_ENV') === 'production') ? 'ERROR' : 'INFO';
 
-                $this->logger->log($logLevel, sprintf('Payout: Donation not found with Charge ID %s', $chargeId));
+                $this->logger->log(
+                    $logLevel,
+                    sprintf('Payout: Donation not found with Charge ID %s', $chargeId ?? 'null')
+                );
+
                 $this->entityManager->commit();
                 continue;
             }

@@ -208,7 +208,6 @@
   </file>
   <file src="src/Application/Commands/HandleOutOfSyncFunds.php">
     <ArgumentTypeCoercion>
-      <code><![CDATA[$funding->getAmount()]]></code>
       <code><![CDATA[$fundingAvailable]]></code>
       <code><![CDATA[$fundingWithdrawalTotal]]></code>
       <code><![CDATA[$fundingWithdrawalTotal]]></code>
@@ -244,12 +243,6 @@
     <MixedArgument>
       <code><![CDATA[static::$defaultName]]></code>
     </MixedArgument>
-    <PossiblyNullArgument>
-      <code><![CDATA[$campaign->getSalesforceId()]]></code>
-      <code><![CDATA[$campaign->getSalesforceId()]]></code>
-      <code><![CDATA[$campaign->getSalesforceId()]]></code>
-      <code><![CDATA[$campaign->getSalesforceId()]]></code>
-    </PossiblyNullArgument>
     <PossiblyNullOperand>
       <code><![CDATA[$campaign->getSalesforceId()]]></code>
       <code><![CDATA[$campaign->getSalesforceId()]]></code>
@@ -319,7 +312,6 @@
     <PossiblyNullArgument>
       <code><![CDATA[$chargeId]]></code>
       <code><![CDATA[$chargeId]]></code>
-      <code><![CDATA[$exception->getStripeCode()]]></code>
     </PossiblyNullArgument>
   </file>
   <file src="src/Application/Messenger/StripePayout.php">
@@ -369,14 +361,6 @@
     </MixedReturnStatement>
   </file>
   <file src="src/Client/Donation.php">
-    <PossiblyFalseArgument>
-      <code><![CDATA[getenv('WEBHOOK_DONATION_SECRET')]]></code>
-    </PossiblyFalseArgument>
-    <PossiblyNullReference>
-      <code><![CDATA[getBody]]></code>
-      <code><![CDATA[getBody]]></code>
-      <code><![CDATA[getBody]]></code>
-    </PossiblyNullReference>
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[getenv('DISABLE_CLIENT_PUSH')]]></code>
       <code><![CDATA[getenv('DISABLE_CLIENT_PUSH')]]></code>
@@ -455,9 +439,6 @@
       <code><![CDATA[$campaignData['charity']['regulatorRegion']]]></code>
       <code><![CDATA[$campaignData['charity']['stripeAccountId']]]></code>
     </MixedArrayAccess>
-    <PossiblyNullArgument>
-      <code><![CDATA[$campaign->getSalesforceId()]]></code>
-    </PossiblyNullArgument>
   </file>
   <file src="src/Domain/Charity.php">
     <RiskyTruthyFalsyComparison>
@@ -488,8 +469,6 @@
       <code><![CDATA[$this->getTipAmount()]]></code>
     </ArgumentTypeCoercion>
     <PossiblyNullPropertyAssignmentValue>
-      <code><![CDATA[$this->donorFirstName]]></code>
-      <code><![CDATA[$this->donorLastName]]></code>
       <code><![CDATA[$this->getCollectedAt()?->format('Y-m-d')]]></code>
     </PossiblyNullPropertyAssignmentValue>
     <PropertyNotSetInConstructor>
@@ -541,10 +520,6 @@
     </PossiblyUndefinedVariable>
   </file>
   <file src="src/Domain/DonationService.php">
-    <PossiblyNullArgument>
-      <code><![CDATA[$donation->getCampaign()->getCharity()->getSalesforceId()]]></code>
-      <code><![CDATA[$donation->getPspCustomerId()]]></code>
-    </PossiblyNullArgument>
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[empty($campaign->getCharity()->getStripeAccountId())]]></code>
       <code><![CDATA[empty($donation->getCampaign()->getCharity()->getStripeAccountId())]]></code>
@@ -559,9 +534,6 @@
     </MissingConstructor>
   </file>
   <file src="src/Domain/FundRepository.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$campaignFunding->getAmount()]]></code>
-    </ArgumentTypeCoercion>
     <DocblockTypeContradiction>
       <code><![CDATA[!$fund]]></code>
       <code><![CDATA[$fund]]></code>
@@ -590,18 +562,10 @@
     <MixedOperand>
       <code><![CDATA[$fundData['id']]]></code>
     </MixedOperand>
-    <PossiblyNullArgument>
-      <code><![CDATA[$campaign->getSalesforceId()]]></code>
-      <code><![CDATA[$fund]]></code>
-      <code><![CDATA[$proxy->getSalesforceId()]]></code>
-    </PossiblyNullArgument>
     <PossiblyNullOperand>
       <code><![CDATA[$campaign->getId()]]></code>
       <code><![CDATA[$fund->getId()]]></code>
     </PossiblyNullOperand>
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[!$campaign->getSalesforceId()]]></code>
-    </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Domain/SalesforceProxyRepository.php">
     <DocblockTypeContradiction>
@@ -974,20 +938,6 @@
     <DeprecatedMethod>
       <code><![CDATA[ConsoleRunner::createHelperSet($container->get(EntityManagerInterface::class))]]></code>
     </DeprecatedMethod>
-    <PossiblyNullArgument>
-      <code><![CDATA[$config->getProxyDir()]]></code>
-      <code><![CDATA[$config->getProxyNamespace()]]></code>
-    </PossiblyNullArgument>
-  </file>
-  <file src="tests/Application/Auth/PersonManagementAuthMiddlewareTest.php">
-    <PossiblyNullReference>
-      <code><![CDATA[get]]></code>
-    </PossiblyNullReference>
-  </file>
-  <file src="tests/Application/Auth/PersonWithPasswordAuthMiddlewareTest.php">
-    <PossiblyNullReference>
-      <code><![CDATA[get]]></code>
-    </PossiblyNullReference>
   </file>
   <file src="tests/Application/Commands/AlwaysAvailableLockStore.php">
     <MissingParamType>
@@ -1006,14 +956,6 @@
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
     </DeprecatedMethod>
-  </file>
-  <file src="tests/Application/Commands/HandleOutOfSyncFundsTest.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$this->getFundingInSync()->getAmount()]]></code>
-      <code><![CDATA[$this->getFundingOverMatched()->getAmount()]]></code>
-      <code><![CDATA[$this->getFundingUnderMatched()->getAmount()]]></code>
-      <code><![CDATA[$this->getFundingUnderMatchedWithNothingAllocated()->getAmount()]]></code>
-    </ArgumentTypeCoercion>
   </file>
   <file src="tests/Application/Commands/ResetMatchingTest.php">
     <InternalClass>
@@ -1042,15 +984,6 @@
                 new Query('SELECT test...', [], []),
             )]]></code>
     </InternalMethod>
-  </file>
-  <file src="tests/Application/Commands/UpdateCampaignsTest.php">
-    <PossiblyNullReference>
-      <code><![CDATA[get]]></code>
-      <code><![CDATA[get]]></code>
-      <code><![CDATA[get]]></code>
-      <code><![CDATA[get]]></code>
-      <code><![CDATA[get]]></code>
-    </PossiblyNullReference>
   </file>
   <file src="tests/Application/DonationTestDataTrait.php">
     <DeprecatedMethod>
@@ -1090,11 +1023,6 @@
     <InternalMethod>
       <code><![CDATA[addToAssertionCount]]></code>
     </InternalMethod>
-  </file>
-  <file src="tests/Domain/FundRepositoryTest.php">
-    <PossiblyNullReference>
-      <code><![CDATA[get]]></code>
-    </PossiblyNullReference>
   </file>
   <file src="tests/TestCase.php">
     <MixedArgument>
