@@ -111,7 +111,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * @param Campaign $campaign
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
      */
@@ -120,7 +119,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign = $proxy;
 
         $client = $this->getClient();
-        $campaignData = $client->getById($campaign->getSalesforceId());
+        $salesforceId = $campaign->getSalesforceId();
+        if ($salesforceId === null) {
+            throw new \Exception("Cannot update campaign with missing salesforce ID");
+        }
+
+        $campaignData = $client->getById($salesforceId);
 
         if ($campaign->hasBeenPersisted() && $campaign->getCurrencyCode() !== $campaignData['currencyCode']) {
             $this->logWarning(sprintf(

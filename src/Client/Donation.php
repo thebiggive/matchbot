@@ -57,6 +57,7 @@ class Donation extends Common
                 getenv('APP_ENV') !== 'production' &&
                 str_contains($ex->getMessage(), '"entity is deleted"')
             );
+            $exResponse = $ex->getResponse();
             if ($sandboxMissingLinkedResource) {
                 /**
                  * The exception we throw here still takes the donation out of the push queue permenantly
@@ -69,7 +70,7 @@ class Donation extends Common
                     'Donation update skipped due to missing sandbox resource. Exception %s: %s. Body: %s',
                     get_class($ex),
                     $ex->getMessage(),
-                    $ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A',
+                    $exResponse ? $exResponse->getBody() : 'N/A',
                 ));
 
                 throw new NotFoundException();
@@ -80,7 +81,7 @@ class Donation extends Common
                 $message->uuid,
                 get_class($ex),
                 $ex->getMessage(),
-                $ex->getResponse() ? $ex->getResponse()->getBody() : 'N/A',
+                $exResponse ? $exResponse->getBody() : 'N/A',
             ));
 
             throw new BadRequestException('Donation not upserted');
@@ -104,6 +105,11 @@ class Donation extends Common
 
     private function hash(string $body): string
     {
-        return hash_hmac('sha256', trim($body), getenv('WEBHOOK_DONATION_SECRET'));
+        $secret = getenv('WEBHOOK_DONATION_SECRET');
+        if ($secret === false) {
+            throw new \Exception("Missing webhook donation secret");
+        }
+
+        return hash_hmac('sha256', trim($body), $secret);
     }
 }

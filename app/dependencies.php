@@ -135,7 +135,7 @@ return function (ContainerBuilder $containerBuilder) {
             return new SlackChannelChatterFactory($token);
         },
 
-        ClaimBotTransport::class => static function (ContainerInterface $c): TransportInterface {
+        ClaimBotTransport::class => static function (): TransportInterface {
             $transportFactory = new TransportFactory([
                 new AmazonSqsTransportFactory(),
                 new RedisTransportFactory(),
@@ -363,7 +363,7 @@ return function (ContainerBuilder $containerBuilder) {
             return $config;
         },
 
-        ProblemDetailsResponseFactory::class => static function (ContainerInterface $c): ProblemDetailsResponseFactory {
+        ProblemDetailsResponseFactory::class => static function (): ProblemDetailsResponseFactory {
             return new ProblemDetailsResponseFactory(new ResponseFactory());
         },
 
@@ -429,7 +429,7 @@ return function (ContainerBuilder $containerBuilder) {
             return new RoutableMessageBus($busContainer, $bus);
         },
 
-        SerializerInterface::class => static function (ContainerInterface $c): SerializerInterface {
+        SerializerInterface::class => static function (): SerializerInterface {
             $encoders = [new JsonEncoder()];
             $normalizers = [
                 new BackedEnumNormalizer(),
@@ -451,7 +451,7 @@ return function (ContainerBuilder $containerBuilder) {
             ]);
         },
 
-        TransportInterface::class => static function (ContainerInterface $c): TransportInterface {
+        TransportInterface::class => static function (): TransportInterface {
             $transportFactory = new TransportFactory([
                 new AmazonSqsTransportFactory(),
                 new InMemoryTransportFactory(), // For unit tests.

@@ -38,7 +38,7 @@ class CampaignFunding extends Model
     protected string $currencyCode;
 
     /**
-     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see CampaignFunding::$currencyCode
      */
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
@@ -71,13 +71,8 @@ class CampaignFunding extends Model
             "of fund SF ID {$this->fund->getSalesforceId()}";
     }
 
-    public function isShared(): bool
-    {
-        return (count($this->campaigns) > 1);
-    }
-
     /**
-     * @return string
+     * @return numeric-string
      */
     public function getAmount(): string
     {
@@ -85,7 +80,7 @@ class CampaignFunding extends Model
     }
 
     /**
-     * @param string $amount
+     * @param numeric-string $amount
      */
     public function setAmount(string $amount): void
     {

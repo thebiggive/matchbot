@@ -14,6 +14,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Tests\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
@@ -35,7 +36,7 @@ class UpdateCampaignsTest extends TestCase
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
-            $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
+            $this->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
             new NullLogger(),
         );
@@ -71,7 +72,7 @@ class UpdateCampaignsTest extends TestCase
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
-            $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
+            $this->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
             new NullLogger(),
         );
@@ -113,7 +114,7 @@ class UpdateCampaignsTest extends TestCase
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
-            $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
+            $this->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
             new NullLogger(),
         );
@@ -170,7 +171,7 @@ class UpdateCampaignsTest extends TestCase
 
         $command = new UpdateCampaigns(
             $campaignRepo,
-            $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
+            $this->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
             new NullLogger(),
         );
@@ -204,7 +205,7 @@ class UpdateCampaignsTest extends TestCase
 
         $command = new UpdateCampaigns(
             $campaignRepoProphecy->reveal(),
-            $this->getAppInstance()->getContainer()->get(EntityManagerInterface::class),
+            $this->getContainer()->get(EntityManagerInterface::class),
             $fundRepoProphecy->reveal(),
             new NullLogger(),
         );
