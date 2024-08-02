@@ -645,9 +645,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             // Warning for now. SF blips happen, especially in sandboxes. So we think this is bad
             // enough to track on charts to see if volumes increase lots, but not to actively alert
             // on as `.ERROR`.
-            $this->logger->warning(
-                "pushSalesforcePending found $count pending items to push to SF, suggests push via Symfony Messenger failed"
-            );
+            $this->logger->warning("pushSalesforcePending found $count pending items to push to SF, " .
+                'suggests push via Symfony Messenger failed');
 
             $first3OrFewerProxies = array_slice($proxiesToCreate, 0, 3);
             $firstUUIDs = array_map(static fn(Donation $d) => $d->getUuid(), $first3OrFewerProxies);
