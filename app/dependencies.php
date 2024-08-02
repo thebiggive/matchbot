@@ -418,8 +418,7 @@ return function (ContainerBuilder $containerBuilder) {
 
             /**
              * Every message defaults to our only bus, so we think these are technically redundant for
-             * now. This also means the list isn't exhaustive – we *know* we don't need
-             * {@see DonationStateUpdated} here. Removing `claimbot` items would require some more testing.
+             * now. The list is possibly not exhaustive.
              */
             $busContainer->set('claimbot.donation.claim', $bus);
             $busContainer->set('claimbot.donation.result', $bus);
