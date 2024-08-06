@@ -7,12 +7,14 @@ namespace MatchBot\Tests\Application\Actions\Hooks;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use Prophecy\Argument;
+use Psr\Container\ContainerInterface;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\StripeClient;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
@@ -26,7 +28,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         // Payout Object events, return a 204 No Content no-op for now.
         $body = $this->getStripeHookMock('po_created');
@@ -48,7 +50,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_succeeded_invalid_id');
         $webhookSecret = $this->getValidWebhookSecret($container);
@@ -77,7 +79,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_succeeded');
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -107,7 +109,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_succeeded');
         $donation = $this->getTestDonation();
@@ -118,11 +120,6 @@ class StripePaymentsUpdateTest extends StripeTest
         $donationRepoProphecy
             ->findAndLockOneBy(['transactionId' => 'pi_externalId_123'])
             ->willReturn($donation)
-            ->shouldBeCalledOnce();
-
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -141,8 +138,8 @@ class StripePaymentsUpdateTest extends StripeTest
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
 
-        $request = $this->createRequest('POST', '/hooks/stripe', $body)
-            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+        $request = self::createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));
 
         $response = $app->handle($request);
 
@@ -157,7 +154,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_succeeded_sek');
         $donation = $this->getTestDonation('6000.00', currencyCode: 'SEK');
@@ -169,11 +166,6 @@ class StripePaymentsUpdateTest extends StripeTest
         $donationRepoProphecy
             ->findAndLockOneBy(['transactionId' => 'pi_externalId_123'])
             ->willReturn($donation)
-            ->shouldBeCalledOnce();
-
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -206,7 +198,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_dispute_closed_lost');
         $donation = $this->getTestDonation();
@@ -223,18 +215,13 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledOnce();
-
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $request = $this->createRequest('POST', '/hooks/stripe', $body)
-            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+        $request = self::createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));
 
         $response = $app->handle($request);
 
@@ -248,7 +235,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_dispute_closed_won');
         $donation = $this->getTestDonation();
@@ -266,18 +253,13 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldNotBeCalled();
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldNotBeCalled();
-
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $request = $this->createRequest('POST', '/hooks/stripe', $body)
-            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+        $request = self::createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));
 
         $response = $app->handle($request);
 
@@ -293,7 +275,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_dispute_closed_lost_unknown_pi');
         $webhookSecret = $this->getValidWebhookSecret($container);
@@ -323,7 +305,7 @@ class StripePaymentsUpdateTest extends StripeTest
         // arrange (plus assert some donation repo & chatter method call counts)
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_dispute_closed_lost_higher_amount');
         $donation = $this->getTestDonation();
@@ -353,10 +335,6 @@ class StripePaymentsUpdateTest extends StripeTest
         $donationRepoProphecy
             ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -365,8 +343,8 @@ class StripePaymentsUpdateTest extends StripeTest
         $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
 
         // act
-        $request = $this->createRequest('POST', '/hooks/stripe', $body)
-            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+        $request = self::createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));
 
         $response = $app->handle($request);
 
@@ -381,7 +359,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_dispute_closed_lost_unexpected_amount');
         $donation = $this->getTestDonation();
@@ -398,18 +376,13 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldNotBeCalled();
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldNotBeCalled();
-
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $request = $this->createRequest('POST', '/hooks/stripe', $body)
-            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+        $request = self::createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));
 
         $response = $app->handle($request);
 
@@ -426,7 +399,7 @@ class StripePaymentsUpdateTest extends StripeTest
         // arrange (plus assert a couple of donation repo method call counts)
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_refunded');
         $donation = $this->getTestDonation();
@@ -449,11 +422,6 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledOnce();
-
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -461,8 +429,8 @@ class StripePaymentsUpdateTest extends StripeTest
         $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
 
         // act
-        $request = $this->createRequest('POST', '/hooks/stripe', $body)
-            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+        $request = self::createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));
 
         $response = $app->handle($request);
 
@@ -484,7 +452,7 @@ class StripePaymentsUpdateTest extends StripeTest
         // arrange
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_over_refunded');
         $donation = $this->getTestDonation();
@@ -513,11 +481,6 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledOnce();
-
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
@@ -525,8 +488,8 @@ class StripePaymentsUpdateTest extends StripeTest
         $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
 
         // act
-        $request = $this->createRequest('POST', '/hooks/stripe', $body)
-            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+        $request = self::createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));
 
         $response = $app->handle($request);
 
@@ -545,7 +508,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
         $webhookSecret = $this->getValidWebhookSecret($container);
 
         $body = $this->getStripeHookMock('ch_tip_refunded');
@@ -562,22 +525,17 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldNotBeCalled();
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldBeCalledOnce();
-
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $request = $this->createRequest('POST', '/hooks/stripe', $body)
-            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+        $request = self::createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));
 
         $response = $app->handle($request);
 
@@ -592,7 +550,7 @@ class StripePaymentsUpdateTest extends StripeTest
         // arrange
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_refunded_but_original_failed');
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -627,7 +585,7 @@ class StripePaymentsUpdateTest extends StripeTest
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $this->getContainer($app);
+        $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_unsupported_partial_refund');
         $donation = $this->getTestDonation();
@@ -644,18 +602,13 @@ class StripePaymentsUpdateTest extends StripeTest
             ->releaseMatchFunds($donation)
             ->shouldNotBeCalled();
 
-        $donationRepoProphecy
-            ->push(Argument::type(Donation::class), false)
-            ->willReturn(true)
-            ->shouldNotBeCalled();
-
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $request = $this->createRequest('POST', '/hooks/stripe', $body)
-            ->withHeader('Stripe-Signature', $this->generateSignature($time, $body, $webhookSecret));
+        $request = self::createRequest('POST', '/hooks/stripe', $body)
+            ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));
 
         $response = $app->handle($request);
 
@@ -680,9 +633,9 @@ class StripePaymentsUpdateTest extends StripeTest
         return $settings['stripe']['accountWebhookSecret'];
     }
 
-    public function getContainer(\Slim\App $app): ?\Psr\Container\ContainerInterface
+    public function getContainer(): ContainerInterface
     {
-        $container = $app->getContainer();
+        $container = parent::getContainer();
         \assert($container instanceof Container);
         $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
 

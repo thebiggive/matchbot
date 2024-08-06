@@ -6,6 +6,7 @@ namespace MatchBot\Application\HttpModels;
 
 /**
  * Donation created plus auth JWS model, for responses after a donation is created.
+ * @psalm-suppress PossiblyUnusedProperty - used in frontend.
  */
 class DonationCreatedResponse
 {

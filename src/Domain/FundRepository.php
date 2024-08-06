@@ -39,14 +39,15 @@ class FundRepository extends SalesforceReadProxyRepository
     {
         $client = $this->getClient();
 
-        if (!$campaign->getSalesforceId()) {
+        $campaignSFId = $campaign->getSalesforceId();
+        if ($campaignSFId === null) {
             $this->logWarning(
                 'Cannot pullForCampaign() funds for campaign without SF ID for internal ID ' . $campaign->getId()
             );
             return;
         }
 
-        $fundsData = $client->getForCampaign($campaign->getSalesforceId());
+        $fundsData = $client->getForCampaign($campaignSFId);
         foreach ($fundsData as $fundData) {
             // For each fund linked to the campaign, look it up or create it if unknown
             /** @var Fund $fund */
@@ -70,6 +71,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 $this->logError('Skipping fund create as unique constraint failed on SF ID ' . $fundData['id']);
 
                 $fund = $this->findOneBy(['salesforceId' => $fundData['id']]);
+                \assert($fund !== null); // since someone else made it it must now be in the db.
                 $fund = $this->setAnyFundData($fund, $fundData);
                 $this->getEntityManager()->persist($fund);
             }
@@ -180,7 +182,12 @@ class FundRepository extends SalesforceReadProxyRepository
      */
     protected function doUpdateFromSf(SalesforceReadProxy $proxy): void
     {
-        $fundData = $this->getClient()->getById($proxy->getSalesforceId());
+        $fundId = $proxy->getSalesforceId();
+        if ($fundId == null) {
+            throw new \Exception("Missing ID on fund, cannot update from SF");
+        }
+
+        $fundData = $this->getClient()->getById($fundId);
         $proxy->setName($fundData['name'] ?? '');
     }
 }

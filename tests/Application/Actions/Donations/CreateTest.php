@@ -9,6 +9,7 @@ use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
@@ -21,15 +22,16 @@ use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
 use Prophecy\Argument;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\App;
 use Slim\Exception\HttpUnauthorizedException;
-use Stripe\Exception\PermissionException;
 use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\MockClock;
-use Symfony\Component\Notifier\Message\ChatMessage;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use UnexpectedValueException;
 
 class CreateTest extends TestCase
@@ -40,6 +42,9 @@ class CreateTest extends TestCase
      * @link https://stripe.com/docs/api/payment_intents/object
      */
     private static PaymentIntent $somePaymentIntentResult;
+
+    /** @var ObjectProphecy<RoutableMessageBus> */
+    private ObjectProphecy $messageBusProphecy;
 
     public function setUp(): void
     {
@@ -94,6 +99,8 @@ class CreateTest extends TestCase
 
         $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
         $container->set(CampaignRepository::class, $campaignRepositoryProphecy->reveal());
+
+        $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
     }
 
     /**
@@ -171,7 +178,8 @@ class CreateTest extends TestCase
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willReturn($donationToReturn);
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $donationRepoProphecy->push(Argument::type(Donation::class), Argument::type('bool'))->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class), Argument::type('bool'))
+            ->shouldNotBeCalled();
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -217,7 +225,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willThrow(new UnexpectedValueException('Currency CAD is invalid for campaign'));
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class), true)->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -259,7 +267,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->shouldNotBeCalled();
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class), true)->shouldNotBeCalled();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -626,7 +634,7 @@ class CreateTest extends TestCase
 
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
+        $data = json_encode($donation->toFrontEndApiModel(), JSON_THROW_ON_ERROR);
         // Don't match default test customer ID from body, in this path.
         $request = $this->createRequest('POST', '/v1/people/99999999-1234-1234-1234-1234567890zz/donations', $data);
         $app->handle($this->addDummyPersonAuth($request)); // Throws HttpUnauthorizedException.
@@ -657,7 +665,7 @@ class CreateTest extends TestCase
 
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = json_encode($donation->toApiModel(), JSON_THROW_ON_ERROR);
+        $data = json_encode($donation->toFrontEndApiModel(), JSON_THROW_ON_ERROR);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
 
         $response = $app->handle($this->addDummyPersonAuth($request));
@@ -694,7 +702,6 @@ class CreateTest extends TestCase
             ->will(new CreateDupeCampaignThrowThenSucceedPromise($donationToReturn))
             ->shouldBeCalledTimes(2); // One exception, one success
 
-        $donationRepoProphecy->push(Argument::type(Donation::class), true)->willReturn(true)->shouldBeCalledOnce();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -943,10 +950,17 @@ class CreateTest extends TestCase
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willReturn($donation);
 
+        /**
+         * @see \MatchBot\IntegrationTests\DonationRepositoryTest for more granular checks of what's
+         * in the envelope. There isn't much variation in what we dispatch so it's not critical to
+         * repeat these checks in every test, but we do want to check we are dispatching the
+         * expected number of times.
+         */
         if ($donationPushed) {
-            $donationRepoProphecy->push($donation, true)->shouldBeCalledOnce();
+            $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->shouldBeCalledOnce()
+                ->willReturnArgument();
         } else {
-            $donationRepoProphecy->push($donation, true)->shouldNotBeCalled();
+            $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->shouldNotBeCalled();
         }
 
         if ($donationMatched) {
@@ -977,13 +991,14 @@ class CreateTest extends TestCase
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+        $container->set(RoutableMessageBus::class, $this->messageBusProphecy->reveal());
 
         return $app;
     }
 
     private function encode(Donation $donation): string
     {
-        $donationArray = $donation->toApiModel();
+        $donationArray = $donation->toFrontEndApiModel();
 
         return json_encode($donationArray);
     }
@@ -1039,8 +1054,6 @@ class CreateTest extends TestCase
         $donation->setTransactionId('pi_stripe_pending_123');
         $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
         $donation->setCharityFee('0.43');
-
-
 
         return $donation;
     }

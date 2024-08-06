@@ -27,6 +27,9 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
     public const PSP_ATTRIBUTE_NAME = 'pspId';
     protected ?string $jws = null;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - called by Slim
+     */
     #[Pure]
     public function __construct(
         protected IdentityToken $token,
@@ -34,6 +37,9 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
     ) {
     }
 
+    /**
+     * @psalm-suppress PossiblyUnusedReturnValue - presumably used by Slim
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $routeContext = RouteContext::fromRequest($request);

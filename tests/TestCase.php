@@ -6,11 +6,16 @@ namespace MatchBot\Tests;
 
 use DI\ContainerBuilder;
 use Exception;
+use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\Donation;
+use MatchBot\Tests\Application\Commands\UpdateCampaignsTest;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -34,6 +39,14 @@ class TestCase extends PHPUnitTestCase
      *                       initialised up to once per test.
      */
     private array $appInstance = [0 => null, 1 => null];
+
+    public function getContainer(): ContainerInterface
+    {
+        $container = $this->getAppInstance()->getContainer();
+        \assert($container !== null);
+
+        return $container;
+    }
 
     /**
      * @return App
@@ -129,7 +142,7 @@ class TestCase extends PHPUnitTestCase
      * @param array $cookies
      * @return Request
      */
-    protected function createRequest(
+    public static function createRequest(
         string $method,
         string $path,
         string $bodyString = '',
@@ -157,13 +170,14 @@ class TestCase extends PHPUnitTestCase
         return new SlimRequest($method, $uri, $h, $cookies, $serverParams, $stream);
     }
 
-
-
     public static function getMinimalCampaign(): Campaign
     {
-        $charity = \MatchBot\Tests\TestCase::someCharity();
+        $charity = self::someCharity();
         $charity->setTbgClaimingGiftAid(false);
-        return new Campaign($charity);
+        $campaign = new Campaign($charity);
+        $campaign->setIsMatched(false);
+
+        return $campaign;
     }
 
     /**
@@ -173,7 +187,7 @@ class TestCase extends PHPUnitTestCase
     public static function someCharity(?string $stripeAccountId = null): Charity
     {
         return new Charity(
-            salesforceId: '12CharityId_' .  self::randomHex(3),
+            salesforceId: '123CharityId' .  self::randomHex(3),
             charityName: "Charity Name",
             stripeAccountId: $stripeAccountId ?? "stripe-account-id-" . self::randomHex(),
             hmrcReferenceNumber: 'H' . self::randomHex(3),
@@ -192,8 +206,32 @@ class TestCase extends PHPUnitTestCase
         $campaign->setName('someCampaign');
         $campaign->setStartDate(new \DateTimeImmutable('2020-01-01'));
         $campaign->setEndDate(new \DateTimeImmutable('3000-01-01'));
+        $campaign->setCurrencyCode('GBP');
+        $campaign->setSalesforceId('1CampaignId' .  self::randomHex(3));
 
         return $campaign;
+    }
+
+    public static function someDonation(): Donation
+    {
+        return Donation::fromApiModel(new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '1',
+            projectId: '123456789012345678',
+            psp: 'stripe',
+            firstName: null,
+            lastName: null,
+            emailAddress: 'user@example.com',
+            countryCode: 'GB',
+        ), TestCase::someCampaign());
+    }
+
+    public static function someUpsertedMessage(): DonationUpserted
+    {
+        $donation = self::someDonation();
+        $donation->setTransactionId('pi_1234');
+
+        return DonationUpserted::fromDonation($donation);
     }
 
     /**

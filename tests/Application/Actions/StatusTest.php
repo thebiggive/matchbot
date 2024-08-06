@@ -144,8 +144,8 @@ class StatusTest extends TestCase
         // Mirrors the instantiation in concrete `EntityManager`'s constructor.
         $proxyFactory = new ProxyFactory(
             $emProphecy->reveal(),
-            $config->getProxyDir(),
-            $config->getProxyNamespace(),
+            $config->getProxyDir() ?? throw new \Exception('Missing proxy dir'),
+            $config->getProxyNamespace() ?? throw new \Exception('missing proxy namespace'),
             $config->getAutoGenerateProxyClasses()
         );
         // *Can* be called by `GenerateProxiesCommand`.

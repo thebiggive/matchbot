@@ -18,6 +18,7 @@ use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
 use MatchBot\Application\Commands\UpdateCampaigns;
+use MatchBot\Application\Commands\UpdateCharities;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
@@ -70,10 +71,12 @@ $commands = [
     new ExpireMatchFunds($psr11App->get(DonationRepository::class)),
     $psr11App->get(HandleOutOfSyncFunds::class),
     new RedistributeMatchFunds(
-        $psr11App->get(CampaignFundingRepository::class),
-        $now,
-        $psr11App->get(DonationRepository::class),
-        $psr11App->get(LoggerInterface::class),
+        campaignFundingRepository: $psr11App->get(CampaignFundingRepository::class),
+        entityManager: $psr11App->get(EntityManagerInterface::class),
+        now: $now,
+        donationRepository: $psr11App->get(DonationRepository::class),
+        logger: $psr11App->get(LoggerInterface::class),
+        bus: $psr11App->get(RoutableMessageBus::class),
     ),
     new ScheduledOutOfSyncFundsCheck(
         $psr11App->get(CampaignFundingRepository::class),
@@ -81,14 +84,20 @@ $commands = [
         $psr11App->get(Matching\Adapter::class),
         $chatter,
     ),
-    new PushDonations(now: $now, donationRepository: $psr11App->get(DonationRepository::class)),
+    new PushDonations(
+        bus: $psr11App->get(RoutableMessageBus::class),
+        now: $now,
+        donationRepository: $psr11App->get(DonationRepository::class),
+    ),
     new ResetMatching(
         $psr11App->get(CampaignFundingRepository::class),
         $psr11App->get(Matching\Adapter::class)
     ),
     new RetrospectivelyMatch(
-        $psr11App->get(DonationRepository::class),
-        $chatter,
+        donationRepository: $psr11App->get(DonationRepository::class),
+        chatter: $chatter,
+        bus: $psr11App->get(RoutableMessageBus::class),
+        entityManager: $psr11App->get(EntityManagerInterface::class),
     ),
     new UpdateCampaigns(
         $psr11App->get(CampaignRepository::class),
@@ -96,6 +105,7 @@ $commands = [
         $psr11App->get(FundRepository::class),
         $psr11App->get(LoggerInterface::class),
     ),
+    $psr11App->get(UpdateCharities::class),
 ];
 
 foreach ($commands as $command) {

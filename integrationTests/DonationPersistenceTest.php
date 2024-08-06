@@ -74,7 +74,7 @@ class DonationPersistenceTest extends IntegrationTest
             'donorLastName' => null,
             'donorPostalAddress' => null,
             'salesforceLastPush' => null,
-            'salesforcePushStatus' => 'not-sent',
+            'salesforcePushStatus' => 'pending-create',
             'salesforceId' => null,
             'tipAmount' => '0.00',
             'psp' => 'stripe',

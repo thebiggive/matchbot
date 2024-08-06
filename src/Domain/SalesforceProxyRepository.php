@@ -6,14 +6,14 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityRepository;
 use MatchBot\Client;
-use MatchBot\Client\Common;
 use Psr\Log\LoggerInterface;
 
 /**
  * @template T of SalesforceProxy
  * @template C of Client\Common
  * @template-extends EntityRepository<T>
- */ abstract class SalesforceProxyRepository extends EntityRepository
+ */
+abstract class SalesforceProxyRepository extends EntityRepository
 {
     /**
      * @psalm-var C

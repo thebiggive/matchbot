@@ -90,7 +90,7 @@ readonly class DonationService
             throw new \UnexpectedValueException(sprintf(
                 'Route customer ID %s did not match %s in donation body',
                 $pspCustomerId,
-                $donation->getPspCustomerId()
+                $donation->getPspCustomerId() ?? 'null'
             ));
         }
 
@@ -145,7 +145,7 @@ readonly class DonationService
                 if (empty($campaign->getCharity()->getStripeAccountId())) {
                     $this->logger->error(sprintf(
                         'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
-                        $donation->getCampaign()->getCharity()->getSalesforceId(),
+                        $donation->getCampaign()->getCharity()->getSalesforceId() ?? 'missing charity sf ID',
                     ));
                     throw new StripeAccountIdNotSetForAccount(
                     );
@@ -248,12 +248,8 @@ readonly class DonationService
             );
         }
 
-        // Attempt immediate sync. Buffered for a future batch sync if the SF call fails.
-        $this->donationRepository->push($donation, true);
-
         return $donation;
     }
-
 
     private function getStatementDescriptor(Charity $charity): string
     {

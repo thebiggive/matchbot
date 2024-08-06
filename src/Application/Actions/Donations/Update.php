@@ -11,6 +11,7 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
@@ -22,12 +23,13 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Slim\Exception\HttpBadRequestException;
-use Stripe\ErrorObject;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\Exception\RateLimitException;
 use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 use TypeError;
@@ -50,6 +52,7 @@ class Update extends Action
         private Stripe $stripe,
         LoggerInterface $logger,
         private ClockInterface $clock,
+        private RoutableMessageBus $bus,
     ) {
         parent::__construct($logger);
     }
@@ -434,7 +437,7 @@ class Update extends Action
 
         $this->save($donation);
 
-        return $this->respondWithData($response, $donation->toApiModel());
+        return $this->respondWithData($response, $donation->toFrontEndApiModel());
     }
 
     private function cancel(Donation $donation, Response $response, array $args): Response
@@ -443,7 +446,7 @@ class Update extends Action
             $this->logger->info("Donation ID {$args['donationId']} was already Cancelled");
             $this->entityManager->rollback();
 
-            return $this->respondWithData($response, $donation->toApiModel());
+            return $this->respondWithData($response, $donation->toFrontEndApiModel());
         }
 
         if ($donation->getDonationStatus()->isSuccessful()) {
@@ -503,7 +506,7 @@ class Update extends Action
             }
         }
 
-        return $this->respondWithData($response, $donation->toApiModel());
+        return $this->respondWithData($response, $donation->toFrontEndApiModel());
     }
 
     /**
@@ -527,9 +530,7 @@ class Update extends Action
             return;
         }
 
-        // We log if this fails but don't worry the client about it. We'll just re-try
-        // sending the updated status to Salesforce in a future batch sync.
-        $this->donationRepository->push($donation, false);
+        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
     }
 
     /**

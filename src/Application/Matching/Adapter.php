@@ -71,7 +71,7 @@ class Adapter
          * @psalm-suppress PossiblyInvalidArrayAccess
          * @psalm-suppress PossiblyFalseReference - we know incrBy will retrun an array in multi mode
          */
-        [$initResponse, $fundBalanceFractional] = $this->storage->multi()
+        [$_initResponse, $fundBalanceFractional] = $this->storage->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),
@@ -101,8 +101,9 @@ class Adapter
 
         /**
          * @psalm-suppress PossiblyFalseReference - in mulit mode decrBy will not return false.
+         * @psalm-suppress PossiblyInvalidArrayAccess - in this case we know exec returns array
          */
-        [$initResponse, $fundBalanceFractional] = $this->storage->multi()
+        [$_initResponse, $fundBalanceFractional] = $this->storage->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),
@@ -153,8 +154,7 @@ class Adapter
 
             $this->setFundingValue($funding, $this->toCurrencyWholeUnit($fundBalanceFractional));
             throw new LessThanRequestedAllocatedException(
-                $this->toCurrencyWholeUnit($amountAllocatedFractional),
-                $this->toCurrencyWholeUnit($fundBalanceFractional)
+                $this->toCurrencyWholeUnit($amountAllocatedFractional)
             );
         }
 

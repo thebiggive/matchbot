@@ -7,10 +7,12 @@ use DI\Container;
 use GuzzleHttp\Psr7\ServerRequest;
 use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestData;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
@@ -21,7 +23,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Ramsey\Uuid\Uuid;
 use Random\Randomizer;
 use Slim\App;
 use Slim\Factory\AppFactory;
@@ -111,7 +112,6 @@ abstract class IntegrationTest extends TestCase
     }
 
     /**
-     * @return void
      * @throws \DI\DependencyException
      * @throws \DI\NotFoundException
      * @throws \MatchBot\Client\BadRequestException
@@ -121,8 +121,11 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+        $donationClientProphecy->createOrUpdate(Argument::type(DonationUpserted::class))->will(
+        /**
+         * @param array{0: Donation} $args
+         */            fn(array $args) => Salesforce18Id::of($args[0]->getSalesforceId() ?? $this->randomString())
+        );
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
@@ -185,8 +188,9 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+        $donationClientProphecy->createOrUpdate(Argument::type(DonationUpserted::class))->willReturn(
+            Salesforce18Id::of($this->randomString())
+        );
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
@@ -406,8 +410,9 @@ abstract class IntegrationTest extends TestCase
         $container = $this->getContainer();
 
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->create(Argument::type(Donation::class))->willReturn($this->randomString());
-        $donationClientProphecy->put(Argument::type(Donation::class))->willReturn(true);
+        $donationClientProphecy->createOrUpdate(Argument::type(DonationUpserted::class))->willReturn(
+            Salesforce18Id::of($this->randomString())
+        );
 
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 

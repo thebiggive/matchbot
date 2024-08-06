@@ -10,19 +10,28 @@ use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Messenger\AbstractStateChanged;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * @template-extends SalesforceWriteProxyRepository<Donation, \MatchBot\Client\Donation>
+ * @psalm-suppress MissingConstructor Doctrine get repo DI isn't very friendly to custom constructors.
  */
 class DonationRepository extends SalesforceWriteProxyRepository
 {
+    /** Maximum of each type of pending object to process */
+    private const MAX_PER_BULK_PUSH = 5_000;
+
+    private const int MAX_SALEFORCE_FIELD_UPDATE_TRIES = 3;
+
     private CampaignRepository $campaignRepository;
     private FundRepository $fundRepository;
     private LockFactory $lockFactory;
@@ -38,73 +47,20 @@ class DonationRepository extends SalesforceWriteProxyRepository
     private Matching\Adapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
     private array $queuedForPersist;
+
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
         $this->matchingAdapter = $adapter;
     }
 
-    public function doCreate(SalesforceWriteProxy $proxy): bool
+    public function doCreate(AbstractStateChanged $changeMessage): void
     {
-        $donation = $proxy;
-        try {
-            $salesforceDonationId = $this->getClient()->create($donation);
-            $donation->setSalesforceId($salesforceDonationId);
-        } catch (NotFoundException $ex) {
-            // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
-            $this->logInfo(
-                "Marking Salesforce donation {$donation->getUuid()} as campaign removed; will not try to push again."
-            );
-            $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_REMOVED);
-            $this->getEntityManager()->persist($donation);
-
-            return true; // Report 'success' for simpler summaries and spotting of real errors.
-        } catch (BadRequestException $exception) {
-            return false;
-        }
-
-        return true;
+        $this->upsert($changeMessage);
     }
 
-    public function doUpdate(SalesforceWriteProxy $proxy): bool
+    public function doUpdate(AbstractStateChanged $changeMessage): void
     {
-        $donation = $proxy;
-
-        if ($donation->getPaymentMethodType() === null) {
-            $donation->replaceNullPaymentMethodTypeWithCard();
-            $this->getEntityManager()->persist($donation);
-        }
-
-        try {
-            if ($donation->getDonationStatus() === DonationStatus::Pending) {
-                // A pending status but an existing Salesforce ID suggests pushes might have ended up out
-                // of order due to race conditions pushing to Salesforce, variable and quite slow
-                // Salesforce performance characteristics, and both client (this) & server (SF) apps being
-                // multi-threaded. The safest thing is not to push a Pending donation to Salesforce a 2nd
-                // time, and just leave updates later in the process to get additional data there. As
-                // far as calling processes and retry logic goes, this should act like a[nother] successful
-                // push.
-                $this->logInfo(sprintf(
-                    'Skipping possible re-push of new-status donation %d, UUID %s, Salesforce ID %s',
-                    $donation->getId(),
-                    $donation->getUuid(),
-                    $donation->getSalesforceId(),
-                ));
-                return true;
-            }
-
-            $result = $this->getClient()->put($donation);
-        } catch (NotFoundException $ex) {
-            // Thrown only for *sandbox* 404s -> quietly stop trying to push the removed donation.
-            $this->logInfo(
-                "Marking old Salesforce donation {$donation->getUuid()} as removed; will not try to push again."
-            );
-            $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_REMOVED);
-            $this->getEntityManager()->persist($donation);
-
-            return true; // Report 'success' for simpler summaries and spotting of real errors.
-        }
-
-        return $result;
+        $this->upsert($changeMessage);
     }
 
     /**
@@ -496,14 +452,13 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * this was needed after CC21 for a last minute donation that could not be persisted in
      * Salesforce because the campaign close date had passed before it reached SF.
      *
-     * @return int  Number of donations updated to 'not-sent'.
+     * @return int  Number of donations updated to 'complete'.
      */
     public function abandonOldCancelled(): int
     {
         $twentyMinsAgo = (new DateTime('now'))
             ->sub(new \DateInterval('PT20M'));
         $pendingSFPushStatuses = [
-            SalesforceWriteProxy::PUSH_STATUS_PENDING_ADDITIONAL_UPDATE,
             SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE,
             SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE,
         ];
@@ -523,7 +478,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $donations = $qb->getQuery()->getResult();
         if (count($donations) > 0) {
             foreach ($donations as $donation) {
-                $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_NOT_SENT);
+                $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
                 $this->getEntityManager()->persist($donation);
             }
 
@@ -632,6 +587,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     /**
      * Locks row in DB to prevent concurrent updates. See jira MAT-260
+     * Requires an open transaction to be managed by the caller.
      * @throws DBALException\LockWaitTimeoutException
      */
     public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation
@@ -661,5 +617,176 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $this->getEntityManager()->remove($fundingWithdrawal);
             }
         });
+    }
+
+    /**
+     * Re-queues proxy objects to Salesforce en masse.
+     *
+     * By using FIFO queues and deduplicating on UUID if there are multiple consumers, we should make it unlikely
+     * that Salesforce hits Donation record lock contention issues.
+     *
+     * @return int  Number of objects pushed
+     */
+    public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus): int
+    {
+        // We don't want to push donations that were created or modified in the last 5 minutes,
+        // to avoid collisions with other pushes.
+        $fiveMinutesAgo = $now->modify('-5 minutes');
+
+        /** @var Donation[] $proxiesToCreate */
+        $proxiesToCreate = $this->findBy(
+            ['salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_CREATE],
+            ['updatedAt' => 'ASC'],
+            self::MAX_PER_BULK_PUSH,
+        );
+
+        if ($proxiesToCreate !== []) {
+            $count = count($proxiesToCreate);
+            // Warning for now. SF blips happen, especially in sandboxes. So we think this is bad
+            // enough to track on charts to see if volumes increase lots, but not to actively alert
+            // on as `.ERROR`.
+            $this->logger->warning("pushSalesforcePending found $count pending items to push to SF, " .
+                'suggests push via Symfony Messenger failed');
+
+            $first3OrFewerProxies = array_slice($proxiesToCreate, 0, 3);
+            $firstUUIDs = array_map(static fn(Donation $d) => $d->getUuid(), $first3OrFewerProxies);
+            $this->logger->info('pushSalesforcePending sample UUIDs: ' . implode(', ', $firstUUIDs));
+        }
+
+        foreach ($proxiesToCreate as $proxy) {
+            if ($proxy->getUpdatedDate() > $fiveMinutesAgo) {
+                // fetching the proxy just to skip it here is a bit wasteful but the performance cost is low
+                // compared to working out how to do a findBy equivalent with multiple criteria
+                // (i.e. using \Doctrine\ORM\EntityRepository::matching() method)
+                continue;
+            }
+
+            $bus->dispatch(new Envelope(DonationUpserted::fromDonation($proxy)));
+        }
+
+        $proxiesToUpdate = $this->findBy(
+            ['salesforcePushStatus' => SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE],
+            ['updatedAt' => 'ASC'],
+            self::MAX_PER_BULK_PUSH,
+        );
+
+        foreach ($proxiesToUpdate as $proxy) {
+            if ($proxy->getUpdatedDate() > $fiveMinutesAgo) {
+                continue;
+            }
+
+            $bus->dispatch(new Envelope(DonationUpserted::fromDonation($proxy)));
+        }
+
+        return count($proxiesToCreate) + count($proxiesToUpdate);
+    }
+
+    private function setSalesforceFieldsWithRetry(
+        AbstractStateChanged $changeMessage,
+        ?Salesforce18Id $salesforceId
+    ): void {
+        $tries = 0;
+
+        // Try to safely set Salesforce ID, and other push tracking fields. If it
+        // fails repeatedly, this should be safe to leave for a later update.
+        // Salesforce has UUIDs so we won't lose the ability to reconcile the records.
+        $uuid = $changeMessage->uuid;
+
+        do {
+            try {
+                $this->setSalesforceFields($uuid, $salesforceId);
+                return;
+            } catch (DBALException\RetryableException $exception) {
+                $tries++;
+                $this->logInfo(sprintf(
+                    '%s: Lock unavailable to set Salesforce fields on donation %s with Salesforce ID %s on try #%d',
+                    get_class($exception),
+                    $uuid,
+                    $salesforceId?->value ?? 'null',
+                    $tries,
+                ));
+            }
+        } while ($tries < self::MAX_SALEFORCE_FIELD_UPDATE_TRIES);
+
+        $this->logWarning(
+            "Failed to set Salesforce fields for donation $uuid after $tries tries"
+        );
+    }
+
+    /**
+     * Sets a Salesforce ID (and general status things)without its own lock and importantly without the ORM, using
+     * a raw DQL `UPDATE` that should make it safe irrespective of ORM work that could also be happening on the record.
+     *
+     * @throws DBALException\LockWaitTimeoutException if some other transaction is holding a lock
+     */
+    private function setSalesforceFields(string $uuid, ?Salesforce18Id $salesforceId): void
+    {
+        $now = new \DateTimeImmutable('now');
+        $query = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            UPDATE Matchbot\Domain\Donation donation
+            SET
+                donation.salesforceId = :salesforceId,
+                donation.salesforcePushStatus = 'complete',
+                donation.salesforceLastPush = :now
+            WHERE donation.uuid = :uuid
+            DQL
+        );
+        $query->setParameter('now', $now);
+        $query->setParameter('salesforceId', $salesforceId?->value);
+        $query->setParameter('uuid', $uuid);
+        $query->execute();
+    }
+
+    private function upsert(AbstractStateChanged $changeMessage): void
+    {
+        Assertion::isInstanceOf($changeMessage, DonationUpserted::class);
+
+        try {
+            $salesforceDonationId = $this->getClient()->createOrUpdate($changeMessage);
+        } catch (NotFoundException $ex) {
+            // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
+            $this->logInfo(
+                "Marking 404 campaign Salesforce donation {$changeMessage->uuid} as complete; " .
+                'will not try to push again.'
+            );
+            $this->setSalesforceFieldsWithRetry($changeMessage, null);
+
+            return;
+        } catch (BadRequestException $exception) {
+            $this->logError(
+                "Pushing Salesforce donation {$changeMessage->uuid} got 400: {$exception->getMessage()}"
+            );
+
+            return;
+        }
+
+        $this->setSalesforceFieldsWithRetry($changeMessage, $salesforceDonationId);
+    }
+
+    /**
+     * Finds all successful donations from the donor with the given stripe customer ID.
+     *
+     * In principle, we would probably prefer to the user ID's we've assigned to donors here
+     * instead of the Stripe Customer ID, so we're less tied into stripe, but we don't have those currently in
+     * the Donation table. Considering adding that column and writing a script to fill in on all old donations.
+     * @return list<Donation>
+     */
+    public function findAllCompleteForCustomer(StripeCustomerId $stripeCustomerId): array
+    {
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT donation from Matchbot\Domain\Donation donation
+            WHERE donation.pspCustomerId = :pspCustomerId
+            AND donation.donationStatus IN (:succcessStatus)
+            ORDER BY donation.createdAt DESC
+        DQL
+        );
+
+        $query->setParameter('pspCustomerId', $stripeCustomerId->stripeCustomerId);
+        $query->setParameter('succcessStatus', DonationStatus::SUCCESS_STATUSES);
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
     }
 }

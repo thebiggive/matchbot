@@ -30,6 +30,7 @@ use function sprintf;
 #[ORM\Index(name: 'date_and_status', columns: ['createdAt', 'donationStatus'])]
 #[ORM\Index(name: 'updated_date_and_status', columns: ['updatedAt', 'donationStatus'])]
 #[ORM\Index(name: 'salesforcePushStatus', columns: ['salesforcePushStatus'])]
+#[ORM\Index(name: 'pspCustomerId', columns: ['pspCustomerId'])]
 #[ORM\Entity(repositoryClass: DonationRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class Donation extends SalesforceWriteProxy
@@ -248,6 +249,7 @@ class Donation extends SalesforceWriteProxy
     protected ?bool $tbgShouldProcessGiftAid = null;
 
     /**
+     * @psalm-suppress PossiblyUnusedProperty - used in DB queries
      * @var ?DateTime   When a queued message that should lead to a Gift Aid claim was sent.
      */
     #[ORM\Column(type: 'datetime', nullable: true)]
@@ -356,6 +358,7 @@ class Donation extends SalesforceWriteProxy
             $donationData->pspMethodType,
         );
 
+        $donation->createdNow(); // Mimic ORM persistence hook attribute, calling its fn explicitly instead.
         $donation->setPsp($psp);
         $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
 
@@ -434,43 +437,22 @@ class Donation extends SalesforceWriteProxy
         }
     }
 
-    public function replaceNullPaymentMethodTypeWithCard(): void
+    public function toSFApiModel(): array
     {
-        if ($this->paymentMethodType !== null) {
-            throw new \Exception('Should only be called when payment method type is null');
-        }
-        $this->paymentMethodType = PaymentMethodType::Card;
-    }
+        $data = [...$this->toFrontEndApiModel(), 'originalPspFee' => (float) $this->getOriginalPspFee()];
 
-    /**
-     * @return array A json encode-ready array representation of the donation, for sending to Salesforce.
-     */
-    public function toHookModel(): array
-    {
-        $data = $this->toApiModel();
-
-        $data['updatedTime'] = $this->getUpdatedDate()->format(DateTimeInterface::ATOM);
-        $data['amountMatchedByChampionFunds'] = (float) $this->getConfirmedChampionWithdrawalTotal();
-        $data['amountMatchedByPledges'] = (float) $this->getConfirmedPledgeWithdrawalTotal();
-        $data['originalPspFee'] = (float) $this->getOriginalPspFee();
-        $data['refundedTime'] = $this->refundedAt?->format(DateTimeInterface::ATOM);
-        $data['tbgGiftAidRequestConfirmedCompleteAt'] =
-            $this->tbgGiftAidRequestConfirmedCompleteAt?->format(DateTimeInterface::ATOM);
-        unset(
-            $data['charityName'],
-            $data['donationId'],
-            $data['matchReservedAmount'],
-            $data['matchedAmount'],
-            $data['cardBrand'],
-            $data['cardCountry'],
-        );
+        // As of mid 2024 only the actual donate frontend gets this value, to avoid
+        // confusion around values that are too temporary to be useful in a CRM anyway.
+        unset($data['matchReservedAmount']);
 
         return $data;
     }
 
-    public function toApiModel(): array
+    public function toFrontEndApiModel(): array
     {
         $data = [
+            'amountMatchedByChampionFunds' => (float) $this->getConfirmedChampionWithdrawalTotal(),
+            'amountMatchedByPledges' => (float) $this->getConfirmedPledgeWithdrawalTotal(),
             'billingPostalAddress' => $this->donorBillingPostcode,
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
@@ -501,10 +483,14 @@ class Donation extends SalesforceWriteProxy
             'psp' => $this->getPsp(),
             'pspCustomerId' => $this->getPspCustomerId(),
             'pspMethodType' => $this->getPaymentMethodType()?->value,
+            'refundedTime' => $this->refundedAt?->format(DateTimeInterface::ATOM),
             'status' => $this->getDonationStatus(),
+            'tbgGiftAidRequestConfirmedCompleteAt' =>
+                $this->tbgGiftAidRequestConfirmedCompleteAt?->format(DateTimeInterface::ATOM),
             'tipAmount' => (float) $this->getTipAmount(),
             'tipGiftAid' => $this->hasTipGiftAid(),
             'transactionId' => $this->getTransactionId(),
+            'updatedTime' => $this->getUpdatedDate()->format(DateTimeInterface::ATOM),
         ];
 
         if ($this->getDonationStatus() === DonationStatus::Pending) {
@@ -931,15 +917,6 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return bool Whether the donation has a hook-updated status and should therefore be updated in Salesforce after
-     *              creation, if successful SF create doesn't happen before MatchBot processes the hook.
-     */
-    public function hasPostCreateUpdates(): bool
-    {
-        return $this->getDonationStatus() !== DonationStatus::Pending;
-    }
-
-    /**
      * @return int      The amount of the total donation, in cents/pence/..., which is to be excluded
      *                  from payout to the charity. This is the sum of
      *                  (a) any part of that amount which was a tip to the Big Give;
@@ -1043,14 +1020,6 @@ class Donation extends SalesforceWriteProxy
     public function setTbgShouldProcessGiftAid(?bool $tbgShouldProcessGiftAid): void
     {
         $this->tbgShouldProcessGiftAid = $tbgShouldProcessGiftAid;
-    }
-
-    /**
-     * @return DateTime|null
-     */
-    public function getTbgGiftAidRequestQueuedAt(): ?DateTime
-    {
-        return $this->tbgGiftAidRequestQueuedAt;
     }
 
     /**
@@ -1233,12 +1202,21 @@ class Donation extends SalesforceWriteProxy
 
     public function toClaimBotModel(): Messages\Donation
     {
+        $lastName = $this->donorLastName;
+        $firstName = $this->donorFirstName;
+        if ($lastName === null) {
+            throw new \Exception("Missing donor last name; cannot send donation to claimbot");
+        }
+        if ($firstName === null) {
+            throw new \Exception("Missing donor first name; cannot send donation to claimbot");
+        }
+
         $donationMessage = new Messages\Donation();
         $donationMessage->id = $this->uuid->toString();
         $donationMessage->donation_date = $this->getCollectedAt()?->format('Y-m-d');
         $donationMessage->title = '';
-        $donationMessage->first_name = $this->donorFirstName;
-        $donationMessage->last_name = $this->donorLastName;
+        $donationMessage->first_name = $firstName;
+        $donationMessage->last_name = $lastName;
 
         $donationMessage->overseas = $this->donorHomePostcode === 'OVERSEAS';
         $donationMessage->postcode = $donationMessage->overseas ? '' : ($this->donorHomePostcode ?? '');
@@ -1439,7 +1417,9 @@ class Donation extends SalesforceWriteProxy
         $this->setTipGiftAid($tipGiftAid);
         $this->setTbgShouldProcessGiftAid($this->getCampaign()->getCharity()->isTbgClaimingGiftAid());
         $this->setDonorHomePostcode($donorHomePostcode);
-        $this->setDonorName($donorName);
+        if ($donorName) {
+            $this->setDonorName($donorName);
+        }
         $this->setDonorEmailAddress($donorEmailAddress);
         $this->setTbgComms($tbgComms);
         $this->setCharityComms($charityComms);

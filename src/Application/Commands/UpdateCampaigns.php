@@ -53,6 +53,11 @@ EOT
         }
 
         foreach ($campaigns as $campaign) {
+            $salesforceId = $campaign->getSalesforceId();
+            if ($salesforceId === null) {
+                throw new \Exception("Missing Salesforce ID for campaign ID " . ($campaign->getId() ?? 'null'));
+            }
+
             try {
                 $this->pull($campaign, $output);
             } catch (NotFoundException $exception) {
@@ -63,24 +68,24 @@ EOT
                     if ($campaign->getEndDate() < new \DateTime()) {
                         $this->logger->info(sprintf(
                             'Skipping unknown PRODUCTION campaign %s whose end date had passed – charity inactive?',
-                            $campaign->getSalesforceId()
+                            $salesforceId
                         ));
                     } else {
                         $this->logger->error(sprintf(
                             'Skipping unknown PRODUCTION campaign %s – charity inactive?',
-                            $campaign->getSalesforceId()
+                            $salesforceId
                         ));
                     }
                 } else {
                     // Chances are a sandbox refresh has led to this campaign being deleted in the Salesforce sandbox.
-                    $output->writeln('Skipping unknown sandbox campaign ' . $campaign->getSalesforceId());
+                    $output->writeln('Skipping unknown sandbox campaign ' . $salesforceId);
                 }
             } catch (DomainCurrencyMustNotChangeException $exception) {
-                $output->writeln('Skipping invalid currency change campaign ' . $campaign->getSalesforceId());
+                $output->writeln('Skipping invalid currency change campaign ' . $salesforceId);
             } catch (TransferException $exception) {
                 $this->logger->info(sprintf(
                     'Retrying campaign %s due to transfer error "%s"',
-                    $campaign->getSalesforceId(),
+                    $salesforceId,
                     $exception->getMessage(),
                 ));
 
@@ -89,7 +94,7 @@ EOT
                 } catch (TransferException $retryException) {
                     $transferError = sprintf(
                         'Skipping campaign %s due to 2nd transfer error "%s"',
-                        $campaign->getSalesforceId(),
+                        $salesforceId,
                         $exception->getMessage(),
                     );
                     $output->writeln($transferError);

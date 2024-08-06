@@ -11,7 +11,10 @@ use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
 use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
+use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
@@ -32,7 +35,6 @@ use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Processor\MemoryPeakUsageProcessor;
-use Monolog\Processor\MemoryUsageProcessor;
 use Monolog\Processor\UidProcessor;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -55,6 +57,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
 use Symfony\Component\Messenger\Middleware\SendMessageMiddleware;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransportFactory;
 use Symfony\Component\Messenger\Transport\Sender\SendersLocator;
 use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
 use Symfony\Component\Messenger\Transport\TransportFactory;
@@ -71,7 +74,8 @@ use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 
 return function (ContainerBuilder $containerBuilder) {
-    // When writing closures within this function do not use `use` to bring in variables - that works in the dev
+    // When writing closures within this function do not use `use` or implicit binding of arrow functions to bring in
+    // variables - that works in the dev
     // env where we use the non-compiled container but not in prod or prod-like envs where it causes an error
     // "Cannot compile closures which import variables using the `use` keyword"
     // https://github.com/PHP-DI/PHP-DI/blob/a7410e4ee4f61312183af2d7e26a9e6592d2d974/src/Compiler/Compiler.php#L389
@@ -131,7 +135,7 @@ return function (ContainerBuilder $containerBuilder) {
             return new SlackChannelChatterFactory($token);
         },
 
-        ClaimBotTransport::class => static function (ContainerInterface $c): TransportInterface {
+        ClaimBotTransport::class => static function (): TransportInterface {
             $transportFactory = new TransportFactory([
                 new AmazonSqsTransportFactory(),
                 new RedisTransportFactory(),
@@ -242,6 +246,11 @@ return function (ContainerBuilder $containerBuilder) {
             return $logger;
         },
 
+        Environment::class => function (ContainerInterface $_c): Environment {
+            /** @psalm-suppress PossiblyFalseArgument - we expect APP_ENV to be set everywhere */
+            return Environment::fromAppEnv(getenv('APP_ENV'));
+        },
+
         'donation-creation-rate-limiter-factory' => function (ContainerInterface $c): RateLimiterFactory {
             return new RateLimiterFactory(
                 config: [
@@ -280,6 +289,7 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     Messages\Donation::class => [ClaimBotTransport::class],
                     StripePayout::class => [TransportInterface::class],
+                    DonationUpserted::class => [TransportInterface::class],
                 ],
                 $c,
             ));
@@ -289,6 +299,7 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
                     StripePayout::class => [$c->get(StripePayoutHandler::class)],
+                    DonationUpserted::class => [$c->get(DonationUpsertedHandler::class)],
                 ],
             ));
             $handleMiddleware->setLogger($logger);
@@ -352,7 +363,7 @@ return function (ContainerBuilder $containerBuilder) {
             return $config;
         },
 
-        ProblemDetailsResponseFactory::class => static function (ContainerInterface $c): ProblemDetailsResponseFactory {
+        ProblemDetailsResponseFactory::class => static function (): ProblemDetailsResponseFactory {
             return new ProblemDetailsResponseFactory(new ResponseFactory());
         },
 
@@ -399,14 +410,25 @@ return function (ContainerBuilder $containerBuilder) {
 
         RoutableMessageBus::class => static function (ContainerInterface $c): RoutableMessageBus {
             $busContainer = new Container();
+            $bus = $c->get(MessageBusInterface::class);
+
             $busContainer->set('claimbot.donation.claim', $c->get(MessageBusInterface::class));
             $busContainer->set('claimbot.donation.result', $c->get(MessageBusInterface::class));
             $busContainer->set(\Stripe\Event::PAYOUT_PAID, $c->get(MessageBusInterface::class));
 
-            return new RoutableMessageBus($busContainer);
+            /**
+             * Every message defaults to our only bus, so we think these are technically redundant for
+             * now. The list is possibly not exhaustive.
+             */
+            $busContainer->set('claimbot.donation.claim', $bus);
+            $busContainer->set('claimbot.donation.result', $bus);
+            $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
+            $busContainer->set(DonationUpserted::class, $bus);
+
+            return new RoutableMessageBus($busContainer, $bus);
         },
 
-        SerializerInterface::class => static function (ContainerInterface $c): SerializerInterface {
+        SerializerInterface::class => static function (): SerializerInterface {
             $encoders = [new JsonEncoder()];
             $normalizers = [
                 new BackedEnumNormalizer(),
@@ -428,9 +450,10 @@ return function (ContainerBuilder $containerBuilder) {
             ]);
         },
 
-        TransportInterface::class => static function (ContainerInterface $c): TransportInterface {
+        TransportInterface::class => static function (): TransportInterface {
             $transportFactory = new TransportFactory([
                 new AmazonSqsTransportFactory(),
+                new InMemoryTransportFactory(), // For unit tests.
                 new RedisTransportFactory(),
             ]);
             return $transportFactory->createTransport(
@@ -472,13 +495,13 @@ return function (ContainerBuilder $containerBuilder) {
                 return new DonationService(
                     donationRepository: $c->get(DonationRepository::class),
                     campaignRepository: $c->get(CampaignRepository::class),
-                    rateLimiterFactory: $rateLimiterFactory,
                     logger: $c->get(LoggerInterface::class),
                     entityManager: $c->get(RetrySafeEntityManager::class),
                     stripe: $c->get(\MatchBot\Client\Stripe::class),
                     matchingAdapter: $c->get(Matching\Adapter::class),
                     chatter: $chatter,
                     clock: $c->get(ClockInterfaceAlias::class),
+                    rateLimiterFactory: $rateLimiterFactory,
                 );
             }
     ]);

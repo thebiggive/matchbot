@@ -84,7 +84,9 @@ class Charity extends SalesforceReadProxy
     private bool $tbgApprovedToClaimGiftAid = false;
 
     /**
-     * @psalm-suppress UnusedProperty - will be used soon.
+     * This field is always null as we update charities synchronosly when SF tells us the update is required.
+     * Consider deleting.
+     * @psalm-suppress UnusedProperty
      */
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $updateFromSFRequiredSince = null;
@@ -247,11 +249,5 @@ class Charity extends SalesforceReadProxy
         $this->setSalesforceLastPull($time);
 
         $this->updateFromSFRequiredSince = null;
-    }
-
-
-    public function setUpdateRequiredFromSFSince(\DateTimeImmutable $since): void
-    {
-        $this->updateFromSFRequiredSince = $since;
     }
 }

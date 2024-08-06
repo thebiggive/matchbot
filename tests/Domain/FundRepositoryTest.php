@@ -38,7 +38,7 @@ class FundRepositoryTest extends TestCase
         $repo = new FundRepository($entityManagerProphecy->reveal(), new ClassMetadata(Fund::class));
         $repo->setClient($fundClientProphecy->reveal());
 
-        $repo->setLogger($this->getAppInstance()->getContainer()->get(LoggerInterface::class));
+        $repo->setLogger($this->getContainer()->get(LoggerInterface::class));
 
         $fund = new ChampionFund();
 

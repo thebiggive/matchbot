@@ -11,7 +11,6 @@ use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -23,9 +22,9 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
 use Slim\Psr7\Response;
-use Stripe\Service\PaymentIntentService;
-use Stripe\StripeClient;
 use Symfony\Component\Clock\MockClock;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -41,10 +40,14 @@ class UpdateHandlesLockExceptionTest extends TestCase
     /** @var ObjectProphecy<EntityManagerInterface>  */
     private ObjectProphecy $entityManagerProphecy;
 
+    /** @var ObjectProphecy<RoutableMessageBus> */
+    private ObjectProphecy $messageBusProphecy;
+
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
     }
 
     public function testRetriesOnUpdateStillPendingLockException(): void
@@ -56,14 +59,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Pending);
 
-        $updateAction = new Update(
-            $this->donationRepositoryProphecy->reveal(),
-            $this->entityManagerProphecy->reveal(),
-            new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
-            $this->createStub(Stripe::class),
-            new NullLogger(),
-            new MockClock(),
-        );
+        $updateAction = $this->makeUpdateAction();
 
         $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Pending"));
 
@@ -83,17 +79,9 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Cancelled);
 
-        $this->donationRepositoryProphecy->push($donation, false)->shouldBeCalled()->willReturn(true);
         $this->donationRepositoryProphecy->releaseMatchFunds($donation)->shouldBeCalled();
 
-        $updateAction = new Update(
-            $this->donationRepositoryProphecy->reveal(),
-            $this->entityManagerProphecy->reveal(),
-            new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
-            $this->createStub(Stripe::class),
-            new NullLogger(),
-            new MockClock(),
-        );
+        $updateAction = $this->makeUpdateAction();
 
         $request = new ServerRequest(method: 'PUT', uri: '', body: $this->putRequestBody(newStatus: "Cancelled"));
 
@@ -119,6 +107,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $donation->setCampaign($campaign);
         $donation->setUuid(Uuid::uuid4());
         $donation->setDonorName(DonorName::of('Donor first name', 'Donor last name'));
+        $donation->setSalesforceId('SALESFORCE_ID');
         $donation->setTransactionId('pi_dummyIntent_id');
 
         return $donation;
@@ -182,5 +171,27 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))
             ->shouldBeCalledTimes(2); // One failure, one success
         $this->entityManagerProphecy->commit()->shouldBeCalledOnce();
+
+        /**
+         * @see \MatchBot\IntegrationTests\DonationRepositoryTest for more granular checks of what's
+         * in the envelope. There isn't much variation in what we dispatch so it's not critical to
+         * repeat these checks in every test, but we do want to check we are dispatching the
+         * expected number of times.
+         */
+        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->shouldBeCalledOnce()
+            ->willReturnArgument();
+    }
+
+    private function makeUpdateAction(): Update
+    {
+        return new Update(
+            $this->donationRepositoryProphecy->reveal(),
+            $this->entityManagerProphecy->reveal(),
+            new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
+            $this->createStub(Stripe::class),
+            new NullLogger(),
+            new MockClock(),
+            $this->messageBusProphecy->reveal(),
+        );
     }
 }
