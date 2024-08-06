@@ -2,10 +2,11 @@
 
 namespace MatchBot\Domain;
 
+use JsonSerializable;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
 
-class Salesforce18Id
+class Salesforce18Id implements JsonSerializable
 {
     private function __construct(public readonly string $value)
     {
@@ -26,6 +27,14 @@ class Salesforce18Id
     }
 
     public function __toString(): string
+    {
+        return $this->value;
+    }
+
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - used indirectly
+     */
+    public function jsonSerialize(): string
     {
         return $this->value;
     }

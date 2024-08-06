@@ -27,4 +27,9 @@ enum Currency
             self::GBP => '£',
         };
     }
+
+    public function isoCode(): string
+    {
+        return $this->name;
+    }
 }

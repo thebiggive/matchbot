@@ -15,37 +15,58 @@ use Ramsey\Uuid\Uuid;
  */
 class ListRegularGivingMandatesTest extends IntegrationTest
 {
-    public function setUp(): void
-    {
-        parent::setUp();
-    }
-
     /**
      * @psalm-suppress MixedArrayAccess - hard to avoid in integration testing like this.
      */
-    public function testItReturnsAListWithCollectedDonation(): void
+    public function testItListsRegularGivingMandate(): void
     {
-//        $this->db()->executeStatement(
-//            "",
-//            []
-//        );
-
-        $this->getService(EntityManagerInterface::class)->clear();
-
         $personId = PersonId::of(Uuid::uuid4()->toString());
 
-        // act
         $allMandatesBody = (string) $this->requestFromController($personId)->getBody();
 
-        // assert
-        $allMandatest = \json_decode($allMandatesBody, associative: true, flags: JSON_THROW_ON_ERROR)['mandates'];
-        \assert(is_array($allMandatest));
+        $mandates = \json_decode($allMandatesBody, associative: true, flags: JSON_THROW_ON_ERROR)['mandates'];
+        \assert(is_array($mandates));
 
-        $this->assertCount(1, $allMandatest);
-        $mandate = $allMandatest['0'];
+        $this->assertCount(1, $mandates);
+        $mandate = $mandates['0'];
         \assert(is_array($mandate));
 
-        $this->assertSame($mandate['donorId'], $personId->value);
+        $this->assertEqualsCanonicalizing(
+            [
+                'donorId' => $personId->value,
+                'campaignId' => 'DummySFIDCampaign0',
+                'charityId' => 'DummySFIDCharity00',
+                'amount' => [
+                    'amountInPence' => 600,
+                    'currency' => 'GBP',
+                ],
+                // we could have a choice of payment card recorded here but I think its probably fine to say that that's
+                // attached to the Donor's account, not the mandate. I.e. they can set their default card and it will
+                // apply to all mandates.
+                'schedule' => [
+                    'type' => 'monthly',
+                    'dayOfMonth' => 31, // i.e. donation to be taken on last day of each calendar month
+                    'activeFrom' => '2024-08-06T00:00:00+00:00',
+                ],
+                // I'm not sure if we'll details of the donor like their name and home address
+                // recorded as part of the mandate. I think probably not - we have that on the person
+                // record and on each individual donation.
+                'charityName' => 'Some Charity',
+                'createdTime' => '2024-08-06T00:00:00+00:00',
+                'giftAid' => true, // not 100% sure yet if GA will be an option on regular giving, assuming it will.
+                'status' => 'active',
+
+                // also guessing tipAmount will be an option on regular giving, and we'll apply same tip to
+                // every donation
+                'tipAmount' => [
+                    'amountInPence' => 100,
+                    'currency' => 'GBP',
+                ],
+                'updatedTime' => '2024-08-06T00:00:00+00:00',
+
+            ],
+            $mandate
+        );
     }
 
     public function requestFromController(PersonId $personId): \Psr\Http\Message\ResponseInterface
