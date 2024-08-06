@@ -22,6 +22,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Slim\App;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Routing\RouteCollectorProxy;
+use MatchBot\Application\Actions\RegularGivingMandate;
 
 return function (App $app) {
     $app->get('/ping', Status::class);
@@ -46,6 +47,11 @@ return function (App $app) {
 
         $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
             ->add(PersonManagementAuthMiddleware::class)
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
+
+        $versionGroup->post('/regular-giving/my-donation-mandates', RegularGivingMandate\GetAllForUser::class)
+            ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 

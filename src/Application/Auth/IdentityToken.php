@@ -7,6 +7,7 @@ namespace MatchBot\Application\Auth;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Domain\PersonId;
 use Psr\Log\LoggerInterface;
 
 class IdentityToken
@@ -31,7 +32,7 @@ class IdentityToken
      * @param LoggerInterface   $logger
      * @return bool Whether the token is valid for the given person.
      */
-    public function check(string $personId, string $jws, LoggerInterface $logger): bool
+    public function check(?string $personId, string $jws, LoggerInterface $logger): bool
     {
         try {
             $decodedJwtBody = JWT::decode($jws, static::getKey());
@@ -52,13 +53,23 @@ class IdentityToken
             return false;
         }
 
-        if ($personId !== $decodedJwtBody->sub->person_id) {
+        if (($personId !== null) && $personId !== $decodedJwtBody->sub->person_id) {
             $logger->warning("JWT error: Not authorised for person ID $personId");
 
             return false;
         }
 
         return true;
+    }
+
+    public static function getPersonId(string $jws): PersonId
+    {
+        /**
+         * @var object{sub: object{person_id: string}} $decodedJwtBody
+         */
+        $decodedJwtBody = JWT::decode($jws, static::getKey());
+
+        return PersonId::of($decodedJwtBody->sub->person_id);
     }
 
     public static function getPspId(string $jws): ?string
