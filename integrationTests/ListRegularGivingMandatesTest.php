@@ -34,7 +34,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         $this->assertEquals(
             [
                 'id' => 'e552a93e-540e-11ef-98b2-3b7275661822',
-                'donorId' => $personId->value,
+                'donorId' => $personId->id,
                 'campaignId' => 'DummySFIDCampaign0',
                 'charityId' => 'DummySFIDCharity00',
                 'amount' => [

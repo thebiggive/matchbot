@@ -2,11 +2,15 @@
 
 namespace MatchBot\Domain;
 
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Embeddable;
 use MatchBot\Application\Assertion;
+use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @psalm-immutable
  */
+#[Embeddable]
 class Money implements \JsonSerializable
 {
     /**
@@ -15,7 +19,9 @@ class Money implements \JsonSerializable
      * @param Currency $currency
      */
     private function __construct(
+        #[Column(type: 'integer')]
         private readonly int $amountInPence,
+        #[Column(type: 'string', enumType: Currency::class)]
         private readonly Currency $currency
     ) {
         Assertion::between(

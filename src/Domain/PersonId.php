@@ -14,12 +14,12 @@ use MatchBot\Application\Assertion;
 class PersonId
 {
     #[Column(type: 'uuid')]
-    public readonly string $value;
+    public readonly string $id;
 
     private function __construct(
         string $personId
     ) {
-        $this->value = $personId;
+        $this->id = $personId;
         Assertion::uuid($personId);
     }
 

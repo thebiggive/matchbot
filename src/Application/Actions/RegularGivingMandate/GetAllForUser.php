@@ -35,7 +35,7 @@ class GetAllForUser extends Action
         return new JsonResponse(['mandates' => [
             [
                 'id' => 'e552a93e-540e-11ef-98b2-3b7275661822',
-                'donorId' => $donorId->value,
+                'donorId' => $donorId->id,
                 'amount' => Money::fromPoundsGBP(6),
                 'campaignId' => Salesforce18Id::of('DummySFIDCampaign0'),
                 'charityId' => Salesforce18Id::of('DummySFIDCharity00'),
