@@ -54,7 +54,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                 // record and on each individual donation.
                 'charityName' => 'Some Charity',
                 'createdTime' => '2024-08-06T00:00:00+00:00',
-                'giftAid' => true, // not 100% sure yet if GA will be an option on regular giving, assuming it will.
+                'giftAid' => true,
                 'status' => 'active',
 
                 // also guessing tipAmount will be an option on regular giving, and we'll apply same tip to
