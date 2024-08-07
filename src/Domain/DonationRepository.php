@@ -15,6 +15,7 @@ use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
+use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\NotFoundException;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
@@ -67,6 +68,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * @param DonationCreate $donationData
      * @return Donation
      * @throws \UnexpectedValueException if inputs invalid, including projectId being unrecognised
+     * @throws CampaignNotReady|NotFoundException
      */
     public function buildFromApiRequest(DonationCreate $donationData): Donation
     {

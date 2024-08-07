@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Environment;
+use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
