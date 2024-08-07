@@ -7,6 +7,7 @@ use Doctrine\ORM\Exception\ORMException;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\Stripe;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -60,6 +61,7 @@ readonly class DonationService
      * @throws StripeAccountIdNotSetForAccount
      * @throws TransportExceptionInterface
      * @throws RateLimitExceededException
+     * @throws CampaignNotReady|\MatchBot\Client\NotFoundException
      */
     public function createDonation(DonationCreate $donationData, string $pspCustomerId): Donation
     {
