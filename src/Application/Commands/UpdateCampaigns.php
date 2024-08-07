@@ -61,7 +61,7 @@ EOT
 
             try {
                 $this->pull($campaign, $output);
-            } catch (NotFoundException $exception) {
+            } catch (NotFoundException | CampaignNotReady $exception) {
                 if (getenv('APP_ENV') === 'production') {
                     // This is currently possible if a charity had a campaign already launchable
                     // before, but no longer meets the requirements to run it. Our Saleforce APIs
