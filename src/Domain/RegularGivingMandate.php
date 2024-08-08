@@ -10,7 +10,6 @@ use Ramsey\Uuid\UuidInterface;
  * @psalm-suppress UnusedProperty - properties being brought into use now
  */
 #[ORM\Table]
-//#[ORM\UniqueConstraint(name: "donor_campaign", fields: ["donorId", "campaignId"])]
 #[ORM\Index(name: 'uuid', columns: ['uuid'])]
 #[ORM\Entity(repositoryClass: DoctrineRegularGivingMandateRepository::class)]
 #[ORM\HasLifecycleCallbacks]
