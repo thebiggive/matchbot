@@ -7,7 +7,7 @@ use MatchBot\Application\Assertion;
 /**
  * @psalm-immutable
  */
-class Money
+class Money implements \JsonSerializable
 {
     /**
      * @param int $amountInPence - Amount of money in minor units, i.e. pence, assumed to be worth 1/100 of the major
@@ -30,6 +30,11 @@ class Money
         return new self($amountInPence, $currency);
     }
 
+    public static function fromPoundsGBP(int $pounds): self
+    {
+        return new self($pounds * 100, Currency::GBP);
+    }
+
     /**
      * @return string Human-readable amount for use in English, e.g. "£17,000.00"
      */
@@ -43,5 +48,13 @@ class Money
                 decimal_separator: '.',
                 thousands_separator: ','
             );
+    }
+
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - used indirectly
+     */
+    public function jsonSerialize(): mixed
+    {
+        return ['amountInPence' => $this->amountInPence, 'currency' => $this->currency->isoCode()];
     }
 }
