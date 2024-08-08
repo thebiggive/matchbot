@@ -94,12 +94,13 @@ return static function (ContainerBuilder $containerBuilder) {
             return $repo;
         },
 
-        RegularGivingMandateRepository::class => static function (ContainerInterface $c): RegularGivingMandateRepository {
-            $em = $c->get(EntityManagerInterface::class);
-            \assert($em instanceof EntityManagerInterface);
-            $repo = $em->getRepository(RegularGivingMandate::class);
-            \assert($repo instanceof RegularGivingMandateRepository);
-            return $repo;
-        },
+        RegularGivingMandateRepository::class =>
+            static function (ContainerInterface $c): RegularGivingMandateRepository {
+                $em = $c->get(EntityManagerInterface::class);
+                \assert($em instanceof EntityManagerInterface);
+                $repo = $em->getRepository(RegularGivingMandate::class);
+                \assert($repo instanceof RegularGivingMandateRepository);
+                return $repo;
+            },
     ]);
 };

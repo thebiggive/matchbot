@@ -25,7 +25,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
     {
         $personId = PersonId::of(Uuid::uuid4()->toString());
 
-       $this->addMandateToDb(/*$personId */);
+        $this->addMandateToDb(/*$personId */);
 
         $allMandatesBody = (string) $this->requestFromController($personId)->getBody();
 
