@@ -15,6 +15,7 @@ use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
+use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\NotFoundException;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
@@ -67,6 +68,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * @param DonationCreate $donationData
      * @return Donation
      * @throws \UnexpectedValueException if inputs invalid, including projectId being unrecognised
+     * @throws CampaignNotReady|NotFoundException
      */
     public function buildFromApiRequest(DonationCreate $donationData): Donation
     {
@@ -642,9 +644,15 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         if ($proxiesToCreate !== []) {
             $count = count($proxiesToCreate);
-            $this->logger->error(
-                "Found $count pending items to push to SF, suggests push via Symfony Messenger failed"
-            );
+            // Warning for now. SF blips happen, especially in sandboxes. So we think this is bad
+            // enough to track on charts to see if volumes increase lots, but not to actively alert
+            // on as `.ERROR`.
+            $this->logger->warning("pushSalesforcePending found $count pending items to push to SF, " .
+                'suggests push via Symfony Messenger failed');
+
+            $first3OrFewerProxies = array_slice($proxiesToCreate, 0, 3);
+            $firstUUIDs = array_map(static fn(Donation $d) => $d->getUuid(), $first3OrFewerProxies);
+            $this->logger->info('pushSalesforcePending sample UUIDs: ' . implode(', ', $firstUUIDs));
         }
 
         foreach ($proxiesToCreate as $proxy) {

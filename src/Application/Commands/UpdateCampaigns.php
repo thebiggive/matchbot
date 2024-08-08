@@ -8,6 +8,7 @@ use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Exception\TransferException;
+use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -60,7 +61,7 @@ EOT
 
             try {
                 $this->pull($campaign, $output);
-            } catch (NotFoundException $exception) {
+            } catch (NotFoundException | CampaignNotReady $exception) {
                 if (getenv('APP_ENV') === 'production') {
                     // This is currently possible if a charity had a campaign already launchable
                     // before, but no longer meets the requirements to run it. Our Saleforce APIs
@@ -113,6 +114,10 @@ EOT
         return 0;
     }
 
+    /**
+     * @throws CampaignNotReady
+     * @throws NotFoundException
+     */
     protected function pull(Campaign $campaign, OutputInterface $output): void
     {
         $this->campaignRepository->updateFromSf($campaign);

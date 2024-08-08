@@ -71,7 +71,7 @@ class Adapter
          * @psalm-suppress PossiblyInvalidArrayAccess
          * @psalm-suppress PossiblyFalseReference - we know incrBy will retrun an array in multi mode
          */
-        [$_, $fundBalanceFractional] = $this->storage->multi()
+        [$_initResponse, $fundBalanceFractional] = $this->storage->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),
@@ -103,7 +103,7 @@ class Adapter
          * @psalm-suppress PossiblyFalseReference - in mulit mode decrBy will not return false.
          * @psalm-suppress PossiblyInvalidArrayAccess - in this case we know exec returns array
          */
-        [$_, $fundBalanceFractional] = $this->storage->multi()
+        [$_initResponse, $fundBalanceFractional] = $this->storage->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),

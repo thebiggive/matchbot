@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Environment;
+use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
@@ -43,16 +44,28 @@ class UpdateCharityFromSalesforce extends Action
         }
 
         $campaignsToUpdate = $this->campaignRepository->findUpdatableForCharity($sfId);
+        $atLeastOneCampaignUpdated = false;
         foreach ($campaignsToUpdate as $campaign) {
             // also implicitly updates the charity every time.
             try {
                 $this->campaignRepository->updateFromSf($campaign);
+                $atLeastOneCampaignUpdated = true;
             } catch (NotFoundException $e) {
                 if ($this->environment === Environment::Production) {
                     // we don't expect to delete campaigns in prod
                     throw $e;
                 }
+            } catch (CampaignNotReady $e) {
+                // but it is normal for campaigns in prod to go from ready to not ready, e.g. when the campaign period
+                // ends.
+                $this->logger->warning($e->getMessage() . "while updating charity " . $sfId->value);
             }
+        }
+
+        if (! $atLeastOneCampaignUpdated) {
+            $this->logger->warning(
+                "Could not update charity " . $sfId->value . "from salesforce as no-known updateable campaigns"
+            );
         }
 
         $this->em->flush();

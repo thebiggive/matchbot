@@ -7,6 +7,8 @@ namespace MatchBot\Domain;
 use DateTime;
 use MatchBot\Application\Assertion;
 use MatchBot\Client;
+use MatchBot\Client\CampaignNotReady;
+use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
 /**
@@ -100,6 +102,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
         return $result;
     }
 
+    /**
+     * @throws CampaignNotReady
+     * @throws NotFoundException
+     */
     public function pullNewFromSf(Salesforce18Id $salesforceId): Campaign
     {
         $campaign = new Campaign(charity: null);
@@ -113,6 +119,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     /**
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
+     * @throws Client\CampaignNotReady
      */
     protected function doUpdateFromSf(SalesforceReadProxy $proxy): void
     {
