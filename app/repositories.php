@@ -20,6 +20,8 @@ use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundingWithdrawalRepository;
 use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\RegularGivingMandate;
+use MatchBot\Domain\RegularGivingMandateRepository;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Lock\LockFactory;
@@ -89,6 +91,14 @@ return static function (ContainerBuilder $containerBuilder) {
             \assert($em instanceof EntityManagerInterface);
             $repo = $em->getRepository(DonorAccount::class);
             \assert($repo instanceof DonorAccountRepository);
+            return $repo;
+        },
+
+        RegularGivingMandateRepository::class => static function (ContainerInterface $c): RegularGivingMandateRepository {
+            $em = $c->get(EntityManagerInterface::class);
+            \assert($em instanceof EntityManagerInterface);
+            $repo = $em->getRepository(RegularGivingMandate::class);
+            \assert($repo instanceof RegularGivingMandateRepository);
             return $repo;
         },
     ]);

@@ -9,6 +9,8 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\RegularGivingMandate;
+use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -19,7 +21,8 @@ class GetAllForUser extends Action
 {
     public function __construct(
         private Environment $environment,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        private RegularGivingMandateRepository $regularGivingMandateRepository
     ) {
         parent::__construct($logger);
     }
@@ -32,11 +35,15 @@ class GetAllForUser extends Action
         $donorId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
         \assert($donorId instanceof PersonId);
 
+        /** @var RegularGivingMandate[] $mandates */
+        $mandates = $this->regularGivingMandateRepository->findALl();
+        $first = $mandates[0];
+
         return new JsonResponse(['mandates' => [
             [
                 'id' => 'e552a93e-540e-11ef-98b2-3b7275661822',
                 'donorId' => $donorId->id,
-                'amount' => Money::fromPoundsGBP(6),
+                'amount' => $first->amount,
                 'campaignId' => Salesforce18Id::of('DummySFIDCampaign0'),
                 'charityId' => Salesforce18Id::of('DummySFIDCharity00'),
                 'schedule' => [
@@ -51,6 +58,7 @@ class GetAllForUser extends Action
                 'tipAmount' => Money::fromPoundsGBP(1),
                 'updatedTime' => (new \DateTimeImmutable('2024-08-06'))->format(DateTimeInterface::ATOM),
             ]
-        ]]);
+        ]
+        ]);
     }
 }

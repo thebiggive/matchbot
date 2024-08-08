@@ -7,16 +7,16 @@ use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 /**
- * @psalm-suppress UnusedClass - will be used soon
+ * @psalm-suppress UnusedProperty - properties being brought into use now
  */
 #[ORM\Table]
-#[ORM\UniqueConstraint(name: "donor_campaign", fields: ["donorId", "campaignId"])]
+//#[ORM\UniqueConstraint(name: "donor_campaign", fields: ["donorId", "campaignId"])]
 #[ORM\Index(name: 'uuid', columns: ['uuid'])]
 #[ORM\Entity(repositoryClass: DoctrineRegularGivingMandateRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class RegularGivingMandate extends SalesforceWriteProxy
 {
-    #[ORM\Column(unique: true)]
+    #[ORM\Column(unique: true, type: 'uuid')]
     private UuidInterface $uuid;
 
     #[ORM\Embedded(columnPrefix: 'person')]
