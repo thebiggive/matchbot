@@ -4,9 +4,12 @@ namespace MatchBot\IntegrationTests;
 
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
-use MatchBot\Application\Actions\RegularGivingMandate;
+use MatchBot\Application\Actions\RegularGivingMandate\GetAllForUser;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\RegularGivingMandate;
+use MatchBot\Domain\Salesforce18Id;
 use Ramsey\Uuid\Uuid;
 
 /**
@@ -22,6 +25,9 @@ class ListRegularGivingMandatesTest extends IntegrationTest
     {
         $personId = PersonId::of(Uuid::uuid4()->toString());
 
+        // @todo create mandate for specific person and query by that in controller
+        $this->addMandateToDb(/*$personId */);
+
         $allMandatesBody = (string) $this->requestFromController($personId)->getBody();
 
         $mandates = \json_decode($allMandatesBody, associative: true, flags: JSON_THROW_ON_ERROR)['mandates'];
@@ -34,11 +40,11 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         $this->assertEquals(
             [
                 'id' => 'e552a93e-540e-11ef-98b2-3b7275661822',
-                'donorId' => $personId->value,
+                'donorId' => $personId->id,
                 'campaignId' => 'DummySFIDCampaign0',
                 'charityId' => 'DummySFIDCharity00',
                 'amount' => [
-                    'amountInPence' => 600,
+                    'amountInPence' => 5_000_00,
                     'currency' => 'GBP',
                 ],
                 'schedule' => [
@@ -63,7 +69,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
 
     public function requestFromController(PersonId $personId): \Psr\Http\Message\ResponseInterface
     {
-        return $this->getService(RegularGivingMandate\GetAllForUser::class)->__invoke(
+        return $this->getService(GetAllForUser::class)->__invoke(
             (new ServerRequest(
                 method: 'GET',
                 uri: '',
@@ -75,5 +81,22 @@ class ListRegularGivingMandatesTest extends IntegrationTest
             new \Slim\Psr7\Response(),
             []
         );
+    }
+
+    private function addMandateToDb(): void
+    {
+        $em = $this->getContainer()->get(EntityManagerInterface::class);
+        $em->getConnection()->executeStatement("DELETE FROM RegularGivingMandate where id > 0");
+
+        $mandate = new RegularGivingMandate(
+            PersonId::of(Uuid::uuid4()->toString()),
+            amount: Money::fromPoundsGBP(5_000),
+            campaignId: Salesforce18Id::of('DummySFIDCampaign0'),
+            charityId: Salesforce18Id::of('DummySFIDCharity00'),
+            giftAid: true,
+        );
+
+        $em->persist($mandate);
+        $em->flush();
     }
 }
