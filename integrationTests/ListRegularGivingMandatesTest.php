@@ -25,6 +25,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
     {
         $personId = PersonId::of(Uuid::uuid4()->toString());
 
+        // @todo create mandate for specific person and query by that in controller
         $this->addMandateToDb(/*$personId */);
 
         $allMandatesBody = (string) $this->requestFromController($personId)->getBody();
