@@ -7,9 +7,6 @@ namespace MatchBot\Migrations;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
-/**
- * Auto-generated Migration: Please modify to your needs!
- */
 final class Version20240809141455 extends AbstractMigration
 {
     public function getDescription(): string
@@ -20,7 +17,12 @@ final class Version20240809141455 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE RegularGivingMandate ADD dayOfMonth SMALLINT NOT NULL, CHANGE uuid uuid CHAR(36) NOT NULL COMMENT \'(DC2Type:uuid)\'');
+        $this->addSql(<<<'SQL'
+            ALTER TABLE RegularGivingMandate
+                ADD dayOfMonth SMALLINT NOT NULL,
+                CHANGE uuid uuid CHAR(36) NOT NULL COMMENT '(DC2Type:uuid)'
+        SQL
+        );
     }
 
     public function down(Schema $schema): void
