@@ -36,7 +36,7 @@ class GetAllForUser extends Action
         \assert($donorId instanceof PersonId);
 
         /** @var RegularGivingMandate[] $mandates */
-        $mandates = $this->regularGivingMandateRepository->findALl();
+        $mandates = $this->regularGivingMandateRepository->findAll();
         $first = $mandates[0];
 
         return new JsonResponse(['mandates' => [
