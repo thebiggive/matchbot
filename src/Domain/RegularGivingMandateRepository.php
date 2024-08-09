@@ -2,8 +2,33 @@
 
 namespace MatchBot\Domain;
 
-interface RegularGivingMandateRepository
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
+
+/**
+ * Note this is different from other repositories we have so far as it encapsulates Doctrine's repository
+ * class instead of extending it, so that it can present just the specific API that we actually want and ensure
+ * that all the ways we use are listed as methods below.
+ *
+ * If we like this pattern we could try applying it
+ * to all repos automatically - see
+ * https://getrector.com/blog/how-to-instantly-decouple-symfony-doctrine-repository-inheritance-to-clean-composition
+ */
+class RegularGivingMandateRepository
 {
-    /** @return list<RegularGivingMandate> */
-    public function findAll();
+    /** @var EntityRepository<RegularGivingMandate>  */
+    private EntityRepository $doctrineRepository;
+
+    public function __construct(EntityManagerInterface $em)
+    {
+        $this->doctrineRepository = $em->getRepository(RegularGivingMandate::class);
+    }
+
+    /**
+     * @return list<RegularGivingMandate>
+     */
+    public function allForDonor(PersonId $donorId): array
+    {
+        return $this->doctrineRepository->findBy(['donorId.id' => $donorId->id]);
+    }
 }

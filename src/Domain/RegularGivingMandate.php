@@ -11,15 +11,17 @@ use Ramsey\Uuid\UuidInterface;
  */
 #[ORM\Table]
 #[ORM\Index(name: 'uuid', columns: ['uuid'])]
-#[ORM\Entity(repositoryClass: DoctrineRegularGivingMandateRepository::class)]
+#[ORM\Entity(
+    repositoryClass: null // we construct our own repository
+)]
 #[ORM\HasLifecycleCallbacks]
 class RegularGivingMandate extends SalesforceWriteProxy
 {
     #[ORM\Column(unique: true, type: 'uuid')]
-    private UuidInterface $uuid;
+    public readonly UuidInterface $uuid;
 
     #[ORM\Embedded(columnPrefix: 'person')]
-    private PersonId $donorId;
+    public PersonId $donorId;
 
     #[ORM\Embedded(columnPrefix: '')]
     public readonly Money $amount;
@@ -40,7 +42,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         Money $amount,
         Salesforce18Id $campaignId,
         Salesforce18Id $charityId,
-        bool $giftAid
+        bool $giftAid,
     ) {
         $this->uuid = Uuid::uuid4();
         $this->createdAt = new \DateTime();
@@ -51,5 +53,25 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->charityId = $charityId->value;
         $this->giftAid = $giftAid;
         $this->donorId = $donorId;
+    }
+
+    public function toFrontEndApiModel(): array
+    {
+        return [
+            'id' => $this->uuid->toString(),
+            'donorId' => $this->donorId->id,
+            'amount' => $this->amount,
+            'campaignId' => $this->campaignId,
+            'charityId' => $this->charityId,
+            'schedule' => [
+                'type' => 'monthly',
+                'dayOfMonth' => 31,
+                'activeFrom' => (new \DateTimeImmutable('2024-08-06'))->format(\DateTimeInterface::ATOM),
+            ],
+            'charityName' => 'Some Charity',
+            'giftAid' => $this->giftAid,
+            'status' => 'active',
+            'tipAmount' => Money::fromPoundsGBP(1),
+        ];
     }
 }

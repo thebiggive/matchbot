@@ -11,6 +11,7 @@ use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * The action for listing a donation is pretty straighforward CRUD, so doesn't need much testing IMHO
@@ -18,17 +19,22 @@ use Ramsey\Uuid\Uuid;
  */
 class ListRegularGivingMandatesTest extends IntegrationTest
 {
+    private PersonId $donorId;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->donorId = PersonId::of(Uuid::uuid4()->toString());
+    }
+
     /**
      * @psalm-suppress MixedArrayAccess - hard to avoid in integration testing like this.
      */
     public function testItListsRegularGivingMandate(): void
     {
-        $personId = PersonId::of(Uuid::uuid4()->toString());
+        $uuid = $this->addMandateToDb($this->donorId);
 
-        // @todo create mandate for specific person and query by that in controller
-        $this->addMandateToDb(/*$personId */);
-
-        $allMandatesBody = (string) $this->requestFromController($personId)->getBody();
+        $allMandatesBody = (string) $this->requestFromController($this->donorId)->getBody();
 
         $mandates = \json_decode($allMandatesBody, associative: true, flags: JSON_THROW_ON_ERROR)['mandates'];
         \assert(is_array($mandates));
@@ -39,8 +45,8 @@ class ListRegularGivingMandatesTest extends IntegrationTest
 
         $this->assertEquals(
             [
-                'id' => 'e552a93e-540e-11ef-98b2-3b7275661822',
-                'donorId' => $personId->id,
+                'id' => $uuid->toString(),
+                'donorId' => $this->donorId->id,
                 'campaignId' => 'DummySFIDCampaign0',
                 'charityId' => 'DummySFIDCharity00',
                 'amount' => [
@@ -59,9 +65,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                     // todo before calling ticket done: confirm if we are taking tips like this for regular giving
                     'amountInPence' => 100,
                     'currency' => 'GBP',
-                ],
-                'createdTime' => '2024-08-06T00:00:00+00:00',
-                'updatedTime' => '2024-08-06T00:00:00+00:00',
+                ]
             ],
             $mandate
         );
@@ -83,20 +87,26 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         );
     }
 
-    private function addMandateToDb(): void
+    private function addMandateToDb(PersonId $personId): UuidInterface
     {
-        $em = $this->getContainer()->get(EntityManagerInterface::class);
-        $em->getConnection()->executeStatement("DELETE FROM RegularGivingMandate where id > 0");
 
         $mandate = new RegularGivingMandate(
-            PersonId::of(Uuid::uuid4()->toString()),
+            donorId: $personId,
             amount: Money::fromPoundsGBP(5_000),
             campaignId: Salesforce18Id::of('DummySFIDCampaign0'),
             charityId: Salesforce18Id::of('DummySFIDCharity00'),
             giftAid: true,
         );
 
+        $em = $this->getContainer()->get(EntityManagerInterface::class);
         $em->persist($mandate);
         $em->flush();
+
+        return $mandate->uuid;
+    }
+
+    public function tearDown(): void
+    {
+        $this->db()->executeStatement('DELETE FROM RegularGivingMandate WHERE personid = ?', [$this->donorId->id]);
     }
 }
