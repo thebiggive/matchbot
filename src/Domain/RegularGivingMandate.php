@@ -11,9 +11,7 @@ use Ramsey\Uuid\UuidInterface;
  */
 #[ORM\Table]
 #[ORM\Index(name: 'uuid', columns: ['uuid'])]
-#[ORM\Entity(
-    repositoryClass: null // we construct our own repository
-)]
+#[ORM\Entity(repositoryClass: DoctrineRegularGivingMandateRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class RegularGivingMandate extends SalesforceWriteProxy
 {
