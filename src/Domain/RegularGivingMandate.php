@@ -36,7 +36,10 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column()]
     private readonly bool $giftAid;
 
-    // todo - add more properties - donation schedule, status etc. Maybe wait until implementing the FE display of them
+    #[ORM\Embedded(columnPrefix: false)]
+    private DayOfMonth $dayOfMonth;
+
+    // todo - add more properties - status etc. Maybe wait until implementing the FE display of them
     // rather than adding preemptively.
     public function __construct(
         PersonId $donorId,
@@ -44,6 +47,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         Salesforce18Id $campaignId,
         Salesforce18Id $charityId,
         bool $giftAid,
+        DayOfMonth $dayOfMonth,
     ) {
         $this->uuid = Uuid::uuid4();
         $this->createdAt = new \DateTime();
@@ -54,6 +58,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->charityId = $charityId->value;
         $this->giftAid = $giftAid;
         $this->donorId = $donorId;
+        $this->dayOfMonth = $dayOfMonth;
     }
 
     public function toFrontEndApiModel(Charity $charity): array
@@ -68,7 +73,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'charityId' => $this->charityId,
             'schedule' => [
                 'type' => 'monthly',
-                'dayOfMonth' => 31,
+                'dayOfMonth' => $this->dayOfMonth->value,
                 'activeFrom' => (new \DateTimeImmutable('2024-08-06'))->format(\DateTimeInterface::ATOM),
             ],
             'charityName' => $charity->getName(),

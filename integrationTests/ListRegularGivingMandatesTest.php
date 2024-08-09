@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\RegularGivingMandate\GetAllForUser;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
+use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
@@ -107,6 +108,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
             campaignId: Salesforce18Id::of($campaignId),
             charityId: Salesforce18Id::of($charityId),
             giftAid: true,
+            dayOfMonth: DayOfMonth::of(31),
         );
 
         $em = $this->getContainer()->get(EntityManagerInterface::class);
@@ -114,10 +116,5 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         $em->flush();
 
         return $mandate->uuid;
-    }
-
-    public function tearDown(): void
-    {
-     //   $this->db()->executeStatement('DELETE FROM RegularGivingMandate WHERE personid = ?', [$this->donorId->id]);
     }
 }
