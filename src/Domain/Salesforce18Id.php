@@ -6,10 +6,19 @@ use JsonSerializable;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
 
+/**
+ * @psalm-template-covariant T of SalesforceProxy
+ */
 class Salesforce18Id implements JsonSerializable
 {
-    private function __construct(public readonly string $value)
+    /**
+     * @param string $value
+     * @psalm-param class-string<T> $_entityClass
+     */
+    private function __construct(public readonly string $value, ?string $_entityClass)
     {
+        Assertion::length($value, 18);
+        Assertion::regex($value, '/[a-zA-Z0-9]{18}/');
     }
 
     /**
@@ -17,13 +26,26 @@ class Salesforce18Id implements JsonSerializable
      */
     public static function of(string $value): self
     {
-        Assertion::length($value, 18);
-        Assertion::regex($value, '/[a-zA-Z0-9]{18}/');
-
         // I think we could also validate a checksum here but as the IDs are generally not hand typed that won't get us
         // much.
 
-        return new self($value);
+        return new self($value, null);
+    }
+
+    /**
+     * @return self<Charity>
+     */
+    public static function ofCharity(string $id): self
+    {
+        return new self($id, Charity::class);
+    }
+
+    /**
+     * @return self<Campaign>
+     */
+    public static function ofCampaign(string $id): self
+    {
+        return new self($id, Campaign::class);
     }
 
     public function __toString(): string

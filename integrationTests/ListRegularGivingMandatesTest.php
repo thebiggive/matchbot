@@ -104,8 +104,8 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         $mandate = new RegularGivingMandate(
             donorId: $personId,
             amount: Money::fromPoundsGBP(5_000),
-            campaignId: Salesforce18Id::of($campaignId),
-            charityId: Salesforce18Id::of($charityId),
+            campaignId: Salesforce18Id::ofCampaign($campaignId),
+            charityId: Salesforce18Id::ofCharity($charityId),
             giftAid: true,
             dayOfMonth: DayOfMonth::of(31),
         );

@@ -13,14 +13,14 @@ class RegularGivingMandateTest extends TestCase
 {
     public function testItRendersApiModel(): void
     {
-        $charity = TestCase::someCharity(salesforceId: Salesforce18Id::of('charity89012345678'));
+        $charity = TestCase::someCharity(salesforceId: Salesforce18Id::ofCharity('charity89012345678'));
 
         $mandate = new RegularGivingMandate(
             donorId: PersonId::of('2c2b4832-563c-11ef-96a4-07141f9e507e'),
             amount: Money::fromPoundsGBP(500),
             dayOfMonth: DayOfMonth::of(12),
-            campaignId: Salesforce18Id::of('campaign9012345678'),
-            charityId: Salesforce18Id::of(
+            campaignId: Salesforce18Id::ofCampaign('campaign9012345678'),
+            charityId: Salesforce18Id::ofCharity(
                 $charity->getSalesforceId() ?? throw new \Exception("sf id can't be null")
             ),
             giftAid: true,

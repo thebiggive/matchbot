@@ -45,6 +45,10 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column(type: 'string', enumType: MandateStatus::class)]
     private MandateStatus $status = MandateStatus::Pending;
 
+    /**
+     * @param Salesforce18Id<Campaign> $campaignId
+     * @param Salesforce18Id<Charity> $charityId
+     */
     public function __construct(
         PersonId $donorId,
         Money $amount,
