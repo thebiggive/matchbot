@@ -15,6 +15,11 @@ enum Environment
         return $this !== self::Production;
     }
 
+    public function isFeatureEnabledRegularGiving(): bool
+    {
+        return $this !== self::Production;
+    }
+
     public static function fromAppEnv(string $name): self
     {
         return match ($name) {

@@ -122,7 +122,8 @@ class DonationRepositoryTest extends TestCase
         // No change – campaign still has a charity without a Stripe Account ID.
         $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject1234567'])
             ->willReturn(null);
-        $campaignRepoProphecy->pullNewFromSf(Salesforce18Id::of('testProject1234567'))->willReturn($dummyCampaign);
+        $campaignRepoProphecy->pullNewFromSf(Salesforce18Id::ofCampaign('testProject1234567'))
+            ->willReturn($dummyCampaign);
 
         $fundRepositoryProphecy->pullForCampaign(Argument::type(Campaign::class))->shouldBeCalled();
 

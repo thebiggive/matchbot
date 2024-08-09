@@ -38,7 +38,7 @@ class UpdateCharityFromSalesforce extends Action
         }
 
         try {
-            $sfId = Salesforce18Id::of($salesforceId);
+            $sfId = Salesforce18Id::ofCharity($salesforceId);
         } catch (AssertionFailedException $e) {
             throw new HttpNotFoundException($request, $e->getMessage());
         }

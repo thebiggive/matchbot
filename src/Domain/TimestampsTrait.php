@@ -29,7 +29,7 @@ trait TimestampsTrait
      * @psalm-suppress PossiblyUnusedMethod
      */
     #[ORM\PrePersist]
-    public function createdNow(): void
+    final public function createdNow(): void
     {
         $this->createdAt = new \DateTime('now');
         $this->updatedAt = new \DateTime('now');

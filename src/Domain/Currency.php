@@ -4,9 +4,9 @@ namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
 
-enum Currency
+enum Currency: string
 {
-    case GBP;
+    case GBP = 'GBP';
 
     public static function fromIsoCode(mixed $isoCode): self
     {
@@ -26,5 +26,10 @@ enum Currency
         return match ($this) {
             self::GBP => '£',
         };
+    }
+
+    public function isoCode(): string
+    {
+        return $this->name;
     }
 }

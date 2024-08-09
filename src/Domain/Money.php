@@ -2,12 +2,16 @@
 
 namespace MatchBot\Domain;
 
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Embeddable;
 use MatchBot\Application\Assertion;
+use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @psalm-immutable
  */
-class Money
+#[Embeddable]
+class Money implements \JsonSerializable
 {
     /**
      * @param int $amountInPence - Amount of money in minor units, i.e. pence, assumed to be worth 1/100 of the major
@@ -15,7 +19,9 @@ class Money
      * @param Currency $currency
      */
     private function __construct(
+        #[Column(type: 'integer')]
         private readonly int $amountInPence,
+        #[Column(type: 'string', enumType: Currency::class)]
         private readonly Currency $currency
     ) {
         Assertion::between(
@@ -28,6 +34,11 @@ class Money
     public static function fromPence(int $amountInPence, Currency $currency): self
     {
         return new self($amountInPence, $currency);
+    }
+
+    public static function fromPoundsGBP(int $pounds): self
+    {
+        return new self($pounds * 100, Currency::GBP);
     }
 
     /**
@@ -43,5 +54,13 @@ class Money
                 decimal_separator: '.',
                 thousands_separator: ','
             );
+    }
+
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - used indirectly
+     */
+    public function jsonSerialize(): mixed
+    {
+        return ['amountInPence' => $this->amountInPence, 'currency' => $this->currency->isoCode()];
     }
 }

@@ -49,7 +49,7 @@ readonly class DonationCreate
 
         $this->donorName = DonorName::maybeFromFirstAndLast($firstName, $lastName);
 
-        $this->projectId = Salesforce18Id::of($projectId);
+        $this->projectId = Salesforce18Id::ofCampaign($projectId);
 
         Assertion::betweenLength($this->donationAmount, 1, 9); // more than we need, allows up to 999k ;
         Assertion::regex(
