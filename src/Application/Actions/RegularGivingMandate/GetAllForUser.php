@@ -37,28 +37,12 @@ class GetAllForUser extends Action
 
         /** @var RegularGivingMandate[] $mandates */
         $mandates = $this->regularGivingMandateRepository->allForDonor($donorId);
-        $first = $mandates[0];
 
-        return new JsonResponse(['mandates' => [
-            [
-                'id' => 'e552a93e-540e-11ef-98b2-3b7275661822',
-                'donorId' => $first->donorId->id,
-                'amount' => $first->amount,
-                'campaignId' => Salesforce18Id::of('DummySFIDCampaign0'),
-                'charityId' => Salesforce18Id::of('DummySFIDCharity00'),
-                'schedule' => [
-                    'type' => 'monthly',
-                    'dayOfMonth' => 31,
-                    'activeFrom' => (new \DateTimeImmutable('2024-08-06'))->format(DateTimeInterface::ATOM),
-                ],
-                'charityName' => 'Some Charity',
-                'createdTime' => (new \DateTimeImmutable('2024-08-06'))->format(DateTimeInterface::ATOM),
-                'giftAid' => true,
-                'status' => 'active',
-                'tipAmount' => Money::fromPoundsGBP(1),
-                'updatedTime' => (new \DateTimeImmutable('2024-08-06'))->format(DateTimeInterface::ATOM),
-            ]
-        ]
+        return new JsonResponse([
+            'mandates' => array_map(
+                fn(RegularGivingMandate $mandate) => $mandate->toFrontEndApiModel(),
+                $mandates,
+            )
         ]);
     }
 }

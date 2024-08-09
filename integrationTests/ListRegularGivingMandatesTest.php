@@ -11,6 +11,7 @@ use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * The action for listing a donation is pretty straighforward CRUD, so doesn't need much testing IMHO
@@ -31,8 +32,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
      */
     public function testItListsRegularGivingMandate(): void
     {
-        // @todo create mandate for specific person and query by that in controller
-        $this->addMandateToDb($this->donorId);
+        $uuid = $this->addMandateToDb($this->donorId);
 
         $allMandatesBody = (string) $this->requestFromController($this->donorId)->getBody();
 
@@ -42,11 +42,10 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         $this->assertCount(1, $mandates);
         $mandate = $mandates['0'];
         \assert(is_array($mandate));
-        $this->assertCount(1, $mandates);
 
         $this->assertEquals(
             [
-                'id' => 'e552a93e-540e-11ef-98b2-3b7275661822',
+                'id' => $uuid->toString(),
                 'donorId' => $this->donorId->id,
                 'campaignId' => 'DummySFIDCampaign0',
                 'charityId' => 'DummySFIDCharity00',
@@ -66,9 +65,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                     // todo before calling ticket done: confirm if we are taking tips like this for regular giving
                     'amountInPence' => 100,
                     'currency' => 'GBP',
-                ],
-                'createdTime' => '2024-08-06T00:00:00+00:00',
-                'updatedTime' => '2024-08-06T00:00:00+00:00',
+                ]
             ],
             $mandate
         );
@@ -90,20 +87,22 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         );
     }
 
-    private function addMandateToDb(PersonId $personId): void
+    private function addMandateToDb(PersonId $personId): UuidInterface
     {
-        $em = $this->getContainer()->get(EntityManagerInterface::class);
 
         $mandate = new RegularGivingMandate(
-            $personId,
+            donorId: $personId,
             amount: Money::fromPoundsGBP(5_000),
             campaignId: Salesforce18Id::of('DummySFIDCampaign0'),
             charityId: Salesforce18Id::of('DummySFIDCharity00'),
             giftAid: true,
         );
 
+        $em = $this->getContainer()->get(EntityManagerInterface::class);
         $em->persist($mandate);
         $em->flush();
+
+        return $mandate->uuid;
     }
 
     public function tearDown(): void
