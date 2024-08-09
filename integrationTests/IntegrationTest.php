@@ -203,14 +203,15 @@ abstract class IntegrationTest extends TestCase
      * @param string $campaignSfId
      * @return array{charityId: int, campaignId: int}
      * @throws \Doctrine\DBAL\Exception
-     *
-     * @psalm-suppress MoreSpecificReturnType
-     * @psalm-suppress LessSpecificReturnStatement
      */
-    public function addCampaignAndCharityToDB(string $campaignSfId, bool $campaignOpen): array
-    {
+    public function addCampaignAndCharityToDB(
+        string $campaignSfId,
+        bool $campaignOpen = true,
+        string $charitySfId = null,
+        string $charityName = 'Some Charity'
+    ): array {
         $charityId = random_int(1000, 100000);
-        $charitySfID = $this->randomString();
+        $charitySfId ??= $this->randomString();
         $charityStripeId = $this->randomString();
 
         $db = $this->db();
@@ -221,7 +222,7 @@ abstract class IntegrationTest extends TestCase
         $db->executeStatement(<<<EOF
             INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
                      hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber) 
-            VALUES ($charityId, 'Some Charity', '$charitySfID', '$nyd', '$nyd', '$nyd', '$charityStripeId',
+            VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
                     null, 0, 0, null, null)
             EOF
         );

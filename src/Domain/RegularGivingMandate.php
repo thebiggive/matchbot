@@ -3,6 +3,7 @@
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
+use MatchBot\Application\Assertion;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -30,7 +31,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     private readonly string $campaignId;
 
     #[ORM\Column()]
-    private readonly string $charityId;
+    public readonly string $charityId;
 
     #[ORM\Column()]
     private readonly bool $giftAid;
@@ -55,8 +56,10 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->donorId = $donorId;
     }
 
-    public function toFrontEndApiModel(): array
+    public function toFrontEndApiModel(Charity $charity): array
     {
+        Assertion::same($charity->salesforceId, $this->charityId);
+
         return [
             'id' => $this->uuid->toString(),
             'donorId' => $this->donorId->id,
@@ -68,7 +71,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
                 'dayOfMonth' => 31,
                 'activeFrom' => (new \DateTimeImmutable('2024-08-06'))->format(\DateTimeInterface::ATOM),
             ],
-            'charityName' => 'Some Charity',
+            'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
             'status' => 'active',
             'tipAmount' => Money::fromPoundsGBP(1),

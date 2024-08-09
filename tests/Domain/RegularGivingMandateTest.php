@@ -12,11 +12,15 @@ class RegularGivingMandateTest extends TestCase
 {
     public function testItRendersApiModel(): void
     {
+        $charity = TestCase::someCharity(salesforceId: Salesforce18Id::of('charity89012345678'));
+
         $mandate = new RegularGivingMandate(
             donorId: PersonId::of('2c2b4832-563c-11ef-96a4-07141f9e507e'),
             amount: Money::fromPoundsGBP(500),
             campaignId: Salesforce18Id::of('campaign9012345678'),
-            charityId: Salesforce18Id::of('charity89012345678'),
+            charityId: Salesforce18Id::of(
+                $charity->getSalesforceId() ?? throw new \Exception("sf id can't be null")
+            ),
             giftAid: true,
         );
 
@@ -38,7 +42,7 @@ class RegularGivingMandateTest extends TestCase
                     "dayOfMonth": 31,
                     "activeFrom": "2024-08-06T00:00:00+00:00"
                   },
-                  "charityName": "Some Charity",
+                  "charityName": "Charity Name",
                   "giftAid": true,
                   "status": "active",
                   "tipAmount": {
@@ -47,7 +51,7 @@ class RegularGivingMandateTest extends TestCase
                   }
                 }
             JSON,
-            \json_encode($mandate->toFrontEndApiModel())
+            \json_encode($mandate->toFrontEndApiModel($charity))
         );
     }
 }
