@@ -11,6 +11,7 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\Commands\UpdateCampaignsTest;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
@@ -184,10 +185,10 @@ class TestCase extends PHPUnitTestCase
      * Returns some random charity - use if you don't care about the details or will replace them with setters later.
      * Introduced to replace many old calls to instantiate Charity with zero arguments.
      */
-    public static function someCharity(?string $stripeAccountId = null): Charity
+    public static function someCharity(?string $stripeAccountId = null, ?Salesforce18Id $salesforceId = null): Charity
     {
         return new Charity(
-            salesforceId: '123CharityId' .  self::randomHex(3),
+            salesforceId: $salesforceId?->value ?? ('123CharityId' .  self::randomHex(3)),
             charityName: "Charity Name",
             stripeAccountId: $stripeAccountId ?? "stripe-account-id-" . self::randomHex(),
             hmrcReferenceNumber: 'H' . self::randomHex(3),

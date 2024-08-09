@@ -3,6 +3,7 @@
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
+use MatchBot\Application\Assertion;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -30,19 +31,31 @@ class RegularGivingMandate extends SalesforceWriteProxy
     private readonly string $campaignId;
 
     #[ORM\Column()]
-    private readonly string $charityId;
+    public readonly string $charityId;
 
     #[ORM\Column()]
     private readonly bool $giftAid;
 
-    // todo - add more properties - donation schedule, status etc. Maybe wait until implementing the FE display of them
-    // rather than adding preemptively.
+    #[ORM\Embedded(columnPrefix: false)]
+    private DayOfMonth $dayOfMonth;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $activeFrom = null;
+
+    #[ORM\Column(type: 'string', enumType: MandateStatus::class)]
+    private MandateStatus $status = MandateStatus::Pending;
+
+    /**
+     * @param Salesforce18Id<Campaign> $campaignId
+     * @param Salesforce18Id<Charity> $charityId
+     */
     public function __construct(
         PersonId $donorId,
         Money $amount,
         Salesforce18Id $campaignId,
         Salesforce18Id $charityId,
         bool $giftAid,
+        DayOfMonth $dayOfMonth,
     ) {
         $this->uuid = Uuid::uuid4();
         $this->createdAt = new \DateTime();
@@ -53,10 +66,25 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->charityId = $charityId->value;
         $this->giftAid = $giftAid;
         $this->donorId = $donorId;
+        $this->dayOfMonth = $dayOfMonth;
     }
 
-    public function toFrontEndApiModel(): array
+    /**
+     * Allows us to take payments according to this agreement from now on.
+     *
+     * Precondition: Must be in Pending status
+     */
+    public function activate(\DateTimeImmutable $activationDate): void
     {
+        Assertion::eq($this->status, MandateStatus::Pending);
+        $this->status = MandateStatus::Active;
+        $this->activeFrom = $activationDate;
+    }
+
+    public function toFrontEndApiModel(Charity $charity): array
+    {
+        Assertion::same($charity->salesforceId, $this->charityId);
+
         return [
             'id' => $this->uuid->toString(),
             'donorId' => $this->donorId->id,
@@ -65,12 +93,12 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'charityId' => $this->charityId,
             'schedule' => [
                 'type' => 'monthly',
-                'dayOfMonth' => 31,
-                'activeFrom' => (new \DateTimeImmutable('2024-08-06'))->format(\DateTimeInterface::ATOM),
+                'dayOfMonth' => $this->dayOfMonth->value,
+                'activeFrom' => $this->activeFrom?->format(\DateTimeInterface::ATOM),
             ],
-            'charityName' => 'Some Charity',
+            'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
-            'status' => 'active',
+            'status' => $this->status->apiName(),
             'tipAmount' => Money::fromPoundsGBP(1),
         ];
     }

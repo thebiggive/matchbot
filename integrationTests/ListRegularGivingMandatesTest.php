@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\RegularGivingMandate\GetAllForUser;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
+use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
@@ -32,7 +33,18 @@ class ListRegularGivingMandatesTest extends IntegrationTest
      */
     public function testItListsRegularGivingMandate(): void
     {
-        $uuid = $this->addMandateToDb($this->donorId);
+        $campaignSfId = $this->randomString();
+        $charitySfId = $this->randomString();
+
+        $charityName = "Charity Name " . $this->randomString();
+
+        $this->addCampaignAndCharityToDB(
+            campaignSfId: $campaignSfId,
+            charitySfId: $charitySfId,
+            charityName: $charityName
+        );
+
+        $uuid = $this->addMandateToDb($this->donorId, $campaignSfId, $charitySfId);
 
         $allMandatesBody = (string) $this->requestFromController($this->donorId)->getBody();
 
@@ -47,8 +59,8 @@ class ListRegularGivingMandatesTest extends IntegrationTest
             [
                 'id' => $uuid->toString(),
                 'donorId' => $this->donorId->id,
-                'campaignId' => 'DummySFIDCampaign0',
-                'charityId' => 'DummySFIDCharity00',
+                'campaignId' => $campaignSfId,
+                'charityId' => $charitySfId,
                 'amount' => [
                     'amountInPence' => 5_000_00,
                     'currency' => 'GBP',
@@ -58,7 +70,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                     'dayOfMonth' => 31, // i.e. donation to be taken on last day of each calendar month
                     'activeFrom' => '2024-08-06T00:00:00+00:00',
                 ],
-                'charityName' => 'Some Charity',
+                'charityName' => $charityName,
                 'giftAid' => true,
                 'status' => 'active',
                 'tipAmount' => [
@@ -87,26 +99,23 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         );
     }
 
-    private function addMandateToDb(PersonId $personId): UuidInterface
+    private function addMandateToDb(PersonId $personId, string $campaignId, string $charityId): UuidInterface
     {
-
         $mandate = new RegularGivingMandate(
             donorId: $personId,
             amount: Money::fromPoundsGBP(5_000),
-            campaignId: Salesforce18Id::of('DummySFIDCampaign0'),
-            charityId: Salesforce18Id::of('DummySFIDCharity00'),
+            campaignId: Salesforce18Id::ofCampaign($campaignId),
+            charityId: Salesforce18Id::ofCharity($charityId),
             giftAid: true,
+            dayOfMonth: DayOfMonth::of(31),
         );
+
+        $mandate->activate(new \DateTimeImmutable('2024-08-06T00:00:00+00:00'));
 
         $em = $this->getContainer()->get(EntityManagerInterface::class);
         $em->persist($mandate);
         $em->flush();
 
         return $mandate->uuid;
-    }
-
-    public function tearDown(): void
-    {
-        $this->db()->executeStatement('DELETE FROM RegularGivingMandate WHERE personid = ?', [$this->donorId->id]);
     }
 }
