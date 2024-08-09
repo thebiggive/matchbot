@@ -42,11 +42,11 @@ class RegularGivingMandateTest extends TestCase
                   "schedule": {
                     "type": "monthly",
                     "dayOfMonth": 12,
-                    "activeFrom": "2024-08-06T00:00:00+00:00"
+                    "activeFrom": null
                   },
                   "charityName": "Charity Name",
                   "giftAid": true,
-                  "status": "active",
+                  "status": "pending",
                   "tipAmount": {
                     "amountInPence": 100,
                     "currency": "GBP"

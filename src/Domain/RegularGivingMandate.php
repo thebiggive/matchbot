@@ -39,8 +39,12 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Embedded(columnPrefix: false)]
     private DayOfMonth $dayOfMonth;
 
-    // todo - add more properties - status etc. Maybe wait until implementing the FE display of them
-    // rather than adding preemptively.
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $activeFrom = null;
+
+    #[ORM\Column(type: 'string', enumType: MandateStatus::class)]
+    private MandateStatus $status = MandateStatus::Pending;
+
     public function __construct(
         PersonId $donorId,
         Money $amount,
@@ -61,6 +65,18 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->dayOfMonth = $dayOfMonth;
     }
 
+    /**
+     * Allows us to take payments according to this agreement from now on.
+     *
+     * Precondition: Must be in Pending status
+     */
+    public function activate(\DateTimeImmutable $activationDate): void
+    {
+        Assertion::eq($this->status, MandateStatus::Pending);
+        $this->status = MandateStatus::Active;
+        $this->activeFrom = $activationDate;
+    }
+
     public function toFrontEndApiModel(Charity $charity): array
     {
         Assertion::same($charity->salesforceId, $this->charityId);
@@ -74,11 +90,11 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'schedule' => [
                 'type' => 'monthly',
                 'dayOfMonth' => $this->dayOfMonth->value,
-                'activeFrom' => (new \DateTimeImmutable('2024-08-06'))->format(\DateTimeInterface::ATOM),
+                'activeFrom' => $this->activeFrom?->format(\DateTimeInterface::ATOM),
             ],
             'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
-            'status' => 'active',
+            'status' => $this->status->apiName(),
             'tipAmount' => Money::fromPoundsGBP(1),
         ];
     }
