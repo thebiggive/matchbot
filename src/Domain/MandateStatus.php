@@ -2,7 +2,8 @@
 
 namespace MatchBot\Domain;
 
-enum MandateStatus: string {
+enum MandateStatus: string
+{
     /**
      * A draft mandate - may not yet be active because the donor hasn't fully confirmed their intention, or because
      * as Big Give we haven't confirmed that e.g. their payment card works.
