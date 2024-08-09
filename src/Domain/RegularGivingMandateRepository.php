@@ -19,18 +19,16 @@ class RegularGivingMandateRepository
     /** @var EntityRepository<RegularGivingMandate>  */
     private EntityRepository $doctrineRepository;
 
-    public function __construct(private EntityManagerInterface $em)
+    public function __construct(EntityManagerInterface $em)
     {
         $this->doctrineRepository = $em->getRepository(RegularGivingMandate::class);
     }
 
     /**
-     * Only really useful during very early development, likely to be deleted soon.
-     *
      * @return list<RegularGivingMandate>
      */
-    public function findAll(): array
+    public function allForDonor(PersonId $donorId): array
     {
-        return $this->doctrineRepository->findAll();
+        return $this->doctrineRepository->findBy(['donorId.id' => $donorId->id]);
     }
 }

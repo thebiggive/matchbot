@@ -18,17 +18,23 @@ use Ramsey\Uuid\Uuid;
  */
 class ListRegularGivingMandatesTest extends IntegrationTest
 {
+    private PersonId $donorId;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->donorId = PersonId::of(Uuid::uuid4()->toString());
+    }
+
     /**
      * @psalm-suppress MixedArrayAccess - hard to avoid in integration testing like this.
      */
     public function testItListsRegularGivingMandate(): void
     {
-        $personId = PersonId::of(Uuid::uuid4()->toString());
-
         // @todo create mandate for specific person and query by that in controller
-        $this->addMandateToDb(/*$personId */);
+        $this->addMandateToDb($this->donorId);
 
-        $allMandatesBody = (string) $this->requestFromController($personId)->getBody();
+        $allMandatesBody = (string) $this->requestFromController($this->donorId)->getBody();
 
         $mandates = \json_decode($allMandatesBody, associative: true, flags: JSON_THROW_ON_ERROR)['mandates'];
         \assert(is_array($mandates));
@@ -36,11 +42,12 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         $this->assertCount(1, $mandates);
         $mandate = $mandates['0'];
         \assert(is_array($mandate));
+        $this->assertCount(1, $mandates);
 
         $this->assertEquals(
             [
                 'id' => 'e552a93e-540e-11ef-98b2-3b7275661822',
-                'donorId' => $personId->id,
+                'donorId' => $this->donorId->id,
                 'campaignId' => 'DummySFIDCampaign0',
                 'charityId' => 'DummySFIDCharity00',
                 'amount' => [
@@ -83,13 +90,12 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         );
     }
 
-    private function addMandateToDb(): void
+    private function addMandateToDb(PersonId $personId): void
     {
         $em = $this->getContainer()->get(EntityManagerInterface::class);
-        $em->getConnection()->executeStatement("DELETE FROM RegularGivingMandate where id > 0");
 
         $mandate = new RegularGivingMandate(
-            PersonId::of(Uuid::uuid4()->toString()),
+            $personId,
             amount: Money::fromPoundsGBP(5_000),
             campaignId: Salesforce18Id::of('DummySFIDCampaign0'),
             charityId: Salesforce18Id::of('DummySFIDCharity00'),
@@ -98,5 +104,10 @@ class ListRegularGivingMandatesTest extends IntegrationTest
 
         $em->persist($mandate);
         $em->flush();
+    }
+
+    public function tearDown(): void
+    {
+        $this->db()->executeStatement('DELETE FROM RegularGivingMandate WHERE personid = ?', [$this->donorId->id]);
     }
 }

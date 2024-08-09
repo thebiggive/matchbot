@@ -21,7 +21,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     private UuidInterface $uuid;
 
     #[ORM\Embedded(columnPrefix: 'person')]
-    private PersonId $donorId;
+    public PersonId $donorId;
 
     #[ORM\Embedded(columnPrefix: '')]
     public readonly Money $amount;

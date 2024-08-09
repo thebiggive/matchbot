@@ -36,13 +36,13 @@ class GetAllForUser extends Action
         \assert($donorId instanceof PersonId);
 
         /** @var RegularGivingMandate[] $mandates */
-        $mandates = $this->regularGivingMandateRepository->findAll();
+        $mandates = $this->regularGivingMandateRepository->allForDonor($donorId);
         $first = $mandates[0];
 
         return new JsonResponse(['mandates' => [
             [
                 'id' => 'e552a93e-540e-11ef-98b2-3b7275661822',
-                'donorId' => $donorId->id,
+                'donorId' => $first->donorId->id,
                 'amount' => $first->amount,
                 'campaignId' => Salesforce18Id::of('DummySFIDCampaign0'),
                 'charityId' => Salesforce18Id::of('DummySFIDCharity00'),
