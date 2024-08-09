@@ -64,12 +64,8 @@ class RegularGivingMandateRepository
             }
         }
 
-//        var_dump(compact(['charities']));
-
         return array_values(array_map(function (RegularGivingMandate $mandate) use ($charities) {
             $charityId = $mandate->charityId;
-//            var_dump('in repo, man');
-//            var_dump(compact(['charityId']));
             return [
                 $mandate,
                 $charities[$charityId] ?? throw new \Exception("Missing charity for mandate " . $mandate->uuid)
