@@ -37,12 +37,14 @@ class RegularGivingMandateRepository
      * @return list<array{0: RegularGivingMandate, 1: Charity}>
      *     List of tuples of regular giving mandates with their recipient charities
      */
-    public function allForDonorWithCharities(PersonId $donor): array
+    public function allActiveForDonorWithCharities(PersonId $donor): array
     {
-        $query = $this->em->createQuery(<<<'DQL'
+        $active = MandateStatus::Active->value;
+        $query = $this->em->createQuery(<<<"DQL"
             SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r 
-            LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId 
-            WHERE r.donorId.id = :donorId
+            LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
+            WHERE r.status = '{$active}'
+            AND r.donorId.id = :donorId
         DQL
         );
 
