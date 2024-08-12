@@ -99,7 +99,6 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
             'status' => $this->status->apiName(),
-            'tipAmount' => Money::fromPoundsGBP(1),
-        ];
+            ];
     }
 }
