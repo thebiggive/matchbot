@@ -36,7 +36,7 @@ class GetAllForUser extends Action
         $donorId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
         \assert($donorId instanceof PersonId);
 
-        $mandates = $this->regularGivingService->allForDonorAsApiModel($donorId);
+        $mandates = $this->regularGivingService->allActiveForDonorAsApiModel($donorId);
 
         return new JsonResponse([
             'mandates' => $mandates

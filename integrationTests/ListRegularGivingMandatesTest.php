@@ -44,7 +44,8 @@ class ListRegularGivingMandatesTest extends IntegrationTest
             charityName: $charityName
         );
 
-        $uuid = $this->addMandateToDb($this->donorId, $campaignSfId, $charitySfId);
+        $uuid = $this->addMandateToDb($this->donorId, $campaignSfId, $charitySfId, active: true);
+        $this->addMandateToDb($this->donorId, $campaignSfId, $charitySfId, active: false);
 
         $allMandatesBody = (string) $this->requestFromController($this->donorId)->getBody();
 
@@ -94,8 +95,12 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         );
     }
 
-    private function addMandateToDb(PersonId $personId, string $campaignId, string $charityId): UuidInterface
-    {
+    private function addMandateToDb(
+        PersonId $personId,
+        string $campaignId,
+        string $charityId,
+        bool $active
+    ): UuidInterface {
         $mandate = new RegularGivingMandate(
             donorId: $personId,
             amount: Money::fromPoundsGBP(5_000),
@@ -105,7 +110,9 @@ class ListRegularGivingMandatesTest extends IntegrationTest
             dayOfMonth: DayOfMonth::of(31),
         );
 
-        $mandate->activate(new \DateTimeImmutable('2024-08-06T00:00:00+00:00'));
+        if ($active) {
+            $mandate->activate(new \DateTimeImmutable('2024-08-06T00:00:00+00:00'));
+        }
 
         $em = $this->getContainer()->get(EntityManagerInterface::class);
         $em->persist($mandate);

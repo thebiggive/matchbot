@@ -9,9 +9,9 @@ class RegularGivingService
     {
     }
 
-    public function allForDonorAsApiModel(PersonId $donor): array
+    public function allActiveForDonorAsApiModel(PersonId $donor): array
     {
-        $mandatesWithCharities = $this->regularGivingMandateRepository->allForDonorWithCharities($donor);
+        $mandatesWithCharities = $this->regularGivingMandateRepository->allActiveForDonorWithCharities($donor);
 
         return array_map(/**
          * @param array{0: RegularGivingMandate, 1: Charity} $tuple
