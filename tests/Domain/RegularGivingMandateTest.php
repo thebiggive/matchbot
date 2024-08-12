@@ -46,11 +46,7 @@ class RegularGivingMandateTest extends TestCase
                   },
                   "charityName": "Charity Name",
                   "giftAid": true,
-                  "status": "pending",
-                  "tipAmount": {
-                    "amountInPence": 100,
-                    "currency": "GBP"
-                  }
+                  "status": "pending"
                 }
             JSON,
             \json_encode($mandate->toFrontEndApiModel($charity))

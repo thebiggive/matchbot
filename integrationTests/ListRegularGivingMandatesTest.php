@@ -73,11 +73,6 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                 'charityName' => $charityName,
                 'giftAid' => true,
                 'status' => 'active',
-                'tipAmount' => [
-                    // todo before calling ticket done: confirm if we are taking tips like this for regular giving
-                    'amountInPence' => 100,
-                    'currency' => 'GBP',
-                ]
             ],
             $mandate
         );
