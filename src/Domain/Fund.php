@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * Represents a commitment of match funds, i.e. a Champion Fund or Pledge. Because a Fund (most
- * typically a Champion Funding) can be split up and allocated to multiple Campaigns, the Fund in
+ * typically a Champion Fund) can be split up and allocated to multiple Campaigns, the Fund in
  * MatchBot doesn't contain an allocated amount and is mostly a container for metadata to help understand
  * where any linked {@see CampaignFunding}s' money comes from.
  *
