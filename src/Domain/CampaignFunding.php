@@ -8,6 +8,16 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * A specific allocation of money from a {@see Fund}, to one or more {@see Campaign}s.
+ *
+ * The Campaigns link is many-to-many, although the most common behaviour is to link to one Campaign.
+ * Linking to multiple creates funding that is not ringfenced and is assigned on a 'first come first
+ * served' basis to the Campaigns that receive donations first.
+ *
+ * Allocation order is currently set to a fixed value for each subclass of {@see Fund}, such that
+ * {@see Pledge}s are used before {@see ChampionFund}s.
+ */
 #[ORM\Table]
 #[ORM\Index(name: 'available_fundings', columns: ['amountAvailable', 'allocationOrder', 'id'])]
 #[ORM\Entity(repositoryClass: CampaignFundingRepository::class)]
@@ -47,6 +57,10 @@ class CampaignFunding extends Model
     /**
      * The amount of this funding allocation not already claimed. If you plan to allocate funds, always read this
      * with a PESSIMISTIC_WRITE lock and modify it in the same transaction you create a FundingWithdrawal.
+     *
+     * This is a less-realtime, eventually consistent copy of the information that we store in Redis
+     * as the primary source of truth, for better performance and to avoid locking issues around fund
+     * allocation.
      *
      * @psalm-var numeric-string Use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see CampaignFunding::$currencyCode
