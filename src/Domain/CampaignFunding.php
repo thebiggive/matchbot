@@ -58,9 +58,8 @@ class CampaignFunding extends Model
      * The amount of this funding allocation not already claimed. If you plan to allocate funds, always read this
      * with a PESSIMISTIC_WRITE lock and modify it in the same transaction you create a FundingWithdrawal.
      *
-     * This is a less-realtime, eventually consistent copy of the information that we store in Redis
-     * as the primary source of truth, for better performance and to avoid locking issues around fund
-     * allocation.
+     * This is a less-realtime, eventually consistent copy of the information that we store in Redis. 
+     * Redis is the primary source of truth, for better performance and to avoid locking issues around fund allocation.
      *
      * @psalm-var numeric-string Use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see CampaignFunding::$currencyCode
