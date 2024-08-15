@@ -74,8 +74,8 @@ class RegularGivingMandateTest extends TestCase
     public function invalidRegularGivingAmounts(): array
     {
         return [
-            [99, 'Amount 0.99GBP is out of allowed range 1GBP-500GBP'],
-            [500_01, 'Amount 500.01GBP is out of allowed range 1GBP-500GBP']
+            [99, 'Amount GBP 0.99 is out of allowed range GBP 1-GBP 500'],
+            [500_01, 'Amount GBP 500.01 is out of allowed range GBP 1-GBP 500']
         ];
     }
 }

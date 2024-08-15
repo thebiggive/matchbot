@@ -84,6 +84,6 @@ class Money implements \JsonSerializable, \Stringable
 
     public function __toString()
     {
-        return $this->amountInPence / 100 . $this->currency->isoCode();
+        return $this->currency->isoCode() . ' ' . ($this->amountInPence / 100);
     }
 }
