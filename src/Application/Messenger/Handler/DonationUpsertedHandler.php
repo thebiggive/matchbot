@@ -28,13 +28,14 @@ readonly class DonationUpsertedHandler
             $this->donationRepository->push($message, false);
         } catch (\Throwable $exception) {
             $this->logger->error(sprintf(
-                "DUH: Exception %s on attempt to push donation %s: %s",
+                "DUH: Exception %s on attempt to push donation %s: %s. Trace: %s",
                 get_class($exception),
                 $donationUUID,
                 $exception->getMessage(),
+                $exception->getTraceAsString(),
             ));
         }
 
-        $this->logger->info("DUH: Donation pushed for UUID: " . $donationUUID);
+        $this->logger->info("DUH: Donation (maybe) pushed for UUID: " . $donationUUID);
     }
 }

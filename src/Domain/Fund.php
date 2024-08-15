@@ -6,6 +6,16 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * Represents a commitment of match funds, i.e. a Champion Fund or Pledge. Because a Fund (most
+ * typically a Champion Fund) can be split up and allocated to multiple Campaigns, the Fund in
+ * MatchBot doesn't contain an allocated amount and is mostly a container for metadata to help understand
+ * where any linked {@see CampaignFunding}s' money comes from.
+ *
+ * Concrete subclasses {@see ChampionFund} & {@see Pledge} are instantiated using Doctrine's
+ * single table inheritance. The discriminator column is 'fundType' and the API field which determines
+ * it originally, in {@see FundRepository::getNewFund()}, is 'type'.
+ */
 #[ORM\Table]
 #[ORM\Entity(repositoryClass: FundRepository::class)]
 #[ORM\InheritanceType('SINGLE_TABLE')]
