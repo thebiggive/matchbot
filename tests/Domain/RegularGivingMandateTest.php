@@ -2,12 +2,14 @@
 
 namespace Domain;
 
+use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
+use UnexpectedValueException;
 
 class RegularGivingMandateTest extends TestCase
 {
@@ -51,5 +53,29 @@ class RegularGivingMandateTest extends TestCase
             JSON,
             \json_encode($mandate->toFrontEndApiModel($charity))
         );
+    }
+    /** @dataProvider invalidRegularGivingAmounts */
+    public function testItCannotBeTooSmallOrTooBig(int $pence, string $expectedMessage): void
+    {
+        $this->expectException(UnexpectedValueException::class);
+        $this->expectExceptionMessage($expectedMessage);
+
+        new RegularGivingMandate(
+            donorId: PersonId::of('2c2b4832-563c-11ef-96a4-07141f9e507e'),
+            amount: Money::fromPence($pence, Currency::GBP),
+            dayOfMonth: DayOfMonth::of(12),
+            campaignId: Salesforce18Id::ofCampaign('campaign9012345678'),
+            charityId: Salesforce18Id::ofCharity('charity09012345678'),
+            giftAid: true,
+        );
+    }
+
+    /** @return list<array{0: int, 1: string}> */
+    public function invalidRegularGivingAmounts(): array
+    {
+        return [
+            [99, 'Amount GBP 0.99 is out of allowed range GBP 1-GBP 500'],
+            [500_01, 'Amount GBP 500.01 is out of allowed range GBP 1-GBP 500']
+        ];
     }
 }
