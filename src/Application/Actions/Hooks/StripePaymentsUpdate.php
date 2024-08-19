@@ -317,7 +317,7 @@ class StripePaymentsUpdate extends Stripe
             ));
             $refundDate = DateTimeImmutable::createFromFormat('U', (string)$event->created);
             assert($refundDate instanceof DateTimeImmutable);
-            $donation->setPartialRefundDate($refundDate);
+            $donation->setTipRefunded($refundDate);
         } elseif ($isFullRefund) {
             $this->logger->info(sprintf(
                 'Marking donation %s refunded based on charge ID %s',

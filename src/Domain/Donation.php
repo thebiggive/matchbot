@@ -1280,10 +1280,9 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * When a donation has been partially refunded (e.g. a tip-only refund) we record the refund date but we
-     * don't change the status.
+     * Sets tip amount to zero and records the refund date.
      */
-    public function setPartialRefundDate(\DateTimeImmutable $datetime): void
+    public function setTipRefunded(\DateTimeImmutable $datetime): void
     {
         $this->refundedAt = $datetime;
         $this->setTipAmount('0.00');
