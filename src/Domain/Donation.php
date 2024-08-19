@@ -1286,6 +1286,7 @@ class Donation extends SalesforceWriteProxy
     public function setPartialRefundDate(\DateTimeImmutable $datetime): void
     {
         $this->refundedAt = $datetime;
+        $this->setTipAmount('0.00');
     }
 
     public function cancel(): void
