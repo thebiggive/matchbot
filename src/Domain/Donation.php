@@ -110,6 +110,20 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected readonly string $amount;
 
+
+    /**
+     * Total amount paid by donor - recorded from the Stripe charge, and reduced to reflect the new total
+     * if we issue a tip refund (but not if we issue a full refund).
+     *
+     * Null for donation collected before August 2024, as we didn't record it at the time.
+     *
+     * @psalm-var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths
+     *                           with decimals!
+     * @see Donation::$currencyCode
+     */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2, nullable: true)]
+    private ?string $totalPaidByDonor = null;
+
     /**
      * Fee the charity takes on, in £. Excludes any tax if applicable.
      *
@@ -225,7 +239,7 @@ class Donation extends SalesforceWriteProxy
     protected string $feeCoverAmount = '0.00';
 
     /**
-     * @var string  Amount donor chose to tip. Precision numeric string.
+     * @var numeric-string  Amount donor chose to tip. Precision numeric string.
      *              Set during donation setup and can also be modified later if the donor changes only this.
      * @see Donation::$currencyCode
      */
@@ -450,6 +464,8 @@ class Donation extends SalesforceWriteProxy
 
     public function toFrontEndApiModel(): array
     {
+        $totalPaidByDonor = $this->getTotalPaidByDonor();
+
         $data = [
             'amountMatchedByChampionFunds' => (float) $this->getConfirmedChampionWithdrawalTotal(),
             'amountMatchedByPledges' => (float) $this->getConfirmedPledgeWithdrawalTotal(),
@@ -463,6 +479,7 @@ class Donation extends SalesforceWriteProxy
             'createdTime' => $this->getCreatedDate()->format(DateTimeInterface::ATOM),
             'currencyCode' => $this->getCurrencyCode(),
             'donationAmount' => (float) $this->getAmount(),
+            'totalPaid' => is_null($totalPaidByDonor) ? null : (float)$totalPaidByDonor,
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
             'emailAddress' => $this->getDonorEmailAddress()?->email,
@@ -1285,6 +1302,15 @@ class Donation extends SalesforceWriteProxy
     public function setTipRefunded(\DateTimeImmutable $datetime): void
     {
         $this->refundedAt = $datetime;
+        Assertion::nullOrEq(
+            $this->totalPaidByDonor,
+            (string)($this->getAmountFractionalIncTip() / 100)
+        );
+
+        if ($this->totalPaidByDonor !== null) {
+            $this->totalPaidByDonor = bcsub($this->totalPaidByDonor, $this->tipAmount, 2);
+        }
+
         $this->setTipAmount('0.00');
     }
 
@@ -1336,6 +1362,7 @@ class Donation extends SalesforceWriteProxy
 
     public function collectFromStripeCharge(
         string $chargeId,
+        int $totalPaidFractional,
         string $transferId,
         ?string $cardBrand,
         ?string $cardCountry,
@@ -1358,6 +1385,8 @@ class Donation extends SalesforceWriteProxy
         $this->donationStatus = DonationStatus::Collected;
         $this->collectedAt = (new \DateTimeImmutable("@$chargeCreationTimestamp"));
         $this->setOriginalPspFeeFractional($originalFeeFractional);
+
+        $this->totalPaidByDonor = bcdiv((string)$totalPaidFractional, '100', 2);
     }
 
     /**
@@ -1453,5 +1482,31 @@ class Donation extends SalesforceWriteProxy
             ->verifyNow();
 
         return true;
+    }
+
+    /**
+     * @return numeric-string|null The total the donor paid, either as recorded at the time or as we can calculate from
+     * other info, in major currency units
+     */
+    public function getTotalPaidByDonor(): ?string
+    {
+        if (! $this->donationStatus->isSuccessful() && ! $this->donationStatus->isReversed()) {
+            // incomplete donation, donor has not paid any amount yet.
+            return null;
+        }
+
+        $total = $this->getAmountFractionalIncTip();
+        $totalString = bcdiv((string)$total, '100', 2);
+
+        if ($this->totalPaidByDonor !== null) {
+            Assertion::eq($this->totalPaidByDonor, $totalString);
+            // We need these to be equal to justify the fact that outside this if block we're returning $totalString
+            // based on today's calculation and assuming it's equal to what we charged the donor at the time it was
+            // confirmed.
+
+            return $this->totalPaidByDonor;
+        }
+
+        return $totalString;
     }
 }

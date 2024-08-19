@@ -99,6 +99,7 @@ class DonationPersistenceTest extends IntegrationTest
             'tbgGiftAidResponseDetail' => null,
             'pspCustomerId' => null,
             'paymentMethodType' => 'card',
+            'totalPaidByDonor' => null,
 
             'updatedAt' => '1970-01-01',
             'createdAt' => '1970-01-01'

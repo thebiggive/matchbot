@@ -158,6 +158,7 @@ class StripePaymentsUpdate extends Stripe
 
             $donation->collectFromStripeCharge(
                 chargeId: $charge->id,
+                totalPaidFractional: $charge->amount,
                 transferId: (string)$charge->transfer,
                 cardBrand: $cardBrand,
                 cardCountry: $cardCountry,
