@@ -793,8 +793,9 @@ class DonationTest extends TestCase
         ), new Campaign(TestCase::someCharity()));
 
         $donation->collectFromStripeCharge(
-            chargeId: 'irrelevent',
-            transferId: 'irrelevent',
+            chargeId: 'irrelevant',
+            totalPaidFractional: 100, // irrelevant
+            transferId: 'irrelevant',
             cardBrand: 'visa',
             cardCountry: 'gb',
             originalFeeFractional: '1',
@@ -892,5 +893,42 @@ class DonationTest extends TestCase
             ['', '', false],
             ['nonempty', 'nonempty', true],
         ];
+    }
+
+    public function testTotalPaidByDonorIsNullForIncompleteDonation(): void
+    {
+        $donation = $this->getTestDonation(collected: false, amount: '6.00', tipAmount: '5.00');
+        $this->assertNull($donation->getTotalPaidByDonor());
+    }
+
+
+    public function testTotalPaidByDonorForCollectedDonation(): void
+    {
+        $donation = $this->getTestDonation(collected: true, amount: '6.00', tipAmount: '5.00');
+        $this->assertSame('11.00', $donation->getTotalPaidByDonor());
+    }
+
+    public function testThrowsIfTotalPaidByDonorForCollectedDonationIsUnexpectedAmount(): void
+    {
+        $donation = $this->getTestDonation(collected: false, amount: '6.00', tipAmount: '5.00');
+        $donation->collectFromStripeCharge(
+            chargeId: 'chargid',
+            totalPaidFractional: 100, // we expected to receive 1100 pence, not just 100.
+            transferId: 'transferId',
+            cardBrand: null,
+            cardCountry: null,
+            originalFeeFractional: '0',
+            chargeCreationTimestamp: time()
+        );
+
+        $this->expectExceptionMessage('Value "1.00" does not equal expected value "11.00".');
+        $donation->getTotalPaidByDonor();
+    }
+
+    public function testTotalPaidByDonorForCollectedRefundedDonation(): void
+    {
+        $donation = $this->getTestDonation(collected: true, amount: '6.00', tipAmount: '5.00');
+        $donation->recordRefundAt(new \DateTimeImmutable());
+        $this->assertSame('11.00', $donation->getTotalPaidByDonor());
     }
 }
