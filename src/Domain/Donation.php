@@ -1486,7 +1486,10 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @return numeric-string|null The total the donor paid, either as recorded at the time or as we can calculate from
-     * other info, in major currency units
+     * other info, in major currency units.
+     *
+     * Returns *original* charge amount even if now fully reversed, but only the net balance paid if there
+     * was a tip-only refund.
      */
     public function getTotalPaidByDonor(): ?string
     {
