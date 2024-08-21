@@ -231,14 +231,6 @@ class Donation extends SalesforceWriteProxy
     protected ?string $donorHomePostcode = null;
 
     /**
-     * @var string  Amount donor chose to add to cover a fee, including any tax.
-     *              Precision numeric string.
-     * @see Donation::$currencyCode
-     */
-    #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
-    protected string $feeCoverAmount = '0.00';
-
-    /**
      * @var numeric-string  Amount donor chose to tip. Precision numeric string.
      *              Set during donation setup and can also be modified later if the donor changes only this.
      * @see Donation::$currencyCode
@@ -392,10 +384,6 @@ class Donation extends SalesforceWriteProxy
             $donation->setDonorCountryCode(strtoupper($donationData->countryCode));
         }
 
-        if (isset($donationData->feeCoverAmount)) {
-            $donation->setFeeCoverAmount($donationData->feeCoverAmount);
-        }
-
         if (isset($donationData->tipAmount)) {
             $donation->setTipAmount($donationData->tipAmount);
         }
@@ -483,7 +471,6 @@ class Donation extends SalesforceWriteProxy
             'donationId' => $this->getUuid(),
             'donationMatched' => $this->getCampaign()->isMatched(),
             'emailAddress' => $this->getDonorEmailAddress()?->email,
-            'feeCoverAmount' => (float) $this->getFeeCoverAmount(),
             'firstName' => $this->getDonorFirstName(true),
             'giftAid' => $this->hasGiftAid(),
             'homeAddress' => $this->getDonorHomeAddressLine1(),
@@ -835,29 +822,6 @@ class Donation extends SalesforceWriteProxy
     /**
      * @return string
      */
-    public function getFeeCoverAmount(): string
-    {
-        return $this->feeCoverAmount;
-    }
-
-    /**
-     * @param string $feeCoverAmount
-     * @throws \UnexpectedValueException if amount is non-zero
-     */
-    public function setFeeCoverAmount(string $feeCoverAmount): void
-    {
-        if ($feeCoverAmount !== '0' && $feeCoverAmount !== '0.00') {
-            // We do not currently offer fee cover. If/when we do offer it we will need to add code here to allow
-            // appropriate non-zero cover - I expect it will need to exactly match the fee being covered.
-            throw new \UnexpectedValueException('Fee cover amount must be "0"');
-        }
-
-        $this->feeCoverAmount = $feeCoverAmount;
-    }
-
-    /**
-     * @return string
-     */
     public function getTipAmount(): string
     {
         return $this->tipAmount;
@@ -967,7 +931,6 @@ class Donation extends SalesforceWriteProxy
     {
         $amountFractional = (int) bcmul('100', $this->getAmount(), 2);
         return $amountFractional +
-            $this->getFeeCoverAmountFractional() +
             $this->getTipAmountFractional() -
             $this->getAmountToDeductFractional();
     }
@@ -979,18 +942,7 @@ class Donation extends SalesforceWriteProxy
     {
         $coreAmountFractional = (int) bcmul('100', $this->getAmount(), 2);
 
-        return
-            $coreAmountFractional +
-            $this->getFeeCoverAmountFractional() +
-            $this->getTipAmountFractional();
-    }
-
-    /**
-     * @return int  In e.g. pence/cents/...
-     */
-    #[Pure] public function getFeeCoverAmountFractional(): int
-    {
-        return (int) bcmul('100', $this->getFeeCoverAmount(), 2);
+        return $coreAmountFractional + $this->getTipAmountFractional();
     }
 
     /**
@@ -1353,7 +1305,6 @@ class Donation extends SalesforceWriteProxy
             $this->getAmount(),
             $this->getCurrencyCode(),
             $incursGiftAidFee,
-            $this->getCampaign()->getFeePercentage(),
         );
 
         $this->setCharityFee($fees->coreFee);

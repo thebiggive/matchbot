@@ -51,13 +51,6 @@ class Campaign extends SalesforceReadProxy
     protected DateTimeInterface $endDate;
 
     /**
-     * @var string|null
-     * @psalm-var numeric-string|null
-     */
-    #[ORM\Column(type: 'decimal', nullable: true, precision: 3, scale: 1)]
-    protected ?string $feePercentage = null;
-
-    /**
      * @var bool    Whether the Campaign has any match funds
      */
     #[ORM\Column(type: 'boolean')]
@@ -176,22 +169,6 @@ class Campaign extends SalesforceReadProxy
     public function setCurrencyCode(string $currencyCode): void
     {
         $this->currencyCode = $currencyCode;
-    }
-
-    /**
-     * @psalm-return numeric-string|null
-     */
-    public function getFeePercentage(): ?string
-    {
-        return $this->feePercentage;
-    }
-
-    /**
-     * @psalm-param numeric-string|null $feePercentage
-     */
-    public function setFeePercentage(?string $feePercentage): void
-    {
-        $this->feePercentage = $feePercentage;
     }
 
     public function getEndDate(): DateTimeInterface

@@ -227,9 +227,6 @@ class DonationRepositoryTest extends TestCase
         $this->assertEquals(949_49, $donation->getAmountForCharityFractional());
     }
 
-    // note we had testStripeAmountForCharityWithFeeCover() here - removed in this commit
-    // as part of MAT-356, may be worth finding and putting back if/when we introduce fee cover.
-
     public function testStripeAmountForCharityWithTip(): void
     {
         // N.B. tip to TBG should not change the amount the charity receives, and the tip

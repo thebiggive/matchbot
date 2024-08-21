@@ -30,7 +30,6 @@ readonly class Donation
         /** @var bool|null Used only to tell credit donations to complete; not persisted. */
         public ?bool $autoConfirmFromCashBalance = null,
         public ?string $currencyCode = null,
-        public ?float $feeCoverAmount = null,
         public ?bool $giftAid = null,
         ?string $firstName = null,
         ?string $lastName = null,

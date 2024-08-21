@@ -925,7 +925,6 @@ class UpdateTest extends TestCase
             'currency' => 'usd',
             'metadata' => [
                 'coreDonationGiftAid' => true,
-                'feeCoverAmount' => '0.00',
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
@@ -1019,7 +1018,6 @@ class UpdateTest extends TestCase
             'currency' => 'usd',
             'metadata' => [
                 'coreDonationGiftAid' => true,
-                'feeCoverAmount' => '0.00',
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
@@ -1111,7 +1109,6 @@ class UpdateTest extends TestCase
             'currency' => 'usd',
             'metadata' => [
                 'coreDonationGiftAid' => true,
-                'feeCoverAmount' => '0.00',
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
@@ -1204,7 +1201,6 @@ class UpdateTest extends TestCase
             'currency' => 'usd',
             'metadata' => [
                 'coreDonationGiftAid' => true,
-                'feeCoverAmount' => '0',
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
@@ -1298,7 +1294,6 @@ class UpdateTest extends TestCase
             'currency' => 'usd',
             'metadata' => [
                 'coreDonationGiftAid' => true,
-                'feeCoverAmount' => '0.00',
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
@@ -1396,7 +1391,6 @@ class UpdateTest extends TestCase
             'currency' => 'usd',
             'metadata' => [
                 'coreDonationGiftAid' => true,
-                'feeCoverAmount' => '0.00',
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,
@@ -1484,7 +1478,6 @@ class UpdateTest extends TestCase
             'currency' => 'usd',
             'metadata' => [
                 'coreDonationGiftAid' => true,
-                'feeCoverAmount' => '0.00',
                 'matchedAmount' => '0.0',
                 'optInCharityEmail' => false,
                 'optInTbgEmail' => true,

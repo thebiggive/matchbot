@@ -279,9 +279,6 @@ class Update extends Action
         if (isset($donationData->countryCode)) {
             $donation->setDonorCountryCode(strtoupper($donationData->countryCode));
         }
-        if (isset($donationData->feeCoverAmount)) {
-            $donation->setFeeCoverAmount((string) $donationData->feeCoverAmount);
-        }
         if (isset($donationData->tipAmount)) {
             try {
                 $donation->setTipAmount($donationData->tipAmount);
@@ -548,7 +545,6 @@ class Update extends Action
                  * See the counterpart in {@see Create::action()} too.
                  */
                 'coreDonationGiftAid' => $donation->hasGiftAid(),
-                'feeCoverAmount' => $donation->getFeeCoverAmount(),
                 'matchedAmount' => $donation->getFundingWithdrawalTotal(),
                 'optInCharityEmail' => $donation->getCharityComms(),
                 'optInTbgEmail' => $donation->getTbgComms(),
