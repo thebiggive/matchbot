@@ -48,10 +48,9 @@ class TakeRegularGivingDonations extends LockingCommand
     {
         $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($this->now, limit:20);
 
-//        var_dump(compact('donations'));
-
         foreach ($donations as $donation) {
-            $this->donationService->confirm($donation);
+            // todo - replace stub card & payment method details or more likely remove those params.
+            $this->donationService->confirm($donation, 'visa', 'gb', '1234');
         }
     }
 }

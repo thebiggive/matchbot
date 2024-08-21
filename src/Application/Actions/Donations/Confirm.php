@@ -12,6 +12,7 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -46,37 +47,9 @@ class Confirm extends Action
         private Stripe $stripe,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $bus,
+        private DonationService $donationService,
     ) {
         parent::__construct($logger);
-    }
-
-    public function confirmDonation(Donation $donation, ?string $cardBrand, string $cardCountry, string $paymentMethodId): \Stripe\PaymentIntent
-    {
-// at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
-        // that, would like to find a way to make it so if its left out we get an error instead - either by having
-        // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
-        $donation->deriveFees($cardBrand, $cardCountry);
-
-        $this->stripe->updatePaymentIntent($donation->getTransactionId(), [
-            // only setting things that may need to be updated at this point.
-            'metadata' => [
-                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
-                'stripeFeeRechargeNet' => $donation->getCharityFee(),
-                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
-            ],
-            // See https://stripe.com/docs/connect/destination-charges#application-fee
-            // Update the fee amount in case the final charge was from
-            // e.g. a Non EU / Amex card where fees are varied.
-            'application_fee_amount' => $donation->getAmountToDeductFractional(),
-            // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
-        ]);
-
-        // looks like sometimes $paymentIntentId and $paymentMethodId are for different customers.
-        $updatedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
-            'payment_method' => $paymentMethodId,
-        ]);
-
-        return $updatedIntent;
     }
 
     /**
@@ -186,16 +159,16 @@ EOF
             }
 
             /**
-             * This is not technically true - at runtime this is a StripeObject instance, but the behaviour seems to be as
-             * documented in the Card class. Stripe SDK is interesting. Without this annotation we would have SA errors on
-             * ->brand and ->country
+             * This is not technically true - at runtime this is a StripeObject instance, but the behaviour seems to be
+             * as documented in the Card class. Stripe SDK is interesting. Without this annotation we would have SA
+             * errors on ->brand and ->country
              * @var Card $card
              */
             $card = $paymentMethod->card;
 
             // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
-            // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not 'Visa' or
-            // 'American Express'
+            // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not
+            // 'Visa' or 'American Express'
             $cardBrand = $card->brand;
 
             // two letter upper string, e.g. 'GB', 'US'.
@@ -204,8 +177,7 @@ EOF
             if (! in_array($cardBrand, Calculator::STRIPE_CARD_BRANDS, true)) {
                 throw new HttpBadRequestException($request, "Unrecognised card brand");
             }
-            $updatedIntent = $this->confirmDonation($donation, $cardBrand, $cardCountry, $paymentMethodId);
-
+            $updatedIntent = $this->donationService->confirm($donation, $cardBrand, $cardCountry, $paymentMethodId);
         } catch (CardException $exception) {
             $this->entityManager->rollback();
 

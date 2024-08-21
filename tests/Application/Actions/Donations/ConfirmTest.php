@@ -5,16 +5,22 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Los\RateLimit\RateLimitMiddlewareFactory;
 use MatchBot\Application\Actions\Donations\Confirm;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Clock\ClockInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\NullLogger;
 use Slim\Exception\HttpBadRequestException;
@@ -25,6 +31,9 @@ use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 class ConfirmTest extends TestCase
 {
@@ -52,6 +61,17 @@ class ConfirmTest extends TestCase
             $this->stripeProphecy->reveal(),
             $this->entityManagerProphecy->reveal(),
             $messageBusStub,
+            new DonationService(
+                $this->getDonationRepository(),
+                $this->createStub(CampaignRepository::class),
+                new NullLogger(),
+                $this->createStub(RetrySafeEntityManager::class),
+                $this->stripeProphecy->reveal(),
+                $this->createStub(Adapter::class),
+                $this->createStub(ChatterInterface::class),
+                $this->createStub(\Symfony\Component\Clock\ClockInterface::class),
+                new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
+            )
         );
     }
 
