@@ -72,7 +72,6 @@ class PullCharityUpdatedBasedOnSfHookTest extends \MatchBot\IntegrationTests\Int
             'currencyCode' => 'GBP',
             'endDate' => '2020-01-01',
             'startDate' => '2020-01-01',
-            'feePercentage' => null,
             'isMatched' => true,
             'title' => 'Campaign title not relavent',
             'charity' => [

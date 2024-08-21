@@ -124,7 +124,6 @@ class UpdateHandlesLockExceptionTest extends TestCase
           "currencyCode": null,
           "donationAmount": "1",
           "emailAddress": null,
-          "feeCoverAmount": null,
           "firstName": null,
           "giftAid": false,
           "homeAddress": null,

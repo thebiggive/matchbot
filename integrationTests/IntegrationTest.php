@@ -233,9 +233,9 @@ abstract class IntegrationTest extends TestCase
 
         $db->executeStatement(<<<EOF
             INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull,
-                                  createdAt, updatedAt, currencyCode, feePercentage) 
+                                  createdAt, updatedAt, currencyCode) 
             VALUES ('$charityId', 'some charity', '$nyd', '$closeDate', '$matched', '$campaignSfId', '$nyd',
-                    '$nyd', '$nyd', 'GBP', 0)
+                    '$nyd', '$nyd', 'GBP')
             EOF
         );
 
