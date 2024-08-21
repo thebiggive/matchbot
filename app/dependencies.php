@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Brick\DateTime\Instant;
 use DI\Container;
 use DI\ContainerBuilder;
 use Doctrine\DBAL\Connection;
@@ -449,6 +450,8 @@ return function (ContainerBuilder $containerBuilder) {
                 'stripe_version' => ApiVersion::CURRENT,
             ]);
         },
+
+        Instant::class => static fn() => Instant::now(),
 
         TransportInterface::class => static function (): TransportInterface {
             $transportFactory = new TransportFactory([

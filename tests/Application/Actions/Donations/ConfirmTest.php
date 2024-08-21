@@ -108,7 +108,9 @@ class ConfirmTest extends TestCase
 
         // assert
         $this->expectException(HttpBadRequestException::class);
-        $this->expectExceptionMessage("Donation status is 'Cancelled', must be 'Pending' to confirm payment");
+        $this->expectExceptionMessage(
+            "Donation status is 'Cancelled', must be 'Pending' or 'PreAuthorized' to confirm payment"
+        );
 
         // act
         $this->callConfirm($this->sut);

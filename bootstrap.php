@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 // Instantiate PHP-DI ContainerBuilder
+use Brick\DateTime\Doctrine\Types\LocalDateType;
 use DI\ContainerBuilder;
 use Doctrine\DBAL\Types\Type;
 
@@ -12,6 +13,10 @@ $containerBuilder = new ContainerBuilder();
 
 if (!in_array(getenv('APP_ENV'), ['local', 'test'], true)) { // Compile cache on staging & production
     $containerBuilder->enableCompilation(__DIR__ . '/var/cache');
+}
+
+if (! Type::hasType('LocalDate')) {
+    \Doctrine\DBAL\Types\Type::addType('LocalDate', LocalDateType::class);
 }
 
 // Set up settings
