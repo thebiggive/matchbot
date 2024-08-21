@@ -111,8 +111,21 @@ class StripePaymentsUpdateTest extends StripeTest
         /** @var Container $container */
         $container = $this->getContainer();
 
-        $body = $this->getStripeHookMock('ch_succeeded');
         $donation = $this->getTestDonation();
+
+        /** @var array $webhookContent */
+        $webhookContent = json_decode(
+            $this->getStripeHookMock('ch_succeeded'),
+            associative: true,
+            flags: JSON_THROW_ON_ERROR
+        );
+
+        /**
+         * @psalm-suppress MixedArrayAssignment
+         * @psalm-suppress MixedArrayAccess
+         */
+        $webhookContent['data']['object']['amount'] = $donation->getAmountFractionalIncTip();
+        $body = json_encode($webhookContent);
         $webhookSecret = $this->getValidWebhookSecret($container);
         $time = (string) time();
 
@@ -156,8 +169,21 @@ class StripePaymentsUpdateTest extends StripeTest
         /** @var Container $container */
         $container = $this->getContainer();
 
-        $body = $this->getStripeHookMock('ch_succeeded_sek');
         $donation = $this->getTestDonation('6000.00', currencyCode: 'SEK');
+
+        /** @var array $webhookContent */
+        $webhookContent = json_decode(
+            $this->getStripeHookMock('ch_succeeded_sek'),
+            associative: true,
+            flags: JSON_THROW_ON_ERROR
+        );
+
+        /**
+         * @psalm-suppress MixedArrayAssignment
+         * @psalm-suppress MixedArrayAccess
+         */
+        $webhookContent['data']['object']['amount'] = $donation->getAmountFractionalIncTip();
+        $body = json_encode($webhookContent);
 
         $webhookSecret = $this->getValidWebhookSecret($container);
         $time = (string) time();

@@ -11,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @psalm-immutable
  */
 #[Embeddable]
-class Money implements \JsonSerializable
+class Money implements \JsonSerializable, \Stringable
 {
     /**
      * @param int $amountInPence - Amount of money in minor units, i.e. pence, assumed to be worth 1/100 of the major
@@ -62,5 +62,28 @@ class Money implements \JsonSerializable
     public function jsonSerialize(): mixed
     {
         return ['amountInPence' => $this->amountInPence, 'currency' => $this->currency->isoCode()];
+    }
+
+    public function lessThan(Money $that): bool
+    {
+        if ($this->currency !== $that->currency) {
+            throw new \UnexpectedValueException("Cannot compare amounts with different currencies");
+        }
+
+        return $this->amountInPence < $that->amountInPence;
+    }
+
+    public function moreThan(Money $that): bool
+    {
+        if ($this->currency !== $that->currency) {
+            throw new \UnexpectedValueException("Cannot compare amounts with different currencies");
+        }
+
+        return $this->amountInPence > $that->amountInPence;
+    }
+
+    public function __toString()
+    {
+        return $this->currency->isoCode() . ' ' . ($this->amountInPence / 100);
     }
 }

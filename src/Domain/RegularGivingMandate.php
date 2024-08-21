@@ -6,6 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use UnexpectedValueException;
 
 /**
  * @psalm-suppress UnusedProperty - properties being brought into use now
@@ -18,6 +19,10 @@ use Ramsey\Uuid\UuidInterface;
 #[ORM\HasLifecycleCallbacks]
 class RegularGivingMandate extends SalesforceWriteProxy
 {
+    private const int MIN_AMOUNT_PENCE = 1_00;
+
+    private const int MAX_AMOUNT_PENCE = 500_00;
+
     #[ORM\Column(unique: true, type: 'uuid')]
     public readonly UuidInterface $uuid;
 
@@ -57,6 +62,14 @@ class RegularGivingMandate extends SalesforceWriteProxy
         bool $giftAid,
         DayOfMonth $dayOfMonth,
     ) {
+        $minAmount = Money::fromPence(self::MIN_AMOUNT_PENCE, Currency::GBP);
+        $maxAmount = Money::fromPence(self::MAX_AMOUNT_PENCE, Currency::GBP);
+        if ($amount->lessThan($minAmount) || $amount->moreThan($maxAmount)) {
+            throw new UnexpectedValueException(
+                "Amount {$amount} is out of allowed range {$minAmount}-{$maxAmount}"
+            );
+        }
+
         $this->uuid = Uuid::uuid4();
         $this->createdAt = new \DateTime();
         $this->updatedAt = new \DateTime();

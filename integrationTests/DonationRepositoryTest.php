@@ -97,6 +97,7 @@ class DonationRepositoryTest extends IntegrationTest
 
         $donation->collectFromStripeCharge(
             chargeId: 'charge_id',
+            totalPaidFractional: 300,
             transferId: 'transfer_id',
             cardBrand: null,
             cardCountry: null,

@@ -275,6 +275,7 @@ class UpdateTest extends TestCase
 
         $donationResponse->collectFromStripeCharge(
             chargeId: 'testchargeid',
+            totalPaidFractional: 100, // irrelevant
             transferId: 'test_transfer_id',
             cardBrand: null,
             cardCountry: null,

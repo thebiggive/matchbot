@@ -102,6 +102,7 @@ trait DonationTestDataTrait
         if ($collected) {
             $donation->collectFromStripeCharge(
                 chargeId: 'ch_externalId_123',
+                totalPaidFractional: (int)(((float)$amount + (float)$tipAmount) * 100),
                 transferId: 'tr_externalId_123',
                 cardBrand: null,
                 cardCountry: null,
