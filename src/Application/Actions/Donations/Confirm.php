@@ -116,7 +116,6 @@ EOF
             throw new HttpBadRequestException($request, $message);
         }
 
-        $paymentIntentId = $donation->getTransactionId();
         try {
             $paymentMethod = $this->stripe->updatePaymentMethodBillingDetail($paymentMethodId, $donation);
         } catch (CardException $cardException) {
@@ -126,7 +125,7 @@ EOF
                 context: 'updatePaymentMethodBillingDetail',
                 exception: $cardException,
                 donation: $donation,
-                paymentIntentId: $paymentIntentId,
+                paymentIntentId: $donation->getTransactionId(),
             );
         } catch (ApiErrorException $exception) {
             $this->entityManager->rollback();
@@ -136,7 +135,7 @@ EOF
                     'Stripe %s on Confirm updatePaymentMethodBillingDetail for donation %s (%s): %s',
                     get_class($exception),
                     $donation->getUuid(),
-                    $paymentIntentId,
+                    $donation->getTransactionId(),
                     $exception->getMessage(),
                 ));
 
@@ -180,7 +179,7 @@ EOF
         // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
         $donation->deriveFees($cardBrand, $cardCountry);
 
-        $this->stripe->updatePaymentIntent($paymentIntentId, [
+        $this->stripe->updatePaymentIntent($donation->getTransactionId(), [
             // only setting things that may need to be updated at this point.
             'metadata' => [
                 'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
@@ -196,7 +195,7 @@ EOF
 
         try {
             // looks like sometimes $paymentIntentId and $paymentMethodId are for different customers.
-            $updatedIntent = $this->stripe->confirmPaymentIntent($paymentIntentId, [
+            $updatedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
                 'payment_method' => $paymentMethodId,
             ]);
         } catch (CardException $exception) {
@@ -206,7 +205,7 @@ EOF
                 context: 'confirmPaymentIntent',
                 exception: $exception,
                 donation: $donation,
-                paymentIntentId: $paymentIntentId,
+                paymentIntentId: $donation->getTransactionId(),
             );
         } catch (InvalidRequestException $exception) {
             // We've seen card test bots, and no humans, try to reuse payment methods like this as of Oct '23. For now
@@ -222,7 +221,7 @@ EOF
                 $this->logger->warning(sprintf(
                     'Stripe InvalidRequestException on Confirm for donation %s (%s): %s',
                     $donation->getUuid(),
-                    $paymentIntentId,
+                    $donation->getTransactionId(),
                     $exception->getMessage(),
                 ));
 
@@ -245,7 +244,7 @@ EOF
                 'Stripe %s on Confirm for donation %s (%s): %s',
                 $exceptionClass,
                 $donation->getUuid(),
-                $paymentIntentId,
+                $donation->getTransactionId(),
                 $exception->getMessage(),
             ));
 
@@ -262,7 +261,7 @@ EOF
                 'Stripe %s on Confirm for donation %s (%s): %s',
                 get_class($exception),
                 $donation->getUuid(),
-                $paymentIntentId,
+                $donation->getTransactionId(),
                 $exception->getMessage(),
             ));
 
