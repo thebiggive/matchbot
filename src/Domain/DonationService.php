@@ -324,4 +324,12 @@ readonly class DonationService
             }
         }
     }
+
+    /**
+     * @psalm-suppress PossiblyUnusedParam
+     */
+    public function confirm(Donation $donation): void
+    {
+        // todo implement by moving code from \MatchBot\Application\Actions\Donations\Confirm::action
+    }
 }

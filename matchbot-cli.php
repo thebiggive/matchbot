@@ -17,6 +17,7 @@ use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
+use MatchBot\Application\Commands\TakeRegularGivingDonations;
 use MatchBot\Application\Commands\UpdateCampaigns;
 use MatchBot\Application\Commands\UpdateCharities;
 use MatchBot\Application\Matching;
@@ -106,6 +107,7 @@ $commands = [
         $psr11App->get(LoggerInterface::class),
     ),
     $psr11App->get(UpdateCharities::class),
+    $psr11App->get(TakeRegularGivingDonations::class),
 ];
 
 foreach ($commands as $command) {

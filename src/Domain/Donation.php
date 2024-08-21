@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use Brick\DateTime\LocalDate;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -315,6 +316,17 @@ class Donation extends SalesforceWriteProxy
     private ?\DateTimeImmutable $refundedAt = null;
 
     /**
+     * We only have permission to collect a preAuthorized donation on or after the given date. Intented to be used
+     * with regular giving.
+     *
+     * @psalm-suppress UnusedProperty (will use soon)
+     *
+     * @see DonationStatus::PreAuthorized
+     */
+    #[ORM\Column(nullable: true, type: 'LocalDate')]
+    private ?LocalDate $preAuthorizationDate = null;
+
+    /**
      * @param string $amount
      * @deprecated but retained for now as used in old test classes. Not recommend for continued use - either use
      * fromApiModel or create a new named constructor that takes required data for your use case.
@@ -510,7 +522,7 @@ class Donation extends SalesforceWriteProxy
             'updatedTime' => $this->getUpdatedDate()->format(DateTimeInterface::ATOM),
         ];
 
-        if ($this->getDonationStatus() === DonationStatus::Pending) {
+        if (in_array($this->getDonationStatus(), [DonationStatus::Pending, DonationStatus::PreAuthorized], true)) {
             $data['matchReservedAmount'] = (float) $this->getFundingWithdrawalTotal();
         }
 
@@ -1321,6 +1333,7 @@ class Donation extends SalesforceWriteProxy
                 $this->donationStatus,
                 [
                     DonationStatus::Pending,
+                    DonationStatus::PreAuthorized,
                     DonationStatus::Cancelled,
                     DonationStatus::Collected, // doesn't really make sense to cancel a collected donation but we have
                                                // existing unit tests doing that, not changing now.
@@ -1475,9 +1488,10 @@ class Donation extends SalesforceWriteProxy
             ->that($this->tbgComms)->notNull('Missing tbgComms preference')
             ->that($this->charityComms)->notNull('Missing charityComms preference')
             ->that($this->donationStatus, 'donationStatus')
-            ->eq(
-                DonationStatus::Pending,
-                "Donation status is '{$this->donationStatus->value}', must be 'Pending' to confirm payment"
+            ->that($this->donationStatus)->inArray(
+                [DonationStatus::Pending, DonationStatus::PreAuthorized],
+                "Donation status is '{$this->donationStatus->value}', must be " .
+                "'Pending' or 'PreAuthorized' to confirm payment"
             )
             ->verifyNow();
 

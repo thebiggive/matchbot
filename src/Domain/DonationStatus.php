@@ -39,6 +39,15 @@ enum DonationStatus: string
     case Pending = 'Pending';
 
     /**
+     * Donor has given us advance permission to collect a donation but only on or after a specified time. Intended to be
+     * used for the 2nd and 3rd donations taken as part of a regular giving plan, which will be matched but not
+     * collected during the donor's online session.
+     *
+     * @see Donation::$preAuthorizationDate
+     */
+    case PreAuthorized = 'PreAuthorized';
+
+    /**
      * Donation has been paid in to Big Give's Stripe account, but not yet transferred to the charity.
      *
      * Generally this should just be temporary status, but there are a few old donations marked 'Collected' in the DB

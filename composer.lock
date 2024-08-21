@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "620d382ae834293a9d3ac3e95ddb0077",
+    "content-hash": "aedad5fe873bd5ecae9f986378e95509",
     "packages": [
         {
             "name": "async-aws/core",
@@ -198,6 +198,136 @@
                 "source": "https://github.com/beberlei/assert/tree/v3.3.2"
             },
             "time": "2021-12-16T21:41:27+00:00"
+        },
+        {
+            "name": "brick/date-time",
+            "version": "0.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/brick/date-time.git",
+                "reference": "7b39737f630a0e5d2a2dc0834b0da77a065efaed"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/brick/date-time/zipball/7b39737f630a0e5d2a2dc0834b0da77a065efaed",
+                "reference": "7b39737f630a0e5d2a2dc0834b0da77a065efaed",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "guzzlehttp/guzzle": "^7.0",
+                "php-coveralls/php-coveralls": "^2.2",
+                "phpunit/phpunit": "^10.5",
+                "vimeo/psalm": "5.25.0"
+            },
+            "suggest": {
+                "ext-timezonedb": "This PECL extension provides up-to-date timezone information"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Brick\\DateTime\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Date and time library",
+            "keywords": [
+                "DayOfWeek",
+                "LocalDateRange",
+                "LocalDateTime",
+                "LocalTime",
+                "Month",
+                "MonthDay",
+                "Year",
+                "YearMonth",
+                "YearMonthRange",
+                "YearWeek",
+                "ZonedDateTime",
+                "brick",
+                "date",
+                "datetime",
+                "duration",
+                "instant",
+                "interval",
+                "localdate",
+                "period",
+                "stopwatch",
+                "time",
+                "timezone"
+            ],
+            "support": {
+                "issues": "https://github.com/brick/date-time/issues",
+                "source": "https://github.com/brick/date-time/tree/0.7.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/BenMorel",
+                    "type": "github"
+                }
+            ],
+            "time": "2024-06-23T14:32:17+00:00"
+        },
+        {
+            "name": "brick/date-time-doctrine",
+            "version": "0.4.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/brick/date-time-doctrine.git",
+                "reference": "3f309f99f6b01fc32bc5aec8f8bbd2cd546775d7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/brick/date-time-doctrine/zipball/3f309f99f6b01fc32bc5aec8f8bbd2cd546775d7",
+                "reference": "3f309f99f6b01fc32bc5aec8f8bbd2cd546775d7",
+                "shasum": ""
+            },
+            "require": {
+                "brick/date-time": "~0.6.0 || ~0.7.0",
+                "doctrine/dbal": "^2.7.0 || ^3.0",
+                "doctrine/orm": "^2.7.0",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "doctrine/annotations": "^1.0",
+                "ext-pdo": "*",
+                "ext-pdo_sqlite": "*",
+                "guzzlehttp/guzzle": "^7.0",
+                "php-coveralls/php-coveralls": "^2.4",
+                "phpunit/phpunit": "^10.5",
+                "vimeo/psalm": "5.21.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Brick\\DateTime\\Doctrine\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Doctrine type mappings for brick/date-time",
+            "keywords": [
+                "brick",
+                "datetime",
+                "doctrine"
+            ],
+            "support": {
+                "issues": "https://github.com/brick/date-time-doctrine/issues",
+                "source": "https://github.com/brick/date-time-doctrine/tree/0.4.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/BenMorel",
+                    "type": "github"
+                }
+            ],
+            "time": "2024-06-23T14:47:30+00:00"
         },
         {
             "name": "brick/math",
