@@ -50,6 +50,35 @@ class Confirm extends Action
         parent::__construct($logger);
     }
 
+    public function confirmDonation(Donation $donation, ?string $cardBrand, string $cardCountry, string $paymentMethodId): \Stripe\PaymentIntent
+    {
+// at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
+        // that, would like to find a way to make it so if its left out we get an error instead - either by having
+        // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
+        $donation->deriveFees($cardBrand, $cardCountry);
+
+        $this->stripe->updatePaymentIntent($donation->getTransactionId(), [
+            // only setting things that may need to be updated at this point.
+            'metadata' => [
+                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
+            ],
+            // See https://stripe.com/docs/connect/destination-charges#application-fee
+            // Update the fee amount in case the final charge was from
+            // e.g. a Non EU / Amex card where fees are varied.
+            'application_fee_amount' => $donation->getAmountToDeductFractional(),
+            // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
+        ]);
+
+        // looks like sometimes $paymentIntentId and $paymentMethodId are for different customers.
+        $updatedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
+            'payment_method' => $paymentMethodId,
+        ]);
+
+        return $updatedIntent;
+    }
+
     /**
      * InvalidRequestException can have various possible messages. If it's one we've seen before that we don't believe
      * indicates a bug or failure in matchbot then we just send an error message to the client. If it's something we
@@ -175,30 +204,8 @@ EOF
             if (! in_array($cardBrand, Calculator::STRIPE_CARD_BRANDS, true)) {
                 throw new HttpBadRequestException($request, "Unrecognised card brand");
             }
+            $updatedIntent = $this->confirmDonation($donation, $cardBrand, $cardCountry, $paymentMethodId);
 
-            // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
-            // that, would like to find a way to make it so if its left out we get an error instead - either by having
-            // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
-            $donation->deriveFees($cardBrand, $cardCountry);
-
-            $this->stripe->updatePaymentIntent($donation->getTransactionId(), [
-                // only setting things that may need to be updated at this point.
-                'metadata' => [
-                    'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
-                    'stripeFeeRechargeNet' => $donation->getCharityFee(),
-                    'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
-                ],
-                // See https://stripe.com/docs/connect/destination-charges#application-fee
-                // Update the fee amount in case the final charge was from
-                // e.g. a Non EU / Amex card where fees are varied.
-                'application_fee_amount' => $donation->getAmountToDeductFractional(),
-                // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
-            ]);
-
-            // looks like sometimes $paymentIntentId and $paymentMethodId are for different customers.
-            $updatedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
-                'payment_method' => $paymentMethodId,
-            ]);
         } catch (CardException $exception) {
             $this->entityManager->rollback();
 
