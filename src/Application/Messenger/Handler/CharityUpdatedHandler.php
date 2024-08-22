@@ -49,8 +49,8 @@ readonly class CharityUpdatedHandler
                     throw $e;
                 }
             } catch (CampaignNotReady $e) {
-                // but it is normal for campaigns in prod to go from ready to not ready, e.g. when the campaign period
-                // ends.
+                // but it is possible for campaigns in prod to go from ready to not ready, e.g. if a charity's
+                // Stripe status changes or they unexpectedly withdraw late
                 $this->logger->warning("{$e->getMessage()} while updating charity {$sfId->value}");
             }
         }
