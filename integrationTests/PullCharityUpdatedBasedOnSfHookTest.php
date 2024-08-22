@@ -47,8 +47,11 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
 
         $charitySfId = Salesforce18Id::ofCharity($sfId);
 
-        // TODO we want the handler BUT with callouts to SF stubbed.
+        // Ensure we're using stubbed client before `CharityUpdatedHandler` makes its campaign repo.
+        $this->getContainer()->set(Client\Campaign::class, $campaignClientProphecy->reveal());
+
         $messageHandler = $this->getService(CharityUpdatedHandler::class);
+
         $busProphecy = $this->prophesize(MessageBusInterface::class);
         $busProphecy->dispatch(Argument::type(Envelope::class))
             ->will(
@@ -70,7 +73,6 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
             )
             ->shouldBeCalledOnce();
 
-        $this->getContainer()->set(Client\Campaign::class, $campaignClientProphecy->reveal());
         $this->getContainer()->set(MessageBusInterface::class, $busProphecy->reveal());
 
         // act
