@@ -13,7 +13,9 @@ use MatchBot\Application\Auth;
 use MatchBot\Application\Auth\IdentityToken;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Messenger\CharityUpdated;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
@@ -288,6 +290,7 @@ return function (ContainerBuilder $containerBuilder) {
             $sendMiddleware = new SendMessageMiddleware(new SendersLocator(
                 [
                     Messages\Donation::class => [ClaimBotTransport::class],
+                    CharityUpdated::class => [TransportInterface::class],
                     StripePayout::class => [TransportInterface::class],
                     DonationUpserted::class => [TransportInterface::class],
                 ],
@@ -297,6 +300,7 @@ return function (ContainerBuilder $containerBuilder) {
 
             $handleMiddleware = new HandleMessageMiddleware(new HandlersLocator(
                 [
+                    CharityUpdated::class => [$c->get(CharityUpdatedHandler::class)],
                     Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
                     StripePayout::class => [$c->get(StripePayoutHandler::class)],
                     DonationUpserted::class => [$c->get(DonationUpsertedHandler::class)],
