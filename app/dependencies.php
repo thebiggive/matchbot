@@ -15,7 +15,6 @@ use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\CharityUpdated;
 use MatchBot\Application\Messenger\DonationUpserted;
-use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
@@ -298,9 +297,12 @@ return function (ContainerBuilder $containerBuilder) {
             ));
             $sendMiddleware->setLogger($logger);
 
+            // Seems like adding a mapping from `CharityUpdated` here crashes DI because of something around
+            // its dependency upon `CampaignRepository` and that class's DI line
+            // `\assert($repo instanceof CampaignRepository)`. Leaving it out of the handlers map
+            // for now. TODO test whether `CharityUpdated` is in fact handled while in this state.
             $handleMiddleware = new HandleMessageMiddleware(new HandlersLocator(
                 [
-                    CharityUpdated::class => [$c->get(CharityUpdatedHandler::class)],
                     Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
                     StripePayout::class => [$c->get(StripePayoutHandler::class)],
                     DonationUpserted::class => [$c->get(DonationUpsertedHandler::class)],
@@ -427,6 +429,7 @@ return function (ContainerBuilder $containerBuilder) {
             $busContainer->set('claimbot.donation.claim', $bus);
             $busContainer->set('claimbot.donation.result', $bus);
             $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
+            $busContainer->set(CharityUpdated::class, $bus);
             $busContainer->set(DonationUpserted::class, $bus);
 
             return new RoutableMessageBus($busContainer, $bus);
