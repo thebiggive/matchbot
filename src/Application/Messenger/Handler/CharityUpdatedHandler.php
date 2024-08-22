@@ -5,6 +5,7 @@ namespace MatchBot\Application\Messenger\Handler;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Messenger\CharityUpdated;
+use MatchBot\Client;
 use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
@@ -22,6 +23,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 readonly class CharityUpdatedHandler
 {
     public function __construct(
+        private Client\Campaign $campaignClient,
         private EntityManagerInterface $em,
         private Environment $environment,
         private LoggerInterface $logger
@@ -32,13 +34,7 @@ readonly class CharityUpdatedHandler
     {
         $this->logger->info("CharityUpdatedHandler: Handling {$message->charityAccountId->value}...");
 
-        /**
-         * @var CampaignRepository $campaignRepository  Injecting this directly seems to cause a DI problem
-         *                                              in combination with registering handler in
-         *                                              bus's HandlersLocator.
-         */
-        $campaignRepository = $this->em->getRepository(Campaign::class);
-
+        $campaignRepository = $this->getCampaignRepository();
         $sfId = $message->charityAccountId;
         $campaignsToUpdate = $campaignRepository->findUpdatableForCharity($sfId);
         $atLeastOneCampaignUpdated = false;
@@ -68,5 +64,20 @@ readonly class CharityUpdatedHandler
         $this->em->flush();
 
         $this->logger->info("CharityUpdatedHandler: Finished handling {$message->charityAccountId->value}");
+    }
+
+    /**
+     * Injecting campaign repo directly seems to cause a DI problem in combination with registering
+     * this handler in bus's HandlersLocator. Working around by setting up locally for the handler here
+     * for now.
+     */
+    private function getCampaignRepository(): CampaignRepository
+    {
+        /** @var CampaignRepository $campaignRepository */
+        $campaignRepository = $this->em->getRepository(Campaign::class);
+        $campaignRepository->setClient($this->campaignClient);
+        $campaignRepository->setLogger($this->logger);
+
+        return $campaignRepository;
     }
 }
