@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Messenger\CharityUpdated;
 use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
@@ -39,10 +40,12 @@ class CharityUpdatedHandlerTest extends TestCase
         $campaignRepositoryProphecy->updateFromSf($onlyRelevantCampaign)->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->getRepository(Campaign::class)
+            ->willReturn($campaignRepositoryProphecy->reveal())
+            ->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $sut = new CharityUpdatedHandler(
-            $campaignRepositoryProphecy->reveal(),
             $entityManagerProphecy->reveal(),
             Environment::fromAppEnv('test'),
             new NullLogger()

@@ -7,6 +7,7 @@ use MatchBot\Application\Environment;
 use MatchBot\Application\Messenger\CharityUpdated;
 use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\NotFoundException;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -21,7 +22,6 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 readonly class CharityUpdatedHandler
 {
     public function __construct(
-        private CampaignRepository $campaignRepository,
         private EntityManagerInterface $em,
         private Environment $environment,
         private LoggerInterface $logger
@@ -32,13 +32,20 @@ readonly class CharityUpdatedHandler
     {
         $this->logger->info("CharityUpdatedHandler: Handling {$message->charityAccountId->value}...");
 
+        /**
+         * @var CampaignRepository $campaignRepository  Injecting this directly seems to cause a DI problem
+         *                                              in combination with registering handler in
+         *                                              bus's HandlersLocator.
+         */
+        $campaignRepository = $this->em->getRepository(Campaign::class);
+
         $sfId = $message->charityAccountId;
-        $campaignsToUpdate = $this->campaignRepository->findUpdatableForCharity($sfId);
+        $campaignsToUpdate = $campaignRepository->findUpdatableForCharity($sfId);
         $atLeastOneCampaignUpdated = false;
         foreach ($campaignsToUpdate as $campaign) {
             // also implicitly updates the charity every time.
             try {
-                $this->campaignRepository->updateFromSf($campaign);
+                $campaignRepository->updateFromSf($campaign);
                 $atLeastOneCampaignUpdated = true;
             } catch (NotFoundException $e) {
                 if ($this->environment === Environment::Production) {
