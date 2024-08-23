@@ -117,9 +117,13 @@ class RegularGivingMandate extends SalesforceWriteProxy
             ];
     }
 
-    public function firstPaymentDayAfter(LocalDateTime $_currentDateTime): LocalDate
+    public function firstPaymentDayAfter(LocalDateTime $currentDateTime): LocalDate
     {
-        // todo - stop ignoring param.
-        return LocalDate::of(2024, 8, 24);
+        $today = $currentDateTime->getDate();
+
+        $nextPaymentDayIsNextMonth = $today->getDayOfMonth() >= $this->dayOfMonth->value;
+
+        return $today->plusMonths($nextPaymentDayIsNextMonth ? 1 : 0)
+            ->withDay($this->dayOfMonth->value);
     }
 }

@@ -32,7 +32,7 @@ class RegularGivingMandateTest extends TestCase
         );
 
         $this->assertEquals(
-            LocalDateTime::parse($expected),
+            LocalDate::parse($expected),
             $mandate->firstPaymentDayAfter(LocalDateTime::parse($currentDateTime))
         );
     }
@@ -111,8 +111,17 @@ class RegularGivingMandateTest extends TestCase
 
         // We will assume that we have already taken any payment that we are entitled to take, so the earliest possible
         // expected next payment day is tomorrow.
+
+        // cases:
+        // Payment day is today. (not really a case as we don't count today as next)
+        // Payment day is later this month. Means today's day number is < to configured number.
+        // Payment day is next month. Today's day number is >= configured number.
+
         return [
-            ['2024-08-23T17:30:00', 24, '2024-08-24'],
+            // current date, configured payment day, expected next payment day
+            ['2024-08-23T17:30:00', 23, '2024-09-23'],
+            ['2024-12-23T17:30:00', 23, '2025-01-23'],
+            ['2024-08-22T17:30:00', 23, '2024-08-23'],
         ];
     }
 }
