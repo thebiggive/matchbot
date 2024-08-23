@@ -119,7 +119,7 @@ EOF
         }
 
         try {
-            $paymentMethod = $this->stripe->updatePaymentMethodBillingDetail($paymentMethodId, $donation);
+            $this->stripe->updatePaymentMethodBillingDetail($paymentMethodId, $donation);
         } catch (CardException $cardException) {
             $this->entityManager->rollback();
 
@@ -154,30 +154,7 @@ EOF
 
 
         try {
-            if ($paymentMethod->type !== 'card') {
-                throw new HttpBadRequestException($request, 'Confirm endpoint only supports card payments for now');
-            }
-
-            /**
-             * This is not technically true - at runtime this is a StripeObject instance, but the behaviour seems to be
-             * as documented in the Card class. Stripe SDK is interesting. Without this annotation we would have SA
-             * errors on ->brand and ->country
-             * @var Card $card
-             */
-            $card = $paymentMethod->card;
-
-            // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
-            // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not
-            // 'Visa' or 'American Express'
-            $cardBrand = $card->brand;
-
-            // two letter upper string, e.g. 'GB', 'US'.
-            $cardCountry = $card->country;
-            \assert(is_string($cardCountry));
-            if (! in_array($cardBrand, Calculator::STRIPE_CARD_BRANDS, true)) {
-                throw new HttpBadRequestException($request, "Unrecognised card brand");
-            }
-            $updatedIntent = $this->donationService->confirm($donation, $cardBrand, $cardCountry, $paymentMethodId);
+            $updatedIntent = $this->donationService->confirm($donation, $paymentMethodId);
         } catch (CardException $exception) {
             $this->entityManager->rollback();
 

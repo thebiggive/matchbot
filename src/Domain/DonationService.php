@@ -4,6 +4,8 @@ namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\Exception\ORMException;
+use MatchBot\Application\Assertion;
+use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
@@ -19,6 +21,8 @@ use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Random\Randomizer;
+use Slim\Exception\HttpBadRequestException;
+use Stripe\Card;
 use Stripe\Exception\ApiErrorException;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Notifier\ChatterInterface;
@@ -324,12 +328,37 @@ readonly class DonationService
         }
     }
 
+    /**
+     * Finalized a donation, instructing stripe to attempt to take payment.
+     */
     public function confirm(
         Donation $donation,
-        ?string $cardBrand,
-        string $cardCountry,
         string $paymentMethodId
     ): \Stripe\PaymentIntent {
+        $paymentMethod = $this->stripe->retrievePaymentMethod($paymentMethodId);
+
+        if ($paymentMethod->type !== 'card') {
+            throw new \DomainException('Confirm only supports card payments for now');
+        }
+
+        /**
+         * This is not technically true - at runtime this is a StripeObject instance, but the behaviour seems to be
+         * as documented in the Card class. Stripe SDK is interesting. Without this annotation we would have SA
+         * errors on ->brand and ->country
+         * @var Card $card
+         */
+        $card = $paymentMethod->card;
+
+        // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
+        // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not
+        // 'Visa' or 'American Express'
+        $cardBrand = $card->brand;
+
+        // two letter upper string, e.g. 'GB', 'US'.
+        $cardCountry = $card->country;
+        \assert(is_string($cardCountry));
+        Assertion::inArray($cardBrand, Calculator::STRIPE_CARD_BRANDS);
+
 // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
         // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.

@@ -48,5 +48,7 @@ interface Stripe
      * @param non-empty-string $paymentMethodId
      * @throws ApiErrorException
      */
-    public function updatePaymentMethodBillingDetail(string $paymentMethodId, Donation $donation): PaymentMethod;
+    public function updatePaymentMethodBillingDetail(string $paymentMethodId, Donation $donation): void;
+
+    public function retrievePaymentMethod(string $paymentMethodId): PaymentMethod;
 }

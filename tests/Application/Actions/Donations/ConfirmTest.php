@@ -308,7 +308,8 @@ class ConfirmTest extends TestCase
         /** @psalm-suppress InvalidPropertyAssignmentValue */
         $paymentMethod->card = $cardDetails;
         $this->stripeProphecy->updatePaymentMethodBillingDetail($paymentMethodId, Argument::type(Donation::class))
-            ->willReturn($paymentMethod);
+            ->will(fn() => null);
+        $this->stripeProphecy->retrievePaymentMethod($paymentMethodId)->willReturn($paymentMethod);
 
         $updatedPaymentIntent = new PaymentIntent(['id' => 'id-doesnt-matter-for-test', ...$updatedIntentData]);
         $updatedPaymentIntent->status = $updatedIntentData['status'];

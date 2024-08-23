@@ -50,7 +50,12 @@ class TakeRegularGivingDonations extends LockingCommand
 
         foreach ($donations as $donation) {
             // todo - replace stub card & payment method details or more likely remove those params.
-            $this->donationService->confirm($donation, 'visa', 'gb', '1234');
+
+            // todo - look up the default payment method ID for this donor.
+            // I now think we do have to pass this and can't just rely on stripe auto
+            // selecting the right method because our fees vary according to card details.
+            $paymentMethodID = 'foo';
+            $this->donationService->confirm($donation, $paymentMethodID);
         }
     }
 }
