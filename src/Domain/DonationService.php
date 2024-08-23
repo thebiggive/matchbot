@@ -336,8 +336,6 @@ readonly class DonationService
         string $paymentMethodId
     ): \Stripe\PaymentIntent {
         $this->updateDonationFees($paymentMethodId, $donation);
-
-        // looks like sometimes $paymentIntentId and $paymentMethodId are for different customers.
         $updatedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
             'payment_method' => $paymentMethodId,
         ]);
