@@ -45,16 +45,13 @@ class CharityUpdatedHandlerTest extends TestCase
         $campaignRepositoryProphecy->updateFromSf($onlyRelevantCampaign)->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->getRepository(Campaign::class)
-            ->willReturn($campaignRepositoryProphecy->reveal())
-            ->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $sut = new CharityUpdatedHandler(
-            $this->prophesize(Client\Campaign::class)->reveal(),
             $entityManagerProphecy->reveal(),
             Environment::fromAppEnv('test'),
-            new NullLogger()
+            new NullLogger(),
+            $campaignRepositoryProphecy->reveal()
         );
 
         $sut->__invoke($message);

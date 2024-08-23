@@ -23,10 +23,10 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 readonly class CharityUpdatedHandler
 {
     public function __construct(
-        private Client\Campaign $campaignClient,
         private EntityManagerInterface $em,
         private Environment $environment,
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
+        private CampaignRepository $campaignRepository,
     ) {
     }
 
@@ -34,14 +34,13 @@ readonly class CharityUpdatedHandler
     {
         $this->logger->info("CharityUpdatedHandler: Handling {$message->charityAccountId->value}...");
 
-        $campaignRepository = $this->getCampaignRepository();
         $sfId = $message->charityAccountId;
-        $campaignsToUpdate = $campaignRepository->findUpdatableForCharity($sfId);
+        $campaignsToUpdate = $this->campaignRepository->findUpdatableForCharity($sfId);
         $atLeastOneCampaignUpdated = false;
         foreach ($campaignsToUpdate as $campaign) {
             // also implicitly updates the charity every time.
             try {
-                $campaignRepository->updateFromSf($campaign);
+                $this->campaignRepository->updateFromSf($campaign);
                 $atLeastOneCampaignUpdated = true;
             } catch (NotFoundException $e) {
                 if ($this->environment === Environment::Production) {
@@ -64,20 +63,5 @@ readonly class CharityUpdatedHandler
         $this->em->flush();
 
         $this->logger->info("CharityUpdatedHandler: Finished handling {$message->charityAccountId->value}");
-    }
-
-    /**
-     * Injecting campaign repo directly seems to cause a DI problem in combination with registering
-     * this handler in bus's HandlersLocator. Working around by setting up locally for the handler here
-     * for now.
-     */
-    private function getCampaignRepository(): CampaignRepository
-    {
-        /** @var CampaignRepository $campaignRepository */
-        $campaignRepository = $this->em->getRepository(Campaign::class);
-        $campaignRepository->setClient($this->campaignClient);
-        $campaignRepository->setLogger($this->logger);
-
-        return $campaignRepository;
     }
 }
