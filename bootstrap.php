@@ -15,9 +15,6 @@ if (!in_array(getenv('APP_ENV'), ['local', 'test'], true)) { // Compile cache on
     $containerBuilder->enableCompilation(__DIR__ . '/var/cache');
 }
 
-if (! Type::hasType('LocalDate')) {
-    \Doctrine\DBAL\Types\Type::addType('LocalDate', LocalDateType::class);
-}
 
 // Set up settings
 $settings = require __DIR__ . '/app/settings.php';
@@ -33,6 +30,9 @@ $repositories($containerBuilder);
 
 if (! Type::hasType('uuid')) {
     Type::addType('uuid', Ramsey\Uuid\Doctrine\UuidType::class);
+}
+if (! Type::hasType('LocalDate')) {
+    Type::addType('LocalDate', LocalDateType::class);
 }
 
 // Build PHP-DI Container instance
