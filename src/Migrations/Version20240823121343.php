@@ -20,7 +20,8 @@ final class Version20240823121343 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $this->addSql('DROP INDEX IDX_4CC08E823A4E7063 ON Charity');
-        $this->addSql('ALTER TABLE Charity DROP updateFromSFRequiredSince');
+        // Commenting out DROP statements below that have run in staging, before they run in prod.
+      //  $this->addSql('ALTER TABLE Charity DROP updateFromSFRequiredSince');
     }
 
     public function down(Schema $schema): void
