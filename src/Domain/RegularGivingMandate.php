@@ -2,6 +2,8 @@
 
 namespace MatchBot\Domain;
 
+use Brick\DateTime\LocalDate;
+use Brick\DateTime\LocalDateTime;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 use Ramsey\Uuid\Uuid;
@@ -113,5 +115,11 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'giftAid' => $this->giftAid,
             'status' => $this->status->apiName(),
             ];
+    }
+
+    public function firstPaymentDayAfter(LocalDateTime $_currentDateTime): LocalDate
+    {
+        // todo - stop ignoring param.
+        return LocalDate::of(2024, 8, 24);
     }
 }

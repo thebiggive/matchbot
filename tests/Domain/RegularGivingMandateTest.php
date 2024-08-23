@@ -2,6 +2,8 @@
 
 namespace Domain;
 
+use Brick\DateTime\LocalDate;
+use Brick\DateTime\LocalDateTime;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Money;
@@ -9,10 +11,32 @@ use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
+use Ramsey\Uuid\Uuid;
 use UnexpectedValueException;
 
 class RegularGivingMandateTest extends TestCase
 {
+    /** @dataProvider nextPaymentDates */
+    public function testExpectedNextPaymentDate(
+        string $currentDateTime,
+        int $configuredPaymentDay,
+        string $expected
+    ): void {
+        $mandate = new RegularGivingMandate(
+            PersonId::of(Uuid::NIL),
+            Money::fromPoundsGBP(1),
+            Salesforce18Id::ofCampaign('a01234567890123AAB'),
+            Salesforce18Id::ofCharity('a01234567890123AAB'),
+            false,
+            DayOfMonth::of($configuredPaymentDay),
+        );
+
+        $this->assertEquals(
+            LocalDateTime::parse($expected),
+            $mandate->firstPaymentDayAfter(LocalDateTime::parse($currentDateTime))
+        );
+    }
+
     public function testItRendersApiModel(): void
     {
         $charity = TestCase::someCharity(salesforceId: Salesforce18Id::ofCharity('charity89012345678'));
@@ -76,6 +100,19 @@ class RegularGivingMandateTest extends TestCase
         return [
             [99, 'Amount GBP 0.99 is out of allowed range GBP 1-GBP 500'],
             [500_01, 'Amount GBP 500.01 is out of allowed range GBP 1-GBP 500']
+        ];
+    }
+
+    /** @return list<array{0: string, 1: int, 2: string}> */
+    public function nextPaymentDates()
+    {
+        // Given a current DateTime, and a configured payment day, on what date do we expect the next payment to be
+        // made?
+
+        // We will assume that we have already taken any payment that we are entitled to take, so the earliest possible
+        // expected next payment day is tomorrow.
+        return [
+            ['2024-08-23T17:30:00', 24, '2024-08-24'],
         ];
     }
 }
