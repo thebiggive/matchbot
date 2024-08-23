@@ -451,8 +451,6 @@ return function (ContainerBuilder $containerBuilder) {
             ]);
         },
 
-        Instant::class => static fn() => Instant::now(),
-
         TransportInterface::class => static function (): TransportInterface {
             $transportFactory = new TransportFactory([
                 new AmazonSqsTransportFactory(),

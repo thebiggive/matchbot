@@ -808,7 +808,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * @return list<Donation>
      */
-    public function findPreAuthorizedDonationsReadyToConfirm(Instant $instant, int $limit): array
+    public function findPreAuthorizedDonationsReadyToConfirm(\DateTimeImmutable $atDateTime, int $limit): array
     {
         $preAuthorized = DonationStatus::PreAuthorized->value;
 
@@ -819,7 +819,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         DQL
         );
 
-        $query->setParameter('now', $instant->toISOString());
+        $query->setParameter('now', $atDateTime);
         $query->setMaxResults($limit);
 
         /** @var list<Donation> $result */

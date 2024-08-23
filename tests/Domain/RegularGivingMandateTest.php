@@ -32,8 +32,8 @@ class RegularGivingMandateTest extends TestCase
         );
 
         $this->assertEquals(
-            LocalDate::parse($expected),
-            $mandate->firstPaymentDayAfter(LocalDateTime::parse($currentDateTime))
+            new \DateTimeImmutable($expected),
+            $mandate->firstPaymentDayAfter(new \DateTimeImmutable($currentDateTime))
         );
     }
 
@@ -119,9 +119,9 @@ class RegularGivingMandateTest extends TestCase
 
         return [
             // current date, configured payment day, expected next payment day
-            ['2024-08-23T17:30:00', 23, '2024-09-23'],
-            ['2024-12-23T17:30:00', 23, '2025-01-23'],
-            ['2024-08-22T17:30:00', 23, '2024-08-23'],
+            ['2024-08-23T17:30:00Z', 23, '2024-09-23T00:00:00Z'],
+            ['2024-12-23T17:30:00Z', 23, '2025-01-23T00:00:00Z'],
+            ['2024-08-22T17:30:00Z', 23, '2024-08-23T00:00:00Z'],
         ];
     }
 }

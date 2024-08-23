@@ -24,7 +24,7 @@ class TakeRegularGivingDonations extends LockingCommand
 {
     /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
     public function __construct(
-        private Instant $now,
+        private \DateTimeImmutable $now,
         private DonationRepository $donationRepository,
         private DonationService $donationService,
     ) {

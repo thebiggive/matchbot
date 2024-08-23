@@ -117,13 +117,14 @@ class RegularGivingMandate extends SalesforceWriteProxy
             ];
     }
 
-    public function firstPaymentDayAfter(LocalDateTime $currentDateTime): LocalDate
+    public function firstPaymentDayAfter(\DateTimeImmutable $currentDateTime): \DateTimeImmutable
     {
-        $today = $currentDateTime->getDate();
+        $today = $currentDateTime->setTime(0, 0);
 
-        $nextPaymentDayIsNextMonth = $today->getDayOfMonth() >= $this->dayOfMonth->value;
+        $nextPaymentDayIsNextMonth = $today->format('d') >= $this->dayOfMonth->value;
 
-        return $today->plusMonths($nextPaymentDayIsNextMonth ? 1 : 0)
-            ->withDay($this->dayOfMonth->value);
+        $todayOrNextMonth = $nextPaymentDayIsNextMonth ? $today->add(new \DateInterval("P1M")) : $today;
+
+        return new \DateTimeImmutable($todayOrNextMonth->format('Y-m-' . $this->dayOfMonth->value));
     }
 }
