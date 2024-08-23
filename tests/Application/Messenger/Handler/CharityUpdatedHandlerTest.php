@@ -2,16 +2,14 @@
 
 namespace MatchBot\Tests\Application\Messenger\Handler;
 
+use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Messenger\CharityUpdated;
 use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
-use MatchBot\Client;
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
-use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Log\NullLogger;
 
@@ -32,9 +30,6 @@ class CharityUpdatedHandlerTest extends TestCase
         $onlyRelevantCampaign = self::someCampaign();
 
         $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepositoryProphecy->setClient(Argument::type(Client\Campaign::class))
-            ->shouldBeCalledOnce();
-        $campaignRepositoryProphecy->setLogger(new NullLogger())->shouldBeCalledOnce();
         $campaignRepositoryProphecy->findUpdatableForCharity($this->charityId)
             ->willReturn([$onlyRelevantCampaign])
             ->shouldBeCalledOnce();
@@ -45,16 +40,15 @@ class CharityUpdatedHandlerTest extends TestCase
         $campaignRepositoryProphecy->updateFromSf($onlyRelevantCampaign)->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $entityManagerProphecy->getRepository(Campaign::class)
-            ->willReturn($campaignRepositoryProphecy->reveal())
-            ->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
+        $container = new Container();
+        $container->set(CampaignRepository::class, $campaignRepositoryProphecy->reveal());
         $sut = new CharityUpdatedHandler(
-            $this->prophesize(Client\Campaign::class)->reveal(),
             $entityManagerProphecy->reveal(),
             Environment::fromAppEnv('test'),
-            new NullLogger()
+            new NullLogger(),
+            $container,
         );
 
         $sut->__invoke($message);
