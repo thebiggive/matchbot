@@ -335,6 +335,18 @@ readonly class DonationService
         Donation $donation,
         string $paymentMethodId
     ): \Stripe\PaymentIntent {
+        $this->updateDonationFees($paymentMethodId, $donation);
+
+        // looks like sometimes $paymentIntentId and $paymentMethodId are for different customers.
+        $updatedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
+            'payment_method' => $paymentMethodId,
+        ]);
+
+        return $updatedIntent;
+    }
+
+    public function updateDonationFees(string $paymentMethodId, Donation $donation): void
+    {
         $paymentMethod = $this->stripe->retrievePaymentMethod($paymentMethodId);
 
         if ($paymentMethod->type !== 'card') {
@@ -377,12 +389,5 @@ readonly class DonationService
             'application_fee_amount' => $donation->getAmountToDeductFractional(),
             // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
         ]);
-
-        // looks like sometimes $paymentIntentId and $paymentMethodId are for different customers.
-        $updatedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
-            'payment_method' => $paymentMethodId,
-        ]);
-
-        return $updatedIntent;
     }
 }
