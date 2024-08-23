@@ -16,8 +16,12 @@ final class Version20240821103038 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('ALTER TABLE Campaign DROP feePercentage');
-        $this->addSql('ALTER TABLE Donation DROP feeCoverAmount');
+        // Commenting out DROP statements below that have run in staging, before they run in prod.
+    //    $this->addSql('ALTER TABLE Campaign DROP feePercentage');
+    //    $this->addSql('ALTER TABLE Donation DROP feeCoverAmount');
+
+        // and added ALTER below, will not run in staging but will run in circleCI and prod
+            $this->addSql('ALTER TABLE Donation ALTER COLUMN feeCoverAmount SET DEFAULT 0');
     }
 
     public function down(Schema $schema): void
