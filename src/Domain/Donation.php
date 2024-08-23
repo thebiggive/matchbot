@@ -315,8 +315,8 @@ class Donation extends SalesforceWriteProxy
      *
      * @see DonationStatus::PreAuthorized
      */
-    #[ORM\Column(nullable: true, type: 'LocalDate')]
-    private ?LocalDate $preAuthorizationDate = null;
+    #[ORM\Column(nullable: true)]
+    private ?DateTimeImmutable $preAuthorizationDate = null;
 
     /**
      * @param string $amount

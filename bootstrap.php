@@ -31,9 +31,6 @@ $repositories($containerBuilder);
 if (! Type::hasType('uuid')) {
     Type::addType('uuid', Ramsey\Uuid\Doctrine\UuidType::class);
 }
-if (! Type::hasType('LocalDate')) {
-    Type::addType('LocalDate', LocalDateType::class);
-}
 
 // Build PHP-DI Container instance
 return $containerBuilder->build();
