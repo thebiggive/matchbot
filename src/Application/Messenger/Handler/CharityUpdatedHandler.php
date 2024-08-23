@@ -20,7 +20,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
  * claim readiness.
  */
 #[AsMessageHandler]
-readonly class CharityUpdatedHandler
+class CharityUpdatedHandler
 {
     public function __construct(
         private EntityManagerInterface $em,

@@ -32,9 +32,6 @@ class CharityUpdatedHandlerTest extends TestCase
         $onlyRelevantCampaign = self::someCampaign();
 
         $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepositoryProphecy->setClient(Argument::type(Client\Campaign::class))
-            ->shouldBeCalledOnce();
-        $campaignRepositoryProphecy->setLogger(new NullLogger())->shouldBeCalledOnce();
         $campaignRepositoryProphecy->findUpdatableForCharity($this->charityId)
             ->willReturn([$onlyRelevantCampaign])
             ->shouldBeCalledOnce();

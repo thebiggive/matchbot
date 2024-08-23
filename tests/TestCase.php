@@ -8,6 +8,7 @@ use DI\ContainerBuilder;
 use Exception;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
@@ -28,6 +29,7 @@ use Slim\Psr7\Headers;
 use Slim\Psr7\Request as SlimRequest;
 use Slim\Psr7\Uri;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
@@ -103,6 +105,8 @@ class TestCase extends PHPUnitTestCase
 
         // By default, tests don't get a real logger.
         $container->set(LoggerInterface::class, new NullLogger());
+
+        $container->set(CharityUpdatedHandler::class, $this->createStub(CharityUpdatedHandler::class));
 
         $container->set(ClockInterface::class, new class implements ClockInterface
         {
