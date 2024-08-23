@@ -7,12 +7,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Messenger\CharityUpdated;
 use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
-use MatchBot\Client;
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
-use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Psr\Log\NullLogger;
 
