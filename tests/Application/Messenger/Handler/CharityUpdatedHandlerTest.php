@@ -2,6 +2,7 @@
 
 namespace MatchBot\Tests\Application\Messenger\Handler;
 
+use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Messenger\CharityUpdated;
@@ -44,11 +45,13 @@ class CharityUpdatedHandlerTest extends TestCase
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
+        $container = new Container();
+        $container->set(CampaignRepository::class, $campaignRepositoryProphecy->reveal());
         $sut = new CharityUpdatedHandler(
             $entityManagerProphecy->reveal(),
             Environment::fromAppEnv('test'),
             new NullLogger(),
-            $campaignRepositoryProphecy->reveal()
+            $container,
         );
 
         $sut->__invoke($message);

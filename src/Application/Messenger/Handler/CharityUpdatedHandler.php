@@ -10,6 +10,7 @@ use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -26,21 +27,24 @@ class CharityUpdatedHandler
         private EntityManagerInterface $em,
         private Environment $environment,
         private LoggerInterface $logger,
-        private CampaignRepository $campaignRepository,
+        private ContainerInterface $container, // apparently at the time this is constructed in tests
+        // the container isn't ready to give us a campaignRepository, so taking a ref to the container
+        // instead and getting the repository inside __invoke
     ) {
     }
 
     public function __invoke(CharityUpdated $message): void
     {
+        $campaignRepository = $this->container->get(CampaignRepository::class);
         $this->logger->info("CharityUpdatedHandler: Handling {$message->charityAccountId->value}...");
 
         $sfId = $message->charityAccountId;
-        $campaignsToUpdate = $this->campaignRepository->findUpdatableForCharity($sfId);
+        $campaignsToUpdate = $campaignRepository->findUpdatableForCharity($sfId);
         $atLeastOneCampaignUpdated = false;
         foreach ($campaignsToUpdate as $campaign) {
             // also implicitly updates the charity every time.
             try {
-                $this->campaignRepository->updateFromSf($campaign);
+                $campaignRepository->updateFromSf($campaign);
                 $atLeastOneCampaignUpdated = true;
             } catch (NotFoundException $e) {
                 if ($this->environment === Environment::Production) {

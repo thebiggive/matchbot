@@ -29,7 +29,9 @@ use Slim\Psr7\Headers;
 use Slim\Psr7\Request as SlimRequest;
 use Slim\Psr7\Uri;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
@@ -105,8 +107,6 @@ class TestCase extends PHPUnitTestCase
 
         // By default, tests don't get a real logger.
         $container->set(LoggerInterface::class, new NullLogger());
-
-        $container->set(CharityUpdatedHandler::class, $this->createStub(CharityUpdatedHandler::class));
 
         $container->set(ClockInterface::class, new class implements ClockInterface
         {
