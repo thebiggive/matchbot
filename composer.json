@@ -172,10 +172,6 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:update-campaigns"
         ],
-        "matchbot:update-charities": [
-            "Composer\\Config::disableProcessTimeout",
-            "php matchbot-cli.php matchbot:update-charities"
-        ],
         "matchbot:update-campaigns-inc-historic": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:update-campaigns --all"
