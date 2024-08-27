@@ -123,15 +123,15 @@ class RegularGivingMandate extends SalesforceWriteProxy
         // We only operate in UK market so all timestamps should be for this TZ:
         Assertion::same($currentDateTime->getTimezone()->getName(), 'Europe/London');
 
-        $today = $currentDateTime->setTime(0, 0);
+        $nextPaymentDayIsNextMonth = $currentDateTime->format('d') >= $this->dayOfMonth->value;
 
-        $nextPaymentDayIsNextMonth = $today->format('d') >= $this->dayOfMonth->value;
-
-        $todayOrNextMonth = $nextPaymentDayIsNextMonth ? $today->add(new \DateInterval("P1M")) : $today;
+        $todayOrNextMonth = $nextPaymentDayIsNextMonth ?
+            $currentDateTime->add(new \DateInterval("P1M")) :
+            $currentDateTime;
 
         return new \DateTimeImmutable(
-            $todayOrNextMonth->format('Y-m-' . $this->dayOfMonth->value),
-            $today->getTimezone()
+            $todayOrNextMonth->format('Y-m-' . $this->dayOfMonth->value . 'T06:00:00'),
+            $currentDateTime->getTimezone()
         );
     }
 }

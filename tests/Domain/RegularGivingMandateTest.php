@@ -75,7 +75,7 @@ class RegularGivingMandateTest extends TestCase
                     "type": "monthly",
                     "dayOfMonth": 12,
                     "activeFrom": null,
-                    "expectedNextPaymentDate": "2024-09-12T00:00:00+01:00"
+                    "expectedNextPaymentDate": "2024-09-12T06:00:00+01:00"
                   },
                   "charityName": "Charity Name",
                   "giftAid": true,
@@ -126,9 +126,9 @@ class RegularGivingMandateTest extends TestCase
 
         return [
             // current date, configured payment day, expected next payment day
-            ['2024-08-23T17:30:00Z', 23, '2024-09-23T00:00:00+0100'],
-            ['2024-12-23T17:30:00Z', 23, '2025-01-23T00:00:00+0000'], // TZ is +0 because its winter
-            ['2024-08-22T17:30:00Z', 23, '2024-08-23T00:00:00+0100'],
+            ['2024-08-23T17:30:00Z', 23, '2024-09-23T06:00:00+0100'],
+            ['2024-12-23T17:30:00Z', 23, '2025-01-23T06:00:00+0000'], // TZ is +0 because its winter
+            ['2024-08-22T17:30:00Z', 23, '2024-08-23T06:00:00+0100'],
         ];
     }
 }
