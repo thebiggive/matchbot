@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Brick\DateTime\Instant;
 use DI\Container;
 use DI\ContainerBuilder;
 use Doctrine\DBAL\Connection;

@@ -68,14 +68,15 @@ class RegularGivingMandateTest extends TestCase
                   "schedule": {
                     "type": "monthly",
                     "dayOfMonth": 12,
-                    "activeFrom": null
+                    "activeFrom": null,
+                    "expectedNextPaymentDate": "2024-09-12"
                   },
                   "charityName": "Charity Name",
                   "giftAid": true,
                   "status": "pending"
                 }
             JSON,
-            \json_encode($mandate->toFrontEndApiModel($charity))
+            \json_encode($mandate->toFrontEndApiModel($charity, new \DateTimeImmutable('2024-08-12')))
         );
     }
     /** @dataProvider invalidRegularGivingAmounts */

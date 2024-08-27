@@ -96,7 +96,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->activeFrom = $activationDate;
     }
 
-    public function toFrontEndApiModel(Charity $charity): array
+    public function toFrontEndApiModel(Charity $charity, \DateTimeImmutable $now): array
     {
         Assertion::same($charity->salesforceId, $this->charityId);
 
@@ -110,6 +110,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
                 'type' => 'monthly',
                 'dayOfMonth' => $this->dayOfMonth->value,
                 'activeFrom' => $this->activeFrom?->format(\DateTimeInterface::ATOM),
+                'expectedNextPaymentDate' => $this->firstPaymentDayAfter($now)->format('Y-m-d'),
             ],
             'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
