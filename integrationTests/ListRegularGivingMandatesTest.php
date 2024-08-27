@@ -75,7 +75,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                     'type' => 'monthly',
                     'dayOfMonth' => 28,
                     'activeFrom' => '2024-08-06T00:00:00+00:00',
-                    'expectedNextPaymentDate' => '2024-08-28',
+                    'expectedNextPaymentDate' => '2024-08-28T00:00:00+01:00',
                 ],
                 'charityName' => $charityName,
                 'giftAid' => true,
