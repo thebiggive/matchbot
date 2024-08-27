@@ -3,26 +3,17 @@
 namespace MatchBot\IntegrationTests;
 
 use Doctrine\ORM\EntityManager;
-use Laminas\Diactoros\ServerRequest;
-use MatchBot\Application\Commands\Command;
-use MatchBot\Application\Commands\LockingCommand;
-use MatchBot\Application\Commands\UpdateCampaigns;
-use MatchBot\Application\Commands\UpdateCharities;
+use MatchBot\Application\Messenger\CharityUpdated;
+use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
 use MatchBot\Client;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityRepository;
 use MatchBot\Domain\Salesforce18Id;
-use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
-use Psr\Container\ContainerInterface;
-use Psr\Log\NullLogger;
-use Slim\Psr7\Request;
-use Slim\Psr7\Uri;
-use Symfony\Component\Console\Tester\CommandTester;
-use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 
-class PullCharityUpdatedBasedOnSfHookTest extends \MatchBot\IntegrationTests\IntegrationTest
+class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
 {
     public function tearDown(): void
     {
@@ -54,7 +45,35 @@ class PullCharityUpdatedBasedOnSfHookTest extends \MatchBot\IntegrationTests\Int
             )
         );
 
+        $charitySfId = Salesforce18Id::ofCharity($sfId);
+
+        // Ensure we're using stubbed client before `CharityUpdatedHandler` makes its campaign repo.
         $this->getContainer()->set(Client\Campaign::class, $campaignClientProphecy->reveal());
+
+        $messageHandler = $this->getService(CharityUpdatedHandler::class);
+
+        $busProphecy = $this->prophesize(MessageBusInterface::class);
+        $busProphecy->dispatch(Argument::type(Envelope::class))
+            ->will(
+                /**
+                 * @param array{0: Envelope} $args
+                 */
+                function (array $args) use ($charitySfId, $messageHandler): Envelope {
+                    $envelope = $args[0];
+                    /** @var CharityUpdated $message */
+                    $message = $envelope->getMessage();
+                    TestCase::assertInstanceOf(CharityUpdated::class, $message);
+                    TestCase::assertSame($charitySfId->value, $message->charityAccountId->value);
+
+                    // Simulate message processing
+                    $messageHandler($message);
+
+                    return $envelope;
+                }
+            )
+            ->shouldBeCalledOnce();
+
+        $this->getContainer()->set(MessageBusInterface::class, $busProphecy->reveal());
 
         // act
         $this->simulateRequestFromSFTo('/hooks/charities/' . $sfId . '/update-required');
