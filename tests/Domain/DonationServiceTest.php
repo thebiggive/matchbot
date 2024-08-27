@@ -19,7 +19,10 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Stripe\Customer;
 use Stripe\Exception\PermissionException;
+use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
@@ -48,7 +51,7 @@ class DonationServiceTest extends TestCase
 
     public function testIdentifiesCharityLackingCapabilities(): void
     {
-        $this->sut = $this->getDonationService(withAlwaysCrashingEntityManager: false);
+        $this->sut = $this->getDonationService();
 
         $donationCreate = $this->getDonationCreate();
         $donation = $this->getDonation();
@@ -104,8 +107,51 @@ class DonationServiceTest extends TestCase
         $this->sut->createDonation($donationCreate, self::CUSTOMER_ID);
     }
 
+    public function testConfirmsDonationUsingDefaultCard(): void
+    {
+        $sut = $this->getDonationService();
+
+        $donation = TestCase::someDonation();
+        $donation->setTransactionId('stripe-pi-id');
+        $donation->setPspCustomerId('stripe-customer-id');
+
+        $stripeCustomer = new Customer();
+        $stripeCustomer->default_source = 'payment-method-id';
+        $this->stripeProphecy->retrieveCustomer('stripe-customer-id')->willReturn($stripeCustomer);
+
+        $paymentMethod = new PaymentMethod();
+        $paymentMethod->type = 'card';
+
+        /** @psalm-suppress PropertyTypeCoercion */
+        $paymentMethod->card = (object)['brand' => 'visa', 'country' => 'GB'];
+        $this->stripeProphecy->retrievePaymentMethod('payment-method-id')->willReturn($paymentMethod);
+
+
+        $this->stripeProphecy->updatePaymentIntent(
+            paymentIntentId: "stripe-pi-id",
+            updateData: [
+                "metadata" => [
+                    "stripeFeeRechargeGross" => "0.26",
+                    "stripeFeeRechargeNet" => "0.22",
+                    "stripeFeeRechargeVat" => "0.04",
+                ],
+                "application_fee_amount" => 26
+            ]
+        );
+
+        $this->stripeProphecy->confirmPaymentIntent(
+            'stripe-pi-id',
+            Argument::type('array')
+        )
+            ->shouldBeCalledOnce()
+            ->willReturn(new PaymentIntent())
+        ;
+
+        $sut->confirmUsingDefaultPaymentMethod($donation);
+    }
+
     private function getDonationService(
-        bool $withAlwaysCrashingEntityManager,
+        bool $withAlwaysCrashingEntityManager = false,
         LoggerInterface $logger = null,
     ): DonationService {
         $emProphecy = $this->prophesize(RetrySafeEntityManager::class);

@@ -17,6 +17,7 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
+use MatchBot\Domain\DomainException\NoDefaultPaymentMethod;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
@@ -387,5 +388,32 @@ readonly class DonationService
             'application_fee_amount' => $donation->getAmountToDeductFractional(),
             // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
         ]);
+    }
+
+    /**
+     * @throws NoDefaultPaymentMethod
+     */
+    public function confirmUsingDefaultPaymentMethod(Donation $donation): void
+    {
+        $customerId = $donation->getPspCustomerId();
+
+        // We can assume a donation will always have a stripe customer before we try to collect.
+        Assertion::notNull($customerId);
+
+        $customer = $this->stripe->retrieveCustomer($customerId);
+
+        $defaultPaymentMethodId = $customer->default_source;
+
+        if ($defaultPaymentMethodId === null) {
+            throw new NoDefaultPaymentMethod(
+                "Cannot collect donation {$donation}, no default payment method for stripe customer {$customerId}}"
+            );
+        }
+
+        // According to stripe phpdocs this is Stripe\Account|Stripe\BankAccount|Stripe\Card|Stripe\Source|string,
+        // which is not very helpful. Asserting it's actually string and we'll see if that's true when we test.
+        Assertion::string($defaultPaymentMethodId);
+
+        $this->confirm($donation, $defaultPaymentMethodId);
     }
 }

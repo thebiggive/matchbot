@@ -8,9 +8,11 @@ use Brick\DateTime\Instant;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
+use MatchBot\Domain\DomainException\NoDefaultPaymentMethod;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\FundingWithdrawalRepository;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -27,13 +29,14 @@ class TakeRegularGivingDonations extends LockingCommand
         private \DateTimeImmutable $now,
         private DonationRepository $donationRepository,
         private DonationService $donationService,
+        private LoggerInterface $logger,
     ) {
         parent::__construct();
     }
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $this->createNewDonationsAccordingToRegularGivingMandates();
-        $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate();
+        $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($output);
 
         return 0;
     }
@@ -44,18 +47,19 @@ class TakeRegularGivingDonations extends LockingCommand
         // Some details of how to actually create these donations are still to be worked out.
     }
 
-    private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(): void
+    private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(OutputInterface $output): void
     {
         $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($this->now, limit:20);
 
         foreach ($donations as $donation) {
-            // todo - replace stub card & payment method details or more likely remove those params.
-
-            // todo - look up the default payment method ID for this donor.
-            // I now think we do have to pass this and can't just rely on stripe auto
-            // selecting the right method because our fees vary according to card details.
-            $paymentMethodID = 'foo';
-            $this->donationService->confirm($donation, $paymentMethodID);
+            try {
+                $this->donationService->confirmUsingDefaultPaymentMethod($donation);
+            } catch (NoDefaultPaymentMethod $e) {
+                $this->logger->warning($e);
+                $output->writeln($e->getMessage());
+                // todo - email donor to say they should set a default payment method, update donation to limit
+                // number of times we retry.
+            }
         }
     }
 }

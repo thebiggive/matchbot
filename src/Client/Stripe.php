@@ -2,7 +2,9 @@
 
 namespace MatchBot\Client;
 
+use Cassandra\Custom;
 use MatchBot\Domain\Donation;
+use Stripe\Customer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
@@ -51,4 +53,6 @@ interface Stripe
     public function updatePaymentMethodBillingDetail(string $paymentMethodId, Donation $donation): void;
 
     public function retrievePaymentMethod(string $paymentMethodId): PaymentMethod;
+
+    public function retrieveCustomer(string $customerId): Customer;
 }

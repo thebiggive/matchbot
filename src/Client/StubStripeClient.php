@@ -4,6 +4,7 @@ namespace MatchBot\Client;
 
 use MatchBot\Domain\Donation;
 use Ramsey\Uuid\Uuid;
+use Stripe\Customer;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
 
@@ -76,5 +77,10 @@ class StubStripeClient implements Stripe
         $paymentMethod->card = (object)['brand' => 'visa', 'country' => 'GB'];
 
         return $paymentMethod;
+    }
+
+    public function retrieveCustomer(string $customerId): Customer
+    {
+        throw new \Exception("not implemented in stub, not currently used in anything load tested.");
     }
 }
