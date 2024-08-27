@@ -12,6 +12,7 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -46,6 +47,7 @@ class Confirm extends Action
         private Stripe $stripe,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $bus,
+        private DonationService $donationService,
     ) {
         parent::__construct($logger);
     }
@@ -116,9 +118,8 @@ EOF
             throw new HttpBadRequestException($request, $message);
         }
 
-        $paymentIntentId = $donation->getTransactionId();
         try {
-            $paymentMethod = $this->stripe->updatePaymentMethodBillingDetail($paymentMethodId, $donation);
+            $this->stripe->updatePaymentMethodBillingDetail($paymentMethodId, $donation);
         } catch (CardException $cardException) {
             $this->entityManager->rollback();
 
@@ -126,7 +127,7 @@ EOF
                 context: 'updatePaymentMethodBillingDetail',
                 exception: $cardException,
                 donation: $donation,
-                paymentIntentId: $paymentIntentId,
+                paymentIntentId: $donation->getTransactionId(),
             );
         } catch (ApiErrorException $exception) {
             $this->entityManager->rollback();
@@ -136,7 +137,7 @@ EOF
                     'Stripe %s on Confirm updatePaymentMethodBillingDetail for donation %s (%s): %s',
                     get_class($exception),
                     $donation->getUuid(),
-                    $paymentIntentId,
+                    $donation->getTransactionId(),
                     $exception->getMessage(),
                 ));
 
@@ -151,54 +152,9 @@ EOF
             throw $exception;
         }
 
-        if ($paymentMethod->type !== 'card') {
-            throw new HttpBadRequestException($request, 'Confirm endpoint only supports card payments for now');
-        }
-
-        /**
-         * This is not technically true - at runtime this is a StripeObject instance, but the behaviour seems to be as
-         * documented in the Card class. Stripe SDK is interesting. Without this annotation we would have SA errors on
-         * ->brand and ->country
-         * @var Card $card
-         */
-        $card = $paymentMethod->card;
-
-        // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
-        // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not 'Visa' or
-        // 'American Express'
-        $cardBrand = $card->brand;
-
-        // two letter upper string, e.g. 'GB', 'US'.
-        $cardCountry = $card->country;
-        \assert(is_string($cardCountry));
-        if (! in_array($cardBrand, Calculator::STRIPE_CARD_BRANDS, true)) {
-            throw new HttpBadRequestException($request, "Unrecognised card brand");
-        }
-
-        // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
-        // that, would like to find a way to make it so if its left out we get an error instead - either by having
-        // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
-        $donation->deriveFees($cardBrand, $cardCountry);
-
-        $this->stripe->updatePaymentIntent($paymentIntentId, [
-            // only setting things that may need to be updated at this point.
-            'metadata' => [
-                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
-                'stripeFeeRechargeNet' => $donation->getCharityFee(),
-                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
-            ],
-            // See https://stripe.com/docs/connect/destination-charges#application-fee
-            // Update the fee amount in case the final charge was from
-            // e.g. a Non EU / Amex card where fees are varied.
-            'application_fee_amount' => $donation->getAmountToDeductFractional(),
-            // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
-        ]);
 
         try {
-            // looks like sometimes $paymentIntentId and $paymentMethodId are for different customers.
-            $updatedIntent = $this->stripe->confirmPaymentIntent($paymentIntentId, [
-                'payment_method' => $paymentMethodId,
-            ]);
+            $updatedIntent = $this->donationService->confirm($donation, $paymentMethodId);
         } catch (CardException $exception) {
             $this->entityManager->rollback();
 
@@ -206,7 +162,7 @@ EOF
                 context: 'confirmPaymentIntent',
                 exception: $exception,
                 donation: $donation,
-                paymentIntentId: $paymentIntentId,
+                paymentIntentId: $donation->getTransactionId(),
             );
         } catch (InvalidRequestException $exception) {
             // We've seen card test bots, and no humans, try to reuse payment methods like this as of Oct '23. For now
@@ -222,7 +178,7 @@ EOF
                 $this->logger->warning(sprintf(
                     'Stripe InvalidRequestException on Confirm for donation %s (%s): %s',
                     $donation->getUuid(),
-                    $paymentIntentId,
+                    $donation->getTransactionId(),
                     $exception->getMessage(),
                 ));
 
@@ -245,7 +201,7 @@ EOF
                 'Stripe %s on Confirm for donation %s (%s): %s',
                 $exceptionClass,
                 $donation->getUuid(),
-                $paymentIntentId,
+                $donation->getTransactionId(),
                 $exception->getMessage(),
             ));
 
@@ -262,7 +218,7 @@ EOF
                 'Stripe %s on Confirm for donation %s (%s): %s',
                 get_class($exception),
                 $donation->getUuid(),
-                $paymentIntentId,
+                $donation->getTransactionId(),
                 $exception->getMessage(),
             ));
 

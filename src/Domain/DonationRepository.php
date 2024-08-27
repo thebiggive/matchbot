@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use Brick\DateTime\Instant;
+use Brick\DateTime\LocalDate;
+use Brick\DateTime\TimeZone;
 use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
@@ -796,6 +799,28 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $query->setParameter('pspCustomerId', $stripeCustomerId->stripeCustomerId);
         $query->setParameter('succcessStatus', DonationStatus::SUCCESS_STATUSES);
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
+
+    /**
+     * @return list<Donation>
+     */
+    public function findPreAuthorizedDonationsReadyToConfirm(\DateTimeImmutable $atDateTime, int $limit): array
+    {
+        $preAuthorized = DonationStatus::PreAuthorized->value;
+
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT donation from Matchbot\Domain\Donation donation
+            WHERE donation.donationStatus = '$preAuthorized'
+            AND donation.preAuthorizationDate >= :now
+        DQL
+        );
+
+        $query->setParameter('now', $atDateTime);
+        $query->setMaxResults($limit);
 
         /** @var list<Donation> $result */
         $result = $query->getResult();

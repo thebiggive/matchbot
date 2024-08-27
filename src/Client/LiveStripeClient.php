@@ -43,7 +43,7 @@ class LiveStripeClient implements Stripe
         return $this->stripeClient->paymentIntents->create($createPayload);
     }
 
-    public function updatePaymentMethodBillingDetail(string $paymentMethodId, Donation $donation): PaymentMethod
+    public function updatePaymentMethodBillingDetail(string $paymentMethodId, Donation $donation): void
     {
         // "A PaymentMethod must be attached a customer to be updated." In tests so far, Stripe seems to permit
         // repeated attachments to the same customer.
@@ -51,7 +51,7 @@ class LiveStripeClient implements Stripe
 
         // Address etc. is set up in Stripe.js already. Adding these values which we collect on the
         // donation separately helps with support queries and maybe with fraud signals.
-        return $this->stripeClient->paymentMethods->update(
+        $this->stripeClient->paymentMethods->update(
             $paymentMethodId,
             [
                 'billing_details' => [
@@ -60,5 +60,10 @@ class LiveStripeClient implements Stripe
                 ],
             ],
         );
+    }
+
+    public function retrievePaymentMethod(string $paymentMethodId): PaymentMethod
+    {
+        return $this->stripeClient->paymentMethods->retrieve($paymentMethodId);
     }
 }
