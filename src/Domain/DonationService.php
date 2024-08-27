@@ -4,6 +4,8 @@ namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\Exception\ORMException;
+use MatchBot\Application\Assertion;
+use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
@@ -19,6 +21,8 @@ use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Random\Randomizer;
+use Slim\Exception\HttpBadRequestException;
+use Stripe\Card;
 use Stripe\Exception\ApiErrorException;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Notifier\ChatterInterface;
@@ -179,7 +183,6 @@ readonly class DonationService
                     'charityName' => $donation->getCampaign()->getCharity()->getName(),
                     'donationId' => $donation->getUuid(),
                     'environment' => getenv('APP_ENV'),
-                    'feeCoverAmount' => $donation->getFeeCoverAmount(),
                     'matchedAmount' => $donation->getFundingWithdrawalTotal(),
                     'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
                     'stripeFeeRechargeNet' => $donation->getCharityFee(),
@@ -323,5 +326,66 @@ readonly class DonationService
                 }
             }
         }
+    }
+
+    /**
+     * Finalized a donation, instructing stripe to attempt to take payment.
+     */
+    public function confirm(
+        Donation $donation,
+        string $paymentMethodId
+    ): \Stripe\PaymentIntent {
+        $this->updateDonationFees($paymentMethodId, $donation);
+        $updatedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
+            'payment_method' => $paymentMethodId,
+        ]);
+
+        return $updatedIntent;
+    }
+
+    public function updateDonationFees(string $paymentMethodId, Donation $donation): void
+    {
+        $paymentMethod = $this->stripe->retrievePaymentMethod($paymentMethodId);
+
+        if ($paymentMethod->type !== 'card') {
+            throw new \DomainException('Confirm only supports card payments for now');
+        }
+
+        /**
+         * This is not technically true - at runtime this is a StripeObject instance, but the behaviour seems to be
+         * as documented in the Card class. Stripe SDK is interesting. Without this annotation we would have SA
+         * errors on ->brand and ->country
+         * @var Card $card
+         */
+        $card = $paymentMethod->card;
+
+        // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
+        // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not
+        // 'Visa' or 'American Express'
+        $cardBrand = $card->brand;
+
+        // two letter upper string, e.g. 'GB', 'US'.
+        $cardCountry = $card->country;
+        \assert(is_string($cardCountry));
+        Assertion::inArray($cardBrand, Calculator::STRIPE_CARD_BRANDS);
+
+// at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
+        // that, would like to find a way to make it so if its left out we get an error instead - either by having
+        // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
+        $donation->deriveFees($cardBrand, $cardCountry);
+
+        $this->stripe->updatePaymentIntent($donation->getTransactionId(), [
+            // only setting things that may need to be updated at this point.
+            'metadata' => [
+                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
+            ],
+            // See https://stripe.com/docs/connect/destination-charges#application-fee
+            // Update the fee amount in case the final charge was from
+            // e.g. a Non EU / Amex card where fees are varied.
+            'application_fee_amount' => $donation->getAmountToDeductFractional(),
+            // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
+        ]);
     }
 }

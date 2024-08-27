@@ -849,13 +849,6 @@ class DonationTest extends TestCase
         ];
     }
 
-    public function testItRejectsNonZeroFeeCoverAmount(): void
-    {
-        $donation = $this->getTestDonation();
-
-        $this->expectExceptionMessage('Fee cover amount must be "0"');
-        $donation->setFeeCoverAmount('1');
-    }
     public function testItThrowsIfAmountUpdatedByORM(): void
     {
         $donation = $this->getTestDonation();

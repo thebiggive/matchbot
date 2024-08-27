@@ -68,7 +68,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                 ],
                 'schedule' => [
                     'type' => 'monthly',
-                    'dayOfMonth' => 31, // i.e. donation to be taken on last day of each calendar month
+                    'dayOfMonth' => 28,
                     'activeFrom' => '2024-08-06T00:00:00+00:00',
                 ],
                 'charityName' => $charityName,
@@ -107,7 +107,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
             campaignId: Salesforce18Id::ofCampaign($campaignId),
             charityId: Salesforce18Id::ofCharity($charityId),
             giftAid: true,
-            dayOfMonth: DayOfMonth::of(31),
+            dayOfMonth: DayOfMonth::of(28),
         );
 
         if ($active) {

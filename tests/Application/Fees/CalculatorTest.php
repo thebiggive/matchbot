@@ -25,40 +25,6 @@ class CalculatorTest extends TestCase
         $this->assertEquals('0.41', $fees->feeVat);
     }
 
-    public function testStripeUKCardGBPDonationWithFeeCover(): void
-    {
-        $fees = Calculator::calculate(
-            'stripe',
-            'visa',
-            'GB',
-            '123',
-            'GbP', // Case doesn't matter for calculator
-            false,
-            '5', // 5% fee inc. 20% VAT.
-        );
-
-        // £6.15 fee covered, inc. VAT
-        $this->assertEquals('5.13', $fees->coreFee);
-        $this->assertEquals('1.02', $fees->feeVat);
-    }
-
-    public function testStripeUKCardEURDonationWithFeeCover(): void
-    {
-        $fees = Calculator::calculate(
-            'stripe',
-            'visa',
-            'GB',
-            '123',
-            'EUR',
-            false,
-            '5', // 5% fee inc. 20% VAT.
-        );
-
-        // £6.15 fee covered, inc. VAT
-        $this->assertEquals('5.13', $fees->coreFee);
-        $this->assertEquals('1.02', $fees->feeVat);
-    }
-
     public function testStripeUSCardGBPDonation(): void
     {
         $fees = Calculator::calculate(
@@ -131,30 +97,9 @@ class CalculatorTest extends TestCase
             '100',
             'USD',
             false,
-            '5',
         );
 
-        $this->assertEquals('5.00', $fees->coreFee);
-        $this->assertEquals('0.00', $fees->feeVat);
-    }
-
-    public function testStripeUSCardUSDDonationWithFeeCover(): void
-    {
-        $fees = Calculator::calculate(
-            'stripe',
-            'visa',
-            'US',
-            '100',
-            'USD',
-            false,
-            '5',
-        );
-
-        // We now record this as a fee to the charity which will be invoiced, without VAT,
-        // and the donor will be charged a higher amount. E.g. here the core donation is
-        // $100 and so that amount is passed to `Calculator`, but the donor card charge
-        // would be $105.
-        $this->assertEquals('5.00', $fees->coreFee);
+        $this->assertEquals('3.50', $fees->coreFee);
         $this->assertEquals('0.00', $fees->feeVat);
     }
 

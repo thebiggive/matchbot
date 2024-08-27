@@ -51,9 +51,6 @@ class Calculator
         'amex', 'diners', 'discover', 'eftpos_au', 'jcb', 'mastercard', 'unionpay', 'visa', 'unknown'
     ];
 
-    /**
-     * @param numeric-string $feePercentageOverride
-     */
     public static function calculate(
         string $psp,
         ?string $cardBrand,
@@ -61,7 +58,6 @@ class Calculator
         string $amount,
         string $currencyCode,
         bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
-        ?string $feePercentageOverride = null,
     ): Fees {
         $calculator = new self(
             psp: $psp,
@@ -70,7 +66,6 @@ class Calculator
             amount: $amount,
             currencyCode: $currencyCode,
             hasGiftAid: $hasGiftAid,
-            feePercentageOverride: $feePercentageOverride,
         );
 
         return new Fees(
@@ -83,8 +78,6 @@ class Calculator
      * We can consider removing all instance properties and methods and relying on static methods and local vars only -
      * a static calculator would be clearer. For now, I've hidden the instance in this private method - there's no
      * public way to get a Calculator instance.
-
-     * @param numeric-string|null $feePercentageOverride
      */
     private function __construct(
         string $psp,
@@ -93,7 +86,6 @@ class Calculator
         readonly private string $amount,
         readonly private string $currencyCode,
         readonly private bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
-        readonly private ?string $feePercentageOverride = null,
     ) {
         if (! in_array($this->cardBrand, [...self::STRIPE_CARD_BRANDS, null], true)) {
             throw new \UnexpectedValueException(
@@ -112,43 +104,28 @@ class Calculator
     private function getCoreFee(): string
     {
         $giftAidFee = '0.00';
-        $feeAmountFixed = '0.00';
 
-        if ($this->feePercentageOverride === null) {
-            // Standard, dynamic fee model. Typically includes fixed amount. Historically may include
-            // a fee on Gift Aid. May vary by card type & country.
+        // Standard, dynamic fee model. Typically includes fixed amount. Historically may include
+        // a fee on Gift Aid. May vary by card type & country.
 
-            $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
-            // Currency code has been compulsory for some time.
-            /** @psalm-suppress ImpureMethodCall */
-            Assertion::keyExists(self::FEES_FIXED, $currencyCode);
-            $feeAmountFixed = self::FEES_FIXED[$currencyCode];
+        $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
+        // Currency code has been compulsory for some time.
+        /** @psalm-suppress ImpureMethodCall */
+        Assertion::keyExists(self::FEES_FIXED, $currencyCode);
+        $feeAmountFixed = self::FEES_FIXED[$currencyCode];
 
-            $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
-            if ($this->cardBrand === 'amex' || !$this->isEU($this->cardCountry)) {
-                $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU, '100', 3);
-            }
+        $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
+        if ($this->cardBrand === 'amex' || !$this->isEU($this->cardCountry)) {
+            $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU, '100', 3);
+        }
 
-            if ($this->hasGiftAid) {
-                // 4 points needed to handle overall percentages of GA fee like 0.75% == 0.0075 ratio.
-                $giftAidFee = bcmul(
-                    bcdiv(self::FEE_GIFT_AID_PERCENTAGE, '100', 4),
-                    $this->amount,
-                    3,
-                );
-            }
-        } else {
-            // Alternative fixed % model. `$giftAidFee` and `$feeAmountFixed` remain zero.
-            // Amount given is inclusive of any tax, so subtract it to get a net value.
-            $vatRatio = bcdiv($this->getFeeVatPercentage(), '100', 3);
-            $vatRatioPlusOne = bcadd('1', $vatRatio, 2);
-            $grossFeeRatio = bcdiv($this->feePercentageOverride, '100', 3);
-
-            $feeRatioBeforeOffest = bcdiv($grossFeeRatio, $vatRatioPlusOne, 10);
-            // To get rounding correct (by standard accounting calculations), we need to 'round up'
-            // slightly so that e.g a ratio of 0.0416666666 (as resulting from UK 20% rate) becomes
-            // 0.0416666667.
-            $feeRatio = bcadd($feeRatioBeforeOffest, '0.0000000001', 10);
+        if ($this->hasGiftAid) {
+            // 4 points needed to handle overall percentages of GA fee like 0.75% == 0.0075 ratio.
+            $giftAidFee = bcmul(
+                bcdiv(self::FEE_GIFT_AID_PERCENTAGE, '100', 4),
+                $this->amount,
+                3,
+            );
         }
 
         // bcmath truncates values beyond the scale it's working at, so to get x.x% and round
@@ -167,17 +144,6 @@ class Calculator
 
     private function getFeeVat(): string
     {
-        // We need to handle flat, inc-VAT fee logic differently to avoid rounding issues.
-        // In this case we work back from the core fee we've derived and subtract it to get
-        // the VAT amount. This is not necessarily the same result as adding the VAT % to
-        // the *rounded* net fee.
-        if ($this->feePercentageOverride) {
-            $grossFeeRatio = bcdiv($this->feePercentageOverride, '100', 3);
-            $grossFeeAmount = $this->roundAmount(bcmul($this->amount, $grossFeeRatio, 3));
-
-            return bcsub($grossFeeAmount, $this->getCoreFee(), 2);
-        }
-
         // Standard, non-flat-fee logic.
         $vatRatio = bcdiv($this->getFeeVatPercentage(), '100', 3);
 

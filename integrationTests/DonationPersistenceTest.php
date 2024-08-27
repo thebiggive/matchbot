@@ -100,6 +100,7 @@ class DonationPersistenceTest extends IntegrationTest
             'pspCustomerId' => null,
             'paymentMethodType' => 'card',
             'totalPaidByDonor' => null,
+            'preAuthorizationDate' => null,
 
             'updatedAt' => '1970-01-01',
             'createdAt' => '1970-01-01'

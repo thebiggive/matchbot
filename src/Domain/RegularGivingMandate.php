@@ -2,6 +2,8 @@
 
 namespace MatchBot\Domain;
 
+use Brick\DateTime\LocalDate;
+use Brick\DateTime\LocalDateTime;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 use Ramsey\Uuid\Uuid;
@@ -113,5 +115,16 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'giftAid' => $this->giftAid,
             'status' => $this->status->apiName(),
             ];
+    }
+
+    public function firstPaymentDayAfter(\DateTimeImmutable $currentDateTime): \DateTimeImmutable
+    {
+        $today = $currentDateTime->setTime(0, 0);
+
+        $nextPaymentDayIsNextMonth = $today->format('d') >= $this->dayOfMonth->value;
+
+        $todayOrNextMonth = $nextPaymentDayIsNextMonth ? $today->add(new \DateInterval("P1M")) : $today;
+
+        return new \DateTimeImmutable($todayOrNextMonth->format('Y-m-' . $this->dayOfMonth->value));
     }
 }

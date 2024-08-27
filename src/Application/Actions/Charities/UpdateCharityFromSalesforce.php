@@ -4,27 +4,24 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\Charities;
 
-use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\AssertionFailedException;
-use MatchBot\Application\Environment;
-use MatchBot\Client\CampaignNotReady;
-use MatchBot\Client\NotFoundException;
-use MatchBot\Domain\CampaignRepository;
+use MatchBot\Application\Messenger\CharityUpdated;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpNotFoundException;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class UpdateCharityFromSalesforce extends Action
 {
     public function __construct(
-        private CampaignRepository $campaignRepository,
+        private MessageBusInterface $messageBus,
         LoggerInterface $logger,
-        private EntityManagerInterface $em,
-        private Environment $environment,
     ) {
         parent::__construct($logger);
     }
@@ -43,35 +40,8 @@ class UpdateCharityFromSalesforce extends Action
             throw new HttpNotFoundException($request, $e->getMessage());
         }
 
-        $campaignsToUpdate = $this->campaignRepository->findUpdatableForCharity($sfId);
-        $atLeastOneCampaignUpdated = false;
-        foreach ($campaignsToUpdate as $campaign) {
-            // also implicitly updates the charity every time.
-            try {
-                $this->campaignRepository->updateFromSf($campaign);
-                $atLeastOneCampaignUpdated = true;
-            } catch (NotFoundException $e) {
-                if ($this->environment === Environment::Production) {
-                    // we don't expect to delete campaigns in prod
-                    throw $e;
-                }
-            } catch (CampaignNotReady $e) {
-                // but it is normal for campaigns in prod to go from ready to not ready, e.g. when the campaign period
-                // ends.
-                $this->logger->warning($e->getMessage() . "while updating charity " . $sfId->value);
-            }
-        }
+        $this->messageBus->dispatch(new Envelope(new CharityUpdated($sfId)));
 
-        if (! $atLeastOneCampaignUpdated) {
-            $this->logger->warning(
-                "Could not update charity " . $sfId->value . "from salesforce as no-known updateable campaigns"
-            );
-        }
-
-        $this->em->flush();
-
-        $data = [];
-
-        return $this->respondWithData($response, $data);
+        return $this->respond($response, new ActionPayload(200));
     }
 }

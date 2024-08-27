@@ -52,32 +52,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         return $campaigns;
     }
 
-    /**
-     * @return list<Campaign> All campaigns from charities that have been updated in salesforce, and that end 18
-     * months ago or later (therefore including open campaigns),
-     */
-    public function findNeedingUpdateFromSf(): array
-    {
-        $query = $this->getEntityManager()->createQuery(
-            <<<'DQL'
-            SELECT campaign FROM MatchBot\Domain\Campaign campaign
-            JOIN campaign.charity charity
-            WHERE charity.updateFromSFRequiredSince IS NOT NULL
-            AND campaign.endDate >= :eighteenMonthsAgo
-            DQL
-        );
-
-        $query->setParameters([
-            'eighteenMonthsAgo' => (new DateTime('now'))->sub(new \DateInterval('P18M')),
-        ]);
-
-        /** @var list<Campaign> $result */
-        $result =  $query->getResult();
-
-        return $result;
-    }
-
-
     /** @return list<Campaign> */
     public function findUpdatableForCharity(Salesforce18Id $charitySfId): array
     {
@@ -157,9 +131,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign->setCurrencyCode($campaignData['currencyCode'] ?? 'GBP');
         $campaign->setEndDate(new DateTime($campaignData['endDate']));
         /** @var float|null $feePercentage */
-        $feePercentage = $campaignData['feePercentage'];
-        Assertion::nullOrNumeric($feePercentage);
-        $campaign->setFeePercentage($feePercentage === null ? null : (string) $feePercentage);
+        $feePercentage = $campaignData['feePercentage'] ?? null;
+        Assertion::null($feePercentage, "Fee percentages are no-longer supported, should always be null");
+
         $campaign->setIsMatched($campaignData['isMatched']);
         $campaign->setName($campaignData['title']);
         $campaign->setStartDate(new DateTime($campaignData['startDate']));
