@@ -110,7 +110,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
                 'type' => 'monthly',
                 'dayOfMonth' => $this->dayOfMonth->value,
                 'activeFrom' => $this->activeFrom?->format(\DateTimeInterface::ATOM),
-                'expectedNextPaymentDate' => $this->firstPaymentDayAfter($now)->format('Y-m-d'),
+                'expectedNextPaymentDate' => $this->firstPaymentDayAfter($now)->format(\DateTimeInterface::ATOM),
             ],
             'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
@@ -120,12 +120,18 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     public function firstPaymentDayAfter(\DateTimeImmutable $currentDateTime): \DateTimeImmutable
     {
+        // We only operate in UK market so all timestamps should be for this TZ:
+        Assertion::same($currentDateTime->getTimezone()->getName(), 'Europe/London');
+
         $today = $currentDateTime->setTime(0, 0);
 
         $nextPaymentDayIsNextMonth = $today->format('d') >= $this->dayOfMonth->value;
 
         $todayOrNextMonth = $nextPaymentDayIsNextMonth ? $today->add(new \DateInterval("P1M")) : $today;
 
-        return new \DateTimeImmutable($todayOrNextMonth->format('Y-m-' . $this->dayOfMonth->value));
+        return new \DateTimeImmutable(
+            $todayOrNextMonth->format('Y-m-' . $this->dayOfMonth->value),
+            $today->getTimezone()
+        );
     }
 }
