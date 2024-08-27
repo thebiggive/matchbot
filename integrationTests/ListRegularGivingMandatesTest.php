@@ -36,6 +36,11 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         $campaignSfId = $this->randomString();
         $charitySfId = $this->randomString();
 
+        $container = $this->getContainer();
+
+        // Assume current date is 27th July in UTC, and 28th July in UK:
+        $container->set(\DateTimeImmutable::class, new \DateTimeImmutable('2024-07-27T23:00:00+00:00'));
+
         $charityName = "Charity Name " . $this->randomString();
 
         $this->addCampaignAndCharityToDB(
@@ -70,6 +75,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                     'type' => 'monthly',
                     'dayOfMonth' => 28,
                     'activeFrom' => '2024-08-06T00:00:00+00:00',
+                    'expectedNextPaymentDate' => '2024-08-28',
                 ],
                 'charityName' => $charityName,
                 'giftAid' => true,
