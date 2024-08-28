@@ -31,11 +31,33 @@ class DonorAccount extends Model
     #[ORM\Embedded(class: 'StripeCustomerId', columnPrefix: false)]
     public readonly StripeCustomerId $stripeCustomerId;
 
+    /**
+     * The payment method selected for use in off session, regular giving payments, when the donor isn't around to
+     * make an individual choice for each donation. Must be a payment card, and have
+     * ['setup_future_usage' => 'on_session'] selected.
+     *
+     * String not embeddable because ORM does not support nullable embeddables.
+     */
+    #[ORM\Column(type: 'string', nullable: true, length: 255)]
+    private ?string $regularGivingPaymentMethod = null;
+
     public function __construct(EmailAddress $emailAddress, DonorName $donorName, StripeCustomerId $stripeCustomerId)
     {
         $this->createdNow();
         $this->emailAddress = $emailAddress;
         $this->stripeCustomerId = $stripeCustomerId;
         $this->donorName = $donorName;
+    }
+
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - to be used soon.
+     */
+    public function getRegularGivingPaymentMethod(): ?StripePaymentMethodId
+    {
+        if ($this->regularGivingPaymentMethod === null) {
+            return null;
+        }
+
+        return StripePaymentMethodId::of($this->regularGivingPaymentMethod);
     }
 }
