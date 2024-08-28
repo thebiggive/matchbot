@@ -18,6 +18,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
@@ -98,6 +99,7 @@ class CreateTest extends TestCase
 
         $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
         $container->set(CampaignRepository::class, $campaignRepositoryProphecy->reveal());
+        $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
 
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
     }

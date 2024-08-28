@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Brick\DateTime\Instant;
+use Doctrine\ORM\EntityManager;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
@@ -27,13 +28,14 @@ class TakeRegularGivingDonations extends LockingCommand
         private \DateTimeImmutable $now,
         private DonationRepository $donationRepository,
         private DonationService $donationService,
+        private EntityManager $em,
     ) {
         parent::__construct();
     }
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $this->createNewDonationsAccordingToRegularGivingMandates();
-        $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate();
+        $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($output);
 
         return 0;
     }
@@ -44,18 +46,31 @@ class TakeRegularGivingDonations extends LockingCommand
         // Some details of how to actually create these donations are still to be worked out.
     }
 
-    private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(): void
+    private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(OutputInterface $output): void
     {
+        /* Still to do to improve this before launch:
+            - deal with possible "The parameter application_fee_amount cannot be updated on a PaymentIntent after a
+              capture has already been made." error
+
+            - Record unsuccessful payment attempts to limit number or time extent of retries
+            - Stop collection if the related regular giving mandate has been cancelled
+            - Send metadata to stripe so to identify the payment as regular giving when we view it there.
+            - Handle exceptions and continue to next donation, e.g. if donation does not have customer ID, or there
+              is no donor account in our db for that ID, or they do not have a payment method on file for this purpose.
+            - Probably other things.
+        */
         $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($this->now, limit:20);
 
         foreach ($donations as $donation) {
-            // todo - replace stub card & payment method details or more likely remove those params.
-
-            // todo - look up the default payment method ID for this donor.
-            // I now think we do have to pass this and can't just rely on stripe auto
-            // selecting the right method because our fees vary according to card details.
-            $paymentMethodID = 'foo';
-            $this->donationService->confirm($donation, $paymentMethodID);
+            $oldStatus = $donation->getDonationStatus();
+            $output->writeln("processing donation $donation");
+            $this->donationService->confirmPreAuthorized($donation);
+            $output->writeln(
+                "Donation {$donation->getUuid()} went from " .
+                "{$oldStatus->name} to {$donation->getDonationStatus()->name}"
+            );
         }
+
+        $this->em->flush();
     }
 }

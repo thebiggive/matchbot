@@ -15,8 +15,10 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -37,6 +39,7 @@ use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 class ConfirmTest extends TestCase
 {
+    public const string PAYMENT_METHOD_ID = 'pm_PAYMENTMETHODID';
     private Confirm $sut;
 
     /** @var ObjectProphecy<Stripe>  */
@@ -71,6 +74,7 @@ class ConfirmTest extends TestCase
                 $this->createStub(ChatterInterface::class),
                 $this->createStub(\Symfony\Component\Clock\ClockInterface::class),
                 new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
+                donorAccountRepository: $this->createStub(DonorAccountRepository::class),
             )
         );
     }
@@ -80,7 +84,7 @@ class ConfirmTest extends TestCase
         // arrange
         $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
-            paymentMethodId: 'PAYMENT_METHOD_ID',
+            paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_action',
                 'client_secret' => 'some_client_secret',
@@ -142,7 +146,7 @@ class ConfirmTest extends TestCase
 
         $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
-            paymentMethodId: 'PAYMENT_METHOD_ID',
+            paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_payment_method',
                 'client_secret' => 'some_client_secret',
@@ -191,7 +195,7 @@ class ConfirmTest extends TestCase
 
         $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
-            paymentMethodId: 'PAYMENT_METHOD_ID',
+            paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_payment_method',
                 'client_secret' => 'some_client_secret',
@@ -230,7 +234,7 @@ class ConfirmTest extends TestCase
         // arrange
         $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
-            paymentMethodId: 'PAYMENT_METHOD_ID',
+            paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_payment_method',
                 'client_secret' => 'some_client_secret',
@@ -270,7 +274,7 @@ class ConfirmTest extends TestCase
     ): void {
         $this->fakeStripeClient(
             cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
-            paymentMethodId: 'PAYMENT_METHOD_ID',
+            paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_action',
                 'client_secret' => 'some_client_secret',
@@ -309,7 +313,8 @@ class ConfirmTest extends TestCase
         $paymentMethod->card = $cardDetails;
         $this->stripeProphecy->updatePaymentMethodBillingDetail($paymentMethodId, Argument::type(Donation::class))
             ->will(fn() => null);
-        $this->stripeProphecy->retrievePaymentMethod($paymentMethodId)->willReturn($paymentMethod);
+        $this->stripeProphecy->retrievePaymentMethod(StripePaymentMethodId::of($paymentMethodId))
+            ->willReturn($paymentMethod);
 
         $updatedPaymentIntent = new PaymentIntent(['id' => 'id-doesnt-matter-for-test', ...$updatedIntentData]);
         $updatedPaymentIntent->status = $updatedIntentData['status'];
@@ -409,7 +414,7 @@ class ConfirmTest extends TestCase
                 method: 'POST',
                 path: 'doesnt-matter-for-test',
                 bodyString: \json_encode([
-                    'stripePaymentMethodId' => 'PAYMENT_METHOD_ID',
+                    'stripePaymentMethodId' => self::PAYMENT_METHOD_ID,
                 ])
             ),
             new Response(),

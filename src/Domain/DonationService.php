@@ -17,6 +17,7 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
+use MatchBot\Domain\DomainException\NoDonorAccountException;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
@@ -45,6 +46,7 @@ readonly class DonationService
         private StripeChatterInterface|ChatterInterface $chatter,
         private ClockInterface $clock,
         private RateLimiterFactory $rateLimiterFactory,
+        private DonorAccountRepository $donorAccountRepository,
     ) {
     }
 
@@ -333,17 +335,17 @@ readonly class DonationService
      */
     public function confirm(
         Donation $donation,
-        string $paymentMethodId
+        StripePaymentMethodId $paymentMethodId
     ): \Stripe\PaymentIntent {
         $this->updateDonationFees($paymentMethodId, $donation);
         $updatedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
-            'payment_method' => $paymentMethodId,
+            'payment_method' => $paymentMethodId->stripePaymentMethodId,
         ]);
 
         return $updatedIntent;
     }
 
-    public function updateDonationFees(string $paymentMethodId, Donation $donation): void
+    public function updateDonationFees(StripePaymentMethodId $paymentMethodId, Donation $donation): void
     {
         $paymentMethod = $this->stripe->retrievePaymentMethod($paymentMethodId);
 
@@ -387,5 +389,27 @@ readonly class DonationService
             'application_fee_amount' => $donation->getAmountToDeductFractional(),
             // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
         ]);
+    }
+
+    public function confirmPreAuthorized(Donation $donation): void
+    {
+        $stripeAccountId = $donation->getPspCustomerId();
+        Assertion::notNull($stripeAccountId);
+        $donorAccount = $this->donorAccountRepository->findByStripeIdOrNull(StripeCustomerId::of($stripeAccountId));
+
+        if ($donorAccount === null) {
+            throw new NoDonorAccountException("Donor account not found for donation $donation");
+        }
+
+        $paymentMethod = $donorAccount->getRegularGivingPaymentMethod();
+
+        if ($paymentMethod === null) {
+            throw new \MatchBot\Domain\NoRegularGivingPaymentMethod(
+                "Cannot confirm donation {$donation->getUuid()} for " .
+                "{$donorAccount->stripeCustomerId->stripeCustomerId}, no payment method"
+            );
+        }
+
+        $this->confirm($donation, $paymentMethod);
     }
 }

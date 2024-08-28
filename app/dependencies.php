@@ -31,6 +31,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
@@ -507,6 +508,7 @@ return function (ContainerBuilder $containerBuilder) {
                     chatter: $chatter,
                     clock: $c->get(ClockInterfaceAlias::class),
                     rateLimiterFactory: $rateLimiterFactory,
+                    donorAccountRepository: $c->get(DonorAccountRepository::class),
                 );
             }
     ]);

@@ -14,6 +14,7 @@ use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -131,7 +132,8 @@ class DonationServiceTest extends TestCase
             matchingAdapter: $this->prophesize(Adapter::class)->reveal(),
             chatter: $this->chatterProphecy->reveal(),
             clock: $this->prophesize(ClockInterface::class)->reveal(),
-            rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage())
+            rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
+            donorAccountRepository: $this->createStub(DonorAccountRepository::class),
         );
     }
 
