@@ -54,6 +54,7 @@ class TakeRegularGivingDonations extends LockingCommand
         foreach ($donations as $donation) {
             try {
                 $this->donationService->confirmUsingDefaultPaymentMethod($donation);
+                $output->writeln("Collected donation $donation");
             } catch (NoDefaultPaymentMethod $e) {
                 $this->logger->warning($e);
                 $output->writeln($e->getMessage());
