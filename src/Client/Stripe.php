@@ -2,7 +2,6 @@
 
 namespace MatchBot\Client;
 
-use Cassandra\Custom;
 use MatchBot\Domain\Donation;
 use Stripe\Customer;
 use Stripe\Exception\ApiErrorException;
