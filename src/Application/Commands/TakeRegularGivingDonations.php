@@ -56,10 +56,18 @@ class TakeRegularGivingDonations extends LockingCommand
                 $this->donationService->confirmUsingDefaultPaymentMethod($donation);
                 $output->writeln("Collected donation $donation");
             } catch (NoDefaultPaymentMethod $e) {
-                $this->logger->warning($e);
+                $this->logger->warning($e->getMessage());
                 $output->writeln($e->getMessage());
-                // todo - email donor to say they should set a default payment method, update donation to limit
-                // number of times we retry.
+
+                $output->writeln(<<<'EOF'
+
+                For now this is going to happen every time, as none of our donors have `default_source` set.
+                Need to change the implementation of confirmUsingDefaultPaymentMethod to take a previously selected
+                payment method ID from our database instead of from stripe. And probably rename to reflect that
+                the PM will be one explicitly selected for this purpose, not just a default.
+                
+                EOF
+                );
             }
         }
     }
