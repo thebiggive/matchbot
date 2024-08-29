@@ -1450,6 +1450,16 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
+     * Authorises BG to collect this donation at the given date in the future.
+     */
+    public function preAuthorize(DateTimeImmutable $paymentDate): void
+    {
+        $this->assertIsReadyToConfirm();
+        $this->preAuthorizationDate = $paymentDate;
+        $this->donationStatus = DonationStatus::PreAuthorized;
+    }
+
+    /**
      * @return numeric-string|null The total the donor paid, either as recorded at the time or as we can calculate from
      * other info, in major currency units.
      *

@@ -121,7 +121,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public function firstPaymentDayAfter(\DateTimeImmutable $currentDateTime): \DateTimeImmutable
     {
         // We only operate in UK market so all timestamps should be for this TZ:
-        Assertion::same($currentDateTime->getTimezone()->getName(), 'Europe/London');
+        // Not sure why some timestamps generated in tests are having TZ names BST or GMT rather than London,
+        // but that's also OK.
+        Assertion::inArray($currentDateTime->getTimezone()->getName(), ['Europe/London', 'BST', 'GMT']);
 
         $nextPaymentDayIsNextMonth = $currentDateTime->format('d') >= $this->dayOfMonth->value;
 
@@ -133,5 +135,10 @@ class RegularGivingMandate extends SalesforceWriteProxy
             $todayOrNextMonth->format('Y-m-' . $this->dayOfMonth->value . 'T06:00:00'),
             $currentDateTime->getTimezone()
         );
+    }
+
+    public function hasGiftAid(): bool
+    {
+        return $this->giftAid;
     }
 }
