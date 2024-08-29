@@ -3,6 +3,7 @@
 namespace MatchBot\Client;
 
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\StripePaymentMethodId;
 use Stripe\Exception\InvalidArgumentException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
@@ -62,8 +63,8 @@ class LiveStripeClient implements Stripe
         );
     }
 
-    public function retrievePaymentMethod(string $paymentMethodId): PaymentMethod
+    public function retrievePaymentMethod(StripePaymentMethodId $pmId): PaymentMethod
     {
-        return $this->stripeClient->paymentMethods->retrieve($paymentMethodId);
+        return $this->stripeClient->paymentMethods->retrieve($pmId->stripePaymentMethodId);
     }
 }

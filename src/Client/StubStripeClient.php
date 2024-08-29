@@ -3,6 +3,7 @@
 namespace MatchBot\Client;
 
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\StripePaymentMethodId;
 use Ramsey\Uuid\Uuid;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
@@ -66,7 +67,7 @@ class StubStripeClient implements Stripe
         $this->pause();
     }
 
-    public function retrievePaymentMethod(string $paymentMethodId): PaymentMethod
+    public function retrievePaymentMethod(StripePaymentMethodId $pmId): PaymentMethod
     {
         $this->pause();
 

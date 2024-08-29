@@ -7,18 +7,18 @@ use Doctrine\ORM\Mapping\Embeddable;
 use MatchBot\Application\Assertion;
 
 #[Embeddable]
-readonly class StripeCustomerId
+readonly class StripePaymentMethodId
 {
     #[Column(type: 'string')]
-    public string $stripeCustomerId;
+    public readonly string $stripePaymentMethodId;
 
     private function __construct(
         string $stripeCustomerId
     ) {
-        $this->stripeCustomerId = $stripeCustomerId;
-        Assertion::notEmpty($this->stripeCustomerId);
-        Assertion::maxLength($this->stripeCustomerId, 255);
-        Assertion::regex($this->stripeCustomerId, '/^cus_[a-zA-Z0-9]+$/'); // e.g. cus_df64s36cf
+        $this->stripePaymentMethodId = $stripeCustomerId;
+        Assertion::notEmpty($this->stripePaymentMethodId);
+        Assertion::maxLength($this->stripePaymentMethodId, 255);
+        Assertion::regex($this->stripePaymentMethodId, '/^pm_[a-zA-Z0-9]+$/'); // e.g. pm_df64s36cf
     }
 
     /**

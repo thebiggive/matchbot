@@ -13,6 +13,7 @@ use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\StripePaymentMethodId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -154,7 +155,7 @@ EOF
 
 
         try {
-            $updatedIntent = $this->donationService->confirm($donation, $paymentMethodId);
+            $updatedIntent = $this->donationService->confirm($donation, StripePaymentMethodId::of($paymentMethodId));
         } catch (CardException $exception) {
             $this->entityManager->rollback();
 

@@ -815,7 +815,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT donation from Matchbot\Domain\Donation donation
             WHERE donation.donationStatus = '$preAuthorized'
-            AND donation.preAuthorizationDate >= :now
+            AND donation.preAuthorizationDate <= :now
         DQL
         );
 
