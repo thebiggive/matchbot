@@ -25,6 +25,7 @@ use Random\Randomizer;
 use Slim\Exception\HttpBadRequestException;
 use Stripe\Card;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Mandate;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
