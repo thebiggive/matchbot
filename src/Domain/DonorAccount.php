@@ -60,4 +60,9 @@ class DonorAccount extends Model
 
         return StripePaymentMethodId::of($this->regularGivingPaymentMethod);
     }
+
+    public function setRegularGivingPaymentMethod(StripePaymentMethodId $methodId): void
+    {
+        $this->regularGivingPaymentMethod = $methodId->stripePaymentMethodId;
+    }
 }
