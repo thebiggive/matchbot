@@ -47,10 +47,6 @@ class TakeRegularGivingDonations extends LockingCommand
 
     private function createNewDonationsAccordingToRegularGivingMandates(): void
     {
-        /* we want any mandates that are:
-            - Currently active
-            - have "donations created up to" null or in the past.
-        */
         $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($this->now, limit: 20);
 
         foreach ($mandates as [$mandate]) {
@@ -91,17 +87,8 @@ class TakeRegularGivingDonations extends LockingCommand
     private function makeDonationForMandate(RegularGivingMandate $mandate): void
     {
         $this->mandateService->makeNextDonationForMandate($mandate);
-        // todo - create donation and persist.
-        // Requires adding a couple of new properties to the donation class & schema
-        // - mandate ID & mandate sequence number. DB should ensure the combination is unique.
-        // May need to adjust the DQL used to fetch the mandates so we also fetch the maximum existing sequence number,
-        // or the last donation of each mandate so we know which one we're creating.
-
         // Also have to think about what to do if we need to create more than one. Shouldn't ever happen in prod as
         // will run this script daily and only need to create donations monthly, but probably worth dealing with in case
         // and for dev environments.
-
-        // may want to write this in a service class instead of directly here so that it's more testable and
-        // can potentially be invoked via HTTP for testing.
     }
 }
