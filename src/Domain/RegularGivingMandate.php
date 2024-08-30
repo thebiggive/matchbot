@@ -15,7 +15,6 @@ use UnexpectedValueException;
  */
 #[ORM\Table]
 #[ORM\Index(name: 'uuid', columns: ['uuid'])]
-#[ORM\Index(name: 'donationsCreatedUpTo', columns: ['donationsCreatedUpTo'])]
 #[ORM\Entity(
     repositoryClass: null // we construct our own repository
 )]
@@ -49,9 +48,6 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $activeFrom = null;
-
-    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private ?\DateTimeImmutable $donationsCreatedUpTo = null;
 
     #[ORM\Column(type: 'string', enumType: MandateStatus::class)]
     private MandateStatus $status = MandateStatus::Pending;
@@ -144,18 +140,5 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public function hasGiftAid(): bool
     {
         return $this->giftAid;
-    }
-
-    /**
-     * Records that all donations we plan to take for this donation before the given time have been created
-     * and saved as pre-authorized donations. This means that no more donations need to be created based on this
-     * mandate before that date.
-     *
-     * @psalm-suppress PossiblyUnusedMethod - to be used soon.
-     */
-    public function setDonationsCreatedUpTo(?\DateTimeImmutable $donationsCreatedUpTo): void
-    {
-        Assertion::same($this->status, MandateStatus::Active);
-        $this->donationsCreatedUpTo = $donationsCreatedUpTo;
     }
 }
