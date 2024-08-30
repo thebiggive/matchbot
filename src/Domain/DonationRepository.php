@@ -11,7 +11,6 @@ use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
-use Doctrine\ORM\Query;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -826,25 +825,5 @@ class DonationRepository extends SalesforceWriteProxyRepository
         /** @var list<Donation> $result */
         $result = $query->getResult();
         return $result;
-    }
-
-    public function maxSequenceNumberForMandate(int $mandateId): ?DonationSequenceNumber
-    {
-        $query = $this->getEntityManager()->createQuery(<<<DQL
-            SELECT MAX(d.mandateSequenceNumber) from MatchBot\Domain\Donation d join d.mandate m
-            WHERE m.id = :mandate_id 
-        DQL
-        );
-
-        $query->setParameter('mandate_id', $mandateId);
-
-        $number = $query->getOneOrNullResult(Query::HYDRATE_SINGLE_SCALAR);
-        \assert(is_int($number) || is_null($number));
-
-        if ($number === null) {
-            return null;
-        }
-
-        return DonationSequenceNumber::of($number);
     }
 }

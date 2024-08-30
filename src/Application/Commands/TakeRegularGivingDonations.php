@@ -12,9 +12,6 @@ use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\FundingWithdrawalRepository;
-use MatchBot\Domain\MandateService;
-use MatchBot\Domain\RegularGivingMandate;
-use MatchBot\Domain\RegularGivingMandateRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,10 +26,8 @@ class TakeRegularGivingDonations extends LockingCommand
     /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
     public function __construct(
         private \DateTimeImmutable $now,
-        private RegularGivingMandateRepository $mandateRepository,
         private DonationRepository $donationRepository,
         private DonationService $donationService,
-        private MandateService $mandateService,
         private EntityManager $em,
     ) {
         parent::__construct();
@@ -47,12 +42,8 @@ class TakeRegularGivingDonations extends LockingCommand
 
     private function createNewDonationsAccordingToRegularGivingMandates(): void
     {
-        $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($this->now, limit: 20);
-
-        foreach ($mandates as [$mandate]) {
-            $this->makeDonationForMandate($mandate);
-            $this->em->flush();
-        }
+        // todo - implement.
+        // Some details of how to actually create these donations are still to be worked out.
     }
 
     private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(OutputInterface $output): void
@@ -66,7 +57,6 @@ class TakeRegularGivingDonations extends LockingCommand
             - Send metadata to stripe so to identify the payment as regular giving when we view it there.
             - Handle exceptions and continue to next donation, e.g. if donation does not have customer ID, or there
               is no donor account in our db for that ID, or they do not have a payment method on file for this purpose.
-            - Ensure we don't send emails that are meant for confirmation of on-session donations
             - Probably other things.
         */
         $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($this->now, limit:20);
@@ -82,13 +72,5 @@ class TakeRegularGivingDonations extends LockingCommand
         }
 
         $this->em->flush();
-    }
-
-    private function makeDonationForMandate(RegularGivingMandate $mandate): void
-    {
-        $this->mandateService->makeNextDonationForMandate($mandate);
-        // Also have to think about what to do if we need to create more than one. Shouldn't ever happen in prod as
-        // will run this script daily and only need to create donations monthly, but probably worth dealing with in case
-        // and for dev environments.
     }
 }

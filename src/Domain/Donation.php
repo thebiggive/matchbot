@@ -27,7 +27,6 @@ use function bccomp;
 use function sprintf;
 
 #[ORM\Table]
-#[ORM\UniqueConstraint(fields: ['mandateSequenceNumber', 'mandate'])]
 #[ORM\Index(name: 'campaign_and_status', columns: ['campaign_id', 'donationStatus'])]
 #[ORM\Index(name: 'date_and_status', columns: ['createdAt', 'donationStatus'])]
 #[ORM\Index(name: 'updated_date_and_status', columns: ['updatedAt', 'donationStatus'])]
@@ -205,23 +204,6 @@ class Donation extends SalesforceWriteProxy
 
     #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $donorLastName = null;
-
-    /**
-     * Position in sequence of donations taken in relation to a regular giving mandate, e.g. 1st
-     * (taken at mandate creation time), 2nd, 3rd etc.
-     *
-     * Null only iff this is an ad-hoc, non regular-giving donation.
-     *
-     * @psalm-suppress PossiblyUnusedProperty - used in DQL
-     */
-    #[ORM\Column(type: 'integer', nullable: true)]
-    protected ?int $mandateSequenceNumber = null;
-
-    /**
-     * @psalm-suppress PossiblyUnusedProperty - used in DQL
-     */
-    #[ORM\ManyToOne(targetEntity: RegularGivingMandate::class)]
-    protected ?RegularGivingMandate $mandate = null;
 
     /**
      * Previously known as donor postal address,
