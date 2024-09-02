@@ -88,6 +88,7 @@ readonly class Money implements \JsonSerializable, \Stringable
     }
 
     /**
+     * Returns an amount in major units as a string, e.g. '1.00' for one pound.
      * @return numeric-string
      */
     public function toNumericString(): string
