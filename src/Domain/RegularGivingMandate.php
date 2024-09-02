@@ -175,21 +175,21 @@ class RegularGivingMandate extends SalesforceWriteProxy
             false,
             $donor->donorName,
             $donor->emailAddress,
-            'GB', // @todo - take country code from donor.
+            $donor->getBillingCountryCode(),
             '0'
         );
 
         $donation->update(
             giftAid: $this->giftAid,
             tipGiftAid: false,
-            donorHomeAddressLine1: 'Address line 1', // @todo - take address from donor
-            donorHomePostcode: 'SW1A 1AA', // @todo - take postcode from donor
+            donorHomeAddressLine1: $donor->getDonorHomeAddressLine1(),
+            donorHomePostcode: $donor->getDonorHomePostcode(),
             donorName: $donor->donorName,
             donorEmailAddress: $donor->emailAddress,
             tbgComms: false,
             charityComms: false,
             championComms: false,
-            donorBillingPostcode: 'SW1A 1AA', // @todo - take postcode from donor
+            donorBillingPostcode: $donor->getDonorBillingPostcode(),
         );
 
         if ($this->activeFrom === null) {

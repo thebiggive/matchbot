@@ -111,12 +111,16 @@ class RegularGivingMandateTest extends TestCase
             StripeCustomerId::of('cus_1234'),
         );
 
+        $donor->setDonorHomePostcode('SW1A 1AA');
+        $donor->setDonorBillingPostcode('SW1A 1AA');
+        $donor->setDonorHomeAddressLine1('Address line 1');
+        $donor->setBillingCountryCode('GB');
+
         $donation = $mandate->createPreAuthorizedDonation(
             DonationSequenceNumber::of($sequenceNo),
             $donor,
             $this->createStub(Campaign::class)
         );
-
         $this->assertEquals(
             (new \DateTimeImmutable(
                 $expected,

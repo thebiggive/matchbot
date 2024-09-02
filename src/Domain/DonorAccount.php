@@ -3,6 +3,7 @@
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
+use MatchBot\Application\Assertion;
 
 /**
  * This is new, about to be brought into use.
@@ -30,6 +31,28 @@ class DonorAccount extends Model
 
     #[ORM\Embedded(class: 'StripeCustomerId', columnPrefix: false)]
     public readonly StripeCustomerId $stripeCustomerId;
+
+    #[ORM\Column(type: 'string', length: 2, nullable: true)]
+    private ?string $billingCountryCode = null;
+
+    /**
+     * From residential address, required if donor will claim Gift Aid.
+     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $donorHomeAddressLine1 = null;
+
+    /**
+     * From residential address, if donor is claiming Gift Aid.
+     */
+    #[ORM\Column(type: 'string', nullable: true)]
+    protected ?string $donorHomePostcode = null;
+
+    /**
+     * May be a post code or equivilent from anywhere in the world,
+     * so we allow up to 15 chars which has been enough for all donors in the last 12 months.
+     */
+    #[ORM\Column(type: 'string', nullable: true)]
+    protected ?string $donorBillingPostcode = null;
 
     /**
      * The payment method selected for use in off session, regular giving payments, when the donor isn't around to
@@ -64,5 +87,51 @@ class DonorAccount extends Model
     public function setRegularGivingPaymentMethod(StripePaymentMethodId $methodId): void
     {
         $this->regularGivingPaymentMethod = $methodId->stripePaymentMethodId;
+    }
+
+    /**
+     */
+    public function setBillingCountryCode(?string $billingCountryCode): void
+    {
+        Assertion::nullOrLength($billingCountryCode, 2);
+        $this->billingCountryCode = $billingCountryCode;
+    }
+
+    public function getBillingCountryCode(): ?string
+    {
+        return $this->billingCountryCode;
+    }
+
+    public function getDonorHomeAddressLine1(): ?string
+    {
+        return $this->donorHomeAddressLine1;
+    }
+
+    public function setDonorHomeAddressLine1(?string $donorHomeAddressLine1): void
+    {
+        Assertion::nullOrBetweenLength($donorHomeAddressLine1, 2, 255);
+        $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
+    }
+
+    public function getDonorHomePostcode(): ?string
+    {
+        return $this->donorHomePostcode;
+    }
+
+    public function setDonorHomePostcode(?string $donorHomePostcode): void
+    {
+        Assertion::nullOrBetweenLength($donorHomePostcode, 3, 10);
+        $this->donorHomePostcode = $donorHomePostcode;
+    }
+
+    public function getDonorBillingPostcode(): ?string
+    {
+        return $this->donorBillingPostcode;
+    }
+
+    public function setDonorBillingPostcode(?string $donorBillingPostcode): void
+    {
+        Assertion::nullOrBetweenLength($donorBillingPostcode, 1, 15);
+        $this->donorBillingPostcode = $donorBillingPostcode;
     }
 }
