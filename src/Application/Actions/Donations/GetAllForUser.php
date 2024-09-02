@@ -26,7 +26,6 @@ class GetAllForUser extends Action
     #[Pure]
     public function __construct(
         private DonationRepository $donationRepository,
-        private Environment $environment,
         LoggerInterface $logger
     ) {
         parent::__construct($logger);
@@ -45,10 +44,6 @@ class GetAllForUser extends Action
 
 
         $stripeCustomerId = StripeCustomerId::of($customerId);
-
-        if (! $this->environment->isFeatureEnabledListPastDonations()) {
-            throw new HttpNotFoundException($request);
-        }
 
         $donations = $this->donationRepository->findAllCompleteForCustomer($stripeCustomerId);
 
