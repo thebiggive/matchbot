@@ -87,7 +87,6 @@ class DonationPersistenceTest extends IntegrationTest
             'charityFeeVat' => '0.00',
             'originalPspFee' => '0.00',
             'currencyCode' => 'GBP',
-            'feeCoverAmount' => '0.00',
             'collectedAt' => null,
             'refundedAt' => '2023-06-22 10:00:00',
             'tbgShouldProcessGiftAid' => null,
@@ -101,6 +100,8 @@ class DonationPersistenceTest extends IntegrationTest
             'paymentMethodType' => 'card',
             'totalPaidByDonor' => null,
             'preAuthorizationDate' => null,
+            'mandate_id' => null,
+            'mandateSequenceNumber' => null,
 
             'updatedAt' => '1970-01-01',
             'createdAt' => '1970-01-01'
