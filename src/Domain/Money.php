@@ -86,4 +86,12 @@ readonly class Money implements \JsonSerializable, \Stringable
     {
         return $this->currency->isoCode() . ' ' . ($this->amountInPence / 100);
     }
+
+    /**
+     * @return numeric-string
+     */
+    public function toNumericString(): string
+    {
+        return bcdiv((string) $this->amountInPence, '100', 2);
+    }
 }

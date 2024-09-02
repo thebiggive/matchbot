@@ -24,6 +24,7 @@ readonly class DonationCreate
     /**
      * @param string $donationAmount In full currency unit, e.g. whole pounds GBP, whole dollars USD
      * @psalm-param numeric-string $donationAmount
+     * @psalm-param ?numeric-string $tipAmount
      * @throws AssertionFailedException
      */
     public function __construct(

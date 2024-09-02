@@ -158,4 +158,59 @@ class RegularGivingMandate extends SalesforceWriteProxy
         Assertion::same($this->status, MandateStatus::Active);
         $this->donationsCreatedUpTo = $donationsCreatedUpTo;
     }
+
+    public function createPreAuthorizedDonation(
+        DonationSequenceNumber $sequenceNumber,
+        DonorAccount $donor,
+        Campaign $campaign
+    ): Donation {
+        $donation = new Donation(
+            $this->amount->toNumericString(),
+            $this->amount->currency->isoCode(),
+            PaymentMethodType::Card,
+            $campaign,
+            false,
+            false,
+            $donor->stripeCustomerId->stripeCustomerId,
+            false,
+            $donor->donorName,
+            $donor->emailAddress,
+            'GB', // @todo - take country code from donor.
+            '0'
+        );
+
+        $donation->update(
+            giftAid: $this->giftAid,
+            tipGiftAid: false,
+            donorHomeAddressLine1: 'Address line 1', // @todo - take address from donor
+            donorHomePostcode: 'SW1A 1AA', // @todo - take postcode from donor
+            donorName: $donor->donorName,
+            donorEmailAddress: $donor->emailAddress,
+            tbgComms: false,
+            charityComms: false,
+            championComms: false,
+            donorBillingPostcode: 'SW1A 1AA', // @todo - take postcode from donor
+        );
+
+        if ($this->activeFrom === null) {
+            throw new \Exception('Missing activation date - is this an active mandate?');
+        }
+
+        $secondDonationDate = $this->firstPaymentDayAfter($this->activeFrom);
+
+        if ($sequenceNumber->number < 2) {
+            // first donation in mandate should be taken on-session, not pre-authorized.
+            throw new \Exception('Cannot generate pre-authorized first donation');
+        }
+
+        $offset = $sequenceNumber->number - 2;
+
+        $preAuthorizationdate = $secondDonationDate->modify("+$offset months");
+
+        \assert($preAuthorizationdate instanceof \DateTimeImmutable);
+
+        $donation->preAuthorize($preAuthorizationdate);
+
+        return $donation;
+    }
 }
