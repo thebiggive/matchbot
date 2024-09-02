@@ -352,18 +352,18 @@ class Donation extends SalesforceWriteProxy
          * Campaign shouldn't be null generally but is when called from this deprecated method.
          */
         $donation = new self(
-            $amount,
-            $currencyCode,
-            $paymentMethodType,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            '0',
+            amount: $amount,
+            currencyCode: $currencyCode,
+            paymentMethodType: $paymentMethodType,
+            campaign: null,
+            charityComms: null,
+            championComms: null,
+            pspCustomerId: null,
+            optInTbgEmail: null,
+            donorName: null,
+            emailAddress: null,
+            countryCode: null,
+            tipAmount: '0',
         );
 
         return $donation;
