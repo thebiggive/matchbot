@@ -10,11 +10,6 @@ enum Environment
     case Local;
     case Test;
 
-    public function isFeatureEnabledListPastDonations(): bool
-    {
-        return $this !== self::Production;
-    }
-
     public function isFeatureEnabledRegularGiving(): bool
     {
         return $this !== self::Production;
