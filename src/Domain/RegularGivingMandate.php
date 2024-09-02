@@ -182,14 +182,14 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $donation->update(
             giftAid: $this->giftAid,
             tipGiftAid: false,
-            donorHomeAddressLine1: $donor->getDonorHomeAddressLine1(),
-            donorHomePostcode: $donor->getDonorHomePostcode(),
+            donorHomeAddressLine1: $donor->getHomeAddressLine1(),
+            donorHomePostcode: $donor->getHomePostcode(),
             donorName: $donor->donorName,
             donorEmailAddress: $donor->emailAddress,
             tbgComms: false,
             charityComms: false,
             championComms: false,
-            donorBillingPostcode: $donor->getDonorBillingPostcode(),
+            donorBillingPostcode: $donor->getBillingPostcode(),
         );
 
         if ($this->activeFrom === null) {

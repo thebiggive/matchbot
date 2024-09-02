@@ -111,9 +111,9 @@ class RegularGivingMandateTest extends TestCase
             StripeCustomerId::of('cus_1234'),
         );
 
-        $donor->setDonorHomePostcode('SW1A 1AA');
-        $donor->setDonorBillingPostcode('SW1A 1AA');
-        $donor->setDonorHomeAddressLine1('Address line 1');
+        $donor->setHomePostcode('SW1A 1AA');
+        $donor->setBillingPostcode('SW1A 1AA');
+        $donor->setHomeAddressLine1('Address line 1');
         $donor->setBillingCountryCode('GB');
 
         $donation = $mandate->createPreAuthorizedDonation(

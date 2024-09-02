@@ -39,20 +39,20 @@ class DonorAccount extends Model
      * From residential address, required if donor will claim Gift Aid.
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    private ?string $donorHomeAddressLine1 = null;
+    private ?string $homeAddressLine1 = null;
 
     /**
      * From residential address, if donor is claiming Gift Aid.
      */
     #[ORM\Column(type: 'string', nullable: true)]
-    protected ?string $donorHomePostcode = null;
+    protected ?string $homePostcode = null;
 
     /**
      * May be a post code or equivilent from anywhere in the world,
      * so we allow up to 15 chars which has been enough for all donors in the last 12 months.
      */
     #[ORM\Column(type: 'string', nullable: true)]
-    protected ?string $donorBillingPostcode = null;
+    protected ?string $billingPostcode = null;
 
     /**
      * The payment method selected for use in off session, regular giving payments, when the donor isn't around to
@@ -102,36 +102,36 @@ class DonorAccount extends Model
         return $this->billingCountryCode;
     }
 
-    public function getDonorHomeAddressLine1(): ?string
+    public function getHomeAddressLine1(): ?string
     {
-        return $this->donorHomeAddressLine1;
+        return $this->homeAddressLine1;
     }
 
-    public function setDonorHomeAddressLine1(?string $donorHomeAddressLine1): void
+    public function setHomeAddressLine1(?string $homeAddressLine1): void
     {
-        Assertion::nullOrBetweenLength($donorHomeAddressLine1, 2, 255);
-        $this->donorHomeAddressLine1 = $donorHomeAddressLine1;
+        Assertion::nullOrBetweenLength($homeAddressLine1, 2, 255);
+        $this->homeAddressLine1 = $homeAddressLine1;
     }
 
-    public function getDonorHomePostcode(): ?string
+    public function getHomePostcode(): ?string
     {
-        return $this->donorHomePostcode;
+        return $this->homePostcode;
     }
 
-    public function setDonorHomePostcode(?string $donorHomePostcode): void
+    public function setHomePostcode(?string $homePostcode): void
     {
-        Assertion::nullOrBetweenLength($donorHomePostcode, 3, 10);
-        $this->donorHomePostcode = $donorHomePostcode;
+        Assertion::nullOrBetweenLength($homePostcode, 3, 10);
+        $this->homePostcode = $homePostcode;
     }
 
-    public function getDonorBillingPostcode(): ?string
+    public function getBillingPostcode(): ?string
     {
-        return $this->donorBillingPostcode;
+        return $this->billingPostcode;
     }
 
-    public function setDonorBillingPostcode(?string $donorBillingPostcode): void
+    public function setBillingPostcode(?string $billingPostcode): void
     {
-        Assertion::nullOrBetweenLength($donorBillingPostcode, 1, 15);
-        $this->donorBillingPostcode = $donorBillingPostcode;
+        Assertion::nullOrBetweenLength($billingPostcode, 1, 15);
+        $this->billingPostcode = $billingPostcode;
     }
 }
