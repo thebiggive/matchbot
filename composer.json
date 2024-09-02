@@ -105,6 +105,7 @@
             "doctrine orm:clear-cache:result"
         ],
         "doctrine:delete-and-recreate": [
+            "@doctrine:cache:clear",
             "doctrine orm:schema-tool:drop --full-database --force",
             "@doctrine:migrate"
         ],
