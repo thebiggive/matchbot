@@ -820,7 +820,7 @@ class Donation extends SalesforceWriteProxy
     public function getTransactionId(): string
     {
         if (!$this->transactionId) {
-            throw new \LogicException('Transaction ID not set');
+            throw new \LogicException('Transaction ID not set for donation ' . ($this->id ?? 'null'));
         }
 
         return $this->transactionId;

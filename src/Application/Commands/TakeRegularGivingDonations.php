@@ -101,7 +101,11 @@ class TakeRegularGivingDonations extends LockingCommand
         foreach ($donations as $donation) {
             $oldStatus = $donation->getDonationStatus();
             $output->writeln("processing donation $donation");
-            $this->donationService->confirmPreAuthorized($donation);
+            try {
+                $this->donationService->confirmPreAuthorized($donation);
+            } catch (\Exception $exception) {
+                $output->writeln('Exception, skipping donation: ' . $exception->getMessage());
+            }
             $output->writeln(
                 "Donation {$donation->getUuid()} went from " .
                 "{$oldStatus->name} to {$donation->getDonationStatus()->name}"

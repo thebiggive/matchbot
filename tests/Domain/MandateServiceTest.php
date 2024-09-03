@@ -7,6 +7,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationSequenceNumber;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
@@ -46,6 +47,7 @@ class MandateServiceTest extends TestCase
             $this->donorAccountRepositoryProphecy->reveal(),
             $this->campaignRepositoryProphecy->reveal(),
             $this->createStub(EntityManagerInterface::class),
+            $this->createStub(DonationService::class),
         );
     }
     public function testMakingNextDonationForMandate(): void

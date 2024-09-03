@@ -14,6 +14,7 @@ readonly class MandateService
         private DonorAccountRepository $donorAccountRepository,
         private CampaignRepository $campaignRepository,
         private EntityManagerInterface $entityManager,
+        private DonationService $donationService,
     ) {
     }
     public function makeNextDonationForMandate(RegularGivingMandate $mandate): Donation
@@ -42,6 +43,8 @@ readonly class MandateService
             $donor,
             $campaign,
         );
+
+        $this->donationService->enrollNewDonation($donation);
 
         return $donation;
     }

@@ -93,9 +93,8 @@ class SetupTestMandate extends LockingCommand
         $amount = (int)($input->getArgument('amount') ?? '1');
         $campaignName = (string) $input->getOption('campaign');
 
-        (new Criteria())->where(Criteria::expr()->contains('name', $campaignName));
-
-        $campaign = $this->campaignRepository->matching(new Criteria())->first();
+        $criteria = (new Criteria())->where(Criteria::expr()->contains('name', $campaignName));
+        $campaign = $this->campaignRepository->matching($criteria)->first();
 
         if (!$campaign) {
             $io->error("No campaign found for {$campaignName}");
