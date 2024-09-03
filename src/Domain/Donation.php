@@ -364,6 +364,8 @@ class Donation extends SalesforceWriteProxy
             emailAddress: null,
             countryCode: null,
             tipAmount: '0',
+            mandate: null,
+            mandateSequenceNumber: null,
         );
 
         return $donation;
@@ -387,6 +389,8 @@ class Donation extends SalesforceWriteProxy
         ?EmailAddress $emailAddress,
         ?string $countryCode,
         ?string $tipAmount,
+        ?RegularGivingMandate $mandate,
+        ?DonationSequenceNumber $mandateSequenceNumber,
     ) {
         $this->setUuid(Uuid::uuid4());
         $this->fundingWithdrawals = new ArrayCollection();
@@ -435,6 +439,9 @@ class Donation extends SalesforceWriteProxy
         if (isset($tipAmount)) {
             $this->setTipAmount($tipAmount);
         }
+
+        $this->mandate = $mandate;
+        $this->mandateSequenceNumber = $mandateSequenceNumber?->number;
     }
 
     /**
@@ -457,6 +464,8 @@ class Donation extends SalesforceWriteProxy
             emailAddress: $donationData->emailAddress,
             countryCode: $donationData->countryCode,
             tipAmount: $donationData->tipAmount,
+            mandate: null,
+            mandateSequenceNumber: null,
         );
     }
 

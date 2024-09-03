@@ -176,7 +176,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,
             countryCode: $donor->getBillingCountryCode(),
-            tipAmount: '0'
+            tipAmount: '0',
+            mandate: $this,
+            mandateSequenceNumber: $sequenceNumber,
         );
 
         $donation->update(
