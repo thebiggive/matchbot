@@ -37,7 +37,7 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
 
         $campaignClientProphecy = $this->prophesize(Client\Campaign::class);
 
-        $campaignClientProphecy->getById($campaign->getSalesforceId())->willReturn(
+        $campaignClientProphecy->getById($campaign->getSalesforceId(), withCache: false)->willReturn(
             $this->simulatedCampaignFromSFAPI(
                 $sfId,
                 'New Charity Name',

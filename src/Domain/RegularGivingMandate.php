@@ -2,8 +2,6 @@
 
 namespace MatchBot\Domain;
 
-use Brick\DateTime\LocalDate;
-use Brick\DateTime\LocalDateTime;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 use Ramsey\Uuid\Uuid;

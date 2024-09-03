@@ -95,7 +95,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @throws \Exception if start or end dates' formats are invalid
      * @throws Client\CampaignNotReady
      */
-    protected function doUpdateFromSf(SalesforceReadProxy $proxy): void
+    protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
     {
         $campaign = $proxy;
 
@@ -105,7 +105,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             throw new \Exception("Cannot update campaign with missing salesforce ID");
         }
 
-        $campaignData = $client->getById($salesforceId);
+        $campaignData = $client->getById($salesforceId, $withCache);
 
         if ($campaign->hasBeenPersisted() && $campaign->getCurrencyCode() !== $campaignData['currencyCode']) {
             $this->logWarning(sprintf(

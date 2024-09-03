@@ -34,4 +34,13 @@ abstract class Common
 
         return $this->httpClient;
     }
+
+    protected function getUri(string $uri, bool $withCache): string
+    {
+        if (!$withCache) {
+            $uri .= '?nocache=1';
+        }
+
+        return $uri;
+    }
 }

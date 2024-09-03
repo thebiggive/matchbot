@@ -180,14 +180,14 @@ class FundRepository extends SalesforceReadProxyRepository
      *
      * @param Fund $proxy
      */
-    protected function doUpdateFromSf(SalesforceReadProxy $proxy): void
+    protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
     {
         $fundId = $proxy->getSalesforceId();
         if ($fundId == null) {
             throw new \Exception("Missing ID on fund, cannot update from SF");
         }
 
-        $fundData = $this->getClient()->getById($fundId);
+        $fundData = $this->getClient()->getById($fundId, $withCache);
         $proxy->setName($fundData['name'] ?? '');
     }
 }
