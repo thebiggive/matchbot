@@ -2,6 +2,7 @@
 
 namespace MatchBot\Domain;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use Stripe\Mandate;
 
@@ -12,6 +13,7 @@ readonly class MandateService
         private DonationRepository $donationRepository,
         private DonorAccountRepository $donorAccountRepository,
         private CampaignRepository $campaignRepository,
+        private EntityManagerInterface $entityManager,
     ) {
     }
     public function makeNextDonationForMandate(RegularGivingMandate $mandate): Donation
@@ -25,9 +27,17 @@ readonly class MandateService
         }
 
         $donor = $this->donorAccountRepository->findByPersonId($mandate->donorId);
-        Assertion::notNull($donor); // would only be null if donor was deleted after mandate created.
+
+        // would only be null if donor was deleted after mandate created.
+        Assertion::notNull($donor, "donor not found for id {$mandate->donorId->id}");
 
         $campaign = $this->campaignRepository->findOneBySalesforceId($mandate->getCampaignId());
+        Assertion::notNull($campaign); // we don't delete old campaigns
+
+        echo "mandate ID: {$mandate->getId()}\n";
+        echo "campaign ID: {$campaign->getId()}\n";
+        $this->entityManager->persist($mandate);
+        $this->entityManager->persist($campaign);
 
         $donation = $mandate->createPreAuthorizedDonation(
             $lastSequenceNumber->next(),

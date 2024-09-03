@@ -125,10 +125,15 @@ class SetupTestMandate extends LockingCommand
         $donor = $this->donorAccountRepository->findByStripeIdOrNull(StripeCustomerId::of($donorStripeId));
         if ($donor === null) {
             $donor = new DonorAccount(
+                $donorId,
                 EmailAddress::of('test@biggive.org'),
                 DonorName::of('First Name', 'Last Name'),
                 StripeCustomerId::of($donorStripeId)
             );
+            $donor->setBillingCountryCode('GB');
+            $donor->setBillingPostcode('SW1 1AA');
+            $donor->setHomePostcode('SW1 1AA');
+            $donor->setHomeAddressLine1('Home line 1');
             $this->em->persist($donor);
         }
         $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of((string) $input->getOption('donor-pmid')));

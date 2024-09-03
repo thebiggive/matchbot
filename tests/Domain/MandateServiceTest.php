@@ -2,6 +2,7 @@
 
 namespace Domain;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DonationRepository;
@@ -33,7 +34,7 @@ class MandateServiceTest extends TestCase
 
     /** @var ObjectProphecy<CampaignRepository> */
     private ObjectProphecy $campaignRepositoryProphecy;
-    private $sut;
+    private MandateService $sut;
 
     public function setUp(): void
     {
@@ -43,7 +44,8 @@ class MandateServiceTest extends TestCase
         $this->sut = new MandateService(
             $this->donationRepositoryProphecy->reveal(),
             $this->donorAccountRepositoryProphecy->reveal(),
-            $this->campaignRepositoryProphecy->reveal()
+            $this->campaignRepositoryProphecy->reveal(),
+            $this->createStub(EntityManagerInterface::class),
         );
     }
     public function testMakingNextDonationForMandate(): void
@@ -52,6 +54,7 @@ class MandateServiceTest extends TestCase
         $personId = PersonId::of('d38667b2-69db-11ef-8885-3f5bcdfd1960');
         $campaignId = Salesforce18Id::ofCampaign('campaignId12345678');
         $donorAccount = new DonorAccount(
+            null,
             EmailAddress::of('email@example.com'),
             DonorName::of('First', 'Last'),
             StripeCustomerId::of('cus_x')

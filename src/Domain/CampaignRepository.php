@@ -90,7 +90,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         return $campaign;
     }
 
-    public function findOneBySalesforceId(Salesforce18Id $salesforceId): Campaign
+    public function findOneBySalesforceId(Salesforce18Id $salesforceId): ?Campaign
     {
         return $this->findOneBy(['salesforceId', $salesforceId->value]);
     }

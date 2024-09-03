@@ -1561,6 +1561,17 @@ class Donation extends SalesforceWriteProxy
 
     public function getMandateSequenceNumber(): ?DonationSequenceNumber
     {
+        if ($this->mandateSequenceNumber === null) {
+            return null;
+        }
         return DonationSequenceNumber::of($this->mandateSequenceNumber);
+    }
+
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function getMandate(): ?RegularGivingMandate
+    {
+        return $this->mandate;
     }
 }

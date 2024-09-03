@@ -133,7 +133,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         // We only operate in UK market so all timestamps should be for this TZ:
         // Not sure why some timestamps generated in tests are having TZ names BST or GMT rather than London,
         // but that's also OK.
-        Assertion::inArray($currentDateTime->getTimezone()->getName(), ['Europe/London', 'BST', 'GMT']);
+        Assertion::inArray($currentDateTime->getTimezone()->getName(), ['Europe/London', 'BST', 'GMT', 'UTC']);
 
         $nextPaymentDayIsNextMonth = $currentDateTime->format('d') >= $this->dayOfMonth->value;
 

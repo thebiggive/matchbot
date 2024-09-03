@@ -7,6 +7,7 @@ namespace MatchBot\Application\Commands;
 use Brick\DateTime\Instant;
 use Doctrine\ORM\EntityManager;
 use MatchBot\Application\Matching;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\DonationRepository;
@@ -88,5 +89,6 @@ class TakeRegularGivingDonations extends LockingCommand
     {
         $donation = $this->mandateService->makeNextDonationForMandate($mandate);
         $this->em->persist($donation);
+        $this->em->flush();
     }
 }
