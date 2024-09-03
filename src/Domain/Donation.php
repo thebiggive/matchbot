@@ -346,17 +346,52 @@ class Donation extends SalesforceWriteProxy
         PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
         string $currencyCode = 'GBP'
     ): self {
-        $donation = new self($amount, $currencyCode, $paymentMethodType);
-        $donation->psp = 'stripe';
+
+        /**
+         * @psalm-suppress NullArgument
+         * Campaign shouldn't be null generally but is when called from this deprecated method.
+         */
+        $donation = new self(
+            amount: $amount,
+            currencyCode: $currencyCode,
+            paymentMethodType: $paymentMethodType,
+            campaign: null,
+            charityComms: null,
+            championComms: null,
+            pspCustomerId: null,
+            optInTbgEmail: null,
+            donorName: null,
+            emailAddress: null,
+            countryCode: null,
+            tipAmount: '0',
+            mandate: null,
+            mandateSequenceNumber: null,
+        );
 
         return $donation;
     }
 
     /**
      * @psalm-param numeric-string $amount
+     * @psalm-param ?numeric-string $tipAmount
+     * @psalm-param Campaign $campaign
      */
-    private function __construct(string $amount, string $currencyCode, PaymentMethodType $paymentMethodType)
-    {
+    public function __construct(
+        string $amount,
+        string $currencyCode,
+        PaymentMethodType $paymentMethodType,
+        $campaign, // relying on Psalm type only because tests pass null
+        ?bool $charityComms,
+        ?bool $championComms,
+        ?string $pspCustomerId,
+        ?bool $optInTbgEmail,
+        ?DonorName $donorName,
+        ?EmailAddress $emailAddress,
+        ?string $countryCode,
+        ?string $tipAmount,
+        ?RegularGivingMandate $mandate,
+        ?DonationSequenceNumber $mandateSequenceNumber,
+    ) {
         $this->setUuid(Uuid::uuid4());
         $this->fundingWithdrawals = new ArrayCollection();
         $this->currencyCode = $currencyCode;
@@ -377,6 +412,36 @@ class Donation extends SalesforceWriteProxy
 
         $this->amount = $amount;
         $this->paymentMethodType = $paymentMethodType;
+        $this->createdNow(); // Mimic ORM persistence hook attribute, calling its fn explicitly instead.
+        $this->setPsp('stripe');
+
+        /**
+         * @psalm-suppress RedundantConditionGivenDocblockType - deprecated function used in tests does not respect
+         * docblock type.
+         */
+        if ($campaign) {
+            $this->setCampaign($campaign); // Charity & match expectation determined implicitly from this
+            $this->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
+        }
+        $this->setCharityComms($charityComms);
+        $this->setChampionComms($championComms);
+        $this->setPspCustomerId($pspCustomerId);
+        $this->setTbgComms($optInTbgEmail);
+        $this->setDonorName($donorName);
+        $this->setDonorEmailAddress($emailAddress);
+
+
+        // We probably don't need to test for all these, just replicationg behaviour of `empty` that was used before.
+        if ($countryCode !== '' && $countryCode !== null && $countryCode !== '0') {
+            $this->setDonorCountryCode(strtoupper($countryCode));
+        }
+
+        if (isset($tipAmount)) {
+            $this->setTipAmount($tipAmount);
+        }
+
+        $this->mandate = $mandate;
+        $this->mandateSequenceNumber = $mandateSequenceNumber?->number;
     }
 
     /**
@@ -385,40 +450,23 @@ class Donation extends SalesforceWriteProxy
      */
     public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
     {
-        $psp = $donationData->psp;
-        Assertion::eq($psp, 'stripe');
-
-        $donation = new self(
-            $donationData->donationAmount,
-            $donationData->currencyCode,
-            $donationData->pspMethodType,
+        Assertion::eq($donationData->psp, 'stripe');
+        return new self(
+            amount: $donationData->donationAmount,
+            currencyCode: $donationData->currencyCode,
+            paymentMethodType: $donationData->pspMethodType,
+            campaign: $campaign,
+            charityComms: $donationData->optInCharityEmail,
+            championComms: $donationData->optInChampionEmail,
+            pspCustomerId: $donationData->pspCustomerId,
+            optInTbgEmail: $donationData->optInTbgEmail,
+            donorName: $donationData->donorName,
+            emailAddress: $donationData->emailAddress,
+            countryCode: $donationData->countryCode,
+            tipAmount: $donationData->tipAmount,
+            mandate: null,
+            mandateSequenceNumber: null,
         );
-
-        $donation->createdNow(); // Mimic ORM persistence hook attribute, calling its fn explicitly instead.
-        $donation->setPsp($psp);
-        $donation->setCampaign($campaign); // Charity & match expectation determined implicitly from this
-
-        // `DonationCreate` doesn't support a distinct property for tip gift aid yet & we only ask once about GA.
-        $donation->setTipGiftAid(false);
-
-        $donation->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
-
-        $donation->setCharityComms($donationData->optInCharityEmail);
-        $donation->setChampionComms($donationData->optInChampionEmail);
-        $donation->setPspCustomerId($donationData->pspCustomerId);
-        $donation->setTbgComms($donationData->optInTbgEmail);
-        $donation->setDonorName($donationData->donorName);
-        $donation->setDonorEmailAddress($donationData->emailAddress);
-
-        if (!empty($donationData->countryCode)) {
-            $donation->setDonorCountryCode(strtoupper($donationData->countryCode));
-        }
-
-        if (isset($donationData->tipAmount)) {
-            $donation->setTipAmount($donationData->tipAmount);
-        }
-
-        return $donation;
     }
 
     private static function maximumAmount(PaymentMethodType $paymentMethodType): int
@@ -1475,6 +1523,11 @@ class Donation extends SalesforceWriteProxy
         $this->assertIsReadyToConfirm();
         $this->preAuthorizationDate = $paymentDate;
         $this->donationStatus = DonationStatus::PreAuthorized;
+    }
+
+    public function getPreAuthorizationDate(): ?\DateTimeImmutable
+    {
+        return $this->preAuthorizationDate;
     }
 
     /**

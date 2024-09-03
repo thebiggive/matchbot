@@ -158,4 +158,61 @@ class RegularGivingMandate extends SalesforceWriteProxy
         Assertion::same($this->status, MandateStatus::Active);
         $this->donationsCreatedUpTo = $donationsCreatedUpTo;
     }
+
+    public function createPreAuthorizedDonation(
+        DonationSequenceNumber $sequenceNumber,
+        DonorAccount $donor,
+        Campaign $campaign
+    ): Donation {
+        $donation = new Donation(
+            amount: $this->amount->toNumericString(),
+            currencyCode: $this->amount->currency->isoCode(),
+            paymentMethodType: PaymentMethodType::Card,
+            campaign: $campaign,
+            charityComms: false,
+            championComms: false,
+            pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            optInTbgEmail: false,
+            donorName: $donor->donorName,
+            emailAddress: $donor->emailAddress,
+            countryCode: $donor->getBillingCountryCode(),
+            tipAmount: '0',
+            mandate: $this,
+            mandateSequenceNumber: $sequenceNumber,
+        );
+
+        $donation->update(
+            giftAid: $this->giftAid,
+            tipGiftAid: false,
+            donorHomeAddressLine1: $donor->getHomeAddressLine1(),
+            donorHomePostcode: $donor->getHomePostcode(),
+            donorName: $donor->donorName,
+            donorEmailAddress: $donor->emailAddress,
+            tbgComms: false,
+            charityComms: false,
+            championComms: false,
+            donorBillingPostcode: $donor->getBillingPostcode(),
+        );
+
+        if ($this->activeFrom === null) {
+            throw new \Exception('Missing activation date - is this an active mandate?');
+        }
+
+        $secondDonationDate = $this->firstPaymentDayAfter($this->activeFrom);
+
+        if ($sequenceNumber->number < 2) {
+            // first donation in mandate should be taken on-session, not pre-authorized.
+            throw new \Exception('Cannot generate pre-authorized first donation');
+        }
+
+        $offset = $sequenceNumber->number - 2;
+
+        $preAuthorizationdate = $secondDonationDate->modify("+$offset months");
+
+        \assert($preAuthorizationdate instanceof \DateTimeImmutable);
+
+        $donation->preAuthorize($preAuthorizationdate);
+
+        return $donation;
+    }
 }
