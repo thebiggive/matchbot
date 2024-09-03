@@ -221,7 +221,7 @@ class Donation extends SalesforceWriteProxy
      * @psalm-suppress PossiblyUnusedProperty - used in DQL
      */
     #[ORM\ManyToOne(targetEntity: RegularGivingMandate::class)]
-    protected ?RegularGivingMandate $mandate = null;
+    private ?RegularGivingMandate $mandate = null;
 
     /**
      * Previously known as donor postal address,

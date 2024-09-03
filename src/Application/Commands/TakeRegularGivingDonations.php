@@ -4,20 +4,13 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
-use Brick\DateTime\Instant;
-use Doctrine\ORM\EntityManager;
-use MatchBot\Application\Matching;
-use MatchBot\Domain\Campaign;
-use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\CampaignFundingRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
-use MatchBot\Domain\FundingWithdrawalRepository;
 use MatchBot\Domain\MandateService;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -34,7 +27,7 @@ class TakeRegularGivingDonations extends LockingCommand
         private DonationRepository $donationRepository,
         private DonationService $donationService,
         private MandateService $mandateService,
-        private EntityManager $em,
+        private EntityManagerInterface $em,
     ) {
         parent::__construct();
     }
