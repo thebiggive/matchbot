@@ -34,8 +34,6 @@ readonly class MandateService
         $campaign = $this->campaignRepository->findOneBySalesforceId($mandate->getCampaignId());
         Assertion::notNull($campaign); // we don't delete old campaigns
 
-        echo "mandate ID: {$mandate->getId()}\n";
-        echo "campaign ID: {$campaign->getId()}\n";
         $this->entityManager->persist($mandate);
         $this->entityManager->persist($campaign);
 
