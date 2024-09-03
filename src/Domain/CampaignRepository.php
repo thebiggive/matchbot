@@ -90,6 +90,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
         return $campaign;
     }
 
+    public function findOneBySalesforceId(Salesforce18Id $salesforceId): ?Campaign
+    {
+        return $this->findOneBy(['salesforceId' => $salesforceId->value]);
+    }
+
     /**
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid

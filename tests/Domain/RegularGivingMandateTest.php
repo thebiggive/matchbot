@@ -67,6 +67,7 @@ class RegularGivingMandateTest extends TestCase
         ))->setTimezone(new \DateTimeZone('Europe/London')));
 
         $donor = new DonorAccount(
+            null,
             EmailAddress::of('fred@example.com'),
             DonorName::of('FirstName', 'LastName'),
             StripeCustomerId::of('cus_1234'),
@@ -106,6 +107,7 @@ class RegularGivingMandateTest extends TestCase
         ))->setTimezone(new \DateTimeZone('Europe/London')));
 
         $donor = new DonorAccount(
+            null,
             EmailAddress::of('fred@example.com'),
             DonorName::of('FirstName', 'LastName'),
             StripeCustomerId::of('cus_1234'),

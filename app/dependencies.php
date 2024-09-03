@@ -6,6 +6,7 @@ use DI\Container;
 use DI\ContainerBuilder;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
@@ -411,6 +412,12 @@ return function (ContainerBuilder $containerBuilder) {
                 $c->get('settings')['doctrine']['connection'],
                 $c->get(LoggerInterface::class),
             );
+        },
+
+        ORM\EntityManager::class =>  static function (): never {
+            // injecting the wrong sort of EM leads to having two different entity managers running at once and
+            // confusing bugs.
+            throw new \Exception("Do not inject EntityManager - you probably want EntityManagerInterface");
         },
 
         RoutableMessageBus::class => static function (ContainerInterface $c): RoutableMessageBus {

@@ -4,20 +4,17 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
-use Brick\DateTime\Instant;
-use Doctrine\ORM\EntityManager;
-use MatchBot\Application\Matching;
-use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\CampaignFundingRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
-use MatchBot\Domain\FundingWithdrawalRepository;
 use MatchBot\Domain\MandateService;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
@@ -33,12 +30,42 @@ class TakeRegularGivingDonations extends LockingCommand
         private DonationRepository $donationRepository,
         private DonationService $donationService,
         private MandateService $mandateService,
-        private EntityManager $em,
+        private EntityManagerInterface $em,
+        private Environment $environment,
     ) {
         parent::__construct();
+
+        $this->addOption(
+            'simulated-date',
+            shortcut: 'simulated-date',
+            mode: InputOption::VALUE_REQUIRED,
+            description: 'UUID of the donor in identity service'
+        );
     }
+
+    /**
+     * When we run this for manual testing on developer machines we will need to simulate a future time
+     * instead of waiting for donations to become payable.
+     */
+    public function applySimulatedDate(?string $simulateDateInput, OutputInterface $output): void
+    {
+        switch (true) {
+            case $this->environment !== Environment::Production && is_string($simulateDateInput):
+                $this->now = new \DateTimeImmutable($simulateDateInput);
+                $output->writeln("Simulating running on {$this->now->format('Y-m-d H:i:s')}");
+                break;
+            case $this->environment === Environment::Production && is_string($simulateDateInput):
+                throw new \Exception("Cannot simulate date in production");
+            default:
+                //no-op
+        }
+    }
+
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
+        /** @psalm-suppress MixedArgument */
+        $this->applySimulatedDate($input->getOption('simulated-date'), $output);
+
         $this->createNewDonationsAccordingToRegularGivingMandates();
         $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($output);
 
@@ -86,9 +113,8 @@ class TakeRegularGivingDonations extends LockingCommand
 
     private function makeDonationForMandate(RegularGivingMandate $mandate): void
     {
-        $this->mandateService->makeNextDonationForMandate($mandate);
-        // Also have to think about what to do if we need to create more than one. Shouldn't ever happen in prod as
-        // will run this script daily and only need to create donations monthly, but probably worth dealing with in case
-        // and for dev environments.
+        $donation = $this->mandateService->makeNextDonationForMandate($mandate);
+        $this->em->persist($donation);
+        $this->em->flush();
     }
 }

@@ -221,7 +221,7 @@ class Donation extends SalesforceWriteProxy
      * @psalm-suppress PossiblyUnusedProperty - used in DQL
      */
     #[ORM\ManyToOne(targetEntity: RegularGivingMandate::class)]
-    protected ?RegularGivingMandate $mandate = null;
+    private ?RegularGivingMandate $mandate = null;
 
     /**
      * Previously known as donor postal address,
@@ -1557,5 +1557,21 @@ class Donation extends SalesforceWriteProxy
         }
 
         return $totalString;
+    }
+
+    public function getMandateSequenceNumber(): ?DonationSequenceNumber
+    {
+        if ($this->mandateSequenceNumber === null) {
+            return null;
+        }
+        return DonationSequenceNumber::of($this->mandateSequenceNumber);
+    }
+
+    /**
+     * @psalm-suppress PossiblyUnusedMethod
+     */
+    public function getMandate(): ?RegularGivingMandate
+    {
+        return $this->mandate;
     }
 }

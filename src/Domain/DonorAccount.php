@@ -4,6 +4,8 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * This is new, about to be brought into use.
@@ -22,6 +24,13 @@ use MatchBot\Application\Assertion;
 class DonorAccount extends Model
 {
     use TimestampsTrait;
+
+    /**
+     * Person ID as they are known in identity service. Nullable only for now to be compatible with existing
+     * data in prod.
+     */
+    #[ORM\Column(type: 'uuid', unique: true, nullable: true)]
+    protected ?UuidInterface $uuid = null;
 
     #[ORM\Embedded(class: 'EmailAddress', columnPrefix: false)]
     public readonly EmailAddress $emailAddress;
@@ -64,12 +73,17 @@ class DonorAccount extends Model
     #[ORM\Column(type: 'string', nullable: true, length: 255)]
     private ?string $regularGivingPaymentMethod = null;
 
-    public function __construct(EmailAddress $emailAddress, DonorName $donorName, StripeCustomerId $stripeCustomerId)
-    {
+    public function __construct(
+        ?PersonId $uuid,
+        EmailAddress $emailAddress,
+        DonorName $donorName,
+        StripeCustomerId $stripeCustomerId
+    ) {
         $this->createdNow();
         $this->emailAddress = $emailAddress;
         $this->stripeCustomerId = $stripeCustomerId;
         $this->donorName = $donorName;
+        $this->uuid = is_null($uuid) ? null : Uuid::fromString($uuid->id);
     }
 
     /**
