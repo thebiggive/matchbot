@@ -25,4 +25,9 @@ readonly class DonationSequenceNumber
     {
         return new self($number);
     }
+
+    public function next(): self
+    {
+        return new self($this->number + 1);
+    }
 }

@@ -86,9 +86,7 @@ class TakeRegularGivingDonations extends LockingCommand
 
     private function makeDonationForMandate(RegularGivingMandate $mandate): void
     {
-        $this->mandateService->makeNextDonationForMandate($mandate);
-        // Also have to think about what to do if we need to create more than one. Shouldn't ever happen in prod as
-        // will run this script daily and only need to create donations monthly, but probably worth dealing with in case
-        // and for dev environments.
+        $donation = $this->mandateService->makeNextDonationForMandate($mandate);
+        $this->em->persist($donation);
     }
 }

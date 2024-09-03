@@ -24,4 +24,9 @@ class DonorAccountRepository extends EntityRepository
         // see https://github.com/laravel-doctrine/fluent/issues/51 for using findOneBy on a field of an embeddable.
         return $this->findOneBy(['stripeCustomerId.stripeCustomerId' => $stripeAccountId->stripeCustomerId]);
     }
+
+    public function findByPersonId(PersonId $personId): ?DonorAccount
+    {
+        return $this->findOneBy(['uuid' => $personId->id]);
+    }
 }

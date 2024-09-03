@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * This is new, about to be brought into use.
@@ -22,6 +23,13 @@ use MatchBot\Application\Assertion;
 class DonorAccount extends Model
 {
     use TimestampsTrait;
+
+    /**
+     * Person ID as they are known in identity service. Nullable only for now to be compatible with existing
+     * data in prod.
+     */
+    #[ORM\Column(type: 'uuid', unique: true, nullable: true)]
+    protected ?UuidInterface $uuid;
 
     #[ORM\Embedded(class: 'EmailAddress', columnPrefix: false)]
     public readonly EmailAddress $emailAddress;

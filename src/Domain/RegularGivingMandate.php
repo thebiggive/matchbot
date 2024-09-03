@@ -35,9 +35,15 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Embedded(columnPrefix: '')]
     public readonly Money $amount;
 
+    /**
+     * @var string 18 digit salesforce ID of campaign
+     */
     #[ORM\Column()]
     private readonly string $campaignId;
 
+    /**
+     * @var string 18 digit salesforce ID of charity
+     */
     #[ORM\Column()]
     public readonly string $charityId;
 
@@ -214,5 +220,10 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $donation->preAuthorize($preAuthorizationdate);
 
         return $donation;
+    }
+
+    public function getCampaignId(): Salesforce18Id
+    {
+        return Salesforce18Id::ofCampaign($this->campaignId);
     }
 }

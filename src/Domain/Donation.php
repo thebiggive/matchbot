@@ -1558,4 +1558,9 @@ class Donation extends SalesforceWriteProxy
 
         return $totalString;
     }
+
+    public function getMandateSequenceNumber(): ?DonationSequenceNumber
+    {
+        return DonationSequenceNumber::of($this->mandateSequenceNumber);
+    }
 }
