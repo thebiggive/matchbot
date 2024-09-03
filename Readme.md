@@ -54,7 +54,7 @@ a donation funds user transfers cash into their account.
 To start the app and its dependencies (`db` and `redis`) locally:
 
 ```shell
-    docker-compose up -d app
+    docker compose up -d app
 ```
 
 
@@ -63,8 +63,8 @@ To start the app and its dependencies (`db` and `redis`) locally:
 To get PHP dependencies and an initial data in structure in place, you'll need to run these once:
 
 ```shell
-    docker-compose exec app composer install
-    docker-compose exec app composer doctrine:delete-and-recreate
+    docker compose exec app composer install
+    docker compose exec app composer doctrine:delete-and-recreate
 ```
 
 If dependencies change you may occasionally need to re-run the `composer install`.
@@ -76,7 +76,7 @@ you will need to flush Redis data to start afresh. You can remove and re-create 
 Docker container, or just flush the data store:
 
 ```shell
-    docker-compose exec redis redis-cli FLUSHALL
+    docker compose exec redis redis-cli FLUSHALL
 ```
 
 ## Run unit tests
@@ -84,8 +84,8 @@ Docker container, or just flush the data store:
 Once you have the app running, you can test with: 
 
 ```shell
-    docker-compose exec app composer run test
-    docker-compose exec app composer run integration-test
+    docker compose exec app composer run test
+    docker compose exec app composer run integration-test
 ```
 
 When run with a coverage driver (e.g. Xdebug enabled by using `thebiggive/php:dev-8.1`),
@@ -94,7 +94,7 @@ this will save coverage data to `./coverage.xml` and `./coverage-integration.xml
 Linting is run with
 
 ```shell
-    docker-compose exec app composer run lint:check
+    docker compose exec app composer run lint:check
 ```
 
 To understand how these commands are run in CI, see [the CircleCI config file](./.circleci/config.yml).
@@ -149,7 +149,7 @@ The headline for each script's purpose is defined in its description in the PHP 
 run
 
 ```shell
-    docker-compose exec app composer matchbot:list-commands
+    docker compose exec app composer matchbot:list-commands
 ```
 
 for an overview of how all [`Commands`](./src/Application/Commands) in the app describe themselves.
@@ -159,7 +159,7 @@ for an overview of how all [`Commands`](./src/Application/Commands) in the app d
 To run a script in an already-running Docker `app` container, use:
 
 ```shell
-    docker-compose exec app composer {name:of:script:from:composer.json}
+    docker compose exec app composer {name:of:script:from:composer.json}
 ```
 
 ### How tasks run on staging & production

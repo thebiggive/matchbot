@@ -42,7 +42,9 @@ class CharityUpdatedHandler
         foreach ($campaignsToUpdate as $campaign) {
             // also implicitly updates the charity every time.
             try {
-                $campaignRepository->updateFromSf($campaign);
+                // We need to ensure SF tells CloudFront not to cache this particular response, or to bundle
+                // it with public API calls for the same endpoint that may have been recently cached.
+                $campaignRepository->updateFromSf($campaign, withCache: false);
                 $atLeastOneCampaignUpdated = true;
             } catch (NotFoundException $e) {
                 if ($this->environment === Environment::Production) {

@@ -15,9 +15,7 @@ use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Tests\TestCase;
-use PHPUnit\Framework\MockObject\MockObject;
 use Prophecy\Argument;
-use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -28,7 +26,7 @@ class FundRepositoryTest extends TestCase
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $fundClientProphecy = $this->prophesize(Client\Fund::class);
         $fundClientProphecy
-            ->getById('sfFakeId987')
+            ->getById('sfFakeId987', withCache: true)
             ->shouldBeCalledOnce()
             ->willReturn([
                 'name' => 'API Fund Name',
@@ -46,7 +44,7 @@ class FundRepositoryTest extends TestCase
         // `FundRepository` such that `doPull()` is a real call but `pull()` doesn't try a real DB engine lookup.
         $fund->setSalesforceId('sfFakeId987');
 
-        $repo->updateFromSf($fund, false); // Don't auto-save as non-DB-backed tests can't persist
+        $repo->updateFromSf($fund, autoSave: false); // Don't auto-save as non-DB-backed tests can't persist
 
         $this->assertEquals('API Fund Name', $fund->getName());
     }

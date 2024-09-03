@@ -14,10 +14,11 @@ class Campaign extends Common
      * @throws NotFoundException if Campaign with given ID not found
      * @throws CampaignNotReady if campaign found in SF but not ready for use in matchbot.
      */
-    public function getById(string $id): array
+    public function getById(string $id, bool $withCache): array
     {
+        $uri = $this->getUri("{$this->getSetting('campaign', 'baseUri')}/$id", $withCache);
         try {
-            $response = $this->getHttpClient()->get("{$this->getSetting('campaign', 'baseUri')}/$id");
+            $response = $this->getHttpClient()->get($uri);
         } catch (RequestException $exception) {
             if ($exception->getResponse() && $exception->getResponse()->getStatusCode() === 404) {
                 // may be safely caught in sandboxes

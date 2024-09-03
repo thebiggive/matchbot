@@ -11,9 +11,10 @@ class Fund extends Common
      * @return array Single Fund, as associative array
      * @throws NotFoundException if Fund with given ID not found
      */
-    public function getById(string $fundId): array
+    public function getById(string $fundId, bool $withCache = true): array
     {
-        $response = $this->getHttpClient()->get("{$this->getSetting('fund', 'baseUri')}/$fundId");
+        $uri = $this->getUri("{$this->getSetting('fund', 'baseUri')}/$fundId", $withCache);
+        $response = $this->getHttpClient()->get($uri);
 
         if ($response->getStatusCode() !== 200) {
             throw new NotFoundException('Fund not found');
