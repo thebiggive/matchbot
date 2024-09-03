@@ -23,7 +23,7 @@ readonly class MandateService
 
         $lastSequenceNumber = $this->donationRepository->maxSequenceNumberForMandate($mandateId);
         if ($lastSequenceNumber === null) {
-            throw new \Exception("No donations found for mandate, cannot generate next donation");
+            throw new \Exception("No donations found for mandate $mandateId, cannot generate next donation");
         }
 
         $donor = $this->donorAccountRepository->findByPersonId($mandate->donorId);

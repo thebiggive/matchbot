@@ -2,7 +2,6 @@
 
 namespace MatchBot\IntegrationTests;
 
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\CharityUpdated;
 use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
