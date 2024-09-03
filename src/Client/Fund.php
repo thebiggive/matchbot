@@ -11,7 +11,7 @@ class Fund extends Common
      * @return array Single Fund, as associative array
      * @throws NotFoundException if Fund with given ID not found
      */
-    public function getById(string $fundId, bool $withCache = true): array
+    public function getById(string $fundId, bool $withCache): array
     {
         $uri = $this->getUri("{$this->getSetting('fund', 'baseUri')}/$fundId", $withCache);
         $response = $this->getHttpClient()->get($uri);
