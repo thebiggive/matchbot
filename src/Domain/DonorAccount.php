@@ -86,9 +86,6 @@ class DonorAccount extends Model
         $this->uuid = is_null($uuid) ? null : Uuid::fromString($uuid->id);
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod - to be used soon.
-     */
     public function getRegularGivingPaymentMethod(): ?StripePaymentMethodId
     {
         if ($this->regularGivingPaymentMethod === null) {

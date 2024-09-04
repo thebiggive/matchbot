@@ -32,7 +32,7 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 use Symfony\Component\RateLimiter\Exception\RateLimitExceededException;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 
-readonly class DonationService
+class DonationService
 {
     private const MAX_RETRY_COUNT = 3;
 
@@ -102,6 +102,193 @@ readonly class DonationService
             ));
         }
 
+        $this->enrollNewDonation($donation);
+
+        return $donation;
+    }
+
+    private function getStatementDescriptor(Charity $charity): string
+    {
+        $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
+        $prefix = 'Big Give ';
+
+        return $prefix . mb_substr(
+            $this->removeSpecialChars($charity->getName()),
+            0,
+            $maximumLength - mb_strlen($prefix),
+        );
+    }
+
+    // Remove special characters except spaces
+    private function removeSpecialChars(string $descriptor): string
+    {
+        return preg_replace('/[^A-Za-z0-9 ]/', '', $descriptor);
+    }
+
+    /**
+     * It seems like just the *first* persist of a given donation needs to be retry-safe, since there is a small
+     * but non-zero minority of Create attempts at the start of a big campaign which get a closed Entity Manager
+     * and then don't know about the connected #campaign on persist and crash when RetrySafeEntityManager tries again.
+     *
+     * The same applies to allocating match funds, which in rare cases can fail with a lock timeout exception. It could
+     * also fail simply because another thread keeps changing the values of funds in redis.
+     *
+     * If the EM "goes away" for any reason but only does so once, `flush()` should still replace the underlying
+     * EM with a new one and then the next persist should succeed.
+     *
+     * If the persist itself fails, we do not replace the underlying entity manager. This means if it's still usable
+     * then we still have any required related new entities in the Unit of Work.
+     * @param \Closure $retryable The action to be executed and then retried if necassary
+     * @param string $actionName The name of the action, used in logs.
+     * @throws ORMException|DBALServerException if they're occurring when max retry count reached.
+     */
+    private function runWithPossibleRetry(\Closure $retryable, string $actionName): void
+    {
+        $retryCount = 0;
+        while ($retryCount < self::MAX_RETRY_COUNT) {
+            try {
+                $retryable();
+                return;
+            } catch (ORMException | DBALServerException $exception) {
+                $retryCount++;
+                $this->logger->info(
+                    sprintf(
+                        $actionName . ' error: %s. Retrying %d of %d.',
+                        $exception->getMessage(),
+                        $retryCount,
+                        self::MAX_RETRY_COUNT,
+                    )
+                );
+
+                $seconds = (new Randomizer())->getFloat(0.1, 1.1);
+                \assert(is_float($seconds)); // See https://github.com/vimeo/psalm/issues/10830
+                $this->clock->sleep($seconds);
+
+                if ($retryCount === self::MAX_RETRY_COUNT) {
+                    $this->logger->error(
+                        sprintf(
+                            $actionName . ' error: %s. Giving up after %d retries.',
+                            $exception->getMessage(),
+                            self::MAX_RETRY_COUNT,
+                        )
+                    );
+
+                    throw $exception;
+                }
+            }
+        }
+    }
+
+    /**
+     * Finalized a donation, instructing stripe to attempt to take payment immediately for a donor
+     * making an immediate, online donation.
+     */
+    public function confirmOnSessionDonation(
+        Donation $donation,
+        StripePaymentMethodId $paymentMethodId
+    ): \Stripe\PaymentIntent {
+        $this->updateDonationFees($paymentMethodId, $donation); // move this out to caller for non auto donation
+        return $this->confirm($donation, $paymentMethodId);
+    }
+
+    /**
+     * Finalized a donation, instructing stripe to attempt to take payment.
+     */
+    private function confirm(
+        Donation $donation,
+        StripePaymentMethodId $paymentMethodId
+    ): \Stripe\PaymentIntent {
+        return $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
+            'payment_method' => $paymentMethodId->stripePaymentMethodId,
+        ]);
+    }
+
+    private function updateDonationFees(StripePaymentMethodId $paymentMethodId, Donation $donation): void
+    {
+        $paymentMethod = $this->stripe->retrievePaymentMethod($paymentMethodId);
+
+        if ($paymentMethod->type !== 'card') {
+            throw new \DomainException('Confirm only supports card payments for now');
+        }
+
+        /**
+         * This is not technically true - at runtime this is a StripeObject instance, but the behaviour seems to be
+         * as documented in the Card class. Stripe SDK is interesting. Without this annotation we would have SA
+         * errors on ->brand and ->country
+         * @var Card $card
+         */
+        $card = $paymentMethod->card;
+
+        // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
+        // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not
+        // 'Visa' or 'American Express'
+        $cardBrand = $card->brand;
+
+        // two letter upper string, e.g. 'GB', 'US'.
+        $cardCountry = $card->country;
+        \assert(is_string($cardCountry));
+        Assertion::inArray($cardBrand, Calculator::STRIPE_CARD_BRANDS);
+
+// at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
+        // that, would like to find a way to make it so if its left out we get an error instead - either by having
+        // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
+        $donation->deriveFees($cardBrand, $cardCountry);
+
+        $this->stripe->updatePaymentIntent($donation->getTransactionId(), [
+            // only setting things that may need to be updated at this point.
+            'metadata' => [
+                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
+            ],
+            // See https://stripe.com/docs/connect/destination-charges#application-fee
+            // Update the fee amount in case the final charge was from
+            // e.g. a Non EU / Amex card where fees are varied.
+            'application_fee_amount' => $donation->getAmountToDeductFractional(),
+            // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
+        ]);
+    }
+
+    public function confirmPreAuthorized(Donation $donation): void
+    {
+        $stripeAccountId = $donation->getPspCustomerId();
+        Assertion::notNull($stripeAccountId);
+        $donorAccount = $this->donorAccountRepository->findByStripeIdOrNull(StripeCustomerId::of($stripeAccountId));
+
+        if ($donorAccount === null) {
+            throw new NoDonorAccountException("Donor account not found for donation $donation");
+        }
+
+        $paymentMethod = $donorAccount->getRegularGivingPaymentMethod();
+
+        if ($paymentMethod === null) {
+            throw new \MatchBot\Domain\NoRegularGivingPaymentMethod(
+                "Cannot confirm donation {$donation->getUuid()} for " .
+                "{$donorAccount->stripeCustomerId->stripeCustomerId}, no payment method"
+            );
+        }
+
+        $this->confirm($donation, $paymentMethod);
+    }
+
+    /**
+     * Does multiple things required when a new donation is added to the system including:
+     * - Checking that the campaign is open
+     * - Allocating match funds to the donation
+     * - Creating Stripe Payment intent
+     *
+     * @throws CampaignNotOpen
+     * @throws CampaignNotReady
+     * @throws CharityAccountLacksNeededCapaiblities
+     * @throws CouldNotMakeStripePaymentIntent
+     * @throws DBALServerException
+     * @throws ORMException
+     * @throws StripeAccountIdNotSetForAccount
+     * @throws TransportExceptionInterface
+     * @throws \MatchBot\Client\NotFoundException
+     */
+    public function enrollNewDonation(Donation $donation): void
+    {
         if (!$donation->getCampaign()->isOpen()) {
             throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
         }
@@ -155,8 +342,7 @@ readonly class DonationService
                         'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
                         $donation->getCampaign()->getCharity()->getSalesforceId() ?? 'missing charity sf ID',
                     ));
-                    throw new StripeAccountIdNotSetForAccount(
-                    );
+                    throw new StripeAccountIdNotSetForAccount();
                 }
 
                 // Else we found new Stripe info and can proceed
@@ -166,14 +352,14 @@ readonly class DonationService
             $createPayload = [
                 ...$donation->getStripeMethodProperties(),
                 ...$donation->getStripeOnBehalfOfProperties(),
-                'customer' => $pspCustomerId,
+                'customer' => $donation->getPspCustomerId(),
                 // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
                 // See https://stripe.com/docs/api/payment_intents/object
                 'amount' => $donation->getAmountFractionalIncTip(),
                 'currency' => strtolower($donation->getCurrencyCode()),
                 'description' => $donation->getDescription(),
                 'capture_method' => 'automatic', // 'automatic' was default in previous API versions,
-                                                // default is now 'automatic_async'
+                // default is now 'automatic_async'
                 'metadata' => [
                     /**
                      * Keys like comms opt ins are set only later. See the counterpart
@@ -254,162 +440,5 @@ readonly class DonationService
                 'Donation Create persist after stripe work'
             );
         }
-
-        return $donation;
-    }
-
-    private function getStatementDescriptor(Charity $charity): string
-    {
-        $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
-        $prefix = 'Big Give ';
-
-        return $prefix . mb_substr(
-            $this->removeSpecialChars($charity->getName()),
-            0,
-            $maximumLength - mb_strlen($prefix),
-        );
-    }
-
-    // Remove special characters except spaces
-    private function removeSpecialChars(string $descriptor): string
-    {
-        return preg_replace('/[^A-Za-z0-9 ]/', '', $descriptor);
-    }
-
-    /**
-     * It seems like just the *first* persist of a given donation needs to be retry-safe, since there is a small
-     * but non-zero minority of Create attempts at the start of a big campaign which get a closed Entity Manager
-     * and then don't know about the connected #campaign on persist and crash when RetrySafeEntityManager tries again.
-     *
-     * The same applies to allocating match funds, which in rare cases can fail with a lock timeout exception. It could
-     * also fail simply because another thread keeps changing the values of funds in redis.
-     *
-     * If the EM "goes away" for any reason but only does so once, `flush()` should still replace the underlying
-     * EM with a new one and then the next persist should succeed.
-     *
-     * If the persist itself fails, we do not replace the underlying entity manager. This means if it's still usable
-     * then we still have any required related new entities in the Unit of Work.
-     * @param \Closure $retryable The action to be executed and then retried if necassary
-     * @param string $actionName The name of the action, used in logs.
-     * @throws ORMException|DBALServerException if they're occurring when max retry count reached.
-     */
-    private function runWithPossibleRetry(\Closure $retryable, string $actionName): void
-    {
-        $retryCount = 0;
-        while ($retryCount < self::MAX_RETRY_COUNT) {
-            try {
-                $retryable();
-                return;
-            } catch (ORMException | DBALServerException $exception) {
-                $retryCount++;
-                $this->logger->info(
-                    sprintf(
-                        $actionName . ' error: %s. Retrying %d of %d.',
-                        $exception->getMessage(),
-                        $retryCount,
-                        self::MAX_RETRY_COUNT,
-                    )
-                );
-
-                $seconds = (new Randomizer())->getFloat(0.1, 1.1);
-                \assert(is_float($seconds)); // See https://github.com/vimeo/psalm/issues/10830
-                $this->clock->sleep($seconds);
-
-                if ($retryCount === self::MAX_RETRY_COUNT) {
-                    $this->logger->error(
-                        sprintf(
-                            $actionName . ' error: %s. Giving up after %d retries.',
-                            $exception->getMessage(),
-                            self::MAX_RETRY_COUNT,
-                        )
-                    );
-
-                    throw $exception;
-                }
-            }
-        }
-    }
-
-    /**
-     * Finalized a donation, instructing stripe to attempt to take payment.
-     */
-    public function confirm(
-        Donation $donation,
-        StripePaymentMethodId $paymentMethodId
-    ): \Stripe\PaymentIntent {
-        $this->updateDonationFees($paymentMethodId, $donation);
-        $updatedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
-            'payment_method' => $paymentMethodId->stripePaymentMethodId,
-        ]);
-
-        return $updatedIntent;
-    }
-
-    public function updateDonationFees(StripePaymentMethodId $paymentMethodId, Donation $donation): void
-    {
-        $paymentMethod = $this->stripe->retrievePaymentMethod($paymentMethodId);
-
-        if ($paymentMethod->type !== 'card') {
-            throw new \DomainException('Confirm only supports card payments for now');
-        }
-
-        /**
-         * This is not technically true - at runtime this is a StripeObject instance, but the behaviour seems to be
-         * as documented in the Card class. Stripe SDK is interesting. Without this annotation we would have SA
-         * errors on ->brand and ->country
-         * @var Card $card
-         */
-        $card = $paymentMethod->card;
-
-        // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
-        // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not
-        // 'Visa' or 'American Express'
-        $cardBrand = $card->brand;
-
-        // two letter upper string, e.g. 'GB', 'US'.
-        $cardCountry = $card->country;
-        \assert(is_string($cardCountry));
-        Assertion::inArray($cardBrand, Calculator::STRIPE_CARD_BRANDS);
-
-// at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
-        // that, would like to find a way to make it so if its left out we get an error instead - either by having
-        // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
-        $donation->deriveFees($cardBrand, $cardCountry);
-
-        $this->stripe->updatePaymentIntent($donation->getTransactionId(), [
-            // only setting things that may need to be updated at this point.
-            'metadata' => [
-                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
-                'stripeFeeRechargeNet' => $donation->getCharityFee(),
-                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
-            ],
-            // See https://stripe.com/docs/connect/destination-charges#application-fee
-            // Update the fee amount in case the final charge was from
-            // e.g. a Non EU / Amex card where fees are varied.
-            'application_fee_amount' => $donation->getAmountToDeductFractional(),
-            // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
-        ]);
-    }
-
-    public function confirmPreAuthorized(Donation $donation): void
-    {
-        $stripeAccountId = $donation->getPspCustomerId();
-        Assertion::notNull($stripeAccountId);
-        $donorAccount = $this->donorAccountRepository->findByStripeIdOrNull(StripeCustomerId::of($stripeAccountId));
-
-        if ($donorAccount === null) {
-            throw new NoDonorAccountException("Donor account not found for donation $donation");
-        }
-
-        $paymentMethod = $donorAccount->getRegularGivingPaymentMethod();
-
-        if ($paymentMethod === null) {
-            throw new \MatchBot\Domain\NoRegularGivingPaymentMethod(
-                "Cannot confirm donation {$donation->getUuid()} for " .
-                "{$donorAccount->stripeCustomerId->stripeCustomerId}, no payment method"
-            );
-        }
-
-        $this->confirm($donation, $paymentMethod);
     }
 }

@@ -12,6 +12,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
@@ -93,9 +94,8 @@ class SetupTestMandate extends LockingCommand
         $amount = (int)($input->getArgument('amount') ?? '1');
         $campaignName = (string) $input->getOption('campaign');
 
-        (new Criteria())->where(Criteria::expr()->contains('name', $campaignName));
-
-        $campaign = $this->campaignRepository->matching(new Criteria())->first();
+        $criteria = (new Criteria())->where(Criteria::expr()->contains('name', $campaignName));
+        $campaign = $this->campaignRepository->matching($criteria)->first();
 
         if (!$campaign) {
             $io->error("No campaign found for {$campaignName}");
@@ -144,8 +144,11 @@ class SetupTestMandate extends LockingCommand
         $this->em->persist($mandate);
         $this->em->flush();
 
-        $io->writeln("Created new regular giving mandate:");
-        $io->writeln(json_encode($mandate->toFrontEndApiModel($charity, $this->now), JSON_PRETTY_PRINT));
+        $io->writeln(
+            "<fg=black;bg=green>" .
+            "Created new regular giving mandate: #{$mandate->getId()} for {$campaignName} by {$charity->getName()}" .
+            "</>"
+        );
 
         return 0;
     }
@@ -172,7 +175,7 @@ class SetupTestMandate extends LockingCommand
         $donation = Donation::fromApiModel(
             new DonationCreate(
                 'GBP',
-                (string)($mandate->amount->amountInPence / 100),
+                (string)($mandate->getAmount()->amountInPence / 100),
                 $campaign->getSalesforceId() ?? throw new \Exception('missing campaign sf ID'),
                 'stripe',
                 PaymentMethodType::Card,
