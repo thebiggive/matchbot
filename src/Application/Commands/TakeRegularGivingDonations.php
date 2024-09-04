@@ -88,7 +88,8 @@ class TakeRegularGivingDonations extends LockingCommand
 
     private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(SymfonyStyle $io): void
     {
-        /* Still to do to improve this before launch:
+        /* @todo-regular-giving
+            Still to do to improve this before launch:
             - deal with possible "The parameter application_fee_amount cannot be updated on a PaymentIntent after a
               capture has already been made." error
 
