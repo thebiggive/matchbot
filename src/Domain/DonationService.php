@@ -189,13 +189,13 @@ class DonationService
     ): \Stripe\PaymentIntent
     {
         $this->updateDonationFees($paymentMethodId, $donation); // move this out to caller for non auto donation
-        $this->confirm($donation, $paymentMethodId);
+        return $this->confirm($donation, $paymentMethodId);
     }
 
     /**
      * Finalized a donation, instructing stripe to attempt to take payment.
      */
-    public function confirm(
+    private function confirm(
         Donation $donation,
         StripePaymentMethodId $paymentMethodId
     ): \Stripe\PaymentIntent {

@@ -155,7 +155,7 @@ EOF
 
 
         try {
-            $updatedIntent = $this->donationService->confirm($donation, StripePaymentMethodId::of($paymentMethodId));
+            $updatedIntent = $this->donationService->confirmOnSessionDonation($donation, StripePaymentMethodId::of($paymentMethodId));
         } catch (CardException $exception) {
             $this->entityManager->rollback();
 
