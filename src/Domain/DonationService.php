@@ -186,8 +186,7 @@ class DonationService
     public function confirmOnSessionDonation(
         Donation $donation,
         StripePaymentMethodId $paymentMethodId
-    ): \Stripe\PaymentIntent
-    {
+    ): \Stripe\PaymentIntent {
         $this->updateDonationFees($paymentMethodId, $donation); // move this out to caller for non auto donation
         return $this->confirm($donation, $paymentMethodId);
     }

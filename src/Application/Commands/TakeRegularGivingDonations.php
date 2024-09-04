@@ -69,7 +69,7 @@ class TakeRegularGivingDonations extends LockingCommand
         $this->applySimulatedDate($input->getOption('simulated-date'), $output);
 
         $this->createNewDonationsAccordingToRegularGivingMandates($io);
-        $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($output, $io);
+        $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($io);
 
         return 0;
     }
@@ -86,7 +86,7 @@ class TakeRegularGivingDonations extends LockingCommand
         }
     }
 
-    private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(OutputInterface $output, SymfonyStyle $io): void
+    private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(SymfonyStyle $io): void
     {
         /* Still to do to improve this before launch:
             - deal with possible "The parameter application_fee_amount cannot be updated on a PaymentIntent after a
@@ -111,7 +111,8 @@ class TakeRegularGivingDonations extends LockingCommand
             $io->writeln(
                 "Donation #{$donation->getId()} is pre-authorized to pay on" .
                 " <options=bold>{$preAuthDate->format('Y-m-d H:i:s')}</>}
-                ");
+                "
+            );
             $oldStatus = $donation->getDonationStatus();
             try {
                 $this->donationService->confirmPreAuthorized($donation);
