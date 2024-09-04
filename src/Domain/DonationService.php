@@ -180,21 +180,31 @@ class DonationService
     }
 
     /**
+     * Finalized a donation, instructing stripe to attempt to take payment immediately for a donor
+     * making an immediate, online donation.
+     */
+    public function confirmOnSessionDonation(
+        Donation $donation,
+        StripePaymentMethodId $paymentMethodId
+    ): \Stripe\PaymentIntent
+    {
+        $this->updateDonationFees($paymentMethodId, $donation); // move this out to caller for non auto donation
+        $this->confirm($donation, $paymentMethodId);
+    }
+
+    /**
      * Finalized a donation, instructing stripe to attempt to take payment.
      */
     public function confirm(
         Donation $donation,
         StripePaymentMethodId $paymentMethodId
     ): \Stripe\PaymentIntent {
-        $this->updateDonationFees($paymentMethodId, $donation);
-        $updatedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
+        return $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
             'payment_method' => $paymentMethodId->stripePaymentMethodId,
         ]);
-
-        return $updatedIntent;
     }
 
-    public function updateDonationFees(StripePaymentMethodId $paymentMethodId, Donation $donation): void
+    private function updateDonationFees(StripePaymentMethodId $paymentMethodId, Donation $donation): void
     {
         $paymentMethod = $this->stripe->retrievePaymentMethod($paymentMethodId);
 
