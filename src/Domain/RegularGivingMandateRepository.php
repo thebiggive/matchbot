@@ -96,10 +96,10 @@ class RegularGivingMandateRepository
         }
 
         return array_values(array_map(function (RegularGivingMandate $mandate) use ($charities) {
-            $charityId = $mandate->charityId;
+            $charityId = $mandate->getCharityId();
             return [
                 $mandate,
-                $charities[$charityId] ?? throw new \Exception("Missing charity for mandate " . $mandate->uuid)
+                $charities[$charityId] ?? throw new \Exception("Missing charity for mandate " . $mandate->getUuid())
             ];
         },
             $mandates));

@@ -488,7 +488,8 @@ class Donation extends SalesforceWriteProxy
             // have a TypeError trying to get a string name from it.
             $charityName = "[pending charity threw " . get_class($t) . "]";
         }
-        return "Donation {$this->getUuid()} to $charityName";
+        $id = is_null($this->id) ? 'non-persisted' : "#{$this->id}";
+        return "Donation $id {$this->getUuid()} to $charityName";
     }
 
     /*

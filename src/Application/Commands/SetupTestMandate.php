@@ -175,7 +175,7 @@ class SetupTestMandate extends LockingCommand
         $donation = Donation::fromApiModel(
             new DonationCreate(
                 'GBP',
-                (string)($mandate->amount->amountInPence / 100),
+                (string)($mandate->getAmount()->amountInPence / 100),
                 $campaign->getSalesforceId() ?? throw new \Exception('missing campaign sf ID'),
                 'stripe',
                 PaymentMethodType::Card,

@@ -27,13 +27,13 @@ class RegularGivingMandate extends SalesforceWriteProxy
     private const int MAX_AMOUNT_PENCE = 500_00;
 
     #[ORM\Column(unique: true, type: 'uuid')]
-    public readonly UuidInterface $uuid;
+    private readonly UuidInterface $uuid;
 
     #[ORM\Embedded(columnPrefix: 'person')]
     public PersonId $donorId;
 
     #[ORM\Embedded(columnPrefix: '')]
-    public readonly Money $amount;
+    private readonly Money $amount;
 
     /**
      * @var string 18 digit salesforce ID of campaign
@@ -45,7 +45,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
      * @var string 18 digit salesforce ID of charity
      */
     #[ORM\Column()]
-    public readonly string $charityId;
+    private readonly string $charityId;
 
     #[ORM\Column()]
     private readonly bool $giftAid;
@@ -225,5 +225,20 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public function getCampaignId(): Salesforce18Id
     {
         return Salesforce18Id::ofCampaign($this->campaignId);
+    }
+
+    public function getUuid(): UuidInterface
+    {
+        return $this->uuid;
+    }
+
+    public function getAmount(): Money
+    {
+        return $this->amount;
+    }
+
+    public function getCharityId(): string
+    {
+        return $this->charityId;
     }
 }

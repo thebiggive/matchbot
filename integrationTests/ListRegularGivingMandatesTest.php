@@ -124,6 +124,6 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         $em->persist($mandate);
         $em->flush();
 
-        return $mandate->uuid;
+        return $mandate->getUuid();
     }
 }

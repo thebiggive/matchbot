@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\MandateService;
@@ -68,19 +68,21 @@ class TakeRegularGivingDonations extends LockingCommand
         /** @psalm-suppress MixedArgument */
         $this->applySimulatedDate($input->getOption('simulated-date'), $output);
 
-        $this->createNewDonationsAccordingToRegularGivingMandates();
+        $this->createNewDonationsAccordingToRegularGivingMandates($io);
         $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($output, $io);
 
         return 0;
     }
 
-    private function createNewDonationsAccordingToRegularGivingMandates(): void
+    private function createNewDonationsAccordingToRegularGivingMandates(SymfonyStyle $io): void
     {
         $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($this->now, limit: 20);
 
+        $io->block(count($mandates) . " mandates have donations to create at this time");
+
         foreach ($mandates as [$mandate]) {
-            $this->makeDonationForMandate($mandate);
-            $this->em->flush();
+            $donation = $this->makeDonationForMandate($mandate);
+            $io->writeln("created donation {$donation}");
         }
     }
 
@@ -100,6 +102,8 @@ class TakeRegularGivingDonations extends LockingCommand
         */
         $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($this->now, limit:20);
 
+        $io->block(count($donations) . " donations are due to be confirmed at this time");
+
         foreach ($donations as $donation) {
             $preAuthDate = $donation->getPreAuthorizationDate();
             \assert($preAuthDate instanceof \DateTimeImmutable);
@@ -112,7 +116,6 @@ class TakeRegularGivingDonations extends LockingCommand
             try {
                 $this->donationService->confirmPreAuthorized($donation);
             } catch (\Exception $exception) {
-                throw $exception;
                 $io->error('Exception, skipping donation: ' . $exception->getMessage());
                 continue;
             }
@@ -126,10 +129,12 @@ class TakeRegularGivingDonations extends LockingCommand
         $this->em->flush();
     }
 
-    private function makeDonationForMandate(RegularGivingMandate $mandate): void
+    private function makeDonationForMandate(RegularGivingMandate $mandate): Donation
     {
         $donation = $this->mandateService->makeNextDonationForMandate($mandate);
         $this->em->persist($donation);
         $this->em->flush();
+
+        return $donation;
     }
 }
