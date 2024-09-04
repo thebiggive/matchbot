@@ -21,7 +21,7 @@ readonly class MandateService
     public function makeNextDonationForMandate(RegularGivingMandate $mandate): Donation
     {
         /*
-         * @todo: Refuse to create donation with preauth date in future. Other than for the 2nd and 3rd donations in
+         * @todo-regular-giving: Refuse to create donation with preauth date in future. Other than for the 2nd and 3rd donations in
          *        the mandate its unnecessary. Better to create them only when the date has been reached, so that we'll
          *        be able to confirm immediatly, and have up to date info from the start on the donor's details, whether
          *        or not they cancelled this mandate etc etc.

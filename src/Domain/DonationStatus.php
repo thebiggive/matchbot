@@ -78,7 +78,7 @@ enum DonationStatus: string
      * Currently, this status is only set when sent explicitly from the donate-frontend, e.g. if they leave the
      * browser open for a long time without completing the donation.
      *
-     * @todo In future, we might think about auto-cancelling old pending donations - or alternately merging this status
+     * @todo-regular-giving In future, we might think about auto-cancelling old pending donations - or alternately merging this status
      *       with Pending if we don't need a distinction.
      */
     case Cancelled = 'Cancelled';
