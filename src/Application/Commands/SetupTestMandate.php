@@ -12,6 +12,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
@@ -143,8 +144,11 @@ class SetupTestMandate extends LockingCommand
         $this->em->persist($mandate);
         $this->em->flush();
 
-        $io->writeln("Created new regular giving mandate:");
-        $io->writeln(json_encode($mandate->toFrontEndApiModel($charity, $this->now), JSON_PRETTY_PRINT));
+        $io->writeln(
+            "<fg=black;bg=green>" .
+            "Created new regular giving mandate: #{$mandate->getId()} for {$campaignName} by {$charity->getName()}" .
+            "</>"
+        );
 
         return 0;
     }
