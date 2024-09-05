@@ -253,7 +253,6 @@
     <ArgumentTypeCoercion>
       <code><![CDATA[$amount]]></code>
       <code><![CDATA[$feeAmountFromPercentageComponent]]></code>
-      <code><![CDATA[$grossFeeAmount]]></code>
       <code><![CDATA[$this->amount]]></code>
       <code><![CDATA[$this->amount]]></code>
       <code><![CDATA[$this->amount]]></code>
@@ -262,9 +261,6 @@
       <code><![CDATA[$this->getFeeVatPercentage()]]></code>
       <code><![CDATA[$this->getFeeVatPercentage()]]></code>
     </ArgumentTypeCoercion>
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[$this->feePercentageOverride]]></code>
-    </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Application/Handlers/HttpErrorHandler.php">
     <PropertyNotSetInConstructor>
@@ -273,12 +269,6 @@
       <code><![CDATA[HttpErrorHandler]]></code>
       <code><![CDATA[HttpErrorHandler]]></code>
     </PropertyNotSetInConstructor>
-  </file>
-  <file src="src/Application/HttpModels/DonationCreatedResponse.php">
-    <MissingConstructor>
-      <code><![CDATA[$donation]]></code>
-      <code><![CDATA[$jwt]]></code>
-    </MissingConstructor>
   </file>
   <file src="src/Application/Matching/Adapter.php">
     <ArgumentTypeCoercion>
@@ -303,9 +293,6 @@
     </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Application/Messenger/Handler/StripePayoutHandler.php">
-    <DeprecatedInterface>
-      <code><![CDATA[StripePayoutHandler]]></code>
-    </DeprecatedInterface>
     <DocblockTypeContradiction>
       <code><![CDATA[is_string($source_transfer)]]></code>
     </DocblockTypeContradiction>
@@ -329,18 +316,6 @@
     </MoreSpecificReturnType>
   </file>
   <file src="src/Client/Campaign.php">
-    <MixedArrayAccess>
-      <code><![CDATA[$campaignResponse['ready']]]></code>
-    </MixedArrayAccess>
-    <MixedAssignment>
-      <code><![CDATA[$campaignResponse]]></code>
-    </MixedAssignment>
-    <MixedInferredReturnType>
-      <code><![CDATA[array]]></code>
-    </MixedInferredReturnType>
-    <MixedReturnStatement>
-      <code><![CDATA[$campaignResponse]]></code>
-    </MixedReturnStatement>
     <PossiblyNullReference>
       <code><![CDATA[getStatusCode]]></code>
     </PossiblyNullReference>
@@ -464,7 +439,6 @@
       <code><![CDATA[$this->getCharityFee()]]></code>
       <code><![CDATA[$this->getCharityFeeGross()]]></code>
       <code><![CDATA[$this->getCharityFeeVat()]]></code>
-      <code><![CDATA[$this->getFeeCoverAmount()]]></code>
       <code><![CDATA[$this->getTipAmount()]]></code>
       <code><![CDATA[$this->getTipAmount()]]></code>
     </ArgumentTypeCoercion>
@@ -473,14 +447,12 @@
     </PossiblyNullPropertyAssignmentValue>
     <PropertyNotSetInConstructor>
       <code><![CDATA[$campaign]]></code>
-      <code><![CDATA[$psp]]></code>
       <code><![CDATA[Donation]]></code>
       <code><![CDATA[Donation]]></code>
     </PropertyNotSetInConstructor>
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[!$this->transactionId]]></code>
       <code><![CDATA[$cardBrand]]></code>
-      <code><![CDATA[empty($donationData->countryCode)]]></code>
       <code><![CDATA[empty($donationMessage->house_no)]]></code>
       <code><![CDATA[empty($this->getDonorFirstName())]]></code>
       <code><![CDATA[empty($this->getDonorLastName())]]></code>
@@ -587,9 +559,6 @@
       <code><![CDATA[$proxy->getSalesforceId()]]></code>
       <code><![CDATA[$proxy->getSalesforceId()]]></code>
     </PossiblyNullOperand>
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[!$proxy->getSalesforceId()]]></code>
-    </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Domain/TimestampsTrait.php">
     <MissingConstructor>
