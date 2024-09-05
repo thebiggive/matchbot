@@ -21,7 +21,9 @@ final class Version20240902110511 extends AbstractMigration
          *
          * Attempting to delete the same column twice throws, so skip this migration in envs where its already deleted.
          */
-        $this->skipIf(! $schema->getTable('Donation')->hasColumn('feeCoverAmount'));
+        if(! $schema->getTable('Donation')->hasColumn('feeCoverAmount')) {
+            return;
+        }
 
         $this->addSql('ALTER TABLE Campaign DROP feePercentage');
         $this->addSql('ALTER TABLE Donation DROP feeCoverAmount');
