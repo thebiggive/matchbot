@@ -94,11 +94,11 @@ class DonationService
             $donation = $this->donationRepository->buildFromApiRequest($donationData);
         }
 
-        if ($pspCustomerId !== $donation->getPspCustomerId()) {
+        if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
             throw new \UnexpectedValueException(sprintf(
                 'Route customer ID %s did not match %s in donation body',
                 $pspCustomerId,
-                $donation->getPspCustomerId() ?? 'null'
+                $donation->getPspCustomerId()?->stripeCustomerId ?? 'null'
             ));
         }
 
@@ -253,7 +253,7 @@ class DonationService
     {
         $stripeAccountId = $donation->getPspCustomerId();
         Assertion::notNull($stripeAccountId);
-        $donorAccount = $this->donorAccountRepository->findByStripeIdOrNull(StripeCustomerId::of($stripeAccountId));
+        $donorAccount = $this->donorAccountRepository->findByStripeIdOrNull($stripeAccountId);
 
         if ($donorAccount === null) {
             throw new NoDonorAccountException("Donor account not found for donation $donation");
@@ -352,7 +352,7 @@ class DonationService
             $createPayload = [
                 ...$donation->getStripeMethodProperties(),
                 ...$donation->getStripeOnBehalfOfProperties(),
-                'customer' => $donation->getPspCustomerId(),
+                'customer' => $donation->getPspCustomerId()?->stripeCustomerId,
                 // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
                 // See https://stripe.com/docs/api/payment_intents/object
                 'amount' => $donation->getAmountFractionalIncTip(),

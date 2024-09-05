@@ -564,7 +564,7 @@ class Donation extends SalesforceWriteProxy
             'optInTbgEmail' => $this->getTbgComms(),
             'projectId' => $this->getCampaign()->getSalesforceId(),
             'psp' => $this->getPsp(),
-            'pspCustomerId' => $this->getPspCustomerId(),
+            'pspCustomerId' => $this->getPspCustomerId()?->stripeCustomerId,
             'pspMethodType' => $this->getPaymentMethodType()?->value,
             'refundedTime' => $this->refundedAt?->format(DateTimeInterface::ATOM),
             'status' => $this->getDonationStatus(),
@@ -1133,9 +1133,17 @@ class Donation extends SalesforceWriteProxy
         $this->tbgGiftAidResponseDetail = $tbgGiftAidResponseDetail;
     }
 
-    public function getPspCustomerId(): ?string
+    public function getPspCustomerId(): ?StripeCustomerId
     {
-        return $this->pspCustomerId;
+        if ($this->pspCustomerId === null) {
+            return null;
+        };
+
+        if ($this->psp !== 'stripe') {
+            throw new \RuntimeException('Unexpected PSP');
+        }
+
+        return StripeCustomerId::of($this->pspCustomerId);
     }
 
     public function setPspCustomerId(?string $pspCustomerId): void
