@@ -13,6 +13,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\Pledge;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestData;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
@@ -26,7 +27,9 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Random\Randomizer;
 use Slim\App;
 use Slim\Factory\AppFactory;
+use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
+use Stripe\Service\CustomerSessionService;
 use Stripe\StripeClient;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
@@ -317,11 +320,17 @@ abstract class IntegrationTest extends TestCase
     public function setUpFakeStripeClient(): ObjectProphecy
     {
         $stripePaymentIntentsProphecy = $this->prophesize(\Stripe\Service\PaymentIntentService::class);
+        $stripeCustomerSessions = $this->prophesize(CustomerSessionService::class);
+        $customerSession = new CustomerSession();
+        $customerSession->client_secret = 'client_secret';
+        $stripeCustomerSessions->create(Argument::any())
+            ->willReturn($customerSession);
 
         $fakeStripeClient = $this->fakeStripeClient(
             $this->prophesize(\Stripe\Service\PaymentMethodService::class),
             $this->prophesize(\Stripe\Service\CustomerService::class),
             $stripePaymentIntentsProphecy,
+            $stripeCustomerSessions,
         );
 
         $container = $this->getContainer();
@@ -376,6 +385,7 @@ abstract class IntegrationTest extends TestCase
         ObjectProphecy $stripePaymentMethodServiceProphecy,
         ObjectProphecy $stripeCustomerServiceProphecy,
         ObjectProphecy $stripePaymentIntents,
+        ObjectProphecy $stripeCustomerSessions
     ): StripeClient {
         $fakeStripeClient = $this->createStub(StripeClient::class);
 
@@ -384,6 +394,7 @@ abstract class IntegrationTest extends TestCase
         @$fakeStripeClient->paymentMethods = $stripePaymentMethodServiceProphecy->reveal();
         @$fakeStripeClient->customers = $stripeCustomerServiceProphecy->reveal();
         @$fakeStripeClient->paymentIntents = $stripePaymentIntents->reveal();
+        @$fakeStripeClient->customerSessions = $stripeCustomerSessions->reveal();
 
         return $fakeStripeClient;
     }

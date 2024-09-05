@@ -3,7 +3,9 @@
 namespace MatchBot\Client;
 
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
+use Stripe\CustomerSession;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
@@ -52,4 +54,6 @@ interface Stripe
     public function updatePaymentMethodBillingDetail(string $paymentMethodId, Donation $donation): void;
 
     public function retrievePaymentMethod(StripePaymentMethodId $pmId): PaymentMethod;
+
+    public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession;
 }

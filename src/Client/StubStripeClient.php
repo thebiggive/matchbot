@@ -3,8 +3,10 @@
 namespace MatchBot\Client;
 
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use Ramsey\Uuid\Uuid;
+use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
 
@@ -77,5 +79,10 @@ class StubStripeClient implements Stripe
         $paymentMethod->card = (object)['brand' => 'visa', 'country' => 'GB'];
 
         return $paymentMethod;
+    }
+
+    public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
+    {
+        return new CustomerSession();
     }
 }
