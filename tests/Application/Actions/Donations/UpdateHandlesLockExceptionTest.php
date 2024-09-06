@@ -156,6 +156,10 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $this->entityManagerProphecy->flush()->will(function () use ($donation, $newStatus, $testCase) {
             if ($testCase->alreadyThrewTimes < 1) { // we could make this 3 but that would slow test down.
                 $testCase->alreadyThrewTimes++;
+                /**
+                 * @psalm-suppress InternalMethod - use in test to simulate failure is not a big issue. We'll
+                 * fix if/when the test errors.
+                 */
                 throw new LockWaitTimeoutException($testCase->createStub(DriverException::class), null);
             }
 

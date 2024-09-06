@@ -63,17 +63,25 @@ class ResetMatchingTest extends TestCase
         $matchingAdapterProphecy->delete(Argument::type(CampaignFunding::class))->shouldNotBeCalled();
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
+
+        /**
+         * @psalm-suppress InternalMethod - use in test to simulate failure is not a big issue. We'll
+         * fix if/when the test errors.
+         * @psalm-suppress InternalClass
+         */
         $campaignFundingRepoProphecy->findAll()
-            ->willThrow(new TableNotFoundException(
+            ->willThrow(
+                new TableNotFoundException(
                 // Doctrine PDO\Exception (a DriverException subclass) wraps native \PDOException.
-                PDOException::new(
-                    new \PDOException(
-                        'SQLSTATE[42S02]: Base table or view not found: 1146 ' .
-                        "Table 'matchbot.CampaignFunding' doesn't exist"
-                    )
-                ),
-                new Query('SELECT test...', [], []),
-            ))
+                    PDOException::new(
+                        new \PDOException(
+                            'SQLSTATE[42S02]: Base table or view not found: 1146 ' .
+                            "Table 'matchbot.CampaignFunding' doesn't exist"
+                        )
+                    ),
+                    new Query('SELECT test...', [], []),
+                )
+            )
             ->shouldBeCalledOnce();
 
         $command = new ResetMatching($campaignFundingRepoProphecy->reveal(), $matchingAdapterProphecy->reveal());

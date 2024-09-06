@@ -148,9 +148,6 @@
     </MixedPropertyFetch>
   </file>
   <file src="src/Application/Actions/Status.php">
-    <InternalMethod>
-      <code><![CDATA[connect]]></code>
-    </InternalMethod>
     <PossiblyNullArgument>
       <code><![CDATA[$emConfig->getProxyDir()]]></code>
       <code><![CDATA[$emConfig->getProxyNamespace()]]></code>
@@ -818,9 +815,6 @@
     <DeprecatedMethod>
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
     </DeprecatedMethod>
-    <InternalMethod>
-      <code><![CDATA[new LockWaitTimeoutException($testCase->createStub(DriverException::class), null)]]></code>
-    </InternalMethod>
   </file>
   <file src="tests/Application/Actions/Donations/UpdateTest.php">
     <MixedArrayAccess>
@@ -926,34 +920,6 @@
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
     </DeprecatedMethod>
   </file>
-  <file src="tests/Application/Commands/ResetMatchingTest.php">
-    <InternalClass>
-      <code><![CDATA[PDOException::new(
-                    new \PDOException(
-                        'SQLSTATE[42S02]: Base table or view not found: 1146 ' .
-                        "Table 'matchbot.CampaignFunding' doesn't exist"
-                    )
-                )]]></code>
-    </InternalClass>
-    <InternalMethod>
-      <code><![CDATA[PDOException::new(
-                    new \PDOException(
-                        'SQLSTATE[42S02]: Base table or view not found: 1146 ' .
-                        "Table 'matchbot.CampaignFunding' doesn't exist"
-                    )
-                )]]></code>
-      <code><![CDATA[new TableNotFoundException(
-                // Doctrine PDO\Exception (a DriverException subclass) wraps native \PDOException.
-                PDOException::new(
-                    new \PDOException(
-                        'SQLSTATE[42S02]: Base table or view not found: 1146 ' .
-                        "Table 'matchbot.CampaignFunding' doesn't exist"
-                    )
-                ),
-                new Query('SELECT test...', [], []),
-            )]]></code>
-    </InternalMethod>
-  </file>
   <file src="tests/Application/DonationTestDataTrait.php">
     <DeprecatedMethod>
       <code><![CDATA[Donation::emptyTestDonation('124.56')]]></code>
@@ -966,17 +932,6 @@
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
       <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
     </DeprecatedMethod>
-    <InternalClass>
-      <code><![CDATA[new ReturnCallback(static function () use ($retrySafeEm, $underlyingEmToResetTo) {
-                $retrySafeEm->setEntityManager($underlyingEmToResetTo);
-            })]]></code>
-    </InternalClass>
-    <InternalMethod>
-      <code><![CDATA[addToAssertionCount]]></code>
-      <code><![CDATA[new ReturnCallback(static function () use ($retrySafeEm, $underlyingEmToResetTo) {
-                $retrySafeEm->setEntityManager($underlyingEmToResetTo);
-            })]]></code>
-    </InternalMethod>
     <MixedArgument>
       <code><![CDATA[$container->get('settings')['doctrine']['connection']]]></code>
       <code><![CDATA[$container->get('settings')['doctrine']['connection']]]></code>
@@ -987,11 +942,6 @@
       <code><![CDATA[$container->get('settings')['doctrine']]]></code>
       <code><![CDATA[$container->get('settings')['doctrine']]]></code>
     </MixedArrayAccess>
-  </file>
-  <file src="tests/Domain/DonationTest.php">
-    <InternalMethod>
-      <code><![CDATA[addToAssertionCount]]></code>
-    </InternalMethod>
   </file>
   <file src="tests/TestCase.php">
     <MixedArgument>

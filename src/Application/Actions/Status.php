@@ -45,7 +45,11 @@ class Status extends Action
 
         try {
             $connection = $this->entityManager->getConnection();
-            $gotDbConnection = $connection->isConnected() || $connection->connect();
+
+            // dummy query just to force DB connection to be made, since
+            // \Doctrine\DBAL\Connection::connect is marked @internal and will be protected in DBAL 4
+            $connection->executeQuery('SELECT 1');
+            $gotDbConnection = $connection->isConnected();
             if (!$gotDbConnection) {
                 $errorMessage = 'Database not connected';
             }

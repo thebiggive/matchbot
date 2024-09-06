@@ -38,12 +38,11 @@ class RetrySafeEntityManagerTest extends TestCase
         $container->set(RetrySafeEntityManager::class, $this->retrySafeEntityManager);
     }
 
+    /** @doesNotPerformAssertions  */
     public function testBuild(): void
     {
         // Just check a construct + EM rebuild doesn't crash.
         $this->retrySafeEntityManager->resetManager();
-
-        $this->addToAssertionCount(1);
     }
 
     public function testGetRepository(): void
@@ -225,9 +224,9 @@ class RetrySafeEntityManagerTest extends TestCase
 
         $retrySafeEm->expects($this->once())
             ->method('resetManager')
-            ->will(new ReturnCallback(static function () use ($retrySafeEm, $underlyingEmToResetTo) {
+            ->willReturnCallback(static function () use ($retrySafeEm, $underlyingEmToResetTo) {
                 $retrySafeEm->setEntityManager($underlyingEmToResetTo);
-            }));
+            });
 
         return $retrySafeEm;
     }
