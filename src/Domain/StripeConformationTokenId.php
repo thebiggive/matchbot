@@ -18,7 +18,9 @@ readonly class StripeConformationTokenId
         $this->stripeConfirmationTokenId = $stripeConfirmationTokenId;
         Assertion::notEmpty($this->stripeConfirmationTokenId);
         Assertion::maxLength($this->stripeConfirmationTokenId, 255);
-        Assertion::regex($this->stripeConfirmationTokenId, '/^ctoken_[a-zA-Z0-9]+$/'); // e.g. ctoken_1NnQUf2eZvKYlo2CIObdtbnb
+
+        // e.g. ctoken_1NnQUf2eZvKYlo2CIObdtbnb
+        Assertion::regex($this->stripeConfirmationTokenId, '/^ctoken_[a-zA-Z0-9]+$/');
     }
 
     /**
