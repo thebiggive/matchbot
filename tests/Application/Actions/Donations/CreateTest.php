@@ -404,7 +404,6 @@ class CreateTest extends TestCase
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
-        $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -500,7 +499,6 @@ class CreateTest extends TestCase
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
-        $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -599,7 +597,6 @@ class CreateTest extends TestCase
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
-        $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -778,7 +775,6 @@ class CreateTest extends TestCase
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
-        $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);

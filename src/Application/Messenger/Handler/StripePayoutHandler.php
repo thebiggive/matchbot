@@ -407,6 +407,7 @@ class StripePayoutHandler
             if (in_array($charge->id, $paidChargeIds, true)) {
                 /** @var string $source_transfer */
                 $source_transfer = $charge->source_transfer;
+                /** @psalm-suppress DocblockTypeContradiction */
                 if (!is_string($source_transfer)) {
                     $this->logger->error("source transfer not of expected type");
                 }

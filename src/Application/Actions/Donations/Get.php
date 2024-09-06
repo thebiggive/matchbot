@@ -33,7 +33,6 @@ class Get extends Action
             throw new DomainRecordNotFoundException('Missing donation ID');
         }
 
-        /** @var Donation $donation */
         $donation = $this->donationRepository->findOneBy(['uuid' => $args['donationId']]);
 
         if (!$donation) {

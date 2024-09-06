@@ -242,7 +242,7 @@ class Adapter
      */
     public function saveFundingsToDatabase(): void
     {
-        $this->entityManager->transactional(function () {
+        $this->entityManager->wrapInTransaction(function () {
             foreach ($this->fundingsToPersist as $funding) {
                 $this->entityManager->persist($funding);
             }

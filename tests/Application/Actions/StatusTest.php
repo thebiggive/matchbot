@@ -177,6 +177,7 @@ class StatusTest extends TestCase
 
         $container->set(EntityManagerInterface::class, $this->getConnectedMockEntityManager());
 
+        /** @psalm-suppress DeprecatedMethod - using Deprecated methods is almost OK in tests */
         $helperSet = ConsoleRunner::createHelperSet($container->get(EntityManagerInterface::class));
         $generateProxiesCommand = new GenerateProxiesCommand();
         $generateProxiesCommand->setHelperSet($helperSet);
