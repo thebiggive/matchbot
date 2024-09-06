@@ -19,14 +19,14 @@ final class Version20211029164148 extends AbstractMigration
 
     public function up(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('ALTER TABLE Charity CHANGE tbgClaimingGiftAid tbgClaimingGiftAid TINYINT(1) NOT NULL');
     }
 
     public function down(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('ALTER TABLE Charity CHANGE tbgClaimingGiftAid tbgClaimingGiftAid TINYINT(1) DEFAULT NULL');
     }

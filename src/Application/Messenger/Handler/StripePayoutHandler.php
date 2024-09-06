@@ -148,7 +148,7 @@ class StripePayoutHandler
                     sprintf(
                         'Payout: Skipping donation status %s found for Charge ID %s',
                         $donation->getDonationStatus()->value,
-                        $chargeId,
+                        $chargeId ?? 'null',
                     )
                 );
             }

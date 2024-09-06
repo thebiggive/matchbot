@@ -19,7 +19,7 @@ final class Version20200826135513 extends AbstractMigration
 
     public function up(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('ALTER TABLE Donation ADD chargeId VARCHAR(255) DEFAULT NULL');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_C893E3F6402C829F ON Donation (chargeId)');
@@ -27,7 +27,7 @@ final class Version20200826135513 extends AbstractMigration
 
     public function down(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('DROP INDEX UNIQ_C893E3F6402C829F ON Donation');
         $this->addSql('ALTER TABLE Donation DROP chargeId');

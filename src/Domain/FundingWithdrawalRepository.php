@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityRepository;
+use MatchBot\Application\Assertion;
 
 /**
  * @extends EntityRepository<FundingWithdrawal>
@@ -13,7 +14,7 @@ class FundingWithdrawalRepository extends EntityRepository
 {
     /**
      * @param CampaignFunding $campaignFunding
-     * @return string Total of FundingWithdrawals (including active reservations) as bcmath-ready string
+     * @return numeric-string Total of FundingWithdrawals (including active reservations) as bcmath-ready string
      */
     public function getWithdrawalsTotal(CampaignFunding $campaignFunding): string
     {
@@ -28,6 +29,8 @@ class FundingWithdrawalRepository extends EntityRepository
         if ($amount === '') {
             return '0.00';
         }
+
+        \assert(is_numeric($amount));
 
         return $amount;
     }

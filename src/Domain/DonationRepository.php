@@ -137,6 +137,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // is most often empty (for new donations) so this will frequently be 0.00.
         $amountMatchedAtStart = $donation->getFundingWithdrawalTotal();
 
+
+        $lockStartTime = 0; // dummy value, should always be overwritten before usage.
         try {
             /** @var list<CampaignFunding> $likelyAvailableFunds */
             $likelyAvailableFunds = $this->getEntityManager()
@@ -234,8 +236,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             return;
         }
 
+        $lockStartTime = microtime(true);
         try {
-            $lockStartTime = microtime(true);
             $totalAmountReleased = $this->matchingAdapter->releaseAllFundsForDonation($donation);
             $lockEndTime = microtime(true);
 
@@ -522,7 +524,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * @param Donation $donation
      * @param CampaignFunding[] $fundings   Fundings likely to have funds available. To be re-queried with a
      *                                      pessimistic write lock before allocation.
-     * @param string                        Amount of match funds already allocated to the donation when we started.
+     *
+     * @param numeric-string $amountMatchedAtStart Amount of match funds already allocated to the donation when we
+     *                                              started.
      * @return FundingWithdrawal[]
      */
     private function safelyAllocateFunds(Donation $donation, array $fundings, string $amountMatchedAtStart): array
@@ -544,6 +548,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $amountToAllocateNow = $amountLeftToMatch;
             }
 
+            $newTotal = '[new total not defined]';
             try {
                 $newTotal = $this->matchingAdapter->subtractAmountWithoutSavingToDB($funding, $amountToAllocateNow);
                 $amountAllocated = $amountToAllocateNow; // If no exception thrown

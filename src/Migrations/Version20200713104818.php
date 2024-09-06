@@ -19,7 +19,7 @@ final class Version20200713104818 extends AbstractMigration
 
     public function up(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         // Migration modified to first set up existing donations with
         // psp = 'enthuse'
@@ -32,7 +32,7 @@ final class Version20200713104818 extends AbstractMigration
 
     public function down(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('ALTER TABLE Donation DROP psp, DROP clientSecret');
     }

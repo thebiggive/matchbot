@@ -8,6 +8,7 @@ use Doctrine\Common\Proxy\ProxyGenerator;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Assertion;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\ChampionFund;
@@ -45,7 +46,11 @@ class Status extends Action
 
         try {
             $connection = $this->entityManager->getConnection();
-            $gotDbConnection = $connection->isConnected() || $connection->connect();
+
+            // dummy query just to force DB connection to be made, since
+            // \Doctrine\DBAL\Connection::connect is marked @internal and will be protected in DBAL 4
+            $connection->executeQuery('SELECT 1');
+            $gotDbConnection = $connection->isConnected();
             if (!$gotDbConnection) {
                 $errorMessage = 'Database not connected';
             }
@@ -91,7 +96,11 @@ class Status extends Action
         // call the public method that regenerates proxies, since in deployed ECS envs we set files to be immutable
         // and expect to generate things only in the `deploy/` entrypoints.
         $emConfig = $this->entityManager->getConfiguration();
-        $proxyGenerator = new ProxyGenerator($emConfig->getProxyDir(), $emConfig->getProxyNamespace());
+        $proxyNamespace = $emConfig->getProxyNamespace();
+        $proxyDirectory = $emConfig->getProxyDir();
+        Assertion::string($proxyNamespace);
+        Assertion::string($proxyDirectory);
+        $proxyGenerator = new ProxyGenerator($proxyDirectory, $proxyNamespace);
         foreach ($criticalModelClasses as $modelClass) {
             $expectedFile = $proxyGenerator->getProxyFileName($modelClass);
 

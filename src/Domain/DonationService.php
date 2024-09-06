@@ -187,7 +187,7 @@ class DonationService
         Donation $donation,
         StripePaymentMethodId $paymentMethodId
     ): \Stripe\PaymentIntent {
-        $this->updateDonationFees($paymentMethodId, $donation); // move this out to caller for non auto donation
+        $this->updateDonationFees($paymentMethodId, $donation);
         return $this->confirm($donation, $paymentMethodId);
     }
 

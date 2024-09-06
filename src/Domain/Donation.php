@@ -132,7 +132,7 @@ class Donation extends SalesforceWriteProxy
      * For Stripe (EU / UK): 1.5% of $amount + 0.20p
      * For Stripe (Non EU / Amex): 3.2% of $amount + 0.20p
      *
-     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
      */
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
@@ -142,7 +142,7 @@ class Donation extends SalesforceWriteProxy
      * Value Added Tax amount on `$charityFee`, in £. In addition to base amount
      * in $charityFee.
      *
-     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      * @see Donation::$currencyCode
      */
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
@@ -337,50 +337,14 @@ class Donation extends SalesforceWriteProxy
     private ?DateTimeImmutable $preAuthorizationDate = null;
 
     /**
-     * @param string $amount
-     * @deprecated but retained for now as used in old test classes. Not recommend for continued use - either use
-     * fromApiModel or create a new named constructor that takes required data for your use case.
-     */
-    public static function emptyTestDonation(
-        string $amount,
-        PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
-        string $currencyCode = 'GBP'
-    ): self {
-
-        /**
-         * @psalm-suppress NullArgument
-         * Campaign shouldn't be null generally but is when called from this deprecated method.
-         */
-        $donation = new self(
-            amount: $amount,
-            currencyCode: $currencyCode,
-            paymentMethodType: $paymentMethodType,
-            campaign: null,
-            charityComms: null,
-            championComms: null,
-            pspCustomerId: null,
-            optInTbgEmail: null,
-            donorName: null,
-            emailAddress: null,
-            countryCode: null,
-            tipAmount: '0',
-            mandate: null,
-            mandateSequenceNumber: null,
-        );
-
-        return $donation;
-    }
-
-    /**
      * @psalm-param numeric-string $amount
      * @psalm-param ?numeric-string $tipAmount
-     * @psalm-param Campaign $campaign
      */
     public function __construct(
         string $amount,
         string $currencyCode,
         PaymentMethodType $paymentMethodType,
-        $campaign, // relying on Psalm type only because tests pass null
+        Campaign $campaign,
         ?bool $charityComms,
         ?bool $championComms,
         ?string $pspCustomerId,
@@ -414,15 +378,8 @@ class Donation extends SalesforceWriteProxy
         $this->paymentMethodType = $paymentMethodType;
         $this->createdNow(); // Mimic ORM persistence hook attribute, calling its fn explicitly instead.
         $this->setPsp('stripe');
-
-        /**
-         * @psalm-suppress RedundantConditionGivenDocblockType - deprecated function used in tests does not respect
-         * docblock type.
-         */
-        if ($campaign) {
-            $this->setCampaign($campaign); // Charity & match expectation determined implicitly from this
-            $this->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
-        }
+        $this->setCampaign($campaign); // Charity & match expectation determined implicitly from this
+        $this->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
         $this->setPspCustomerId($pspCustomerId);
@@ -715,7 +672,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * Get core donation amount excluding any tip or fee cover.
      *
-     * @return string   In full pounds GBP.
+     * @return numeric-string   In full pounds GBP.
      */
     public function getAmount(): string
     {
@@ -723,18 +680,24 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string   In full pounds GBP. Net fee if VAT is added.
+     * @return numeric-string   In full pounds GBP. Net fee if VAT is added.
      */
     public function getCharityFee(): string
     {
         return $this->charityFee;
     }
 
+    /**
+     * @return numeric-string
+     */
     #[Pure] public function getCharityFeeGross(): string
     {
         return bcadd($this->getCharityFee(), $this->getCharityFeeVat(), 2);
     }
 
+    /**
+     * @param numeric-string $charityFee
+     */
     public function setCharityFee(string $charityFee): void
     {
         $this->charityFee = $charityFee;
@@ -899,7 +862,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string
+     * @return numeric-string
      */
     public function getTipAmount(): string
     {
@@ -961,7 +924,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string
+     * @return numeric-string
      */
     public function getCharityFeeVat(): string
     {
@@ -969,7 +932,7 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @param string $charityFeeVat
+     * @param numeric-string $charityFeeVat
      */
     public function setCharityFeeVat(string $charityFeeVat): void
     {
@@ -1260,16 +1223,20 @@ class Donation extends SalesforceWriteProxy
     {
         $lastName = $this->donorLastName;
         $firstName = $this->donorFirstName;
+        $collectedAt = $this->getCollectedAt();
         if ($lastName === null) {
             throw new \Exception("Missing donor last name; cannot send donation to claimbot");
         }
         if ($firstName === null) {
             throw new \Exception("Missing donor first name; cannot send donation to claimbot");
         }
+        if ($collectedAt === null) {
+            throw new \Exception("Missing donor collected date; cannot send donation to claimbot");
+        }
 
         $donationMessage = new Messages\Donation();
         $donationMessage->id = $this->uuid->toString();
-        $donationMessage->donation_date = $this->getCollectedAt()?->format('Y-m-d');
+        $donationMessage->donation_date = $collectedAt->format('Y-m-d');
         $donationMessage->title = '';
         $donationMessage->first_name = $firstName;
         $donationMessage->last_name = $lastName;

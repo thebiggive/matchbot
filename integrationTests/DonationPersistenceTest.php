@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
 
 class DonationPersistenceTest extends IntegrationTest
@@ -15,7 +16,8 @@ class DonationPersistenceTest extends IntegrationTest
         // arrange
         $em = $this->getService(EntityManagerInterface::class);
         $connection = $em->getConnection();
-        $donation = $this->makeDonationObject();
+        $donation = TestCase::someDonation('1');
+        $em->persist($donation->getCampaign());
         $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 10:00:00'));
 
         // act
@@ -49,7 +51,7 @@ class DonationPersistenceTest extends IntegrationTest
      */
     private function assertRowsSimilar(array $expected, array $actual, string $message = ''): void
     {
-        $ignoredColumns = ['id' => 0, 'uuid' => 0, 'updatedAt' => 0, 'createdAt' => 0];
+        $ignoredColumns = ['id' => 0, 'uuid' => 0, 'updatedAt' => 0, 'createdAt' => 0, 'campaign_id' => 0];
 
         $this->assertSame($ignoredColumns + $expected, $ignoredColumns + $actual, $message);
     }
@@ -89,7 +91,7 @@ class DonationPersistenceTest extends IntegrationTest
             'currencyCode' => 'GBP',
             'collectedAt' => null,
             'refundedAt' => '2023-06-22 10:00:00',
-            'tbgShouldProcessGiftAid' => null,
+            'tbgShouldProcessGiftAid' => 1,
             'tbgGiftAidRequestQueuedAt' => null,
             'tbgGiftAidRequestFailedAt' => null,
             'transferId' => null,
@@ -106,13 +108,5 @@ class DonationPersistenceTest extends IntegrationTest
             'updatedAt' => '1970-01-01',
             'createdAt' => '1970-01-01'
         ];
-    }
-
-    /**
-     * @return Donation
-     */
-    public function makeDonationObject(): Donation
-    {
-        return Donation::emptyTestDonation('1');
     }
 }

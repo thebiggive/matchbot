@@ -38,12 +38,11 @@ class RetrySafeEntityManagerTest extends TestCase
         $container->set(RetrySafeEntityManager::class, $this->retrySafeEntityManager);
     }
 
+    /** @doesNotPerformAssertions  */
     public function testBuild(): void
     {
         // Just check a construct + EM rebuild doesn't crash.
         $this->retrySafeEntityManager->resetManager();
-
-        $this->addToAssertionCount(1);
     }
 
     public function testGetRepository(): void
@@ -69,7 +68,7 @@ class RetrySafeEntityManagerTest extends TestCase
         $container = $app->getContainer();
         $container->set(EntityManager::class, $underlyingEmProphecy->reveal());
 
-        $this->retrySafeEntityManager->persist(Donation::emptyTestDonation('1'));
+        $this->retrySafeEntityManager->persist(TestCase::someDonation('1'));
     }
 
     public function testPersistWithRetry(): void
@@ -100,7 +99,7 @@ class RetrySafeEntityManagerTest extends TestCase
         $container->set(RetrySafeEntityManager::class, $this->retrySafeEntityManager);
         $container->set(EntityManagerInterface::class, $this->retrySafeEntityManager);
 
-        $this->retrySafeEntityManager->persist(Donation::emptyTestDonation('1'));
+        $this->retrySafeEntityManager->persist(TestCase::someDonation('1'));
     }
 
     public function testFlush(): void
@@ -164,7 +163,7 @@ class RetrySafeEntityManagerTest extends TestCase
         $emProperty = $retrySafeEntityManagerReflected->getProperty('entityManager');
         $emProperty->setValue($this->retrySafeEntityManager, $underlyingEmProphecy->reveal());
 
-        $this->retrySafeEntityManager->refresh(Donation::emptyTestDonation('1'), LockMode::PESSIMISTIC_WRITE);
+        $this->retrySafeEntityManager->refresh(TestCase::someDonation('1'), LockMode::PESSIMISTIC_WRITE);
     }
 
     public function testRefreshRetriesOnEmClosed(): void
@@ -190,7 +189,7 @@ class RetrySafeEntityManagerTest extends TestCase
             $underlyingEmProphecy2->reveal(),
         );
 
-        $retrySafeEntityManager->refresh(Donation::emptyTestDonation('1'), LockMode::PESSIMISTIC_WRITE);
+        $retrySafeEntityManager->refresh(TestCase::someDonation('1'), LockMode::PESSIMISTIC_WRITE);
     }
 
     /**
@@ -225,9 +224,9 @@ class RetrySafeEntityManagerTest extends TestCase
 
         $retrySafeEm->expects($this->once())
             ->method('resetManager')
-            ->will(new ReturnCallback(static function () use ($retrySafeEm, $underlyingEmToResetTo) {
+            ->willReturnCallback(static function () use ($retrySafeEm, $underlyingEmToResetTo) {
                 $retrySafeEm->setEntityManager($underlyingEmToResetTo);
-            }));
+            });
 
         return $retrySafeEm;
     }

@@ -19,7 +19,7 @@ final class Version20211029152640 extends AbstractMigration
 
     public function up(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('ALTER TABLE Donation ADD collectedAt DATETIME NOT NULL, ADD tbgShouldProcessGiftAid TINYINT(1) DEFAULT NULL, ADD tbgGiftAidRequestQueuedAt TINYINT(1) DEFAULT NULL, ADD tbgGiftAidRequestFailedAt TINYINT(1) DEFAULT NULL');
 
@@ -30,7 +30,7 @@ final class Version20211029152640 extends AbstractMigration
 
     public function down(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('ALTER TABLE Donation DROP collectedAt, DROP tbgShouldProcessGiftAid, DROP tbgGiftAidRequestQueuedAt, DROP tbgGiftAidRequestFailedAt');
     }

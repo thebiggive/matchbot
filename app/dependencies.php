@@ -144,8 +144,12 @@ return function (ContainerBuilder $containerBuilder) {
                 new AmazonSqsTransportFactory(),
                 new RedisTransportFactory(),
             ]);
+            $claimbotDSN = getenv('CLAIMBOT_MESSENGER_TRANSPORT_DSN');
+            if ($claimbotDSN === false) {
+                throw new \Exception('CLAIMBOT_MESSENGER_TRANSPORT_DSN must be defined in environment');
+            }
             return $transportFactory->createTransport(
-                getenv('CLAIMBOT_MESSENGER_TRANSPORT_DSN'),
+                $claimbotDSN,
                 [],
                 new PhpSerializer(),
             );
@@ -469,8 +473,12 @@ return function (ContainerBuilder $containerBuilder) {
                 new InMemoryTransportFactory(), // For unit tests.
                 new RedisTransportFactory(),
             ]);
+            $dsn = getenv('MESSENGER_TRANSPORT_DSN');
+            if ($dsn === false) {
+                throw new \Exception('MESSENGER_TRANSPORT_DSN not defined in enviornmnet');
+            }
             return $transportFactory->createTransport(
-                getenv('MESSENGER_TRANSPORT_DSN'),
+                $dsn,
                 [],
                 new PhpSerializer(),
             );

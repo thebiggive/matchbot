@@ -19,7 +19,7 @@ final class Version20211029163214 extends AbstractMigration
 
     public function up(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('ALTER TABLE Charity ADD hmrcReferenceNumber VARCHAR(7) DEFAULT NULL, ADD tbgClaimingGiftAid TINYINT(1) DEFAULT NULL');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_4CC08E829EF7853B ON Charity (hmrcReferenceNumber)');
@@ -30,7 +30,7 @@ final class Version20211029163214 extends AbstractMigration
 
     public function down(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('DROP INDEX UNIQ_4CC08E829EF7853B ON Charity');
         $this->addSql('ALTER TABLE Charity DROP hmrcReferenceNumber, DROP tbgClaimingGiftAid');

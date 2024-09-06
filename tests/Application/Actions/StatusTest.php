@@ -8,6 +8,7 @@ use DI\Container;
 use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Platforms\MySQL80Platform;
+use Doctrine\DBAL\Result;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
@@ -18,6 +19,7 @@ use Doctrine\ORM\Tools\Console\ConsoleRunner;
 use Doctrine\ORM\UnitOfWork;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\NullOutput;
@@ -114,6 +116,9 @@ class StatusTest extends TestCase
         $config->setMetadataCache($cacheAdapter);
 
         $connectionProphecy = $this->prophesize(Connection::class);
+        $connectionProphecy->executeQuery('SELECT 1')->willReturn(
+            $this->createStub(Result::class)
+        );
         $connectionProphecy->isConnected()
             ->willReturn(true);
         // *Can* be called by `GenerateProxiesCommand`.

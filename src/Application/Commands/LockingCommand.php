@@ -49,8 +49,11 @@ abstract class LockingCommand extends Command
 
     private function getLock(): bool
     {
+        $name = $this->getName();
+        \assert(\is_string($name), 'Command name must be defined');
+
         $this->lock = $this->lockFactory->createLock(
-            $this->getName(),
+            $name,
             30 * 60,    // 30 minute lock
             true        // auto-release on process end
         );

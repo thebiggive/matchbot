@@ -20,7 +20,7 @@ final class Version20191109151808 extends AbstractMigration
     public function up(Schema $schema) : void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('CREATE TABLE Charity (id INT UNSIGNED AUTO_INCREMENT NOT NULL, name VARCHAR(255) NOT NULL, salesforceId VARCHAR(18) DEFAULT NULL, salesforceLastPull DATETIME DEFAULT NULL, createdAt DATETIME NOT NULL, updatedAt DATETIME NOT NULL, UNIQUE INDEX UNIQ_4CC08E82D8961D21 (salesforceId), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB');
         $this->addSql('CREATE TABLE Campaign (id INT UNSIGNED AUTO_INCREMENT NOT NULL, charity_id INT UNSIGNED DEFAULT NULL, name VARCHAR(255) NOT NULL, startDate DATETIME NOT NULL, endDate DATETIME NOT NULL, isMatched TINYINT(1) NOT NULL, salesforceId VARCHAR(18) DEFAULT NULL, salesforceLastPull DATETIME DEFAULT NULL, createdAt DATETIME NOT NULL, updatedAt DATETIME NOT NULL, UNIQUE INDEX UNIQ_E663708BD8961D21 (salesforceId), INDEX IDX_E663708BF5C97E37 (charity_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB');
@@ -40,7 +40,7 @@ final class Version20191109151808 extends AbstractMigration
     public function down(Schema $schema) : void
     {
         // this down() migration is auto-generated, please modify it to your needs
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('ALTER TABLE Campaign DROP FOREIGN KEY FK_E663708BF5C97E37');
         $this->addSql('ALTER TABLE Campaign_CampaignFunding DROP FOREIGN KEY FK_33643995F639F774');
