@@ -194,7 +194,10 @@ class RetrySafeEntityManager extends EntityManagerDecorator
      */
     public function getRepository($className)
     {
-        return $this->ormConfig->getRepositoryFactory()->getRepository($this, $className);
+        $objectRepository = $this->ormConfig->getRepositoryFactory()->getRepository($this, $className);
+        \assert($objectRepository instanceof ORM\EntityRepository);
+
+        return $objectRepository;
     }
 
     /**

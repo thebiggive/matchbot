@@ -24,7 +24,7 @@ class FundingWithdrawal extends Model
     protected Donation $donation;
 
     /**
-     * @var string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
+     * @var numeric-string Always use bcmath methods as in repository helpers to avoid doing float maths with decimals!
      */
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $amount;
@@ -49,7 +49,7 @@ class FundingWithdrawal extends Model
     }
 
     /**
-     * @param string $amount
+     * @param numeric-string $amount
      */
     public function setAmount(string $amount): void
     {
@@ -57,7 +57,7 @@ class FundingWithdrawal extends Model
     }
 
     /**
-     * @return string
+     * @return numeric-string
      */
     public function getAmount(): string
     {

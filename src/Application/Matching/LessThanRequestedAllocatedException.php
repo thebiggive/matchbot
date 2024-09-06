@@ -9,7 +9,7 @@ use JetBrains\PhpStorm\Pure;
 class LessThanRequestedAllocatedException extends \Exception
 {
     /**
-     * @param string $amountAllocated       May be zero if somebody else just secured the last funds.
+     * @param numeric-string $amountAllocated       May be zero if somebody else just secured the last funds.
      */
     #[Pure]
     public function __construct(
@@ -18,6 +18,9 @@ class LessThanRequestedAllocatedException extends \Exception
         parent::__construct('Less than requested was allocated');
     }
 
+    /**
+     * @return numeric-string
+     */
     public function getAmountAllocated(): string
     {
         return $this->amountAllocated;

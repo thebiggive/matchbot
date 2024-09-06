@@ -63,10 +63,6 @@
       <code><![CDATA[$c->get('settings')['redis']['host']]]></code>
       <code><![CDATA[$settings['doctrine']['cache_dir']]]></code>
     </MixedOperand>
-    <PossiblyFalseArgument>
-      <code><![CDATA[getenv('CLAIMBOT_MESSENGER_TRANSPORT_DSN')]]></code>
-      <code><![CDATA[getenv('MESSENGER_TRANSPORT_DSN')]]></code>
-    </PossiblyFalseArgument>
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[getenv('BYPASS_PSP')]]></code>
     </RiskyTruthyFalsyComparison>
@@ -85,26 +81,12 @@
     <MixedArrayAccess>
       <code><![CDATA[$container->get('settings')['displayErrorDetails']]]></code>
     </MixedArrayAccess>
-    <PossiblyNullReference>
-      <code><![CDATA[get]]></code>
-    </PossiblyNullReference>
   </file>
   <file src="src/Application/Actions/Donations/Get.php">
     <DocblockTypeContradiction>
       <code><![CDATA[!$donation]]></code>
       <code><![CDATA[$donation]]></code>
     </DocblockTypeContradiction>
-  </file>
-  <file src="src/Application/Actions/Donations/Update.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$donation->getAmount()]]></code>
-    </ArgumentTypeCoercion>
-    <PossiblyNullArgument>
-      <code><![CDATA[$exception->getStripeCode()]]></code>
-      <code><![CDATA[$exception->getStripeCode()]]></code>
-      <code><![CDATA[$exception->getStripeCode()]]></code>
-      <code><![CDATA[$retryException->getStripeCode()]]></code>
-    </PossiblyNullArgument>
   </file>
   <file src="src/Application/Actions/GetPaymentMethods.php">
     <MixedArgument>
@@ -134,32 +116,11 @@
     <MixedArgument>
       <code><![CDATA[$event->data->object]]></code>
     </MixedArgument>
-    <PossiblyNullArgument>
-      <code><![CDATA[$intentId]]></code>
-      <code><![CDATA[$intentId]]></code>
-      <code><![CDATA[$intentId]]></code>
-      <code><![CDATA[$intentId]]></code>
-      <code><![CDATA[$intentId]]></code>
-    </PossiblyNullArgument>
   </file>
   <file src="src/Application/Actions/Hooks/StripePayoutUpdate.php">
     <MixedPropertyFetch>
       <code><![CDATA[$event->data->object->id]]></code>
     </MixedPropertyFetch>
-  </file>
-  <file src="src/Application/Actions/Status.php">
-    <PossiblyNullArgument>
-      <code><![CDATA[$emConfig->getProxyDir()]]></code>
-      <code><![CDATA[$emConfig->getProxyNamespace()]]></code>
-    </PossiblyNullArgument>
-  </file>
-  <file src="src/Application/Auth/DonationPublicAuthMiddleware.php">
-    <PossiblyNullArgument>
-      <code><![CDATA[$donationId]]></code>
-    </PossiblyNullArgument>
-    <PossiblyNullReference>
-      <code><![CDATA[getArgument]]></code>
-    </PossiblyNullReference>
   </file>
   <file src="src/Application/Auth/DonationToken.php">
     <MixedPropertyFetch>
@@ -189,14 +150,6 @@
       <code><![CDATA[$decodedJwtBody->sub->psp_id ?? null]]></code>
     </MixedReturnStatement>
   </file>
-  <file src="src/Application/Auth/PersonManagementAuthMiddleware.php">
-    <PossiblyNullArgument>
-      <code><![CDATA[$personId]]></code>
-    </PossiblyNullArgument>
-    <PossiblyNullReference>
-      <code><![CDATA[getArgument]]></code>
-    </PossiblyNullReference>
-  </file>
   <file src="src/Application/Commands/Command.php">
     <PossiblyNullOperand>
       <code><![CDATA[$this->getName()]]></code>
@@ -204,12 +157,6 @@
     </PossiblyNullOperand>
   </file>
   <file src="src/Application/Commands/HandleOutOfSyncFunds.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$fundingAvailable]]></code>
-      <code><![CDATA[$fundingWithdrawalTotal]]></code>
-      <code><![CDATA[$fundingWithdrawalTotal]]></code>
-      <code><![CDATA[$fundingWithdrawalTotal]]></code>
-    </ArgumentTypeCoercion>
     <MixedArgument>
       <code><![CDATA[$excludedFundingIds]]></code>
     </MixedArgument>
@@ -221,17 +168,9 @@
     </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Application/Commands/LockingCommand.php">
-    <PossiblyNullArgument>
-      <code><![CDATA[$this->getName()]]></code>
-    </PossiblyNullArgument>
     <PossiblyNullOperand>
       <code><![CDATA[$this->getName()]]></code>
     </PossiblyNullOperand>
-  </file>
-  <file src="src/Application/Commands/RetrospectivelyMatch.php">
-    <PossiblyFalseArgument>
-      <code><![CDATA[getenv('APP_ENV')]]></code>
-    </PossiblyFalseArgument>
   </file>
   <file src="src/Application/Commands/UpdateCampaigns.php">
     <DeprecatedMethod>
@@ -246,19 +185,6 @@
       <code><![CDATA[$campaign->getSalesforceId()]]></code>
     </PossiblyNullOperand>
   </file>
-  <file src="src/Application/Fees/Calculator.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$amount]]></code>
-      <code><![CDATA[$feeAmountFromPercentageComponent]]></code>
-      <code><![CDATA[$this->amount]]></code>
-      <code><![CDATA[$this->amount]]></code>
-      <code><![CDATA[$this->amount]]></code>
-      <code><![CDATA[$this->getCoreFee()]]></code>
-      <code><![CDATA[$this->getCoreFee()]]></code>
-      <code><![CDATA[$this->getFeeVatPercentage()]]></code>
-      <code><![CDATA[$this->getFeeVatPercentage()]]></code>
-    </ArgumentTypeCoercion>
-  </file>
   <file src="src/Application/Handlers/HttpErrorHandler.php">
     <PropertyNotSetInConstructor>
       <code><![CDATA[HttpErrorHandler]]></code>
@@ -268,20 +194,9 @@
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Application/Matching/Adapter.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$wholeUnit]]></code>
-    </ArgumentTypeCoercion>
     <DeprecatedMethod>
       <code><![CDATA[transactional]]></code>
     </DeprecatedMethod>
-    <PossiblyInvalidMethodCall>
-      <code><![CDATA[decrBy]]></code>
-      <code><![CDATA[exec]]></code>
-      <code><![CDATA[exec]]></code>
-      <code><![CDATA[incrBy]]></code>
-      <code><![CDATA[set]]></code>
-      <code><![CDATA[set]]></code>
-    </PossiblyInvalidMethodCall>
   </file>
   <file src="src/Application/Messenger/Handler/GiftAidResultHandler.php">
     <RiskyTruthyFalsyComparison>
@@ -293,29 +208,12 @@
     <DocblockTypeContradiction>
       <code><![CDATA[is_string($source_transfer)]]></code>
     </DocblockTypeContradiction>
-    <PossiblyNullArgument>
-      <code><![CDATA[$chargeId]]></code>
-      <code><![CDATA[$chargeId]]></code>
-    </PossiblyNullArgument>
   </file>
   <file src="src/Application/Messenger/StripePayout.php">
     <MissingConstructor>
       <code><![CDATA[$connectAccountId]]></code>
       <code><![CDATA[$payoutId]]></code>
     </MissingConstructor>
-  </file>
-  <file src="src/Application/Persistence/RetrySafeEntityManager.php">
-    <LessSpecificReturnStatement>
-      <code><![CDATA[$this->ormConfig->getRepositoryFactory()->getRepository($this, $className)]]></code>
-    </LessSpecificReturnStatement>
-    <MoreSpecificReturnType>
-      <code><![CDATA[getRepository]]></code>
-    </MoreSpecificReturnType>
-  </file>
-  <file src="src/Client/Campaign.php">
-    <PossiblyNullReference>
-      <code><![CDATA[getStatusCode]]></code>
-    </PossiblyNullReference>
   </file>
   <file src="src/Client/Common.php">
     <MixedArrayAccess>
@@ -426,22 +324,6 @@
     </MissingConstructor>
   </file>
   <file src="src/Domain/Donation.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$amount]]></code>
-      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
-      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
-      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
-      <code><![CDATA[$this->getAmount()]]></code>
-      <code><![CDATA[$this->getAmount()]]></code>
-      <code><![CDATA[$this->getCharityFee()]]></code>
-      <code><![CDATA[$this->getCharityFeeGross()]]></code>
-      <code><![CDATA[$this->getCharityFeeVat()]]></code>
-      <code><![CDATA[$this->getTipAmount()]]></code>
-      <code><![CDATA[$this->getTipAmount()]]></code>
-    </ArgumentTypeCoercion>
-    <PossiblyNullPropertyAssignmentValue>
-      <code><![CDATA[$this->getCollectedAt()?->format('Y-m-d')]]></code>
-    </PossiblyNullPropertyAssignmentValue>
     <PropertyNotSetInConstructor>
       <code><![CDATA[$campaign]]></code>
       <code><![CDATA[Donation]]></code>
@@ -456,12 +338,6 @@
     </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Domain/DonationRepository.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$amountAllocated]]></code>
-      <code><![CDATA[$amountAllocated]]></code>
-      <code><![CDATA[$amountMatchedAtStart]]></code>
-      <code><![CDATA[$donation->getAmount()]]></code>
-    </ArgumentTypeCoercion>
     <DeprecatedMethod>
       <code><![CDATA[getResultCacheImpl]]></code>
       <code><![CDATA[transactional]]></code>
@@ -482,11 +358,6 @@
       <code><![CDATA[Donation[]]]></code>
       <code><![CDATA[Donation[]]]></code>
     </MixedReturnTypeCoercion>
-    <PossiblyUndefinedVariable>
-      <code><![CDATA[$lockStartTime]]></code>
-      <code><![CDATA[$lockStartTime]]></code>
-      <code><![CDATA[$newTotal]]></code>
-    </PossiblyUndefinedVariable>
   </file>
   <file src="src/Domain/DonationService.php">
     <RiskyTruthyFalsyComparison>

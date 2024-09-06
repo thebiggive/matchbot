@@ -51,6 +51,9 @@ class Calculator
         'amex', 'diners', 'discover', 'eftpos_au', 'jcb', 'mastercard', 'unionpay', 'visa', 'unknown'
     ];
 
+    /**
+     * @param numeric-string $amount
+     */
     public static function calculate(
         string $psp,
         ?string $cardBrand,
@@ -78,6 +81,8 @@ class Calculator
      * We can consider removing all instance properties and methods and relying on static methods and local vars only -
      * a static calculator would be clearer. For now, I've hidden the instance in this private method - there's no
      * public way to get a Calculator instance.
+     *
+     * @param numeric-string $amount
      */
     private function __construct(
         string $psp,
@@ -101,6 +106,9 @@ class Calculator
         );
     }
 
+    /**
+     * @return numeric-string
+     */
     private function getCoreFee(): string
     {
         $giftAidFee = '0.00';
@@ -142,6 +150,9 @@ class Calculator
         );
     }
 
+    /**
+     * @return numeric-string
+     */
     private function getFeeVat(): string
     {
         // Standard, non-flat-fee logic.
@@ -150,6 +161,9 @@ class Calculator
         return $this->roundAmount(bcmul($vatRatio, $this->getCoreFee(), 3));
     }
 
+    /**
+     * @return numeric-string
+     */
     private function getFeeVatPercentage(): string
     {
         $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
@@ -165,9 +179,9 @@ class Calculator
      * Takes a bcmath string amount with 3 or more decimal places and rounds to
      * 2 places, with 0.005 rounding up and below rounding down.
      *
-     * @param string $amount    Simplified from https://stackoverflow.com/a/51390451/2803757 for
+     * @param numeric-string $amount    Simplified from https://stackoverflow.com/a/51390451/2803757 for
      *                          fixed scale and only positive inputs.
-     * @return string
+     * @return numeric-string
      */
     #[Pure] private function roundAmount(string $amount): string
     {

@@ -57,6 +57,9 @@ trait DonationTestDataTrait
         return $donation;
     }
 
+    /**
+     * @param numeric-string $amount
+     */
     protected function getTestDonation(
         string $amount = '123.45',
         PaymentMethodType $pspMethodType = PaymentMethodType::Card,

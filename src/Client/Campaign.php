@@ -20,7 +20,7 @@ class Campaign extends Common
         try {
             $response = $this->getHttpClient()->get($uri);
         } catch (RequestException $exception) {
-            if ($exception->getResponse() && $exception->getResponse()->getStatusCode() === 404) {
+            if ($exception->getResponse()?->getStatusCode() === 404) {
                 // may be safely caught in sandboxes
                 throw new NotFoundException(sprintf('Campaign ID %s not found in SF', $id));
             }

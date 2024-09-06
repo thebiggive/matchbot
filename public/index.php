@@ -30,10 +30,13 @@ $request = $serverRequestCreator->createServerRequestFromGlobals();
 
 // Create Error Handler
 $responseFactory = $app->getResponseFactory();
+$appContainer = $app->getContainer();
+\assert($appContainer !== null);
+
 $errorHandler = new HttpErrorHandler(
     $callableResolver,
     $responseFactory,
-    $app->getContainer()->get(LoggerInterface::class),
+    $appContainer->get(LoggerInterface::class),
 );
 
 // Create Shutdown Handler
