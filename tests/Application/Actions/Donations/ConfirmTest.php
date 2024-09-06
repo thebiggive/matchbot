@@ -388,7 +388,7 @@ class ConfirmTest extends TestCase
         $this->stripeProphecy->updatePaymentIntent(
             $paymentIntentId,
             $expectedMetadataUpdate
-        )->shouldBeCalled(); // should it though?
+        )->shouldBeCalled();
 
         if (is_string($confirmationTokenId)) {
             $confirmation = $this->stripeProphecy->confirmPaymentIntent(
