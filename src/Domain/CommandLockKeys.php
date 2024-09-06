@@ -32,4 +32,11 @@ class CommandLockKeys
      */
     #[ORM\Column(type: 'integer', options: ['unsigned' => true])]
     public int $key_expiration;
+
+    public function __construct(string $key_id, string $key_token, int $key_expiration)
+    {
+        $this->key_id = $key_id;
+        $this->key_token = $key_token;
+        $this->key_expiration = $key_expiration;
+    }
 }

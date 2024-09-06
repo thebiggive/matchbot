@@ -50,7 +50,6 @@ class FundRepository extends SalesforceReadProxyRepository
         $fundsData = $client->getForCampaign($campaignSFId);
         foreach ($fundsData as $fundData) {
             // For each fund linked to the campaign, look it up or create it if unknown
-            /** @var Fund $fund */
             $fund = $this->findOneBy(['salesforceId' => $fundData['id']]);
             if (!$fund) {
                 $fund = $this->getNewFund($fundData);

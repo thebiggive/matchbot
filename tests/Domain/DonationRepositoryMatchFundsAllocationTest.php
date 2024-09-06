@@ -47,7 +47,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $this->emProphecy->getRepository(CampaignFunding::class)
             ->willReturn($this->campaignFundingsRepositoryProphecy->reveal());
 
-        $this->emProphecy->transactional(Argument::type(\Closure::class))->will(/**
+        $this->emProphecy->wrapInTransaction(Argument::type(\Closure::class))->will(/**
          * @param list<\Closure> $args
          * @return mixed
          */            fn(array $args) => $args[0]()

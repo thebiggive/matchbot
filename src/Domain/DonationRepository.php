@@ -623,7 +623,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function removeAllFundingWithdrawalsForDonation(Donation $donation): void
     {
-        $this->getEntityManager()->transactional(function () use ($donation) {
+        $this->getEntityManager()->wrapInTransaction(function () use ($donation) {
             foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
                 $this->getEntityManager()->remove($fundingWithdrawal);
             }

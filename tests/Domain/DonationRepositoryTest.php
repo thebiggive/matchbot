@@ -336,7 +336,7 @@ class DonationRepositoryTest extends TestCase
             ->willReturn('0.00')
             ->shouldBeCalledOnce();
 
-        $this->entityManagerProphecy->transactional(Argument::type(\Closure::class))->will(/**
+        $this->entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))->will(/**
          * @param array<\Closure> $args
          * @return mixed
          */            fn(array $args) => $args[0]()

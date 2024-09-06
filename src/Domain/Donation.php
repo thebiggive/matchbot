@@ -1216,7 +1216,10 @@ class Donation extends SalesforceWriteProxy
 
     public function hasEnoughDataForSalesforce(): bool
     {
-        return !empty($this->getDonorFirstName()) && !empty($this->getDonorLastName());
+        $firstName = $this->getDonorFirstName();
+        $lastName = $this->getDonorLastName();
+
+        return is_string($firstName) && $firstName !== '' && is_string($lastName) && $lastName !== '';
     }
 
     public function toClaimBotModel(): Messages\Donation
@@ -1254,7 +1257,7 @@ class Donation extends SalesforceWriteProxy
             // In any case where this doesn't produce a result, just send the full first 40 characters
             // of the home address. This is also HMRC's requested value in this property for overseas
             // donations.
-            if (empty($donationMessage->house_no) || $donationMessage->overseas) {
+            if ($donationMessage->house_no === '' || $donationMessage->overseas) {
                 $donationMessage->house_no = trim($this->donorHomeAddressLine1);
             }
 
@@ -1383,7 +1386,7 @@ class Donation extends SalesforceWriteProxy
         $this->chargeId = $chargeId;
         $this->transferId = $transferId;
 
-        if ($cardBrand) {
+        if ($cardBrand !== null) {
             /** @psalm-var value-of<Calculator::STRIPE_CARD_BRANDS> $cardBrand */
             $this->deriveFees($cardBrand, $cardCountry);
         }

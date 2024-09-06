@@ -28,7 +28,6 @@
       <code><![CDATA[$c->get('settings')['redis']]]></code>
       <code><![CDATA[$c->get('settings')['redis']]]></code>
       <code><![CDATA[$c->get('settings')['stripe']]]></code>
-      <code><![CDATA[$c->get('settings')['stripe']]]></code>
       <code><![CDATA[$loggerSettings['level']]]></code>
       <code><![CDATA[$loggerSettings['name']]]></code>
       <code><![CDATA[$loggerSettings['path']]]></code>
@@ -77,20 +76,6 @@
       <code><![CDATA[$container->get('settings')['displayErrorDetails']]]></code>
     </MixedArrayAccess>
   </file>
-  <file src="src/Application/Actions/Donations/Get.php">
-    <DocblockTypeContradiction>
-      <code><![CDATA[!$donation]]></code>
-      <code><![CDATA[$donation]]></code>
-    </DocblockTypeContradiction>
-  </file>
-  <file src="src/Application/Actions/GetPaymentMethods.php">
-    <MixedArgument>
-      <code><![CDATA[$customerId]]></code>
-    </MixedArgument>
-    <MixedAssignment>
-      <code><![CDATA[$customerId]]></code>
-    </MixedAssignment>
-  </file>
   <file src="src/Application/Actions/Hooks/Stripe.php">
     <MixedArrayAccess>
       <code><![CDATA[$container->get('settings')['stripe']]]></code>
@@ -100,14 +85,6 @@
     </MixedAssignment>
   </file>
   <file src="src/Application/Actions/Hooks/StripePaymentsUpdate.php">
-    <DocblockTypeContradiction>
-      <code><![CDATA[!$donation]]></code>
-      <code><![CDATA[!$donation]]></code>
-      <code><![CDATA[!$donation]]></code>
-      <code><![CDATA[$donation]]></code>
-      <code><![CDATA[$donation]]></code>
-      <code><![CDATA[$donation]]></code>
-    </DocblockTypeContradiction>
     <MixedArgument>
       <code><![CDATA[$event->data->object]]></code>
     </MixedArgument>
@@ -123,12 +100,6 @@
     </MixedPropertyFetch>
   </file>
   <file src="src/Application/Auth/IdentityToken.php">
-    <MissingParamType>
-      <code><![CDATA[$jws]]></code>
-    </MissingParamType>
-    <MixedArgument>
-      <code><![CDATA[$jws]]></code>
-    </MixedArgument>
     <MixedInferredReturnType>
       <code><![CDATA[?string]]></code>
       <code><![CDATA[bool]]></code>
@@ -176,8 +147,6 @@
     </MixedArgument>
     <PossiblyNullOperand>
       <code><![CDATA[$campaign->getSalesforceId()]]></code>
-      <code><![CDATA[$campaign->getSalesforceId()]]></code>
-      <code><![CDATA[$campaign->getSalesforceId()]]></code>
     </PossiblyNullOperand>
   </file>
   <file src="src/Application/Handlers/HttpErrorHandler.php">
@@ -188,21 +157,11 @@
       <code><![CDATA[HttpErrorHandler]]></code>
     </PropertyNotSetInConstructor>
   </file>
-  <file src="src/Application/Matching/Adapter.php">
-    <DeprecatedMethod>
-      <code><![CDATA[transactional]]></code>
-    </DeprecatedMethod>
-  </file>
   <file src="src/Application/Messenger/Handler/GiftAidResultHandler.php">
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[empty($donationMessage->response_detail)]]></code>
       <code><![CDATA[empty($donationMessage->submission_correlation_id)]]></code>
     </RiskyTruthyFalsyComparison>
-  </file>
-  <file src="src/Application/Messenger/Handler/StripePayoutHandler.php">
-    <DocblockTypeContradiction>
-      <code><![CDATA[is_string($source_transfer)]]></code>
-    </DocblockTypeContradiction>
   </file>
   <file src="src/Application/Messenger/StripePayout.php">
     <MissingConstructor>
@@ -227,7 +186,6 @@
   </file>
   <file src="src/Client/Donation.php">
     <RiskyTruthyFalsyComparison>
-      <code><![CDATA[getenv('DISABLE_CLIENT_PUSH')]]></code>
       <code><![CDATA[getenv('DISABLE_CLIENT_PUSH')]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
@@ -311,13 +269,6 @@
       <code><![CDATA[empty($hmrcReferenceNumber)]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
-  <file src="src/Domain/CommandLockKeys.php">
-    <MissingConstructor>
-      <code><![CDATA[$key_expiration]]></code>
-      <code><![CDATA[$key_id]]></code>
-      <code><![CDATA[$key_token]]></code>
-    </MissingConstructor>
-  </file>
   <file src="src/Domain/Donation.php">
     <PropertyNotSetInConstructor>
       <code><![CDATA[Donation]]></code>
@@ -325,16 +276,11 @@
     </PropertyNotSetInConstructor>
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[!$this->transactionId]]></code>
-      <code><![CDATA[$cardBrand]]></code>
-      <code><![CDATA[empty($donationMessage->house_no)]]></code>
-      <code><![CDATA[empty($this->getDonorFirstName())]]></code>
-      <code><![CDATA[empty($this->getDonorLastName())]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Domain/DonationRepository.php">
     <DeprecatedMethod>
       <code><![CDATA[getResultCacheImpl]]></code>
-      <code><![CDATA[transactional]]></code>
     </DeprecatedMethod>
     <MixedReturnTypeCoercion>
       <code><![CDATA[$qb->getQuery()
@@ -353,12 +299,6 @@
       <code><![CDATA[Donation[]]]></code>
     </MixedReturnTypeCoercion>
   </file>
-  <file src="src/Domain/DonationService.php">
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[empty($campaign->getCharity()->getStripeAccountId())]]></code>
-      <code><![CDATA[empty($donation->getCampaign()->getCharity()->getStripeAccountId())]]></code>
-    </RiskyTruthyFalsyComparison>
-  </file>
   <file src="src/Domain/Fund.php">
     <MissingConstructor>
       <code><![CDATA[$currencyCode]]></code>
@@ -368,10 +308,6 @@
     </MissingConstructor>
   </file>
   <file src="src/Domain/FundRepository.php">
-    <DocblockTypeContradiction>
-      <code><![CDATA[!$fund]]></code>
-      <code><![CDATA[$fund]]></code>
-    </DocblockTypeContradiction>
     <MissingConstructor>
       <code><![CDATA[$campaignFundingRepository]]></code>
       <code><![CDATA[$matchingAdapter]]></code>
@@ -402,15 +338,9 @@
     </PossiblyNullOperand>
   </file>
   <file src="src/Domain/SalesforceProxyRepository.php">
-    <DocblockTypeContradiction>
-      <code><![CDATA[!$this->client]]></code>
-      <code><![CDATA[$this->client]]></code>
-    </DocblockTypeContradiction>
     <MissingConstructor>
       <code><![CDATA[$client]]></code>
       <code><![CDATA[$client]]></code>
-      <code><![CDATA[$client]]></code>
-      <code><![CDATA[$logger]]></code>
       <code><![CDATA[$logger]]></code>
       <code><![CDATA[$logger]]></code>
     </MissingConstructor>
@@ -430,11 +360,6 @@
       <code><![CDATA[$updatedAt]]></code>
     </MissingConstructor>
   </file>
-  <file src="src/Monolog/Processor/AwsTraceIdProcessor.php">
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[empty($traceId)]]></code>
-    </RiskyTruthyFalsyComparison>
-  </file>
   <file src="tests/Application/Actions/Donations/CreateTest.php">
     <MixedArrayAccess>
       <code><![CDATA[$payloadArray['error']]]></code>
@@ -451,12 +376,6 @@
     <MixedAssignment>
       <code><![CDATA[$payloadArray]]></code>
     </MixedAssignment>
-    <RedundantConditionGivenDocblockType>
-      <code><![CDATA[assertFalse]]></code>
-      <code><![CDATA[assertFalse]]></code>
-      <code><![CDATA[assertFalse]]></code>
-      <code><![CDATA[assertFalse]]></code>
-    </RedundantConditionGivenDocblockType>
   </file>
   <file src="tests/Application/Actions/Donations/GetTest.php">
     <MixedArrayAccess>
@@ -543,16 +462,6 @@
       <code><![CDATA[$webhookSecret]]></code>
       <code><![CDATA[$webhookSecret]]></code>
     </MixedAssignment>
-  </file>
-  <file src="tests/Application/Actions/StatusTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[ConsoleRunner::createHelperSet($container->get(EntityManagerInterface::class))]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="tests/Application/Commands/AlwaysAvailableLockStore.php">
-    <MissingParamType>
-      <code><![CDATA[$ttl]]></code>
-    </MissingParamType>
   </file>
   <file src="tests/Application/Commands/ClaimGiftAidTest.php">
     <MixedArgumentTypeCoercion>

@@ -331,13 +331,15 @@ class DonationService
         }
 
         if ($donation->getPsp() === 'stripe') {
-            if (empty($donation->getCampaign()->getCharity()->getStripeAccountId())) {
+            $stripeAccountId = $donation->getCampaign()->getCharity()->getStripeAccountId();
+            if ($stripeAccountId === null || $stripeAccountId === '') {
                 // Try re-pulling in case charity has very recently onboarded with for Stripe.
                 $campaign = $donation->getCampaign();
                 $this->campaignRepository->updateFromSf($campaign);
 
                 // If still empty, error out
-                if (empty($campaign->getCharity()->getStripeAccountId())) {
+                $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
+                if ($stripeAccountId === null || $stripeAccountId === '') {
                     $this->logger->error(sprintf(
                         'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
                         $donation->getCampaign()->getCharity()->getSalesforceId() ?? 'missing charity sf ID',

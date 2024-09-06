@@ -31,6 +31,7 @@ class GetPaymentMethods extends Action
         // as the person, and sets this attribute to the Stripe Customer ID based on JWS claims, all
         // in `PersonWithPasswordAuthMiddleware`.
         $customerId = $request->getAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME);
+        \assert(is_string($customerId));
 
         $paymentMethods = $this->stripeClient->customers->allPaymentMethods(
             $customerId,

@@ -298,7 +298,6 @@ class StripePaymentsUpdate extends Stripe
 
         $this->entityManager->beginTransaction();
 
-        /** @var Donation $donation */
         $donation = $this->donationRepository->findOneBy(['chargeId' => $charge->id]);
 
         if (!$donation) {

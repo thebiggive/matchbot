@@ -64,6 +64,19 @@ class RetrySafeEntityManager extends EntityManagerDecorator
         parent::__construct($this->entityManager);
     }
 
+
+    /**
+     * @template RETURN
+     * @psalm-param callable(): RETURN $func
+     * @psalm-return RETURN
+     *
+     * @psalm-suppress MoreSpecificImplementedParamType
+     */
+    public function wrapInTransaction(callable $func)
+    {
+        return $this->transactional($func);
+    }
+
     /**
      * @template T
      * @psalm-param callable(): T $func
