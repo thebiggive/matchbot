@@ -3,9 +3,11 @@
 namespace MatchBot\Client;
 
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\StripeConformationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use Ramsey\Uuid\Uuid;
+use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
@@ -84,5 +86,10 @@ class StubStripeClient implements Stripe
     public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
     {
         return new CustomerSession();
+    }
+
+    public function retrieveConfirmationToken(StripeConformationTokenId $confirmationTokenId): ConfirmationToken
+    {
+        return new ConfirmationToken();
     }
 }

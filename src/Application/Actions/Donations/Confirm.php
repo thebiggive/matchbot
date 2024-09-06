@@ -13,6 +13,7 @@ use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\StripeConformationTokenId;
 use MatchBot\Domain\StripePaymentMethodId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -90,7 +91,15 @@ class Confirm extends Action
         }
         \assert(is_array($requestBody));
 
-        $paymentMethodId = $requestBody['stripePaymentMethodId'];
+        $paymentMethodId = $requestBody['stripePaymentMethodId'] ?? null;
+        \assert(is_string($paymentMethodId) || is_null($paymentMethodId));
+        $confirmationTokenId = $requestBody['stripeConfirmationTokenId'] ?? null;
+        \assert(is_string($confirmationTokenId) || is_null($confirmationTokenId));
+
+        /**
+         * Will narrow from bool to true when ticket DON-896 is done.
+         */
+        $usingConfirmationToken = array_key_exists('stripeConfirmationTokenId', $requestBody);
 
         $this->entityManager->beginTransaction();
 
@@ -99,7 +108,7 @@ class Confirm extends Action
             throw new NotFoundException();
         }
 
-        if (!is_string($paymentMethodId) || trim($paymentMethodId) === '') {
+        if (! $usingConfirmationToken && (!is_string($paymentMethodId) || trim($paymentMethodId) === '')) {
             $donationUUID = $donation->getId();
             $this->logger->warning(
                 <<<EOF
@@ -108,6 +117,18 @@ EOF
             );
             throw new HttpBadRequestException($request, "stripePaymentMethodId required");
         }
+
+        if ($usingConfirmationToken && (!is_string($confirmationTokenId) || trim($confirmationTokenId) === '')) {
+            $donationUUID = $donation->getId();
+            $this->logger->warning(
+                <<<EOF
+Donation Confirmation attempted with missing confirmation token id "$confirmationTokenId" for Donation $donationUUID
+EOF
+            );
+            throw new HttpBadRequestException($request, "stripePaymentMethodId required");
+        }
+
+
         \assert($paymentMethodId !== ""); // required to call updatePaymentMethodBillingDetail
 
         try {
@@ -119,46 +140,59 @@ EOF
             throw new HttpBadRequestException($request, $message);
         }
 
-        try {
-            $this->stripe->updatePaymentMethodBillingDetail($paymentMethodId, $donation);
-        } catch (CardException $cardException) {
-            $this->entityManager->rollback();
+        if (! $usingConfirmationToken) {
+            \assert(is_string($paymentMethodId));
+            // this block not needed when using confirmation tokens as payment method is attached to the customer
+            // via stripe client side library.
+            try {
+                $this->stripe->updatePaymentMethodBillingDetail($paymentMethodId, $donation);
+            } catch (CardException $cardException) {
+                $this->entityManager->rollback();
 
-            return $this->handleCardException(
-                context: 'updatePaymentMethodBillingDetail',
-                exception: $cardException,
-                donation: $donation,
-                paymentIntentId: $donation->getTransactionId(),
-            );
-        } catch (ApiErrorException $exception) {
-            $this->entityManager->rollback();
+                return $this->handleCardException(
+                    context: 'updatePaymentMethodBillingDetail',
+                    exception: $cardException,
+                    donation: $donation,
+                    paymentIntentId: $donation->getTransactionId(),
+                );
+            } catch (ApiErrorException $exception) {
+                $this->entityManager->rollback();
 
-            if (str_contains($exception->getMessage(), "You must collect the security code (CVC) for this card")) {
-                $this->logger->warning(sprintf(
-                    'Stripe %s on Confirm updatePaymentMethodBillingDetail for donation %s (%s): %s',
-                    get_class($exception),
-                    $donation->getUuid(),
-                    $donation->getTransactionId(),
-                    $exception->getMessage(),
-                ));
+                if (str_contains($exception->getMessage(), "You must collect the security code (CVC) for this card")) {
+                    $this->logger->warning(sprintf(
+                        'Stripe %s on Confirm updatePaymentMethodBillingDetail for donation %s (%s): %s',
+                        get_class($exception),
+                        $donation->getUuid(),
+                        $donation->getTransactionId(),
+                        $exception->getMessage(),
+                    ));
 
-                return new JsonResponse([
-                    'error' => [
-                        'message' => 'Cannot confirm donation; card security code not collected',
-                        'code' => $exception->getStripeCode()
-                    ],
-                ], 402);
+                    return new JsonResponse([
+                        'error' => [
+                            'message' => 'Cannot confirm donation; card security code not collected',
+                            'code' => $exception->getStripeCode()
+                        ],
+                    ], 402);
+                }
+
+                throw $exception;
             }
-
-            throw $exception;
         }
 
 
         try {
-            $updatedIntent = $this->donationService->confirmOnSessionDonation(
-                $donation,
-                StripePaymentMethodId::of($paymentMethodId)
-            );
+            if ($usingConfirmationToken) {
+                $updatedIntent = $this->donationService->confirmOnSessionDonation(
+                    $donation,
+                    StripeConformationTokenId::of($confirmationTokenId)
+                );
+            } else {
+                \assert(is_string($paymentMethodId));
+                $updatedIntent = $this->donationService->confirmOnSessionDonation(
+                    $donation,
+                    StripePaymentMethodId::of($paymentMethodId)
+                );
+            }
         } catch (CardException $exception) {
             $this->entityManager->rollback();
 
@@ -250,11 +284,6 @@ EOF
                     : null,
             ],
         ]);
-    }
-
-    public function randomString(): string
-    {
-        return substr(Uuid::uuid4()->toString(), 0, 15);
     }
 
     private function handleCardException(

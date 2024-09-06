@@ -25,6 +25,7 @@ use Random\Randomizer;
 use Slim\Exception\HttpBadRequestException;
 use Stripe\Card;
 use Stripe\Exception\ApiErrorException;
+use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
@@ -185,10 +186,14 @@ class DonationService
      */
     public function confirmOnSessionDonation(
         Donation $donation,
-        StripePaymentMethodId $paymentMethodId
+        StripePaymentMethodId|StripeConformationTokenId $tokenId
     ): \Stripe\PaymentIntent {
-        $this->updateDonationFees($paymentMethodId, $donation);
-        return $this->confirm($donation, $paymentMethodId);
+        if ($tokenId instanceof StripePaymentMethodId) {
+            $this->updateDonationFees($tokenId, $donation);
+        } else {
+            $this->updateDonationFeesFromConfirmationToken($tokenId, $donation);
+        }
+        return $this->confirm($donation, $tokenId);
     }
 
     /**
@@ -196,11 +201,19 @@ class DonationService
      */
     private function confirm(
         Donation $donation,
-        StripePaymentMethodId $paymentMethodId
+        StripePaymentMethodId|StripeConformationTokenId $tokenId
     ): \Stripe\PaymentIntent {
-        return $this->stripe->confirmPaymentIntent($donation->getTransactionId(), [
-            'payment_method' => $paymentMethodId->stripePaymentMethodId,
-        ]);
+        $params = [
+            ...($tokenId instanceof StripePaymentMethodId ?
+                ['payment_method' => $tokenId->stripePaymentMethodId] : []),
+
+            ...($tokenId instanceof StripeConformationTokenId ?
+                ['confirmation_token' => $tokenId->stripeConfirmationTokenId] : []),
+        ];
+
+        $paymentIntentId = $donation->getTransactionId();
+
+        return $this->stripe->confirmPaymentIntent($paymentIntentId, $params);
     }
 
     private function updateDonationFees(StripePaymentMethodId $paymentMethodId, Donation $donation): void
@@ -227,26 +240,8 @@ class DonationService
         // two letter upper string, e.g. 'GB', 'US'.
         $cardCountry = $card->country;
         \assert(is_string($cardCountry));
-        Assertion::inArray($cardBrand, Calculator::STRIPE_CARD_BRANDS);
 
-// at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
-        // that, would like to find a way to make it so if its left out we get an error instead - either by having
-        // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
-        $donation->deriveFees($cardBrand, $cardCountry);
-
-        $this->stripe->updatePaymentIntent($donation->getTransactionId(), [
-            // only setting things that may need to be updated at this point.
-            'metadata' => [
-                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
-                'stripeFeeRechargeNet' => $donation->getCharityFee(),
-                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
-            ],
-            // See https://stripe.com/docs/connect/destination-charges#application-fee
-            // Update the fee amount in case the final charge was from
-            // e.g. a Non EU / Amex card where fees are varied.
-            'application_fee_amount' => $donation->getAmountToDeductFractional(),
-            // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
-        ]);
+        $this->doUpdateDonationFees($cardBrand, $donation, $cardCountry);
     }
 
     public function confirmPreAuthorized(Donation $donation): void
@@ -442,5 +437,50 @@ class DonationService
                 'Donation Create persist after stripe work'
             );
         }
+    }
+
+    public function doUpdateDonationFees(string $cardBrand, Donation $donation, string $cardCountry): void
+    {
+        Assertion::inArray($cardBrand, Calculator::STRIPE_CARD_BRANDS);
+
+// at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
+        // that, would like to find a way to make it so if its left out we get an error instead - either by having
+        // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
+        $donation->deriveFees($cardBrand, $cardCountry);
+
+        // we still need this
+        $this->stripe->updatePaymentIntent($donation->getTransactionId(), [
+            // only setting things that may need to be updated at this point.
+            'metadata' => [
+                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
+            ],
+            // See https://stripe.com/docs/connect/destination-charges#application-fee
+            // Update the fee amount in case the final charge was from
+            // e.g. a Non EU / Amex card where fees are varied.
+            'application_fee_amount' => $donation->getAmountToDeductFractional(),
+            // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
+        ]);
+    }
+
+    private function updateDonationFeesFromConfirmationToken(
+        StripeConformationTokenId $tokenId,
+        Donation $donation
+    ): void {
+        $token = $this->stripe->retrieveConfirmationToken($tokenId);
+
+        /** @var StripeObject $paymentMethodPreview */
+        $paymentMethodPreview = $token->payment_method_preview;
+
+        /** @var StripeObject $card */
+        $card = $paymentMethodPreview['card'];
+
+        $cardBrand = $card['brand'];
+        $cardCountry = $card['country'];
+        Assertion::string($cardBrand);
+        Assertion::string($cardCountry);
+
+        $this->doUpdateDonationFees(cardBrand: $cardBrand, donation: $donation, cardCountry: $cardBrand);
     }
 }
