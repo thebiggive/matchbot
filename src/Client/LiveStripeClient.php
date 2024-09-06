@@ -3,8 +3,10 @@
 namespace MatchBot\Client;
 
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\StripeConformationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
+use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\Exception\InvalidArgumentException;
 use Stripe\PaymentIntent;
@@ -39,6 +41,11 @@ class LiveStripeClient implements Stripe
     public function retrievePaymentIntent(string $paymentIntentId): PaymentIntent
     {
         return $this->stripeClient->paymentIntents->retrieve($paymentIntentId);
+    }
+
+    public function retrieveConfirmationToken(StripeConformationTokenId $confirmationTokenId): ConfirmationToken
+    {
+        return $this->stripeClient->confirmationTokens->retrieve($confirmationTokenId->stripeConfirmationTokenId);
     }
 
     public function createPaymentIntent(array $createPayload): PaymentIntent

@@ -3,8 +3,10 @@
 namespace MatchBot\Client;
 
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\StripeConformationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
+use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
@@ -56,4 +58,6 @@ interface Stripe
     public function retrievePaymentMethod(StripePaymentMethodId $pmId): PaymentMethod;
 
     public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession;
+
+    public function retrieveConfirmationToken(StripeConformationTokenId $confirmationTokenId): ConfirmationToken;
 }
