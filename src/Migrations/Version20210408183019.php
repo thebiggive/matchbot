@@ -19,7 +19,7 @@ final class Version20210408183019 extends AbstractMigration
 
     public function up(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         // Migration modified to first set up existing data with currencyCode 'GBP'.
         $this->addSql('ALTER TABLE Campaign ADD currencyCode VARCHAR(3) NOT NULL DEFAULT \'GBP\'');
@@ -36,7 +36,7 @@ final class Version20210408183019 extends AbstractMigration
 
     public function down(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('ALTER TABLE Campaign DROP currencyCode');
         $this->addSql('ALTER TABLE CampaignFunding DROP currencyCode');

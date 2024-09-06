@@ -20,7 +20,7 @@ final class Version20191110112409 extends AbstractMigration
     public function up(Schema $schema) : void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('ALTER TABLE FundingWithdrawal ADD campaignFunding_id INT UNSIGNED DEFAULT NULL');
         $this->addSql('ALTER TABLE FundingWithdrawal ADD CONSTRAINT FK_5C8EAC12CB9EBA34 FOREIGN KEY (campaignFunding_id) REFERENCES CampaignFunding (id)');
@@ -30,7 +30,7 @@ final class Version20191110112409 extends AbstractMigration
     public function down(Schema $schema) : void
     {
         // this down() migration is auto-generated, please modify it to your needs
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('ALTER TABLE FundingWithdrawal DROP FOREIGN KEY FK_5C8EAC12CB9EBA34');
         $this->addSql('DROP INDEX IDX_5C8EAC12CB9EBA34 ON FundingWithdrawal');
