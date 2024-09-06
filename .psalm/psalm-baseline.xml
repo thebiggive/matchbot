@@ -72,11 +72,6 @@
       <code><![CDATA[getenv('MAX_CREATES_PER_IP_PER_5M')]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
-  <file src="integrationTests/DonationPersistenceTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-    </DeprecatedMethod>
-  </file>
   <file src="public/index.php">
     <MixedArrayAccess>
       <code><![CDATA[$container->get('settings')['displayErrorDetails']]]></code>
@@ -325,7 +320,6 @@
   </file>
   <file src="src/Domain/Donation.php">
     <PropertyNotSetInConstructor>
-      <code><![CDATA[$campaign]]></code>
       <code><![CDATA[Donation]]></code>
       <code><![CDATA[Donation]]></code>
     </PropertyNotSetInConstructor>
@@ -469,11 +463,6 @@
       <code><![CDATA[$payloadArray['createdTime']]]></code>
     </MixedArrayAccess>
   </file>
-  <file src="tests/Application/Actions/Donations/UpdateHandlesLockExceptionTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-    </DeprecatedMethod>
-  </file>
   <file src="tests/Application/Actions/Donations/UpdateTest.php">
     <MixedArrayAccess>
       <code><![CDATA[$payloadArray['billingPostalAddress']]]></code>
@@ -572,24 +561,7 @@
       <code><![CDATA[$this->getExpectedStamps($testDonation->getUuid())]]></code>
     </MixedArgumentTypeCoercion>
   </file>
-  <file src="tests/Application/Commands/ExpireMatchFundsTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="tests/Application/DonationTestDataTrait.php">
-    <DeprecatedMethod>
-      <code><![CDATA[Donation::emptyTestDonation('124.56')]]></code>
-    </DeprecatedMethod>
-  </file>
   <file src="tests/Application/Persistence/RetrySafeEntityManagerTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-    </DeprecatedMethod>
     <MixedArgument>
       <code><![CDATA[$container->get('settings')['doctrine']['connection']]]></code>
       <code><![CDATA[$container->get('settings')['doctrine']['connection']]]></code>

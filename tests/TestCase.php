@@ -11,6 +11,7 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
@@ -212,18 +213,31 @@ class TestCase extends PHPUnitTestCase
         return $campaign;
     }
 
-    public static function someDonation(): Donation
-    {
-        return Donation::fromApiModel(new DonationCreate(
-            currencyCode: 'GBP',
-            donationAmount: '1',
-            projectId: '123456789012345678',
-            psp: 'stripe',
-            firstName: null,
-            lastName: null,
-            emailAddress: 'user@example.com',
-            countryCode: 'GB',
-        ), TestCase::someCampaign());
+
+    /**
+     * @param numeric-string $amount
+     */
+    public static function someDonation(
+        string $amount = '1',
+        string $currencyCode = 'GBP',
+        PaymentMethodType $paymentMethodType = PaymentMethodType::Card
+    ): Donation {
+        return new Donation(
+            amount: $amount,
+            currencyCode: $currencyCode,
+            paymentMethodType: $paymentMethodType,
+            campaign: self::someCampaign('123456789012345678'),
+            charityComms: null,
+            championComms: null,
+            pspCustomerId: null,
+            optInTbgEmail: null,
+            donorName: null,
+            emailAddress: null,
+            countryCode: null,
+            tipAmount: '0',
+            mandate: null,
+            mandateSequenceNumber: null,
+        );
     }
 
     public static function someUpsertedMessage(): DonationUpserted

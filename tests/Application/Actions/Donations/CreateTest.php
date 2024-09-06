@@ -1044,8 +1044,7 @@ class CreateTest extends TestCase
             $campaign->setEndDate((new \DateTime())->sub(new \DateInterval('P1D')));
         }
 
-        /** @psalm-suppress DeprecatedMethod */
-        $donation = Donation::emptyTestDonation(amount: '12.00', currencyCode: $currencyCode);
+        $donation = TestCase::someDonation(amount: '12.00', currencyCode: $currencyCode);
         $donation->setCampaign(TestCase::getMinimalCampaign());
 
         if (!$minimalSetupData) {

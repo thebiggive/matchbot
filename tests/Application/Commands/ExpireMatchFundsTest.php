@@ -40,8 +40,8 @@ class ExpireMatchFundsTest extends TestCase
     {
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findWithExpiredMatching(Argument::type(\DateTimeImmutable::class))->willReturn([
-            Donation::emptyTestDonation('1'),
-            Donation::emptyTestDonation('1')
+            TestCase::someDonation('1'),
+            TestCase::someDonation('1')
         ]);
         $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledTimes(2);

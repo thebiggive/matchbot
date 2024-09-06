@@ -82,7 +82,7 @@ trait DonationTestDataTrait
         $campaign->setSalesforceId('456ProjectId');
 
         /** @psalm-suppress DeprecatedMethod **/
-        $donation = Donation::emptyTestDonation(
+        $donation = TestCase::someDonation(
             amount: $amount,
             paymentMethodType: $pspMethodType,
             currencyCode: $currencyCode,
@@ -135,7 +135,7 @@ trait DonationTestDataTrait
         $campaign->setName('Test campaign');
         $campaign->setSalesforceId('456ProjectId');
 
-        $donation = Donation::emptyTestDonation('124.56');
+        $donation = TestCase::someDonation('124.56');
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCharityFee('2.57');
         $donation->setCampaign($campaign);

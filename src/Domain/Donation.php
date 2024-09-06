@@ -337,50 +337,14 @@ class Donation extends SalesforceWriteProxy
     private ?DateTimeImmutable $preAuthorizationDate = null;
 
     /**
-     * @param numeric-string $amount
-     * @deprecated but retained for now as used in old test classes. Not recommend for continued use - either use
-     * fromApiModel or create a new named constructor that takes required data for your use case.
-     */
-    public static function emptyTestDonation(
-        string $amount,
-        PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
-        string $currencyCode = 'GBP'
-    ): self {
-
-        /**
-         * @psalm-suppress NullArgument
-         * Campaign shouldn't be null generally but is when called from this deprecated method.
-         */
-        $donation = new self(
-            amount: $amount,
-            currencyCode: $currencyCode,
-            paymentMethodType: $paymentMethodType,
-            campaign: null,
-            charityComms: null,
-            championComms: null,
-            pspCustomerId: null,
-            optInTbgEmail: null,
-            donorName: null,
-            emailAddress: null,
-            countryCode: null,
-            tipAmount: '0',
-            mandate: null,
-            mandateSequenceNumber: null,
-        );
-
-        return $donation;
-    }
-
-    /**
      * @psalm-param numeric-string $amount
      * @psalm-param ?numeric-string $tipAmount
-     * @psalm-param Campaign $campaign
      */
     public function __construct(
         string $amount,
         string $currencyCode,
         PaymentMethodType $paymentMethodType,
-        $campaign, // relying on Psalm type only because tests pass null
+        Campaign $campaign,
         ?bool $charityComms,
         ?bool $championComms,
         ?string $pspCustomerId,
@@ -414,15 +378,8 @@ class Donation extends SalesforceWriteProxy
         $this->paymentMethodType = $paymentMethodType;
         $this->createdNow(); // Mimic ORM persistence hook attribute, calling its fn explicitly instead.
         $this->setPsp('stripe');
-
-        /**
-         * @psalm-suppress RedundantConditionGivenDocblockType - deprecated function used in tests does not respect
-         * docblock type.
-         */
-        if ($campaign) {
-            $this->setCampaign($campaign); // Charity & match expectation determined implicitly from this
-            $this->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
-        }
+        $this->setCampaign($campaign); // Charity & match expectation determined implicitly from this
+        $this->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
         $this->setCharityComms($charityComms);
         $this->setChampionComms($championComms);
         $this->setPspCustomerId($pspCustomerId);
