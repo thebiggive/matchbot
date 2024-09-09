@@ -43,10 +43,10 @@ class GetPaymentMethods extends Action
         \assert(is_array($paymentMethodArray));
 
         // exclude payment methods with 'allow_redisplay' set to limited:
-        $displayableMethods = array_filter(
+        $displayableMethods = array_values(array_filter(
             $paymentMethodArray,
             static fn(array $paymentMethod) => in_array($paymentMethod['allow_redisplay'], ['always', 'unspecified'])
-        );
+        ));
 
         return $this->respondWithData($response, ['data' => $displayableMethods]);
     }
