@@ -88,7 +88,7 @@ class LiveStripeClient implements Stripe
                 'payment_element' => [
                     'enabled' => true,
                     'features' => [
-                        'payment_method_allow_redisplay_filters' => ['always', 'unspecified'],
+                        'payment_method_allow_redisplay_filters' => ['always', 'limited', 'unspecified'],
                         'payment_method_redisplay' => 'enabled',
                         'payment_method_redisplay_limit' => 10, // default 3, 10 is max stripe allows.
                         'payment_method_remove' => 'disabled', // default value
