@@ -241,7 +241,7 @@ class DonationService
         $cardCountry = $card->country;
         \assert(is_string($cardCountry));
 
-        $this->doUpdateDonationFees($cardBrand, $donation, $cardCountry);
+        $this->doUpdateDonationFees($cardBrand, $donation, $cardCountry, $donation->supportsSavingPaymentMethod());
     }
 
     public function confirmPreAuthorized(Donation $donation): void
@@ -381,11 +381,6 @@ class DonationService
                     'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
                 ],
             ];
-
-            if ($donation->supportsSavingPaymentMethod()) {
-                $createPayload['setup_future_usage'] = 'on_session';
-            }
-
             try {
                 $intent = $this->stripe->createPaymentIntent($createPayload);
             } catch (ApiErrorException $exception) {
@@ -439,8 +434,12 @@ class DonationService
         }
     }
 
-    public function doUpdateDonationFees(string $cardBrand, Donation $donation, string $cardCountry): void
-    {
+    public function doUpdateDonationFees(
+        string $cardBrand,
+        Donation $donation,
+        string $cardCountry,
+        bool $savePaymentMethod
+    ): void {
         Assertion::inArray($cardBrand, Calculator::STRIPE_CARD_BRANDS);
 
 // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
@@ -449,19 +448,26 @@ class DonationService
         $donation->deriveFees($cardBrand, $cardCountry);
 
         // we still need this
-        $this->stripe->updatePaymentIntent($donation->getTransactionId(), [
+        $updatedIntentData = [
             // only setting things that may need to be updated at this point.
             'metadata' => [
                 'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
                 'stripeFeeRechargeNet' => $donation->getCharityFee(),
                 'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
             ],
+
             // See https://stripe.com/docs/connect/destination-charges#application-fee
             // Update the fee amount in case the final charge was from
             // e.g. a Non EU / Amex card where fees are varied.
             'application_fee_amount' => $donation->getAmountToDeductFractional(),
             // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
-        ]);
+        ];
+
+        if ($savePaymentMethod) {
+            $updatedIntentData['setup_future_usage'] = 'on_session';
+        }
+
+        $this->stripe->updatePaymentIntent($donation->getTransactionId(), $updatedIntentData);
     }
 
     private function updateDonationFeesFromConfirmationToken(
@@ -478,9 +484,17 @@ class DonationService
 
         $cardBrand = $card['brand'];
         $cardCountry = $card['country'];
+
         Assertion::string($cardBrand);
         Assertion::string($cardCountry);
 
-        $this->doUpdateDonationFees(cardBrand: $cardBrand, donation: $donation, cardCountry: $cardBrand);
+        $savePaymentMethod = $paymentMethodPreview['allow_redisplay'] === 'always';
+
+        $this->doUpdateDonationFees(
+            cardBrand: $cardBrand,
+            donation: $donation,
+            cardCountry: $cardBrand,
+            savePaymentMethod: $savePaymentMethod
+        );
     }
 }

@@ -77,7 +77,6 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'setup_future_usage' => 'on_session',
             'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 154,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
@@ -354,7 +353,6 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'setup_future_usage' => 'on_session',
             'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_newStripeAccount_456',
@@ -467,7 +465,6 @@ class CreateTest extends TestCase
                 'destination' => 'unitTest_stripeAccount_123',
             ],
             'customer' => self::PSPCUSTOMERID,
-            'setup_future_usage' => 'on_session'
         ];
 
         $stripeProphecy = $this->prophesize(Stripe::class);
@@ -557,7 +554,6 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'setup_future_usage' => 'on_session',
             'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
@@ -736,7 +732,6 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'setup_future_usage' => 'on_session',
             'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
