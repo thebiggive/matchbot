@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
+use Psr\Log\LoggerInterface;
 use Stripe\Mandate;
 
 readonly class MandateService
@@ -16,6 +17,7 @@ readonly class MandateService
         private CampaignRepository $campaignRepository,
         private EntityManagerInterface $entityManager,
         private DonationService $donationService,
+        private LoggerInterface $log,
     ) {
     }
 
@@ -45,14 +47,22 @@ readonly class MandateService
             $donor,
             $campaign,
         );
-        if ($donation->getPreAuthorizationDate() > $this->now) {
+        $preAuthorizationDate = $donation->getPreAuthorizationDate();
+        \assert($preAuthorizationDate instanceof \DateTimeImmutable);
+
+        if ($preAuthorizationDate > $this->now) {
+            $this->log->info(
+                "Not creating donation yet as will only be authorized to pay on " .
+                $preAuthorizationDate->format("Y-m-d") . ' and now is ' . $this->now->format("Y-m-d")
+            );
+
             // Throw this donation away without persisting, we can create it again when the authorization date is
             // reached.
             return null;
         }
 
         $this->donationService->enrollNewDonation($donation);
-        $mandate->setDonationsCreatedUpTo($donation->getPreAuthorizationDate());
+        $mandate->setDonationsCreatedUpTo($preAuthorizationDate);
 
         return $donation;
     }

@@ -22,6 +22,7 @@ use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Log\LoggerInterface;
 
 /**
 
@@ -108,12 +109,13 @@ class MandateServiceTest extends TestCase
     public function makeSut(\DateTimeImmutable $simulatedNow): MandateService
     {
         return new MandateService(
-            $simulatedNow,
-            $this->donationRepositoryProphecy->reveal(),
-            $this->donorAccountRepositoryProphecy->reveal(),
-            $this->campaignRepositoryProphecy->reveal(),
-            $this->createStub(EntityManagerInterface::class),
-            $this->createStub(DonationService::class),
+            now: $simulatedNow,
+            donationRepository: $this->donationRepositoryProphecy->reveal(),
+            donorAccountRepository: $this->donorAccountRepositoryProphecy->reveal(),
+            campaignRepository: $this->campaignRepositoryProphecy->reveal(),
+            entityManager: $this->createStub(EntityManagerInterface::class),
+            donationService: $this->createStub(DonationService::class),
+            log: $this->createStub(LoggerInterface::class),
         );
     }
 

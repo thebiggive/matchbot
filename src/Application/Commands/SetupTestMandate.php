@@ -12,6 +12,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationSequenceNumber;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
@@ -59,6 +60,7 @@ class SetupTestMandate extends LockingCommand
         private EntityManagerInterface $em,
         private CampaignRepository $campaignRepository,
         private DonorAccountRepository $donorAccountRepository,
+        private DonationService $donationService,
         \DateTimeImmutable $now,
     ) {
         parent::__construct();
@@ -119,6 +121,8 @@ class SetupTestMandate extends LockingCommand
             $dayOfMonth
         );
         $mandate->activate($this->now);
+        $this->em->persist($mandate);
+
 
         $donorStripeId = (string)$input->getOption('donor-stripeid');
 
@@ -161,36 +165,48 @@ class SetupTestMandate extends LockingCommand
         $paymentDay2ndDonation = $mandate->firstPaymentDayAfter($this->now);
         $paymentDay3rdDonation = $mandate->firstPaymentDayAfter($paymentDay2ndDonation);
 
-        $this->preAuthorizeNewDonation($mandate, $campaign, $donor, $paymentDay2ndDonation);
-        $this->preAuthorizeNewDonation($mandate, $campaign, $donor, $paymentDay3rdDonation);
+        $this->preAuthorizeNewDonation(
+            $mandate,
+            $campaign,
+            $donor,
+            $paymentDay2ndDonation,
+            DonationSequenceNumber::of(2)
+        );
+
+        $this->preAuthorizeNewDonation(
+            $mandate,
+            $campaign,
+            $donor,
+            $paymentDay3rdDonation,
+            DonationSequenceNumber::of(3)
+        );
     }
 
 
-    public function preAuthorizeNewDonation(
+    private function preAuthorizeNewDonation(
         RegularGivingMandate $mandate,
         Campaign $campaign,
         DonorAccount $donor,
         \DateTimeImmutable $paymentDay,
+        DonationSequenceNumber $number
     ): void {
-        $donation = Donation::fromApiModel(
-            new DonationCreate(
-                'GBP',
-                (string)($mandate->getAmount()->amountInPence / 100),
-                $campaign->getSalesforceId() ?? throw new \Exception('missing campaign sf ID'),
-                'stripe',
-                PaymentMethodType::Card,
-                'GB',
-                false,
-                false,
-                false,
-                $donor->stripeCustomerId->stripeCustomerId,
-                '0',
-                $donor->donorName->first,
-                $donor->donorName->last,
-                $donor->emailAddress->email
-            ),
-            $campaign
+        $donation = new Donation(
+            amount: (string)($mandate->getAmount()->amountInPence / 100),
+            currencyCode: 'GBP',
+            paymentMethodType: PaymentMethodType::Card,
+            campaign: $campaign,
+            charityComms: false,
+            championComms: false,
+            pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            optInTbgEmail: false,
+            donorName: $donor->donorName,
+            emailAddress: $donor->emailAddress,
+            countryCode: 'GB',
+            tipAmount: '0',
+            mandate: $mandate,
+            mandateSequenceNumber: $number,
         );
+
         $donation->update(
             giftAid: $mandate->hasGiftAid(),
             donorHomeAddressLine1: 'donor home address',
@@ -199,6 +215,8 @@ class SetupTestMandate extends LockingCommand
         );
 
         $donation->preAuthorize($paymentDay);
+
+        $this->donationService->enrollNewDonation($donation);
         $this->em->persist($donation);
     }
 }

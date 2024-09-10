@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\Donation;
@@ -24,13 +25,14 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 class TakeRegularGivingDonations extends LockingCommand
 {
+    private ?MandateService $mandateService = null;
+
     /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
     public function __construct(
-        private \DateTimeImmutable $now,
+        private Container $container,
         private RegularGivingMandateRepository $mandateRepository,
         private DonationRepository $donationRepository,
         private DonationService $donationService,
-        private MandateService $mandateService,
         private EntityManagerInterface $em,
         private Environment $environment,
     ) {
@@ -44,6 +46,13 @@ class TakeRegularGivingDonations extends LockingCommand
         );
     }
 
+    public function setSimulatedNow(string $simulateDateInput, OutputInterface $output): void
+    {
+        $simulatedNow = new \DateTimeImmutable($simulateDateInput);
+        $this->container->set(\DateTimeImmutable::class, $simulatedNow);
+        $output->writeln("Simulating running on {$simulatedNow->format('Y-m-d H:i:s')}");
+    }
+
     /**
      * When we run this for manual testing on developer machines we will need to simulate a future time
      * instead of waiting for donations to become payable.
@@ -52,14 +61,15 @@ class TakeRegularGivingDonations extends LockingCommand
     {
         switch (true) {
             case $this->environment !== Environment::Production && is_string($simulateDateInput):
-                $this->now = new \DateTimeImmutable($simulateDateInput);
-                $output->writeln("Simulating running on {$this->now->format('Y-m-d H:i:s')}");
+                $this->setSimulatedNow($simulateDateInput, $output);
                 break;
             case $this->environment === Environment::Production && is_string($simulateDateInput):
                 throw new \Exception("Cannot simulate date in production");
             default:
                 //no-op
         }
+
+        $this->mandateService = $this->container->get(MandateService::class);
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
@@ -67,18 +77,19 @@ class TakeRegularGivingDonations extends LockingCommand
         $io = new SymfonyStyle($input, $output);
         /** @psalm-suppress MixedArgument */
         $this->applySimulatedDate($input->getOption('simulated-date'), $output);
+        $now = $this->container->get(\DateTimeImmutable::class);
 
-        $this->createNewDonationsAccordingToRegularGivingMandates($io);
-        $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($io);
+        $this->createNewDonationsAccordingToRegularGivingMandates($now, $io);
+        $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($now, $io);
 
         return 0;
     }
 
-    private function createNewDonationsAccordingToRegularGivingMandates(SymfonyStyle $io): void
+    private function createNewDonationsAccordingToRegularGivingMandates(\DateTimeImmutable $now, SymfonyStyle $io): void
     {
-        $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($this->now, limit: 20);
+        $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($now, limit: 20);
 
-        $io->block(count($mandates) . " mandates have donations to create at this time");
+        $io->block(count($mandates) . " mandates may have donations to create at this time");
 
         foreach ($mandates as [$mandate]) {
             $donation = $this->makeDonationForMandate($mandate);
@@ -88,8 +99,10 @@ class TakeRegularGivingDonations extends LockingCommand
         }
     }
 
-    private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(SymfonyStyle $io): void
-    {
+    private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(
+        \DateTimeImmutable $now,
+        SymfonyStyle $io
+    ): void {
         /* @todo-regular-giving
             Still to do to improve this before launch:
             - deal with possible "The parameter application_fee_amount cannot be updated on a PaymentIntent after a
@@ -103,7 +116,7 @@ class TakeRegularGivingDonations extends LockingCommand
             - Ensure we don't send emails that are meant for confirmation of on-session donations
             - Probably other things.
         */
-        $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($this->now, limit:20);
+        $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($now, limit:20);
 
         $io->block(count($donations) . " donations are due to be confirmed at this time");
 
@@ -135,6 +148,8 @@ class TakeRegularGivingDonations extends LockingCommand
 
     private function makeDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
+        \assert($this->mandateService !== null);
+
         $donation = $this->mandateService->makeNextDonationForMandate($mandate);
         if (! $donation) {
             return null;
