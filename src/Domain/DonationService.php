@@ -17,6 +17,7 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
+use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use Psr\Log\LoggerInterface;
@@ -25,6 +26,7 @@ use Random\Randomizer;
 use Slim\Exception\HttpBadRequestException;
 use Stripe\Card;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Mandate;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Notifier\ChatterInterface;
@@ -244,6 +246,9 @@ class DonationService
         $this->doUpdateDonationFees($cardBrand, $donation, $cardCountry, $donation->supportsSavingPaymentMethod());
     }
 
+    /**
+     * Trigger collection of funds from a pre-authorized donation associated with a regular giving mandate
+     */
     public function confirmPreAuthorized(Donation $donation): void
     {
         $stripeAccountId = $donation->getPspCustomerId();
@@ -252,6 +257,15 @@ class DonationService
 
         if ($donorAccount === null) {
             throw new NoDonorAccountException("Donor account not found for donation $donation");
+        }
+
+        $mandate = $donation->getMandate();
+        \assert($mandate !== null);
+        $currentMandateStatus = $mandate->getStatus();
+        if ($currentMandateStatus !== MandateStatus::Active) {
+            throw new MandateNotActive(
+                "Not confirming donation as mandate is '{$currentMandateStatus->name}', not Active"
+            );
         }
 
         $paymentMethod = $donorAccount->getRegularGivingPaymentMethod();

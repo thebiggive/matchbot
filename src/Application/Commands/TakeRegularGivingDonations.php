@@ -7,6 +7,7 @@ namespace MatchBot\Application\Commands;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
+use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
@@ -109,7 +110,6 @@ class TakeRegularGivingDonations extends LockingCommand
               capture has already been made." error
 
             - Record unsuccessful payment attempts to limit number or time extent of retries
-            - Stop collection if the related regular giving mandate has been cancelled
             - Send metadata to stripe so to identify the payment as regular giving when we view it there.
             - Handle exceptions and continue to next donation, e.g. if donation does not have customer ID, or there
               is no donor account in our db for that ID, or they do not have a payment method on file for this purpose.
@@ -131,7 +131,12 @@ class TakeRegularGivingDonations extends LockingCommand
             );
             $oldStatus = $donation->getDonationStatus();
             try {
-                $this->donationService->confirmPreAuthorized($donation);
+                try {
+                    $this->donationService->confirmPreAuthorized($donation);
+                } catch (MandateNotActive $exception) {
+                    $io->info($exception->getMessage());
+                    continue;
+                }
             } catch (\Exception $exception) {
                 $io->error('Exception, skipping donation: ' . $exception->getMessage());
                 continue;
