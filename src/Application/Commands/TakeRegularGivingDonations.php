@@ -106,13 +106,8 @@ class TakeRegularGivingDonations extends LockingCommand
     ): void {
         /* @todo-regular-giving
             Still to do to improve this before launch:
-            - deal with possible "The parameter application_fee_amount cannot be updated on a PaymentIntent after a
-              capture has already been made." error
-
             - Record unsuccessful payment attempts to limit number or time extent of retries
             - Send metadata to stripe so to identify the payment as regular giving when we view it there.
-            - Handle exceptions and continue to next donation, e.g. if donation does not have customer ID, or there
-              is no donor account in our db for that ID, or they do not have a payment method on file for this purpose.
             - Ensure we don't send emails that are meant for confirmation of on-session donations
             - Probably other things.
         */
