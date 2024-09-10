@@ -10,6 +10,7 @@ readonly class MandateService
 {
     /** @psalm-suppress PossiblyUnusedMethod - will be used by DI */
     public function __construct(
+        private \DateTimeImmutable $now,
         private DonationRepository $donationRepository,
         private DonorAccountRepository $donorAccountRepository,
         private CampaignRepository $campaignRepository,
@@ -18,15 +19,8 @@ readonly class MandateService
     ) {
     }
 
-    public function makeNextDonationForMandate(RegularGivingMandate $mandate): Donation
+    public function makeNextDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
-        /*
-         * @todo-regular-giving: Refuse to create donation with preauth date in future. Other than for the 2nd and
-         *        3rd donations in
-         *        the mandate its unnecessary. Better to create them only when the date has been reached, so that we'll
-         *        be able to confirm immediatly, and have up to date info from the start on the donor's details, whether
-         *        or not they cancelled this mandate etc etc.
-         */
         $mandateId = $mandate->getId();
         Assertion::notNull($mandateId);
 
@@ -51,6 +45,11 @@ readonly class MandateService
             $donor,
             $campaign,
         );
+        if ($donation->getPreAuthorizationDate() > $this->now) {
+            // Throw this donation away without persisting, we can create it again when the authorization date is
+            // reached.
+            return null;
+        }
 
         $this->donationService->enrollNewDonation($donation);
         $mandate->setDonationsCreatedUpTo($donation->getPreAuthorizationDate());

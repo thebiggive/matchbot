@@ -82,7 +82,9 @@ class TakeRegularGivingDonations extends LockingCommand
 
         foreach ($mandates as [$mandate]) {
             $donation = $this->makeDonationForMandate($mandate);
-            $io->writeln("created donation {$donation}");
+            if ($donation) {
+                $io->writeln("created donation {$donation}");
+            }
         }
     }
 
@@ -131,9 +133,13 @@ class TakeRegularGivingDonations extends LockingCommand
         $this->em->flush();
     }
 
-    private function makeDonationForMandate(RegularGivingMandate $mandate): Donation
+    private function makeDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
         $donation = $this->mandateService->makeNextDonationForMandate($mandate);
+        if (! $donation) {
+            return null;
+        }
+
         $this->em->persist($donation);
         $this->em->flush();
 
