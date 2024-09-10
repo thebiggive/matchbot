@@ -488,13 +488,14 @@ class DonationService
         Assertion::string($cardBrand);
         Assertion::string($cardCountry);
 
-        $savePaymentMethod = $paymentMethodPreview['allow_redisplay'] === 'always';
+        // whether to save the method or not is controlled from client side. We don't need to control it here.
+        $savePaymentMethod = false;
 
         $this->doUpdateDonationFees(
             cardBrand: $cardBrand,
             donation: $donation,
             cardCountry: $cardBrand,
-            savePaymentMethod: $savePaymentMethod
+            savePaymentMethod: $savePaymentMethod,
         );
     }
 }
