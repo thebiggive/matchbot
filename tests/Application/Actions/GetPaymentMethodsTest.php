@@ -7,7 +7,6 @@ namespace MatchBot\Tests\Application\Actions;
 use DI\Container;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
-use Stripe\Collection;
 use Stripe\Service\CustomerService;
 use Stripe\StripeClient;
 
@@ -22,19 +21,19 @@ class GetPaymentMethodsTest extends TestCase
         $stripeCustomersProphecy = $this->prophesize(CustomerService::class);
         $stripeCustomersProphecy->allPaymentMethods('cus_aaaaaaaaaaaa11', ['type' => 'card'])
             ->shouldBeCalledOnce()
-            ->willReturn(Collection::constructFrom(['data' => [
-                [
-                    'id' => 'pm_123',
-                    'allow_redisplay' => 'always',
-                    'card' => [
-                        'brand' => 'visa',
-                        'last4' => '4242',
-                        'exp_month' => 1,
-                        'exp_year' => 2022,
+            ->willReturn([
+                'data' => [
+                    [
+                        'id' => 'pm_123',
+                        'card' => [
+                            'brand' => 'visa',
+                            'last4' => '4242',
+                            'exp_month' => 1,
+                            'exp_year' => 2022,
+                        ],
                     ],
                 ],
-            ],
-            ]));
+            ]);
 
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
