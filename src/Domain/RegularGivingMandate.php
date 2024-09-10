@@ -166,7 +166,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public function createPreAuthorizedDonation(
         DonationSequenceNumber $sequenceNumber,
         DonorAccount $donor,
-        Campaign $campaign
+        Campaign $campaign,
+        \DateTimeImmutable $now = new \DateTimeImmutable(),
     ): Donation {
         $donation = new Donation(
             amount: $this->amount->toNumericString(),
@@ -183,6 +184,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             tipAmount: '0',
             mandate: $this,
             mandateSequenceNumber: $sequenceNumber,
+            createdAt: $now,
         );
 
         $donation->update(

@@ -355,6 +355,7 @@ class Donation extends SalesforceWriteProxy
         ?string $tipAmount,
         ?RegularGivingMandate $mandate,
         ?DonationSequenceNumber $mandateSequenceNumber,
+        \DateTimeImmutable $createdAt = new \DateTimeImmutable(),
     ) {
         $this->setUuid(Uuid::uuid4());
         $this->fundingWithdrawals = new ArrayCollection();
@@ -377,6 +378,7 @@ class Donation extends SalesforceWriteProxy
         $this->amount = $amount;
         $this->paymentMethodType = $paymentMethodType;
         $this->createdNow(); // Mimic ORM persistence hook attribute, calling its fn explicitly instead.
+        $this->createdAt = \DateTime::createFromImmutable($createdAt);
         $this->setPsp('stripe');
         $this->setCampaign($campaign); // Charity & match expectation determined implicitly from this
         $this->setTbgShouldProcessGiftAid($campaign->getCharity()->isTbgClaimingGiftAid());
