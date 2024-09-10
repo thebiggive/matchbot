@@ -17,6 +17,7 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
+use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use Psr\Log\LoggerInterface;
@@ -252,6 +253,11 @@ class DonationService
 
         if ($donorAccount === null) {
             throw new NoDonorAccountException("Donor account not found for donation $donation");
+        }
+
+        $currentMandateStatus = $donation->getMandate()->getStatus();
+        if ($currentMandateStatus !== MandateStatus::Active) {
+            throw new MandateNotActive("Not confirming donation as mandate is '{$currentMandateStatus->name}', not Active");
         }
 
         $paymentMethod = $donorAccount->getRegularGivingPaymentMethod();

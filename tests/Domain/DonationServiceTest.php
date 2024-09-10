@@ -10,16 +10,30 @@ use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
+use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationSequenceNumber;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\Money;
+use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PersonId;
+use MatchBot\Domain\RegularGivingMandate;
+use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\StripeCustomerId;
+use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Ramsey\Uuid\Uuid;
 use Stripe\Exception\PermissionException;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
@@ -31,17 +45,21 @@ class DonationServiceTest extends TestCase
     private const CUSTOMER_ID = 'cus_CUSTOMERID';
     private DonationService $sut;
 
-    /** @var \Prophecy\Prophecy\ObjectProphecy<Stripe> */
-    private \Prophecy\Prophecy\ObjectProphecy $stripeProphecy;
+    /** @var ObjectProphecy<Stripe> */
+    private ObjectProphecy $stripeProphecy;
 
-    /** @var \Prophecy\Prophecy\ObjectProphecy<DonationRepository> */
-    private \Prophecy\Prophecy\ObjectProphecy $donationRepoProphecy;
+    /** @var ObjectProphecy<DonationRepository> */
+    private ObjectProphecy $donationRepoProphecy;
 
     /** @var ObjectProphecy<StripeChatterInterface> */
     private ObjectProphecy $chatterProphecy;
 
+    /** @var ObjectProphecy<DonorAccountRepository> */
+    private ObjectProphecy $donorAccountRepoProphecy;
+
     public function setUp(): void
     {
+        $this->donorAccountRepoProphecy = $this->prophesize(DonorAccountRepository::class);
         $this->donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $this->stripeProphecy = $this->prophesize(Stripe::class);
         $this->chatterProphecy = $this->prophesize(StripeChatterInterface::class);
@@ -105,9 +123,49 @@ class DonationServiceTest extends TestCase
         $this->sut->createDonation($donationCreate, self::CUSTOMER_ID);
     }
 
+    public function testRefusesToConfirmPreAuthedDonationForNonActiveMandate(): void
+    {
+        $mandate = new RegularGivingMandate(
+            PersonId::of(Uuid::MAX),
+            Money::fromPoundsGBP(1),
+            Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
+            Salesforce18Id::ofCharity('xxxxxxxxxxxxxxxxxx'),
+            false,
+            DayOfMonth::of(1),
+        );
+
+        $mandate->activate(new \DateTimeImmutable('2024-09-01'));
+
+        $stripeCustomerId = StripeCustomerId::of('cus_123');
+        $donor = new DonorAccount(
+            null,
+            EmailAddress::of('example@email.com'),
+            DonorName::of('first', 'last'),
+            $stripeCustomerId,
+        );
+        $donor->setBillingPostcode('SW11AA');
+        $donor->setBillingCountryCode('GB');
+        $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_paymentMethodID'));
+
+        $donation = $mandate->createPreAuthorizedDonation(
+            DonationSequenceNumber::of(2),
+            $donor,
+            TestCase::someCampaign(),
+        );
+
+        $this->donorAccountRepoProphecy->findByStripeIdOrNull($stripeCustomerId)->willReturn($donor);
+
+        $mandate->cancel();
+        $this->expectException(MandateNotActive::class);
+        $this->expectExceptionMessage("Not confirming donation as mandate is 'Cancelled', not Active");
+
+        $this->getDonationService(false)->confirmPreAuthorized($donation);
+    }
+
     private function getDonationService(
         bool $withAlwaysCrashingEntityManager,
         LoggerInterface $logger = null,
+        DonorAccountRepository $donorAccountRepository = null,
     ): DonationService {
         $emProphecy = $this->prophesize(RetrySafeEntityManager::class);
         if ($withAlwaysCrashingEntityManager) {
@@ -133,7 +191,7 @@ class DonationServiceTest extends TestCase
             chatter: $this->chatterProphecy->reveal(),
             clock: $this->prophesize(ClockInterface::class)->reveal(),
             rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
-            donorAccountRepository: $this->createStub(DonorAccountRepository::class),
+            donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
         );
     }
 
