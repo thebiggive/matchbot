@@ -16,6 +16,12 @@ enum MandateStatus: string
      */
     case Active = 'active';
 
+    /**
+     * The donor previously intended to make a regular donation but may have either changed their mind or
+     * discontinued the mandate after giving as many donations as they intended.
+     */
+    case Cancelled = 'cancelled';
+
     public function apiName(): string
     {
         return $this->value;

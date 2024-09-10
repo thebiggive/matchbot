@@ -239,4 +239,14 @@ class RegularGivingMandate extends SalesforceWriteProxy
     {
         return $this->charityId;
     }
+
+    public function cancel(): void
+    {
+        $this->status = MandateStatus::Cancelled;
+    }
+
+    public function getStatus(): MandateStatus
+    {
+        return $this->status;
+    }
 }
