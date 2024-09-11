@@ -110,24 +110,6 @@ class DonationService
         return $donation;
     }
 
-    private function getStatementDescriptor(Charity $charity): string
-    {
-        $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
-        $prefix = 'Big Give ';
-
-        return $prefix . mb_substr(
-            $this->removeSpecialChars($charity->getName()),
-            0,
-            $maximumLength - mb_strlen($prefix),
-        );
-    }
-
-    // Remove special characters except spaces
-    private function removeSpecialChars(string $descriptor): string
-    {
-        return preg_replace('/[^A-Za-z0-9 ]/', '', $descriptor);
-    }
-
     /**
      * It seems like just the *first* persist of a given donation needs to be retry-safe, since there is a small
      * but non-zero minority of Create attempts at the start of a big campaign which get a closed Entity Manager
@@ -440,43 +422,8 @@ class DonationService
             throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
         }
 
-        $createPayload = [
-            ...$donation->getStripeMethodProperties(),
-            ...$donation->getStripeOnBehalfOfProperties(),
-            'customer' => $donation->getPspCustomerId()?->stripeCustomerId,
-            // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
-            // See https://stripe.com/docs/api/payment_intents/object
-            'amount' => $donation->getAmountFractionalIncTip(),
-            'currency' => strtolower($donation->getCurrencyCode()),
-            'description' => $donation->getDescription(),
-            'capture_method' => 'automatic', // 'automatic' was default in previous API versions,
-            // default is now 'automatic_async'
-            'metadata' => [
-                /**
-                 * Keys like comms opt ins are set only later. See the counterpart
-                 * in {@see Update::addData()} too.
-                 */
-                'campaignId' => $donation->getCampaign()->getSalesforceId(),
-                'campaignName' => $donation->getCampaign()->getCampaignName(),
-                'charityId' => $donation->getCampaign()->getCharity()->getSalesforceId(),
-                'charityName' => $donation->getCampaign()->getCharity()->getName(),
-                'donationId' => $donation->getUuid(),
-                'environment' => getenv('APP_ENV'),
-                'matchedAmount' => $donation->getFundingWithdrawalTotal(),
-                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
-                'stripeFeeRechargeNet' => $donation->getCharityFee(),
-                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
-                'tipAmount' => $donation->getTipAmount(),
-            ],
-            'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
-            // See https://stripe.com/docs/connect/destination-charges#application-fee
-            'application_fee_amount' => $donation->getAmountToDeductFractional(),
-            'transfer_data' => [
-                'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
-            ],
-        ];
         try {
-            $intent = $this->stripe->createPaymentIntent($createPayload);
+            $intent = $this->stripe->createPaymentIntent($donation->createStripePaymentIntentPayload());
         } catch (ApiErrorException $exception) {
             $message = $exception->getMessage();
 

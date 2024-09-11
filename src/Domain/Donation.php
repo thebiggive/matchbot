@@ -1553,4 +1553,49 @@ class Donation extends SalesforceWriteProxy
     {
         return $this->mandate;
     }
+
+    /**
+     * @return array Representation of this donation suitable for creating a Stripe Payment intent with
+     * @see \MatchBot\Client\Stripe::createPaymentIntent
+     */
+    public function createStripePaymentIntentPayload(): array
+    {
+        Assertion::same('stripe', $this->psp);
+
+        return [
+            ...$this->getStripeMethodProperties(),
+            ...$this->getStripeOnBehalfOfProperties(),
+            'customer' => $this->getPspCustomerId()?->stripeCustomerId,
+            // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
+            // See https://stripe.com/docs/api/payment_intents/object
+            'amount' => $this->getAmountFractionalIncTip(),
+            'currency' => strtolower($this->getCurrencyCode()),
+            'description' => $this->getDescription(),
+            'capture_method' => 'automatic', // 'automatic' was default in previous API versions,
+            // default is now 'automatic_async'
+            'metadata' => [
+                /**
+                 * Keys like comms opt ins are set only later. See the counterpart
+                 * in {@see Update::addData()} too.
+                 */
+                'campaignId' => $this->getCampaign()->getSalesforceId(),
+                'campaignName' => $this->getCampaign()->getCampaignName(),
+                'charityId' => $this->getCampaign()->getCharity()->getSalesforceId(),
+                'charityName' => $this->getCampaign()->getCharity()->getName(),
+                'donationId' => $this->getUuid(),
+                'environment' => getenv('APP_ENV'),
+                'matchedAmount' => $this->getFundingWithdrawalTotal(),
+                'stripeFeeRechargeGross' => $this->getCharityFeeGross(),
+                'stripeFeeRechargeNet' => $this->getCharityFee(),
+                'stripeFeeRechargeVat' => $this->getCharityFeeVat(),
+                'tipAmount' => $this->getTipAmount(),
+            ],
+            'statement_descriptor' => $this->getCampaign()->getCharity()->getStatementDescriptor(),
+            // See https://stripe.com/docs/connect/destination-charges#application-fee
+            'application_fee_amount' => $this->getAmountToDeductFractional(),
+            'transfer_data' => [
+                'destination' => $this->getCampaign()->getCharity()->getStripeAccountId(),
+            ],
+        ];
+    }
 }
