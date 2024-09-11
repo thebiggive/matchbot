@@ -46,7 +46,6 @@ readonly class MandateService
             $lastSequenceNumber->next(),
             $donor,
             $campaign,
-            $this->now,
         );
         $preAuthorizationDate = $donation->getPreAuthorizationDate();
         \assert($preAuthorizationDate instanceof \DateTimeImmutable);
