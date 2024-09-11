@@ -239,4 +239,22 @@ class Charity extends SalesforceReadProxy
 
         $this->setSalesforceLastPull($time);
     }
+
+    public function getStatementDescriptor(): string
+    {
+        $maximumLength = 22; // https://stripe.com/docs/payments/payment-intents#dynamic-statement-descriptor
+        $prefix = 'Big Give ';
+
+        return $prefix . mb_substr(
+            $this->removeSpecialChars($this->getName()),
+            0,
+            $maximumLength - mb_strlen($prefix),
+        );
+    }
+
+    // Remove special characters except spaces
+    public function removeSpecialChars(string $descriptor): string
+    {
+        return preg_replace('/[^A-Za-z0-9 ]/', '', $descriptor);
+    }
 }

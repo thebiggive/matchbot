@@ -46,7 +46,6 @@ readonly class MandateService
             $lastSequenceNumber->next(),
             $donor,
             $campaign,
-            $this->now,
         );
         $preAuthorizationDate = $donation->getPreAuthorizationDate();
         \assert($preAuthorizationDate instanceof \DateTimeImmutable);
@@ -62,7 +61,7 @@ readonly class MandateService
             return null;
         }
 
-        $this->donationService->enrollNewDonation($donation);
+        $this->donationService->createPaymentIntent($donation);
         $mandate->setDonationsCreatedUpTo($preAuthorizationDate);
 
         return $donation;
