@@ -21,7 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
-    name: 'matchbot:take-regular-giving-donations',
+    name: 'matchbot:collect-regular-giving',
     description: "Takes money from donors that they have given us advance permission to take.",
 )]
 class TakeRegularGivingDonations extends LockingCommand
