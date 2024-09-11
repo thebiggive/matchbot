@@ -61,7 +61,7 @@ readonly class MandateService
             return null;
         }
 
-        $this->donationService->enrollNewDonation($donation);
+        $this->donationService->createPaymentIntent($donation);
         $mandate->setDonationsCreatedUpTo($preAuthorizationDate);
 
         return $donation;

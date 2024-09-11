@@ -360,91 +360,7 @@ class DonationService
                 $donation->setCampaign($campaign);
             }
 
-            $createPayload = [
-                ...$donation->getStripeMethodProperties(),
-                ...$donation->getStripeOnBehalfOfProperties(),
-                'customer' => $donation->getPspCustomerId()?->stripeCustomerId,
-                // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
-                // See https://stripe.com/docs/api/payment_intents/object
-                'amount' => $donation->getAmountFractionalIncTip(),
-                'currency' => strtolower($donation->getCurrencyCode()),
-                'description' => $donation->getDescription(),
-                'capture_method' => 'automatic', // 'automatic' was default in previous API versions,
-                // default is now 'automatic_async'
-                'metadata' => [
-                    /**
-                     * Keys like comms opt ins are set only later. See the counterpart
-                     * in {@see Update::addData()} too.
-                     */
-                    'campaignId' => $donation->getCampaign()->getSalesforceId(),
-                    'campaignName' => $donation->getCampaign()->getCampaignName(),
-                    'charityId' => $donation->getCampaign()->getCharity()->getSalesforceId(),
-                    'charityName' => $donation->getCampaign()->getCharity()->getName(),
-                    'donationId' => $donation->getUuid(),
-                    'environment' => getenv('APP_ENV'),
-                    'matchedAmount' => $donation->getFundingWithdrawalTotal(),
-                    'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
-                    'stripeFeeRechargeNet' => $donation->getCharityFee(),
-                    'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
-                    'tipAmount' => $donation->getTipAmount(),
-                ],
-                'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
-                // See https://stripe.com/docs/connect/destination-charges#application-fee
-                'application_fee_amount' => $donation->getAmountToDeductFractional(),
-                'transfer_data' => [
-                    'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
-                ],
-            ];
-            try {
-                $intent = $this->stripe->createPaymentIntent($createPayload);
-            } catch (ApiErrorException $exception) {
-                $message = $exception->getMessage();
-
-                $accountLacksCapabilities = str_contains(
-                    $message,
-                    // this message is an issue the charity needs to fix, we can't fix it for them.
-                    // We likely want to let the team know to hide the campaign from prominents views though.
-                    'Your destination account needs to have at least one of the following capabilities enabled'
-                );
-
-                $failureMessage = sprintf(
-                    'Stripe Payment Intent create error on %s, %s [%s]: %s. Charity: %s [%s].',
-                    $donation->getUuid(),
-                    $exception->getStripeCode() ?? 'unknown',
-                    get_class($exception),
-                    $message,
-                    $donation->getCampaign()->getCharity()->getName(),
-                    $donation->getCampaign()->getCharity()->getStripeAccountId() ?? 'unknown',
-                );
-
-                $level = $accountLacksCapabilities ? LogLevel::WARNING : LogLevel::ERROR;
-                $this->logger->log($level, $failureMessage);
-
-                if ($accountLacksCapabilities) {
-                    $env = getenv('APP_ENV');
-                    \assert(is_string($env));
-                    $failureMessageWithContext = sprintf(
-                        '[%s] %s',
-                        $env,
-                        $failureMessage,
-                    );
-                    $this->chatter->send(new ChatMessage($failureMessageWithContext));
-
-                    throw new CharityAccountLacksNeededCapaiblities();
-                }
-
-                throw new CouldNotMakeStripePaymentIntent();
-            }
-
-            $donation->setTransactionId($intent->id);
-
-            $this->runWithPossibleRetry(
-                function () use ($donation) {
-                    $this->entityManager->persistWithoutRetries($donation);
-                    $this->entityManager->flush();
-                },
-                'Donation Create persist after stripe work'
-            );
+            $this->createPaymentIntent($donation);
         }
     }
 
@@ -510,6 +426,104 @@ class DonationService
             donation: $donation,
             cardCountry: $cardBrand,
             savePaymentMethod: $savePaymentMethod,
+        );
+    }
+
+    /**
+     * Creates a payment intent at Stripe and records the PI ID against the donation.
+     */
+    public function createPaymentIntent(Donation $donation): void
+    {
+        Assertion::same($donation->getPsp(), 'stripe');
+
+        if (!$donation->getCampaign()->isOpen()) {
+            throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
+        }
+
+        $createPayload = [
+            ...$donation->getStripeMethodProperties(),
+            ...$donation->getStripeOnBehalfOfProperties(),
+            'customer' => $donation->getPspCustomerId()?->stripeCustomerId,
+            // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
+            // See https://stripe.com/docs/api/payment_intents/object
+            'amount' => $donation->getAmountFractionalIncTip(),
+            'currency' => strtolower($donation->getCurrencyCode()),
+            'description' => $donation->getDescription(),
+            'capture_method' => 'automatic', // 'automatic' was default in previous API versions,
+            // default is now 'automatic_async'
+            'metadata' => [
+                /**
+                 * Keys like comms opt ins are set only later. See the counterpart
+                 * in {@see Update::addData()} too.
+                 */
+                'campaignId' => $donation->getCampaign()->getSalesforceId(),
+                'campaignName' => $donation->getCampaign()->getCampaignName(),
+                'charityId' => $donation->getCampaign()->getCharity()->getSalesforceId(),
+                'charityName' => $donation->getCampaign()->getCharity()->getName(),
+                'donationId' => $donation->getUuid(),
+                'environment' => getenv('APP_ENV'),
+                'matchedAmount' => $donation->getFundingWithdrawalTotal(),
+                'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
+                'tipAmount' => $donation->getTipAmount(),
+            ],
+            'statement_descriptor' => $this->getStatementDescriptor($donation->getCampaign()->getCharity()),
+            // See https://stripe.com/docs/connect/destination-charges#application-fee
+            'application_fee_amount' => $donation->getAmountToDeductFractional(),
+            'transfer_data' => [
+                'destination' => $donation->getCampaign()->getCharity()->getStripeAccountId(),
+            ],
+        ];
+        try {
+            $intent = $this->stripe->createPaymentIntent($createPayload);
+        } catch (ApiErrorException $exception) {
+            $message = $exception->getMessage();
+
+            $accountLacksCapabilities = str_contains(
+                $message,
+                // this message is an issue the charity needs to fix, we can't fix it for them.
+                // We likely want to let the team know to hide the campaign from prominents views though.
+                'Your destination account needs to have at least one of the following capabilities enabled'
+            );
+
+            $failureMessage = sprintf(
+                'Stripe Payment Intent create error on %s, %s [%s]: %s. Charity: %s [%s].',
+                $donation->getUuid(),
+                $exception->getStripeCode() ?? 'unknown',
+                get_class($exception),
+                $message,
+                $donation->getCampaign()->getCharity()->getName(),
+                $donation->getCampaign()->getCharity()->getStripeAccountId() ?? 'unknown',
+            );
+
+            $level = $accountLacksCapabilities ? LogLevel::WARNING : LogLevel::ERROR;
+            $this->logger->log($level, $failureMessage);
+
+            if ($accountLacksCapabilities) {
+                $env = getenv('APP_ENV');
+                \assert(is_string($env));
+                $failureMessageWithContext = sprintf(
+                    '[%s] %s',
+                    $env,
+                    $failureMessage,
+                );
+                $this->chatter->send(new ChatMessage($failureMessageWithContext));
+
+                throw new CharityAccountLacksNeededCapaiblities();
+            }
+
+            throw new CouldNotMakeStripePaymentIntent();
+        }
+
+        $donation->setTransactionId($intent->id);
+
+        $this->runWithPossibleRetry(
+            function () use ($donation) {
+                $this->entityManager->persistWithoutRetries($donation);
+                $this->entityManager->flush();
+            },
+            'Donation Create persist after stripe work'
         );
     }
 }
