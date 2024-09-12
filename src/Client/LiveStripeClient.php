@@ -97,7 +97,7 @@ class LiveStripeClient implements Stripe
                         'payment_method_save' => 'enabled',
 
                         // off-session (Regular Giving) payment methods will be saved separately.
-                        // TODO link to that when implemented.
+                        // @todo-regular-giving link to that when implemented.
                         'payment_method_save_usage' => 'on_session',
                     ],
                 ]
