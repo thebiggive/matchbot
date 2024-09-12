@@ -18,7 +18,7 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
-use MatchBot\Domain\StripeConformationTokenId;
+use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -382,7 +382,7 @@ class ConfirmTest extends TestCase
             $confirmationToken->payment_method_preview['type'] = 'card';
             $confirmationToken->payment_method_preview['card'] = $cardDetails;
 
-            $this->stripeProphecy->retrieveConfirmationToken(StripeConformationTokenId::of($confirmationTokenId))
+            $this->stripeProphecy->retrieveConfirmationToken(StripeConfirmationTokenId::of($confirmationTokenId))
                 ->willReturn($confirmationToken);
         }
 

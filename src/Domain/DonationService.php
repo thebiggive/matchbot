@@ -170,7 +170,7 @@ class DonationService
      */
     public function confirmOnSessionDonation(
         Donation $donation,
-        StripePaymentMethodId|StripeConformationTokenId $tokenId
+        StripePaymentMethodId|StripeConfirmationTokenId $tokenId
     ): \Stripe\PaymentIntent {
         if ($tokenId instanceof StripePaymentMethodId) {
             $this->updateDonationFees($tokenId, $donation);
@@ -185,13 +185,13 @@ class DonationService
      */
     private function confirm(
         Donation $donation,
-        StripePaymentMethodId|StripeConformationTokenId $tokenId
+        StripePaymentMethodId|StripeConfirmationTokenId $tokenId
     ): \Stripe\PaymentIntent {
         $params = [
             ...($tokenId instanceof StripePaymentMethodId ?
                 ['payment_method' => $tokenId->stripePaymentMethodId] : []),
 
-            ...($tokenId instanceof StripeConformationTokenId ?
+            ...($tokenId instanceof StripeConfirmationTokenId ?
                 ['confirmation_token' => $tokenId->stripeConfirmationTokenId] : []),
         ];
 
@@ -383,7 +383,7 @@ class DonationService
     }
 
     private function updateDonationFeesFromConfirmationToken(
-        StripeConformationTokenId $tokenId,
+        StripeConfirmationTokenId $tokenId,
         Donation $donation
     ): void {
         $token = $this->stripe->retrieveConfirmationToken($tokenId);

@@ -13,7 +13,7 @@ use MatchBot\Client\Stripe;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
-use MatchBot\Domain\StripeConformationTokenId;
+use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripePaymentMethodId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -184,7 +184,7 @@ EOF
             if ($usingConfirmationToken) {
                 $updatedIntent = $this->donationService->confirmOnSessionDonation(
                     $donation,
-                    StripeConformationTokenId::of($confirmationTokenId)
+                    StripeConfirmationTokenId::of($confirmationTokenId)
                 );
             } else {
                 \assert(is_string($paymentMethodId));

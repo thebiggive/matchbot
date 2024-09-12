@@ -7,7 +7,7 @@ use Doctrine\ORM\Mapping\Embeddable;
 use MatchBot\Application\Assertion;
 
 #[Embeddable]
-readonly class StripeConformationTokenId
+readonly class StripeConfirmationTokenId
 {
     #[Column(type: 'string')]
     public readonly string $stripeConfirmationTokenId;

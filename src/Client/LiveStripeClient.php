@@ -3,7 +3,7 @@
 namespace MatchBot\Client;
 
 use MatchBot\Domain\Donation;
-use MatchBot\Domain\StripeConformationTokenId;
+use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use Stripe\ConfirmationToken;
@@ -43,7 +43,7 @@ class LiveStripeClient implements Stripe
         return $this->stripeClient->paymentIntents->retrieve($paymentIntentId);
     }
 
-    public function retrieveConfirmationToken(StripeConformationTokenId $confirmationTokenId): ConfirmationToken
+    public function retrieveConfirmationToken(StripeConfirmationTokenId $confirmationTokenId): ConfirmationToken
     {
         return $this->stripeClient->confirmationTokens->retrieve($confirmationTokenId->stripeConfirmationTokenId);
     }
