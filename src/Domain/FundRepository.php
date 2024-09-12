@@ -50,7 +50,6 @@ class FundRepository extends SalesforceReadProxyRepository
         $fundsData = $client->getForCampaign($campaignSFId);
         foreach ($fundsData as $fundData) {
             // For each fund linked to the campaign, look it up or create it if unknown
-            /** @var Fund $fund */
             $fund = $this->findOneBy(['salesforceId' => $fundData['id']]);
             if (!$fund) {
                 $fund = $this->getNewFund($fundData);
@@ -180,14 +179,14 @@ class FundRepository extends SalesforceReadProxyRepository
      *
      * @param Fund $proxy
      */
-    protected function doUpdateFromSf(SalesforceReadProxy $proxy): void
+    protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
     {
         $fundId = $proxy->getSalesforceId();
         if ($fundId == null) {
             throw new \Exception("Missing ID on fund, cannot update from SF");
         }
 
-        $fundData = $this->getClient()->getById($fundId);
+        $fundData = $this->getClient()->getById($fundId, $withCache);
         $proxy->setName($fundData['name'] ?? '');
     }
 }

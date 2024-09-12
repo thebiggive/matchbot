@@ -50,6 +50,35 @@ class RegularGivingMandateRepository
 
         $query->setParameter('donorId', $donor->id);
 
+        return $this->getMandatesWithCharities($query);
+    }
+
+    /**
+     * @return list<array{0: RegularGivingMandate, 1: Charity}>
+     */
+    public function findMandatesWithDonationsToCreateOn(\DateTimeImmutable $now, int $limit): array
+    {
+        $active = MandateStatus::Active->value;
+        $query = $this->em->createQuery(<<<"DQL"
+            SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r 
+            LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
+            WHERE r.status = '{$active}'
+            AND (r.donationsCreatedUpTo IS NULL OR r.donationsCreatedUpTo <= :now)
+        DQL
+        );
+
+        $query->setParameter('now', $now);
+        $query->setMaxResults($limit);
+
+        return $this->getMandatesWithCharities($query);
+    }
+
+    /**
+     * @param \Doctrine\ORM\Query $query . Query must be for mandates and charities jonied together.
+     * @return list<array{0: RegularGivingMandate, 1: Charity}>
+     */
+    private function getMandatesWithCharities(\Doctrine\ORM\Query $query)
+    {
         /** @var list<RegularGivingMandate|Charity> $x */
         $x = $query->getResult();
 
@@ -67,10 +96,10 @@ class RegularGivingMandateRepository
         }
 
         return array_values(array_map(function (RegularGivingMandate $mandate) use ($charities) {
-            $charityId = $mandate->charityId;
+            $charityId = $mandate->getCharityId();
             return [
                 $mandate,
-                $charities[$charityId] ?? throw new \Exception("Missing charity for mandate " . $mandate->uuid)
+                $charities[$charityId] ?? throw new \Exception("Missing charity for mandate " . $mandate->getUuid())
             ];
         },
             $mandates));

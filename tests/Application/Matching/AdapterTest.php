@@ -30,7 +30,7 @@ class AdapterTest extends TestCase
         $this->storage = new ArrayMatchingStorage();
 
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $this->entityManagerProphecy->transactional(Argument::type(\Closure::class))->will(function (array $args) {
+        $this->entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))->will(function (array $args) {
             $closure = $args[0];
             \assert($closure instanceof \Closure);
             $closure();

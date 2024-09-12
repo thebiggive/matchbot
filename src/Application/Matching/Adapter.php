@@ -38,7 +38,7 @@ class Adapter
     private static int $storageDurationSeconds = 86_400; // 1 day
 
     /**
-     * @var list<array{campaignFunding: CampaignFunding, amount:string}>
+     * @var list<array{campaignFunding: CampaignFunding, amount:numeric-string}>
      */
     private array $amountsSubtractedInCurrentProcess = [];
 
@@ -49,6 +49,9 @@ class Adapter
     ) {
     }
 
+    /**
+     * @param numeric-string $amount
+     */
     public function addAmount(CampaignFunding $funding, string $amount): string
     {
         $fundBalance = $this->addAmountWithoutSavingFundingsToDB($funding, $amount);
@@ -60,8 +63,8 @@ class Adapter
 
     /**
      * @param CampaignFunding $funding
-     * @param string $amount
-     * @return string New fund balance as bcmath-ready string
+     * @param numeric-string $amount
+     * @return numeric-string New fund balance
      */
     private function addAmountWithoutSavingFundingsToDB(CampaignFunding $funding, string $amount): string
     {
@@ -70,6 +73,7 @@ class Adapter
         /**
          * @psalm-suppress PossiblyInvalidArrayAccess
          * @psalm-suppress PossiblyFalseReference - we know incrBy will retrun an array in multi mode
+         * @psalm-suppress PossiblyInvalidMethodCall
          */
         [$_initResponse, $fundBalanceFractional] = $this->storage->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
@@ -92,7 +96,7 @@ class Adapter
      * doesn't flush the database changes on its own.
      *
      * @param CampaignFunding $funding
-     * @param string $amount
+     * @param numeric-string $amount
      * @return string New fund balance as bcmath-ready string
      */
     public function subtractAmountWithoutSavingToDB(CampaignFunding $funding, string $amount): string
@@ -102,6 +106,7 @@ class Adapter
         /**
          * @psalm-suppress PossiblyFalseReference - in mulit mode decrBy will not return false.
          * @psalm-suppress PossiblyInvalidArrayAccess - in this case we know exec returns array
+         * @psalm-suppress PossiblyInvalidMethodCall
          */
         [$_initResponse, $fundBalanceFractional] = $this->storage->multi()
             // Init if and only if new to Redis or expired (after 24 hours), using database value.
@@ -174,7 +179,7 @@ class Adapter
      * transactionally so that they are safe for high-volume, multi-thread use.
      *
      * @param CampaignFunding $funding
-     * @return string Amount available as bcmath-ready decimal string
+     * @return numeric-string Amount available
      */
     public function getAmountAvailable(CampaignFunding $funding): string
     {
@@ -202,7 +207,7 @@ class Adapter
      * Converts e.g. pounds to pence – but is currency-agnostic except for currently assuming
      * a 100-fold multiplication is reasonable.
      *
-     * @param string $wholeUnit e.g. pounds, dollars.
+     * @param numeric-string $wholeUnit e.g. pounds, dollars.
      * @return int  e.g. pence, cents.
      */
     private function toCurrencyFractionalUnit(string $wholeUnit): int
@@ -237,7 +242,7 @@ class Adapter
      */
     public function saveFundingsToDatabase(): void
     {
-        $this->entityManager->transactional(function () {
+        $this->entityManager->wrapInTransaction(function () {
             foreach ($this->fundingsToPersist as $funding) {
                 $this->entityManager->persist($funding);
             }

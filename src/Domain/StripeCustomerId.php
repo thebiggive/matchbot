@@ -6,14 +6,11 @@ use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Embeddable;
 use MatchBot\Application\Assertion;
 
-/**
- * @psalm-immutable
- */
 #[Embeddable]
-class StripeCustomerId
+readonly class StripeCustomerId
 {
     #[Column(type: 'string')]
-    public readonly string $stripeCustomerId;
+    public string $stripeCustomerId;
 
     private function __construct(
         string $stripeCustomerId

@@ -4,58 +4,160 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
-use Brick\DateTime\Instant;
-use MatchBot\Application\Matching;
-use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\CampaignFundingRepository;
+use DI\Container;
+use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Environment;
+use MatchBot\Domain\DomainException\MandateNotActive;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
-use MatchBot\Domain\FundingWithdrawalRepository;
+use MatchBot\Domain\MandateService;
+use MatchBot\Domain\RegularGivingMandate;
+use MatchBot\Domain\RegularGivingMandateRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
-    name: 'matchbot:take-regular-giving-donations',
+    name: 'matchbot:collect-regular-giving',
     description: "Takes money from donors that they have given us advance permission to take.",
 )]
 class TakeRegularGivingDonations extends LockingCommand
 {
+    private ?MandateService $mandateService = null;
+
     /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
     public function __construct(
-        private \DateTimeImmutable $now,
+        private Container $container,
+        private RegularGivingMandateRepository $mandateRepository,
         private DonationRepository $donationRepository,
         private DonationService $donationService,
+        private EntityManagerInterface $em,
+        private Environment $environment,
     ) {
         parent::__construct();
+
+        $this->addOption(
+            'simulated-date',
+            shortcut: 'simulated-date',
+            mode: InputOption::VALUE_REQUIRED,
+            description: 'UUID of the donor in identity service'
+        );
     }
+
+    public function setSimulatedNow(string $simulateDateInput, OutputInterface $output): void
+    {
+        $simulatedNow = new \DateTimeImmutable($simulateDateInput);
+        $this->container->set(\DateTimeImmutable::class, $simulatedNow);
+        $output->writeln("Simulating running on {$simulatedNow->format('Y-m-d H:i:s')}");
+    }
+
+    /**
+     * When we run this for manual testing on developer machines we will need to simulate a future time
+     * instead of waiting for donations to become payable.
+     */
+    public function applySimulatedDate(?string $simulateDateInput, OutputInterface $output): void
+    {
+        switch (true) {
+            case $this->environment !== Environment::Production && is_string($simulateDateInput):
+                $this->setSimulatedNow($simulateDateInput, $output);
+                break;
+            case $this->environment === Environment::Production && is_string($simulateDateInput):
+                throw new \Exception("Cannot simulate date in production");
+            default:
+                //no-op
+        }
+
+        $this->mandateService = $this->container->get(MandateService::class);
+    }
+
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $this->createNewDonationsAccordingToRegularGivingMandates();
-        $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate();
+        $io = new SymfonyStyle($input, $output);
+        /** @psalm-suppress MixedArgument */
+        $this->applySimulatedDate($input->getOption('simulated-date'), $output);
+        $now = $this->container->get(\DateTimeImmutable::class);
+
+        $this->createNewDonationsAccordingToRegularGivingMandates($now, $io);
+        $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($now, $io);
 
         return 0;
     }
 
-    private function createNewDonationsAccordingToRegularGivingMandates(): void
+    private function createNewDonationsAccordingToRegularGivingMandates(\DateTimeImmutable $now, SymfonyStyle $io): void
     {
-        // todo - implement.
-        // Some details of how to actually create these donations are still to be worked out.
+        $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($now, limit: 20);
+
+        $io->block(count($mandates) . " mandates may have donations to create at this time");
+
+        foreach ($mandates as [$mandate]) {
+            $donation = $this->makeDonationForMandate($mandate);
+            if ($donation) {
+                $io->writeln("created donation {$donation}");
+            }
+        }
     }
 
-    private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(): void
-    {
-        $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($this->now, limit:20);
+    private function confirmPreCreatedDonationsThatHaveReachedPaymentDate(
+        \DateTimeImmutable $now,
+        SymfonyStyle $io
+    ): void {
+        /* @todo-regular-giving
+            Still to do to improve this before launch:
+            - Record unsuccessful payment attempts to limit number or time extent of retries
+            - Send metadata to stripe so to identify the payment as regular giving when we view it there.
+            - Ensure we don't send emails that are meant for confirmation of on-session donations
+            - Probably other things.
+        */
+        $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($now, limit:20);
+
+        $io->block(count($donations) . " donations are due to be confirmed at this time");
 
         foreach ($donations as $donation) {
-            // todo - replace stub card & payment method details or more likely remove those params.
-
-            // todo - look up the default payment method ID for this donor.
-            // I now think we do have to pass this and can't just rely on stripe auto
-            // selecting the right method because our fees vary according to card details.
-            $paymentMethodID = 'foo';
-            $this->donationService->confirm($donation, $paymentMethodID);
+            $preAuthDate = $donation->getPreAuthorizationDate();
+            \assert($preAuthDate instanceof \DateTimeImmutable);
+            $io->writeln("processing donation #{$donation->getId()}");
+            $io->writeln(
+                "Donation #{$donation->getId()} is pre-authorized to pay on" .
+                " <options=bold>{$preAuthDate->format('Y-m-d H:i:s')}</>}
+                "
+            );
+            $oldStatus = $donation->getDonationStatus();
+            try {
+                try {
+                    $this->donationService->confirmPreAuthorized($donation);
+                } catch (MandateNotActive $exception) {
+                    $io->info($exception->getMessage());
+                    continue;
+                }
+            } catch (\Exception $exception) {
+                $io->error('Exception, skipping donation: ' . $exception->getMessage());
+                continue;
+            }
+            // status change not expected here - status will be changed by stripe callback to tell us its paid.
+            $io->writeln(
+                "Donation {$donation->getUuid()} went from " .
+                "<options=bold>{$oldStatus->name}</> to <options=bold>{$donation->getDonationStatus()->name}</>"
+            );
         }
+
+        $this->em->flush();
+    }
+
+    private function makeDonationForMandate(RegularGivingMandate $mandate): ?Donation
+    {
+        \assert($this->mandateService !== null);
+
+        $donation = $this->mandateService->makeNextDonationForMandate($mandate);
+        if (! $donation) {
+            return null;
+        }
+
+        $this->em->persist($donation);
+        $this->em->flush();
+
+        return $donation;
     }
 }

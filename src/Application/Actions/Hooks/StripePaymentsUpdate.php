@@ -118,10 +118,14 @@ class StripePaymentsUpdate extends Stripe
         $this->entityManager->beginTransaction();
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+        if (is_string($intentId)) {
+            $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+        } else {
+            $donation = null;
+        }
 
         if (!$donation) {
-            $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
+            $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId ?? 'null'));
             $this->entityManager->rollback();
 
             return $this->respond($response, new ActionPayload(204));
@@ -212,7 +216,7 @@ class StripePaymentsUpdate extends Stripe
                 'Dispute %s (reason: %s) closure for Payment Intent ID %s ignored as no updates needed for status %s',
                 $dispute->id,
                 $dispute->reason,
-                $intentId,
+                $intentId ?? 'null',
                 $dispute->status,
             ));
             return $this->respond($response, new ActionPayload(204));
@@ -220,11 +224,15 @@ class StripePaymentsUpdate extends Stripe
 
         $this->entityManager->beginTransaction();
 
-        /** @var Donation $donation */
-        $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+        if (is_string($intentId)) {
+            /** @var Donation $donation */
+            $donation = $this->donationRepository->findAndLockOneBy(['transactionId' => $intentId]);
+        } else {
+            $donation = null;
+        }
 
         if (!$donation) {
-            $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId));
+            $this->logger->notice(sprintf('Donation not found with Payment Intent ID %s', $intentId ?? 'null'));
             $this->entityManager->rollback();
 
             return $this->respond($response, new ActionPayload(204));
@@ -236,7 +244,7 @@ class StripePaymentsUpdate extends Stripe
                 'Skipping unexpected dispute lost amount %s pence for donation %s based on Payment Intent ID %s',
                 $dispute->amount, // int: pence / cents.
                 $donation->getUuid(),
-                $intentId,
+                $intentId ?? 'null',
             ));
             $this->entityManager->rollback();
 
@@ -260,7 +268,7 @@ class StripePaymentsUpdate extends Stripe
             $donation->getUuid(),
             $dispute->id,
             $dispute->reason,
-            $intentId,
+            $intentId ?? 'null',
         ));
 
         $refundDate = DateTimeImmutable::createFromFormat('U', (string)$event->created);
@@ -290,7 +298,6 @@ class StripePaymentsUpdate extends Stripe
 
         $this->entityManager->beginTransaction();
 
-        /** @var Donation $donation */
         $donation = $this->donationRepository->findOneBy(['chargeId' => $charge->id]);
 
         if (!$donation) {

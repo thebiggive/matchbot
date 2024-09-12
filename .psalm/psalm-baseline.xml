@@ -28,7 +28,6 @@
       <code><![CDATA[$c->get('settings')['redis']]]></code>
       <code><![CDATA[$c->get('settings')['redis']]]></code>
       <code><![CDATA[$c->get('settings')['stripe']]]></code>
-      <code><![CDATA[$c->get('settings')['stripe']]]></code>
       <code><![CDATA[$loggerSettings['level']]]></code>
       <code><![CDATA[$loggerSettings['name']]]></code>
       <code><![CDATA[$loggerSettings['path']]]></code>
@@ -63,10 +62,6 @@
       <code><![CDATA[$c->get('settings')['redis']['host']]]></code>
       <code><![CDATA[$settings['doctrine']['cache_dir']]]></code>
     </MixedOperand>
-    <PossiblyFalseArgument>
-      <code><![CDATA[getenv('CLAIMBOT_MESSENGER_TRANSPORT_DSN')]]></code>
-      <code><![CDATA[getenv('MESSENGER_TRANSPORT_DSN')]]></code>
-    </PossiblyFalseArgument>
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[getenv('BYPASS_PSP')]]></code>
     </RiskyTruthyFalsyComparison>
@@ -76,43 +71,10 @@
       <code><![CDATA[getenv('MAX_CREATES_PER_IP_PER_5M')]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
-  <file src="integrationTests/DonationPersistenceTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-    </DeprecatedMethod>
-  </file>
   <file src="public/index.php">
     <MixedArrayAccess>
       <code><![CDATA[$container->get('settings')['displayErrorDetails']]]></code>
     </MixedArrayAccess>
-    <PossiblyNullReference>
-      <code><![CDATA[get]]></code>
-    </PossiblyNullReference>
-  </file>
-  <file src="src/Application/Actions/Donations/Get.php">
-    <DocblockTypeContradiction>
-      <code><![CDATA[!$donation]]></code>
-      <code><![CDATA[$donation]]></code>
-    </DocblockTypeContradiction>
-  </file>
-  <file src="src/Application/Actions/Donations/Update.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$donation->getAmount()]]></code>
-    </ArgumentTypeCoercion>
-    <PossiblyNullArgument>
-      <code><![CDATA[$exception->getStripeCode()]]></code>
-      <code><![CDATA[$exception->getStripeCode()]]></code>
-      <code><![CDATA[$exception->getStripeCode()]]></code>
-      <code><![CDATA[$retryException->getStripeCode()]]></code>
-    </PossiblyNullArgument>
-  </file>
-  <file src="src/Application/Actions/GetPaymentMethods.php">
-    <MixedArgument>
-      <code><![CDATA[$customerId]]></code>
-    </MixedArgument>
-    <MixedAssignment>
-      <code><![CDATA[$customerId]]></code>
-    </MixedAssignment>
   </file>
   <file src="src/Application/Actions/Hooks/Stripe.php">
     <MixedArrayAccess>
@@ -123,46 +85,14 @@
     </MixedAssignment>
   </file>
   <file src="src/Application/Actions/Hooks/StripePaymentsUpdate.php">
-    <DocblockTypeContradiction>
-      <code><![CDATA[!$donation]]></code>
-      <code><![CDATA[!$donation]]></code>
-      <code><![CDATA[!$donation]]></code>
-      <code><![CDATA[$donation]]></code>
-      <code><![CDATA[$donation]]></code>
-      <code><![CDATA[$donation]]></code>
-    </DocblockTypeContradiction>
     <MixedArgument>
       <code><![CDATA[$event->data->object]]></code>
     </MixedArgument>
-    <PossiblyNullArgument>
-      <code><![CDATA[$intentId]]></code>
-      <code><![CDATA[$intentId]]></code>
-      <code><![CDATA[$intentId]]></code>
-      <code><![CDATA[$intentId]]></code>
-      <code><![CDATA[$intentId]]></code>
-    </PossiblyNullArgument>
   </file>
   <file src="src/Application/Actions/Hooks/StripePayoutUpdate.php">
     <MixedPropertyFetch>
       <code><![CDATA[$event->data->object->id]]></code>
     </MixedPropertyFetch>
-  </file>
-  <file src="src/Application/Actions/Status.php">
-    <InternalMethod>
-      <code><![CDATA[connect]]></code>
-    </InternalMethod>
-    <PossiblyNullArgument>
-      <code><![CDATA[$emConfig->getProxyDir()]]></code>
-      <code><![CDATA[$emConfig->getProxyNamespace()]]></code>
-    </PossiblyNullArgument>
-  </file>
-  <file src="src/Application/Auth/DonationPublicAuthMiddleware.php">
-    <PossiblyNullArgument>
-      <code><![CDATA[$donationId]]></code>
-    </PossiblyNullArgument>
-    <PossiblyNullReference>
-      <code><![CDATA[getArgument]]></code>
-    </PossiblyNullReference>
   </file>
   <file src="src/Application/Auth/DonationToken.php">
     <MixedPropertyFetch>
@@ -170,12 +100,6 @@
     </MixedPropertyFetch>
   </file>
   <file src="src/Application/Auth/IdentityToken.php">
-    <MissingParamType>
-      <code><![CDATA[$jws]]></code>
-    </MissingParamType>
-    <MixedArgument>
-      <code><![CDATA[$jws]]></code>
-    </MixedArgument>
     <MixedInferredReturnType>
       <code><![CDATA[?string]]></code>
       <code><![CDATA[bool]]></code>
@@ -192,14 +116,6 @@
       <code><![CDATA[$decodedJwtBody->sub->psp_id ?? null]]></code>
     </MixedReturnStatement>
   </file>
-  <file src="src/Application/Auth/PersonManagementAuthMiddleware.php">
-    <PossiblyNullArgument>
-      <code><![CDATA[$personId]]></code>
-    </PossiblyNullArgument>
-    <PossiblyNullReference>
-      <code><![CDATA[getArgument]]></code>
-    </PossiblyNullReference>
-  </file>
   <file src="src/Application/Commands/Command.php">
     <PossiblyNullOperand>
       <code><![CDATA[$this->getName()]]></code>
@@ -207,12 +123,6 @@
     </PossiblyNullOperand>
   </file>
   <file src="src/Application/Commands/HandleOutOfSyncFunds.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$fundingAvailable]]></code>
-      <code><![CDATA[$fundingWithdrawalTotal]]></code>
-      <code><![CDATA[$fundingWithdrawalTotal]]></code>
-      <code><![CDATA[$fundingWithdrawalTotal]]></code>
-    </ArgumentTypeCoercion>
     <MixedArgument>
       <code><![CDATA[$excludedFundingIds]]></code>
     </MixedArgument>
@@ -224,17 +134,9 @@
     </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Application/Commands/LockingCommand.php">
-    <PossiblyNullArgument>
-      <code><![CDATA[$this->getName()]]></code>
-    </PossiblyNullArgument>
     <PossiblyNullOperand>
       <code><![CDATA[$this->getName()]]></code>
     </PossiblyNullOperand>
-  </file>
-  <file src="src/Application/Commands/RetrospectivelyMatch.php">
-    <PossiblyFalseArgument>
-      <code><![CDATA[getenv('APP_ENV')]]></code>
-    </PossiblyFalseArgument>
   </file>
   <file src="src/Application/Commands/UpdateCampaigns.php">
     <DeprecatedMethod>
@@ -245,26 +147,7 @@
     </MixedArgument>
     <PossiblyNullOperand>
       <code><![CDATA[$campaign->getSalesforceId()]]></code>
-      <code><![CDATA[$campaign->getSalesforceId()]]></code>
-      <code><![CDATA[$campaign->getSalesforceId()]]></code>
     </PossiblyNullOperand>
-  </file>
-  <file src="src/Application/Fees/Calculator.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$amount]]></code>
-      <code><![CDATA[$feeAmountFromPercentageComponent]]></code>
-      <code><![CDATA[$grossFeeAmount]]></code>
-      <code><![CDATA[$this->amount]]></code>
-      <code><![CDATA[$this->amount]]></code>
-      <code><![CDATA[$this->amount]]></code>
-      <code><![CDATA[$this->getCoreFee()]]></code>
-      <code><![CDATA[$this->getCoreFee()]]></code>
-      <code><![CDATA[$this->getFeeVatPercentage()]]></code>
-      <code><![CDATA[$this->getFeeVatPercentage()]]></code>
-    </ArgumentTypeCoercion>
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[$this->feePercentageOverride]]></code>
-    </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Application/Handlers/HttpErrorHandler.php">
     <PropertyNotSetInConstructor>
@@ -274,76 +157,17 @@
       <code><![CDATA[HttpErrorHandler]]></code>
     </PropertyNotSetInConstructor>
   </file>
-  <file src="src/Application/HttpModels/DonationCreatedResponse.php">
-    <MissingConstructor>
-      <code><![CDATA[$donation]]></code>
-      <code><![CDATA[$jwt]]></code>
-    </MissingConstructor>
-  </file>
-  <file src="src/Application/Matching/Adapter.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$wholeUnit]]></code>
-    </ArgumentTypeCoercion>
-    <DeprecatedMethod>
-      <code><![CDATA[transactional]]></code>
-    </DeprecatedMethod>
-    <PossiblyInvalidMethodCall>
-      <code><![CDATA[decrBy]]></code>
-      <code><![CDATA[exec]]></code>
-      <code><![CDATA[exec]]></code>
-      <code><![CDATA[incrBy]]></code>
-      <code><![CDATA[set]]></code>
-      <code><![CDATA[set]]></code>
-    </PossiblyInvalidMethodCall>
-  </file>
   <file src="src/Application/Messenger/Handler/GiftAidResultHandler.php">
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[empty($donationMessage->response_detail)]]></code>
       <code><![CDATA[empty($donationMessage->submission_correlation_id)]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
-  <file src="src/Application/Messenger/Handler/StripePayoutHandler.php">
-    <DeprecatedInterface>
-      <code><![CDATA[StripePayoutHandler]]></code>
-    </DeprecatedInterface>
-    <DocblockTypeContradiction>
-      <code><![CDATA[is_string($source_transfer)]]></code>
-    </DocblockTypeContradiction>
-    <PossiblyNullArgument>
-      <code><![CDATA[$chargeId]]></code>
-      <code><![CDATA[$chargeId]]></code>
-    </PossiblyNullArgument>
-  </file>
   <file src="src/Application/Messenger/StripePayout.php">
     <MissingConstructor>
       <code><![CDATA[$connectAccountId]]></code>
       <code><![CDATA[$payoutId]]></code>
     </MissingConstructor>
-  </file>
-  <file src="src/Application/Persistence/RetrySafeEntityManager.php">
-    <LessSpecificReturnStatement>
-      <code><![CDATA[$this->ormConfig->getRepositoryFactory()->getRepository($this, $className)]]></code>
-    </LessSpecificReturnStatement>
-    <MoreSpecificReturnType>
-      <code><![CDATA[getRepository]]></code>
-    </MoreSpecificReturnType>
-  </file>
-  <file src="src/Client/Campaign.php">
-    <MixedArrayAccess>
-      <code><![CDATA[$campaignResponse['ready']]]></code>
-    </MixedArrayAccess>
-    <MixedAssignment>
-      <code><![CDATA[$campaignResponse]]></code>
-    </MixedAssignment>
-    <MixedInferredReturnType>
-      <code><![CDATA[array]]></code>
-    </MixedInferredReturnType>
-    <MixedReturnStatement>
-      <code><![CDATA[$campaignResponse]]></code>
-    </MixedReturnStatement>
-    <PossiblyNullReference>
-      <code><![CDATA[getStatusCode]]></code>
-    </PossiblyNullReference>
   </file>
   <file src="src/Client/Common.php">
     <MixedArrayAccess>
@@ -362,7 +186,6 @@
   </file>
   <file src="src/Client/Donation.php">
     <RiskyTruthyFalsyComparison>
-      <code><![CDATA[getenv('DISABLE_CLIENT_PUSH')]]></code>
       <code><![CDATA[getenv('DISABLE_CLIENT_PUSH')]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
@@ -446,56 +269,18 @@
       <code><![CDATA[empty($hmrcReferenceNumber)]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
-  <file src="src/Domain/CommandLockKeys.php">
-    <MissingConstructor>
-      <code><![CDATA[$key_expiration]]></code>
-      <code><![CDATA[$key_id]]></code>
-      <code><![CDATA[$key_token]]></code>
-    </MissingConstructor>
-  </file>
   <file src="src/Domain/Donation.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$amount]]></code>
-      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
-      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
-      <code><![CDATA[$fundingWithdrawal->getAmount()]]></code>
-      <code><![CDATA[$this->getAmount()]]></code>
-      <code><![CDATA[$this->getAmount()]]></code>
-      <code><![CDATA[$this->getCharityFee()]]></code>
-      <code><![CDATA[$this->getCharityFeeGross()]]></code>
-      <code><![CDATA[$this->getCharityFeeVat()]]></code>
-      <code><![CDATA[$this->getFeeCoverAmount()]]></code>
-      <code><![CDATA[$this->getTipAmount()]]></code>
-      <code><![CDATA[$this->getTipAmount()]]></code>
-    </ArgumentTypeCoercion>
-    <PossiblyNullPropertyAssignmentValue>
-      <code><![CDATA[$this->getCollectedAt()?->format('Y-m-d')]]></code>
-    </PossiblyNullPropertyAssignmentValue>
     <PropertyNotSetInConstructor>
-      <code><![CDATA[$campaign]]></code>
-      <code><![CDATA[$psp]]></code>
       <code><![CDATA[Donation]]></code>
       <code><![CDATA[Donation]]></code>
     </PropertyNotSetInConstructor>
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[!$this->transactionId]]></code>
-      <code><![CDATA[$cardBrand]]></code>
-      <code><![CDATA[empty($donationData->countryCode)]]></code>
-      <code><![CDATA[empty($donationMessage->house_no)]]></code>
-      <code><![CDATA[empty($this->getDonorFirstName())]]></code>
-      <code><![CDATA[empty($this->getDonorLastName())]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Domain/DonationRepository.php">
-    <ArgumentTypeCoercion>
-      <code><![CDATA[$amountAllocated]]></code>
-      <code><![CDATA[$amountAllocated]]></code>
-      <code><![CDATA[$amountMatchedAtStart]]></code>
-      <code><![CDATA[$donation->getAmount()]]></code>
-    </ArgumentTypeCoercion>
     <DeprecatedMethod>
       <code><![CDATA[getResultCacheImpl]]></code>
-      <code><![CDATA[transactional]]></code>
     </DeprecatedMethod>
     <MixedReturnTypeCoercion>
       <code><![CDATA[$qb->getQuery()
@@ -513,17 +298,6 @@
       <code><![CDATA[Donation[]]]></code>
       <code><![CDATA[Donation[]]]></code>
     </MixedReturnTypeCoercion>
-    <PossiblyUndefinedVariable>
-      <code><![CDATA[$lockStartTime]]></code>
-      <code><![CDATA[$lockStartTime]]></code>
-      <code><![CDATA[$newTotal]]></code>
-    </PossiblyUndefinedVariable>
-  </file>
-  <file src="src/Domain/DonationService.php">
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[empty($campaign->getCharity()->getStripeAccountId())]]></code>
-      <code><![CDATA[empty($donation->getCampaign()->getCharity()->getStripeAccountId())]]></code>
-    </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Domain/Fund.php">
     <MissingConstructor>
@@ -534,10 +308,6 @@
     </MissingConstructor>
   </file>
   <file src="src/Domain/FundRepository.php">
-    <DocblockTypeContradiction>
-      <code><![CDATA[!$fund]]></code>
-      <code><![CDATA[$fund]]></code>
-    </DocblockTypeContradiction>
     <MissingConstructor>
       <code><![CDATA[$campaignFundingRepository]]></code>
       <code><![CDATA[$matchingAdapter]]></code>
@@ -568,15 +338,9 @@
     </PossiblyNullOperand>
   </file>
   <file src="src/Domain/SalesforceProxyRepository.php">
-    <DocblockTypeContradiction>
-      <code><![CDATA[!$this->client]]></code>
-      <code><![CDATA[$this->client]]></code>
-    </DocblockTypeContradiction>
     <MissingConstructor>
       <code><![CDATA[$client]]></code>
       <code><![CDATA[$client]]></code>
-      <code><![CDATA[$client]]></code>
-      <code><![CDATA[$logger]]></code>
       <code><![CDATA[$logger]]></code>
       <code><![CDATA[$logger]]></code>
     </MissingConstructor>
@@ -587,9 +351,6 @@
       <code><![CDATA[$proxy->getSalesforceId()]]></code>
       <code><![CDATA[$proxy->getSalesforceId()]]></code>
     </PossiblyNullOperand>
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[!$proxy->getSalesforceId()]]></code>
-    </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Domain/TimestampsTrait.php">
     <MissingConstructor>
@@ -598,224 +359,6 @@
       <code><![CDATA[$updatedAt]]></code>
       <code><![CDATA[$updatedAt]]></code>
     </MissingConstructor>
-  </file>
-  <file src="src/Migrations/Version20191109151808.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20191109215947.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20191110112409.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20191110121708.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20191110162524.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20191113083835.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20191119154404.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20191126051351.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20200713104818.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20200720102604.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20200804150108.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20200804164545.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20200826135513.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20200925104750.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20201113093420.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20201114144300.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20201118043500.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20201119104427.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20201119205321.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20201208101014.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20210122113600.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20210311133325.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20210408183019.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20210422163630.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20210907103000.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20210907110200.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20211029152640.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20211029163214.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20211029164148.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20211029225612.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20211209083200.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20220104121300.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20220104135535.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20220201161400.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20220201171800.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Migrations/Version20220402132739.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getName]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="src/Monolog/Processor/AwsTraceIdProcessor.php">
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[empty($traceId)]]></code>
-    </RiskyTruthyFalsyComparison>
   </file>
   <file src="tests/Application/Actions/Donations/CreateTest.php">
     <MixedArrayAccess>
@@ -833,25 +376,11 @@
     <MixedAssignment>
       <code><![CDATA[$payloadArray]]></code>
     </MixedAssignment>
-    <RedundantConditionGivenDocblockType>
-      <code><![CDATA[assertFalse]]></code>
-      <code><![CDATA[assertFalse]]></code>
-      <code><![CDATA[assertFalse]]></code>
-      <code><![CDATA[assertFalse]]></code>
-    </RedundantConditionGivenDocblockType>
   </file>
   <file src="tests/Application/Actions/Donations/GetTest.php">
     <MixedArrayAccess>
       <code><![CDATA[$payloadArray['createdTime']]]></code>
     </MixedArrayAccess>
-  </file>
-  <file src="tests/Application/Actions/Donations/UpdateHandlesLockExceptionTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-    </DeprecatedMethod>
-    <InternalMethod>
-      <code><![CDATA[new LockWaitTimeoutException($testCase->createStub(DriverException::class), null)]]></code>
-    </InternalMethod>
   </file>
   <file src="tests/Application/Actions/Donations/UpdateTest.php">
     <MixedArrayAccess>
@@ -934,16 +463,6 @@
       <code><![CDATA[$webhookSecret]]></code>
     </MixedAssignment>
   </file>
-  <file src="tests/Application/Actions/StatusTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[ConsoleRunner::createHelperSet($container->get(EntityManagerInterface::class))]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="tests/Application/Commands/AlwaysAvailableLockStore.php">
-    <MissingParamType>
-      <code><![CDATA[$ttl]]></code>
-    </MissingParamType>
-  </file>
   <file src="tests/Application/Commands/ClaimGiftAidTest.php">
     <MixedArgumentTypeCoercion>
       <code><![CDATA[$this->getExpectedStamps($testDonation->getUuid())]]></code>
@@ -951,63 +470,7 @@
       <code><![CDATA[$this->getExpectedStamps($testDonation->getUuid())]]></code>
     </MixedArgumentTypeCoercion>
   </file>
-  <file src="tests/Application/Commands/ExpireMatchFundsTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-    </DeprecatedMethod>
-  </file>
-  <file src="tests/Application/Commands/ResetMatchingTest.php">
-    <InternalClass>
-      <code><![CDATA[PDOException::new(
-                    new \PDOException(
-                        'SQLSTATE[42S02]: Base table or view not found: 1146 ' .
-                        "Table 'matchbot.CampaignFunding' doesn't exist"
-                    )
-                )]]></code>
-    </InternalClass>
-    <InternalMethod>
-      <code><![CDATA[PDOException::new(
-                    new \PDOException(
-                        'SQLSTATE[42S02]: Base table or view not found: 1146 ' .
-                        "Table 'matchbot.CampaignFunding' doesn't exist"
-                    )
-                )]]></code>
-      <code><![CDATA[new TableNotFoundException(
-                // Doctrine PDO\Exception (a DriverException subclass) wraps native \PDOException.
-                PDOException::new(
-                    new \PDOException(
-                        'SQLSTATE[42S02]: Base table or view not found: 1146 ' .
-                        "Table 'matchbot.CampaignFunding' doesn't exist"
-                    )
-                ),
-                new Query('SELECT test...', [], []),
-            )]]></code>
-    </InternalMethod>
-  </file>
-  <file src="tests/Application/DonationTestDataTrait.php">
-    <DeprecatedMethod>
-      <code><![CDATA[Donation::emptyTestDonation('124.56')]]></code>
-    </DeprecatedMethod>
-  </file>
   <file src="tests/Application/Persistence/RetrySafeEntityManagerTest.php">
-    <DeprecatedMethod>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-      <code><![CDATA[Donation::emptyTestDonation('1')]]></code>
-    </DeprecatedMethod>
-    <InternalClass>
-      <code><![CDATA[new ReturnCallback(static function () use ($retrySafeEm, $underlyingEmToResetTo) {
-                $retrySafeEm->setEntityManager($underlyingEmToResetTo);
-            })]]></code>
-    </InternalClass>
-    <InternalMethod>
-      <code><![CDATA[addToAssertionCount]]></code>
-      <code><![CDATA[new ReturnCallback(static function () use ($retrySafeEm, $underlyingEmToResetTo) {
-                $retrySafeEm->setEntityManager($underlyingEmToResetTo);
-            })]]></code>
-    </InternalMethod>
     <MixedArgument>
       <code><![CDATA[$container->get('settings')['doctrine']['connection']]]></code>
       <code><![CDATA[$container->get('settings')['doctrine']['connection']]]></code>
@@ -1018,11 +481,6 @@
       <code><![CDATA[$container->get('settings')['doctrine']]]></code>
       <code><![CDATA[$container->get('settings')['doctrine']]]></code>
     </MixedArrayAccess>
-  </file>
-  <file src="tests/Domain/DonationTest.php">
-    <InternalMethod>
-      <code><![CDATA[addToAssertionCount]]></code>
-    </InternalMethod>
   </file>
   <file src="tests/TestCase.php">
     <MixedArgument>

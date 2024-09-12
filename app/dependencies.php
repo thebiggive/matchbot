@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use Brick\DateTime\Instant;
 use DI\Container;
 use DI\ContainerBuilder;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
@@ -32,6 +32,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
@@ -143,8 +144,12 @@ return function (ContainerBuilder $containerBuilder) {
                 new AmazonSqsTransportFactory(),
                 new RedisTransportFactory(),
             ]);
+            $claimbotDSN = getenv('CLAIMBOT_MESSENGER_TRANSPORT_DSN');
+            if ($claimbotDSN === false) {
+                throw new \Exception('CLAIMBOT_MESSENGER_TRANSPORT_DSN must be defined in environment');
+            }
             return $transportFactory->createTransport(
-                getenv('CLAIMBOT_MESSENGER_TRANSPORT_DSN'),
+                $claimbotDSN,
                 [],
                 new PhpSerializer(),
             );
@@ -413,6 +418,12 @@ return function (ContainerBuilder $containerBuilder) {
             );
         },
 
+        ORM\EntityManager::class =>  static function (): never {
+            // injecting the wrong sort of EM leads to having two different entity managers running at once and
+            // confusing bugs.
+            throw new \Exception("Do not inject EntityManager - you probably want EntityManagerInterface");
+        },
+
         RoutableMessageBus::class => static function (ContainerInterface $c): RoutableMessageBus {
             $busContainer = new Container();
             $bus = $c->get(MessageBusInterface::class);
@@ -462,8 +473,12 @@ return function (ContainerBuilder $containerBuilder) {
                 new InMemoryTransportFactory(), // For unit tests.
                 new RedisTransportFactory(),
             ]);
+            $dsn = getenv('MESSENGER_TRANSPORT_DSN');
+            if ($dsn === false) {
+                throw new \Exception('MESSENGER_TRANSPORT_DSN not defined in enviornmnet');
+            }
             return $transportFactory->createTransport(
-                getenv('MESSENGER_TRANSPORT_DSN'),
+                $dsn,
                 [],
                 new PhpSerializer(),
             );
@@ -508,6 +523,7 @@ return function (ContainerBuilder $containerBuilder) {
                     chatter: $chatter,
                     clock: $c->get(ClockInterfaceAlias::class),
                     rateLimiterFactory: $rateLimiterFactory,
+                    donorAccountRepository: $c->get(DonorAccountRepository::class),
                 );
             }
     ]);

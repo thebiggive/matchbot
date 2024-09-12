@@ -6,6 +6,7 @@ namespace MatchBot\Application\Commands;
 
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputArgument;
@@ -101,10 +102,13 @@ class RetrospectivelyMatch extends LockingCommand
         // the command was run manually, send the results to Slack.
         if ($numDistinctCampaigns > 0) {
             $chatMessage = new ChatMessage('Retrospective matching');
+            $env = getenv('APP_ENV');
+            Assertion::string($env);
+
             $options = (new SlackOptions())
                 ->block((new SlackHeaderBlock(sprintf(
                     '[%s] %s',
-                    getenv('APP_ENV'),
+                    $env,
                     'Retrospective matching completed',
                 ))))
                 ->block((new SlackSectionBlock())->text($summary));

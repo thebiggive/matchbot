@@ -3,7 +3,12 @@
 namespace MatchBot\Client;
 
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\StripeConfirmationTokenId;
+use MatchBot\Domain\StripeCustomerId;
+use MatchBot\Domain\StripePaymentMethodId;
 use Ramsey\Uuid\Uuid;
+use Stripe\ConfirmationToken;
+use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
 
@@ -66,7 +71,7 @@ class StubStripeClient implements Stripe
         $this->pause();
     }
 
-    public function retrievePaymentMethod(string $paymentMethodId): PaymentMethod
+    public function retrievePaymentMethod(StripePaymentMethodId $pmId): PaymentMethod
     {
         $this->pause();
 
@@ -76,5 +81,15 @@ class StubStripeClient implements Stripe
         $paymentMethod->card = (object)['brand' => 'visa', 'country' => 'GB'];
 
         return $paymentMethod;
+    }
+
+    public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
+    {
+        return new CustomerSession();
+    }
+
+    public function retrieveConfirmationToken(StripeConfirmationTokenId $confirmationTokenId): ConfirmationToken
+    {
+        return new ConfirmationToken();
     }
 }

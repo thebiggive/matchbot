@@ -21,6 +21,7 @@ class DonationFundsNotifierTest extends TestCase
     {
         //arrange
         $donorAccount = new DonorAccount(
+            null,
             EmailAddress::of('foo@example.com'),
             DonorName::of('Fred', 'Brooks'),
             StripeCustomerId::of('cus_1234'), // this one doesn't matter for the test.

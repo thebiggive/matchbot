@@ -31,7 +31,7 @@ class AlwaysAvailableLockStore implements BlockingStoreInterface
     /**
      * @return void
      */
-    public function putOffExpiration(Key $key, $ttl)
+    public function putOffExpiration(Key $key, float $ttl)
     {
         // Do nothing
     }

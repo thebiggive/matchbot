@@ -11,6 +11,7 @@ use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
+use Doctrine\ORM\Query;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -136,6 +137,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // is most often empty (for new donations) so this will frequently be 0.00.
         $amountMatchedAtStart = $donation->getFundingWithdrawalTotal();
 
+
+        $lockStartTime = 0; // dummy value, should always be overwritten before usage.
         try {
             /** @var list<CampaignFunding> $likelyAvailableFunds */
             $likelyAvailableFunds = $this->getEntityManager()
@@ -233,8 +236,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             return;
         }
 
+        $lockStartTime = microtime(true);
         try {
-            $lockStartTime = microtime(true);
             $totalAmountReleased = $this->matchingAdapter->releaseAllFundsForDonation($donation);
             $lockEndTime = microtime(true);
 
@@ -521,7 +524,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * @param Donation $donation
      * @param CampaignFunding[] $fundings   Fundings likely to have funds available. To be re-queried with a
      *                                      pessimistic write lock before allocation.
-     * @param string                        Amount of match funds already allocated to the donation when we started.
+     *
+     * @param numeric-string $amountMatchedAtStart Amount of match funds already allocated to the donation when we
+     *                                              started.
      * @return FundingWithdrawal[]
      */
     private function safelyAllocateFunds(Donation $donation, array $fundings, string $amountMatchedAtStart): array
@@ -543,6 +548,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 $amountToAllocateNow = $amountLeftToMatch;
             }
 
+            $newTotal = '[new total not defined]';
             try {
                 $newTotal = $this->matchingAdapter->subtractAmountWithoutSavingToDB($funding, $amountToAllocateNow);
                 $amountAllocated = $amountToAllocateNow; // If no exception thrown
@@ -617,7 +623,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function removeAllFundingWithdrawalsForDonation(Donation $donation): void
     {
-        $this->getEntityManager()->transactional(function () use ($donation) {
+        $this->getEntityManager()->wrapInTransaction(function () use ($donation) {
             foreach ($donation->getFundingWithdrawals() as $fundingWithdrawal) {
                 $this->getEntityManager()->remove($fundingWithdrawal);
             }
@@ -815,7 +821,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT donation from Matchbot\Domain\Donation donation
             WHERE donation.donationStatus = '$preAuthorized'
-            AND donation.preAuthorizationDate >= :now
+            AND donation.preAuthorizationDate <= :now
         DQL
         );
 
@@ -825,5 +831,25 @@ class DonationRepository extends SalesforceWriteProxyRepository
         /** @var list<Donation> $result */
         $result = $query->getResult();
         return $result;
+    }
+
+    public function maxSequenceNumberForMandate(int $mandateId): ?DonationSequenceNumber
+    {
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT MAX(d.mandateSequenceNumber) from MatchBot\Domain\Donation d join d.mandate m
+            WHERE m.id = :mandate_id 
+        DQL
+        );
+
+        $query->setParameter('mandate_id', $mandateId);
+
+        $number = $query->getOneOrNullResult(Query::HYDRATE_SINGLE_SCALAR);
+        \assert(is_int($number) || is_null($number));
+
+        if ($number === null) {
+            return null;
+        }
+
+        return DonationSequenceNumber::of($number);
     }
 }

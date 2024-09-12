@@ -346,7 +346,7 @@ class Update extends Action
                         'Stripe Payment Intent update error from lock "rate limit" on %s, %s [%s]: %s',
                         $donation->getUuid(),
                         get_class($retryException),
-                        $retryException->getStripeCode(),
+                        ($retryException->getStripeCode() ?? 'no-stripe-code'),
                         $retryException->getMessage(),
                     ));
                     $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent [C]');
@@ -585,7 +585,7 @@ class Update extends Action
                     $noFeeChangeMessage,
                     $donation->getUuid(),
                     get_class($exception),
-                    $exception->getStripeCode(),
+                    $exception->getStripeCode() ?? 'null',
                     $exception->getMessage(),
                 ));
                 // Fall through to normal save and success response.
@@ -597,7 +597,7 @@ class Update extends Action
                     $donation->getAmountToDeductFractional(),
                     $donation->getUuid(),
                     get_class($exception),
-                    $exception->getStripeCode(),
+                    $exception->getStripeCode() ?? 'null',
                     $exception->getMessage(),
                 ));
                 // Quickly distinguish fee change case with response message suffix.
@@ -614,7 +614,7 @@ class Update extends Action
                 'Stripe Payment Intent update error on %s, %s [%s]: %s',
                 $donation->getUuid(),
                 get_class($exception),
-                $exception->getStripeCode(),
+                $exception->getStripeCode() ?? 'null',
                 $exception->getMessage(),
             ));
             $error = new ActionError(ActionError::SERVER_ERROR, 'Could not update Stripe Payment Intent [B]');

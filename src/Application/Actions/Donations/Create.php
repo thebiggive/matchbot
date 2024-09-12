@@ -16,6 +16,7 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\HttpModels\DonationCreatedResponse;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
@@ -38,6 +39,7 @@ class Create extends Action
         private SerializerInterface $serializer,
         LoggerInterface $logger,
         private RoutableMessageBus $bus,
+        private Stripe $stripe,
     ) {
         parent::__construct($logger);
     }
@@ -177,9 +179,15 @@ class Create extends Action
 
         $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
 
-        $data = new DonationCreatedResponse();
-        $data->donation = $donation->toFrontEndApiModel();
-        $data->jwt = DonationToken::create($donation->getUuid());
+        $stripeCustomerId = $donation->getPspCustomerId();
+        \assert($stripeCustomerId !== null);
+        $customerSession = $this->stripe->createCustomerSession($stripeCustomerId);
+
+        $data = new DonationCreatedResponse(
+            donation: $donation->toFrontEndApiModel(),
+            jwt: DonationToken::create($donation->getUuid()),
+            stripeSessionSecret: $customerSession->client_secret,
+        );
 
         return $this->respondWithData($response, $data, 201);
     }

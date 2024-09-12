@@ -24,15 +24,18 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
      *                                            Salesforce object in parallel.
      * @throws Client\CampaignNotReady
      */
-    abstract protected function doUpdateFromSf(SalesforceReadProxy $proxy): void;
+    abstract protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void;
 
     /**
      * @psalm-param T $proxy
      * @throws Client\NotFoundException
      * @throws Client\CampaignNotReady
      */
-    public function updateFromSf(SalesforceReadProxy $proxy, bool $autoSave = true): void
-    {
+    public function updateFromSf(
+        SalesforceReadProxy $proxy,
+        bool $withCache = true,
+        bool $autoSave = true,
+    ): void {
         // Make sure we update existing object if passed in a partial copy and we already have that Salesforce object
         // persisted, otherwise we'll try to insert a duplicate and get an ORM crash.
         if (
@@ -40,11 +43,11 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
             ($existingProxy = $this->findOneBy(['salesforceId' => $proxy->getSalesforceId()]))
         ) {
             $this->logInfo('Updating ' . get_class($proxy) . ' ' . $proxy->getSalesforceId() . '...');
-            if (!$proxy->getSalesforceId()) {
+            if ($proxy->getSalesforceId() === null) {
                 $this->logWarning(
                     'Cannot update ' .
                     get_class($proxy) . ' without SF ID for internal ID ' .
-                    ($proxy->getId() ?? '[unknown]')
+                    ($proxy->getId() ?? -1)
                 );
                 return;
             }
@@ -53,7 +56,7 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
             $this->logInfo('Creating ' . get_class($proxy) . ' ' . $proxy->getSalesforceId());
         }
 
-        $this->doUpdateFromSf($proxy);
+        $this->doUpdateFromSf($proxy, $withCache);
 
         $proxy->setSalesforceLastPull(new DateTime('now'));
         $this->getEntityManager()->persist($proxy);

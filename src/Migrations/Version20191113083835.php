@@ -19,7 +19,7 @@ final class Version20191113083835 extends AbstractMigration
 
     public function up(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('CREATE INDEX available_fundings ON CampaignFunding (amountAvailable, allocationOrder, id)');
         $this->addSql('CREATE INDEX date_and_status ON Donation (createdAt, donationStatus)');
@@ -28,7 +28,7 @@ final class Version20191113083835 extends AbstractMigration
 
     public function down(Schema $schema) : void
     {
-        $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration can only be executed safely on \'mysql\'.');
+        $this->abortIf(! $this->connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform, 'Migration can only be executed safely on \'mysql\'.');
 
         $this->addSql('DROP INDEX available_fundings ON CampaignFunding');
         $this->addSql('DROP INDEX date_and_status ON Donation');

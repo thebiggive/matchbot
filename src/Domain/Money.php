@@ -11,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @psalm-immutable
  */
 #[Embeddable]
-class Money implements \JsonSerializable, \Stringable
+readonly class Money implements \JsonSerializable, \Stringable
 {
     /**
      * @param int $amountInPence - Amount of money in minor units, i.e. pence, assumed to be worth 1/100 of the major
@@ -20,9 +20,9 @@ class Money implements \JsonSerializable, \Stringable
      */
     private function __construct(
         #[Column(type: 'integer')]
-        private readonly int $amountInPence,
+        public int $amountInPence,
         #[Column(type: 'string', enumType: Currency::class)]
-        private readonly Currency $currency
+        public Currency $currency
     ) {
         Assertion::between(
             $this->amountInPence,
@@ -85,5 +85,14 @@ class Money implements \JsonSerializable, \Stringable
     public function __toString()
     {
         return $this->currency->isoCode() . ' ' . ($this->amountInPence / 100);
+    }
+
+    /**
+     * Returns an amount in major units as a string, e.g. '1.00' for one pound.
+     * @return numeric-string
+     */
+    public function toNumericString(): string
+    {
+        return bcdiv((string) $this->amountInPence, '100', 2);
     }
 }

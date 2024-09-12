@@ -18,7 +18,9 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
 use Prophecy\Argument;
@@ -27,6 +29,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\App;
 use Slim\Exception\HttpUnauthorizedException;
+use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\MockClock;
@@ -36,6 +39,7 @@ use UnexpectedValueException;
 
 class CreateTest extends TestCase
 {
+    public const string PSPCUSTOMERID = 'cus_aaaaaaaaaaaa11';
     private static array $somePaymentIntentArgs;
     /**
      * @var PaymentIntent Mock result, most properites we don't use omitted.
@@ -57,7 +61,7 @@ class CreateTest extends TestCase
                 'enabled' => true,
                 'allow_redirects' => 'never',
             ],
-            'customer' => 'cus_aaaaaaaaaaaa11',
+            'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'capture_method' => 'automatic',
             'metadata' => [
@@ -73,7 +77,6 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'setup_future_usage' => 'on_session',
             'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 154,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
@@ -98,6 +101,7 @@ class CreateTest extends TestCase
 
         $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
         $container->set(CampaignRepository::class, $campaignRepositoryProphecy->reveal());
+        $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
 
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
     }
@@ -333,7 +337,7 @@ class CreateTest extends TestCase
                 'enabled' => true,
                 'allow_redirects' => 'never',
             ],
-            'customer' => 'cus_aaaaaaaaaaaa11',
+            'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'capture_method' => 'automatic',
             'metadata' => [
@@ -349,7 +353,6 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'setup_future_usage' => 'on_session',
             'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_newStripeAccount_456',
@@ -372,6 +375,8 @@ class CreateTest extends TestCase
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
+        $this->prophesizeCustomerSession($stripeProphecy);
+
 
         $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
@@ -397,7 +402,6 @@ class CreateTest extends TestCase
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
-        $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -460,14 +464,15 @@ class CreateTest extends TestCase
             'transfer_data' => [
                 'destination' => 'unitTest_stripeAccount_123',
             ],
-            'customer' => 'cus_aaaaaaaaaaaa11',
-            'setup_future_usage' => 'on_session'
+            'customer' => self::PSPCUSTOMERID,
         ];
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn(self::$somePaymentIntentResult)
             ->shouldBeCalledOnce();
+        $this->prophesizeCustomerSession($stripeProphecy);
+
 
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
@@ -491,7 +496,6 @@ class CreateTest extends TestCase
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
-        $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -508,7 +512,7 @@ class CreateTest extends TestCase
     {
         $donation = $this->getTestDonation(true, true);
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
-        $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
+        $donation->setPspCustomerId(self::PSPCUSTOMERID);
 
         $fundingWithdrawalForMatch = new FundingWithdrawal(self::someCampaignFunding());
         $fundingWithdrawalForMatch->setAmount('8.00'); // Partial match
@@ -534,7 +538,7 @@ class CreateTest extends TestCase
                 'enabled' => true,
                 'allow_redirects' => 'never',
             ],
-            'customer' => 'cus_aaaaaaaaaaaa11',
+            'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'capture_method' => 'automatic',
             'metadata' => [
@@ -550,7 +554,6 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'setup_future_usage' => 'on_session',
             'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
@@ -563,6 +566,7 @@ class CreateTest extends TestCase
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn(self::$somePaymentIntentResult)
             ->shouldBeCalledOnce();
+        $this->prophesizeCustomerSession($stripeProphecy);
 
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
@@ -589,7 +593,6 @@ class CreateTest extends TestCase
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
-        $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -713,7 +716,7 @@ class CreateTest extends TestCase
                 'enabled' => true,
                 'allow_redirects' => 'never',
             ],
-            'customer' => 'cus_aaaaaaaaaaaa11',
+            'customer' => self::PSPCUSTOMERID,
             'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
             'capture_method' => 'automatic',
             'metadata' => [
@@ -729,7 +732,6 @@ class CreateTest extends TestCase
                 'stripeFeeRechargeVat' => '0.00',
                 'tipAmount' => '1.11',
             ],
-            'setup_future_usage' => 'on_session',
             'statement_descriptor' => 'Big Give Create test c',
             'application_fee_amount' => 149,
             'on_behalf_of' => 'unitTest_stripeAccount_123',
@@ -742,6 +744,7 @@ class CreateTest extends TestCase
         $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn(self::$somePaymentIntentResult)
             ->shouldBeCalledOnce();
+        $this->prophesizeCustomerSession($stripeProphecy);
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
@@ -767,7 +770,6 @@ class CreateTest extends TestCase
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
         $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
-        $this->assertFalse($payloadArray['donation']['giftAid']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -797,6 +799,8 @@ class CreateTest extends TestCase
         $stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
             ->willReturn(self::$somePaymentIntentResult)
             ->shouldBeCalledOnce();
+        $this->prophesizeCustomerSession($stripeProphecy);
+
 
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
@@ -849,6 +853,7 @@ class CreateTest extends TestCase
         $stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
             ->willReturn(self::$somePaymentIntentResult)
             ->shouldBeCalledOnce();
+        $this->prophesizeCustomerSession($stripeProphecy);
 
         $container->set(Stripe::class, $stripeProphecy->reveal());
 
@@ -1030,8 +1035,7 @@ class CreateTest extends TestCase
             $campaign->setEndDate((new \DateTime())->sub(new \DateInterval('P1D')));
         }
 
-        /** @psalm-suppress DeprecatedMethod */
-        $donation = Donation::emptyTestDonation(amount: '12.00', currencyCode: $currencyCode);
+        $donation = TestCase::someDonation(amount: '12.00', currencyCode: $currencyCode);
         $donation->setCampaign(TestCase::getMinimalCampaign());
 
         if (!$minimalSetupData) {
@@ -1047,7 +1051,7 @@ class CreateTest extends TestCase
         $donation->setDonorCountryCode('GB');
         $donation->setTipAmount('1.11');
         $donation->setTransactionId('pi_stripe_pending_123');
-        $donation->setPspCustomerId('cus_aaaaaaaaaaaa11');
+        $donation->setPspCustomerId(self::PSPCUSTOMERID);
         $donation->setCharityFee('0.43');
 
         return $donation;
@@ -1072,5 +1076,17 @@ class CreateTest extends TestCase
         $campaignFunding->setCurrencyCode('GBP');
 
         return $campaignFunding;
+    }
+
+    /**
+     * @param ObjectProphecy<Stripe> $stripeProphecy
+     * @return void
+     */
+    public function prophesizeCustomerSession(ObjectProphecy $stripeProphecy): void
+    {
+        $customerSession = new CustomerSession();
+        $customerSession->client_secret = 'customer_session_client_secret';
+        $stripeProphecy->createCustomerSession(StripeCustomerId::of(self::PSPCUSTOMERID))
+            ->willReturn($customerSession);
     }
 }

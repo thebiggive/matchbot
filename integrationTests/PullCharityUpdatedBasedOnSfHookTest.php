@@ -2,7 +2,7 @@
 
 namespace MatchBot\IntegrationTests;
 
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\CharityUpdated;
 use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
 use MatchBot\Client;
@@ -24,7 +24,7 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
     public function testItPullsCharityUpdateAfterSalesforceSendsHook(): void
     {
         // arrange
-        $em = $this->getService(EntityManager::class);
+        $em = $this->getService(EntityManagerInterface::class);
 
         $campaign = TestCase::someCampaign();
         $charity = $campaign->getCharity();
@@ -37,7 +37,7 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
 
         $campaignClientProphecy = $this->prophesize(Client\Campaign::class);
 
-        $campaignClientProphecy->getById($campaign->getSalesforceId())->willReturn(
+        $campaignClientProphecy->getById($campaign->getSalesforceId(), withCache: false)->willReturn(
             $this->simulatedCampaignFromSFAPI(
                 $sfId,
                 'New Charity Name',

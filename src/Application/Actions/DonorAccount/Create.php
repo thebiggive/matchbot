@@ -71,6 +71,7 @@ class Create extends Action
         }
 
         $donorAccount = new DonorAccount(
+            null,
             $emailAddress,
             $donorName,
             $stripeCustomerId,

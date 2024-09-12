@@ -101,8 +101,12 @@ class IdentityToken
         return $secret;
     }
 
-    public function isComplete($jws): bool
+    public function isComplete(?string $jws): bool
     {
+        if ($jws === null) {
+            return false;
+        }
+
         try {
             $decodedJwtBody = JWT::decode($jws, static::getKey());
         } catch (\Exception $exception) {

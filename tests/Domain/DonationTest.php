@@ -166,11 +166,12 @@ class DonationTest extends TestCase
         );
     }
 
+    /**
+     * @doesNotPerformAssertions Just check setPsp() doesn't hit an exception
+     */
     public function testValidPspAccepted(): void
     {
         $_donation = $this->getTestDonation();
-
-        $this->addToAssertionCount(1); // Just check setPsp() doesn't hit an exception
     }
 
     public function testSetAndGetOriginalFee(): void

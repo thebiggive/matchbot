@@ -37,7 +37,7 @@ class CharityUpdatedHandlerTest extends TestCase
         // Besides confirming the handler doesn't crash, this is the point of the test as it stands.
         // Given that the above repo helper had a campaign, we expect `updateFromSf()` which calls
         // out to the API to also be called.
-        $campaignRepositoryProphecy->updateFromSf($onlyRelevantCampaign)->shouldBeCalledOnce();
+        $campaignRepositoryProphecy->updateFromSf($onlyRelevantCampaign, withCache: false)->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->flush()->shouldBeCalledOnce();

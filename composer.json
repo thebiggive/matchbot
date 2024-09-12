@@ -105,6 +105,7 @@
             "doctrine orm:clear-cache:result"
         ],
         "doctrine:delete-and-recreate": [
+            "@doctrine:cache:clear",
             "doctrine orm:schema-tool:drop --full-database --force",
             "@doctrine:migrate"
         ],
@@ -175,6 +176,10 @@
         "matchbot:update-campaigns-inc-historic": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:update-campaigns --all"
+        ],
+        "matchbot:collect-regular-giving": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:collect-regular-giving"
         ],
         "messenger:consume": [
             "Composer\\Config::disableProcessTimeout",

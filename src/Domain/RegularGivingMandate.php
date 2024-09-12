@@ -2,8 +2,6 @@
 
 namespace MatchBot\Domain;
 
-use Brick\DateTime\LocalDate;
-use Brick\DateTime\LocalDateTime;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 use Ramsey\Uuid\Uuid;
@@ -15,6 +13,7 @@ use UnexpectedValueException;
  */
 #[ORM\Table]
 #[ORM\Index(name: 'uuid', columns: ['uuid'])]
+#[ORM\Index(name: 'donationsCreatedUpTo', columns: ['donationsCreatedUpTo'])]
 #[ORM\Entity(
     repositoryClass: null // we construct our own repository
 )]
@@ -26,19 +25,25 @@ class RegularGivingMandate extends SalesforceWriteProxy
     private const int MAX_AMOUNT_PENCE = 500_00;
 
     #[ORM\Column(unique: true, type: 'uuid')]
-    public readonly UuidInterface $uuid;
+    private readonly UuidInterface $uuid;
 
     #[ORM\Embedded(columnPrefix: 'person')]
     public PersonId $donorId;
 
     #[ORM\Embedded(columnPrefix: '')]
-    public readonly Money $amount;
+    private readonly Money $amount;
 
+    /**
+     * @var string 18 digit salesforce ID of campaign
+     */
     #[ORM\Column()]
     private readonly string $campaignId;
 
+    /**
+     * @var string 18 digit salesforce ID of charity
+     */
     #[ORM\Column()]
-    public readonly string $charityId;
+    private readonly string $charityId;
 
     #[ORM\Column()]
     private readonly bool $giftAid;
@@ -48,6 +53,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $activeFrom = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $donationsCreatedUpTo = null;
 
     #[ORM\Column(type: 'string', enumType: MandateStatus::class)]
     private MandateStatus $status = MandateStatus::Pending;
@@ -96,7 +104,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->activeFrom = $activationDate;
     }
 
-    public function toFrontEndApiModel(Charity $charity): array
+    public function toFrontEndApiModel(Charity $charity, \DateTimeImmutable $now): array
     {
         Assertion::same($charity->salesforceId, $this->charityId);
 
@@ -110,6 +118,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
                 'type' => 'monthly',
                 'dayOfMonth' => $this->dayOfMonth->value,
                 'activeFrom' => $this->activeFrom?->format(\DateTimeInterface::ATOM),
+                'expectedNextPaymentDate' => $this->firstPaymentDayAfter($now)->format(\DateTimeInterface::ATOM),
             ],
             'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
@@ -119,12 +128,125 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     public function firstPaymentDayAfter(\DateTimeImmutable $currentDateTime): \DateTimeImmutable
     {
-        $today = $currentDateTime->setTime(0, 0);
+        // We only operate in UK market so all timestamps should be for this TZ:
+        // Not sure why some timestamps generated in tests are having TZ names BST or GMT rather than London,
+        // but that's also OK.
+        Assertion::inArray($currentDateTime->getTimezone()->getName(), ['Europe/London', 'BST', 'GMT', 'UTC']);
 
-        $nextPaymentDayIsNextMonth = $today->format('d') >= $this->dayOfMonth->value;
+        $nextPaymentDayIsNextMonth = $currentDateTime->format('d') >= $this->dayOfMonth->value;
 
-        $todayOrNextMonth = $nextPaymentDayIsNextMonth ? $today->add(new \DateInterval("P1M")) : $today;
+        $todayOrNextMonth = $nextPaymentDayIsNextMonth ?
+            $currentDateTime->add(new \DateInterval("P1M")) :
+            $currentDateTime;
 
-        return new \DateTimeImmutable($todayOrNextMonth->format('Y-m-' . $this->dayOfMonth->value));
+        return new \DateTimeImmutable(
+            $todayOrNextMonth->format('Y-m-' . $this->dayOfMonth->value . 'T06:00:00'),
+            $currentDateTime->getTimezone()
+        );
+    }
+
+    public function hasGiftAid(): bool
+    {
+        return $this->giftAid;
+    }
+
+    /**
+     * Records that all donations we plan to take for this donation before the given time have been created
+     * and saved as pre-authorized donations. This means that no more donations need to be created based on this
+     * mandate before that date.
+     *
+     * @psalm-suppress PossiblyUnusedMethod - to be used soon.
+     */
+    public function setDonationsCreatedUpTo(?\DateTimeImmutable $donationsCreatedUpTo): void
+    {
+        Assertion::same($this->status, MandateStatus::Active);
+        $this->donationsCreatedUpTo = $donationsCreatedUpTo;
+    }
+
+    public function createPreAuthorizedDonation(
+        DonationSequenceNumber $sequenceNumber,
+        DonorAccount $donor,
+        Campaign $campaign
+    ): Donation {
+        $donation = new Donation(
+            amount: $this->amount->toNumericString(),
+            currencyCode: $this->amount->currency->isoCode(),
+            paymentMethodType: PaymentMethodType::Card,
+            campaign: $campaign,
+            charityComms: false,
+            championComms: false,
+            pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            optInTbgEmail: false,
+            donorName: $donor->donorName,
+            emailAddress: $donor->emailAddress,
+            countryCode: $donor->getBillingCountryCode(),
+            tipAmount: '0',
+            mandate: $this,
+            mandateSequenceNumber: $sequenceNumber,
+        );
+
+        $donation->update(
+            giftAid: $this->giftAid,
+            tipGiftAid: false,
+            donorHomeAddressLine1: $donor->getHomeAddressLine1(),
+            donorHomePostcode: $donor->getHomePostcode(),
+            donorName: $donor->donorName,
+            donorEmailAddress: $donor->emailAddress,
+            tbgComms: false,
+            charityComms: false,
+            championComms: false,
+            donorBillingPostcode: $donor->getBillingPostcode(),
+        );
+
+        if ($this->activeFrom === null) {
+            throw new \Exception('Missing activation date - is this an active mandate?');
+        }
+
+        $secondDonationDate = $this->firstPaymentDayAfter($this->activeFrom);
+
+        if ($sequenceNumber->number < 2) {
+            // first donation in mandate should be taken on-session, not pre-authorized.
+            throw new \Exception('Cannot generate pre-authorized first donation');
+        }
+
+        $offset = $sequenceNumber->number - 2;
+
+        $preAuthorizationdate = $secondDonationDate->modify("+$offset months");
+
+        \assert($preAuthorizationdate instanceof \DateTimeImmutable);
+
+        $donation->preAuthorize($preAuthorizationdate);
+
+        return $donation;
+    }
+
+    public function getCampaignId(): Salesforce18Id
+    {
+        return Salesforce18Id::ofCampaign($this->campaignId);
+    }
+
+    public function getUuid(): UuidInterface
+    {
+        return $this->uuid;
+    }
+
+    public function getAmount(): Money
+    {
+        return $this->amount;
+    }
+
+    public function getCharityId(): string
+    {
+        return $this->charityId;
+    }
+
+    public function cancel(): void
+    {
+        $this->status = MandateStatus::Cancelled;
+    }
+
+    public function getStatus(): MandateStatus
+    {
+        return $this->status;
     }
 }
