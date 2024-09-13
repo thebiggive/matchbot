@@ -43,7 +43,7 @@ class TakeRegularGivingDonations extends LockingCommand
             'simulated-date',
             shortcut: 'simulated-date',
             mode: InputOption::VALUE_REQUIRED,
-            description: 'UUID of the donor in identity service'
+            description: 'Simulated datetime'
         );
     }
 
