@@ -26,7 +26,7 @@ class CharityUpdatedHandlerTest extends TestCase
 
     public function testItCallsUpdateFromSf(): void
     {
-        $message = new CharityUpdated($this->charityId);
+        $message = new CharityUpdated($this->charityId, null);
         $onlyRelevantCampaign = self::someCampaign();
 
         $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
