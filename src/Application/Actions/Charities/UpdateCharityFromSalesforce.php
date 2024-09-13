@@ -40,6 +40,7 @@ class UpdateCharityFromSalesforce extends Action
             throw new HttpNotFoundException($request, $e->getMessage());
         }
 
+        $this->logger->info("UpdateCharityFromSalesforce queueing message to update charity from Salesforce: $sfId");
         $this->messageBus->dispatch(new Envelope(new CharityUpdated($sfId)));
 
         return $this->respond($response, new ActionPayload(200));
