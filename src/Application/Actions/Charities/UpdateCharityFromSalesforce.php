@@ -14,11 +14,10 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpNotFoundException;
-use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageDeduplicationAwareInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-class UpdateCharityFromSalesforce extends Action implements MessageDeduplicationAwareInterface
+class UpdateCharityFromSalesforce extends Action
 {
     public function __construct(
         private MessageBusInterface $messageBus,
@@ -42,19 +41,9 @@ class UpdateCharityFromSalesforce extends Action implements MessageDeduplication
         }
 
         $this->logger->info("UpdateCharityFromSalesforce queueing message to update charity from Salesforce: $sfId");
-        $this->messageBus->dispatch(new Envelope(new CharityUpdated($sfId)));
+        $requestTraceId = $_SERVER['HTTP_X_AMZN_TRACE_ID'] ?? null;
+        $this->messageBus->dispatch(new Envelope(new CharityUpdated($sfId, $requestTraceId)));
 
         return $this->respond($response, new ActionPayload(200));
-    }
-
-    /**
-     * As MatchBot uses a FIFO SQS queue in non-dev environments, we must provide a deduplication
-     * ID to allow for multiple updates within a 5 minute period.
-     *
-     * @link https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues-exactly-once-processing.html
-     */
-    public function getMessageDeduplicationId(): ?string
-    {
-        return $_SERVER['HTTP_X_AMZN_TRACE_ID'] ?? null;
     }
 }
