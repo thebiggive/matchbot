@@ -170,18 +170,17 @@ class DonationService
      */
     public function confirmOnSessionDonation(
         Donation $donation,
-        StripePaymentMethodId|StripeConfirmationTokenId $tokenId
+        StripeConfirmationTokenId $tokenId
     ): \Stripe\PaymentIntent {
-        if ($tokenId instanceof StripePaymentMethodId) {
-            $this->updateDonationFees($tokenId, $donation);
-        } else {
-            $this->updateDonationFeesFromConfirmationToken($tokenId, $donation);
-        }
+        $this->updateDonationFeesFromConfirmationToken($tokenId, $donation);
         return $this->confirm($donation, $tokenId);
     }
 
     /**
      * Finalized a donation, instructing stripe to attempt to take payment.
+     *
+     * $tokenId will be StripeConformationTokenId for ad-hoc payments, StripePaymentMethodId for regular giving.
+     * @todo-regular-giving separate out into two functions and avoid instanceof
      */
     private function confirm(
         Donation $donation,
@@ -198,34 +197,6 @@ class DonationService
         $paymentIntentId = $donation->getTransactionId();
 
         return $this->stripe->confirmPaymentIntent($paymentIntentId, $params);
-    }
-
-    private function updateDonationFees(StripePaymentMethodId $paymentMethodId, Donation $donation): void
-    {
-        $paymentMethod = $this->stripe->retrievePaymentMethod($paymentMethodId);
-
-        if ($paymentMethod->type !== 'card') {
-            throw new \DomainException('Confirm only supports card payments for now');
-        }
-
-        /**
-         * This is not technically true - at runtime this is a StripeObject instance, but the behaviour seems to be
-         * as documented in the Card class. Stripe SDK is interesting. Without this annotation we would have SA
-         * errors on ->brand and ->country
-         * @var Card $card
-         */
-        $card = $paymentMethod->card;
-
-        // documented at https://stripe.com/docs/api/payment_methods/object?lang=php
-        // Contrary to what Stripes docblock says, in my testing 'brand' is strings like 'visa' or 'amex'. Not
-        // 'Visa' or 'American Express'
-        $cardBrand = $card->brand;
-
-        // two letter upper string, e.g. 'GB', 'US'.
-        $cardCountry = $card->country;
-        \assert(is_string($cardCountry));
-
-        $this->doUpdateDonationFees($cardBrand, $donation, $cardCountry, $donation->supportsSavingPaymentMethod());
     }
 
     /**
@@ -350,7 +321,6 @@ class DonationService
         string $cardBrand,
         Donation $donation,
         string $cardCountry,
-        bool $savePaymentMethod
     ): void {
         Assertion::inArray($cardBrand, Calculator::STRIPE_CARD_BRANDS);
 
@@ -375,10 +345,6 @@ class DonationService
             // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
         ];
 
-        if ($savePaymentMethod) {
-            $updatedIntentData['setup_future_usage'] = 'on_session';
-        }
-
         $this->stripe->updatePaymentIntent($donation->getTransactionId(), $updatedIntentData);
     }
 
@@ -400,14 +366,10 @@ class DonationService
         Assertion::string($cardBrand);
         Assertion::string($cardCountry);
 
-        // whether to save the method or not is controlled from client side. We don't need to control it here.
-        $savePaymentMethod = false;
-
         $this->doUpdateDonationFees(
             cardBrand: $cardBrand,
             donation: $donation,
             cardCountry: $cardBrand,
-            savePaymentMethod: $savePaymentMethod,
         );
     }
 

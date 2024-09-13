@@ -62,27 +62,6 @@ class StubStripeClient implements Stripe
         return substr(Uuid::uuid4()->toString(), 0, 15);
     }
 
-    /**
-     * The actual billing data patch isn't important; the main job of the stub is to simulate
-     * retrieving a Payment Method, since one is the return value of an update() in the Stripe SDK.
-     */
-    public function updatePaymentMethodBillingDetail(string $paymentMethodId, Donation $donation): void
-    {
-        $this->pause();
-    }
-
-    public function retrievePaymentMethod(StripePaymentMethodId $pmId): PaymentMethod
-    {
-        $this->pause();
-
-        $paymentMethod = new PaymentMethod('ST' . self::randomString());
-        $paymentMethod->type = 'card';
-        /** @psalm-suppress PropertyTypeCoercion card */
-        $paymentMethod->card = (object)['brand' => 'visa', 'country' => 'GB'];
-
-        return $paymentMethod;
-    }
-
     public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
     {
         return new CustomerSession();
