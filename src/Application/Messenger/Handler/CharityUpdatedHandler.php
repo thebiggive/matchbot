@@ -40,17 +40,29 @@ class CharityUpdatedHandler
         $campaignsToUpdate = $campaignRepository->findUpdatableForCharity($sfId);
         $atLeastOneCampaignUpdated = false;
         foreach ($campaignsToUpdate as $campaign) {
+            $this->logger->info("CharityUpdatedHandler: Updating campaign {$campaign->getSalesforceId()}");
+
             // also implicitly updates the charity every time.
             try {
                 // We need to ensure SF tells CloudFront not to cache this particular response, or to bundle
                 // it with public API calls for the same endpoint that may have been recently cached.
                 $campaignRepository->updateFromSf($campaign, withCache: false);
+
+                $this->logger->info("CharityUpdatedHandler: Updated campaign {$campaign->getSalesforceId()}");
+                $this->logger->info(sprintf(
+                    'CharityUpdatedHandler: Charity %s HMRC ref is now %s',
+                    $sfId->value,
+                    $campaign->getCharity()->getHmrcReferenceNumber() ?? 'unknown',
+                ));
+
                 $atLeastOneCampaignUpdated = true;
             } catch (NotFoundException $e) {
                 if ($this->environment === Environment::Production) {
                     // we don't expect to delete campaigns in prod
                     throw $e;
                 }
+
+                $this->logger->warning("{$e->getMessage()} while updating charity {$sfId->value}");
             } catch (CampaignNotReady $e) {
                 // but it is possible for campaigns in prod to go from ready to not ready, e.g. if a charity's
                 // Stripe status changes or they unexpectedly withdraw late
