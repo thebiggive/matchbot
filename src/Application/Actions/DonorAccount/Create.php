@@ -20,8 +20,9 @@ use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 
 /**
- * Creates a record that a donor has (or intends to have) an account to transfer funds to in advance of donating to
- * charity. We will need this to email them a confirmation when the funds are recieved.
+ * Creates a record that a donor has (or intends to have) an account to transfer funds by bank transfer
+ * in advance of donating to charity, or to make Regular Giving arrangements. We need this to
+ * email them a confirmation when the funds are received or to manage capturing off-session donations.
  */
 class Create extends Action
 {
