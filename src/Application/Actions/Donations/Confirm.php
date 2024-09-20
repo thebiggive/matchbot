@@ -90,6 +90,8 @@ class Confirm extends Action
         $confirmationTokenId = $requestBody['stripeConfirmationTokenId'] ?? null;
         \assert(is_string($confirmationTokenId) || is_null($confirmationTokenId));
 
+        $saveCardForReuse = ($requestBody['saveCardForReuse'] ?? false) === true;
+
         $this->entityManager->beginTransaction();
 
         $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $args['donationId']]);
@@ -122,7 +124,8 @@ EOF
         try {
             $updatedIntent = $this->donationService->confirmOnSessionDonation(
                 $donation,
-                StripeConfirmationTokenId::of($confirmationTokenId)
+                StripeConfirmationTokenId::of($confirmationTokenId),
+                $saveCardForReuse,
             );
         } catch (CardException $exception) {
             $this->entityManager->rollback();

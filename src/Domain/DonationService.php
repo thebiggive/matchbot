@@ -170,10 +170,11 @@ class DonationService
      */
     public function confirmOnSessionDonation(
         Donation $donation,
-        StripeConfirmationTokenId $tokenId
+        StripeConfirmationTokenId $tokenId,
+        bool $saveCardForReuse
     ): \Stripe\PaymentIntent {
         $this->updateDonationFeesFromConfirmationToken($tokenId, $donation);
-        return $this->confirm($donation, $tokenId);
+        return $this->confirm($donation, $tokenId, $saveCardForReuse);
     }
 
     /**
@@ -184,9 +185,13 @@ class DonationService
      */
     private function confirm(
         Donation $donation,
-        StripePaymentMethodId|StripeConfirmationTokenId $tokenId
+        StripePaymentMethodId|StripeConfirmationTokenId $tokenId,
+        bool $saveCardForReuse = false,
     ): \Stripe\PaymentIntent {
         $params = [
+            ...($saveCardForReuse ?
+                ['setup_future_usage' => 'off_session'] : []),
+
             ...($tokenId instanceof StripePaymentMethodId ?
                 ['payment_method' => $tokenId->stripePaymentMethodId] : []),
 
