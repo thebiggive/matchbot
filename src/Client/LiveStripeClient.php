@@ -55,6 +55,25 @@ class LiveStripeClient implements Stripe
 
     public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
     {
+        /**
+         * Enabling this would add a "Save payment details for future purchases" checkbox to the payment element.
+         * Since we offer a donation platform and not purchases that isn't appropriate for us. We disable it and will
+         * collect consent separately and use our own mechanism to save the payment method when the donor wants us to
+         */
+        $payment_method_save = 'disabled';
+
+        /**
+         * keep default 3; 10 is max stripe allows.
+         */
+        $payment_method_redisplay_limit = 3;
+
+        /**
+         * default value – need to ensure it stays off to avoid breaking Regular Giving by mistake,
+         * since the list can include `off_session` saved cards that may be mandate-linked.
+         */
+        $payment_method_remove = 'disabled';
+
+
         return $this->stripeClient->customerSessions->create([
             'customer' => $stripeCustomerId->stripeCustomerId,
             'components' => [
@@ -63,15 +82,11 @@ class LiveStripeClient implements Stripe
                     'features' => [
                         'payment_method_allow_redisplay_filters' => ['always', 'unspecified'],
                         'payment_method_redisplay' => 'enabled',
-                        'payment_method_redisplay_limit' => 3, // Keep default 3; 10 is max stripe allows.
-                        // default value – need to ensure it stays off to avoid breaking Regular Giving by mistake,
-                        // since the list can include `off_session` saved cards that may be mandate-linked.
-                        'payment_method_remove' => 'disabled',
-                        'payment_method_save' => 'enabled',
-
-                        // off-session (Regular Giving) payment methods will be saved separately.
-                        // @todo-regular-giving link to that when implemented.
-                        'payment_method_save_usage' => 'on_session',
+                        ...(compact(
+                            'payment_method_save',
+                            'payment_method_remove',
+                            'payment_method_redisplay_limit'
+                        )),
                     ],
                 ]
             ],
