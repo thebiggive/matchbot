@@ -18,6 +18,7 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestCase;
@@ -26,6 +27,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Clock\ClockInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\NullLogger;
+use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Psr7\Response;
 use Stripe\ConfirmationToken;
@@ -409,6 +411,7 @@ class ConfirmTest extends TestCase
                     countryCode: 'GB',
                 ),
                 $testCase->getMinimalCampaign(),
+                PersonId::of(Uuid::NIL)
             );
 
             $donation->update(

@@ -56,6 +56,14 @@ class Donation extends SalesforceWriteProxy
     protected UuidInterface $uuid;
 
     /**
+     * Person ID as they are known in identity service. Nullable only to be compatible with existing
+     * data in prod.
+     */
+    #[ORM\Column(type: 'uuid', nullable: true)]
+    protected ?UuidInterface $donorIdentityUUID;
+
+
+    /**
      * @var Campaign
      */
     #[ORM\ManyToOne(targetEntity: Campaign::class)]
@@ -341,6 +349,7 @@ class Donation extends SalesforceWriteProxy
      * @psalm-param ?numeric-string $tipAmount
      */
     public function __construct(
+        ?PersonId $donorId,
         string $amount,
         string $currencyCode,
         PaymentMethodType $paymentMethodType,
@@ -356,6 +365,7 @@ class Donation extends SalesforceWriteProxy
         ?RegularGivingMandate $mandate,
         ?DonationSequenceNumber $mandateSequenceNumber,
     ) {
+        $this->donorIdentityUUID = $donorId?->toUUID();
         $this->setUuid(Uuid::uuid4());
         $this->fundingWithdrawals = new ArrayCollection();
         $this->currencyCode = $currencyCode;
@@ -405,10 +415,11 @@ class Donation extends SalesforceWriteProxy
      * @throws \Assert\AssertionFailedException
      * @throws \UnexpectedValueException
      */
-    public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
+    public static function fromApiModel(DonationCreate $donationData, Campaign $campaign, ?PersonId $donorId): Donation
     {
         Assertion::eq($donationData->psp, 'stripe');
         return new self(
+            donorId: $donorId,
             amount: $donationData->donationAmount,
             currencyCode: $donationData->currencyCode,
             paymentMethodType: $donationData->pspMethodType,
@@ -477,7 +488,11 @@ class Donation extends SalesforceWriteProxy
 
     public function toSFApiModel(): array
     {
-        $data = [...$this->toFrontEndApiModel(), 'originalPspFee' => (float) $this->getOriginalPspFee()];
+        $data = [
+            ...$this->toFrontEndApiModel(),
+            'originalPspFee' => (float) $this->getOriginalPspFee(),
+            'donorIdentityUUID' => $this->donorIdentityUUID?->toString(),
+        ];
 
         // As of mid 2024 only the actual donate frontend gets this value, to avoid
         // confusion around values that are too temporary to be useful in a CRM anyway.

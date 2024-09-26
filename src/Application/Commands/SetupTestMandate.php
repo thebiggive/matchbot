@@ -188,6 +188,7 @@ class SetupTestMandate extends LockingCommand
         DonationSequenceNumber $number
     ): void {
         $donation = new Donation(
+            donorId: $mandate->donorId,
             amount: (string)($mandate->getAmount()->amountInPence / 100),
             currencyCode: 'GBP',
             paymentMethodType: PaymentMethodType::Card,

@@ -15,12 +15,14 @@ use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Pledge;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
@@ -195,7 +197,7 @@ class RedistributeMatchFundsTest extends TestCase
             donationAmount: $donationAmount,
             projectId: 'projectid012345678',
             psp: 'stripe',
-        ), $this->getMinimalCampaign());
+        ), $this->getMinimalCampaign(), PersonId::of(Uuid::NIL));
         $donation->setSalesforceId('sf_1244');
         $donation->setTransactionId('pi_tenPound123');
 

@@ -101,7 +101,7 @@ class IdentityToken
         return $secret;
     }
 
-    public function isComplete(?string $jws): bool
+    public static function isComplete(?string $jws): bool
     {
         if ($jws === null) {
             return false;

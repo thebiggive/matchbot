@@ -22,12 +22,14 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
@@ -99,9 +101,10 @@ class DonationRepositoryTest extends TestCase
             projectId: 'testProject1234567',
             psp: 'stripe',
         );
+        $donorId = PersonId::of(Uuid::NIL);
 
         $donation = $this->getRepo(null, false, $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload);
+            ->buildFromApiRequest($createPayload, $donorId);
 
         $this->assertEquals('USD', $donation->getCurrencyCode());
         $this->assertEquals('123', $donation->getAmount());
@@ -140,8 +143,10 @@ class DonationRepositoryTest extends TestCase
         );
         $donationRepository->setFundRepository($fundRepositoryProphecy->reveal());
 
+        $donorId = PersonId::of(Uuid::NIL);
+
         $donation = $donationRepository
-            ->buildFromApiRequest($createPayload);
+            ->buildFromApiRequest($createPayload, $donorId);
 
         $this->assertSame('testProject1234567', $donation->getCampaign()->getSalesforceId());
     }
@@ -166,9 +171,11 @@ class DonationRepositoryTest extends TestCase
             projectId: 'testProject1234567',
             psp: 'stripe',
         );
+        $donorId = PersonId::of(Uuid::NIL);
+
 
         $this->getRepo(null, false, $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload);
+            ->buildFromApiRequest($createPayload, $donorId);
     }
 
     /**

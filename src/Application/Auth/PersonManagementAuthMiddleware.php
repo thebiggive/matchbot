@@ -26,6 +26,8 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
 
     public const PSP_ATTRIBUTE_NAME = 'pspId';
     public const PERSON_ID_ATTRIBUTE_NAME = 'personId';
+
+    public const PERSON_HAS_PASSWORD_ATTRIBUTE_NAME = 'personHasPassword';
     protected ?string $jws = null;
 
     /**
@@ -65,8 +67,11 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
 
         $this->checkCompleteness($request);
 
-        $request = $request->withAttribute(self::PSP_ATTRIBUTE_NAME, IdentityToken::getPspId($this->jws));
-        $request = $request->withAttribute(self::PERSON_ID_ATTRIBUTE_NAME, IdentityToken::getPersonId($this->jws));
+        $request = $request
+            ->withAttribute(self::PSP_ATTRIBUTE_NAME, IdentityToken::getPspId($this->jws))
+            ->withAttribute(self::PERSON_ID_ATTRIBUTE_NAME, IdentityToken::getPersonId($this->jws))
+            ->withAttribute(self::PERSON_HAS_PASSWORD_ATTRIBUTE_NAME, IdentityToken::isComplete($this->jws))
+        ;
 
         return $handler->handle($request);
     }

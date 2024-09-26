@@ -71,8 +71,9 @@ class DonationServiceTest extends TestCase
 
         $donationCreate = $this->getDonationCreate();
         $donation = $this->getDonation();
+        $donorId = PersonId::of(Uuid::NIL);
 
-        $this->donationRepoProphecy->buildFromApiRequest($donationCreate)->willReturn($donation);
+        $this->donationRepoProphecy->buildFromApiRequest($donationCreate, $donorId)->willReturn($donation);
 
         $this->chatterProphecy->send(
             new ChatMessage(
@@ -92,7 +93,7 @@ class DonationServiceTest extends TestCase
 
         $this->expectException(CharityAccountLacksNeededCapaiblities::class);
 
-        $this->sut->createDonation($donationCreate, self::CUSTOMER_ID);
+        $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::of(Uuid::NIL));
     }
 
     public function testInitialPersistRunsOutOfRetries(): void
@@ -113,14 +114,15 @@ class DonationServiceTest extends TestCase
 
         $donationCreate = $this->getDonationCreate();
         $donation = $this->getDonation();
+        $donorId = PersonId::of(Uuid::NIL);
 
-        $this->donationRepoProphecy->buildFromApiRequest($donationCreate)->willReturn($donation);
+        $this->donationRepoProphecy->buildFromApiRequest($donationCreate, $donorId)->willReturn($donation);
         $this->stripeProphecy->createPaymentIntent(Argument::any())
             ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
 
         $this->expectException(UniqueConstraintViolationException::class);
 
-        $this->sut->createDonation($donationCreate, self::CUSTOMER_ID);
+        $this->sut->createDonation($donationCreate, self::CUSTOMER_ID, PersonId::of(Uuid::NIL));
     }
 
     public function testRefusesToConfirmPreAuthedDonationForNonActiveMandate(): void
@@ -209,7 +211,8 @@ class DonationServiceTest extends TestCase
     {
         return Donation::fromApiModel(
             $this->getDonationCreate(),
-            TestCase::someCampaign(stripeAccountId: 'STRIPE-ACCOUNT-ID')
+            TestCase::someCampaign(stripeAccountId: 'STRIPE-ACCOUNT-ID'),
+            PersonId::of(Uuid::NIL)
         );
     }
 }

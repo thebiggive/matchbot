@@ -15,9 +15,11 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Pledge;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 
@@ -88,7 +90,7 @@ class DonationRepositoryTest extends IntegrationTest
             projectId: 'ccampaign123456789',
             psp: 'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
-        ), $campaign);
+        ), $campaign, PersonId::of(Uuid::NIL));
 
         $donation->update(
             giftAid: true,
@@ -166,7 +168,8 @@ class DonationRepositoryTest extends IntegrationTest
                 psp: 'stripe',
                 emailAddress: $randomEmailAddress,
             ),
-            campaign: $campaign
+            campaign: $campaign,
+            donorId: PersonId::of(Uuid::NIL),
         );
         if ($donationStatus === DonationStatus::Cancelled) {
             $oldPendingDonation->cancel();

@@ -12,6 +12,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
@@ -20,6 +21,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Ramsey\Uuid\Uuid;
 use Redis;
 use Slim\App;
 use Slim\Factory\AppFactory;
@@ -223,6 +225,7 @@ class TestCase extends PHPUnitTestCase
         PaymentMethodType $paymentMethodType = PaymentMethodType::Card
     ): Donation {
         return new Donation(
+            donorId: PersonId::of(Uuid::NIL),
             amount: $amount,
             currencyCode: $currencyCode,
             paymentMethodType: $paymentMethodType,

@@ -18,7 +18,7 @@ class PersonWithPasswordAuthMiddleware extends PersonManagementAuthMiddleware
 {
     protected function checkCompleteness(ServerRequestInterface $request): void
     {
-        if (!$this->token->isComplete($this->jws)) {
+        if (! IdentityToken::isComplete($this->jws)) {
             /** @var array<string> $serverParams */
             $serverParams = $request->getServerParams();
             // We've seen in CC23 rare attempts to e.g. update payment method with a token that's not complete,

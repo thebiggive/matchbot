@@ -18,9 +18,11 @@ use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Pledge;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
+use Ramsey\Uuid\Uuid;
 
 class DonationTest extends TestCase
 {
@@ -34,7 +36,7 @@ class DonationTest extends TestCase
             projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::Card
-        ), $this->getMinimalCampaign());
+        ), $this->getMinimalCampaign(), PersonId::of(Uuid::NIL));
 
         $this->assertFalse($donation->getDonationStatus()->isSuccessful());
         $this->assertEquals('pending-create', $donation->getSalesforcePushStatus());
@@ -94,7 +96,7 @@ class DonationTest extends TestCase
             projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::Card
-        ), $this->getMinimalCampaign());
+        ), $this->getMinimalCampaign(), PersonId::of(Uuid::NIL));
     }
 
     public function test200kCustomerBalanceDonationIsAllowed(): void
@@ -105,7 +107,7 @@ class DonationTest extends TestCase
             projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
-        ), $this->getMinimalCampaign());
+        ), $this->getMinimalCampaign(), PersonId::of(Uuid::NIL));
 
         $this->assertSame('200000', $donation->getAmount());
     }
@@ -121,7 +123,7 @@ class DonationTest extends TestCase
             projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
-        ), $this->getMinimalCampaign());
+        ), $this->getMinimalCampaign(), PersonId::of(Uuid::NIL));
     }
 
     public function testTipAmountTooHighNotPersisted(): void
@@ -146,7 +148,7 @@ class DonationTest extends TestCase
             psp:'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance,
             tipAmount: '0.01',
-        ), $this->getMinimalCampaign());
+        ), $this->getMinimalCampaign(), PersonId::of(Uuid::NIL));
     }
 
     public function testInvalidPspRejected(): void
@@ -162,7 +164,8 @@ class DonationTest extends TestCase
                 projectId: 'doesnt0matter12345',
                 psp: 'paypal',
             ),
-            new Campaign(TestCase::someCharity())
+            new Campaign(TestCase::someCharity()),
+            PersonId::of(Uuid::NIL)
         );
     }
 
@@ -412,7 +415,7 @@ class DonationTest extends TestCase
             lastName: null,
             emailAddress: 'user@example.com',
             countryCode: 'GB',
-        ), TestCase::someCampaign());
+        ), TestCase::someCampaign(), PersonId::of(Uuid::NIL));
 
         $donation->update(
             giftAid: false,
@@ -436,7 +439,7 @@ class DonationTest extends TestCase
             lastName: 'Charitable',
             emailAddress: 'user@example.com',
             countryCode: 'GB',
-        ), TestCase::someCampaign());
+        ), TestCase::someCampaign(), PersonId::of(Uuid::NIL));
 
         $donation->update(
             giftAid: false,
@@ -462,7 +465,7 @@ class DonationTest extends TestCase
             lastName: 'Charitable',
             emailAddress: 'user@example.com',
             countryCode: 'GB',
-        ), TestCase::someCampaign());
+        ), TestCase::someCampaign(), PersonId::of(Uuid::NIL));
 
         $donation->update(
             giftAid: false,
@@ -489,7 +492,7 @@ class DonationTest extends TestCase
             lastName: 'Charitable',
             emailAddress: 'user@example.com',
             countryCode: 'GB',
-        ), TestCase::someCampaign());
+        ), TestCase::someCampaign(), PersonId::of(Uuid::NIL));
 
         $donation->update(
             giftAid: false,
@@ -516,7 +519,7 @@ class DonationTest extends TestCase
             firstName: 'Chelsea',
             lastName: 'Charitable',
             emailAddress: 'user@example.com',
-        ), TestCase::someCampaign());
+        ), TestCase::someCampaign(), PersonId::of(Uuid::NIL));
 
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing Billing Postcode");
@@ -533,7 +536,7 @@ class DonationTest extends TestCase
             psp: 'stripe',
             firstName: null,
             lastName: null,
-        ), TestCase::someCampaign());
+        ), TestCase::someCampaign(), PersonId::of(Uuid::NIL));
 
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing Donor First Name");
@@ -551,7 +554,7 @@ class DonationTest extends TestCase
             psp: 'stripe',
             firstName: 'First',
             lastName: 'Last',
-        ), TestCase::someCampaign());
+        ), TestCase::someCampaign(), PersonId::of(Uuid::NIL));
 
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing Donor Email Address");
@@ -568,7 +571,7 @@ class DonationTest extends TestCase
             psp: 'stripe',
             firstName: 'First',
             lastName: 'Last',
-        ), TestCase::someCampaign());
+        ), TestCase::someCampaign(), PersonId::of(Uuid::NIL));
 
         $donation->cancel();
 
@@ -604,7 +607,7 @@ class DonationTest extends TestCase
             projectId: 'projectid012345678',
             psp:'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
-        ), $this->getMinimalCampaign());
+        ), $this->getMinimalCampaign(), PersonId::of(Uuid::NIL));
 
         $this->assertSame('Test First Name', $donation->getDonorFirstName(true));
         $this->assertSame('Test Last Name', $donation->getDonorLastName(true));
@@ -692,7 +695,8 @@ class DonationTest extends TestCase
                 'projectid012345678',
                 'stripe',
             ),
-            $this->getMinimalCampaign()
+            $this->getMinimalCampaign(),
+            PersonId::of(Uuid::NIL)
         );
         $donation->cancel();
 
@@ -706,7 +710,7 @@ class DonationTest extends TestCase
             '1.00',
             'projectid012345678',
             'stripe',
-        ), $this->getMinimalCampaign());
+        ), $this->getMinimalCampaign(), PersonId::of(Uuid::NIL));
         $donation->setDonationStatus(DonationStatus::Paid);
 
         $this->expectExceptionMessage('Cannot cancel Paid donation');
@@ -723,7 +727,7 @@ class DonationTest extends TestCase
             projectId: 'projectid012345678',
             psp: 'stripe',
             tipAmount: '-0.01'
-        ), $this->getMinimalCampaign());
+        ), $this->getMinimalCampaign(), PersonId::of(Uuid::NIL));
     }
 
     /**
@@ -737,7 +741,7 @@ class DonationTest extends TestCase
             donationAmount: '1.0',
             projectId: 'testProject1234567',
             psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        ), new Campaign(TestCase::someCharity()), PersonId::of(Uuid::NIL));
 
         $this->assertSame($expected, $donation->getDonorCountryCode());
     }
@@ -754,7 +758,7 @@ class DonationTest extends TestCase
             donationAmount: '1.0',
             projectId: 'testProject1234567',
             psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        ), new Campaign(TestCase::someCharity()), PersonId::of(Uuid::NIL));
 
         $this->expectExceptionMessage('Cannot Claim Gift Aid Without Home Address');
 
@@ -772,7 +776,7 @@ class DonationTest extends TestCase
             donationAmount: '1.0',
             projectId: 'testProject1234567',
             psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        ), new Campaign(TestCase::someCharity()), PersonId::of(Uuid::NIL));
 
         $this->expectExceptionMessage('Cannot Claim Gift Aid Without Home Address');
 
@@ -791,7 +795,7 @@ class DonationTest extends TestCase
             donationAmount: '1.0',
             projectId: 'testProject1234567',
             psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        ), new Campaign(TestCase::someCharity()), PersonId::of(Uuid::NIL));
 
         $donation->collectFromStripeCharge(
             chargeId: 'irrelevant',

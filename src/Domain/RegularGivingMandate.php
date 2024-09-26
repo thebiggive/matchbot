@@ -169,6 +169,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         Campaign $campaign
     ): Donation {
         $donation = new Donation(
+            donorId: $this->donorId,
             amount: $this->amount->toNumericString(),
             currencyCode: $this->amount->currency->isoCode(),
             paymentMethodType: PaymentMethodType::Card,

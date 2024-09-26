@@ -23,6 +23,7 @@ use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\PersonId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -66,6 +67,12 @@ class Create extends Action
 
         $body = (string) $request->getBody();
 
+        $donorId = $request->getAttribute(PersonManagementAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
+        \assert($donorId instanceof PersonId);
+        if (! $request->getAttribute(PersonManagementAuthMiddleware::PERSON_HAS_PASSWORD_ATTRIBUTE_NAME)) {
+            $donorId = null;
+        }
+
         try {
             /** @var DonationCreate $donationData */
             $donationData = $this->serializer->deserialize($body, DonationCreate::class, 'json');
@@ -95,7 +102,7 @@ class Create extends Action
         }
 
         try {
-            $donation = $this->donationService->createDonation($donationData, $customerId);
+            $donation = $this->donationService->createDonation($donationData, $customerId, $donorId);
         } catch (RateLimitExceededException $e) {
             $retryDelaySeconds = ($e->getRetryAfter()->getTimestamp() - time());
             return $this->respond(

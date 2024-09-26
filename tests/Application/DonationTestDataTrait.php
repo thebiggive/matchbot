@@ -11,6 +11,7 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
@@ -51,7 +52,7 @@ trait DonationTestDataTrait
             pspCustomerId: 'cus_123',
         );
 
-        $donation = Donation::fromApiModel($data, $campaign);
+        $donation = Donation::fromApiModel($data, $campaign, PersonId::of(Uuid::NIL));
         $this->setMinimumFieldsSetOnFirstPersist($donation);
 
         return $donation;

@@ -12,12 +12,14 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Tests\Application\Matching\ArrayMatchingStorage;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Messenger\RoutableMessageBus;
 
 /**
@@ -82,6 +84,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
                 pspMethodType: PaymentMethodType::Card
             ),
             $this->campaign,
+            PersonId::of(Uuid::NIL)
         );
 
         $this->emProphecy->persist($donation)->shouldBeCalled();
@@ -119,6 +122,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
                 pspMethodType: PaymentMethodType::Card
             ),
             $this->campaign,
+            PersonId::of(Uuid::NIL),
         );
 
         $this->emProphecy->persist($donation)->shouldBeCalled();
@@ -205,6 +209,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
                 pspMethodType: PaymentMethodType::Card
             ),
             $this->campaign,
+            PersonId::of(Uuid::NIL),
         );
 
         $this->emProphecy->persist($donation)->shouldBeCalled();
@@ -249,6 +254,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
                 pspMethodType: PaymentMethodType::Card
             ),
             $this->campaign,
+            PersonId::of(Uuid::NIL),
         );
         $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawal->setAmount('1.00');
@@ -287,6 +293,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
                 pspMethodType: PaymentMethodType::Card
             ),
             $this->campaign,
+            PersonId::of(Uuid::NIL),
         );
 
         $this->emProphecy->flush()->shouldNotBeCalled();

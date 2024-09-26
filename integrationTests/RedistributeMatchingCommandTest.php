@@ -16,11 +16,13 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Pledge;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Random\Randomizer;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -170,7 +172,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
             projectId: 'projectid012345678',
             psp: 'stripe',
             pspMethodType: PaymentMethodType::Card,
-        ), $campaign);
+        ), $campaign, PersonId::of(Uuid::NIL));
         $randomizer = new Randomizer();
 
         $donation->setTransactionId('pi_' . $this->randomString());

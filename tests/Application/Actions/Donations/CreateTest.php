@@ -20,6 +20,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
@@ -144,8 +145,10 @@ class CreateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donorId = PersonId::of(Uuid::NIL);
+
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), $donorId)
             ->willReturn($donation);
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -172,13 +175,14 @@ class CreateTest extends TestCase
 
         $donationToReturn = $donation;
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
+        $donorId = PersonId::of(Uuid::NIL);
 
         $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), $donorId)
             ->willReturn($donationToReturn);
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
         $donationRepoProphecy->push(Argument::type(DonationUpserted::class), Argument::type('bool'))
@@ -222,11 +226,13 @@ class CreateTest extends TestCase
         $donation = $this->getTestDonation(true, false, true, 'CAD');
 
         $app = $this->getAppInstance();
+        $donorId = PersonId::of(Uuid::NIL);
+
         /** @var Container $container */
         $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), $donorId)
             ->willThrow(new UnexpectedValueException('Currency CAD is invalid for campaign'));
         $donationRepoProphecy->push(Argument::type(DonationUpserted::class), true)->shouldNotBeCalled();
 
@@ -267,8 +273,10 @@ class CreateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donorId = PersonId::of(Uuid::NIL);
+
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), $donorId)
             ->shouldNotBeCalled();
         $donationRepoProphecy->push(Argument::type(DonationUpserted::class), true)->shouldNotBeCalled();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -695,9 +703,11 @@ class CreateTest extends TestCase
         $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
 
+        $donorId = PersonId::of(Uuid::NIL);
+
         // Use a custom Prophecy Promise to vary the simulated behaviour.
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), $donorId)
             ->will(new CreateDupeCampaignThrowThenSucceedPromise($donationToReturn))
             ->shouldBeCalledTimes(2); // One exception, one success
 
@@ -947,7 +957,7 @@ class CreateTest extends TestCase
         $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class))
             ->willReturn($donation);
 
         /**
