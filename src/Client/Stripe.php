@@ -49,14 +49,6 @@ interface Stripe
      */
     public function createPaymentIntent(array $createPayload): PaymentIntent;
 
-    /**
-     * @param non-empty-string $paymentMethodId
-     * @throws ApiErrorException
-     */
-    public function updatePaymentMethodBillingDetail(string $paymentMethodId, Donation $donation): void;
-
-    public function retrievePaymentMethod(StripePaymentMethodId $pmId): PaymentMethod;
-
     public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession;
 
     public function retrieveConfirmationToken(StripeConfirmationTokenId $confirmationTokenId): ConfirmationToken;

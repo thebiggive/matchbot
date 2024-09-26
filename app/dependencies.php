@@ -53,6 +53,7 @@ use Symfony\Component\Clock\ClockInterface as ClockInterfaceAlias;
 use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\DoctrineDbalStore;
+use Symfony\Component\Messenger\Bridge\AmazonSqs\Middleware\AddFifoStampMiddleware;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsTransportFactory;
 use Symfony\Component\Messenger\Bridge\Redis\Transport\RedisTransportFactory;
 use Symfony\Component\Messenger\Handler\HandlersLocator;
@@ -315,6 +316,7 @@ return function (ContainerBuilder $containerBuilder) {
             $handleMiddleware->setLogger($logger);
 
             return new MessageBus([
+                new AddFifoStampMiddleware(),
                 $sendMiddleware,
                 $handleMiddleware,
             ]);

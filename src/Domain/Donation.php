@@ -1562,7 +1562,8 @@ class Donation extends SalesforceWriteProxy
     {
         Assertion::same('stripe', $this->psp);
 
-        return [
+        /** @var array{metadata: array} $payload */
+        $payload = [
             ...$this->getStripeMethodProperties(),
             ...$this->getStripeOnBehalfOfProperties(),
             'customer' => $this->getPspCustomerId()?->stripeCustomerId,
@@ -1597,5 +1598,14 @@ class Donation extends SalesforceWriteProxy
                 'destination' => $this->getCampaign()->getCharity()->getStripeAccountId(),
             ],
         ];
+
+        $mandate = $this->getMandate();
+        $sequenceNumber = $this->getMandateSequenceNumber();
+        if ($mandate !== null && $sequenceNumber !== null) {
+            $payload['metadata']['mandateId'] = $mandate->getId();
+            $payload['metadata']['mandateSequenceNumber'] = $sequenceNumber->number;
+        }
+
+        return $payload;
     }
 }

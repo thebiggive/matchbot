@@ -5,7 +5,6 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use Psr\Log\LoggerInterface;
-use Stripe\Mandate;
 
 readonly class MandateService
 {

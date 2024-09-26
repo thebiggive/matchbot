@@ -4,12 +4,9 @@ namespace MatchBot\Application\Commands;
 
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManagerInterface;
-use Infection\Console\IO;
 use MatchBot\Application\Environment;
-use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationSequenceNumber;
@@ -78,7 +75,7 @@ class SetupTestMandate extends LockingCommand
             'id of payment method in stripe'
         );
 
-        $this->addOption('campaign', 'c', InputOption::VALUE_REQUIRED);
+        $this->addOption('campaign-id', 'c', InputOption::VALUE_REQUIRED);
         $this->addOption('gift-aid', 'g', InputOption::VALUE_NONE);
         $this->addArgument('amount', InputArgument::OPTIONAL, 'Amount in pounds');
         $this->addArgument('day-of-month', InputArgument::OPTIONAL, 'Amount in pounds');
@@ -94,13 +91,13 @@ class SetupTestMandate extends LockingCommand
 
         $donorId = PersonId::of((string) $input->getOption('donor-uuid'));
         $amount = (int)($input->getArgument('amount') ?? '1');
-        $campaignName = (string) $input->getOption('campaign');
+        $campaignId = (string) $input->getOption('campaign-id');
 
-        $criteria = (new Criteria())->where(Criteria::expr()->contains('name', $campaignName));
+        $criteria = (new Criteria())->where(Criteria::expr()->contains('salesforceId', $campaignId));
         $campaign = $this->campaignRepository->matching($criteria)->first();
 
         if (!$campaign) {
-            $io->error("No campaign found for {$campaignName}");
+            $io->error("No campaign found for {$campaignId}");
             return Command::FAILURE;
         }
 
@@ -150,7 +147,7 @@ class SetupTestMandate extends LockingCommand
 
         $io->writeln(
             "<fg=black;bg=green>" .
-            "Created new regular giving mandate: #{$mandate->getId()} for {$campaignName} by {$charity->getName()}" .
+            "Created new regular giving mandate: #{$mandate->getId()} for {$campaignId} by {$charity->getName()}" .
             "</>"
         );
 
