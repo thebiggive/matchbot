@@ -28,7 +28,7 @@ return function (App $app) {
     $app->get('/ping', Status::class);
 
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
-        // Provides real IP for reCAPTCHA
+        // Provides real IP for e.g. rate limiter
         $ipMiddleware = getenv('APP_ENV') === 'local'
             ? new ClientIp()
             : (new ClientIp())->proxy([], ['X-Forwarded-For']);

@@ -104,7 +104,7 @@ class Confirm extends Action
 Donation Confirmation attempted with missing confirmation token id "$confirmationTokenId" for Donation $donationUUID
 EOF
             );
-            throw new HttpBadRequestException($request, "stripePaymentMethodId required");
+            throw new HttpBadRequestException($request, "stripeConfirmationTokenId required");
         }
 
 
