@@ -64,7 +64,10 @@ class StubStripeClient implements Stripe
 
     public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
     {
-        return new CustomerSession();
+        $session = new CustomerSession();
+        $session->client_secret = 'fake_client_secret';
+
+        return $session;
     }
 
     public function retrieveConfirmationToken(StripeConfirmationTokenId $confirmationTokenId): ConfirmationToken
