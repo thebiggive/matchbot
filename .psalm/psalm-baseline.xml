@@ -62,9 +62,6 @@
       <code><![CDATA[$c->get('settings')['redis']['host']]]></code>
       <code><![CDATA[$settings['doctrine']['cache_dir']]]></code>
     </MixedOperand>
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[getenv('BYPASS_PSP')]]></code>
-    </RiskyTruthyFalsyComparison>
   </file>
   <file src="app/settings.php">
     <RiskyTruthyFalsyComparison>

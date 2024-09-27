@@ -175,9 +175,8 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Client\Stripe::class => function (ContainerInterface $c): Client\Stripe {
-
-            $useStubStripe = (getenv('APP_ENV') !== 'production' && getenv('BYPASS_PSP'));
-            if ($useStubStripe) {
+            $isLoadTest = getenv('APP_ENV') !== 'production' && isset($_SERVER['HTTP_X_IS_LOAD_TEST']);
+            if ($isLoadTest) {
                 return new Client\StubStripeClient();
             }
 
