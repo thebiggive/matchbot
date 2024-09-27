@@ -52,7 +52,7 @@ class StubStripeClient implements Stripe
     public function createPaymentIntent(array $createPayload): PaymentIntent
     {
         $this->pause();
-        return new PaymentIntent('ST' . self::randomString());
+        return new PaymentIntent('pi_stub_' . self::randomString());
     }
 
     private static function randomString(): string
