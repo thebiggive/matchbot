@@ -2,15 +2,13 @@
 
 namespace MatchBot\Client;
 
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
-use MatchBot\Domain\StripePaymentMethodId;
 use Ramsey\Uuid\Uuid;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
-use Stripe\PaymentMethod;
+use Stripe\StripeObject;
 
 /**
  * Does not connect to stripe. For use in load testing to allow testing Matchbot with high traffic levels
@@ -72,6 +70,11 @@ class StubStripeClient implements Stripe
 
     public function retrieveConfirmationToken(StripeConfirmationTokenId $confirmationTokenId): ConfirmationToken
     {
-        return new ConfirmationToken();
+        $confirmationToken = new ConfirmationToken();
+        $confirmationToken->payment_method_preview = new StripeObject();
+        $confirmationToken->payment_method_preview['type'] = 'card';
+        $confirmationToken->payment_method_preview['card'] = ['brand' => 'discover', 'country' => 'some-country'];
+
+        return $confirmationToken;
     }
 }
