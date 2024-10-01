@@ -1,6 +1,6 @@
 <?php
 
-namespace Domain;
+namespace MatchBot\Tests\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\Campaign;

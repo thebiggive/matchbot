@@ -456,6 +456,76 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
+     * Taking the floor of the current minute as N and looking between N-16 minutes and
+     * N-1 minutes, returns:
+     * * if there are less than 20 such donations, null; or
+     * * if there are 20+ such donations, the ratio of those which are complete.
+     */
+    public function getRecentHighVolumeCompletionRatio(\DateTimeImmutable $startOfThisMinute): ?float
+    {
+        $oneMinuteAgo = $startOfThisMinute->sub(new \DateInterval('PT1M'));
+        $sixteenMinutesAgo = $startOfThisMinute->sub(new \DateInterval('PT16M'));
+
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select(
+                'COUNT(d.id) as donationCount, SUM(CASE WHEN d.donationStatus IN ' .
+                '(:completeStatuses) THEN 1 ELSE 0 END) as completeCount'
+            )
+            ->from(Donation::class, 'd')
+            ->where('d.createdAt >= :start')
+            ->andWhere('d.createdAt < :end')
+            ->setParameter('start', $sixteenMinutesAgo)
+            ->setParameter('end', $oneMinuteAgo)
+            ->setParameter(
+                'completeStatuses',
+                array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES),
+            );
+
+        /**
+         * @var array{donationCount: int, completeCount: int}|null $result
+         */
+        $result = $qb->getQuery()->getOneOrNullResult(Query::HYDRATE_ARRAY);
+
+        if ($result === null || $result['donationCount'] < 20) {
+            return null;
+        }
+
+        return (float) $result['completeCount'] / $result['donationCount'];
+    }
+
+    public function getDonationsJustCreated(\DateTimeImmutable $startOfThisMinute): int
+    {
+        // Somewhere 1 to 1.999... minutes before the command started.
+        $oneMinuteAgo = $startOfThisMinute->sub(new \DateInterval('PT1M'));
+
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('COUNT(d.id)')
+            ->from(Donation::class, 'd')
+            ->where('d.createdAt >= :start')
+            ->andWhere('d.createdAt < :end')
+            ->setParameter('start', $oneMinuteAgo)
+            ->setParameter('end', $startOfThisMinute);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    public function getDonationsJustCollected(\DateTimeImmutable $startOfThisMinute): int
+    {
+        // Somewhere 1 to 1.999... minutes before the command started.
+        $oneMinuteAgo = $startOfThisMinute->sub(new \DateInterval('PT1M'));
+
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('COUNT(d.id)')
+            ->from(Donation::class, 'd')
+            ->where('d.collectedAt >= :start')
+            ->andWhere('d.collectedAt < :end')
+            ->setParameter('start', $oneMinuteAgo)
+            ->setParameter('end', $startOfThisMinute);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
      * Give up on pushing Cancelled donations to Salesforce after a few minutes. For example,
      * this was needed after CC21 for a last minute donation that could not be persisted in
      * Salesforce because the campaign close date had passed before it reached SF.

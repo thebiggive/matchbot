@@ -1,6 +1,6 @@
 <?php
 
-namespace Domain;
+namespace MatchBot\Tests\Domain;
 
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Domain\Salesforce18Id;

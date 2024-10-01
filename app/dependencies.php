@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Aws\CloudWatch\CloudWatchClient;
 use DI\Container;
 use DI\ContainerBuilder;
 use Doctrine\DBAL\Connection;
@@ -181,6 +182,17 @@ return function (ContainerBuilder $containerBuilder) {
             }
 
             return new Client\LiveStripeClient($c->get(StripeClient::class));
+        },
+
+        CloudWatchClient::class => static function (): CloudWatchClient {
+            return new CloudWatchClient([
+                'version' => 'latest',
+                'region' => getenv('AWS_REGION'),
+                'credentials' => [
+                    'key' => getenv('AWS_CLOUDWATCH_ACCESS_KEY_ID'),
+                    'secret' => getenv('AWS_CLOUDWATCH_SECRET_ACCESS_KEY'),
+                ],
+            ]);
         },
 
         DonationFundsNotifier::class => function (ContainerInterface $c): DonationFundsNotifier {
