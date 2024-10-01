@@ -457,7 +457,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
     /**
      * Taking the floor of the current minute as N and looking between N-16 minutes and
-     * N-1 minutes, returns:
+     * N-1 minutes for donations with >£0 matching assigned, returns:
      * * if there are less than 20 such donations, null; or
      * * if there are 20+ such donations, the ratio of those which are complete.
      */
@@ -472,8 +472,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 '(:completeStatuses) THEN 1 ELSE 0 END) as completeCount'
             )
             ->from(Donation::class, 'd')
+            ->leftJoin('d.fundingWithdrawals', 'fw')
             ->where('d.createdAt >= :start')
             ->andWhere('d.createdAt < :end')
+            ->having('SUM(fw.amount) > 0')
             ->setParameter('start', $sixteenMinutesAgo)
             ->setParameter('end', $oneMinuteAgo)
             ->setParameter(
