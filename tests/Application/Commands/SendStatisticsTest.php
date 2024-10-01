@@ -27,7 +27,21 @@ class SendStatisticsTest extends TestCase
             ->willReturn(0);
 
         $cloudWatchClientProphecy = $this->prophesize(CloudWatchClient::class);
-        $cloudWatchClientProphecy->putMetricData(Argument::size(2))->shouldBeCalledOnce();
+        $cloudWatchClientProphecy->putMetricData([
+            'Namespace' => 'TbgMatchBot',
+            'MetricData' => [
+                [
+                    'MetricName' => 'tbg-test-DonationsCreated',
+                    'Value' => 0,
+                    'Timestamp' => $startOfThisMinute,
+                ],
+                [
+                    'MetricName' => 'tbg-test-DonationsCollected',
+                    'Value' => 0,
+                    'Timestamp' => $startOfThisMinute,
+                ],
+            ],
+        ])->shouldBeCalledOnce();
 
         $command = new SendStatistics(
             cloudWatchClient: $cloudWatchClientProphecy->reveal(),
@@ -60,7 +74,26 @@ class SendStatisticsTest extends TestCase
             ->willReturn(100);
 
         $cloudWatchClientProphecy = $this->prophesize(CloudWatchClient::class);
-        $cloudWatchClientProphecy->putMetricData(Argument::size(2))->shouldBeCalledOnce();
+        $cloudWatchClientProphecy->putMetricData([
+            'Namespace' => 'TbgMatchBot',
+            'MetricData' => [
+                [
+                    'MetricName' => 'tbg-test-DonationsCreated',
+                    'Value' => 700,
+                    'Timestamp' => $startOfThisMinute,
+                ],
+                [
+                    'MetricName' => 'tbg-test-DonationsCollected',
+                    'Value' => 100,
+                    'Timestamp' => $startOfThisMinute,
+                ],
+                [
+                    'MetricName' => 'tbg-test-CompletionRate',
+                    'Value' => 0.6543,
+                    'Timestamp' => $startOfThisMinute,
+                ],
+            ],
+        ])->shouldBeCalledOnce();
 
         $command = new SendStatistics(
             cloudWatchClient: $cloudWatchClientProphecy->reveal(),

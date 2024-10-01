@@ -71,7 +71,7 @@ class SendStatistics extends LockingCommand
      */
     private function makeMetric(string $name, float | int | null $value, \DateTimeImmutable $timestamp): array
     {
-        $appEnv = getenv('APP_ENV') === false ? null : '';
+        $appEnv = getenv('APP_ENV');
         \assert(is_string($appEnv)); // crash if somehow missing.
         return [
             'MetricName' => "tbg-$appEnv-$name",

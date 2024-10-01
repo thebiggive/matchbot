@@ -170,6 +170,10 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:retrospectively-match"
         ],
+        "matchbot:send-statistics": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:send-statistics"
+        ],
         "matchbot:update-campaigns": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:update-campaigns"
