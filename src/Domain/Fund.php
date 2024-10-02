@@ -27,7 +27,7 @@ abstract class Fund extends SalesforceReadProxy
     use TimestampsTrait;
 
     /** @var 'championFund'|'pledge'|'unknownFund' */
-    public const DISCRIMINATOR_VALUE = 'unknownFund';
+    public const string DISCRIMINATOR_VALUE = 'unknownFund';
 
     /**
      * @var string  ISO 4217 code for the currency used with this fund, and in which FundingWithdrawals are denominated.
