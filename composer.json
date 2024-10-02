@@ -173,6 +173,10 @@
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:send-statistics"
         ],
+        "matchbot:tick": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:tick"
+        ],
         "matchbot:update-campaigns": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:update-campaigns"
