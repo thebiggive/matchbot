@@ -466,27 +466,23 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $oneMinuteAgo = $startOfThisMinute->sub(new \DateInterval('PT1M'));
         $sixteenMinutesAgo = $startOfThisMinute->sub(new \DateInterval('PT16M'));
 
-        $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select(
-                'COUNT(d.id) as donationCount, SUM(CASE WHEN d.donationStatus IN ' .
-                '(:completeStatuses) THEN 1 ELSE 0 END) as completeCount'
-            )
-            ->from(Donation::class, 'd')
-            ->leftJoin('d.fundingWithdrawals', 'fw')
-            ->where('d.createdAt >= :start')
-            ->andWhere('d.createdAt < :end')
-            ->having('SUM(fw.amount) > 0')
-            ->setParameter('start', $sixteenMinutesAgo)
-            ->setParameter('end', $oneMinuteAgo)
-            ->setParameter(
-                'completeStatuses',
-                array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES),
-            );
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT
+            COUNT(d.id) as donationCount, 
+            SUM(CASE WHEN d.donationStatus IN (:completeStatuses) THEN 1 ELSE 0 END) as completeCount
+            FROM MatchBot\Domain\Donation d 
+            LEFT JOIN d.fundingWithdrawals fw
+            WHERE d.createdAt >= :start
+            AND d.createdAt < :end HAVING SUM(fw.amount) > 0
+        DQL
+        );
+        $query->setParameter('start', $sixteenMinutesAgo);
+        $query->setParameter('end', $oneMinuteAgo);
 
         /**
          * @var array{donationCount: int, completeCount: int}|null $result
          */
-        $result = $qb->getQuery()->getOneOrNullResult(Query::HYDRATE_ARRAY);
+        $result = $query->getOneOrNullResult(Query::HYDRATE_ARRAY);
 
         if ($result === null || $result['donationCount'] < 20) {
             return null;
