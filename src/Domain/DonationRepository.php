@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use Brick\DateTime\Instant;
-use Brick\DateTime\LocalDate;
-use Brick\DateTime\TimeZone;
 use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
@@ -473,11 +470,16 @@ class DonationRepository extends SalesforceWriteProxyRepository
             FROM MatchBot\Domain\Donation d 
             LEFT JOIN d.fundingWithdrawals fw
             WHERE d.createdAt >= :start
-            AND d.createdAt < :end HAVING SUM(fw.amount) > 0
+            AND d.createdAt < :end
+            HAVING SUM(fw.amount) > 0
         DQL
         );
         $query->setParameter('start', $sixteenMinutesAgo);
         $query->setParameter('end', $oneMinuteAgo);
+        $query->setParameter(
+            'completeStatuses',
+            array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES),
+        );
 
         /**
          * @var array{donationCount: int, completeCount: int}|null $result

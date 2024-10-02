@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use Brick\DateTime\LocalDate;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 // Instantiate PHP-DI ContainerBuilder
-use Brick\DateTime\Doctrine\Types\LocalDateType;
 use DI\ContainerBuilder;
 use Doctrine\DBAL\Types\Type;
 
