@@ -14,7 +14,7 @@ use Stripe\StripeClient;
 
 class UpdatePaymentMethod extends Action
 {
-    public const EXPECTED_STRIPE_NEW_CARD_MESSAGES = [
+    public const array EXPECTED_STRIPE_NEW_CARD_MESSAGES = [
         "Your card's security code is incorrect.",
         'Your card number is incorrect.',
         'Your card was declined.',

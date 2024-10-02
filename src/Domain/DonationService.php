@@ -37,7 +37,7 @@ use Symfony\Component\RateLimiter\RateLimiterFactory;
 
 class DonationService
 {
-    private const MAX_RETRY_COUNT = 3;
+    private const int MAX_RETRY_COUNT = 3;
 
     public function __construct(
         private DonationRepository $donationRepository,

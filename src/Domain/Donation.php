@@ -40,10 +40,10 @@ class Donation extends SalesforceWriteProxy
     /**
      * @see Donation::$currencyCode
      */
-    public const MAXIMUM_CARD_DONATION = 25_000;
+    public const int MAXIMUM_CARD_DONATION = 25_000;
 
-    public const MAXIMUM_CUSTOMER_BALANCE_DONATION = 200_000;
-    public const MINUMUM_AMOUNT = 1;
+    public const int MAXIMUM_CUSTOMER_BALANCE_DONATION = 200_000;
+    public const int MINUMUM_AMOUNT = 1;
 
     private array $possiblePSPs = ['stripe'];
 
