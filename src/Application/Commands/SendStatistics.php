@@ -41,12 +41,12 @@ class SendStatistics extends LockingCommand
         );
         $donationsCreated = $this->makeMetric(
             'DonationsCreated',
-            $this->donationRepository->getDonationsJustCreated($startOfThisMinute),
+            $this->donationRepository->countDonationsJustCreated($startOfThisMinute),
             $startOfThisMinute,
         );
         $donationsCollected = $this->makeMetric(
             'DonationsCollected',
-            $this->donationRepository->getDonationsJustCollected($startOfThisMinute),
+            $this->donationRepository->countDonationsJustCollected($startOfThisMinute),
             $startOfThisMinute,
         );
         $notNullMetrics = [$donationsCreated, $donationsCollected];

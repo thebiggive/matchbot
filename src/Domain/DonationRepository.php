@@ -493,36 +493,40 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return (float) $result['completeCount'] / $result['donationCount'];
     }
 
-    public function getDonationsJustCreated(\DateTimeImmutable $startOfThisMinute): int
+    public function countDonationsJustCreated(\DateTimeImmutable $startOfThisMinute): int
     {
         // Somewhere 1 to 1.999... minutes before the command started.
         $oneMinuteAgo = $startOfThisMinute->sub(new \DateInterval('PT1M'));
 
-        $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('COUNT(d.id)')
-            ->from(Donation::class, 'd')
-            ->where('d.createdAt >= :start')
-            ->andWhere('d.createdAt < :end')
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT COUNT(d.id)
+            FROM MatchBot\Domain\Donation d
+            WHERE d.createdAt >= :start
+            AND d.createdAt < :end
+        DQL
+        )
             ->setParameter('start', $oneMinuteAgo)
             ->setParameter('end', $startOfThisMinute);
 
-        return (int) $qb->getQuery()->getSingleScalarResult();
+        return (int) $query->getSingleScalarResult();
     }
 
-    public function getDonationsJustCollected(\DateTimeImmutable $startOfThisMinute): int
+    public function countDonationsJustCollected(\DateTimeImmutable $startOfThisMinute): int
     {
         // Somewhere 1 to 1.999... minutes before the command started.
         $oneMinuteAgo = $startOfThisMinute->sub(new \DateInterval('PT1M'));
 
-        $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('COUNT(d.id)')
-            ->from(Donation::class, 'd')
-            ->where('d.collectedAt >= :start')
-            ->andWhere('d.collectedAt < :end')
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT COUNT(d.id)
+            FROM MatchBot\Domain\Donation d
+            WHERE d.collectedAt >= :start
+            AND d.collectedAt < :end
+        DQL
+        )
             ->setParameter('start', $oneMinuteAgo)
             ->setParameter('end', $startOfThisMinute);
 
-        return (int) $qb->getQuery()->getSingleScalarResult();
+        return (int) $query->getSingleScalarResult();
     }
 
     /**

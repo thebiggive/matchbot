@@ -21,9 +21,9 @@ class SendStatisticsTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->getRecentHighVolumeCompletionRatio($startOfThisMinute)
             ->willReturn(null);
-        $donationRepoProphecy->getDonationsJustCreated($startOfThisMinute)
+        $donationRepoProphecy->countDonationsJustCreated($startOfThisMinute)
             ->willReturn(0);
-        $donationRepoProphecy->getDonationsJustCollected($startOfThisMinute)
+        $donationRepoProphecy->countDonationsJustCollected($startOfThisMinute)
             ->willReturn(0);
 
         $cloudWatchClientProphecy = $this->prophesize(CloudWatchClient::class);
@@ -68,9 +68,9 @@ class SendStatisticsTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->getRecentHighVolumeCompletionRatio($startOfThisMinute)
             ->willReturn(0.6543);
-        $donationRepoProphecy->getDonationsJustCreated($startOfThisMinute)
+        $donationRepoProphecy->countDonationsJustCreated($startOfThisMinute)
             ->willReturn(700);
-        $donationRepoProphecy->getDonationsJustCollected($startOfThisMinute)
+        $donationRepoProphecy->countDonationsJustCollected($startOfThisMinute)
             ->willReturn(100);
 
         $cloudWatchClientProphecy = $this->prophesize(CloudWatchClient::class);
