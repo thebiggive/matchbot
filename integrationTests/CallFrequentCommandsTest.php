@@ -6,6 +6,7 @@ use Aws\CloudWatch\CloudWatchClient;
 use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\SendStatistics;
+use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
 use Prophecy\Argument;
@@ -56,6 +57,7 @@ class CallFrequentCommandsTest extends IntegrationTest
             new SendStatistics(
                 $this->getMockCloudWatchClient(),
                 $this->getService(DonationRepository::class),
+                $this->getService(Environment::class),
             ),
             new ExpireMatchFunds($this->getService(DonationRepository::class)),
         ];

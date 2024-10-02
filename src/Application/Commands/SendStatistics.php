@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Aws\CloudWatch\CloudWatchClient;
+use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,7 +26,8 @@ class SendStatistics extends LockingCommand
 {
     public function __construct(
         private CloudWatchClient $cloudWatchClient,
-        private DonationRepository $donationRepository
+        private DonationRepository $donationRepository,
+        private Environment $environment,
     ) {
         parent::__construct();
     }
@@ -71,10 +73,8 @@ class SendStatistics extends LockingCommand
      */
     private function makeMetric(string $name, float | int | null $value, \DateTimeImmutable $timestamp): array
     {
-        $appEnv = getenv('APP_ENV');
-        \assert(is_string($appEnv)); // crash if somehow missing.
         return [
-            'MetricName' => "tbg-$appEnv-$name",
+            'MetricName' => "tbg-{$this->environment->toLower()}-$name",
             'Value' => $value,
             'Timestamp' => $timestamp,
         ];

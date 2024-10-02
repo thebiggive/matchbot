@@ -6,9 +6,9 @@ namespace MatchBot\Tests\Application\Commands;
 
 use Aws\CloudWatch\CloudWatchClient;
 use MatchBot\Application\Commands\SendStatistics;
+use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
-use Prophecy\Argument;
 use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
@@ -46,6 +46,7 @@ class SendStatisticsTest extends TestCase
         $command = new SendStatistics(
             cloudWatchClient: $cloudWatchClientProphecy->reveal(),
             donationRepository: $donationRepoProphecy->reveal(),
+            environment: Environment::fromAppEnv('test'),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
@@ -98,6 +99,7 @@ class SendStatisticsTest extends TestCase
         $command = new SendStatistics(
             cloudWatchClient: $cloudWatchClientProphecy->reveal(),
             donationRepository: $donationRepoProphecy->reveal(),
+            environment: Environment::fromAppEnv('test'),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
