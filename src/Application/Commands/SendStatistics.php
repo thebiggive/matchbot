@@ -7,6 +7,7 @@ namespace MatchBot\Application\Commands;
 use Aws\CloudWatch\CloudWatchClient;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
+use Psr\Clock\ClockInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -25,6 +26,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class SendStatistics extends LockingCommand
 {
     public function __construct(
+        private ClockInterface $clock,
         private CloudWatchClient $cloudWatchClient,
         private DonationRepository $donationRepository,
         private Environment $environment,
@@ -34,7 +36,7 @@ class SendStatistics extends LockingCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $time = time();
+        $time = $this->clock->now()->getTimestamp();
         $startOfThisMinute = new \DateTimeImmutable('@' . ($time - ($time % 60)));
         $completionRate = $this->makeMetric(
             'CompletionRate',
@@ -43,12 +45,12 @@ class SendStatistics extends LockingCommand
         );
         $donationsCreated = $this->makeMetric(
             'DonationsCreated',
-            $this->donationRepository->countDonationsJustCreated($startOfThisMinute),
+            $this->donationRepository->countDonationsCreatedInMinuteTo($startOfThisMinute),
             $startOfThisMinute,
         );
         $donationsCollected = $this->makeMetric(
             'DonationsCollected',
-            $this->donationRepository->countDonationsJustCollected($startOfThisMinute),
+            $this->donationRepository->countDonationsCollectedInMinuteTo($startOfThisMinute),
             $startOfThisMinute,
         );
         $notNullMetrics = [$donationsCreated, $donationsCollected];

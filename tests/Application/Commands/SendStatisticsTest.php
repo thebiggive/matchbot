@@ -10,21 +10,29 @@ use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
 use Psr\Log\NullLogger;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 
 class SendStatisticsTest extends TestCase
 {
+    private \DateTimeImmutable $startOfMockClocksCurrentMinute;
+
+    public function setUp(): void
+    {
+        $this->startOfMockClocksCurrentMinute = new \DateTimeImmutable('@1727866800');
+
+        parent::setUp();
+    }
+
     public function testZeroStatsPushTwoFigures(): void
     {
-        $startOfThisMinute = new \DateTimeImmutable('@' . (time() - (time() % 60)));
+        $end = $this->startOfMockClocksCurrentMinute;
+
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->getRecentHighVolumeCompletionRatio($startOfThisMinute)
-            ->willReturn(null);
-        $donationRepoProphecy->countDonationsJustCreated($startOfThisMinute)
-            ->willReturn(0);
-        $donationRepoProphecy->countDonationsJustCollected($startOfThisMinute)
-            ->willReturn(0);
+        $donationRepoProphecy->getRecentHighVolumeCompletionRatio($end)->willReturn(null);
+        $donationRepoProphecy->countDonationsCreatedInMinuteTo($end)->willReturn(0);
+        $donationRepoProphecy->countDonationsCollectedInMinuteTo($end)->willReturn(0);
 
         $cloudWatchClientProphecy = $this->prophesize(CloudWatchClient::class);
         $cloudWatchClientProphecy->putMetricData([
@@ -33,17 +41,18 @@ class SendStatisticsTest extends TestCase
                 [
                     'MetricName' => 'tbg-test-DonationsCreated',
                     'Value' => 0,
-                    'Timestamp' => $startOfThisMinute,
+                    'Timestamp' => $end,
                 ],
                 [
                     'MetricName' => 'tbg-test-DonationsCollected',
                     'Value' => 0,
-                    'Timestamp' => $startOfThisMinute,
+                    'Timestamp' => $end,
                 ],
             ],
         ])->shouldBeCalledOnce();
 
         $command = new SendStatistics(
+            clock: new MockClock('@1727866802'),
             cloudWatchClient: $cloudWatchClientProphecy->reveal(),
             donationRepository: $donationRepoProphecy->reveal(),
             environment: Environment::fromAppEnv('test'),
@@ -65,14 +74,12 @@ class SendStatisticsTest extends TestCase
 
     public function testBusyStatsPushThreeFigures(): void
     {
-        $startOfThisMinute = new \DateTimeImmutable('@' . (time() - (time() % 60)));
+        $end = $this->startOfMockClocksCurrentMinute;
+
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->getRecentHighVolumeCompletionRatio($startOfThisMinute)
-            ->willReturn(0.6543);
-        $donationRepoProphecy->countDonationsJustCreated($startOfThisMinute)
-            ->willReturn(700);
-        $donationRepoProphecy->countDonationsJustCollected($startOfThisMinute)
-            ->willReturn(100);
+        $donationRepoProphecy->getRecentHighVolumeCompletionRatio($end)->willReturn(0.6543);
+        $donationRepoProphecy->countDonationsCreatedInMinuteTo($end)->willReturn(700);
+        $donationRepoProphecy->countDonationsCollectedInMinuteTo($end)->willReturn(100);
 
         $cloudWatchClientProphecy = $this->prophesize(CloudWatchClient::class);
         $cloudWatchClientProphecy->putMetricData([
@@ -81,22 +88,23 @@ class SendStatisticsTest extends TestCase
                 [
                     'MetricName' => 'tbg-test-DonationsCreated',
                     'Value' => 700,
-                    'Timestamp' => $startOfThisMinute,
+                    'Timestamp' => $end,
                 ],
                 [
                     'MetricName' => 'tbg-test-DonationsCollected',
                     'Value' => 100,
-                    'Timestamp' => $startOfThisMinute,
+                    'Timestamp' => $end,
                 ],
                 [
                     'MetricName' => 'tbg-test-CompletionRate',
                     'Value' => 0.6543,
-                    'Timestamp' => $startOfThisMinute,
+                    'Timestamp' => $end,
                 ],
             ],
         ])->shouldBeCalledOnce();
 
         $command = new SendStatistics(
+            clock: new MockClock('@1727866802'),
             cloudWatchClient: $cloudWatchClientProphecy->reveal(),
             donationRepository: $donationRepoProphecy->reveal(),
             environment: Environment::fromAppEnv('test'),

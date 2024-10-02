@@ -7,7 +7,6 @@ use DI\Container;
 use DI\ContainerBuilder;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM;
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
@@ -50,7 +49,7 @@ use Stripe\Util\ApiVersion;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Psr16Cache;
-use Symfony\Component\Clock\ClockInterface as ClockInterfaceAlias;
+use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\DoctrineDbalStore;
@@ -500,7 +499,7 @@ return function (ContainerBuilder $containerBuilder) {
             return $c->get(EntityManagerInterface::class)->getConnection();
         },
 
-        ClockInterfaceAlias::class => fn() => new NativeClock(),
+        ClockInterface::class => fn() => new NativeClock(),
 
         Auth\SalesforceAuthMiddleware::class =>
             function (ContainerInterface $c) {
@@ -534,7 +533,7 @@ return function (ContainerBuilder $containerBuilder) {
                     stripe: $c->get(\MatchBot\Client\Stripe::class),
                     matchingAdapter: $c->get(Matching\Adapter::class),
                     chatter: $chatter,
-                    clock: $c->get(ClockInterfaceAlias::class),
+                    clock: $c->get(ClockInterface::class),
                     rateLimiterFactory: $rateLimiterFactory,
                     donorAccountRepository: $c->get(DonorAccountRepository::class),
                 );

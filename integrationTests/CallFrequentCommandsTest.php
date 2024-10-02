@@ -10,6 +10,7 @@ use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
 use Prophecy\Argument;
+use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -55,6 +56,7 @@ class CallFrequentCommandsTest extends IntegrationTest
 
         $commands = [
             new SendStatistics(
+                new NativeClock(),
                 $this->getMockCloudWatchClient(),
                 $this->getService(DonationRepository::class),
                 $this->getService(Environment::class),

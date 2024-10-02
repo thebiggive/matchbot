@@ -453,15 +453,16 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
-     * Taking the floor of the current minute as N and looking between N-16 minutes and
-     * N-1 minutes for donations with >£0 matching assigned, returns:
+     * Taking a now-ish input that's typically the floor of the current minute and
+     * looking between $nowish-16 minutes and
+     * $nowish-1 minutes for donations with >£0 matching assigned, returns:
      * * if there are less than 20 such donations, null; or
      * * if there are 20+ such donations, the ratio of those which are complete.
      */
-    public function getRecentHighVolumeCompletionRatio(\DateTimeImmutable $startOfThisMinute): ?float
+    public function getRecentHighVolumeCompletionRatio(\DateTimeImmutable $nowish): ?float
     {
-        $oneMinuteAgo = $startOfThisMinute->sub(new \DateInterval('PT1M'));
-        $sixteenMinutesAgo = $startOfThisMinute->sub(new \DateInterval('PT16M'));
+        $oneMinutePrior = $nowish->sub(new \DateInterval('PT1M'));
+        $sixteenMinutesPrior = $nowish->sub(new \DateInterval('PT16M'));
 
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
             SELECT
@@ -474,8 +475,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             HAVING SUM(fw.amount) > 0
         DQL
         );
-        $query->setParameter('start', $sixteenMinutesAgo);
-        $query->setParameter('end', $oneMinuteAgo);
+        $query->setParameter('start', $sixteenMinutesPrior);
+        $query->setParameter('end', $oneMinutePrior);
         $query->setParameter(
             'completeStatuses',
             array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES),
@@ -493,11 +494,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return (float) $result['completeCount'] / $result['donationCount'];
     }
 
-    public function countDonationsJustCreated(\DateTimeImmutable $startOfThisMinute): int
+    public function countDonationsCreatedInMinuteTo(\DateTimeImmutable $end): int
     {
-        // Somewhere 1 to 1.999... minutes before the command started.
-        $oneMinuteAgo = $startOfThisMinute->sub(new \DateInterval('PT1M'));
-
+        $oneMinutePrior = $end->sub(new \DateInterval('PT1M'));
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
             SELECT COUNT(d.id)
             FROM MatchBot\Domain\Donation d
@@ -505,17 +504,15 @@ class DonationRepository extends SalesforceWriteProxyRepository
             AND d.createdAt < :end
         DQL
         )
-            ->setParameter('start', $oneMinuteAgo)
-            ->setParameter('end', $startOfThisMinute);
+            ->setParameter('start', $oneMinutePrior)
+            ->setParameter('end', $end);
 
         return (int) $query->getSingleScalarResult();
     }
 
-    public function countDonationsJustCollected(\DateTimeImmutable $startOfThisMinute): int
+    public function countDonationsCollectedInMinuteTo(\DateTimeImmutable $end): int
     {
-        // Somewhere 1 to 1.999... minutes before the command started.
-        $oneMinuteAgo = $startOfThisMinute->sub(new \DateInterval('PT1M'));
-
+        $oneMinutePrior = $end->sub(new \DateInterval('PT1M'));
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
             SELECT COUNT(d.id)
             FROM MatchBot\Domain\Donation d
@@ -523,8 +520,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
             AND d.collectedAt < :end
         DQL
         )
-            ->setParameter('start', $oneMinuteAgo)
-            ->setParameter('end', $startOfThisMinute);
+            ->setParameter('start', $oneMinutePrior)
+            ->setParameter('end', $end);
 
         return (int) $query->getSingleScalarResult();
     }
