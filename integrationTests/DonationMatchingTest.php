@@ -21,7 +21,6 @@ class DonationMatchingTest extends IntegrationTest
     {
         parent::setUp();
 
-        $this->setupFakeDonationClient();
         $this->campaignFundingRepository = $this->getService(CampaignFundingRepository::class);
         $this->matchingAdapater = $this->getService(Adapter::class);
     }
