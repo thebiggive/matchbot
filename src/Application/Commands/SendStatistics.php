@@ -7,7 +7,7 @@ namespace MatchBot\Application\Commands;
 use Aws\CloudWatch\CloudWatchClient;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
-use Psr\Clock\ClockInterface;
+use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
