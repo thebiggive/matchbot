@@ -7,6 +7,7 @@ $psr11App = require __DIR__ . '/bootstrap.php';
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\ClaimGiftAid;
 use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
@@ -53,6 +54,7 @@ assert($chatter instanceof ChatterInterface);
  */
 $now = new \DateTimeImmutable('now');
 $commands = [
+    $psr11App->get(CallFrequentTasks::class),
     new ClaimGiftAid(
         $psr11App->get(DonationRepository::class),
         $psr11App->get(EntityManagerInterface::class),
