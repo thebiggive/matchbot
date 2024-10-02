@@ -17,14 +17,14 @@ abstract class SalesforceWriteProxy extends SalesforceProxy
     use TimestampsTrait;
 
     /** @var string Object should be created in Salesforce. This might be imminent or queued. */
-    public const PUSH_STATUS_PENDING_CREATE = 'pending-create';
+    public const string PUSH_STATUS_PENDING_CREATE = 'pending-create';
     /** @var string Object should be updated in Salesforce. This might be imminent or queued. */
-    public const PUSH_STATUS_PENDING_UPDATE = 'pending-update';
+    public const string PUSH_STATUS_PENDING_UPDATE = 'pending-update';
     /**
      * @var string  Object has been created and/or updated in Salesforce and no push is pending. Includes some cases
      *              where there is just no applicable data to send.
      */
-    public const PUSH_STATUS_COMPLETE = 'complete';
+    public const string PUSH_STATUS_COMPLETE = 'complete';
 
     /**
      * @psalm-suppress PossiblyUnusedProperty   Used for manual dev database checks.

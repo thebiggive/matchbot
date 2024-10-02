@@ -204,6 +204,7 @@ class RetrySafeEntityManager extends EntityManagerDecorator
     /**
      * We need to override the base `EntityManager` call with the equivalent so that repositories
      * contain the retry-safe EM (i.e. `$this` in our current context) and not the default one.
+     * @psalm-suppress ParamNameMismatch Impossible to match both decorator & interface's different param names.
      */
     public function getRepository($className)
     {

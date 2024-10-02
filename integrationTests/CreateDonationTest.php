@@ -12,13 +12,14 @@ class CreateDonationTest extends IntegrationTest
     {
         parent::setUp();
         $this->addFundedCampaignAndCharityToDB($this->randomString());
-        $this->setupFakeDonationClient();
     }
 
     public function testItCreatesADonation(): void
     {
-        // This test should be using fake stripe and salesforce clients, but things within our app,
+        // This test should be using fake stripe, but things within our app,
         // from the HTTP router to the DB is using our real prod code.
+        // Because the push to Salesforce is via Messenger and tests us `in-memory://` as its DSN, this is not
+        // faked but we expect the messages to be ignored.
 
         // act
         $response = $this->createDonation(100);

@@ -7,6 +7,7 @@ $psr11App = require __DIR__ . '/bootstrap.php';
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\ClaimGiftAid;
 use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
@@ -17,6 +18,7 @@ use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
+use MatchBot\Application\Commands\SendStatistics;
 use MatchBot\Application\Commands\SetupTestMandate;
 use MatchBot\Application\Commands\TakeRegularGivingDonations;
 use MatchBot\Application\Commands\UpdateCampaigns;
@@ -52,6 +54,7 @@ assert($chatter instanceof ChatterInterface);
  */
 $now = new \DateTimeImmutable('now');
 $commands = [
+    $psr11App->get(CallFrequentTasks::class),
     new ClaimGiftAid(
         $psr11App->get(DonationRepository::class),
         $psr11App->get(EntityManagerInterface::class),
@@ -106,8 +109,9 @@ $commands = [
         $psr11App->get(FundRepository::class),
         $psr11App->get(LoggerInterface::class),
     ),
-    $psr11App->get(TakeRegularGivingDonations::class),
+    $psr11App->get(SendStatistics::class),
     $psr11App->get(SetupTestMandate::class),
+    $psr11App->get(TakeRegularGivingDonations::class),
 ];
 
 foreach ($commands as $command) {

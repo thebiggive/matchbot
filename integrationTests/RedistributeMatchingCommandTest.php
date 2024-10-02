@@ -42,7 +42,6 @@ class RedistributeMatchingCommandTest extends IntegrationTest
     {
         parent::setUp();
 
-        $this->setupFakeDonationClient();
         $this->campaignFundingRepository = $this->getService(CampaignFundingRepository::class);
 
         [$this->openCampaign, $this->openCampaignChampionFunding] = $this->prepareCampaign(true);
