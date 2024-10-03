@@ -95,6 +95,7 @@ $commands = [
     ),
     new RetrospectivelyMatch(
         donationRepository: $psr11App->get(DonationRepository::class),
+        matchFundsRedistributor: $psr11App->get(MatchFundsRedistributor::class),
         chatter: $chatter,
         bus: $psr11App->get(RoutableMessageBus::class),
         entityManager: $psr11App->get(EntityManagerInterface::class),

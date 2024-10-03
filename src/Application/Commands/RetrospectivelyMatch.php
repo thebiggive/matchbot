@@ -7,6 +7,7 @@ namespace MatchBot\Application\Commands;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputArgument;
@@ -36,6 +37,7 @@ class RetrospectivelyMatch extends LockingCommand
         private ChatterInterface $chatter,
         private RoutableMessageBus $bus,
         private EntityManagerInterface $entityManager,
+        private MatchFundsRedistributor $matchFundsRedistributor,
     ) {
         parent::__construct();
     }
@@ -92,8 +94,6 @@ class RetrospectivelyMatch extends LockingCommand
             }
         }
 
-        // if a campaign has closed in the last hour then run restribute match funds function.
-
         $numDistinctCampaigns = count($distinctCampaignIds);
 
         $summary = "Retrospectively matched $numWithMatchingAllocated of $numChecked donations. " .
@@ -117,6 +117,11 @@ class RetrospectivelyMatch extends LockingCommand
             $chatMessage->options($options);
 
             $this->chatter->send($chatMessage);
+        }
+
+        if (count($toCheckForMatching) > 0) {
+            [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();
+            $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
         }
 
         return 0;
