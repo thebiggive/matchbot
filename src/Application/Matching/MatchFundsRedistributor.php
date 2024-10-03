@@ -12,7 +12,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 
-class MatchFundsRedistributor {
+class MatchFundsRedistributor
+{
     public function __construct(
         private DonationRepository $donationRepository,
         private \DateTimeImmutable $now,
@@ -20,9 +21,7 @@ class MatchFundsRedistributor {
         private LoggerInterface $logger,
         private EntityManagerInterface $entityManager,
         private RoutableMessageBus $bus,
-    )
-    {
-
+    ) {
     }
 
     public function redistributeMatchFunds(OutputInterface $output): int
