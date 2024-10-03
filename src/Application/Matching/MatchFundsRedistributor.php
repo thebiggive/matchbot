@@ -24,7 +24,14 @@ class MatchFundsRedistributor
     ) {
     }
 
-    public function redistributeMatchFunds(OutputInterface $output): int
+    /**
+     * @return array{0: int, 1: int} Number of donations checked and amended respectively
+     *
+     * @throws TerminalLockException
+     * @throws \DateInvalidOperationException
+     * @throws \Doctrine\ORM\TransactionRequiredException
+     */
+    public function redistributeMatchFunds(): array
     {
         $donationsToCheck = $this->donationRepository->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
             campaignsClosedBefore: $this->now,
@@ -94,8 +101,8 @@ class MatchFundsRedistributor
         }
 
         $numberChecked = count($donationsToCheck);
-        $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
 
-        return 0;
+
+        return [$numberChecked, $donationsAmended];
     }
 }
