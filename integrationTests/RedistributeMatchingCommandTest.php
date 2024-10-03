@@ -7,6 +7,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
@@ -68,12 +69,14 @@ class RedistributeMatchingCommandTest extends IntegrationTest
 
         // act
         $command = new RedistributeMatchFunds(
-            $this->campaignFundingRepository,
-            $this->createStub(EntityManagerInterface::class),
-            new \DateTimeImmutable('now'),
-            $this->getService(DonationRepository::class),
-            $this->getService(LoggerInterface::class),
-            $this->messageBusProphecy->reveal(),
+            new MatchFundsRedistributor(
+                donationRepository: $this->getService(DonationRepository::class),
+                now: new \DateTimeImmutable('now'),
+                campaignFundingRepository: $this->campaignFundingRepository,
+                logger: $this->getService(LoggerInterface::class),
+                entityManager: $this->createStub(EntityManagerInterface::class),
+                bus: $this->messageBusProphecy->reveal(),
+            ),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->run(new ArrayInput([]), $output);
@@ -114,12 +117,14 @@ class RedistributeMatchingCommandTest extends IntegrationTest
 
         // act
         $command = new RedistributeMatchFunds(
-            $this->campaignFundingRepository,
-            $this->createStub(EntityManagerInterface::class),
-            new \DateTimeImmutable('now'),
-            $this->getService(DonationRepository::class),
-            $this->getService(LoggerInterface::class),
-            $this->messageBusProphecy->reveal(),
+            new MatchFundsRedistributor(
+                campaignFundingRepository: $this->campaignFundingRepository,
+                entityManager: $this->createStub(EntityManagerInterface::class),
+                now: new \DateTimeImmutable('now'),
+                donationRepository: $this->getService(DonationRepository::class),
+                logger: $this->getService(LoggerInterface::class),
+                bus: $this->messageBusProphecy->reveal(),
+            ),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->run(new ArrayInput([]), $output);
