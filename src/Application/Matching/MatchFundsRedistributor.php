@@ -105,7 +105,6 @@ class MatchFundsRedistributor
 
         $numberChecked = count($donationsToCheck);
 
-
         return [$numberChecked, $donationsAmended];
     }
 }
