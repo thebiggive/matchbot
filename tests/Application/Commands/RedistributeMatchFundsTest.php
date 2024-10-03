@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Commands;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
@@ -227,12 +228,14 @@ class RedistributeMatchFundsTest extends TestCase
         ObjectProphecy $loggerProphecy,
     ): RedistributeMatchFunds {
         $command = new RedistributeMatchFunds(
-            campaignFundingRepository: $campaignFundingRepository->reveal(),
-            entityManager: $this->createStub(EntityManagerInterface::class),
-            now: $now,
-            donationRepository: $donationRepoProphecy->reveal(),
-            logger: $loggerProphecy->reveal(),
-            bus: $this->messageBusProphecy->reveal(),
+            matchFundsRedistributor: new MatchFundsRedistributor(
+                donationRepository: $donationRepoProphecy->reveal(),
+                now: $now,
+                campaignFundingRepository: $campaignFundingRepository->reveal(),
+                logger: $loggerProphecy->reveal(),
+                entityManager: $this->createStub(EntityManagerInterface::class),
+                bus: $this->messageBusProphecy->reveal(),
+            ),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());

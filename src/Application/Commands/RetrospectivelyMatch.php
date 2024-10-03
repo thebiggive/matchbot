@@ -92,6 +92,8 @@ class RetrospectivelyMatch extends LockingCommand
             }
         }
 
+        // if a campaign has closed in the last hour then run restribute match funds function.
+
         $numDistinctCampaigns = count($distinctCampaignIds);
 
         $summary = "Retrospectively matched $numWithMatchingAllocated of $numChecked donations. " .
