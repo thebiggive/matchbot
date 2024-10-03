@@ -2,12 +2,18 @@ openapi: 3.0.0
 servers:
   # Added by API Auto Mocking Plugin
   - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/Noel/TBG-Donations/1.0.10
+    url: https://virtserver.swaggerhub.com/Noel/TBG-Donations/1.0.12
   - description: "MatchBot staging"
     url: https://matchbot-staging.thebiggivetest.org.uk/v1
+  - description: "Salesforce Full (staging)"
+    url: https://thebiggive--full.sandbox.my.salesforce-sites.com/donations/services/apexrest/v2.0
 info:
-  description: The Big Give Donations public API
-  version: 1.0.10
+  description: |
+    The Big Give Donations public API.
+    As both systems share a Donation schema, all endpoints are documented here
+    for now; however operation `salesforceUpsert` is implemented only in Salesforce
+    and all others are implemented only in MatchBot.
+  version: 1.0.12
   title: Donations
   contact:
     email: tech@thebiggive.org.uk
@@ -15,17 +21,18 @@ info:
     name: Apache 2.0
     url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
 paths:
-  /donations:
+  /people/{personId}/donations:
+    parameters:
+      - name: personId
+        in: path
+        schema:
+          type: string
+        description: Identifier of the donor
+        required: true
     post:
-      summary: Creates a donation
-      operationId: addDonation
-      description: Initiates a donation with pending status
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Donation'
-        description: Donation to create
+      operationId: createDonation
+      summary: Create a donation on behalf of a specified person
+      tags: [Donation fundamentals]
       responses:
         '201':
           description: Donation created
@@ -35,18 +42,25 @@ paths:
                 $ref: '#/components/schemas/DonationCreatedResponse'
         '400':
           description: Invalid donation properties
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Donation'
   /donations/{donationId}:
     parameters:
       - name: donationId
         in: path
         schema:
           type: string
-        description: Case-insensitive Salesforce ID for a donation
+        description: UUID for a donation
         required: true
     get:
+      operationId: getDonation
+      summary: Gets a donation's details by ID
+      tags: [Donation fundamentals]
       security:
         - JWT: []
-      summary: Gets a donation's details by ID
       responses:
         '200':
           description: Donation returned
@@ -59,10 +73,11 @@ paths:
         '404':
           description: Donation not found
     put:
+      operationId: editDonation
+      summary: Modify an existing donation
+      tags: [Donation fundamentals]
       security:
         - JWT: []
-      summary: Modify an existing donation
-      operationId: editDonation
       description: |
         Change something about a donation. Currently supports
         (a) adding more details, and
@@ -87,30 +102,51 @@ paths:
           description: Not authorised to see donation details
         '404':
           description: Donation not found
-  /people/{personId}/donations:
+  /donations/{donationId}/confirm:
     parameters:
-      - name: personId
+      - name: donationId
         in: path
         schema:
           type: string
-        description: Identifier of the donor
+        description: UUID for a donation
         required: true
     post:
-      summary: Create a donation on behalf of a specified person
-      responses:
-        '201':
-          description: Donation created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DonationCreatedResponse'
-        '400':
-          description: Invalid donation properties
+      operationId: confirmDonation
+      summary: Confirm a donation using a Stripe.js token
+      tags: [Donation fundamentals]
+      security:
+        - JWT: []
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Donation'
+              type: object
+              properties:
+                stripeConfirmationTokenId:
+                  type: string
+                  example: ctoken_123abc
+      responses:
+        '200':
+          description: Donation confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paymentIntent:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        description: Stripe payment intent status
+                      client_secret:
+                        type: string
+                        description: Secret for Stripe.js to e.g. complete 3D Secure if needed
+        '400':
+          description: Invalid or missing token
+        '402':
+          description: Payment failed
+
   /people/{personId}/payment_methods:
     parameters:
       - name: personId
@@ -127,7 +163,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentMethodsResponse'
+  /donations/{donationUuid}:
+    parameters:
+      - in: path
+        name: donationUuid
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: header
+        name: X-Webhook-Verify-Hash
+        required: true
+        schema:
+          type: string
+        description: |
+          For Salesforce pushes from the server only, in lieu of security JWT.
+          A variable content hash based on a shared webhook secret. Note that
+          the secret varies per-environment (UAT vs. Production). To calculate
+          the expected hash, trim leading and trailing whitespace from the
+          JSON body, and get an HMAC SHA-256 digest using `webhook_secret` as
+          the key. Convert the hash digest to lowercase hexits. So, in pseudocode,
 
+            verify_hash = lowercase_hex(
+              hash_hmac(
+                'sha256',
+                trim(json_body_text),
+                webhook_secret
+              )
+            )
+    post:
+      summary: Upserts (inserts or updates as needed) copy of the donation to Salesforce
+      operationId: salesforceUpsert
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Donation'
+      responses:
+        '200':
+          description: Donation upserted
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                  salesforceId:
+                    type: string
 
 components:
   schemas:
@@ -143,6 +225,11 @@ components:
           description: |
             A signed JWT to prove identity for subsequent operations on the
             donation, like reading its status or cancelling it.
+        stripeSessionSecret:
+          readOnly: true
+          type: string
+          description: |
+            Secret which allows Stripe.js to manage saved payment methods.
         donation:
           $ref: '#/components/schemas/Donation'
     Donation:

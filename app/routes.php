@@ -33,6 +33,11 @@ return function (App $app) {
             ? new ClientIp()
             : (new ClientIp())->proxy([], ['X-Forwarded-For']);
 
+        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
+            ->add(PersonManagementAuthMiddleware::class)
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
+
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {
             $group->get('', Donations\Get::class);
             $group->put('', Donations\Update::class); // Includes cancelling.
@@ -42,11 +47,6 @@ return function (App $app) {
 
         $versionGroup->post('/{personId:[a-z0-9-]{36}}/donor-account', DonorAccount\Create::class)
             ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
-            ->add($ipMiddleware)
-            ->add(RateLimitMiddleware::class);
-
-        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
-            ->add(PersonManagementAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
