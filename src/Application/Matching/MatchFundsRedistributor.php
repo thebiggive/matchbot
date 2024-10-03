@@ -25,6 +25,9 @@ class MatchFundsRedistributor
     }
 
     /**
+     * Redistribute match funding allocations where possible, from lower to higher priority
+     * match fund pots.   
+     *
      * @return array{0: int, 1: int} Number of donations checked and amended respectively
      *
      * @throws TerminalLockException

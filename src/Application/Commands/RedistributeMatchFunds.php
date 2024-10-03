@@ -15,10 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 
-/**
- * Redistribute match funding allocations where possible, from lower to higher priority match fund pots.
- */
-class RedistributeMatchFunds extends LockingCommand // this script has stuff we want to additionally do.
+class RedistributeMatchFunds extends LockingCommand
 {
     protected static $defaultName = 'matchbot:redistribute-match-funds';
 
