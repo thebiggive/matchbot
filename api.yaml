@@ -32,8 +32,10 @@ paths:
         in: path
         schema:
           type: string
+          format: uuid
         description: Identifier of the donor
         required: true
+
     post:
       operationId: createDonation
       summary: Create a donation on behalf of a specified person
@@ -52,6 +54,28 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Donation'
+
+    get:
+      operationId: listDonations
+      summary: List existing complete donations made by the person
+      tags: [Past donations]
+      security:
+        - JWT: []
+      responses:
+        '200':
+          description: List of donations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  donations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Donation'
+        '400':
+          description: Required parameters not set as expected
+
   /donations/{donationId}:
     parameters:
       - name: donationId
@@ -77,6 +101,7 @@ paths:
           description: Not authorised to see donation details
         '404':
           description: Donation not found
+
     put:
       operationId: editDonation
       summary: Modify an existing donation
@@ -107,6 +132,7 @@ paths:
           description: Not authorised to see donation details
         '404':
           description: Donation not found
+
   /donations/{donationId}/confirm:
     parameters:
       - name: donationId
@@ -158,6 +184,7 @@ paths:
         in: path
         schema:
           type: string
+          format: uuid
         required: true
     get:
       operationId: listPaymentMethods
@@ -178,6 +205,7 @@ paths:
         in: path
         schema:
           type: string
+          format: uuid
         required: true
       - name: paymentMethodId
         in: path
@@ -201,18 +229,21 @@ paths:
           description: Payment method updated
         '400':
           description: Payment method update failed
+
   /people/{personId}/payment_methods/{paymentMethodId}:
     parameters:
       - name: personId
         in: path
         schema:
           type: string
+          format: uuid
         required: true
       - name: paymentMethodId
         in: path
         schema:
           type: string
         required: true
+
     delete:
       operationId: deletePaymentMethod
       summary: Delete a stored payment card
@@ -224,6 +255,63 @@ paths:
           description: Payment method deleted
         '400':
           description: Payment method deletion failed
+
+  /person/{personId}/donor-account:
+    parameters:
+      - name: personId
+        in: path
+        schema:
+          type: string
+          format: uuid
+        required: true
+    post:
+      operationId: enableDonorAccount
+      summary: Activate features that need more data e.g. inbound bank transfers
+      tags: [Future donation management]
+      security:
+        - JWT: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                emailAddress:
+                  type: string
+                  format: email
+                donorName:
+                  type: object
+                  properties:
+                    firstName:
+                      type: string
+                    lastName:
+                      type: string
+      responses:
+        '201':
+          description: Donor account features enabled
+        '400':
+          description: Invalid data or already enabled
+
+  /regular-giving/my-donation-mandates:
+    get:
+      operationId: listMandates
+      summary: List mandates for regular giving
+      tags: [Regular giving]
+      security:
+        - JWT: []
+      responses:
+        '200':
+          description: List of mandates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mandates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RegularGivingMandate'
+
   /donations/{donationUuid}:
     parameters:
       - in: path
@@ -294,6 +382,7 @@ components:
             Secret which allows Stripe.js to manage saved payment methods.
         donation:
           $ref: '#/components/schemas/Donation'
+
     Donation:
       type: object
       required:
@@ -461,6 +550,48 @@ components:
           type: string
           format: date-time
           example: '2020-01-11T08:07:06.005Z'
+
+    RegularGivingMandate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        donorId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        campaignId:
+          type: string
+          description: Salesforce ID
+        charityId:
+          type: string
+          description: Salesforce ID
+        schedule:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: ["monthly"]
+            dayOfMonth:
+              type: integer
+              minimum: 1
+              maximum: 28
+            activeFrom:
+              type: string
+              format: date-time
+            expectedNextPaymentDate:
+              type: string
+              format: date-time
+        charityName:
+          type: string
+        giftAid:
+          type: boolean
+        status:
+          type: string
+          enum: ["pending", "active", "cancelled"]
+
     PaymentMethodsResponse:
       # The implementation of this method currently returns data exactly as supplied to matchbot by stripe.
       # Selected properties are shown here, see https://stripe.com/docs/api/payment_methods/object for more details
@@ -490,6 +621,7 @@ components:
       properties:
         donation:
           $ref: '#/components/schemas/Donation'
+
   securitySchemes:
     JWT:
       type: apiKey

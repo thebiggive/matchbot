@@ -123,7 +123,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
             'status' => $this->status->apiName(),
-            ];
+        ];
     }
 
     public function firstPaymentDayAfter(\DateTimeImmutable $currentDateTime): \DateTimeImmutable

@@ -45,11 +45,19 @@ return function (App $app) {
         })
             ->add(DonationPublicAuthMiddleware::class);
 
+        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donor-account', DonorAccount\Create::class)
+            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
+
+        // TODO Migrate Donate to the less confusing endpoint above, then delete this one.
         $versionGroup->post('/{personId:[a-z0-9-]{36}}/donor-account', DonorAccount\Create::class)
             ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
+        // TODO Discuss moving this to e.g. /people/{personId}/mandates for consistency & easier understanding
+        // of the available endpoints.
         $versionGroup->get('/regular-giving/my-donation-mandates', RegularGivingMandate\GetAllForUser::class)
             ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
