@@ -9,9 +9,14 @@ servers:
     url: https://thebiggive--full.sandbox.my.salesforce-sites.com/donations/services/apexrest/v2.0
 info:
   description: |
-    The Big Give Donations public API.
-    As both systems share a Donation schema, all endpoints are documented here
-    for now; however operation `salesforceUpsert` is implemented only in Salesforce
+    The Big Give Donations APIs.
+
+    This contract aims to cover all endpoints except
+    `/ping` and integration webhooks. Most webhooks' structures are defined by Stripe
+    with us choosing just the endpoint.
+
+    As Salesforce & MatchBot share a Donation schema, endpoints for both are documented here
+    together; however operation `salesforceUpsert` is implemented only in Salesforce
     and all others are implemented only in MatchBot.
   version: 1.0.12
   title: Donations
@@ -32,7 +37,7 @@ paths:
     post:
       operationId: createDonation
       summary: Create a donation on behalf of a specified person
-      tags: [Donation fundamentals]
+      tags: [Core donation journey]
       responses:
         '201':
           description: Donation created
@@ -58,7 +63,7 @@ paths:
     get:
       operationId: getDonation
       summary: Gets a donation's details by ID
-      tags: [Donation fundamentals]
+      tags: [Core donation journey]
       security:
         - JWT: []
       responses:
@@ -75,7 +80,7 @@ paths:
     put:
       operationId: editDonation
       summary: Modify an existing donation
-      tags: [Donation fundamentals]
+      tags: [Core donation journey]
       security:
         - JWT: []
       description: |
@@ -113,7 +118,7 @@ paths:
     post:
       operationId: confirmDonation
       summary: Confirm a donation using a Stripe.js token
-      tags: [Donation fundamentals]
+      tags: [Core donation journey]
       security:
         - JWT: []
       requestBody:
@@ -155,7 +160,11 @@ paths:
           type: string
         required: true
     get:
+      operationId: listPaymentMethods
       summary: Get stored payment methods (i.e. payment cards) for a person
+      tags: [Future donation management]
+      security:
+        - JWT: [ ]
       responses:
         '200':
           description: List of payment methods as returned to Matchbot by the Stripe API
@@ -163,6 +172,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentMethodsResponse'
+  /people/{personId}/payment_methods/{paymentMethodId}/billing_details:
+    parameters:
+      - name: personId
+        in: path
+        schema:
+          type: string
+        required: true
+      - name: paymentMethodId
+        in: path
+        schema:
+          type: string
+        required: true
+    put:
+      operationId: updatePaymentMethod
+      summary: Update expiry and/or address of a stored payment card
+      tags: [Future donation management]
+      security:
+        - JWT: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: "Subset of a Stripe.js Payment Method object, see https://docs.stripe.com/api/payment_methods/object"
+      responses:
+        '204':
+          description: Payment method updated
+        '400':
+          description: Payment method update failed
+  /people/{personId}/payment_methods/{paymentMethodId}:
+    parameters:
+      - name: personId
+        in: path
+        schema:
+          type: string
+        required: true
+      - name: paymentMethodId
+        in: path
+        schema:
+          type: string
+        required: true
+    delete:
+      operationId: deletePaymentMethod
+      summary: Delete a stored payment card
+      tags: [Future donation management]
+      security:
+        - JWT: [ ]
+      responses:
+        '204':
+          description: Payment method deleted
+        '400':
+          description: Payment method deletion failed
   /donations/{donationUuid}:
     parameters:
       - in: path
@@ -194,6 +255,7 @@ paths:
     post:
       summary: Upserts (inserts or updates as needed) copy of the donation to Salesforce
       operationId: salesforceUpsert
+      tags: [Salesforce integration]
       requestBody:
         content:
           application/json:
