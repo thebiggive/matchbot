@@ -14,8 +14,6 @@ use Doctrine\ORM\Mapping as ORM;
  */
 abstract class SalesforceWriteProxy extends SalesforceProxy
 {
-    use TimestampsTrait;
-
     /** @var string Object should be created in Salesforce. This might be imminent or queued. */
     public const string PUSH_STATUS_PENDING_CREATE = 'pending-create';
     /** @var string Object should be updated in Salesforce. This might be imminent or queued. */

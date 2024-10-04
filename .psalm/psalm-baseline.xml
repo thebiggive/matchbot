@@ -198,8 +198,6 @@
       <code><![CDATA[$isMatched]]></code>
       <code><![CDATA[$name]]></code>
       <code><![CDATA[$startDate]]></code>
-      <code><![CDATA[Campaign]]></code>
-      <code><![CDATA[Campaign]]></code>
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Domain/CampaignFunding.php">
@@ -209,8 +207,6 @@
       <code><![CDATA[$amountAvailable]]></code>
       <code><![CDATA[$currencyCode]]></code>
       <code><![CDATA[$fund]]></code>
-      <code><![CDATA[CampaignFunding]]></code>
-      <code><![CDATA[CampaignFunding]]></code>
     </PropertyNotSetInConstructor>
   </file>
   <file src="src/Domain/CampaignFundingRepository.php">
@@ -261,10 +257,6 @@
     </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Domain/Donation.php">
-    <PropertyNotSetInConstructor>
-      <code><![CDATA[Donation]]></code>
-      <code><![CDATA[Donation]]></code>
-    </PropertyNotSetInConstructor>
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[!$this->transactionId]]></code>
     </RiskyTruthyFalsyComparison>
