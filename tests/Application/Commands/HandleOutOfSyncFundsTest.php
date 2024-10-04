@@ -208,7 +208,6 @@ class HandleOutOfSyncFundsTest extends TestCase
     private function getFundingInSync(): CampaignFunding
     {
         $fundingInSync = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
             amount: '123.45',
             amountAvailable: '80.01',
@@ -222,11 +221,10 @@ class HandleOutOfSyncFundsTest extends TestCase
     private function getFundingOverMatched(): CampaignFunding
     {
         $fundingOverMatched = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
-            amount:'150',
+            amount: '150',
             amountAvailable: '99.0',
-            allocationOrder:  100
+            allocationOrder: 100
         );
 
         $fundingOverMatched->setId(2);
@@ -237,11 +235,10 @@ class HandleOutOfSyncFundsTest extends TestCase
     private function getFundingUnderMatched(): CampaignFunding
     {
         $fundingUnderMatched = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
-            amount:'987.65',
+            amount: '987.65',
             amountAvailable: '487.65',
-            allocationOrder:  100
+            allocationOrder: 100
         );
         $fundingUnderMatched->setId(3);
 
@@ -251,11 +248,10 @@ class HandleOutOfSyncFundsTest extends TestCase
     private function getFundingUnderMatchedWithNothingAllocated(): CampaignFunding
     {
         $fundingUnderMatchedWithZero = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
-            amount:'1000.00',
+            amount: '1000.00',
             amountAvailable: '1000.00',
-            allocationOrder:  100
+            allocationOrder: 100
         );
         $fundingUnderMatchedWithZero->setId(4);
 

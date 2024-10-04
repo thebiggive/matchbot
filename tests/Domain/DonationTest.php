@@ -187,7 +187,6 @@ class DonationTest extends TestCase
         $pledge = new Pledge(currencyCode: 'GBP', name: '');
 
         $campaignFunding = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: $pledge,
             amount: '1000',
             amountAvailable: '1.23',
@@ -233,11 +232,10 @@ class DonationTest extends TestCase
         $donation = $this->getTestDonation();
 
         $campaignFunding = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new ChampionFund(currencyCode: 'GBP', name: ''),
             amount: '1000',
             amountAvailable: '1000',
-            allocationOrder:  100,
+            allocationOrder: 100,
         );
         $withdrawal0 = new FundingWithdrawal($campaignFunding);
         $withdrawal0->setAmount('1');
@@ -259,22 +257,20 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
         $campaignFunding0 = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new ChampionFund(currencyCode: 'GBP', name: ''),
             amount: '1000',
             amountAvailable: '1000',
-            allocationOrder:  100,
+            allocationOrder: 100,
         );
 
         $withdrawal0 = new FundingWithdrawal($campaignFunding0);
         $withdrawal0->setAmount('1');
 
         $campaignFunding1 = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new ChampionFund(currencyCode: 'GBP', name: ''),
             amount: '1000',
             amountAvailable: '1000',
-            allocationOrder:  100,
+            allocationOrder: 100,
         );
         $withdrawal1 = new FundingWithdrawal($campaignFunding1);
         $withdrawal1->setAmount('2');

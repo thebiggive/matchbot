@@ -200,15 +200,6 @@
       <code><![CDATA[$startDate]]></code>
     </PropertyNotSetInConstructor>
   </file>
-  <file src="src/Domain/CampaignFunding.php">
-    <PropertyNotSetInConstructor>
-      <code><![CDATA[$allocationOrder]]></code>
-      <code><![CDATA[$amount]]></code>
-      <code><![CDATA[$amountAvailable]]></code>
-      <code><![CDATA[$currencyCode]]></code>
-      <code><![CDATA[$fund]]></code>
-    </PropertyNotSetInConstructor>
-  </file>
   <file src="src/Domain/CampaignFundingRepository.php">
     <MixedInferredReturnType>
       <code><![CDATA[?CampaignFunding]]></code>

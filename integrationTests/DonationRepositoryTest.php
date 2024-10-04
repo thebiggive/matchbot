@@ -176,7 +176,6 @@ class DonationRepositoryTest extends IntegrationTest
 
         $pledge = new Pledge(currencyCode: 'GBP', name: '');
         $campaignFunding = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: $pledge,
             amount: '1.0',
             amountAvailable: '1.0',

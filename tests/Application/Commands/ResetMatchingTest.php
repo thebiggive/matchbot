@@ -27,7 +27,6 @@ class ResetMatchingTest extends TestCase
         $fund->setSalesforceLastPull(new \DateTime());
 
         $campaignFunding = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: $fund,
             amount: '400',
             amountAvailable: '400',

@@ -1075,7 +1075,6 @@ class CreateTest extends TestCase
     private static function someCampaignFunding(): CampaignFunding
     {
         $campaignFunding = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
             amount: '8.00',
             amountAvailable: '8.00',

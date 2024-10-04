@@ -47,7 +47,6 @@ class AdapterTest extends TestCase
     public function testItReturnsAmountAvailableFromAFundingNotInStorage(): void
     {
         $funding = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
             amount: '10000',
             amountAvailable: '12.53',
@@ -63,7 +62,6 @@ class AdapterTest extends TestCase
     public function testItAddsAmountForFunding(): void
     {
         $funding = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
             amount: '1000',
             amountAvailable: '50',
@@ -84,7 +82,6 @@ class AdapterTest extends TestCase
     public function testItSubtractsAmountForFunding(): void
     {
             $funding = new CampaignFunding(
-                currencyCode: 'GBP',
                 fund: new Pledge('GBP', 'some pledge'),
                 amount: '1000',
                 amountAvailable: '50',
@@ -105,7 +102,6 @@ class AdapterTest extends TestCase
     public function testItReleasesFundsInCaseOfRaceCondition(): void
     {
                 $funding = new CampaignFunding(
-                    currencyCode: 'GBP',
                     fund: new Pledge('GBP', 'some pledge'),
                     amount: '1000',
                     amountAvailable: '50',
@@ -141,7 +137,6 @@ class AdapterTest extends TestCase
         });
 
         $funding = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
             amount: '1000',
             amountAvailable: '50',
@@ -179,7 +174,6 @@ class AdapterTest extends TestCase
     public function testItDeletesCampaignFundingData(): void
     {
         $funding = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
             amount: '1000',
             amountAvailable: '1',
@@ -200,7 +194,6 @@ class AdapterTest extends TestCase
     {
         // arrange
         $funding = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
             amount: '1000',
             amountAvailable: '50',

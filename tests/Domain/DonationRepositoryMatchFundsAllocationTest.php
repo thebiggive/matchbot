@@ -101,11 +101,10 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
     public function testItAllocates1From1For1(): void
     {
         $campaignFunding = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
             amount: '1000',
             amountAvailable: '1',
-            allocationOrder:  100
+            allocationOrder: 100
         );
         $campaignFunding->setId(1);
 
@@ -183,20 +182,18 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         string $withdrawl1AmountExpected
     ): void {
         $campaignFunding0 = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
             amount: '1000',
             amountAvailable: $funding0Available,
-            allocationOrder:  100
+            allocationOrder: 100
         );
         $campaignFunding0->setId(0);
 
         $campaignFunding1 = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
             amount: '1000',
             amountAvailable: $funding1Available,
-            allocationOrder:  100
+            allocationOrder: 100
         );
         $campaignFunding1->setId(1);
 
@@ -243,11 +240,10 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
     public function testItAllocates1From2For2When1AlreadyMatched(): void
     {
         $campaignFunding = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: new Pledge('GBP', 'some pledge'),
             amount: '1000',
             amountAvailable: '1.0',
-            allocationOrder:  100
+            allocationOrder: 100
         );
         $campaignFunding->setId(1);
 
@@ -289,11 +285,10 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
     public function testItRejectsFundingInWrongCurrency(): void
     {
         $campaignFunding = new CampaignFunding(
-            currencyCode: 'USD',
-            fund: new Pledge('GBP', 'some pledge'),
+            fund: new Pledge('USD', 'some pledge'),
             amount: '1000',
-            amountAvailable: '1.0',
-            allocationOrder:  100
+            amountAvailable: '1',
+            allocationOrder: 100
         );
 
         $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([

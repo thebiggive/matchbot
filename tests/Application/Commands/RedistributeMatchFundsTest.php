@@ -181,7 +181,6 @@ class RedistributeMatchFundsTest extends TestCase
         $pledge = new Pledge(currencyCode: 'GBP', name: '');
 
         return new CampaignFunding(
-            currencyCode: 'GBP',
             fund: $pledge,
             amount: $pledgeAmount,
             amountAvailable: $pledgeAmount,
@@ -203,11 +202,10 @@ class RedistributeMatchFundsTest extends TestCase
 
         $championFund = new ChampionFund(currencyCode: 'GBP', name: '');
         $campaignFunding = new CampaignFunding(
-            currencyCode: 'GBP',
             fund: $championFund,
             amount: $donationAmount,
             amountAvailable: '0',
-            allocationOrder:  200,
+            allocationOrder: 200,
         );
 
         $championFundWithdrawal = new FundingWithdrawal($campaignFunding);

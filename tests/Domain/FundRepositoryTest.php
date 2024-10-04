@@ -273,11 +273,10 @@ class FundRepositoryTest extends TestCase
     private function getExistingCampaignFunding(bool $shared): CampaignFunding
     {
         return new CampaignFunding(
-            currencyCode: 'GBP',
             fund: $this->getExistingFund($shared),
             amount: '400',
             amountAvailable: '1000',
-            allocationOrder:  200,
+            allocationOrder: 200,
         );
     }
 
