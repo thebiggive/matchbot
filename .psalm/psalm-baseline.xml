@@ -290,14 +290,6 @@
       <code><![CDATA[Donation[]]]></code>
     </MixedReturnTypeCoercion>
   </file>
-  <file src="src/Domain/Fund.php">
-    <MissingConstructor>
-      <code><![CDATA[$currencyCode]]></code>
-      <code><![CDATA[$currencyCode]]></code>
-      <code><![CDATA[$name]]></code>
-      <code><![CDATA[$name]]></code>
-    </MissingConstructor>
-  </file>
   <file src="src/Domain/FundRepository.php">
     <MissingConstructor>
       <code><![CDATA[$campaignFundingRepository]]></code>
@@ -342,14 +334,6 @@
       <code><![CDATA[$proxy->getSalesforceId()]]></code>
       <code><![CDATA[$proxy->getSalesforceId()]]></code>
     </PossiblyNullOperand>
-  </file>
-  <file src="src/Domain/TimestampsTrait.php">
-    <MissingConstructor>
-      <code><![CDATA[$createdAt]]></code>
-      <code><![CDATA[$createdAt]]></code>
-      <code><![CDATA[$updatedAt]]></code>
-      <code><![CDATA[$updatedAt]]></code>
-    </MissingConstructor>
   </file>
   <file src="tests/Application/Actions/Donations/CreateTest.php">
     <MixedArrayAccess>

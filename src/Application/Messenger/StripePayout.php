@@ -10,7 +10,6 @@ readonly class StripePayout
     public function __construct(
         public string $connectAccountId,
         public string $payoutId,
-    )
-    {
+    ) {
     }
 }

@@ -22,14 +22,12 @@ class ResetMatchingTest extends TestCase
 {
     public function testSinglePush(): void
     {
-        $fund = new ChampionFund();
+        $fund = new ChampionFund('GBP', name: 'Test Champion Fund 123');
         $fund->setSalesforceId('sfFundId123');
         $fund->setSalesforceLastPull(new \DateTime());
-        $fund->setName('Test Champion Fund 123');
 
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setFund($fund);
-        $campaignFunding->setCurrencyCode('GBP');
         $campaignFunding->setAmount('400');
         $campaignFunding->setAllocationOrder(200);
 

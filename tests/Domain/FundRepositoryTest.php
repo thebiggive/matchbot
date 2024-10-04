@@ -38,7 +38,7 @@ class FundRepositoryTest extends TestCase
 
         $repo->setLogger($this->getContainer()->get(LoggerInterface::class));
 
-        $fund = new ChampionFund();
+        $fund = new ChampionFund(currencyCode: 'GBP', name: '');
 
         // Quickest way to ensure this behaves like a newly-found Fund without having to partially mock / prophesise
         // `FundRepository` such that `doPull()` is a real call but `pull()` doesn't try a real DB engine lookup.
@@ -259,12 +259,13 @@ class FundRepositoryTest extends TestCase
 
     private function getExistingFund(bool $shared): Fund
     {
-        $existingFund = new ChampionFund();
+        $existingFund = new ChampionFund(
+            currencyCode: 'GBP',
+            name: $shared ? 'Test Shared Champion Fund 456' : 'Test Champion Fund 123'
+        );
         $existingFund->setId($shared ? 456456 : 123123);
         $existingFund->setSalesforceId($shared ? 'sfFundId456' : 'sfFundId123');
         $existingFund->setSalesforceLastPull(new \DateTime());
-        $existingFund->setCurrencyCode('GBP');
-        $existingFund->setName($shared ? 'Test Shared Champion Fund 456' : 'Test Champion Fund 123');
 
         return $existingFund;
     }

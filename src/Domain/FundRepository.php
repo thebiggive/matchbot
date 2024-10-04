@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching;
 use MatchBot\Client;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
@@ -161,10 +162,15 @@ class FundRepository extends SalesforceReadProxyRepository
 
     protected function getNewFund(array $fundData): Fund
     {
+        $currencyCode = $fundData['currencyCode'] ?? 'GBP';
+        $name = $fundData['name'] ?? '';
+        Assertion::string($currencyCode);
+        Assertion::string($name);
+
         if ($fundData['type'] === Pledge::DISCRIMINATOR_VALUE) {
-            $fund = new Pledge();
+            $fund = new Pledge(currencyCode: $currencyCode, name: $name);
         } elseif ($fundData['type'] === 'championFund') {
-            $fund = new ChampionFund();
+            $fund = new ChampionFund(currencyCode: $currencyCode, name: $name);
         } else {
             throw new \UnexpectedValueException("Unknown fund type '{$fundData['type']}'");
         }
