@@ -1074,13 +1074,12 @@ class CreateTest extends TestCase
 
     private static function someCampaignFunding(): CampaignFunding
     {
-        $campaignFunding = new CampaignFunding(
+        return new CampaignFunding(
             fund: new Pledge('GBP', 'some pledge'),
             amount: '8.00',
             amountAvailable: '8.00',
             allocationOrder: 100,
         );
-        return $campaignFunding;
     }
 
     /**
