@@ -111,18 +111,13 @@ class FundRepository extends SalesforceReadProxyRepository
                 }
             } else {
                 // Not a previously existing campaign -> create one and set balances without checking for existing ones.
-                $campaignFunding = new CampaignFunding();
-                $campaignFunding->createdNow();
-                $campaignFunding->setFund($fund);
-                $campaignFunding->setCurrencyCode($fund->getCurrencyCode());
-                $campaignFunding->setAmountAvailable($amountForCampaign);
-                $campaignFunding->setAmount($amountForCampaign);
-            }
-
-            if ($fund instanceof Pledge) {
-                $campaignFunding->setAllocationOrder(100);
-            } else {
-                $campaignFunding->setAllocationOrder(200);
+                $campaignFunding = new CampaignFunding(
+                    currencyCode: $fund->getCurrencyCode(),
+                    fund: $fund,
+                    amount: $amountForCampaign,
+                    amountAvailable: $amountForCampaign,
+                    allocationOrder: $fund instanceof Pledge ? 100 : 200,
+                );
             }
 
             // Make the CampaignFunding available to the Campaign. This method is immutable and won't add duplicates

@@ -9,6 +9,7 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
+use MatchBot\Domain\Pledge;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -206,40 +207,57 @@ class HandleOutOfSyncFundsTest extends TestCase
 
     private function getFundingInSync(): CampaignFunding
     {
-        $fundingInSync = new CampaignFunding();
+        $fundingInSync = new CampaignFunding(
+            currencyCode: 'GBP',
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '123.45',
+            amountAvailable: '80.01',
+            allocationOrder: 100,
+        );
         $fundingInSync->setId(1);
-        $fundingInSync->setAmount('123.45');
-        $fundingInSync->setAmountAvailable('80.01');
 
         return $fundingInSync;
     }
 
     private function getFundingOverMatched(): CampaignFunding
     {
-        $fundingOverMatched = new CampaignFunding();
+        $fundingOverMatched = new CampaignFunding(
+            currencyCode: 'GBP',
+            fund: new Pledge('GBP', 'some pledge'),
+            amount:'150',
+            amountAvailable: '99.0',
+            allocationOrder:  100
+        );
+
         $fundingOverMatched->setId(2);
-        $fundingOverMatched->setAmount('150');
-        $fundingOverMatched->setAmountAvailable('99.00');
 
         return $fundingOverMatched;
     }
 
     private function getFundingUnderMatched(): CampaignFunding
     {
-        $fundingUnderMatched = new CampaignFunding();
+        $fundingUnderMatched = new CampaignFunding(
+            currencyCode: 'GBP',
+            fund: new Pledge('GBP', 'some pledge'),
+            amount:'987.65',
+            amountAvailable: '487.65',
+            allocationOrder:  100
+        );
         $fundingUnderMatched->setId(3);
-        $fundingUnderMatched->setAmount('987.65');
-        $fundingUnderMatched->setAmountAvailable('487.65');
 
         return $fundingUnderMatched;
     }
 
     private function getFundingUnderMatchedWithNothingAllocated(): CampaignFunding
     {
-        $fundingUnderMatchedWithZero = new CampaignFunding();
+        $fundingUnderMatchedWithZero = new CampaignFunding(
+            currencyCode: 'GBP',
+            fund: new Pledge('GBP', 'some pledge'),
+            amount:'1000.00',
+            amountAvailable: '1000.00',
+            allocationOrder:  100
+        );
         $fundingUnderMatchedWithZero->setId(4);
-        $fundingUnderMatchedWithZero->setAmount('1000.00');
-        $fundingUnderMatchedWithZero->setAmountAvailable('1000.00');
 
         return $fundingUnderMatchedWithZero;
     }

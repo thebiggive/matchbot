@@ -7,6 +7,7 @@ use MatchBot\Application\Matching\LessThanRequestedAllocatedException;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\TerminalLockException;
 use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\Pledge;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -45,9 +46,14 @@ class AdapterTest extends TestCase
 
     public function testItReturnsAmountAvailableFromAFundingNotInStorage(): void
     {
-        $funding = new CampaignFunding();
+        $funding = new CampaignFunding(
+            currencyCode: 'GBP',
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '10000',
+            amountAvailable: '12.53',
+            allocationOrder: 100,
+        );
         $funding->setId(1);
-        $funding->setAmountAvailable('12.53');
 
         $amountAvaialble = $this->sut->getAmountAvailable($funding);
 
@@ -56,9 +62,14 @@ class AdapterTest extends TestCase
 
     public function testItAddsAmountForFunding(): void
     {
-        $funding = new CampaignFunding();
+        $funding = new CampaignFunding(
+            currencyCode: 'GBP',
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '1000',
+            amountAvailable: '50',
+            allocationOrder: 100,
+        );
         $funding->setId(1);
-        $funding->setAmountAvailable('50');
         $this->sut->addAmount($funding, '12.53');
         $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
 
@@ -72,9 +83,14 @@ class AdapterTest extends TestCase
 
     public function testItSubtractsAmountForFunding(): void
     {
-            $funding = new CampaignFunding();
+            $funding = new CampaignFunding(
+                currencyCode: 'GBP',
+                fund: new Pledge('GBP', 'some pledge'),
+                amount: '1000',
+                amountAvailable: '50',
+                allocationOrder: 100,
+            );
             $funding->setId(1);
-            $funding->setAmountAvailable('50');
             $amountToSubtract = "10.10";
 
             $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
@@ -88,9 +104,14 @@ class AdapterTest extends TestCase
 
     public function testItReleasesFundsInCaseOfRaceCondition(): void
     {
-                $funding = new CampaignFunding();
+                $funding = new CampaignFunding(
+                    currencyCode: 'GBP',
+                    fund: new Pledge('GBP', 'some pledge'),
+                    amount: '1000',
+                    amountAvailable: '50',
+                    allocationOrder: 100,
+                );
                 $funding->setId(1);
-                $funding->setAmountAvailable('50');
                 $amountToSubtract = "30";
 
             $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
@@ -119,7 +140,13 @@ class AdapterTest extends TestCase
             return $this->storage->decrBy($key, 40_00);
         });
 
-        $funding = new CampaignFunding();
+        $funding = new CampaignFunding(
+            currencyCode: 'GBP',
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '1000',
+            amountAvailable: '50',
+            allocationOrder: 100,
+        );
         $funding->setId(53);
         $funding->setAmountAvailable('50');
         $amountToSubtract = "30";
@@ -151,9 +178,14 @@ class AdapterTest extends TestCase
 
     public function testItDeletesCampaignFundingData(): void
     {
-        $funding = new CampaignFunding();
+        $funding = new CampaignFunding(
+            currencyCode: 'GBP',
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '1000',
+            amountAvailable: '1',
+            allocationOrder: 100,
+        );
         $funding->setId(1);
-        $funding->setAmountAvailable('1');
         $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
         $this->sut->addAmount($funding, '5');
 
@@ -167,9 +199,14 @@ class AdapterTest extends TestCase
     public function testItReleasesNewlyAllocatedFunds(): void
     {
         // arrange
-        $funding = new CampaignFunding();
+        $funding = new CampaignFunding(
+            currencyCode: 'GBP',
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '1000',
+            amountAvailable: '50',
+            allocationOrder: 100,
+        );
         $funding->setId(1);
-        $funding->setAmountAvailable('50');
         $amountToSubtract = "10.10";
 
         $this->entityManagerProphecy->persist($funding)->shouldBeCalled();

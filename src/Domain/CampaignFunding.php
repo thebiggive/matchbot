@@ -73,10 +73,28 @@ class CampaignFunding extends Model
     #[ORM\Column(type: 'integer')]
     protected int $allocationOrder;
 
-    public function __construct()
-    {
-        $this->campaigns = new ArrayCollection();
+    /**
+     * @param numeric-string $amount
+     * @param numeric-string $amountAvailable
+     */
+    public function __construct(
+        string $currencyCode,
+        Fund $fund,
+        string $amount,
+        string $amountAvailable,
+        int $allocationOrder
+    ) {
+        if ($allocationOrder < 0) {
+            throw new \LogicException('Allocation order must be a positive integer');
+        }
 
+        $this->currencyCode = $currencyCode;
+        $this->fund = $fund;
+        $this->amount = $amount;
+        $this->amountAvailable = $amountAvailable;
+        $this->allocationOrder = $allocationOrder;
+
+        $this->campaigns = new ArrayCollection();
         $this->createdNow();
     }
 
@@ -120,14 +138,6 @@ class CampaignFunding extends Model
     }
 
     /**
-     * @param Fund $fund
-     */
-    public function setFund(Fund $fund): void
-    {
-        $this->fund = $fund;
-    }
-
-    /**
      * Add a Campaign to those for which this CampaignFunding is available, *if* not already linked.
      *
      * @param Campaign $campaign
@@ -147,18 +157,6 @@ class CampaignFunding extends Model
     }
 
     /**
-     * @param int $allocationOrder
-     */
-    public function setAllocationOrder(int $allocationOrder): void
-    {
-        if ($allocationOrder < 0) {
-            throw new \LogicException('Allocation order must be a positive integer');
-        }
-
-        $this->allocationOrder = $allocationOrder;
-    }
-
-    /**
      * @return Fund
      */
     public function getFund(): Fund
@@ -169,10 +167,5 @@ class CampaignFunding extends Model
     public function getCurrencyCode(): string
     {
         return $this->currencyCode;
-    }
-
-    public function setCurrencyCode(string $currencyCode): void
-    {
-        $this->currencyCode = $currencyCode;
     }
 }
