@@ -204,9 +204,6 @@ Generally this structure follows normal conventions for a modern PHP app:
 
   `add(...)` is responsible for adding middleware. It can apply to a single route or a whole group of them. Again, this
   is how we make routes authenticated. **Modify with caution!**
-* [`settings.php`](./app/settings.php): you won't normally need to do much with this directly because it mostly just
-  re-structures environment variables found in `.env` (locally) or env vars loaded from a secrets file (on ECS), into
-  formats expected by classes we feed config arrays.
 
 ### Important code
 

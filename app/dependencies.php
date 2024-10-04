@@ -133,10 +133,7 @@ return function (ContainerBuilder $containerBuilder) {
 
         SlackChannelChatterFactory::class => static function (ContainerInterface $c): SlackChannelChatterFactory {
             $settings = $c->get('settings');
-            assert(is_array($settings));
-            /** @psalm-suppress MixedArrayAccess $token */
             $token = $settings['notifier']['slack']['api_token'];
-            assert(is_string($token));
             return new SlackChannelChatterFactory($token);
         },
 
@@ -170,7 +167,6 @@ return function (ContainerBuilder $containerBuilder) {
 
         Client\Mailer::class => function (ContainerInterface $c): Client\Mailer {
             $settings = $c->get('settings');
-            \assert(is_array($settings));
             return new Client\Mailer($settings, $c->get(LoggerInterface::class));
         },
 

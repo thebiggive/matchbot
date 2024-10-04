@@ -5,6 +5,12 @@
 declare(strict_types=1);
 
 namespace Psr\Container {
+
+    use MatchBot\Settings;
+
+    /**
+     * @psalm-import-type matchbotAppSettings from Settings
+     */
     interface ContainerInterface
     {
         /** @param string|class-string $name */
@@ -13,17 +19,23 @@ namespace Psr\Container {
         /**
          * @template T of object
          * @psalm-param string|class-string<T> $name
-         * @psalm-return ($name is class-string ? T : mixed)
+         * @psalm-return (
+        $name is 'settings' ? matchbotAppSettings :
+        ($name is class-string ? T : mixed)
+        )
          */
         public function get(string $name): object;
     }
 }
 
 namespace DI {
-    use Psr\Container\ContainerInterface;
-    use \DI\FactoryInterface;
     use Invoker\InvokerInterface;
+    use MatchBot\Settings;
+    use Psr\Container\ContainerInterface;
 
+    /**
+     * @psalm-import-type matchbotAppSettings from Settings
+     */
     class Container implements ContainerInterface, FactoryInterface, InvokerInterface
     {
         /**
@@ -39,7 +51,10 @@ namespace DI {
         /**
          * @template T of object
          * @psalm-param string|class-string<T> $name
-         * @psalm-return ($name is class-string ? T : mixed)
+         * @psalm-return (
+         $name is 'settings' ? matchbotAppSettings :
+         ($name is class-string ? T : mixed)
+         )
          */
         public function get(string $name): object;
     }

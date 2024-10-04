@@ -116,7 +116,8 @@ class StripePayoutUpdateTest extends StripeTest
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $webhookSecret = $container->get('settings')['stripe']['connectAppWebhookSecret'];
+        $settings = $container->get('settings');
+        $webhookSecret = $settings['stripe']['connectAppWebhookSecret'];
         $time = (string) time();
 
         $request = $this->createRequest('POST', '/hooks/stripe-connect', $body)

@@ -17,7 +17,7 @@ abstract class Stripe extends Action
 {
     protected ?Event $event = null;
 
-    /** @var array{connectAppWebhookSecret: string, accountWebhookSecret: string} */
+    /** @var array{connectAppWebhookSecret: string, accountWebhookSecret: string, ...} */
     protected array $stripeSettings;
 
     public function __construct(ContainerInterface $container, LoggerInterface $logger)

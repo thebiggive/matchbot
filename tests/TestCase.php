@@ -13,6 +13,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Settings;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -65,9 +66,7 @@ class TestCase extends PHPUnitTestCase
 
         // Container intentionally not compiled for tests.
 
-        // Set up settings
-        $settings = require __DIR__ . '/../app/settings.php';
-        $settings($containerBuilder);
+        Settings::applyTo($containerBuilder);
 
         // Set up dependencies
         $dependencies = require __DIR__ . '/../app/dependencies.php';

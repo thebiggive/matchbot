@@ -29,6 +29,15 @@ class RetrySafeEntityManagerTest extends TestCase
         $app = $this->getAppInstance();
         /** @var Container $container */
         $container = $app->getContainer();
+/*
+
+Argument 2 of MatchBot\Application\Persistence\RetrySafeEntityManager::__construct expects
+array{charset: string,    dbname: string, defaultTableOptions: array{collate: string}, driver: 'pdo_mysql',          driverOptions: array{1009: null|string}, host: string, password: string, port: int, user: string}, but parent type
+array{charset: 'utf8mb4', dbname: string, defaultTableOptions: array{collate: 'utf8mb4_unicode_ci'}, driver: string, driverOptions: array{1009: string}, host: false|string, password: false|string, port: 3306, user: false|string} provided (see https://psalm.dev/193)
+
+
+ */
+
 
         $this->retrySafeEntityManager = new RetrySafeEntityManager(
             $this->getConfiguration($container),

@@ -45,7 +45,7 @@ class RetrySafeEntityManager extends EntityManagerDecorator
      *      password: string,
      *      charset: string,
      *      defaultTableOptions: array{collate: string},
-     *      driverOptions: array{1009: ?string}
+     *      driverOptions: array{1009?: string}
      * } $connectionSettings
      */
     public function __construct(

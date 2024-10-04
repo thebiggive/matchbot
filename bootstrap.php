@@ -5,6 +5,8 @@ declare(strict_types=1);
 // Instantiate PHP-DI ContainerBuilder
 use DI\ContainerBuilder;
 use Doctrine\DBAL\Types\Type;
+use MatchBot\Settings;
+
 
 require __DIR__ . '/vendor/autoload.php';
 
@@ -14,10 +16,8 @@ if (!in_array(getenv('APP_ENV'), ['local', 'test'], true)) { // Compile cache on
     $containerBuilder->enableCompilation(__DIR__ . '/var/cache');
 }
 
-
 // Set up settings
-$settings = require __DIR__ . '/app/settings.php';
-$settings($containerBuilder);
+Settings::applyTo($containerBuilder);
 
 // Set up dependencies
 $dependencies = require __DIR__ . '/app/dependencies.php';

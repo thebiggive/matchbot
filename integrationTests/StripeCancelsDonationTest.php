@@ -37,7 +37,6 @@ class StripeCancelsDonationTest extends IntegrationTest
 
         /**
          * @psalm-suppress MixedArrayAccess
-         * @var string $webhookSecret
          */
         $webhookSecret = $this->getContainer()->get('settings')['stripe']['accountWebhookSecret'];
 

@@ -58,7 +58,6 @@ abstract class IntegrationTest extends TestCase
         $container->set(\Psr\Log\LoggerInterface::class, new \Psr\Log\NullLogger());
 
         $settings = $container->get('settings');
-        \assert(is_array($settings));
         $settings['apiClient'] = $this->fakeApiClientSettingsThatAlwaysThrow();
         $container->set('settings', $settings);
 
