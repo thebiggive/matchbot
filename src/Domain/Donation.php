@@ -36,6 +36,8 @@ use function sprintf;
 #[ORM\HasLifecycleCallbacks]
 class Donation extends SalesforceWriteProxy
 {
+    use TimestampsTrait;
+
     /**
      * @see Donation::$currencyCode
      */

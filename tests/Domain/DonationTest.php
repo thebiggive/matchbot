@@ -184,9 +184,7 @@ class DonationTest extends TestCase
 
     public function testtoFrontEndApiModel(): void
     {
-        $pledge = new Pledge();
-        $pledge->setCurrencyCode('GBP');
-        $pledge->setName('');
+        $pledge = new Pledge(currencyCode: 'GBP', name: '');
 
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setCurrencyCode('GBP');
@@ -232,7 +230,7 @@ class DonationTest extends TestCase
         $donation = $this->getTestDonation();
 
         $campaignFunding = new CampaignFunding();
-        $campaignFunding->setFund(new ChampionFund());
+        $campaignFunding->setFund(new ChampionFund(currencyCode: 'GBP', name: ''));
         $withdrawal0 = new FundingWithdrawal($campaignFunding);
         $withdrawal0->setAmount('1');
 
@@ -253,13 +251,13 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
         $campaignFunding0 = new CampaignFunding();
-        $campaignFunding0->setFund(new ChampionFund());
+        $campaignFunding0->setFund(new ChampionFund(currencyCode: 'GBP', name: ''));
 
         $withdrawal0 = new FundingWithdrawal($campaignFunding0);
         $withdrawal0->setAmount('1');
 
         $campaignFunding1 = new CampaignFunding();
-        $campaignFunding1->setFund(new Pledge());
+        $campaignFunding1->setFund(new Pledge(currencyCode: 'GBP', name: ''));
         $withdrawal1 = new FundingWithdrawal($campaignFunding1);
         $withdrawal1->setAmount('2');
 

@@ -435,9 +435,7 @@ class StripePayoutHandlerTest extends TestCase
             $container->get(StripeClient::class)
         );
 
-        $payoutMessage = (new StripePayout())
-            ->setConnectAccountId(self::CONNECTED_ACCOUNT_ID)
-            ->setPayoutId($payoutId);
+        $payoutMessage = new StripePayout(connectAccountId: self::CONNECTED_ACCOUNT_ID, payoutId: $payoutId);
         $payoutHandler($payoutMessage);
     }
 }

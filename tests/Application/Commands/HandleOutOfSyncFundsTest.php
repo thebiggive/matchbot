@@ -19,6 +19,18 @@ use Symfony\Component\Lock\LockFactory;
 
 class HandleOutOfSyncFundsTest extends TestCase
 {
+    private CampaignFunding $fundingUnderMatched;
+    private CampaignFunding $fundingInSync;
+    private CampaignFunding $fundingOverMatched;
+    private CampaignFunding $fundingUnderMatchedWithNothingAllocated;
+
+    public function setUp(): void
+    {
+        $this->fundingUnderMatched = $this->getFundingUnderMatched();
+        $this->fundingInSync = $this->getFundingInSync();
+        $this->fundingOverMatched = $this->getFundingOverMatched();
+        $this->fundingUnderMatchedWithNothingAllocated = $this->getFundingUnderMatchedWithNothingAllocated();
+    }
     public function testCheck(): void
     {
         $command = $this->getCommand(expectFixes: false);
@@ -104,10 +116,10 @@ class HandleOutOfSyncFundsTest extends TestCase
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
         $campaignFundingRepoProphecy->findAll()
             ->willReturn([
-                $this->getFundingInSync(),
-                $this->getFundingOverMatched(),
-                $this->getFundingUnderMatched(),
-                $this->getFundingUnderMatchedWithNothingAllocated(),
+                $this->fundingInSync,
+                $this->fundingOverMatched,
+                $this->fundingUnderMatched,
+                $this->fundingUnderMatchedWithNothingAllocated,
             ])
             ->shouldBeCalledOnce();
 
@@ -126,31 +138,31 @@ class HandleOutOfSyncFundsTest extends TestCase
     private function getFundingWithdrawalRepoProphecy()
     {
         $fundingWithdrawalRepoProphecy = $this->prophesize(FundingWithdrawalRepository::class);
-        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->getFundingInSync())
+        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->fundingInSync)
             ->willReturn(bcsub(
-                $this->getFundingInSync()->getAmount(),
-                $this->getFundingInSync()->getAmountAvailable(),
+                $this->fundingInSync->getAmount(),
+                $this->fundingInSync->getAmountAvailable(),
                 2
             ))
             ->shouldBeCalledOnce();
-        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->getFundingOverMatched())
+        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->fundingOverMatched)
             ->willReturn(bcsub(
-                $this->getFundingOverMatched()->getAmount(),
-                $this->getFundingOverMatched()->getAmountAvailable(),
+                $this->fundingOverMatched->getAmount(),
+                $this->fundingOverMatched->getAmountAvailable(),
                 2
             ))
             ->shouldBeCalledOnce();
-        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->getFundingUnderMatched())
+        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->fundingUnderMatched)
             ->willReturn(bcsub(
-                $this->getFundingUnderMatched()->getAmount(),
-                $this->getFundingUnderMatched()->getAmountAvailable(),
+                $this->fundingUnderMatched->getAmount(),
+                $this->fundingUnderMatched->getAmountAvailable(),
                 2
             ))
             ->shouldBeCalledOnce();
-        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->getFundingUnderMatchedWithNothingAllocated())
+        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->fundingUnderMatchedWithNothingAllocated)
             ->willReturn(bcsub(
-                $this->getFundingUnderMatchedWithNothingAllocated()->getAmount(),
-                $this->getFundingUnderMatchedWithNothingAllocated()->getAmountAvailable(),
+                $this->fundingUnderMatchedWithNothingAllocated->getAmount(),
+                $this->fundingUnderMatchedWithNothingAllocated->getAmountAvailable(),
                 2
             ))
             ->shouldBeCalledOnce();
@@ -165,19 +177,19 @@ class HandleOutOfSyncFundsTest extends TestCase
     {
         $matchingAdapterProphecy = $this->prophesize(Adapter::class);
         $matchingAdapterProphecy
-            ->getAmountAvailable($this->getFundingInSync())
+            ->getAmountAvailable($this->fundingInSync)
             ->willReturn('80.01') // DB amount available === £80.01
             ->shouldBeCalledOnce();
         $matchingAdapterProphecy
-            ->getAmountAvailable($this->getFundingOverMatched())
+            ->getAmountAvailable($this->fundingOverMatched)
             ->willReturn('109.00') // DB amount available === £99.00
             ->shouldBeCalledOnce();
         $matchingAdapterProphecy
-            ->getAmountAvailable($this->getFundingUnderMatched())
+            ->getAmountAvailable($this->fundingUnderMatched)
             ->willReturn('457.65') // DB amount available === £487.65
             ->shouldBeCalledOnce();
         $matchingAdapterProphecy
-            ->getAmountAvailable($this->getFundingUnderMatchedWithNothingAllocated())
+            ->getAmountAvailable($this->fundingUnderMatchedWithNothingAllocated)
             ->willReturn('999.99') // DB amount available === £1000.00
             ->shouldBeCalledOnce();
 

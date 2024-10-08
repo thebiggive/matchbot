@@ -44,8 +44,8 @@ class StripePayoutHandler
     public function __invoke(StripePayout $payout): void
     {
         $count = 0;
-        $connectAccountId = $payout->getConnectAccountId();
-        $payoutId = $payout->getPayoutId();
+        $connectAccountId = $payout->connectAccountId;
+        $payoutId = $payout->payoutId;
 
         try {
             $payoutInfo = $this->processSuccessfulPayout(

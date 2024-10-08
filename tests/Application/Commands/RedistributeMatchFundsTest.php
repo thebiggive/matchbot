@@ -178,7 +178,7 @@ class RedistributeMatchFundsTest extends TestCase
     private function getFullyAvailablePledgeFunding(): CampaignFunding
     {
         $pledgeAmount = '101.00';
-        $pledge = new Pledge();
+        $pledge = new Pledge(currencyCode: 'GBP', name: '');
         $pledgeFunding = new CampaignFunding();
         $pledgeFunding->setAmount($pledgeAmount);
         $pledgeFunding->setAmountAvailable($pledgeAmount);
@@ -200,7 +200,7 @@ class RedistributeMatchFundsTest extends TestCase
         $donation->setSalesforceId('sf_1244');
         $donation->setTransactionId('pi_tenPound123');
 
-        $championFund = new ChampionFund();
+        $championFund = new ChampionFund(currencyCode: 'GBP', name: '');
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setAmount($donationAmount);
         // We're bypassing normal allocation helpers and will set up the FundingWithdrawal to the test donation below.

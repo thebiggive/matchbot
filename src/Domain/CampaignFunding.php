@@ -76,6 +76,8 @@ class CampaignFunding extends Model
     public function __construct()
     {
         $this->campaigns = new ArrayCollection();
+
+        $this->createdNow();
     }
 
     public function __toString(): string

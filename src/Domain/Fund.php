@@ -41,6 +41,15 @@ abstract class Fund extends SalesforceReadProxy
     #[ORM\Column(type: 'string')]
     protected string $name;
 
+    final public function __construct(string $currencyCode, string $name)
+    {
+        $this->createdAt = new \DateTime();
+        $this->updatedAt = new \DateTime();
+
+        $this->currencyCode = $currencyCode;
+        $this->name = $name;
+    }
+
     /**
      * @param string $name
      */

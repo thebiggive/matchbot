@@ -174,9 +174,7 @@ class DonationRepositoryTest extends IntegrationTest
             $oldPendingDonation->setDonationStatus($donationStatus);
         }
 
-        $pledge = new Pledge();
-        $pledge->setCurrencyCode('GBP');
-        $pledge->setName('');
+        $pledge = new Pledge(currencyCode: 'GBP', name: '');
         $campaignFunding = new CampaignFunding();
         $campaignFunding->setFund($pledge);
         $campaignFunding->createdNow();
