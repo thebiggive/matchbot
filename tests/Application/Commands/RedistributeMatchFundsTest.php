@@ -179,13 +179,13 @@ class RedistributeMatchFundsTest extends TestCase
     {
         $pledgeAmount = '101.00';
         $pledge = new Pledge(currencyCode: 'GBP', name: '');
-        $pledgeFunding = new CampaignFunding();
-        $pledgeFunding->setAmount($pledgeAmount);
-        $pledgeFunding->setAmountAvailable($pledgeAmount);
-        $pledgeFunding->setAllocationOrder(100);
-        $pledgeFunding->setFund($pledge);
 
-        return $pledgeFunding;
+        return new CampaignFunding(
+            fund: $pledge,
+            amount: $pledgeAmount,
+            amountAvailable: $pledgeAmount,
+            allocationOrder: 100,
+        );
     }
 
     private function getTenPoundChampionMatchedDonation(): Donation
@@ -201,12 +201,12 @@ class RedistributeMatchFundsTest extends TestCase
         $donation->setTransactionId('pi_tenPound123');
 
         $championFund = new ChampionFund(currencyCode: 'GBP', name: '');
-        $campaignFunding = new CampaignFunding();
-        $campaignFunding->setAmount($donationAmount);
-        // We're bypassing normal allocation helpers and will set up the FundingWithdrawal to the test donation below.
-        $campaignFunding->setAmountAvailable('0');
-        $campaignFunding->setAllocationOrder(200);
-        $campaignFunding->setFund($championFund);
+        $campaignFunding = new CampaignFunding(
+            fund: $championFund,
+            amount: $donationAmount,
+            amountAvailable: '0',
+            allocationOrder: 200,
+        );
 
         $championFundWithdrawal = new FundingWithdrawal($campaignFunding);
         $championFundWithdrawal->setAmount($donationAmount);

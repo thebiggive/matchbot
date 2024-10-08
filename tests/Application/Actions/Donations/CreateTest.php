@@ -11,6 +11,7 @@ use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use MatchBot\Client\Fund;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
@@ -20,6 +21,8 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\Pledge;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
@@ -1071,11 +1074,12 @@ class CreateTest extends TestCase
 
     private static function someCampaignFunding(): CampaignFunding
     {
-        $campaignFunding = new CampaignFunding();
-        $campaignFunding->setAmount('8.00');
-        $campaignFunding->setCurrencyCode('GBP');
-
-        return $campaignFunding;
+        return new CampaignFunding(
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '8.00',
+            amountAvailable: '8.00',
+            allocationOrder: 100,
+        );
     }
 
     /**

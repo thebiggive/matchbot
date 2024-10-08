@@ -26,10 +26,12 @@ class ResetMatchingTest extends TestCase
         $fund->setSalesforceId('sfFundId123');
         $fund->setSalesforceLastPull(new \DateTime());
 
-        $campaignFunding = new CampaignFunding();
-        $campaignFunding->setFund($fund);
-        $campaignFunding->setAmount('400');
-        $campaignFunding->setAllocationOrder(200);
+        $campaignFunding = new CampaignFunding(
+            fund: $fund,
+            amount: '400',
+            amountAvailable: '400',
+            allocationOrder: 200,
+        );
 
         $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
         $matchingAdapterProphecy->delete($campaignFunding)->shouldBeCalledOnce();
