@@ -76,6 +76,7 @@ class CampaignFunding extends Model
     /**
      * @param numeric-string $amountAvailable
      * @param numeric-string $amount
+     * @param positive-int $allocationOrder
      */
     public function __construct(
         Fund $fund,
@@ -83,10 +84,6 @@ class CampaignFunding extends Model
         string $amountAvailable,
         int $allocationOrder
     ) {
-        if ($allocationOrder < 0) {
-            throw new \LogicException('Allocation order must be a positive integer');
-        }
-
         $this->fund = $fund;
         $this->currencyCode = $fund->getCurrencyCode();
         $this->amount = $amount;
@@ -148,6 +145,15 @@ class CampaignFunding extends Model
         }
 
         $this->campaigns->add($campaign);
+    }
+
+    /**
+     * Currently only used in test
+     * @return list<Campaign>
+     */
+    public function getCampaigns(): array
+    {
+        return array_values($this->campaigns->toArray());
     }
 
     public function getAllocationOrder(): int

@@ -185,11 +185,14 @@ class TestCase extends PHPUnitTestCase
      * Returns some random charity - use if you don't care about the details or will replace them with setters later.
      * Introduced to replace many old calls to instantiate Charity with zero arguments.
      */
-    public static function someCharity(?string $stripeAccountId = null, ?Salesforce18Id $salesforceId = null): Charity
-    {
+    public static function someCharity(
+        ?string $stripeAccountId = null,
+        ?Salesforce18Id $salesforceId = null,
+        string $name = 'Charity Name'
+    ): Charity {
         return new Charity(
             salesforceId: $salesforceId?->value ?? ('123CharityId' .  self::randomHex(3)),
-            charityName: "Charity Name",
+            charityName: $name,
             stripeAccountId: $stripeAccountId ?? "stripe-account-id-" . self::randomHex(),
             hmrcReferenceNumber: 'H' . self::randomHex(3),
             giftAidOnboardingStatus: 'Onboarded',
