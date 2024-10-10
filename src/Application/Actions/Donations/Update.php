@@ -42,7 +42,7 @@ use TypeError;
  */
 class Update extends Action
 {
-    private const MAX_UPDATE_RETRY_COUNT = 4;
+    private const int MAX_UPDATE_RETRY_COUNT = 4;
 
     #[Pure]
     public function __construct(

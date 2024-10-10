@@ -26,4 +26,9 @@ enum Environment
             default => throw new \Exception("Unknown environment \"$name\""),
         };
     }
+
+    public function toLower(): string
+    {
+        return strtolower($this->name);
+    }
 }

@@ -28,7 +28,7 @@ use function assert;
 
 class StatusTest extends TestCase
 {
-    private const DOMAIN_DIR = __DIR__ . '/../../../src/Domain';
+    private const string DOMAIN_DIR = __DIR__ . '/../../../src/Domain';
 
     public function setUp(): void
     {

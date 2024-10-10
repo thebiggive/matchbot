@@ -2,15 +2,13 @@
 
 namespace MatchBot\Client;
 
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
-use MatchBot\Domain\StripePaymentMethodId;
 use Ramsey\Uuid\Uuid;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
-use Stripe\PaymentMethod;
+use Stripe\StripeObject;
 
 /**
  * Does not connect to stripe. For use in load testing to allow testing Matchbot with high traffic levels
@@ -54,7 +52,7 @@ class StubStripeClient implements Stripe
     public function createPaymentIntent(array $createPayload): PaymentIntent
     {
         $this->pause();
-        return new PaymentIntent('ST' . self::randomString());
+        return new PaymentIntent('pi_stub_' . self::randomString());
     }
 
     private static function randomString(): string
@@ -64,11 +62,19 @@ class StubStripeClient implements Stripe
 
     public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
     {
-        return new CustomerSession();
+        $session = new CustomerSession();
+        $session->client_secret = 'fake_client_secret';
+
+        return $session;
     }
 
     public function retrieveConfirmationToken(StripeConfirmationTokenId $confirmationTokenId): ConfirmationToken
     {
-        return new ConfirmationToken();
+        $confirmationToken = new ConfirmationToken();
+        $confirmationToken->payment_method_preview = new StripeObject();
+        $confirmationToken->payment_method_preview['type'] = 'card';
+        $confirmationToken->payment_method_preview['card'] = ['brand' => 'discover', 'country' => 'some-country'];
+
+        return $confirmationToken;
     }
 }

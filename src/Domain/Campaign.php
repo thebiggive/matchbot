@@ -62,6 +62,7 @@ class Campaign extends SalesforceReadProxy
      */
     public function __construct(?Charity $charity)
     {
+        $this->createdNow();
         $this->campaignFundings = new ArrayCollection();
         if ($charity) {
             $this->charity = $charity;

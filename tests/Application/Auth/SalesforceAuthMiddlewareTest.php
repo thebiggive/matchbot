@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Mailer\Tests\Application\Auth;
+namespace MatchBot\Tests\Application\Auth;
 
-use Laminas\Diactoros\Request;
 use MatchBot\Application\Auth\SalesforceAuthMiddleware;
 use MatchBot\Tests\TestCase;
 use Psr\Http\Message\ServerRequestInterface;

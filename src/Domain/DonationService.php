@@ -23,10 +23,7 @@ use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Random\Randomizer;
-use Slim\Exception\HttpBadRequestException;
-use Stripe\Card;
 use Stripe\Exception\ApiErrorException;
-use Stripe\Mandate;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Notifier\ChatterInterface;
@@ -37,7 +34,7 @@ use Symfony\Component\RateLimiter\RateLimiterFactory;
 
 class DonationService
 {
-    private const MAX_RETRY_COUNT = 3;
+    private const int MAX_RETRY_COUNT = 3;
 
     public function __construct(
         private DonationRepository $donationRepository,

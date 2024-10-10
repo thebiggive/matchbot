@@ -12,6 +12,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\Pledge;
 use MatchBot\Tests\Application\Matching\ArrayMatchingStorage;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
@@ -99,9 +100,12 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
      */
     public function testItAllocates1From1For1(): void
     {
-        $campaignFunding = new CampaignFunding();
-        $campaignFunding->setCurrencyCode('GBP');
-        $campaignFunding->setAmountAvailable('1.0');
+        $campaignFunding = new CampaignFunding(
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '1000',
+            amountAvailable: '1',
+            allocationOrder: 100
+        );
         $campaignFunding->setId(1);
 
         $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
@@ -177,14 +181,20 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         string $withdrawal0AmountExpected,
         string $withdrawl1AmountExpected
     ): void {
-        $campaignFunding0 = new CampaignFunding();
-        $campaignFunding0->setCurrencyCode('GBP');
-        $campaignFunding0->setAmountAvailable($funding0Available);
+        $campaignFunding0 = new CampaignFunding(
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '1000',
+            amountAvailable: $funding0Available,
+            allocationOrder: 100
+        );
         $campaignFunding0->setId(0);
 
-        $campaignFunding1 = new CampaignFunding();
-        $campaignFunding1->setCurrencyCode('GBP');
-        $campaignFunding1->setAmountAvailable($funding1Available);
+        $campaignFunding1 = new CampaignFunding(
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '1000',
+            amountAvailable: $funding1Available,
+            allocationOrder: 100
+        );
         $campaignFunding1->setId(1);
 
 
@@ -229,9 +239,12 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
 
     public function testItAllocates1From2For2When1AlreadyMatched(): void
     {
-        $campaignFunding = new CampaignFunding();
-        $campaignFunding->setCurrencyCode('GBP');
-        $campaignFunding->setAmountAvailable('1.0');
+        $campaignFunding = new CampaignFunding(
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '1000',
+            amountAvailable: '1.0',
+            allocationOrder: 100
+        );
         $campaignFunding->setId(1);
 
         $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
@@ -271,9 +284,12 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
 
     public function testItRejectsFundingInWrongCurrency(): void
     {
-        $campaignFunding = new CampaignFunding();
-        $campaignFunding->setCurrencyCode('USD');
-        $campaignFunding->setAmountAvailable('1.0');
+        $campaignFunding = new CampaignFunding(
+            fund: new Pledge('USD', 'some pledge'),
+            amount: '1000',
+            amountAvailable: '1',
+            allocationOrder: 100
+        );
 
         $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
             $campaignFunding

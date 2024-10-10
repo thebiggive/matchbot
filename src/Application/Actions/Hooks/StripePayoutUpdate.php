@@ -126,9 +126,7 @@ class StripePayoutUpdate extends Stripe
         $connectAccountId = $event->account;
         Assertion::notNull($connectAccountId, 'Connected Account ID should not be null');
 
-        $message = (new StripePayout())
-            ->setConnectAccountId($connectAccountId)
-            ->setPayoutId($payoutId);
+        $message = new StripePayout(connectAccountId: $connectAccountId, payoutId: $payoutId);
 
         $stamps = [
             new BusNameStamp(Event::PAYOUT_PAID),

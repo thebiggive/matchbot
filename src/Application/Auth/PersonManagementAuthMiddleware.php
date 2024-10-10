@@ -24,8 +24,8 @@ class PersonManagementAuthMiddleware implements MiddlewareInterface
 {
     use ErrorTrait;
 
-    public const PSP_ATTRIBUTE_NAME = 'pspId';
-    public const PERSON_ID_ATTRIBUTE_NAME = 'personId';
+    public const string PSP_ATTRIBUTE_NAME = 'pspId';
+    public const string PERSON_ID_ATTRIBUTE_NAME = 'personId';
     protected ?string $jws = null;
 
     /**

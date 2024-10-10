@@ -6,9 +6,60 @@ namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Charity;
 use MatchBot\Tests\TestCase;
+use PHPUnit\Util\Test;
 
 class CharityTest extends TestCase
 {
+    public function testTbGApprovedToClaimGiftAidWhenRefNumberAndRightStatusSet(): void
+    {
+        $charity = TestCase::someCharity();
+
+        $charity->updateFromSfPull(
+            charityName: 'name doesnt matter',
+            stripeAccountId: null,
+            hmrcReferenceNumber: 'not-empty',
+            giftAidOnboardingStatus: Charity::GIFT_AID_APPROVED_STATUS,
+            regulator: null,
+            regulatorNumber: null,
+            time: new \DateTime()
+        );
+
+        $this->assertTrue($charity->getTbgApprovedToClaimGiftAid());
+    }
+    public function testWeAreNotApprovedToClaimGAWithoutReferenceNumber(): void
+    {
+        $charity = TestCase::someCharity();
+
+        $charity->updateFromSfPull(
+            charityName: 'name doesnt matter', // empty
+            stripeAccountId: null,
+            hmrcReferenceNumber: '',
+            giftAidOnboardingStatus: Charity::GIFT_AID_APPROVED_STATUS,
+            regulator: null,
+            regulatorNumber: null,
+            time: new \DateTime()
+        );
+
+        $this->assertFalse($charity->getTbgApprovedToClaimGiftAid());
+    }
+
+    public function testWeAreNotApprovedToClaimGAWithoutApprovedStatus(): void
+    {
+        $charity = TestCase::someCharity();
+
+        $charity->updateFromSfPull(
+            charityName: 'name doesnt matter',
+            stripeAccountId: null,
+            hmrcReferenceNumber: 'not-empty',
+            giftAidOnboardingStatus: 'Onboarded',
+            regulator: null,
+            regulatorNumber: null,
+            time: new \DateTime()
+        );
+
+        $this->assertFalse($charity->getTbgApprovedToClaimGiftAid());
+    }
+
     public function testInvalidRegularIsDenied(): void
     {
         $this->expectException(\UnexpectedValueException::class);
@@ -70,6 +121,14 @@ class CharityTest extends TestCase
         );
 
         $this->assertSame($expected, $charity->isTbgClaimingGiftAid());
+    }
+
+    public function testItGeneratesStatementDescriptor(): void
+    {
+        $charity = TestCase::someCharity(
+            name: 'Name with /€€€€€€€€€€€€€/ this is a long name with special and multibyte chars'
+        );
+        $this->assertSame('Big Give Name with  th', $charity->getStatementDescriptor());
     }
 
 

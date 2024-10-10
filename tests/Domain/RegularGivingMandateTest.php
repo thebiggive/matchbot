@@ -1,13 +1,10 @@
 <?php
 
-namespace Domain;
+namespace MatchBot\Tests\Domain;
 
-use Brick\DateTime\LocalDate;
-use Brick\DateTime\LocalDateTime;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationSequenceNumber;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorName;

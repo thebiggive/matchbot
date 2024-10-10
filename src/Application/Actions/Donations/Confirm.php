@@ -28,7 +28,7 @@ class Confirm extends Action
      * Message excerpts that we expect to see sometimes from stripe on InvalidRequestExceptions. An exception
      * containing any of these strings should not generate an alarm.
      */
-    public const EXPECTED_STRIPE_INVALID_REQUEST_MESSAGES = [
+    public const array EXPECTED_STRIPE_INVALID_REQUEST_MESSAGES = [
         'The provided PaymentMethod has failed authentication',
         'You must collect the security code (CVC) for this card from the cardholder before you can use it',
 
@@ -104,7 +104,7 @@ class Confirm extends Action
 Donation Confirmation attempted with missing confirmation token id "$confirmationTokenId" for Donation $donationUUID
 EOF
             );
-            throw new HttpBadRequestException($request, "stripePaymentMethodId required");
+            throw new HttpBadRequestException($request, "stripeConfirmationTokenId required");
         }
 
 

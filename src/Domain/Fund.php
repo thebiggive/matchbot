@@ -27,7 +27,7 @@ abstract class Fund extends SalesforceReadProxy
     use TimestampsTrait;
 
     /** @var 'championFund'|'pledge'|'unknownFund' */
-    public const DISCRIMINATOR_VALUE = 'unknownFund';
+    public const string DISCRIMINATOR_VALUE = 'unknownFund';
 
     /**
      * @var string  ISO 4217 code for the currency used with this fund, and in which FundingWithdrawals are denominated.
@@ -40,6 +40,15 @@ abstract class Fund extends SalesforceReadProxy
      */
     #[ORM\Column(type: 'string')]
     protected string $name;
+
+    final public function __construct(string $currencyCode, string $name)
+    {
+        $this->createdAt = new \DateTime();
+        $this->updatedAt = new \DateTime();
+
+        $this->currencyCode = $currencyCode;
+        $this->name = $name;
+    }
 
     /**
      * @param string $name

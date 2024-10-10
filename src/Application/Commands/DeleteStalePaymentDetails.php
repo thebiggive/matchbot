@@ -17,9 +17,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class DeleteStalePaymentDetails extends LockingCommand
 {
-    private const STRIPE_PAGE_SIZE = 100; // Maximum allowed. Iterators page through automatically.
+    private const int STRIPE_PAGE_SIZE = 100; // Maximum allowed. Iterators page through automatically.
 
-    private const MAX_CUSTOMER_COUNT_TO_DETATCH_PER_RUN = 2_000;
+    private const int MAX_CUSTOMER_COUNT_TO_DETATCH_PER_RUN = 2_000;
 
     protected static $defaultName = 'matchbot:delete-stale-payment-details';
 

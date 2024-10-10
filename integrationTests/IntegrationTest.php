@@ -8,12 +8,10 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
-use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\Pledge;
 use MatchBot\Domain\Salesforce18Id;
-use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestData;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
@@ -112,28 +110,6 @@ abstract class IntegrationTest extends TestCase
                 throw new \Exception("Do not use real API client in tests");
             }
         }];
-    }
-
-    /**
-     * @throws \DI\DependencyException
-     * @throws \DI\NotFoundException
-     * @throws \MatchBot\Client\BadRequestException
-     */
-    public function setupFakeDonationClient(): void
-    {
-        $container = $this->getContainer();
-
-        $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
-        $donationClientProphecy->createOrUpdate(Argument::type(DonationUpserted::class))->will(
-        /**
-         * @param array{0: Donation} $args
-         */            fn(array $args) => Salesforce18Id::of($args[0]->getSalesforceId() ?? $this->randomString())
-        );
-
-        $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
-
-        $donationRepo = $container->get(DonationRepository::class);
-        $donationRepo->setClient($donationClientProphecy->reveal());
     }
 
     protected function getContainer(): Container
