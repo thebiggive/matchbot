@@ -119,10 +119,8 @@ class RetrospectivelyMatch extends LockingCommand
             $this->chatter->send($chatMessage);
         }
 
-        if (count($toCheckForMatching) > 0) {
-            [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();
-            $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
-        }
+        [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();
+        $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
 
         return 0;
     }
