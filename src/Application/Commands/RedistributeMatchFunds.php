@@ -33,7 +33,10 @@ class RedistributeMatchFunds extends LockingCommand
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();
-        $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
+        if ($donationsAmended > 0) {
+            $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
+        }
+
         return 0;
     }
 }
