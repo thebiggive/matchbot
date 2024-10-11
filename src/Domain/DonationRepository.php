@@ -791,7 +791,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 // Seen only at fairly quiet times *and* before we increased DB wait_timeout from 8 hours
                 // to just over workers' max lifetime of 24 hours. Should happen rarely or never with new DB config.
                 $tries++;
-                $this->logError(sprintf(
+                $this->logWarning(sprintf(
                     '%s: Connection lost while setting Salesforce fields on donation %s, try #%d',
                     get_class($exception),
                     $uuid,
@@ -800,7 +800,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             }
         } while ($tries < self::MAX_SALEFORCE_FIELD_UPDATE_TRIES);
 
-        $this->logWarning(
+        $this->logError(
             "Failed to set Salesforce fields for donation $uuid after $tries tries"
         );
     }
