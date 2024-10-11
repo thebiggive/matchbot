@@ -38,11 +38,11 @@ paths:
 
     post:
       operationId: createDonation
-      summary: Create a donation on behalf of a specified person
+      summary: Create a pending status donation on behalf of a specified person
       tags: [Core donation journey]
       responses:
         '201':
-          description: Donation created
+          description: Pending donation created
           content:
             application/json:
               schema:
