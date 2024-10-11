@@ -2,12 +2,23 @@ openapi: 3.0.0
 servers:
   # Added by API Auto Mocking Plugin
   - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/Noel/TBG-Donations/1.0.10
+    url: https://virtserver.swaggerhub.com/Noel/TBG-Donations/1.0.12
   - description: "MatchBot staging"
     url: https://matchbot-staging.thebiggivetest.org.uk/v1
+  - description: "Salesforce Full (staging)"
+    url: https://thebiggive--full.sandbox.my.salesforce-sites.com/donations/services/apexrest/v2.0
 info:
-  description: The Big Give Donations public API
-  version: 1.0.10
+  description: |
+    The Big Give Donations APIs.
+
+    This contract aims to cover all endpoints except
+    `/ping` and integration webhooks. Most webhooks' structures are defined by Stripe
+    with us choosing just the endpoint.
+
+    As Salesforce & MatchBot share a Donation schema, endpoints for both are documented here
+    together; however operation `salesforceUpsert` is implemented only in Salesforce
+    and all others are implemented only in MatchBot.
+  version: 1.0.12
   title: Donations
   contact:
     email: tech@thebiggive.org.uk
@@ -15,38 +26,70 @@ info:
     name: Apache 2.0
     url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
 paths:
-  /donations:
+  /people/{personId}/donations:
+    parameters:
+      - name: personId
+        in: path
+        schema:
+          type: string
+          format: uuid
+        description: Identifier of the donor
+        required: true
+
     post:
-      summary: Creates a donation
-      operationId: addDonation
-      description: Initiates a donation with pending status
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Donation'
-        description: Donation to create
+      operationId: createDonation
+      summary: Create a pending status donation on behalf of a specified person
+      tags: [Core donation journey]
       responses:
         '201':
-          description: Donation created
+          description: Pending donation created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DonationCreatedResponse'
         '400':
           description: Invalid donation properties
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Donation'
+
+    get:
+      operationId: listDonations
+      summary: List existing complete donations made by the person
+      tags: [Past donations]
+      security:
+        - JWT: []
+      responses:
+        '200':
+          description: List of donations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  donations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Donation'
+        '400':
+          description: Required parameters not set as expected
+
   /donations/{donationId}:
     parameters:
       - name: donationId
         in: path
         schema:
           type: string
-        description: Case-insensitive Salesforce ID for a donation
+        description: UUID for a donation
         required: true
     get:
+      operationId: getDonation
+      summary: Gets a donation's details by ID
+      tags: [Core donation journey]
       security:
         - JWT: []
-      summary: Gets a donation's details by ID
       responses:
         '200':
           description: Donation returned
@@ -58,11 +101,13 @@ paths:
           description: Not authorised to see donation details
         '404':
           description: Donation not found
+
     put:
+      operationId: editDonation
+      summary: Modify an existing donation
+      tags: [Core donation journey]
       security:
         - JWT: []
-      summary: Modify an existing donation
-      operationId: editDonation
       description: |
         Change something about a donation. Currently supports
         (a) adding more details, and
@@ -87,39 +132,66 @@ paths:
           description: Not authorised to see donation details
         '404':
           description: Donation not found
-  /people/{personId}/donations:
+
+  /donations/{donationId}/confirm:
     parameters:
-      - name: personId
+      - name: donationId
         in: path
         schema:
           type: string
-        description: Identifier of the donor
+        description: UUID for a donation
         required: true
     post:
-      summary: Create a donation on behalf of a specified person
-      responses:
-        '201':
-          description: Donation created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DonationCreatedResponse'
-        '400':
-          description: Invalid donation properties
+      operationId: confirmDonation
+      summary: Confirm a donation using a Stripe.js token
+      tags: [Core donation journey]
+      security:
+        - JWT: []
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Donation'
+              type: object
+              properties:
+                stripeConfirmationTokenId:
+                  type: string
+                  example: ctoken_123abc
+      responses:
+        '200':
+          description: Donation confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paymentIntent:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        description: Stripe payment intent status
+                      client_secret:
+                        type: string
+                        description: Secret for Stripe.js to e.g. complete 3D Secure if needed
+        '400':
+          description: Invalid or missing token
+        '402':
+          description: Payment failed
+
   /people/{personId}/payment_methods:
     parameters:
       - name: personId
         in: path
         schema:
           type: string
+          format: uuid
         required: true
     get:
+      operationId: listPaymentMethods
       summary: Get stored payment methods (i.e. payment cards) for a person
+      tags: [Future donation management]
+      security:
+        - JWT: [ ]
       responses:
         '200':
           description: List of payment methods as returned to Matchbot by the Stripe API
@@ -127,7 +199,167 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentMethodsResponse'
+  /people/{personId}/payment_methods/{paymentMethodId}/billing_details:
+    parameters:
+      - name: personId
+        in: path
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: paymentMethodId
+        in: path
+        schema:
+          type: string
+        required: true
+    put:
+      operationId: updatePaymentMethod
+      summary: Update expiry and/or address of a stored payment card
+      tags: [Future donation management]
+      security:
+        - JWT: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              description: "Subset of a Stripe.js Payment Method object, see https://docs.stripe.com/api/payment_methods/object"
+      responses:
+        '204':
+          description: Payment method updated
+        '400':
+          description: Payment method update failed
 
+  /people/{personId}/payment_methods/{paymentMethodId}:
+    parameters:
+      - name: personId
+        in: path
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: paymentMethodId
+        in: path
+        schema:
+          type: string
+        required: true
+
+    delete:
+      operationId: deletePaymentMethod
+      summary: Delete a stored payment card
+      tags: [Future donation management]
+      security:
+        - JWT: [ ]
+      responses:
+        '204':
+          description: Payment method deleted
+        '400':
+          description: Payment method deletion failed
+
+  /person/{personId}/donor-account:
+    parameters:
+      - name: personId
+        in: path
+        schema:
+          type: string
+          format: uuid
+        required: true
+    post:
+      operationId: enableDonorAccount
+      summary: Activate features that need more data e.g. inbound bank transfers
+      tags: [Future donation management]
+      security:
+        - JWT: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                emailAddress:
+                  type: string
+                  format: email
+                donorName:
+                  type: object
+                  properties:
+                    firstName:
+                      type: string
+                    lastName:
+                      type: string
+      responses:
+        '201':
+          description: Donor account features enabled
+        '400':
+          description: Invalid data or already enabled
+
+  /regular-giving/my-donation-mandates:
+    get:
+      operationId: listMandates
+      summary: List mandates for regular giving
+      tags: [Regular giving]
+      security:
+        - JWT: []
+      responses:
+        '200':
+          description: List of mandates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mandates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RegularGivingMandate'
+
+  /donations/{donationUuid}:
+    parameters:
+      - in: path
+        name: donationUuid
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: header
+        name: X-Webhook-Verify-Hash
+        required: true
+        schema:
+          type: string
+        description: |
+          For Salesforce pushes from the server only, in lieu of security JWT.
+          A variable content hash based on a shared webhook secret. Note that
+          the secret varies per-environment (UAT vs. Production). To calculate
+          the expected hash, trim leading and trailing whitespace from the
+          JSON body, and get an HMAC SHA-256 digest using `webhook_secret` as
+          the key. Convert the hash digest to lowercase hexits. So, in pseudocode,
+
+            verify_hash = lowercase_hex(
+              hash_hmac(
+                'sha256',
+                trim(json_body_text),
+                webhook_secret
+              )
+            )
+    post:
+      summary: Upserts (inserts or updates as needed) copy of the donation to Salesforce
+      operationId: salesforceUpsert
+      tags: [Salesforce integration]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Donation'
+      responses:
+        '200':
+          description: Donation upserted
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                  salesforceId:
+                    type: string
 
 components:
   schemas:
@@ -143,8 +375,14 @@ components:
           description: |
             A signed JWT to prove identity for subsequent operations on the
             donation, like reading its status or cancelling it.
+        stripeSessionSecret:
+          readOnly: true
+          type: string
+          description: |
+            Secret which allows Stripe.js to manage saved payment methods.
         donation:
           $ref: '#/components/schemas/Donation'
+
     Donation:
       type: object
       required:
@@ -312,6 +550,48 @@ components:
           type: string
           format: date-time
           example: '2020-01-11T08:07:06.005Z'
+
+    RegularGivingMandate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        donorId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        campaignId:
+          type: string
+          description: Salesforce ID
+        charityId:
+          type: string
+          description: Salesforce ID
+        schedule:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: ["monthly"]
+            dayOfMonth:
+              type: integer
+              minimum: 1
+              maximum: 28
+            activeFrom:
+              type: string
+              format: date-time
+            expectedNextPaymentDate:
+              type: string
+              format: date-time
+        charityName:
+          type: string
+        giftAid:
+          type: boolean
+        status:
+          type: string
+          enum: ["pending", "active", "cancelled"]
+
     PaymentMethodsResponse:
       # The implementation of this method currently returns data exactly as supplied to matchbot by stripe.
       # Selected properties are shown here, see https://stripe.com/docs/api/payment_methods/object for more details
@@ -341,6 +621,7 @@ components:
       properties:
         donation:
           $ref: '#/components/schemas/Donation'
+
   securitySchemes:
     JWT:
       type: apiKey
