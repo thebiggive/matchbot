@@ -3,18 +3,23 @@
 namespace MatchBot\Application\Matching;
 
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Commands\RedistributeMatchFunds;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
+use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
+use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\Notifier\Message\ChatMessage;
 
 class MatchFundsRedistributor
 {
     public function __construct(
+        private ChatterInterface $chatter,
         private DonationRepository $donationRepository,
         private \DateTimeImmutable $now,
         private CampaignFundingRepository $campaignFundingRepository,
@@ -105,6 +110,29 @@ class MatchFundsRedistributor
 
         $numberChecked = count($donationsToCheck);
 
+        if ($donationsAmended > 0) {
+            $this->sendSlackSummary($numberChecked, $donationsAmended);
+        }
+
         return [$numberChecked, $donationsAmended];
+    }
+
+    private function sendSlackSummary(?int $numberChecked, int $donationsAmended): void
+    {
+        $env = getenv('APP_ENV');
+        Assertion::string($env);
+
+        $summary = "Checked $numberChecked donations and redistributed matching for $donationsAmended";
+        $options = (new SlackOptions())
+            ->block((new SlackHeaderBlock(sprintf(
+                '[%s] %s',
+                $env,
+                'Funds redistributed',
+            ))))
+            ->block((new SlackSectionBlock())->text($summary));
+        $chatMessage = new ChatMessage('Funds redistribution');
+        $chatMessage->options($options);
+
+        $this->chatter->send($chatMessage);
     }
 }
