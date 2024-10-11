@@ -28,6 +28,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Notifier\ChatterInterface;
 
 class RedistributeMatchingCommandTest extends IntegrationTest
 {
@@ -70,6 +71,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         // act
         $command = new RedistributeMatchFunds(
             new MatchFundsRedistributor(
+                chatter: $this->createStub(ChatterInterface::class),
                 donationRepository: $this->getService(DonationRepository::class),
                 now: new \DateTimeImmutable('now'),
                 campaignFundingRepository: $this->campaignFundingRepository,
@@ -118,6 +120,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         // act
         $command = new RedistributeMatchFunds(
             new MatchFundsRedistributor(
+                chatter: $this->createStub(ChatterInterface::class),
                 campaignFundingRepository: $this->campaignFundingRepository,
                 entityManager: $this->createStub(EntityManagerInterface::class),
                 now: new \DateTimeImmutable('now'),

@@ -26,6 +26,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Notifier\ChatterInterface;
 
 class RedistributeMatchFundsTest extends TestCase
 {
@@ -229,6 +230,7 @@ class RedistributeMatchFundsTest extends TestCase
     ): RedistributeMatchFunds {
         $command = new RedistributeMatchFunds(
             matchFundsRedistributor: new MatchFundsRedistributor(
+                chatter: $this->createStub(ChatterInterface::class),
                 donationRepository: $donationRepoProphecy->reveal(),
                 now: $now,
                 campaignFundingRepository: $campaignFundingRepository->reveal(),
