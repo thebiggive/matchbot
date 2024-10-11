@@ -36,6 +36,7 @@ class Confirm extends Action
         // we can still get this error if the cancellation is too late to stop us attempting to confirm.
         // phpcs:ignore
         'This PaymentIntent\'s payment_method could not be updated because it has a status of canceled. You may only update the payment_method of a PaymentIntent with one of the following statuses: requires_payment_method, requires_confirmation, requires_action.',
+        'The confirmation token has already been used to confirm a previous PaymentIntent',
     ];
 
     public function __construct(
@@ -134,33 +135,6 @@ EOF
                 paymentIntentId: $donation->getTransactionId(),
             );
         } catch (InvalidRequestException $exception) {
-            // We've seen card test bots, and no humans, try to reuse payment methods like this as of Oct '23. For now
-            // we want to log it as a warning, so we can see frequency on a dashboard but don't get alarms.
-            // The full Stripe message ($exception->getMessage()) we've seen is e.g.:
-            // "The provided PaymentMethod was previously used with a PaymentIntent without Customer attachment,
-            // shared with a connected account without Customer attachment, or was detached from a Customer. It may
-            // not be used again. To use a PaymentMethod multiple times, you must attach it to a Customer first."
-            $paymentMethodReuseAttempted = (
-                str_contains($exception->getMessage(), 'The provided PaymentMethod was previously used')
-            );
-            if ($paymentMethodReuseAttempted) {
-                $this->logger->warning(sprintf(
-                    'Stripe InvalidRequestException on Confirm for donation %s (%s): %s',
-                    $donation->getUuid(),
-                    $donation->getTransactionId(),
-                    $exception->getMessage(),
-                ));
-
-                $this->entityManager->rollback();
-
-                return new JsonResponse([
-                    'error' => [
-                        'message' => 'Payment method cannot be used again',
-                        'code' => $exception->getStripeCode(),
-                    ],
-                ], 402);
-            }
-
             if (!$this->errorMessageFromStripeIsExpected($exception)) {
                 throw $exception;
             }
