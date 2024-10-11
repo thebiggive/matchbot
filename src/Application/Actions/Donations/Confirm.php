@@ -36,6 +36,7 @@ class Confirm extends Action
         // we can still get this error if the cancellation is too late to stop us attempting to confirm.
         // phpcs:ignore
         'This PaymentIntent\'s payment_method could not be updated because it has a status of canceled. You may only update the payment_method of a PaymentIntent with one of the following statuses: requires_payment_method, requires_confirmation, requires_action.',
+        'The confirmation token has already been used to confirm a previous PaymentIntent',
     ];
 
     public function __construct(
