@@ -28,10 +28,15 @@ return function (App $app) {
     $app->get('/ping', Status::class);
 
     $app->group('/v1', function (RouteCollectorProxy $versionGroup) {
-        // Provides real IP for reCAPTCHA
+        // Provides real IP for e.g. rate limiter
         $ipMiddleware = getenv('APP_ENV') === 'local'
             ? new ClientIp()
             : (new ClientIp())->proxy([], ['X-Forwarded-For']);
+
+        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
+            ->add(PersonManagementAuthMiddleware::class)
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
 
         $versionGroup->group('/donations/{donationId:[a-z0-9-]{36}}', function (RouteCollectorProxy $group) {
             $group->get('', Donations\Get::class);
@@ -40,16 +45,19 @@ return function (App $app) {
         })
             ->add(DonationPublicAuthMiddleware::class);
 
+        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donor-account', DonorAccount\Create::class)
+            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
+
+        // TODO Migrate Donate to the less confusing endpoint above, then delete this one.
         $versionGroup->post('/{personId:[a-z0-9-]{36}}/donor-account', DonorAccount\Create::class)
             ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
-        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
-            ->add(PersonManagementAuthMiddleware::class)
-            ->add($ipMiddleware)
-            ->add(RateLimitMiddleware::class);
-
+        // TODO Discuss moving this to e.g. /people/{personId}/mandates for consistency & easier understanding
+        // of the available endpoints.
         $versionGroup->get('/regular-giving/my-donation-mandates', RegularGivingMandate\GetAllForUser::class)
             ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)

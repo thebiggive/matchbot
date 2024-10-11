@@ -174,17 +174,13 @@ class DonationRepositoryTest extends IntegrationTest
             $oldPendingDonation->setDonationStatus($donationStatus);
         }
 
-        $pledge = new Pledge();
-        $pledge->setCurrencyCode('GBP');
-        $pledge->setName('');
-        $campaignFunding = new CampaignFunding();
-        $campaignFunding->setFund($pledge);
-        $campaignFunding->createdNow();
-        $campaignFunding->setFund($campaignFunding->getFund());
-        $campaignFunding->setAllocationOrder(100);
-        $campaignFunding->setCurrencyCode('GBP');
-        $campaignFunding->setAmount('1.0');
-        $campaignFunding->setAmountAvailable('1.0');
+        $pledge = new Pledge(currencyCode: 'GBP', name: '');
+        $campaignFunding = new CampaignFunding(
+            fund: $pledge,
+            amount: '1.0',
+            amountAvailable: '1.0',
+            allocationOrder: 100,
+        );
         $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
         $oldPendingDonation->addFundingWithdrawal($fundingWithdrawal);
         $fundingWithdrawal->setAmount('1');

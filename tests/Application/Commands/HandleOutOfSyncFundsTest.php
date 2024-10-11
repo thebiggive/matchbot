@@ -9,6 +9,7 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
+use MatchBot\Domain\Pledge;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -19,6 +20,18 @@ use Symfony\Component\Lock\LockFactory;
 
 class HandleOutOfSyncFundsTest extends TestCase
 {
+    private CampaignFunding $fundingUnderMatched;
+    private CampaignFunding $fundingInSync;
+    private CampaignFunding $fundingOverMatched;
+    private CampaignFunding $fundingUnderMatchedWithNothingAllocated;
+
+    public function setUp(): void
+    {
+        $this->fundingUnderMatched = $this->getFundingUnderMatched();
+        $this->fundingInSync = $this->getFundingInSync();
+        $this->fundingOverMatched = $this->getFundingOverMatched();
+        $this->fundingUnderMatchedWithNothingAllocated = $this->getFundingUnderMatchedWithNothingAllocated();
+    }
     public function testCheck(): void
     {
         $command = $this->getCommand(expectFixes: false);
@@ -104,10 +117,10 @@ class HandleOutOfSyncFundsTest extends TestCase
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
         $campaignFundingRepoProphecy->findAll()
             ->willReturn([
-                $this->getFundingInSync(),
-                $this->getFundingOverMatched(),
-                $this->getFundingUnderMatched(),
-                $this->getFundingUnderMatchedWithNothingAllocated(),
+                $this->fundingInSync,
+                $this->fundingOverMatched,
+                $this->fundingUnderMatched,
+                $this->fundingUnderMatchedWithNothingAllocated,
             ])
             ->shouldBeCalledOnce();
 
@@ -126,31 +139,31 @@ class HandleOutOfSyncFundsTest extends TestCase
     private function getFundingWithdrawalRepoProphecy()
     {
         $fundingWithdrawalRepoProphecy = $this->prophesize(FundingWithdrawalRepository::class);
-        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->getFundingInSync())
+        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->fundingInSync)
             ->willReturn(bcsub(
-                $this->getFundingInSync()->getAmount(),
-                $this->getFundingInSync()->getAmountAvailable(),
+                $this->fundingInSync->getAmount(),
+                $this->fundingInSync->getAmountAvailable(),
                 2
             ))
             ->shouldBeCalledOnce();
-        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->getFundingOverMatched())
+        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->fundingOverMatched)
             ->willReturn(bcsub(
-                $this->getFundingOverMatched()->getAmount(),
-                $this->getFundingOverMatched()->getAmountAvailable(),
+                $this->fundingOverMatched->getAmount(),
+                $this->fundingOverMatched->getAmountAvailable(),
                 2
             ))
             ->shouldBeCalledOnce();
-        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->getFundingUnderMatched())
+        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->fundingUnderMatched)
             ->willReturn(bcsub(
-                $this->getFundingUnderMatched()->getAmount(),
-                $this->getFundingUnderMatched()->getAmountAvailable(),
+                $this->fundingUnderMatched->getAmount(),
+                $this->fundingUnderMatched->getAmountAvailable(),
                 2
             ))
             ->shouldBeCalledOnce();
-        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->getFundingUnderMatchedWithNothingAllocated())
+        $fundingWithdrawalRepoProphecy->getWithdrawalsTotal($this->fundingUnderMatchedWithNothingAllocated)
             ->willReturn(bcsub(
-                $this->getFundingUnderMatchedWithNothingAllocated()->getAmount(),
-                $this->getFundingUnderMatchedWithNothingAllocated()->getAmountAvailable(),
+                $this->fundingUnderMatchedWithNothingAllocated->getAmount(),
+                $this->fundingUnderMatchedWithNothingAllocated->getAmountAvailable(),
                 2
             ))
             ->shouldBeCalledOnce();
@@ -165,19 +178,19 @@ class HandleOutOfSyncFundsTest extends TestCase
     {
         $matchingAdapterProphecy = $this->prophesize(Adapter::class);
         $matchingAdapterProphecy
-            ->getAmountAvailable($this->getFundingInSync())
+            ->getAmountAvailable($this->fundingInSync)
             ->willReturn('80.01') // DB amount available === £80.01
             ->shouldBeCalledOnce();
         $matchingAdapterProphecy
-            ->getAmountAvailable($this->getFundingOverMatched())
+            ->getAmountAvailable($this->fundingOverMatched)
             ->willReturn('109.00') // DB amount available === £99.00
             ->shouldBeCalledOnce();
         $matchingAdapterProphecy
-            ->getAmountAvailable($this->getFundingUnderMatched())
+            ->getAmountAvailable($this->fundingUnderMatched)
             ->willReturn('457.65') // DB amount available === £487.65
             ->shouldBeCalledOnce();
         $matchingAdapterProphecy
-            ->getAmountAvailable($this->getFundingUnderMatchedWithNothingAllocated())
+            ->getAmountAvailable($this->fundingUnderMatchedWithNothingAllocated)
             ->willReturn('999.99') // DB amount available === £1000.00
             ->shouldBeCalledOnce();
 
@@ -194,40 +207,53 @@ class HandleOutOfSyncFundsTest extends TestCase
 
     private function getFundingInSync(): CampaignFunding
     {
-        $fundingInSync = new CampaignFunding();
+        $fundingInSync = new CampaignFunding(
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '123.45',
+            amountAvailable: '80.01',
+            allocationOrder: 100,
+        );
         $fundingInSync->setId(1);
-        $fundingInSync->setAmount('123.45');
-        $fundingInSync->setAmountAvailable('80.01');
 
         return $fundingInSync;
     }
 
     private function getFundingOverMatched(): CampaignFunding
     {
-        $fundingOverMatched = new CampaignFunding();
+        $fundingOverMatched = new CampaignFunding(
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '150',
+            amountAvailable: '99.0',
+            allocationOrder: 100
+        );
+
         $fundingOverMatched->setId(2);
-        $fundingOverMatched->setAmount('150');
-        $fundingOverMatched->setAmountAvailable('99.00');
 
         return $fundingOverMatched;
     }
 
     private function getFundingUnderMatched(): CampaignFunding
     {
-        $fundingUnderMatched = new CampaignFunding();
+        $fundingUnderMatched = new CampaignFunding(
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '987.65',
+            amountAvailable: '487.65',
+            allocationOrder: 100
+        );
         $fundingUnderMatched->setId(3);
-        $fundingUnderMatched->setAmount('987.65');
-        $fundingUnderMatched->setAmountAvailable('487.65');
 
         return $fundingUnderMatched;
     }
 
     private function getFundingUnderMatchedWithNothingAllocated(): CampaignFunding
     {
-        $fundingUnderMatchedWithZero = new CampaignFunding();
+        $fundingUnderMatchedWithZero = new CampaignFunding(
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '1000.00',
+            amountAvailable: '1000.00',
+            allocationOrder: 100
+        );
         $fundingUnderMatchedWithZero->setId(4);
-        $fundingUnderMatchedWithZero->setAmount('1000.00');
-        $fundingUnderMatchedWithZero->setAmountAvailable('1000.00');
 
         return $fundingUnderMatchedWithZero;
     }

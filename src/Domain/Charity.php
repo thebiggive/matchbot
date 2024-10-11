@@ -15,9 +15,9 @@ class Charity extends SalesforceReadProxy
 {
     use TimestampsTrait;
 
-    private const GIFT_AID_APPROVED_STATUS = 'Onboarded & Approved';
+    public const string GIFT_AID_APPROVED_STATUS = 'Onboarded & Approved';
 
-    private const GIFT_AID_ONBOARDED_STATUSES = [
+    private const array GIFT_AID_ONBOARDED_STATUSES = [
         'Onboarded',
         'Onboarded & Data Sent to HMRC',
         self::GIFT_AID_APPROVED_STATUS,
@@ -25,7 +25,7 @@ class Charity extends SalesforceReadProxy
         'Onboarded but HMRC Rejected',
     ];
 
-    private const POSSIBLE_GIFT_AID_STATUSES = [
+    private const array POSSIBLE_GIFT_AID_STATUSES = [
         ...self::GIFT_AID_ONBOARDED_STATUSES,
         'Invited to Onboard',
         'Withdrawn',
@@ -197,6 +197,11 @@ class Charity extends SalesforceReadProxy
         $this->tbgApprovedToClaimGiftAid = $tbgApprovedToClaimGiftAid;
     }
 
+    public function getTbgApprovedToClaimGiftAid(): bool
+    {
+        return $this->tbgApprovedToClaimGiftAid;
+    }
+
     /**
      * @throws \UnexpectedValueException if $giftAidOnboardingStatus is not listed in self::POSSIBLE_GIFT_AID_STATUSES
      */
@@ -253,7 +258,7 @@ class Charity extends SalesforceReadProxy
     }
 
     // Remove special characters except spaces
-    public function removeSpecialChars(string $descriptor): string
+    private function removeSpecialChars(string $descriptor): string
     {
         return preg_replace('/[^A-Za-z0-9 ]/', '', $descriptor);
     }

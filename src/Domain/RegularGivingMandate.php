@@ -20,6 +20,8 @@ use UnexpectedValueException;
 #[ORM\HasLifecycleCallbacks]
 class RegularGivingMandate extends SalesforceWriteProxy
 {
+    use TimestampsTrait;
+
     private const int MIN_AMOUNT_PENCE = 1_00;
 
     private const int MAX_AMOUNT_PENCE = 500_00;
@@ -72,6 +74,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         bool $giftAid,
         DayOfMonth $dayOfMonth,
     ) {
+        $this->createdNow();
         $minAmount = Money::fromPence(self::MIN_AMOUNT_PENCE, Currency::GBP);
         $maxAmount = Money::fromPence(self::MAX_AMOUNT_PENCE, Currency::GBP);
         if ($amount->lessThan($minAmount) || $amount->moreThan($maxAmount)) {
@@ -81,8 +84,6 @@ class RegularGivingMandate extends SalesforceWriteProxy
         }
 
         $this->uuid = Uuid::uuid4();
-        $this->createdAt = new \DateTime();
-        $this->updatedAt = new \DateTime();
 
         $this->amount = $amount;
         $this->campaignId = $campaignId->value;
@@ -123,7 +124,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
             'status' => $this->status->apiName(),
-            ];
+        ];
     }
 
     public function firstPaymentDayAfter(\DateTimeImmutable $currentDateTime): \DateTimeImmutable

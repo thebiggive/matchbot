@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching;
 use MatchBot\Client;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
@@ -110,18 +111,12 @@ class FundRepository extends SalesforceReadProxyRepository
                 }
             } else {
                 // Not a previously existing campaign -> create one and set balances without checking for existing ones.
-                $campaignFunding = new CampaignFunding();
-                $campaignFunding->createdNow();
-                $campaignFunding->setFund($fund);
-                $campaignFunding->setCurrencyCode($fund->getCurrencyCode());
-                $campaignFunding->setAmountAvailable($amountForCampaign);
-                $campaignFunding->setAmount($amountForCampaign);
-            }
-
-            if ($fund instanceof Pledge) {
-                $campaignFunding->setAllocationOrder(100);
-            } else {
-                $campaignFunding->setAllocationOrder(200);
+                $campaignFunding = new CampaignFunding(
+                    fund: $fund,
+                    amount: $amountForCampaign,
+                    amountAvailable: $amountForCampaign,
+                    allocationOrder: $fund instanceof Pledge ? 100 : 200,
+                );
             }
 
             // Make the CampaignFunding available to the Campaign. This method is immutable and won't add duplicates
@@ -161,10 +156,15 @@ class FundRepository extends SalesforceReadProxyRepository
 
     protected function getNewFund(array $fundData): Fund
     {
+        $currencyCode = $fundData['currencyCode'] ?? 'GBP';
+        $name = $fundData['name'] ?? '';
+        Assertion::string($currencyCode);
+        Assertion::string($name);
+
         if ($fundData['type'] === Pledge::DISCRIMINATOR_VALUE) {
-            $fund = new Pledge();
+            $fund = new Pledge(currencyCode: $currencyCode, name: $name);
         } elseif ($fundData['type'] === 'championFund') {
-            $fund = new ChampionFund();
+            $fund = new ChampionFund(currencyCode: $currencyCode, name: $name);
         } else {
             throw new \UnexpectedValueException("Unknown fund type '{$fundData['type']}'");
         }

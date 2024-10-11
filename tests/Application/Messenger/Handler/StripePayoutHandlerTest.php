@@ -30,9 +30,9 @@ class StripePayoutHandlerTest extends TestCase
     use DonationTestDataTrait;
     use StripeFormattingTrait;
 
-    private const CONNECTED_ACCOUNT_ID = 'acct_unitTest123';
-    private const DEFAULT_PAYOUT_ID = 'po_externalId_123';
-    private const RETRIED_PAYOUT_ID = 'po_retrySuccess_234';
+    private const string CONNECTED_ACCOUNT_ID = 'acct_unitTest123';
+    private const string DEFAULT_PAYOUT_ID = 'po_externalId_123';
+    private const string RETRIED_PAYOUT_ID = 'po_retrySuccess_234';
 
     public function testUnrecognisedChargeId(): void
     {
@@ -435,9 +435,7 @@ class StripePayoutHandlerTest extends TestCase
             $container->get(StripeClient::class)
         );
 
-        $payoutMessage = (new StripePayout())
-            ->setConnectAccountId(self::CONNECTED_ACCOUNT_ID)
-            ->setPayoutId($payoutId);
+        $payoutMessage = new StripePayout(connectAccountId: self::CONNECTED_ACCOUNT_ID, payoutId: $payoutId);
         $payoutHandler($payoutMessage);
     }
 }

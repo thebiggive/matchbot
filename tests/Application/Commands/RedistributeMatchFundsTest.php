@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Commands;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
@@ -25,6 +26,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Notifier\ChatterInterface;
 
 class RedistributeMatchFundsTest extends TestCase
 {
@@ -177,14 +179,14 @@ class RedistributeMatchFundsTest extends TestCase
     private function getFullyAvailablePledgeFunding(): CampaignFunding
     {
         $pledgeAmount = '101.00';
-        $pledge = new Pledge();
-        $pledgeFunding = new CampaignFunding();
-        $pledgeFunding->setAmount($pledgeAmount);
-        $pledgeFunding->setAmountAvailable($pledgeAmount);
-        $pledgeFunding->setAllocationOrder(100);
-        $pledgeFunding->setFund($pledge);
+        $pledge = new Pledge(currencyCode: 'GBP', name: '');
 
-        return $pledgeFunding;
+        return new CampaignFunding(
+            fund: $pledge,
+            amount: $pledgeAmount,
+            amountAvailable: $pledgeAmount,
+            allocationOrder: 100,
+        );
     }
 
     private function getTenPoundChampionMatchedDonation(): Donation
@@ -199,13 +201,13 @@ class RedistributeMatchFundsTest extends TestCase
         $donation->setSalesforceId('sf_1244');
         $donation->setTransactionId('pi_tenPound123');
 
-        $championFund = new ChampionFund();
-        $campaignFunding = new CampaignFunding();
-        $campaignFunding->setAmount($donationAmount);
-        // We're bypassing normal allocation helpers and will set up the FundingWithdrawal to the test donation below.
-        $campaignFunding->setAmountAvailable('0');
-        $campaignFunding->setAllocationOrder(200);
-        $campaignFunding->setFund($championFund);
+        $championFund = new ChampionFund(currencyCode: 'GBP', name: '');
+        $campaignFunding = new CampaignFunding(
+            fund: $championFund,
+            amount: $donationAmount,
+            amountAvailable: '0',
+            allocationOrder: 200,
+        );
 
         $championFundWithdrawal = new FundingWithdrawal($campaignFunding);
         $championFundWithdrawal->setAmount($donationAmount);
@@ -227,12 +229,15 @@ class RedistributeMatchFundsTest extends TestCase
         ObjectProphecy $loggerProphecy,
     ): RedistributeMatchFunds {
         $command = new RedistributeMatchFunds(
-            campaignFundingRepository: $campaignFundingRepository->reveal(),
-            entityManager: $this->createStub(EntityManagerInterface::class),
-            now: $now,
-            donationRepository: $donationRepoProphecy->reveal(),
-            logger: $loggerProphecy->reveal(),
-            bus: $this->messageBusProphecy->reveal(),
+            matchFundsRedistributor: new MatchFundsRedistributor(
+                chatter: $this->createStub(ChatterInterface::class),
+                donationRepository: $donationRepoProphecy->reveal(),
+                now: $now,
+                campaignFundingRepository: $campaignFundingRepository->reveal(),
+                logger: $loggerProphecy->reveal(),
+                entityManager: $this->createStub(EntityManagerInterface::class),
+                bus: $this->messageBusProphecy->reveal(),
+            ),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());

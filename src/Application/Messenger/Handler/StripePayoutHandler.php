@@ -29,7 +29,7 @@ class StripePayoutHandler
      *          reconcile donations' statuses. We limit the levels to 10, more than we've seen to date, to ensure
      *          we can never end up in an infinite loop.
      */
-    private const MAX_RETRY_DEPTH = 10;
+    private const int MAX_RETRY_DEPTH = 10;
     /** @var string[] */
     private array $processedPayoutIds = [];
 
@@ -44,8 +44,8 @@ class StripePayoutHandler
     public function __invoke(StripePayout $payout): void
     {
         $count = 0;
-        $connectAccountId = $payout->getConnectAccountId();
-        $payoutId = $payout->getPayoutId();
+        $connectAccountId = $payout->connectAccountId;
+        $payoutId = $payout->payoutId;
 
         try {
             $payoutInfo = $this->processSuccessfulPayout(

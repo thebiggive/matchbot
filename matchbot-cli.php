@@ -7,6 +7,7 @@ $psr11App = require __DIR__ . '/bootstrap.php';
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\ClaimGiftAid;
 use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
@@ -17,10 +18,12 @@ use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
+use MatchBot\Application\Commands\SendStatistics;
 use MatchBot\Application\Commands\SetupTestMandate;
 use MatchBot\Application\Commands\TakeRegularGivingDonations;
 use MatchBot\Application\Commands\UpdateCampaigns;
 use MatchBot\Application\Matching;
+use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
@@ -52,6 +55,7 @@ assert($chatter instanceof ChatterInterface);
  */
 $now = new \DateTimeImmutable('now');
 $commands = [
+    $psr11App->get(CallFrequentTasks::class),
     new ClaimGiftAid(
         $psr11App->get(DonationRepository::class),
         $psr11App->get(EntityManagerInterface::class),
@@ -72,12 +76,7 @@ $commands = [
     new ExpireMatchFunds($psr11App->get(DonationRepository::class)),
     $psr11App->get(HandleOutOfSyncFunds::class),
     new RedistributeMatchFunds(
-        campaignFundingRepository: $psr11App->get(CampaignFundingRepository::class),
-        entityManager: $psr11App->get(EntityManagerInterface::class),
-        now: $now,
-        donationRepository: $psr11App->get(DonationRepository::class),
-        logger: $psr11App->get(LoggerInterface::class),
-        bus: $psr11App->get(RoutableMessageBus::class),
+        matchFundsRedistributor: $psr11App->get(MatchFundsRedistributor::class),
     ),
     new ScheduledOutOfSyncFundsCheck(
         $psr11App->get(CampaignFundingRepository::class),
@@ -96,6 +95,7 @@ $commands = [
     ),
     new RetrospectivelyMatch(
         donationRepository: $psr11App->get(DonationRepository::class),
+        matchFundsRedistributor: $psr11App->get(MatchFundsRedistributor::class),
         chatter: $chatter,
         bus: $psr11App->get(RoutableMessageBus::class),
         entityManager: $psr11App->get(EntityManagerInterface::class),
@@ -106,8 +106,9 @@ $commands = [
         $psr11App->get(FundRepository::class),
         $psr11App->get(LoggerInterface::class),
     ),
-    $psr11App->get(TakeRegularGivingDonations::class),
+    $psr11App->get(SendStatistics::class),
     $psr11App->get(SetupTestMandate::class),
+    $psr11App->get(TakeRegularGivingDonations::class),
 ];
 
 foreach ($commands as $command) {

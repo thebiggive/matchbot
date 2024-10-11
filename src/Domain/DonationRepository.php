@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
-use Brick\DateTime\Instant;
-use Brick\DateTime\LocalDate;
-use Brick\DateTime\TimeZone;
 use DateTime;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
@@ -33,7 +30,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 class DonationRepository extends SalesforceWriteProxyRepository
 {
     /** Maximum of each type of pending object to process */
-    private const MAX_PER_BULK_PUSH = 5_000;
+    private const int MAX_PER_BULK_PUSH = 5_000;
 
     private const int MAX_SALEFORCE_FIELD_UPDATE_TRIES = 3;
 
@@ -47,7 +44,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      *
      * @link https://github.com/thebiggive/donate-frontend/blob/8e689db34fb747d0b2fd15378543649a5c34074e/src/environments/environment.production.ts
      */
-    private const EXPIRY_SECONDS = 32 * 60; // 32 minutes: 30 min official timed window plus 2 mins grace.
+    private const int EXPIRY_SECONDS = 32 * 60; // 32 minutes: 30 min official timed window plus 2 mins grace.
 
     private Matching\Adapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
@@ -456,6 +453,80 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
+     * Taking a now-ish input that's typically the floor of the current minute and
+     * looking between $nowish-16 minutes and
+     * $nowish-1 minutes for donations with >£0 matching assigned, returns:
+     * * if there are less than 20 such donations, null; or
+     * * if there are 20+ such donations, the ratio of those which are complete.
+     */
+    public function getRecentHighVolumeCompletionRatio(\DateTimeImmutable $nowish): ?float
+    {
+        $oneMinutePrior = $nowish->sub(new \DateInterval('PT1M'));
+        $sixteenMinutesPrior = $nowish->sub(new \DateInterval('PT16M'));
+
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT
+            COUNT(d.id) as donationCount, 
+            SUM(CASE WHEN d.donationStatus IN (:completeStatuses) THEN 1 ELSE 0 END) as completeCount
+            FROM MatchBot\Domain\Donation d 
+            LEFT JOIN d.fundingWithdrawals fw
+            WHERE d.createdAt >= :start
+            AND d.createdAt < :end
+            HAVING SUM(fw.amount) > 0
+        DQL
+        );
+        $query->setParameter('start', $sixteenMinutesPrior);
+        $query->setParameter('end', $oneMinutePrior);
+        $query->setParameter(
+            'completeStatuses',
+            array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES),
+        );
+
+        /**
+         * @var array{donationCount: int, completeCount: int}|null $result
+         */
+        $result = $query->getOneOrNullResult(Query::HYDRATE_ARRAY);
+
+        if ($result === null || $result['donationCount'] < 20) {
+            return null;
+        }
+
+        return (float) $result['completeCount'] / $result['donationCount'];
+    }
+
+    public function countDonationsCreatedInMinuteTo(\DateTimeImmutable $end): int
+    {
+        $oneMinutePrior = $end->sub(new \DateInterval('PT1M'));
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT COUNT(d.id)
+            FROM MatchBot\Domain\Donation d
+            WHERE d.createdAt >= :start
+            AND d.createdAt < :end
+        DQL
+        )
+            ->setParameter('start', $oneMinutePrior)
+            ->setParameter('end', $end);
+
+        return (int) $query->getSingleScalarResult();
+    }
+
+    public function countDonationsCollectedInMinuteTo(\DateTimeImmutable $end): int
+    {
+        $oneMinutePrior = $end->sub(new \DateInterval('PT1M'));
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT COUNT(d.id)
+            FROM MatchBot\Domain\Donation d
+            WHERE d.collectedAt >= :start
+            AND d.collectedAt < :end
+        DQL
+        )
+            ->setParameter('start', $oneMinutePrior)
+            ->setParameter('end', $end);
+
+        return (int) $query->getSingleScalarResult();
+    }
+
+    /**
      * Give up on pushing Cancelled donations to Salesforce after a few minutes. For example,
      * this was needed after CC21 for a last minute donation that could not be persisted in
      * Salesforce because the campaign close date had passed before it reached SF.
@@ -720,7 +791,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 // Seen only at fairly quiet times *and* before we increased DB wait_timeout from 8 hours
                 // to just over workers' max lifetime of 24 hours. Should happen rarely or never with new DB config.
                 $tries++;
-                $this->logError(sprintf(
+                $this->logWarning(sprintf(
                     '%s: Connection lost while setting Salesforce fields on donation %s, try #%d',
                     get_class($exception),
                     $uuid,
@@ -729,7 +800,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             }
         } while ($tries < self::MAX_SALEFORCE_FIELD_UPDATE_TRIES);
 
-        $this->logWarning(
+        $this->logError(
             "Failed to set Salesforce fields for donation $uuid after $tries tries"
         );
     }

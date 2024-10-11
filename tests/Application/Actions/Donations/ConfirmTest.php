@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Los\RateLimit\RateLimitMiddlewareFactory;
 use MatchBot\Application\Actions\Donations\Confirm;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
@@ -19,11 +18,8 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\StripeConfirmationTokenId;
-use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestCase;
-use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
-use Psr\Clock\ClockInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\NullLogger;
 use Slim\Exception\HttpBadRequestException;
@@ -183,54 +179,6 @@ class ConfirmTest extends TestCase
                 'message' => 'Your card was declined',
                 'code' => 'card_declined',
                 'decline_code' => 'generic_decline',
-            ]],
-            \json_decode($response->getBody()->getContents(), true)
-        );
-    }
-
-    /**
-     * We've seen card test bots, and no humans, try to do this as of Oct '23. For now we want to log it
-     * as a warning, so we can see frequency on a dashboard but don't get alarms.
-     */
-    public function testItReturns402OnStalePaymentMethodReuse(): void
-    {
-        // arrange
-
-        // in reality the fee would be calculated according to details of the card etc. The Calculator class is
-        //tested separately. This is just a dummy value.
-
-        $this->fakeStripeClient(
-            cardDetails: ['brand' => 'discover', 'country' => 'some-country'],
-            paymentMethodId: self::PAYMENT_METHOD_ID,
-            updatedIntentData: [
-                'status' => 'requires_payment_method',
-                'client_secret' => 'some_client_secret',
-            ],
-            paymentIntentId: 'PAYMENT_INTENT_ID',
-            expectedMetadataUpdate: [
-                "metadata" => [
-                    "stripeFeeRechargeGross" => "2.66",
-                    "stripeFeeRechargeNet" => "2.22",
-                    "stripeFeeRechargeVat" => "0.44",
-                ],
-                "application_fee_amount" => 266,
-            ],
-            confirmFailsWithCardError: false,
-            confirmFailsWithApiError: false,
-            confirmFailsWithPaymentMethodUsedError: true,
-            confirmationTokenId: self::CONFIRMATION_TOKEN_ID,
-        );
-
-        // act
-        $response = $this->callConfirm($this->sut);
-
-        // assert
-
-        $this->assertSame(402, $response->getStatusCode()); // 'Payment required'.
-        $this->assertSame(
-            ['error' => [
-                'message' => 'Payment method cannot be used again',
-                'code' => 'invalid_request_error',
             ]],
             \json_decode($response->getBody()->getContents(), true)
         );

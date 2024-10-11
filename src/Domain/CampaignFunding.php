@@ -73,9 +73,25 @@ class CampaignFunding extends Model
     #[ORM\Column(type: 'integer')]
     protected int $allocationOrder;
 
-    public function __construct()
-    {
+    /**
+     * @param numeric-string $amountAvailable
+     * @param numeric-string $amount
+     * @param positive-int $allocationOrder
+     */
+    public function __construct(
+        Fund $fund,
+        string $amount,
+        string $amountAvailable,
+        int $allocationOrder
+    ) {
+        $this->fund = $fund;
+        $this->currencyCode = $fund->getCurrencyCode();
+        $this->amount = $amount;
+        $this->amountAvailable = $amountAvailable;
+        $this->allocationOrder = $allocationOrder;
+
         $this->campaigns = new ArrayCollection();
+        $this->createdNow();
     }
 
     public function __toString(): string
@@ -118,14 +134,6 @@ class CampaignFunding extends Model
     }
 
     /**
-     * @param Fund $fund
-     */
-    public function setFund(Fund $fund): void
-    {
-        $this->fund = $fund;
-    }
-
-    /**
      * Add a Campaign to those for which this CampaignFunding is available, *if* not already linked.
      *
      * @param Campaign $campaign
@@ -139,21 +147,18 @@ class CampaignFunding extends Model
         $this->campaigns->add($campaign);
     }
 
+    /**
+     * Currently only used in test
+     * @return list<Campaign>
+     */
+    public function getCampaigns(): array
+    {
+        return array_values($this->campaigns->toArray());
+    }
+
     public function getAllocationOrder(): int
     {
         return $this->allocationOrder;
-    }
-
-    /**
-     * @param int $allocationOrder
-     */
-    public function setAllocationOrder(int $allocationOrder): void
-    {
-        if ($allocationOrder < 0) {
-            throw new \LogicException('Allocation order must be a positive integer');
-        }
-
-        $this->allocationOrder = $allocationOrder;
     }
 
     /**
@@ -167,10 +172,5 @@ class CampaignFunding extends Model
     public function getCurrencyCode(): string
     {
         return $this->currencyCode;
-    }
-
-    public function setCurrencyCode(string $currencyCode): void
-    {
-        $this->currencyCode = $currencyCode;
     }
 }

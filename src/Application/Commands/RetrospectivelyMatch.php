@@ -7,8 +7,10 @@ namespace MatchBot\Application\Commands;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\DonationRepository;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -27,25 +29,25 @@ use Symfony\Component\Notifier\Message\ChatMessage;
  * If not argument (number of days) is given, campaigns which closed within the last hour are checked
  * and all of their donations are eligible for matching.
  */
+#[AsCommand(
+    name: 'matchbot:retrospectively-match',
+    description: 'Allocates matching for just-closed campaigns\' donations, or the last N days\' donations, if
+    missed due to pending reservations, refunds etc.'
+)]
 class RetrospectivelyMatch extends LockingCommand
 {
-    protected static $defaultName = 'matchbot:retrospectively-match';
-
     public function __construct(
         private DonationRepository $donationRepository,
         private ChatterInterface $chatter,
         private RoutableMessageBus $bus,
         private EntityManagerInterface $entityManager,
+        private MatchFundsRedistributor $matchFundsRedistributor,
     ) {
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this->setDescription(
-            "Allocates matching for just-closed campaigns' donations, or the " .
-            "last N days' donations, if missed due to pending reservations, refunds etc."
-        );
         $this->addArgument(
             'days-back',
             InputArgument::OPTIONAL,
@@ -116,6 +118,9 @@ class RetrospectivelyMatch extends LockingCommand
 
             $this->chatter->send($chatMessage);
         }
+
+        [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();
+        $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
 
         return 0;
     }

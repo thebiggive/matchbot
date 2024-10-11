@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Commands;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
+use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
@@ -29,12 +30,18 @@ class RetrospectivelyMatchTest extends TestCase
     /** @var ObjectProphecy<RoutableMessageBus> */
     private ObjectProphecy $messageBusProphecy;
 
+    /**
+     * @var ObjectProphecy<MatchFundsRedistributor>
+     */
+    private ObjectProphecy $matchFundsRedistributorProphecy;
+
     public function setUp(): void
     {
         $chatterProphecy = $this->prophesize(ChatterInterface::class);
         $this->chatter = $chatterProphecy->reveal();
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
         $this->messageBusProphecy->dispatch(Argument::type(Envelope::class), Argument::cetera())->willReturnArgument();
+        $this->matchFundsRedistributorProphecy = $this->prophesize(MatchFundsRedistributor::class);
     }
 
     /**
@@ -43,12 +50,14 @@ class RetrospectivelyMatchTest extends TestCase
     public function testMissingDaysBackRunsInDefaultMode(): void
     {
         $commandTester = $this->getCommandTester(matchingIsAllocated: true);
+        $this->matchFundsRedistributorProphecy->redistributeMatchFunds()->shouldBeCalledOnce()->willReturn([3, 2]);
         $commandTester->execute([]);
 
         $expectedOutputLines = [
             'matchbot:retrospectively-match starting!',
             'Automatically evaluating campaigns which closed in the past hour',
             'Retrospectively matched 1 of 1 donations. £123.45 total new matching, across 1 campaigns.',
+            'Checked 3 donations and redistributed matching for 2',
             'matchbot:retrospectively-match complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -58,12 +67,14 @@ class RetrospectivelyMatchTest extends TestCase
     public function testNonWholeDaysBackIsRounded(): void
     {
         $commandTester = $this->getCommandTester(matchingIsAllocated: false);
+        $this->matchFundsRedistributorProphecy->redistributeMatchFunds()->shouldBeCalledOnce()->willReturn([3, 2]);
         $commandTester->execute(['days-back' => '7.5']);
 
         $expectedOutputLines = [
             'matchbot:retrospectively-match starting!',
             "Looking at past 8 days' donations",
             'Retrospectively matched 0 of 0 donations. £0.00 total new matching, across 0 campaigns.',
+            'Checked 3 donations and redistributed matching for 2',
             'matchbot:retrospectively-match complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -73,12 +84,14 @@ class RetrospectivelyMatchTest extends TestCase
     public function testWholeDaysBackProceeds(): void
     {
         $commandTester = $this->getCommandTester(matchingIsAllocated: false);
+        $this->matchFundsRedistributorProphecy->redistributeMatchFunds()->shouldBeCalledOnce()->willReturn([3, 2]);
         $commandTester->execute(['days-back' => '8']);
 
         $expectedOutputLines = [
             'matchbot:retrospectively-match starting!',
             "Looking at past 8 days' donations",
             'Retrospectively matched 0 of 0 donations. £0.00 total new matching, across 0 campaigns.',
+            'Checked 3 donations and redistributed matching for 2',
             'matchbot:retrospectively-match complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -114,6 +127,7 @@ class RetrospectivelyMatchTest extends TestCase
             $this->chatter,
             $this->messageBusProphecy->reveal(),
             $this->createStub(EntityManagerInterface::class),
+            $this->matchFundsRedistributorProphecy->reveal()
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
