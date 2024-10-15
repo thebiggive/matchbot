@@ -27,6 +27,11 @@ class Identity
         return '/v1/people/12345678-1234-1234-1234-1234567890ab/donations';
     }
 
+    public static function getTestPersonMandateEndpoint(): string
+    {
+        return '/v1/people/12345678-1234-1234-1234-1234567890ab/regular-giving';
+    }
+
     /**
      * @see self::getTestIdentityTokenIncomplete()
      */

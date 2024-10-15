@@ -56,6 +56,11 @@ return function (App $app) {
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
+        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/regular-giving', RegularGivingMandate\Create::class)
+            ->add(PersonManagementAuthMiddleware::class)
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
+
         // TODO Discuss moving this to e.g. /people/{personId}/mandates for consistency & easier understanding
         // of the available endpoints.
         $versionGroup->get('/regular-giving/my-donation-mandates', RegularGivingMandate\GetAllForUser::class)

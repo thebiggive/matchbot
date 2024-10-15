@@ -221,6 +221,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
         return $donation;
     }
 
+    /**
+     * @return Salesforce18Id<Campaign>
+     */
     public function getCampaignId(): Salesforce18Id
     {
         return Salesforce18Id::ofCampaign($this->campaignId);
