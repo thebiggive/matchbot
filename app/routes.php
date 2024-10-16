@@ -50,12 +50,6 @@ return function (App $app) {
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
-        // TODO Migrate Donate to the less confusing endpoint above, then delete this one.
-        $versionGroup->post('/{personId:[a-z0-9-]{36}}/donor-account', DonorAccount\Create::class)
-            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
-            ->add($ipMiddleware)
-            ->add(RateLimitMiddleware::class);
-
         $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/regular-giving', RegularGivingMandate\Create::class)
             ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
