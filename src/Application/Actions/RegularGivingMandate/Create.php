@@ -56,10 +56,9 @@ class Create extends Action
             $exceptionType = get_class($exception);
 
             return $this->validationError(
-                $response,
-                "$message: $exceptionType - {$exception->getMessage()}",
-                $message,
-                empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
+                response: $response,
+                logMessage: "$message: $exceptionType - {$exception->getMessage()}",
+                publicMessage: $message,
             );
         }
 

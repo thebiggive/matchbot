@@ -57,7 +57,7 @@ return function (App $app) {
             ->add(RateLimitMiddleware::class);
 
         $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/regular-giving', RegularGivingMandate\Create::class)
-            ->add(PersonManagementAuthMiddleware::class)
+            ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
