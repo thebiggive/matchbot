@@ -291,7 +291,21 @@ paths:
           description: Donor account features enabled
         '400':
           description: Invalid data or already enabled
-
+  /people/{personId}/regular-giving:
+    post:
+      description: Create a regular giving mandate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MandateCreationRequest'
+      responses:
+        '201':
+          description: Regular giving mandate created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegularGivingMandate'
   /regular-giving/my-donation-mandates:
     get:
       operationId: listMandates
@@ -550,6 +564,20 @@ components:
           type: string
           format: date-time
           example: '2020-01-11T08:07:06.005Z'
+
+    MandateCreationRequest:
+      type: object
+      properties:
+        amountInPence:
+          type: integer
+        currency:
+          type: string
+        dayOfMonth:
+          type: integer
+        giftAid:
+          type: boolean
+        campaignId:
+          type: string
 
     RegularGivingMandate:
       type: object

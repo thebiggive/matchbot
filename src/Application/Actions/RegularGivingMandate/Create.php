@@ -29,6 +29,7 @@ class Create extends Action
         private CampaignRepository $campaignRepository,
         private SerializerInterface $serializer,
         private EntityManagerInterface $em,
+        private \DateTimeImmutable $now,
     ) {
         parent::__construct($logger);
     }
@@ -106,6 +107,6 @@ class Create extends Action
         // when the mandate is active.
 
         $this->em->flush();
-        return new JsonResponse(['mandate' => ['id' => $mandate->getId()]], 201);
+        return new JsonResponse($mandate->toFrontEndApiModel($charity, $this->now), 201);
     }
 }
