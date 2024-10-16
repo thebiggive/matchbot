@@ -572,6 +572,7 @@ components:
           type: integer
         currency:
           type: string
+          enum: ["GBP"]
         dayOfMonth:
           type: integer
         giftAid:
@@ -589,7 +590,13 @@ components:
           type: string
           format: uuid
         amount:
-          type: number
+          type: object
+          properties:
+            amountInPence:
+              type: integer
+            currency:
+              type: string
+              enum: ["GBP"]
         campaignId:
           type: string
           description: Salesforce ID
