@@ -20,29 +20,63 @@ readonly class MandateService
     ) {
     }
 
-
-    /**
-     * @param Salesforce18Id<Campaign> $campaignId
-     * @param Salesforce18Id<Charity> $charityId
-     */
     public function setupNewMandate(
         PersonId $donorID,
         Money $amount,
-        Salesforce18Id $campaignId,
-        Salesforce18Id $charityId,
+        Campaign $campaign,
         bool $giftAid,
         DayOfMonth $dayOfMonth,
     ): RegularGivingMandate {
+        $charityId = Salesforce18Id::ofCharity(
+            $campaign->getCharity()->getSalesforceId() ?? throw new \Exception('missing charity SF ID')
+        );
+
+        /**
+         * For now we assume this exists - @todo-regular-giving ensure that for all accounts (or all accounts that
+         * might need it) the account is in the DB with the UUID filled in before this point.
+         */
+        $donor = $this->donorAccountRepository->findByPersonId($donorID);
+        if ($donor === null) {
+            throw new \Exception("donor not found with ID {$donorID->id}");
+        }
+
         $mandate = new RegularGivingMandate(
             donorId: $donorID,
             amount: $amount,
-            campaignId: $campaignId,
+            campaignId: Salesforce18Id::ofCampaign(
+                $campaign->getSalesforceId() ?? throw new \Exception('missing campaign SF ID')
+            ),
             charityId: $charityId,
             giftAid: $giftAid,
             dayOfMonth: $dayOfMonth,
         );
 
         $this->entityManager->persist($mandate);
+        $this->entityManager->flush();
+
+        $firstDonation = new Donation(
+            amount: $amount->toNumericString(),
+            currencyCode: $amount->currency->isoCode(),
+            paymentMethodType: PaymentMethodType::Card,
+            campaign: $campaign,
+            charityComms: false,
+            championComms: false,
+            pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            optInTbgEmail: false,
+            donorName: $donor->donorName,
+            emailAddress: $donor->emailAddress,
+            countryCode: $donor->getBillingCountryCode(),
+            tipAmount: '0',
+            mandate: $mandate,
+            mandateSequenceNumber: DonationSequenceNumber::of(1)
+        );
+        $this->donationService->enrollNewDonation($firstDonation);
+        // @todo-regular-giving - throw if first donation is not fully matched unless donor has said they're OK with
+        //                        that.
+        // @todo-regular-giving - collect first donation
+        // @todo-regular-giving - do same for 2nd and third donations except those are just to be preauthed and enrolled
+        //                        and checked for matching, not collected at this point.
+
         $this->entityManager->flush();
 
         return $mandate;

@@ -80,10 +80,7 @@ class Create extends Action
         $mandate = $this->mandateService->setupNewMandate(
             donorID: PersonId::of($donorIdString),
             amount: $mandateData->amount,
-            campaignId: $mandateData->campaignId,
-            charityId: Salesforce18Id::ofCharity(
-                $charity->getSalesforceId() ?? throw new \Exception('missing charity SF ID')
-            ),
+            campaign: $campaign,
             giftAid: $mandateData->giftAid,
             dayOfMonth: $mandateData->dayOfMonth,
         );
