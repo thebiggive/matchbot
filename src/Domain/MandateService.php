@@ -20,6 +20,34 @@ readonly class MandateService
     ) {
     }
 
+
+    /**
+     * @param Salesforce18Id<Campaign> $campaignId
+     * @param Salesforce18Id<Charity> $charityId
+     */
+    public function setupNewMandate(
+        PersonId $donorID,
+        Money $amount,
+        Salesforce18Id $campaignId,
+        Salesforce18Id $charityId,
+        bool $giftAid,
+        DayOfMonth $dayOfMonth,
+    ): RegularGivingMandate {
+        $mandate = new RegularGivingMandate(
+            donorId: $donorID,
+            amount: $amount,
+            campaignId: $campaignId,
+            charityId: $charityId,
+            giftAid: $giftAid,
+            dayOfMonth: $dayOfMonth,
+        );
+
+        $this->entityManager->persist($mandate);
+        $this->entityManager->flush();
+
+        return $mandate;
+    }
+
     public function makeNextDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
         $mandateId = $mandate->getId();
