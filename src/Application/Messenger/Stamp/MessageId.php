@@ -8,7 +8,7 @@ use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Messenger\Stamp\StampInterface;
 
-class MessageId implements StampInterface
+readonly class MessageId implements StampInterface
 {
     private UuidInterface $messageId;
 
