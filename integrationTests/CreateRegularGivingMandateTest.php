@@ -4,19 +4,40 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Actions\Donations;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use GuzzleHttp\Psr7\ServerRequest;
+use MatchBot\Domain\DonorAccount;
+use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\PersonId;
 use MatchBot\IntegrationTests\IntegrationTest;
 use MatchBot\Tests\TestData;
+use Prophecy\Argument;
 use Psr\Http\Message\ResponseInterface;
+use MatchBot\Client\Stripe;
+use Stripe\PaymentIntent;
 
 class CreateRegularGivingMandateTest extends IntegrationTest
 {
     public function testItCreatesRegularGivingMandate(): void
     {
+        // arrange
         $pencePerMonth = random_int(1_00, 500_00);
 
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        $paymentIntentId = 'payment-intent-id-' . $this->randomString();
+        $stripeProphecy->createPaymentIntent(
+            Argument::that(fn(array $payload) => ($payload['amount'] === $pencePerMonth))
+        )
+            ->shouldBeCalledOnce()
+            ->willReturn(new PaymentIntent($paymentIntentId));
+        $this->getContainer()->set(Stripe::class, $stripeProphecy->reveal());
+
+        $this->ensureDbHasDonorAccount();
+
+        // act
         $response = $this->createRegularGivingMandate($pencePerMonth);
 
+        // assert
         $this->assertSame(201, $response->getStatusCode());
         $mandateDatabaseRows = $this->db()->executeQuery(
             "SELECT * from RegularGivingMandate where amount_amountInPence = ?",
@@ -56,5 +77,18 @@ class CreateRegularGivingMandateTest extends IntegrationTest
                 serverParams: ['REMOTE_ADDR' => '127.0.0.1']
             )
         );
+    }
+
+    private function ensureDbHasDonorAccount(): void
+    {
+        $donorAccount = TestData\Identity::donorAccount();
+        $repository = $this->getService(DonorAccountRepository::class);
+
+        // previously I did a try-catch for UniqueConstraintViolationException but that's no good,
+        // the entity manager goes away when it throws that.
+
+        if (! $repository->findByPersonId($donorAccount->id())) {
+            $repository->save($donorAccount);
+        }
     }
 }
