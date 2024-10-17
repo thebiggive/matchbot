@@ -17,7 +17,7 @@ readonly class AddOrLogMessageId implements MiddlewareInterface
     {
     }
 
-    /** @psalm-suppress PossiblyUnusedReturnValue sig must match interface */
+    /** @psalm-suppress PossiblyUnusedReturnValue Messenger uses value; our test doesn't */
     public function handle(Envelope $envelope, StackInterface $stack): Envelope
     {
         $existingMessageIdStamp = $envelope->last(MessageId::class);
