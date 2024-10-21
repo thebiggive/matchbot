@@ -10,6 +10,7 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\MandateCreate;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\PersonId;
@@ -87,6 +88,13 @@ class Create extends Action
                 dayOfMonth: $mandateData->dayOfMonth,
             );
         } catch (WrongCampaignType $e) {
+            return $this->validationError(
+                $response,
+                $e->getMessage(),
+                null,
+                false,
+            );
+        } catch (NotFullyMatched $e) {
             return $this->validationError(
                 $response,
                 $e->getMessage(),

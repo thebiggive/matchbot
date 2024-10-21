@@ -1609,4 +1609,9 @@ class Donation extends SalesforceWriteProxy
 
         return $payload;
     }
+
+    public function isFullyMatched(): bool
+    {
+        return bccomp($this->amount, $this->getFundingWithdrawalTotal(), 2) == 0;
+    }
 }

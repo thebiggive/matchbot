@@ -5,6 +5,7 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
+use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 
@@ -29,6 +30,7 @@ readonly class RegularGivingService
      * @throws DomainException\CouldNotMakeStripePaymentIntent
      * @throws DomainException\StripeAccountIdNotSetForAccount
      * @throws WrongCampaignType
+     * @throws NotFullyMatched
      * @throws \Doctrine\DBAL\Exception\ServerException
      * @throws \Doctrine\ORM\Exception\ORMException
      * @throws \MatchBot\Client\CampaignNotReady
@@ -92,6 +94,12 @@ readonly class RegularGivingService
             mandateSequenceNumber: DonationSequenceNumber::of(1)
         );
         $this->donationService->enrollNewDonation($firstDonation);
+        if (! $firstDonation->isFullyMatched()) {
+            throw new NotFullyMatched(
+                "Donation could not be fully matched, need to match {$firstDonation->getAmount()}," .
+                " only matched {$firstDonation->getFundingWithdrawalTotal()}"
+            );
+        }
         // @todo-regular-giving - throw if first donation is not fully matched unless donor has said they're OK with
         //                        that.
         // @todo-regular-giving - collect first donation
