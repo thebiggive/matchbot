@@ -11,7 +11,7 @@ use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\MandateCreate;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\WrongCampaignType;
-use MatchBot\Domain\MandateService;
+use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
@@ -26,7 +26,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 class Create extends Action
 {
     public function __construct(
-        private MandateService $mandateService,
+        private RegularGivingService $mandateService,
         private Environment $environment,
         LoggerInterface $logger,
         private CampaignRepository $campaignRepository,

@@ -14,7 +14,8 @@ use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
-use MatchBot\Domain\MandateService;
+use MatchBot\Domain\RegularGivingMandateRepository;
+use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
@@ -27,7 +28,7 @@ use Psr\Log\LoggerInterface;
 /**
 
  */
-class MandateServiceTest extends TestCase
+class RegularGivingServiceTest extends TestCase
 {
     /** @var ObjectProphecy<DonationRepository> */
     private ObjectProphecy $donationRepositoryProphecy;
@@ -106,9 +107,9 @@ class MandateServiceTest extends TestCase
         $this->assertNull($donation);
     }
 
-    public function makeSut(\DateTimeImmutable $simulatedNow): MandateService
+    public function makeSut(\DateTimeImmutable $simulatedNow): RegularGivingService
     {
-        return new MandateService(
+        return new RegularGivingService(
             now: $simulatedNow,
             donationRepository: $this->donationRepositoryProphecy->reveal(),
             donorAccountRepository: $this->donorAccountRepositoryProphecy->reveal(),
@@ -116,6 +117,7 @@ class MandateServiceTest extends TestCase
             entityManager: $this->createStub(EntityManagerInterface::class),
             donationService: $this->createStub(DonationService::class),
             log: $this->createStub(LoggerInterface::class),
+            regularGivingMandateRepository: $this->createStub(RegularGivingMandateRepository::class),
         );
     }
 
