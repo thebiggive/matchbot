@@ -78,10 +78,10 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
-     * @return bool does this campaign accept ad-hoc giving, i.e. non-regular giving.
+     * @return bool does this campaign accept one-off giving, i.e. non-regular giving.
      * @see self::isRegularGiving()
      */
-    public function isAdHocGiving(): bool
+    public function isOneOffGiving(): bool
     {
         return true;
     }
@@ -92,7 +92,7 @@ class Campaign extends SalesforceReadProxy
     public function isRegularGiving(): bool
     {
         /* @todo-regular-giving - make this a property pulled from the Salesforce campaign when available.
-         *                        then update @see self::isAdHocGiving() to return the opposite of this
+         *                        then update @see self::isOneOffGiving() to return the opposite of this
          */
         return true;
     }

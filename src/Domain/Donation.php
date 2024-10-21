@@ -211,7 +211,7 @@ class Donation extends SalesforceWriteProxy
      * Position in sequence of donations taken in relation to a regular giving mandate, e.g. 1st
      * (taken at mandate creation time), 2nd, 3rd etc.
      *
-     * Null only iff this is an ad-hoc, non regular-giving donation.
+     * Null only iff this is a one-off, non regular-giving donation.
      *
      * @psalm-suppress PossiblyUnusedProperty - used in DQL
      */

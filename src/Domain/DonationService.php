@@ -178,7 +178,7 @@ class DonationService
     /**
      * Finalized a donation, instructing stripe to attempt to take payment.
      *
-     * $tokenId will be StripeConformationTokenId for ad-hoc payments, StripePaymentMethodId for regular giving.
+     * $tokenId will be StripeConformationTokenId for one off payments, StripePaymentMethodId for regular giving.
      * @todo-regular-giving separate out into two functions and avoid instanceof
      */
     private function confirm(
@@ -256,9 +256,9 @@ class DonationService
             throw new CampaignNotOpen("Campaign {$campaign->getSalesforceId()} is not open");
         }
 
-        if (! $campaign->isAdHocGiving()) {
+        if (! $campaign->isOneOffGiving()) {
             throw new WrongCampaignType(
-                "Campaign {$campaign->getSalesforceId()} does not accept ad-hoc giving (regular-giving only)"
+                "Campaign {$campaign->getSalesforceId()} does not accept one-off giving (regular-giving only)"
             );
         }
 
