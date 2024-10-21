@@ -75,7 +75,6 @@ readonly class RegularGivingService
         );
 
         $this->entityManager->persist($mandate);
-        $this->entityManager->flush();
 
         $firstDonation = new Donation(
             amount: $amount->toNumericString(),
