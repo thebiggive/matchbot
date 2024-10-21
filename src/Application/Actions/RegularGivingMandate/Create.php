@@ -10,6 +10,7 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\MandateCreate;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\MandateService;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
@@ -77,13 +78,22 @@ class Create extends Action
 
         // create donor account if not existing. For now we assume the donor account already exists in the Matchbot DB.
 
-        $mandate = $this->mandateService->setupNewMandate(
-            donorID: PersonId::of($donorIdString),
-            amount: $mandateData->amount,
-            campaign: $campaign,
-            giftAid: $mandateData->giftAid,
-            dayOfMonth: $mandateData->dayOfMonth,
-        );
+        try {
+            $mandate = $this->mandateService->setupNewMandate(
+                donorID: PersonId::of($donorIdString),
+                amount: $mandateData->amount,
+                campaign: $campaign,
+                giftAid: $mandateData->giftAid,
+                dayOfMonth: $mandateData->dayOfMonth,
+            );
+        } catch (WrongCampaignType $e) {
+            return $this->validationError(
+                $response,
+                $e->getMessage(),
+                null,
+                false,
+            );
+        }
 
         // create first three pending donations for mandate.
 

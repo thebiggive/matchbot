@@ -4,6 +4,8 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\DomainException\CampaignNotOpen;
+use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 
 readonly class MandateService
@@ -20,6 +22,18 @@ readonly class MandateService
     ) {
     }
 
+    /**
+     * @throws CampaignNotOpen
+     * @throws DomainException\CharityAccountLacksNeededCapaiblities
+     * @throws DomainException\CouldNotMakeStripePaymentIntent
+     * @throws DomainException\StripeAccountIdNotSetForAccount
+     * @throws WrongCampaignType
+     * @throws \Doctrine\DBAL\Exception\ServerException
+     * @throws \Doctrine\ORM\Exception\ORMException
+     * @throws \MatchBot\Client\CampaignNotReady
+     * @throws \MatchBot\Client\NotFoundException
+     * @throws \Symfony\Component\Notifier\Exception\TransportExceptionInterface
+     */
     public function setupNewMandate(
         PersonId $donorID,
         Money $amount,
@@ -27,6 +41,12 @@ readonly class MandateService
         bool $giftAid,
         DayOfMonth $dayOfMonth,
     ): RegularGivingMandate {
+        if (! $campaign->isRegularGiving()) {
+            throw new WrongCampaignType(
+                "Campaign {$campaign->getSalesforceId()} does not accept regular giving"
+            );
+        }
+
         $charityId = Salesforce18Id::ofCharity(
             $campaign->getCharity()->getSalesforceId() ?? throw new \Exception('missing charity SF ID')
         );

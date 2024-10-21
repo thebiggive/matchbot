@@ -22,6 +22,7 @@ use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
+use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\DonationService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -136,6 +137,13 @@ class Create extends Action
                 $e->getMessage(),
                 null,
                 true, // Reduce to info log as some instances expected on campaign close
+            );
+        } catch (WrongCampaignType $e) {
+            return $this->validationError(
+                $response,
+                $e->getMessage(),
+                null,
+                false,
             );
         } catch (CharityAccountLacksNeededCapaiblities) {
             return $this->respond(
