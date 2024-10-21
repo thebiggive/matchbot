@@ -20,6 +20,7 @@ use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
+use MatchBot\Application\Messenger\Middleware\AddOrLogMessageId;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -327,6 +328,7 @@ return function (ContainerBuilder $containerBuilder) {
 
             return new MessageBus([
                 new AddFifoStampMiddleware(),
+                new AddOrLogMessageId($logger),
                 $sendMiddleware,
                 $handleMiddleware,
             ]);

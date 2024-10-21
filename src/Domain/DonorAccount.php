@@ -86,6 +86,21 @@ class DonorAccount extends Model
         $this->uuid = is_null($uuid) ? null : Uuid::fromString($uuid->id);
     }
 
+    /**
+     * Returns the UUID of this person as held in Identity service. Use with care as throws is Matchbot doesn't (yet)
+     * have that UUID on record
+     *
+     * @todo-regular-giving - consider filling in all values in prod and making $this->uuid non-nullable.
+     */
+    public function id(): PersonId
+    {
+        if (is_null($this->uuid)) {
+            throw new \Exception("UUID not known for stripe customer ID " . $this->stripeCustomerId->stripeCustomerId);
+        }
+
+        return PersonId::of($this->uuid->toString());
+    }
+
     public function getRegularGivingPaymentMethod(): ?StripePaymentMethodId
     {
         if ($this->regularGivingPaymentMethod === null) {

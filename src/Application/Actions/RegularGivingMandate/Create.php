@@ -10,6 +10,7 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\MandateCreate;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\MandateService;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
@@ -24,6 +25,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 class Create extends Action
 {
     public function __construct(
+        private MandateService $mandateService,
         private Environment $environment,
         LoggerInterface $logger,
         private CampaignRepository $campaignRepository,
@@ -42,8 +44,6 @@ class Create extends Action
 
         $donorIdString = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
         \assert(is_string($donorIdString));
-        $donorID = PersonId::of($donorIdString);
-
         $body = (string) $request->getBody();
 
         try {
@@ -77,20 +77,13 @@ class Create extends Action
 
         // create donor account if not existing. For now we assume the donor account already exists in the Matchbot DB.
 
-        // todo - move this into the MandateService
-        $mandate = new RegularGivingMandate(
-            donorId: $donorID,
+        $mandate = $this->mandateService->setupNewMandate(
+            donorID: PersonId::of($donorIdString),
             amount: $mandateData->amount,
-            campaignId: $mandateData->campaignId,
-            charityId: Salesforce18Id::ofCharity(
-                $charity->getSalesforceId() ?? throw new \Exception('missing charity SF ID')
-            ),
+            campaign: $campaign,
             giftAid: $mandateData->giftAid,
             dayOfMonth: $mandateData->dayOfMonth,
         );
-
-
-        $this->em->persist($mandate);
 
         // create first three pending donations for mandate.
 
