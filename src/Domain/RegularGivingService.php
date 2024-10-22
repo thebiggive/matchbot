@@ -99,8 +99,6 @@ readonly class RegularGivingService
                 " only matched {$firstDonation->getFundingWithdrawalTotal()}"
             );
         }
-        // @todo-regular-giving - throw if first donation is not fully matched unless donor has said they're OK with
-        //                        that.
         // @todo-regular-giving - collect first donation
         // @todo-regular-giving - do same for 2nd and third donations except those are just to be preauthed and enrolled
         //                        and checked for matching, not collected at this point.
