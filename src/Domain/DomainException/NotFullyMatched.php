@@ -3,7 +3,7 @@
 namespace MatchBot\Domain\DomainException;
 
 /**
- * Thrown to stop a regular giving campaign being used for a one-off donation, or vice versa.
+ * Thrown to stop a donation being set up without matching when a full match was expected.
  */
 class NotFullyMatched extends DomainException
 {
