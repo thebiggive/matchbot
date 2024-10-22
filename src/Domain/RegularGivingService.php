@@ -99,7 +99,7 @@ readonly class RegularGivingService
                 " only matched {$firstDonation->getFundingWithdrawalTotal()}"
             );
         }
-        // @todo-regular-giving - collect first donation
+        // @todo-regular-giving - collect first donation (currently created as pending, not collected)
         // @todo-regular-giving - do same for 2nd and third donations except those are just to be preauthed and enrolled
         //                        and checked for matching, not collected at this point.
 
