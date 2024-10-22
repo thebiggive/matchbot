@@ -937,4 +937,39 @@ class DonationTest extends TestCase
         $donation->recordRefundAt(new \DateTimeImmutable());
         $this->assertSame('11.00', $donation->getTotalPaidByDonor());
     }
+
+    public function testDonationWithNoFundingIsNotFullyMatched(): void
+    {
+        $donation = $this->getTestDonation();
+
+        $this->assertFalse($donation->isFullyMatched());
+    }
+
+    public function testAlmostMatchedDonationIsNotFullyMatched(): void
+    {
+        $donation = $this->getTestDonation(amount: '100.00');
+
+        $fund = new ChampionFund('GBP', 'some champion fund');
+        $campaignFunding = new CampaignFunding($fund, amount: '1000', amountAvailable: '1000', allocationOrder: 1);
+        $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
+        $fundingWithdrawl->setAmount('99.99');
+        $donation->addFundingWithdrawal($fundingWithdrawl);
+
+        $this->assertFalse($donation->isFullyMatched());
+    }
+
+    public function testFullyMatchedDonationIsFullyMatched(): void
+    {
+        $donation = $this->getTestDonation(amount: '100.00');
+
+        $fund = new ChampionFund('GBP', 'some champion fund');
+        $campaignFunding = new CampaignFunding($fund, '1000', '1000', 1);
+        $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
+        $fundingWithdrawl->setAmount('100.00');
+        $donation->addFundingWithdrawal($fundingWithdrawl);
+
+        $isFullyMatched = $donation->isFullyMatched();
+
+        $this->assertTrue($isFullyMatched);
+    }
 }

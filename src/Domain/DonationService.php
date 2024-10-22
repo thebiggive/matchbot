@@ -20,6 +20,7 @@ use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
+use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Random\Randomizer;
@@ -67,6 +68,7 @@ class DonationService
      * @throws StripeAccountIdNotSetForAccount
      * @throws TransportExceptionInterface
      * @throws RateLimitExceededException
+     * @throws WrongCampaignType
      * @throws CampaignNotReady|\MatchBot\Client\NotFoundException
      */
     public function createDonation(DonationCreate $donationData, string $pspCustomerId): Donation
@@ -176,7 +178,7 @@ class DonationService
     /**
      * Finalized a donation, instructing stripe to attempt to take payment.
      *
-     * $tokenId will be StripeConformationTokenId for ad-hoc payments, StripePaymentMethodId for regular giving.
+     * $tokenId will be StripeConformationTokenId for one off payments, StripePaymentMethodId for regular giving.
      * @todo-regular-giving separate out into two functions and avoid instanceof
      */
     private function confirm(
@@ -248,8 +250,16 @@ class DonationService
      */
     public function enrollNewDonation(Donation $donation): void
     {
-        if (!$donation->getCampaign()->isOpen()) {
-            throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
+        $campaign = $donation->getCampaign();
+
+        if (!$campaign->isOpen()) {
+            throw new CampaignNotOpen("Campaign {$campaign->getSalesforceId()} is not open");
+        }
+
+        if (! $campaign->isOneOffGiving()) {
+            throw new WrongCampaignType(
+                "Campaign {$campaign->getSalesforceId()} does not accept one-off giving (regular-giving only)"
+            );
         }
 
         // A closed EM can happen if the above tried to insert a campaign or fund, hit a duplicate error because
@@ -266,7 +276,7 @@ class DonationService
             $this->entityManager->flush();
         }, 'Donation Create persist before stripe work');
 
-        if ($donation->getCampaign()->isMatched()) {
+        if ($campaign->isMatched()) {
             $this->runWithPossibleRetry(
                 function () use ($donation) {
                     try {
@@ -290,10 +300,9 @@ class DonationService
         }
 
         if ($donation->getPsp() === 'stripe') {
-            $stripeAccountId = $donation->getCampaign()->getCharity()->getStripeAccountId();
+            $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
             if ($stripeAccountId === null || $stripeAccountId === '') {
                 // Try re-pulling in case charity has very recently onboarded with for Stripe.
-                $campaign = $donation->getCampaign();
                 $this->campaignRepository->updateFromSf($campaign);
 
                 // If still empty, error out
@@ -301,7 +310,7 @@ class DonationService
                 if ($stripeAccountId === null || $stripeAccountId === '') {
                     $this->logger->error(sprintf(
                         'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
-                        $donation->getCampaign()->getCharity()->getSalesforceId() ?? 'missing charity sf ID',
+                        $campaign->getCharity()->getSalesforceId() ?? 'missing charity sf ID',
                     ));
                     throw new StripeAccountIdNotSetForAccount();
                 }

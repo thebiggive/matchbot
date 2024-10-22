@@ -10,7 +10,9 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\MandateCreate;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\MandateService;
+use MatchBot\Domain\DomainException\NotFullyMatched;
+use MatchBot\Domain\DomainException\WrongCampaignType;
+use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
@@ -25,7 +27,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 class Create extends Action
 {
     public function __construct(
-        private MandateService $mandateService,
+        private RegularGivingService $mandateService,
         private Environment $environment,
         LoggerInterface $logger,
         private CampaignRepository $campaignRepository,
@@ -77,13 +79,29 @@ class Create extends Action
 
         // create donor account if not existing. For now we assume the donor account already exists in the Matchbot DB.
 
-        $mandate = $this->mandateService->setupNewMandate(
-            donorID: PersonId::of($donorIdString),
-            amount: $mandateData->amount,
-            campaign: $campaign,
-            giftAid: $mandateData->giftAid,
-            dayOfMonth: $mandateData->dayOfMonth,
-        );
+        try {
+            $mandate = $this->mandateService->setupNewMandate(
+                donorID: PersonId::of($donorIdString),
+                amount: $mandateData->amount,
+                campaign: $campaign,
+                giftAid: $mandateData->giftAid,
+                dayOfMonth: $mandateData->dayOfMonth,
+            );
+        } catch (WrongCampaignType $e) {
+            return $this->validationError(
+                $response,
+                $e->getMessage(),
+                null,
+                false,
+            );
+        } catch (NotFullyMatched $e) {
+            return $this->validationError(
+                $response,
+                $e->getMessage(),
+                null,
+                false,
+            );
+        }
 
         // create first three pending donations for mandate.
 
