@@ -10,6 +10,7 @@ use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\Stripe;
@@ -30,6 +31,7 @@ use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Serializer\Exception\MissingConstructorArgumentsException;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 use TypeError;
@@ -79,8 +81,12 @@ class Update extends Action
                 HttpModels\Donation::class,
                 'json'
             );
-        } catch (UnexpectedValueException | TypeError $exception) {
-            // UnexpectedValueException is the Serializer one, not the global one
+        } catch (
+            UnexpectedValueException | // the Serializer one, not the global one
+            AssertionFailedException |
+            MissingConstructorArgumentsException |
+            TypeError $exception
+        ) {
             $this->logger->info("Donation Update non-serialisable payload was: $body");
 
             $message = 'Donation Update data deserialise error';
@@ -92,14 +98,6 @@ class Update extends Action
                 $message,
                 empty($body), // Suspected bot / junk traffic sometimes sends blank payload.
             );
-        }
-
-        if (
-            getenv('APP_ENV') !== 'production' &&
-            str_starts_with($donationData->donorName?->first ?? '', 'Please throw')
-        ) {
-            $this->logger->critical("Testing a critical log message for BG2-2297");
-            throw new \Exception("{$donationData->donorName?->first} requested an exception for test purposes");
         }
 
         if (!isset($donationData->status)) {
