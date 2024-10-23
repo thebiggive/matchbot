@@ -30,6 +30,7 @@ use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Serializer\Exception\MissingConstructorArgumentsException;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 use TypeError;
@@ -79,7 +80,7 @@ class Update extends Action
                 HttpModels\Donation::class,
                 'json'
             );
-        } catch (UnexpectedValueException | TypeError $exception) {
+        } catch (UnexpectedValueException | MissingConstructorArgumentsException | TypeError $exception) {
             // UnexpectedValueException is the Serializer one, not the global one
             $this->logger->info("Donation Update non-serialisable payload was: $body");
 
