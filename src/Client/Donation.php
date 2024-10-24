@@ -9,6 +9,9 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Salesforce18Id;
 
+/**
+ * Client to push / upsert copies of donations to Salesforce.
+ */
 class Donation extends Common
 {
     /**
@@ -96,9 +99,6 @@ class Donation extends Common
          * @var array{'salesforceId': string} $donationCreatedResponse
          */
         $donationCreatedResponse = json_decode($response->getBody()->getContents(), true);
-
-        // todo add new property that SF now returns to API docs as distinct from donationId.
-        // Semantics were unclear before and SF was sometimes putting its own IDs in `donationId` I think.
 
         return Salesforce18Id::of($donationCreatedResponse['salesforceId']);
     }
