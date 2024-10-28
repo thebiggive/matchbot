@@ -9,11 +9,16 @@ use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\Donations\Update;
+use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -25,6 +30,9 @@ use Slim\Psr7\Response;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -37,7 +45,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
     /** @var ObjectProphecy<DonationRepository>  */
     private ObjectProphecy $donationRepositoryProphecy;
 
-    /** @var ObjectProphecy<EntityManagerInterface>  */
+    /** @var ObjectProphecy<RetrySafeEntityManager>  */
     private ObjectProphecy $entityManagerProphecy;
 
     /** @var ObjectProphecy<RoutableMessageBus> */
@@ -46,7 +54,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
-        $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $this->entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
     }
 
@@ -187,14 +195,31 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
     private function makeUpdateAction(): Update
     {
+        $donationRepository = $this->donationRepositoryProphecy->reveal();
+        $entityManager = $this->entityManagerProphecy->reveal();
         return new Update(
-            $this->donationRepositoryProphecy->reveal(),
-            $this->entityManagerProphecy->reveal(),
+            $donationRepository,
+            $entityManager,
             new Serializer([new ObjectNormalizer()], [new JsonEncoder()]),
             $this->createStub(Stripe::class),
             new NullLogger(),
             new MockClock(),
-            $this->messageBusProphecy->reveal(),
+            new DonationService(
+                donationRepository: $donationRepository,
+                campaignRepository: $this->createStub(CampaignRepository::class),
+                logger: new NullLogger(),
+                entityManager: $entityManager,
+                stripe: $this->createStub(Stripe::class),
+                matchingAdapter: $this->createStub(Adapter::class),
+                chatter: $this->createStub(ChatterInterface::class),
+                clock: new MockClock(),
+                rateLimiterFactory: new RateLimiterFactory(
+                    ['id' => 'stub', 'policy' => 'no_limit'],
+                    new InMemoryStorage()
+                ),
+                donorAccountRepository: $this->createStub(DonorAccountRepository::class),
+                bus: $this->messageBusProphecy->reveal(),
+            ),
         );
     }
 }

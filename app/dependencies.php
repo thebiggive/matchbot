@@ -538,6 +538,7 @@ return function (ContainerBuilder $containerBuilder) {
                     clock: $c->get(ClockInterface::class),
                     rateLimiterFactory: $rateLimiterFactory,
                     donorAccountRepository: $c->get(DonorAccountRepository::class),
+                    bus: $c->get(RoutableMessageBus::class),
                 );
             }
     ]);

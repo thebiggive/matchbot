@@ -4,9 +4,11 @@ namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\Exception\ORMException;
+use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\CampaignNotReady;
@@ -15,7 +17,9 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
+use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
+use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
@@ -27,6 +31,8 @@ use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
@@ -48,6 +54,7 @@ class DonationService
         private ClockInterface $clock,
         private RateLimiterFactory $rateLimiterFactory,
         private DonorAccountRepository $donorAccountRepository,
+        private RoutableMessageBus $bus,
     ) {
     }
 
@@ -440,5 +447,98 @@ class DonationService
             },
             'Donation Create persist after stripe work'
         );
+    }
+
+    /**
+     * Sets donation to cancelled in matchbot db, releases match funds, cancels payment in stripe, and updates
+     * salesforce
+     */
+    public function cancel(Donation $donation): void
+    {
+        if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
+            $this->logger->info("Donation ID {$donation->getUuid()} was already Cancelled");
+            $this->entityManager->rollback();
+
+            return;
+        }
+
+        if ($donation->getDonationStatus()->isSuccessful()) {
+            // If a donor uses browser back before loading the thank you page, it is possible for them to get
+            // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
+            $this->entityManager->rollback();
+
+            throw new DonationAlreadyFinalised(
+                'Donation ID {$donation->getUuid()} could not be cancelled as {$donation->getDonationStatus()->value}'
+            );
+        }
+
+        $this->logger->info("Donor cancelled ID {$donation->getUuid()}");
+
+        $donation->cancel();
+
+        // Save & flush early to reduce chance of lock conflicts.
+        $this->save($donation);
+
+        if ($donation->getCampaign()->isMatched()) {
+            $this->donationRepository->releaseMatchFunds($donation);
+        }
+
+        if ($donation->getPsp() === 'stripe') {
+            try {
+                $this->stripe->cancelPaymentIntent($donation->getTransactionId());
+            } catch (ApiErrorException $exception) {
+                /**
+                 * As per the notes in {@see DonationRepository::releaseMatchFunds()}, we
+                 * occasionally see double-cancels from the frontend. If Stripe tell us the
+                 * Cancelled Donation's PI is canceled [note US spelling doesn't match our internal
+                 * status], in all CC21 checks this seemed to be the situation.
+                 *
+                 * Instead of panicking in this scenario, our best available option is to log only a
+                 * notice – we can still easily find these in the logs on-demand if we need to
+                 * investigate proactively – and return 200 OK to the frontend.
+                 */
+                $doubleCancelMessage = 'You cannot cancel this PaymentIntent because it has a status of canceled.';
+                $returnError = !str_starts_with($exception->getMessage(), $doubleCancelMessage);
+                $stripeErrorLogLevel = $returnError ? LogLevel::ERROR : LogLevel::NOTICE;
+
+                // We use the same log message, but reduce the severity in the case where we have detected
+                // that it's unlikely to be a serious issue.
+                $this->logger->log(
+                    $stripeErrorLogLevel,
+                    'Stripe Payment Intent cancel error: ' .
+                    get_class($exception) . ': ' . $exception->getMessage()
+                );
+
+                if ($returnError) {
+                    throw new CouldNotCancelStripePaymentIntent();
+                } // Else likely double-send -> fall through to normal return the donation as-is.
+            }
+        }
+    }
+
+    /**
+     * Save donation in all cases. Also send updated donation data to Salesforce, *if* we know
+     * enough to do so successfully.
+     *
+     * Assumes it will be called only after starting a transaction pre-donation-select.
+     *
+     * @param Donation $donation
+     */
+    public function save(Donation $donation): void
+    {
+        // SF push and the corresponding DB persist only happens when names are already set.
+        // There could be other data we need to save before that point, e.g. comms
+        // preferences, so to be safe we persist here first.
+        $this->entityManager->persist($donation);
+        $this->entityManager->flush();
+        $this->entityManager->commit();
+
+        if (!$donation->hasEnoughDataForSalesforce()) {
+            return;
+        }
+
+        $donationUpserted = DonationUpserted::fromDonation($donation);
+        $envelope = new Envelope($donationUpserted);
+        $this->bus->dispatch($envelope);
     }
 }
