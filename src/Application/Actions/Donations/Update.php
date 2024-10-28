@@ -14,7 +14,9 @@ use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\Stripe;
+use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
+use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -156,7 +158,19 @@ class Update extends Action
                 }
 
                 if ($donationData->status === DonationStatus::Cancelled->value) {
-                    return $this->cancel($donation, $response);
+                    try {
+                        $this->cancel($donation);
+                    } catch (DonationAlreadyFinalised $e) {
+                        return $this->validationError(
+                            $response,
+                            $e->getMessage(),
+                            'Donation already finalised'
+                        );
+                    } catch (CouldNotCancelStripePaymentIntent) {
+                        $error = new ActionError(ActionError::SERVER_ERROR, 'Could not cancel Stripe Payment Intent');
+                        return $this->respond($response, new ActionPayload(500, null, $error));
+                    }
+                    return $this->respondWithData($response, $donation->toFrontEndApiModel());
                 }
 
                 return $this->addData($donation, $donationData, $args, $response, $request);
@@ -435,14 +449,13 @@ class Update extends Action
         return $this->respondWithData($response, $donation->toFrontEndApiModel());
     }
 
-    private function cancel(Donation $donation, Response $response): Response
+    private function cancel(Donation $donation): void
     {
-        $donationId = $donation->getUuid();
         if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
-            $this->logger->info("Donation ID {$donationId} was already Cancelled");
+            $this->logger->info("Donation ID {$donation->getUuid()} was already Cancelled");
             $this->entityManager->rollback();
 
-            return $this->respondWithData($response, $donation->toFrontEndApiModel());
+            return;
         }
 
         if ($donation->getDonationStatus()->isSuccessful()) {
@@ -450,14 +463,12 @@ class Update extends Action
             // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
             $this->entityManager->rollback();
 
-            return $this->validationError(
-                $response,
-                "Donation ID {$donationId} could not be cancelled as {$donation->getDonationStatus()->value}",
-                'Donation already finalised'
+            throw new DonationAlreadyFinalised(
+                'Donation ID {$donation->getUuid()} could not be cancelled as {$donation->getDonationStatus()->value}'
             );
         }
 
-        $this->logger->info("Donor cancelled ID {$donationId}");
+        $this->logger->info("Donor cancelled ID {$donation->getUuid()}");
 
         $donation->cancel();
 
@@ -495,14 +506,10 @@ class Update extends Action
                 );
 
                 if ($returnError) {
-                    $error = new ActionError(ActionError::SERVER_ERROR, 'Could not cancel Stripe Payment Intent');
-
-                    return $this->respond($response, new ActionPayload(500, null, $error));
-                } // Else likely double-send -> fall through to normal 200 OK response and return the donation as-is.
+                    throw new CouldNotCancelStripePaymentIntent();
+                } // Else likely double-send -> fall through to normal return the donation as-is.
             }
         }
-
-        return $this->respondWithData($response, $donation->toFrontEndApiModel());
     }
 
     /**
