@@ -41,6 +41,16 @@ class CallFrequentTasks extends LockingCommand
             return $expireReturn;
         }
 
+        $cancelStaleTipsCommand = $app->find('matchbot:cancel-stale-donation-fund-tips');
+        $cancelStaleReturn = $cancelStaleTipsCommand->run(
+            new ArrayInput(['command' => 'matchbot:cancel-stale-donation-fund-tips']),
+            $output
+        );
+        if ($cancelStaleReturn !== 0) {
+            $output->writeln('Failed cancel stale donation fund tips');
+            return $expireReturn;
+        }
+
         return 0;
     }
 }
