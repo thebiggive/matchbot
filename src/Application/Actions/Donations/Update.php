@@ -156,7 +156,7 @@ class Update extends Action
                 }
 
                 if ($donationData->status === DonationStatus::Cancelled->value) {
-                    return $this->cancel($donation, $response, $args);
+                    return $this->cancel($donation, $response);
                 }
 
                 return $this->addData($donation, $donationData, $args, $response, $request);
@@ -435,10 +435,11 @@ class Update extends Action
         return $this->respondWithData($response, $donation->toFrontEndApiModel());
     }
 
-    private function cancel(Donation $donation, Response $response, array $args): Response
+    private function cancel(Donation $donation, Response $response): Response
     {
+        $donationId = $donation->getUuid();
         if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
-            $this->logger->info("Donation ID {$args['donationId']} was already Cancelled");
+            $this->logger->info("Donation ID {$donationId} was already Cancelled");
             $this->entityManager->rollback();
 
             return $this->respondWithData($response, $donation->toFrontEndApiModel());
@@ -451,12 +452,12 @@ class Update extends Action
 
             return $this->validationError(
                 $response,
-                "Donation ID {$args['donationId']} could not be cancelled as {$donation->getDonationStatus()->value}",
+                "Donation ID {$donationId} could not be cancelled as {$donation->getDonationStatus()->value}",
                 'Donation already finalised'
             );
         }
 
-        $this->logger->info("Donor cancelled ID {$args['donationId']}");
+        $this->logger->info("Donor cancelled ID {$donationId}");
 
         $donation->cancel();
 
