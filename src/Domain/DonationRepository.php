@@ -949,5 +949,4 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $result = $query->getResult();
         return $result;
     }
-
 }
