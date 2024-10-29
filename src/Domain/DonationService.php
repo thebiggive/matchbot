@@ -330,7 +330,7 @@ class DonationService
         }
     }
 
-    public function doUpdateDonationFees(
+    private function doUpdateDonationFees(
         string $cardBrand,
         Donation $donation,
         string $cardCountry,
@@ -358,6 +358,13 @@ class DonationService
             // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
         ];
 
+        $this->logger->info(sprintf(
+            'Donation UUID %s has current net fee %d, following patch with brand %s',
+            $donation->getUuid(),
+            $donation->getCharityFee(),
+            $cardBrand,
+        ));
+
         $this->stripe->updatePaymentIntent($donation->getTransactionId(), $updatedIntentData);
     }
 
@@ -378,6 +385,13 @@ class DonationService
 
         Assertion::string($cardBrand);
         Assertion::string($cardCountry);
+
+        $this->logger->info(sprintf(
+            'Donation UUID %s has card brand %s and country %s',
+            $donation->getUuid(),
+            $cardBrand,
+            $cardCountry,
+        ));
 
         $this->doUpdateDonationFees(
             cardBrand: $cardBrand,

@@ -202,6 +202,8 @@ class Calculator
             return true;
         }
 
+        Assertion::notBlank($cardCountry);
+
         return in_array($cardCountry, self::EU_COUNTRY_CODES, true);
     }
 }
