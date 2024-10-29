@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use MatchBot\Application\Assertion;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -21,24 +22,25 @@ class CallFrequentTasks extends LockingCommand
         $app = $this->getApplication();
         \assert($app instanceof Application);
 
-        $statsCommand = $app->find('matchbot:send-statistics');
-        $statsReturn = $statsCommand->run(
-            new ArrayInput(['command' => 'matchbot:send-statistics']),
-            $output
-        );
-        if ($statsReturn !== 0) {
-            $output->writeln('Failed to send statistics');
-            return $statsReturn;
-        }
+        $commandNames = [
+            'matchbot:send-statistics',
+            'matchbot:expire-match-funds',
+            'matchbot:cancel-stale-donation-fund-tips',
+        ];
 
-        $expireCommand = $app->find('matchbot:expire-match-funds');
-        $expireReturn = $expireCommand->run(
-            new ArrayInput(['command' => 'matchbot:expire-match-funds']),
-            $output
-        );
-        if ($expireReturn !== 0) {
-            $output->writeln('Failed to expire match funds');
-            return $expireReturn;
+        $commands = array_map($app->find(...), $commandNames);
+        Assertion::allIsInstanceOf($commands, Command::class);
+
+        foreach ($commands as $command) {
+            $return = $command->run(
+                new ArrayInput(['command' => $command->getName()]),
+                $output
+            );
+
+            if ($return !== 0) {
+                $output->writeln("Failed run {$command->getName()}");
+                return $return;
+            }
         }
 
         return 0;

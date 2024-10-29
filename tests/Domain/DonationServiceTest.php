@@ -36,6 +36,7 @@ use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
 use Stripe\Exception\PermissionException;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Message\ChatMessage;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
@@ -191,6 +192,7 @@ class DonationServiceTest extends TestCase
             clock: $this->prophesize(ClockInterface::class)->reveal(),
             rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
+            bus: $this->createStub(RoutableMessageBus::class),
         );
     }
 

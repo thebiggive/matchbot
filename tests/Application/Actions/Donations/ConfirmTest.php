@@ -65,16 +65,20 @@ class ConfirmTest extends TestCase
             $this->entityManagerProphecy->reveal(),
             $messageBusStub,
             new DonationService(
-                $this->getDonationRepository(),
-                $this->createStub(CampaignRepository::class),
-                new NullLogger(),
-                $this->createStub(RetrySafeEntityManager::class),
-                $this->stripeProphecy->reveal(),
-                $this->createStub(Adapter::class),
-                $this->createStub(ChatterInterface::class),
-                $this->createStub(\Symfony\Component\Clock\ClockInterface::class),
-                new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
+                donationRepository: $this->getDonationRepository(),
+                campaignRepository: $this->createStub(CampaignRepository::class),
+                logger: new NullLogger(),
+                entityManager: $this->createStub(RetrySafeEntityManager::class),
+                stripe: $this->stripeProphecy->reveal(),
+                matchingAdapter: $this->createStub(Adapter::class),
+                chatter: $this->createStub(ChatterInterface::class),
+                clock: $this->createStub(\Symfony\Component\Clock\ClockInterface::class),
+                rateLimiterFactory: new RateLimiterFactory(
+                    ['id' => 'stub', 'policy' => 'no_limit'],
+                    new InMemoryStorage()
+                ),
                 donorAccountRepository: $this->createStub(DonorAccountRepository::class),
+                bus: $this->createStub(RoutableMessageBus::class),
             )
         );
     }

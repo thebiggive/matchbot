@@ -8,6 +8,7 @@ $psr11App = require __DIR__ . '/bootstrap.php';
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\CallFrequentTasks;
+use MatchBot\Application\Commands\CancelStaleDonationFundTips;
 use MatchBot\Application\Commands\ClaimGiftAid;
 use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
@@ -109,6 +110,7 @@ $commands = [
     $psr11App->get(SendStatistics::class),
     $psr11App->get(SetupTestMandate::class),
     $psr11App->get(TakeRegularGivingDonations::class),
+    $psr11App->get(CancelStaleDonationFundTips::class),
 ];
 
 foreach ($commands as $command) {

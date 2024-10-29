@@ -14,9 +14,12 @@ use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\Stripe;
+use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
+use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\PaymentMethodType;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -54,7 +57,7 @@ class Update extends Action
         private Stripe $stripe,
         LoggerInterface $logger,
         private ClockInterface $clock,
-        private RoutableMessageBus $bus,
+        private DonationService $donationService,
     ) {
         parent::__construct($logger);
     }
@@ -156,7 +159,19 @@ class Update extends Action
                 }
 
                 if ($donationData->status === DonationStatus::Cancelled->value) {
-                    return $this->cancel($donation, $response, $args);
+                    try {
+                        $this->donationService->cancel($donation);
+                    } catch (DonationAlreadyFinalised $e) {
+                        return $this->validationError(
+                            $response,
+                            $e->getMessage(),
+                            'Donation already finalised'
+                        );
+                    } catch (CouldNotCancelStripePaymentIntent) {
+                        $error = new ActionError(ActionError::SERVER_ERROR, 'Could not cancel Stripe Payment Intent');
+                        return $this->respond($response, new ActionPayload(500, null, $error));
+                    }
+                    return $this->respondWithData($response, $donation->toFrontEndApiModel());
                 }
 
                 return $this->addData($donation, $donationData, $args, $response, $request);
@@ -430,103 +445,11 @@ class Update extends Action
             }
         }
 
-        $this->save($donation);
+        $this->donationService->save($donation);
 
         return $this->respondWithData($response, $donation->toFrontEndApiModel());
     }
 
-    private function cancel(Donation $donation, Response $response, array $args): Response
-    {
-        if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
-            $this->logger->info("Donation ID {$args['donationId']} was already Cancelled");
-            $this->entityManager->rollback();
-
-            return $this->respondWithData($response, $donation->toFrontEndApiModel());
-        }
-
-        if ($donation->getDonationStatus()->isSuccessful()) {
-            // If a donor uses browser back before loading the thank you page, it is possible for them to get
-            // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
-            $this->entityManager->rollback();
-
-            return $this->validationError(
-                $response,
-                "Donation ID {$args['donationId']} could not be cancelled as {$donation->getDonationStatus()->value}",
-                'Donation already finalised'
-            );
-        }
-
-        $this->logger->info("Donor cancelled ID {$args['donationId']}");
-
-        $donation->cancel();
-
-        // Save & flush early to reduce chance of lock conflicts.
-        $this->save($donation);
-
-        if ($donation->getCampaign()->isMatched()) {
-            $this->donationRepository->releaseMatchFunds($donation);
-        }
-
-        if ($donation->getPsp() === 'stripe') {
-            try {
-                $this->stripe->cancelPaymentIntent($donation->getTransactionId());
-            } catch (ApiErrorException $exception) {
-                /**
-                 * As per the notes in {@see DonationRepository::releaseMatchFunds()}, we
-                 * occasionally see double-cancels from the frontend. If Stripe tell us the
-                 * Cancelled Donation's PI is canceled [note US spelling doesn't match our internal
-                 * status], in all CC21 checks this seemed to be the situation.
-                 *
-                 * Instead of panicking in this scenario, our best available option is to log only a
-                 * notice – we can still easily find these in the logs on-demand if we need to
-                 * investigate proactively – and return 200 OK to the frontend.
-                 */
-                $doubleCancelMessage = 'You cannot cancel this PaymentIntent because it has a status of canceled.';
-                $returnError = !str_starts_with($exception->getMessage(), $doubleCancelMessage);
-                $stripeErrorLogLevel = $returnError ? LogLevel::ERROR : LogLevel::NOTICE;
-
-                // We use the same log message, but reduce the severity in the case where we have detected
-                // that it's unlikely to be a serious issue.
-                $this->logger->log(
-                    $stripeErrorLogLevel,
-                    'Stripe Payment Intent cancel error: ' .
-                    get_class($exception) . ': ' . $exception->getMessage()
-                );
-
-                if ($returnError) {
-                    $error = new ActionError(ActionError::SERVER_ERROR, 'Could not cancel Stripe Payment Intent');
-
-                    return $this->respond($response, new ActionPayload(500, null, $error));
-                } // Else likely double-send -> fall through to normal 200 OK response and return the donation as-is.
-            }
-        }
-
-        return $this->respondWithData($response, $donation->toFrontEndApiModel());
-    }
-
-    /**
-     * Save donation in all cases. Also send updated donation data to Salesforce, *if* we know
-     * enough to do so successfully.
-     *
-     * Assumes it will be called only after starting a transaction pre-donation-select.
-     *
-     * @param Donation $donation
-     */
-    private function save(Donation $donation): void
-    {
-        // SF push and the corresponding DB persist only happens when names are already set.
-        // There could be other data we need to save before that point, e.g. comms
-        // preferences, so to be safe we persist here first.
-        $this->entityManager->persist($donation);
-        $this->entityManager->flush();
-        $this->entityManager->commit();
-
-        if (!$donation->hasEnoughDataForSalesforce()) {
-            return;
-        }
-
-        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
-    }
 
     /**
      * @throws RateLimitException if e.g. Stripe had locked the PI while processing.

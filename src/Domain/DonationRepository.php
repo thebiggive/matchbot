@@ -923,4 +923,30 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         return DonationSequenceNumber::of($number);
     }
+
+    /**
+     * Returns a limited size list of donation fund tip donations that have been left unpaid for some time and
+     * we will want to auto-cancel
+     * @return list<Donation>
+     */
+    public function findStaleDonationFundsTips(\DateTimeImmutable $atDateTime): array
+    {
+        $pending = DonationStatus::Pending->value;
+
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT donation from Matchbot\Domain\Donation donation join donation.campaign c
+            WHERE donation.donationStatus = '$pending'
+            AND donation.paymentMethodType = 'customer_balance'
+            AND c.name = 'Big Give General Donations'
+            AND donation.createdAt < :latestCreationDate
+        DQL
+        );
+
+        $query->setParameter('latestCreationDate', $atDateTime->sub(new \DateInterval('P14D')));
+        $query->setMaxResults(100);
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
 }
