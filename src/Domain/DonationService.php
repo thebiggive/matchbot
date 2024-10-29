@@ -359,7 +359,7 @@ class DonationService
         ];
 
         $this->logger->info(sprintf(
-            'Donation UUID %s has current net fee %d, following patch with brand %s',
+            'Donation UUID %s has current net fee %s, following patch with brand %s',
             $donation->getUuid(),
             $donation->getCharityFee(),
             $cardBrand,
