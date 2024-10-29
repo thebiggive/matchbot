@@ -1907,7 +1907,7 @@ class UpdateTest extends TestCase
      * @param ObjectProphecy<RetrySafeEntityManager> $entityManagerProphecy
      * @param ?ObjectProphecy<Stripe> $stripeProphecy
      */
-    public function setDoublesInContainer(
+    private function setDoublesInContainer(
         Container $container,
         ObjectProphecy $donationRepoProphecy,
         ObjectProphecy $entityManagerProphecy,
