@@ -943,7 +943,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         );
 
         $query->setParameter('latestCreationDate', $atDateTime->sub(new \DateInterval('P14D')));
-        $query->setMaxResults(5);
+        $query->setMaxResults(100);
 
         /** @var list<Donation> $result */
         $result = $query->getResult();
