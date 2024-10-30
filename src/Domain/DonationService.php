@@ -459,7 +459,9 @@ class DonationService
 
     /**
      * Sets donation to cancelled in matchbot db, releases match funds, cancels payment in stripe, and updates
-     * salesforce
+     * salesforce.
+     *
+     * Requires an open DB transaction.
      */
     public function cancel(Donation $donation): void
     {
@@ -480,7 +482,7 @@ class DonationService
             );
         }
 
-        $this->logger->info("Donor cancelled ID {$donation->getUuid()}");
+        $this->logger->info("Cancelled ID {$donation->getUuid()}");
 
         $donation->cancel();
 
