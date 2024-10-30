@@ -453,6 +453,30 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
+     * @return Donation[]
+     */
+    public function findWithFeePossiblyOverchaged(): array
+    {
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT d
+            FROM MatchBot\Domain\Donation d 
+            WHERE d.collectedAt >= :start
+            AND d.donationStatus IN (:completeStatuses)
+            AND d.paymentMethodType = 'card'
+        DQL
+        );
+        $query->setParameter('start', new \DateTimeImmutable('2024-09-13 00:00:00'));
+        $query->setParameter(
+            'completeStatuses',
+            array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES),
+        );
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
+
+    /**
      * Taking a now-ish input that's typically the floor of the current minute and
      * looking between $nowish-16 minutes and
      * $nowish-1 minutes for donations with >£0 matching assigned, returns:

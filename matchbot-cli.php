@@ -18,6 +18,7 @@ use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
+use MatchBot\Application\Commands\ReturnErroneousExcessFees;
 use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
 use MatchBot\Application\Commands\SendStatistics;
 use MatchBot\Application\Commands\SetupTestMandate;
@@ -100,6 +101,10 @@ $commands = [
         chatter: $chatter,
         bus: $psr11App->get(RoutableMessageBus::class),
         entityManager: $psr11App->get(EntityManagerInterface::class),
+    ),
+    new ReturnErroneousExcessFees(
+        donationRepository: $psr11App->get(DonationRepository::class),
+        stripeClient: $psr11App->get(StripeClient::class),
     ),
     new UpdateCampaigns(
         $psr11App->get(CampaignRepository::class),
