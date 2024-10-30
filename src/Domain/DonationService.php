@@ -83,7 +83,7 @@ class DonationService
         $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
 
         try {
-            $donation = $this->donationRepository->buildFromApiRequest($donationData);
+            $donation = $this->donationRepository->buildFromApiRequest($donationData, $this->logger);
         } catch (\UnexpectedValueException $e) {
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $e->getMessage());
@@ -100,7 +100,7 @@ class DonationService
                 'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
                 $donationData->projectId->value,
             ));
-            $donation = $this->donationRepository->buildFromApiRequest($donationData);
+            $donation = $this->donationRepository->buildFromApiRequest($donationData, $this->logger);
         }
 
         if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
@@ -340,7 +340,8 @@ class DonationService
 // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
         // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
-        $donation->deriveFees($cardBrand, $cardCountry);
+        $this->logger->info('Will deriveFees in DonationService::doUpdateDonationFes');
+        $donation->deriveFees($cardBrand, $cardCountry, $this->logger);
 
         // we still need this
         $updatedIntentData = [

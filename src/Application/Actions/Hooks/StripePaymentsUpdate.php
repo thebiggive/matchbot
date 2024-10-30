@@ -169,6 +169,7 @@ class StripePaymentsUpdate extends Stripe
                 cardCountry: $cardCountry,
                 originalFeeFractional: (string)$originalFeeFractional,
                 chargeCreationTimestamp: $charge->created,
+                logger: $this->logger,
             );
 
             $this->logger->info(sprintf(

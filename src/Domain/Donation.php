@@ -19,6 +19,7 @@ use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
 use Messages;
+use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -1353,7 +1354,7 @@ class Donation extends SalesforceWriteProxy
      * @param string|null $cardBrand
      * @param string|null $cardCountry ISO two letter uppercase code
      */
-    public function deriveFees(?string $cardBrand, ?string $cardCountry): void
+    public function deriveFees(?string $cardBrand, ?string $cardCountry, ?LoggerInterface $logger = null): void
     {
         $incursGiftAidFee = $this->hasGiftAid() && $this->hasTbgShouldProcessGiftAid();
 
@@ -1364,6 +1365,7 @@ class Donation extends SalesforceWriteProxy
             $this->getAmount(),
             $this->getCurrencyCode(),
             $incursGiftAidFee,
+            $logger,
         );
 
         $this->setCharityFee($fees->coreFee);
@@ -1377,7 +1379,8 @@ class Donation extends SalesforceWriteProxy
         ?string $cardBrand,
         ?string $cardCountry,
         string $originalFeeFractional,
-        int $chargeCreationTimestamp
+        int $chargeCreationTimestamp,
+        ?LoggerInterface $logger = null,
     ): void {
         Assertion::eq(is_null($cardBrand), is_null($cardCountry));
         Assertion::numeric($originalFeeFractional);
@@ -1388,8 +1391,11 @@ class Donation extends SalesforceWriteProxy
         $this->transferId = $transferId;
 
         if ($cardBrand !== null) {
+            if ($logger) {
+                $logger->info("Will deriveFees in collectFromStripeCharge, card brand $cardBrand and country $cardCountry");
+            }
             /** @psalm-var value-of<Calculator::STRIPE_CARD_BRANDS> $cardBrand */
-            $this->deriveFees($cardBrand, $cardCountry);
+            $this->deriveFees($cardBrand, $cardCountry, $logger);
         }
 
         $this->donationStatus = DonationStatus::Collected;

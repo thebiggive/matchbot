@@ -6,6 +6,7 @@ namespace MatchBot\Application\Fees;
 
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
+use Psr\Log\LoggerInterface;
 
 /**
  * @psalm-immutable
@@ -61,6 +62,7 @@ class Calculator
         string $amount,
         string $currencyCode,
         bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
+        ?LoggerInterface $logger = null,
     ): Fees {
         $calculator = new self(
             psp: $psp,
@@ -71,10 +73,21 @@ class Calculator
             hasGiftAid: $hasGiftAid,
         );
 
-        return new Fees(
-            coreFee: $calculator->getCoreFee(),
+        $fees = new Fees(
+            coreFee: $calculator->getCoreFee($logger),
             feeVat: $calculator->getFeeVat()
         );
+
+        if ($logger) {
+            $logger->info(sprintf(
+                'Calculated fees for %s %s donation: core fee %s',
+                $cardCountry,
+                $cardBrand,
+                $fees->coreFee,
+            ));
+        }
+
+        return $fees;
     }
 
     /**
@@ -109,7 +122,7 @@ class Calculator
     /**
      * @return numeric-string
      */
-    private function getCoreFee(): string
+    private function getCoreFee(?LoggerInterface $logger = null): string
     {
         $giftAidFee = '0.00';
 
@@ -124,6 +137,14 @@ class Calculator
 
         $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
         if ($this->cardBrand === 'amex' || !$this->isEU($this->cardCountry)) {
+            if ($logger !== null) {
+                $logger->info(sprintf(
+                    'Calculating fees for non-EU or Amex card based on "%s" and "%s"',
+                    $this->cardBrand,
+                    $this->cardCountry,
+                ));
+            }
+
             $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU, '100', 3);
         }
 

@@ -336,7 +336,8 @@ class Update extends Action
         // we call deriveFees here for consistency with the Create action, in case the derivation logic changes to
         // depend on something we do mutate in the donation. But if this is a card payment it will be called again in
         // the `confirm` action.
-        $donation->deriveFees(null, null);
+        $this->logger->info('Will deriveFees in Update');
+        $donation->deriveFees(null, null, $this->logger);
 
         if ($donation->getPsp() === 'stripe') {
             try {

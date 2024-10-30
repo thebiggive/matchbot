@@ -18,6 +18,7 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\NotFoundException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
@@ -71,7 +72,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * @throws \UnexpectedValueException if inputs invalid, including projectId being unrecognised
      * @throws CampaignNotReady|NotFoundException
      */
-    public function buildFromApiRequest(DonationCreate $donationData): Donation
+    public function buildFromApiRequest(DonationCreate $donationData, ?LoggerInterface $logger = null): Donation
     {
         if (!in_array($donationData->psp, ['stripe'], true)) {
             throw new \UnexpectedValueException(sprintf(
@@ -112,7 +113,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         $donation = Donation::fromApiModel($donationData, $campaign);
-        $donation->deriveFees(null, null);
+        if ($logger) {
+            $logger->info('Will deriveFees in donation repo buildFromApiRequest');
+        }
+        $donation->deriveFees(null, null, $logger);
 
         return $donation;
     }
