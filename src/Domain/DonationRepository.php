@@ -463,6 +463,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             WHERE d.collectedAt >= :start
             AND d.donationStatus IN (:completeStatuses)
             AND d.paymentMethodType = 'card'
+            AND d.transactionId NOT LIKE 'pi_stub_%'
         DQL
         );
         $query->setParameter('start', new \DateTimeImmutable('2024-09-06 00:00:00'));
