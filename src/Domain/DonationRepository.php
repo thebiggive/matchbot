@@ -465,7 +465,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             AND d.paymentMethodType = 'card'
         DQL
         );
-        $query->setParameter('start', new \DateTimeImmutable('2024-09-13 00:00:00'));
+        $query->setParameter('start', new \DateTimeImmutable('2024-09-06 00:00:00'));
         $query->setParameter(
             'completeStatuses',
             array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES),
