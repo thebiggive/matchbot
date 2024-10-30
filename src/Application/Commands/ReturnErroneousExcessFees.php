@@ -57,8 +57,8 @@ class ReturnErroneousExcessFees extends LockingCommand
         $countOfDonationsWithDiscrepancy = 0;
         $countOfDonationsToChange = 0;
 
-        /** @var numeric-string $sumOfFeeDifference */
-        $sumOfFeeDifference = '0.00';
+        /** @var numeric-string $sumOfFeeDifferencePounds */
+        $sumOfFeeDifferencePounds = '0.00';
 
         foreach ($donations as $donation) {
             $chargeId = $donation->getChargeId();
@@ -79,7 +79,7 @@ class ReturnErroneousExcessFees extends LockingCommand
                 continue;
             }
 
-            $feeDifference = $fee->amount - $donation->getAmountToDeductFractional();
+            $feeDifferencePence = $fee->amount - $donation->getAmountToDeductFractional();
 
             if ($donation->getCharityFee() !== $this->getCorrectFees($donation, $charge)->coreFee) {
                 $output->writeln("Donation {$donation->getId()} has a different fee than expected");
@@ -87,16 +87,16 @@ class ReturnErroneousExcessFees extends LockingCommand
             }
 
             $countOfDonationsToChange++;
-            $sumOfFeeDifference = bcadd($sumOfFeeDifference, (string) ($feeDifference / 100), 2);
+            $sumOfFeeDifferencePounds = bcadd($sumOfFeeDifferencePounds, (string) ($feeDifferencePence / 100), 2);
 
             if ($mode === 'fix') {
                 $this->stripeClient->applicationFees->createRefund($feeId, [
-                    'amount' => $feeDifference,
+                    'amount' => $feeDifferencePence,
                     'metadata' => ['reason' => 'MAT-383 erroneous fee correction'],
                 ]);
-                $output->writeln("Refunded {$feeDifference} for {$donation->getUuid()}");
+                $output->writeln("Refunded {$feeDifferencePence} for {$donation->getUuid()}");
             } else {
-                $output->writeln("Would refund {$feeDifference} for {$donation->getUuid()}");
+                $output->writeln("Would refund {$feeDifferencePence} for {$donation->getUuid()}");
             }
         }
 
@@ -105,7 +105,7 @@ class ReturnErroneousExcessFees extends LockingCommand
             $countOfDonationsChecked,
             $countOfDonationsWithDiscrepancy,
             $countOfDonationsToChange,
-            $sumOfFeeDifference,
+            $sumOfFeeDifferencePounds,
         ));
 
         return 0;
