@@ -1,6 +1,6 @@
 <?php
 
-namespace Domain;
+namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Pledge;
