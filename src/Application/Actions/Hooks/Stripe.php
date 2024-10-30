@@ -50,6 +50,7 @@ abstract class Stripe extends Action
         } catch (\UnexpectedValueException $e) {
             return $this->validationError($response, "Invalid Payload: {$e->getMessage()}", 'Invalid Payload');
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
+            $this->logger->info(sprintf('Stripe verify %s: %s', get_class($e), $e->getMessage()));
             return $this->validationError($response, 'Invalid Signature');
         }
 

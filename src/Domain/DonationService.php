@@ -4,9 +4,11 @@ namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\Exception\ORMException;
+use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\CampaignNotReady;
@@ -15,17 +17,22 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
+use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
+use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
+use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
@@ -47,6 +54,7 @@ class DonationService
         private ClockInterface $clock,
         private RateLimiterFactory $rateLimiterFactory,
         private DonorAccountRepository $donorAccountRepository,
+        private RoutableMessageBus $bus,
     ) {
     }
 
@@ -67,6 +75,7 @@ class DonationService
      * @throws StripeAccountIdNotSetForAccount
      * @throws TransportExceptionInterface
      * @throws RateLimitExceededException
+     * @throws WrongCampaignType
      * @throws CampaignNotReady|\MatchBot\Client\NotFoundException
      */
     public function createDonation(DonationCreate $donationData, string $pspCustomerId): Donation
@@ -176,7 +185,7 @@ class DonationService
     /**
      * Finalized a donation, instructing stripe to attempt to take payment.
      *
-     * $tokenId will be StripeConformationTokenId for ad-hoc payments, StripePaymentMethodId for regular giving.
+     * $tokenId will be StripeConformationTokenId for one off payments, StripePaymentMethodId for regular giving.
      * @todo-regular-giving separate out into two functions and avoid instanceof
      */
     private function confirm(
@@ -248,8 +257,16 @@ class DonationService
      */
     public function enrollNewDonation(Donation $donation): void
     {
-        if (!$donation->getCampaign()->isOpen()) {
-            throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
+        $campaign = $donation->getCampaign();
+
+        if (!$campaign->isOpen()) {
+            throw new CampaignNotOpen("Campaign {$campaign->getSalesforceId()} is not open");
+        }
+
+        if (! $campaign->isOneOffGiving()) {
+            throw new WrongCampaignType(
+                "Campaign {$campaign->getSalesforceId()} does not accept one-off giving (regular-giving only)"
+            );
         }
 
         // A closed EM can happen if the above tried to insert a campaign or fund, hit a duplicate error because
@@ -266,7 +283,7 @@ class DonationService
             $this->entityManager->flush();
         }, 'Donation Create persist before stripe work');
 
-        if ($donation->getCampaign()->isMatched()) {
+        if ($campaign->isMatched()) {
             $this->runWithPossibleRetry(
                 function () use ($donation) {
                     try {
@@ -290,10 +307,9 @@ class DonationService
         }
 
         if ($donation->getPsp() === 'stripe') {
-            $stripeAccountId = $donation->getCampaign()->getCharity()->getStripeAccountId();
+            $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
             if ($stripeAccountId === null || $stripeAccountId === '') {
                 // Try re-pulling in case charity has very recently onboarded with for Stripe.
-                $campaign = $donation->getCampaign();
                 $this->campaignRepository->updateFromSf($campaign);
 
                 // If still empty, error out
@@ -301,7 +317,7 @@ class DonationService
                 if ($stripeAccountId === null || $stripeAccountId === '') {
                     $this->logger->error(sprintf(
                         'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
-                        $donation->getCampaign()->getCharity()->getSalesforceId() ?? 'missing charity sf ID',
+                        $campaign->getCharity()->getSalesforceId() ?? 'missing charity sf ID',
                     ));
                     throw new StripeAccountIdNotSetForAccount();
                 }
@@ -314,14 +330,15 @@ class DonationService
         }
     }
 
-    public function doUpdateDonationFees(
+    private function doUpdateDonationFees(
         string $cardBrand,
         Donation $donation,
         string $cardCountry,
     ): void {
         Assertion::inArray($cardBrand, Calculator::STRIPE_CARD_BRANDS);
+        Assertion::regex($cardCountry, '/^[A-Z]{2}$/');
 
-// at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
+        // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
         // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
         $donation->deriveFees($cardBrand, $cardCountry);
@@ -363,10 +380,17 @@ class DonationService
         Assertion::string($cardBrand);
         Assertion::string($cardCountry);
 
+        $this->logger->info(sprintf(
+            'Donation UUID %s has card brand %s and country %s',
+            $donation->getUuid(),
+            $cardBrand,
+            $cardCountry,
+        ));
+
         $this->doUpdateDonationFees(
             cardBrand: $cardBrand,
             donation: $donation,
-            cardCountry: $cardBrand,
+            cardCountry: $cardCountry,
         );
     }
 
@@ -431,5 +455,98 @@ class DonationService
             },
             'Donation Create persist after stripe work'
         );
+    }
+
+    /**
+     * Sets donation to cancelled in matchbot db, releases match funds, cancels payment in stripe, and updates
+     * salesforce
+     */
+    public function cancel(Donation $donation): void
+    {
+        if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
+            $this->logger->info("Donation ID {$donation->getUuid()} was already Cancelled");
+            $this->entityManager->rollback();
+
+            return;
+        }
+
+        if ($donation->getDonationStatus()->isSuccessful()) {
+            // If a donor uses browser back before loading the thank you page, it is possible for them to get
+            // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
+            $this->entityManager->rollback();
+
+            throw new DonationAlreadyFinalised(
+                'Donation ID {$donation->getUuid()} could not be cancelled as {$donation->getDonationStatus()->value}'
+            );
+        }
+
+        $this->logger->info("Donor cancelled ID {$donation->getUuid()}");
+
+        $donation->cancel();
+
+        // Save & flush early to reduce chance of lock conflicts.
+        $this->save($donation);
+
+        if ($donation->getCampaign()->isMatched()) {
+            $this->donationRepository->releaseMatchFunds($donation);
+        }
+
+        if ($donation->getPsp() === 'stripe') {
+            try {
+                $this->stripe->cancelPaymentIntent($donation->getTransactionId());
+            } catch (ApiErrorException $exception) {
+                /**
+                 * As per the notes in {@see DonationRepository::releaseMatchFunds()}, we
+                 * occasionally see double-cancels from the frontend. If Stripe tell us the
+                 * Cancelled Donation's PI is canceled [note US spelling doesn't match our internal
+                 * status], in all CC21 checks this seemed to be the situation.
+                 *
+                 * Instead of panicking in this scenario, our best available option is to log only a
+                 * notice – we can still easily find these in the logs on-demand if we need to
+                 * investigate proactively – and return 200 OK to the frontend.
+                 */
+                $doubleCancelMessage = 'You cannot cancel this PaymentIntent because it has a status of canceled.';
+                $returnError = !str_starts_with($exception->getMessage(), $doubleCancelMessage);
+                $stripeErrorLogLevel = $returnError ? LogLevel::ERROR : LogLevel::NOTICE;
+
+                // We use the same log message, but reduce the severity in the case where we have detected
+                // that it's unlikely to be a serious issue.
+                $this->logger->log(
+                    $stripeErrorLogLevel,
+                    'Stripe Payment Intent cancel error: ' .
+                    get_class($exception) . ': ' . $exception->getMessage()
+                );
+
+                if ($returnError) {
+                    throw new CouldNotCancelStripePaymentIntent();
+                } // Else likely double-send -> fall through to normal return the donation as-is.
+            }
+        }
+    }
+
+    /**
+     * Save donation in all cases. Also send updated donation data to Salesforce, *if* we know
+     * enough to do so successfully.
+     *
+     * Assumes it will be called only after starting a transaction pre-donation-select.
+     *
+     * @param Donation $donation
+     */
+    public function save(Donation $donation): void
+    {
+        // SF push and the corresponding DB persist only happens when names are already set.
+        // There could be other data we need to save before that point, e.g. comms
+        // preferences, so to be safe we persist here first.
+        $this->entityManager->persist($donation);
+        $this->entityManager->flush();
+        $this->entityManager->commit();
+
+        if (!$donation->hasEnoughDataForSalesforce()) {
+            return;
+        }
+
+        $donationUpserted = DonationUpserted::fromDonation($donation);
+        $envelope = new Envelope($donationUpserted);
+        $this->bus->dispatch($envelope);
     }
 }

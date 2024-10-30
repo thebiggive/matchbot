@@ -78,6 +78,26 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
+     * @return bool does this campaign accept one-off giving, i.e. non-regular giving.
+     * @see self::isRegularGiving()
+     */
+    public function isOneOffGiving(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return bool does this campaign accept regular giving, i.e. can it have regular giving mandates.
+     */
+    public function isRegularGiving(): bool
+    {
+        /* @todo-regular-giving - make this a property pulled from the Salesforce campaign when available.
+         *                        then update @see self::isOneOffGiving() to return the opposite of this
+         */
+        return true;
+    }
+
+    /**
      * @psalm-suppress PossiblyUnusedMethod
      */
     #[ORM\PrePersist]

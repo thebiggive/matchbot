@@ -453,6 +453,31 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
+     * @return Donation[]
+     */
+    public function findWithFeePossiblyOverchaged(): array
+    {
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT d
+            FROM MatchBot\Domain\Donation d 
+            WHERE d.collectedAt >= :start
+            AND d.donationStatus IN (:completeStatuses)
+            AND d.paymentMethodType = 'card'
+            AND d.transactionId NOT LIKE 'pi_stub_%'
+        DQL
+        );
+        $query->setParameter('start', new \DateTimeImmutable('2024-09-06 00:00:00'));
+        $query->setParameter(
+            'completeStatuses',
+            array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES),
+        );
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
+
+    /**
      * Taking a now-ish input that's typically the floor of the current minute and
      * looking between $nowish-16 minutes and
      * $nowish-1 minutes for donations with >£0 matching assigned, returns:
@@ -922,5 +947,31 @@ class DonationRepository extends SalesforceWriteProxyRepository
         }
 
         return DonationSequenceNumber::of($number);
+    }
+
+    /**
+     * Returns a limited size list of donation fund tip donations that have been left unpaid for some time and
+     * we will want to auto-cancel
+     * @return list<Donation>
+     */
+    public function findStaleDonationFundsTips(\DateTimeImmutable $atDateTime): array
+    {
+        $pending = DonationStatus::Pending->value;
+
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT donation from Matchbot\Domain\Donation donation join donation.campaign c
+            WHERE donation.donationStatus = '$pending'
+            AND donation.paymentMethodType = 'customer_balance'
+            AND c.name = 'Big Give General Donations'
+            AND donation.createdAt < :latestCreationDate
+        DQL
+        );
+
+        $query->setParameter('latestCreationDate', $atDateTime->sub(new \DateInterval('P14D')));
+        $query->setMaxResults(100);
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
     }
 }

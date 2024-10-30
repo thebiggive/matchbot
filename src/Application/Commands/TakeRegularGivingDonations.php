@@ -11,7 +11,7 @@ use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
-use MatchBot\Domain\MandateService;
+use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -26,7 +26,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 class TakeRegularGivingDonations extends LockingCommand
 {
-    private ?MandateService $mandateService = null;
+    private ?RegularGivingService $mandateService = null;
 
     /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
     public function __construct(
@@ -70,7 +70,7 @@ class TakeRegularGivingDonations extends LockingCommand
                 //no-op
         }
 
-        $this->mandateService = $this->container->get(MandateService::class);
+        $this->mandateService = $this->container->get(RegularGivingService::class);
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int

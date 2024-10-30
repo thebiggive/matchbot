@@ -8,6 +8,7 @@ $psr11App = require __DIR__ . '/bootstrap.php';
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\CallFrequentTasks;
+use MatchBot\Application\Commands\CancelStaleDonationFundTips;
 use MatchBot\Application\Commands\ClaimGiftAid;
 use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
@@ -17,6 +18,7 @@ use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
+use MatchBot\Application\Commands\ReturnErroneousExcessFees;
 use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
 use MatchBot\Application\Commands\SendStatistics;
 use MatchBot\Application\Commands\SetupTestMandate;
@@ -100,6 +102,11 @@ $commands = [
         bus: $psr11App->get(RoutableMessageBus::class),
         entityManager: $psr11App->get(EntityManagerInterface::class),
     ),
+    new ReturnErroneousExcessFees(
+        donationRepository: $psr11App->get(DonationRepository::class),
+        logger: $psr11App->get(LoggerInterface::class),
+        stripeClient: $psr11App->get(StripeClient::class),
+    ),
     new UpdateCampaigns(
         $psr11App->get(CampaignRepository::class),
         $psr11App->get(EntityManagerInterface::class),
@@ -109,6 +116,7 @@ $commands = [
     $psr11App->get(SendStatistics::class),
     $psr11App->get(SetupTestMandate::class),
     $psr11App->get(TakeRegularGivingDonations::class),
+    $psr11App->get(CancelStaleDonationFundTips::class),
 ];
 
 foreach ($commands as $command) {
