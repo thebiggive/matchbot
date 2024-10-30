@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
-use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Fees\Fees;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use Psr\Log\LoggerInterface;
 use Stripe\Card;
 use Stripe\StripeClient;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -29,6 +29,7 @@ class ReturnErroneousExcessFees extends LockingCommand
 {
     public function __construct(
         private DonationRepository $donationRepository,
+        private LoggerInterface $logger,
         private readonly StripeClient $stripeClient,
     ) {
         parent::__construct();
@@ -75,14 +76,14 @@ class ReturnErroneousExcessFees extends LockingCommand
 
             if ($fee->amount_refunded > 0) {
                 // Might be because the donation itself was fully refunded and the fee reversed. Carry on.
-                $output->writeln("Donation {$donation->getId()} has already had fee refunded");
+                $output->writeln("Donation {$donation->getUuid()} has already had fee refunded");
                 continue;
             }
 
             $feeDifferencePence = $fee->amount - $donation->getAmountToDeductFractional();
 
             if ($donation->getCharityFee() !== $this->getCorrectFees($donation, $charge)->coreFee) {
-                $output->writeln("Donation {$donation->getId()} has a different fee than expected");
+                $this->logger->error("Donation {$donation->getUuid()} has a different fee than expected");
                 continue;
             }
 

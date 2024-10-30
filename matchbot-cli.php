@@ -104,6 +104,7 @@ $commands = [
     ),
     new ReturnErroneousExcessFees(
         donationRepository: $psr11App->get(DonationRepository::class),
+        logger: $psr11App->get(LoggerInterface::class),
         stripeClient: $psr11App->get(StripeClient::class),
     ),
     new UpdateCampaigns(
