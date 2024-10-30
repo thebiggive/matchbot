@@ -94,14 +94,14 @@ class ReturnErroneousExcessFees extends LockingCommand
                     'amount' => $feeDifferencePence,
                     'metadata' => ['reason' => 'MAT-383 erroneous fee correction'],
                 ]);
-                $output->writeln("Refunded {$feeDifferencePence} for {$donation->getUuid()}");
+                $output->writeln("Refunded {$feeDifferencePence} pence for {$donation->getUuid()}");
             } else {
-                $output->writeln("Would refund {$feeDifferencePence} for {$donation->getUuid()}");
+                $output->writeln("Would refund {$feeDifferencePence} pence for {$donation->getUuid()}");
             }
         }
 
         $output->writeln(sprintf(
-            "Checked %d donations, found %d with differences, %d safe to correct, totalling %s",
+            "Checked %d donations, found %d with differences, %d safe to correct, totalling %s pounds",
             $countOfDonationsChecked,
             $countOfDonationsWithDiscrepancy,
             $countOfDonationsToChange,
