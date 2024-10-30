@@ -73,7 +73,7 @@ class StubStripeClient implements Stripe
         $confirmationToken = new ConfirmationToken();
         $confirmationToken->payment_method_preview = new StripeObject();
         $confirmationToken->payment_method_preview['type'] = 'card';
-        $confirmationToken->payment_method_preview['card'] = ['brand' => 'discover', 'country' => 'some-country'];
+        $confirmationToken->payment_method_preview['card'] = ['brand' => 'discover', 'country' => 'XX'];
 
         return $confirmationToken;
     }
