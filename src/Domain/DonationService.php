@@ -336,8 +336,9 @@ class DonationService
         string $cardCountry,
     ): void {
         Assertion::inArray($cardBrand, Calculator::STRIPE_CARD_BRANDS);
+        Assertion::regex($cardCountry, '/^[A-Z]{2}$/');
 
-// at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
+        // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
         // derive fees return a value, or making functions like Donation::getCharityFeeGross throw if called before it.
         $donation->deriveFees($cardBrand, $cardCountry);
@@ -396,7 +397,7 @@ class DonationService
         $this->doUpdateDonationFees(
             cardBrand: $cardBrand,
             donation: $donation,
-            cardCountry: $cardBrand,
+            cardCountry: $cardCountry,
         );
     }
 
