@@ -95,6 +95,17 @@ class ReturnErroneousExcessFees extends LockingCommand
                     'metadata' => ['reason' => 'MAT-383 erroneous fee correction'],
                 ]);
                 $output->writeln("Refunded {$feeDifferencePence} pence for {$donation->getUuid()}");
+
+                $this->stripeClient->paymentIntents->update(
+                    $donation->getTransactionId(),
+                    [
+                        'metadata' => [
+                            'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                            'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                            'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
+                        ]
+                    ]
+                );
             } else {
                 $output->writeln("Would refund {$feeDifferencePence} pence for {$donation->getUuid()}");
             }
