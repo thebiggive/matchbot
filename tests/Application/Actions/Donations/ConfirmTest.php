@@ -125,6 +125,48 @@ class ConfirmTest extends TestCase
         );
     }
 
+    public function testItChargesMinimumFeeOnGBVisaCardDonation(): void
+    {
+        // arrange
+        $this->fakeStripeClient(
+            cardDetails: ['brand' => 'visa', 'country' => 'GB'],
+            paymentMethodId: self::PAYMENT_METHOD_ID,
+            updatedIntentData: [
+                'status' => 'requires_action',
+                'client_secret' => 'some_client_secret',
+            ],
+            paymentIntentId: 'PAYMENT_INTENT_ID',
+            // £63 donation incurs a fee of 20p + (1.5% == 0.945) == £1.15 (rounded), net.
+            expectedMetadataUpdate: [
+                "metadata" => [
+                    "stripeFeeRechargeGross" => '1.38',
+                    "stripeFeeRechargeNet" => '1.15',
+                    "stripeFeeRechargeVat" => '0.23',
+                ],
+                "application_fee_amount" => 138,
+            ],
+            confirmFailsWithCardError: false,
+            confirmFailsWithApiError: false,
+            confirmFailsWithPaymentMethodUsedError: false,
+            confirmationTokenId: self::CONFIRMATION_TOKEN_ID,
+        );
+
+        // Make sure the latest fees, based on card type, are saved to the database.
+        $this->entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $this->entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $this->entityManagerProphecy->commit()->shouldBeCalledOnce();
+
+        // act
+        $response = $this->callConfirm($this->sut);
+
+        // assert
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(
+            ['paymentIntent' => ['status' => 'requires_action', 'client_secret' => 'some_client_secret']],
+            \json_decode($response->getBody()->getContents(), true)
+        );
+    }
+
     public function testItReturns400OnCancelledDonation(): void
     {
         // arrange
