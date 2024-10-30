@@ -48,7 +48,9 @@ class CancelStaleDonationFundTips extends LockingCommand
         $staleDonationTips = $this->donationRepository->findStaleDonationFundsTips($this->now);
 
         foreach ($staleDonationTips as $tipDonation) {
+            $this->entityManager->beginTransaction();
             $this->donationService->cancel($tipDonation);
+            $this->entityManager->commit();
             $output->writeln("Cancelled tip donation {$tipDonation->getUuid()}");
         }
 
