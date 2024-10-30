@@ -55,14 +55,14 @@
         "symfony/console": "^6.0",
         "symfony/event-dispatcher": "^6.0",
         "symfony/lock": "^6.0",
-        "symfony/messenger": "^6.0",
+        "symfony/messenger": "^7.1.0",
         "symfony/notifier": "^6.2",
-        "symfony/property-access": "^6.0",
+        "symfony/property-access": "^7.1.0",
         "symfony/rate-limiter": "^7.1",
         "symfony/redis-messenger": "^6.0",
-        "symfony/serializer": "^5.2",
+        "symfony/serializer": "^7.1.0",
         "symfony/slack-notifier": "^6.2",
-        "thebiggive/messages": "^3.0"
+        "thebiggive/messages": "^3.1.0"
     },
     "require-dev": {
         "doctrine/event-manager": "^2.0",

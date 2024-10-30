@@ -50,7 +50,6 @@ class Create extends Action
 
         try {
             $mandateData = $this->serializer->deserialize($body, MandateCreate::class, 'json');
-            \assert($mandateData instanceof MandateCreate);
         } catch (\TypeError | UnexpectedValueException | AssertionFailedException $exception) {
             /** similar catch with commentary in @see \MatchBot\Application\Actions\Donations\Create */
             $this->logger->info("Mandate Create non-serialisable payload was: $body");

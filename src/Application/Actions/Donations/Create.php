@@ -68,7 +68,6 @@ class Create extends Action
         $body = (string) $request->getBody();
 
         try {
-            /** @var DonationCreate $donationData */
             $donationData = $this->serializer->deserialize($body, DonationCreate::class, 'json');
         } catch (\TypeError | UnexpectedValueException | AssertionFailedException $exception) {
             // UnexpectedValueException is the Serializer one,
