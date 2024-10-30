@@ -25,7 +25,7 @@ class CallFrequentTasks extends LockingCommand
         $commandNames = [
             'matchbot:send-statistics',
             'matchbot:expire-match-funds',
-            'matchbot:cancel-stale-donation-fund-tips',
+//            'matchbot:cancel-stale-donation-fund-tips', <-- this new one is erroring in prod. Commenting out for now to fix in the morning
         ];
 
         $commands = array_map($app->find(...), $commandNames);
