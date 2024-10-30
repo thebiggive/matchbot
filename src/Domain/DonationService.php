@@ -359,13 +359,6 @@ class DonationService
             // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
         ];
 
-        $this->logger->info(sprintf(
-            'Donation UUID %s has current net fee %s, following patch with brand %s',
-            $donation->getUuid(),
-            $donation->getCharityFee(),
-            $cardBrand,
-        ));
-
         $this->stripe->updatePaymentIntent($donation->getTransactionId(), $updatedIntentData);
     }
 
