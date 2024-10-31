@@ -460,8 +460,6 @@ class DonationService
     /**
      * Sets donation to cancelled in matchbot db, releases match funds, cancels payment in stripe, and updates
      * salesforce.
-     *
-     * Requires an open DB transaction.
      */
     public function cancel(Donation $donation): void
     {
