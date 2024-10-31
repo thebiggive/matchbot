@@ -352,7 +352,7 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
+        $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $this->setDoublesInContainer($container, $donationRepoProphecy, $entityManagerProphecy);
 
@@ -479,7 +479,7 @@ class UpdateTest extends TestCase
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
+        $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $stripeErrorMessage = 'You cannot cancel this PaymentIntent because it has a status of ' .
             'succeeded. Only a PaymentIntent with one of the following statuses may be canceled: ' .

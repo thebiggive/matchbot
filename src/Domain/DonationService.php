@@ -460,14 +460,11 @@ class DonationService
     /**
      * Sets donation to cancelled in matchbot db, releases match funds, cancels payment in stripe, and updates
      * salesforce.
-     *
-     * Requires an open DB transaction.
      */
     public function cancel(Donation $donation): void
     {
         if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
             $this->logger->info("Donation ID {$donation->getUuid()} was already Cancelled");
-            $this->entityManager->rollback();
 
             return;
         }
@@ -475,7 +472,6 @@ class DonationService
         if ($donation->getDonationStatus()->isSuccessful()) {
             // If a donor uses browser back before loading the thank you page, it is possible for them to get
             // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
-            $this->entityManager->rollback();
 
             throw new DonationAlreadyFinalised(
                 'Donation ID {$donation->getUuid()} could not be cancelled as {$donation->getDonationStatus()->value}'
@@ -541,7 +537,6 @@ class DonationService
         // preferences, so to be safe we persist here first.
         $this->entityManager->persist($donation);
         $this->entityManager->flush();
-        $this->entityManager->commit();
 
         if (!$donation->hasEnoughDataForSalesforce()) {
             return;
