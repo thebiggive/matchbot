@@ -7,6 +7,7 @@ namespace MatchBot\Application\Commands;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Fees\Fees;
+use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -147,7 +148,7 @@ class ReturnErroneousExcessFees extends LockingCommand
             throw new \LogicException('Cannot continue with no card on charge');
         }
 
-        $cardBrand = $card->brand;
+        $cardBrand = CardBrand::from($card->brand);
         $cardCountry = Country::fromAlpha2OrNull($card->country);
 
         return Calculator::calculate(

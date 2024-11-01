@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Fees;
 
 use MatchBot\Application\Fees\Calculator;
+use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Tests\TestCase;
 
@@ -14,7 +15,7 @@ class CalculatorTest extends TestCase
     {
         $fees = Calculator::calculate(
             'stripe',
-            'visa',
+            CardBrand::from('visa'),
             Country::fromAlpha2('GB'),
             '123',
             'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
@@ -30,7 +31,7 @@ class CalculatorTest extends TestCase
     {
         $fees = Calculator::calculate(
             'stripe',
-            'visa',
+            CardBrand::from('visa'),
             Country::fromAlpha2('US'),
             '123',
             'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
@@ -45,7 +46,7 @@ class CalculatorTest extends TestCase
     {
         $fees = Calculator::calculate(
             'stripe',
-            'visa',
+            CardBrand::from('visa'),
             Country::fromAlpha2('US'),
             '100',
             'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
@@ -60,7 +61,7 @@ class CalculatorTest extends TestCase
     {
         $fees = Calculator::calculate(
             'stripe',
-            'visa',
+            CardBrand::from('visa'),
             Country::fromAlpha2('GB'),
             '123',
             'sek',
@@ -75,7 +76,7 @@ class CalculatorTest extends TestCase
     {
         $fees = Calculator::calculate(
             'stripe',
-            'visa',
+            CardBrand::from('visa'),
             Country::fromAlpha2('US'),
             '123',
             'SEK', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
@@ -93,7 +94,7 @@ class CalculatorTest extends TestCase
     {
         $fees = Calculator::calculate(
             'stripe',
-            'visa',
+            CardBrand::from('visa'),
             Country::fromAlpha2('US'),
             '100',
             'USD',
@@ -113,7 +114,7 @@ class CalculatorTest extends TestCase
 
         $fees = Calculator::calculate(
             psp: 'stripe',
-            cardBrand: 'mastercard',
+            cardBrand: CardBrand::from('mastercard'),
             cardCountry: Country::fromAlpha2('GB'),
             amount: $donationAmount,
             currencyCode: 'GBP',
@@ -134,7 +135,7 @@ class CalculatorTest extends TestCase
 
         $fees = Calculator::calculate(
             psp: 'stripe',
-            cardBrand: 'mastercard',
+            cardBrand: CardBrand::from('mastercard'),
             cardCountry: Country::fromAlpha2('GB'),
             amount: $donationAmount,
             currencyCode: 'GBP',
@@ -154,7 +155,7 @@ class CalculatorTest extends TestCase
 
         $fees = Calculator::calculate(
             psp: 'stripe',
-            cardBrand: 'mastercard',
+            cardBrand: CardBrand::from('mastercard'),
             cardCountry: Country::fromAlpha2('US'),
             amount: $donationAmount,
             currencyCode: 'GBP',
@@ -163,22 +164,5 @@ class CalculatorTest extends TestCase
 
         $this->assertSame('0.52', $fees->coreFee);
         $this->assertSame(9.48, $donationAmount - $fees->coreFee);
-    }
-
-    public function testItRejectsUnexpectedCardBrand(): void
-    {
-        $this->expectExceptionMessage(
-            'Unexpected card brand, expected brands are amex, diners, discover, eftpos_au, jcb, mastercard, ' .
-            'unionpay, visa, unknown'
-        );
-
-        Calculator::calculate(
-            'stripe',
-            'Card brand that doesnt exist',
-            Country::fromAlpha2('GB'),
-            '1',
-            'GBP',
-            false,
-        );
     }
 }

@@ -6,6 +6,7 @@ namespace MatchBot\Application\Fees;
 
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 
 /**
@@ -37,30 +38,16 @@ class Calculator
     ];
 
     /**
-     * From https://stripe.com/docs/api/errors#errors-payment_method-card-brand
-     */
-    public const array STRIPE_CARD_BRANDS = [
-        'amex', 'diners', 'discover', 'eftpos_au', 'jcb', 'mastercard', 'unionpay', 'visa', 'unknown'
-    ];
-
-    /**
      * @param numeric-string $amount
      */
     public static function calculate(
         string $psp,
-        ?string $cardBrand,
+        ?CardBrand $cardBrand,
         ?Country $cardCountry,
         string $amount,
         string $currencyCode,
         bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
     ): Fees {
-        if (! in_array($cardBrand, [...self::STRIPE_CARD_BRANDS, null], true)) {
-            throw new \UnexpectedValueException(
-                'Unexpected card brand, expected brands are ' .
-                implode(', ', self::STRIPE_CARD_BRANDS)
-            );
-        }
-
         Assertion::eq(
             $psp,
             'stripe',
@@ -95,7 +82,7 @@ class Calculator
     private static function getCoreFee(
         string $amount,
         string $currencyCode,
-        ?string $cardBrand,
+        ?CardBrand $cardBrand,
         ?Country $cardCountry,
         bool $hasGiftAid
     ): string {
@@ -111,7 +98,7 @@ class Calculator
         $feeAmountFixed = self::FEES_FIXED[$currencyCode];
 
         $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
-        if ($cardBrand === 'amex' || !self::isEU($cardCountry)) {
+        if ($cardBrand?->isAmex() || !self::isEU($cardCountry)) {
             $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU, '100', 3);
         }
 

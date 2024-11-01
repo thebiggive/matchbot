@@ -11,6 +11,7 @@ use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\Donation;
@@ -810,7 +811,7 @@ class DonationTest extends TestCase
             chargeId: 'irrelevant',
             totalPaidFractional: 100, // irrelevant
             transferId: 'irrelevant',
-            cardBrand: 'visa',
+            cardBrand: CardBrand::visa,
             cardCountry: Country::fromAlpha2('gb'),
             originalFeeFractional: '1',
             chargeCreationTimestamp: 1,

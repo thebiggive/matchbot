@@ -17,6 +17,7 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -194,7 +195,7 @@ class DonationRepositoryTest extends TestCase
         $donation = $this->getTestDonation('987.65');
         ;
         $donation->setTipAmount('10.00');
-        $donation->deriveFees('amex', null);
+        $donation->deriveFees(CardBrand::amex, null);
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20
@@ -215,7 +216,7 @@ class DonationRepositoryTest extends TestCase
         $donation = $this->getTestDonation('987.65');
         ;
         $donation->setTipAmount('10.00');
-        $donation->deriveFees('visa', Country::fromAlpha2('US'));
+        $donation->deriveFees(CardBrand::visa, Country::fromAlpha2('US'));
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20

@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
+use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
@@ -145,7 +146,7 @@ class StripePaymentsUpdate extends Stripe
                 $card = (object)$card;
             }
 
-            $cardBrand = $card?->brand;
+            $cardBrand = CardBrand::fromNameOrNull($card?->brand);
             $cardCountry = Country::fromAlpha2OrNull($card?->country);
             $balanceTransaction = (string) $charge->balance_transaction;
 

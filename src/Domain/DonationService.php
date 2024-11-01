@@ -331,11 +331,10 @@ class DonationService
     }
 
     private function doUpdateDonationFees(
-        string $cardBrand,
+        CardBrand $cardBrand,
         Donation $donation,
         Country $cardCountry,
     ): void {
-        Assertion::inArray($cardBrand, Calculator::STRIPE_CARD_BRANDS);
 
         // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
@@ -373,17 +372,17 @@ class DonationService
         /** @var StripeObject $card */
         $card = $paymentMethodPreview['card'];
 
-        $cardBrand = $card['brand'];
+        Assertion::string($card['brand']);
+        $cardBrand = CardBrand::from($card['brand']);
         $cardCountry = $card['country'];
 
-        Assertion::string($cardBrand);
         Assertion::string($cardCountry);
         $cardCountry = Country::fromAlpha2($cardCountry);
 
         $this->logger->info(sprintf(
             'Donation UUID %s has card brand %s and country %s',
             $donation->getUuid(),
-            $cardBrand,
+            $cardBrand->value,
             $cardCountry,
         ));
 
