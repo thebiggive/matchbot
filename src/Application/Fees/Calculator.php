@@ -62,6 +62,19 @@ class Calculator
         string $currencyCode,
         bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
     ): Fees {
+        if (! in_array($cardBrand, [...self::STRIPE_CARD_BRANDS, null], true)) {
+            throw new \UnexpectedValueException(
+                'Unexpected card brand, expected brands are ' .
+                implode(', ', self::STRIPE_CARD_BRANDS)
+            );
+        }
+
+        Assertion::eq(
+            $psp,
+            'stripe',
+            'Only Stripe PSP is supported as don\'t know what fees to charge for other PSPs.'
+        );
+
         $calculator = new self(
             psp: $psp,
             cardBrand: $cardBrand,
@@ -92,18 +105,7 @@ class Calculator
         readonly private string $currencyCode,
         readonly private bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
     ) {
-        if (! in_array($this->cardBrand, [...self::STRIPE_CARD_BRANDS, null], true)) {
-            throw new \UnexpectedValueException(
-                'Unexpected card brand, expected brands are ' .
-                implode(', ', self::STRIPE_CARD_BRANDS)
-            );
-        }
 
-        Assertion::eq(
-            $psp,
-            'stripe',
-            'Only Stripe PSP is supported as don\'t know what fees to charge for other PSPs.'
-        );
     }
 
     /**
