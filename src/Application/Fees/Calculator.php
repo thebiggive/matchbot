@@ -75,65 +75,59 @@ class Calculator
             'Only Stripe PSP is supported as don\'t know what fees to charge for other PSPs.'
         );
 
-        $calculator = new self(
-            psp: $psp,
-            cardBrand: $cardBrand,
-            cardCountry: $cardCountry,
+        $coreFee = self::getCoreFee(
             amount: $amount,
             currencyCode: $currencyCode,
-            hasGiftAid: $hasGiftAid,
+            cardBrand: $cardBrand,
+            cardCountry: $cardCountry,
+            hasGiftAid: $hasGiftAid
+        );
+
+        // note at this point coreFee has been rounded to the nearest penny before we calculate VAT.
+
+        $feeVat = self::getFeeVat(
+            coreFee: $coreFee,
+            currencyCode: $currencyCode
         );
 
         return new Fees(
-            coreFee: $calculator->getCoreFee(),
-            feeVat: $calculator->getFeeVat()
+            coreFee: $coreFee,
+            feeVat: $feeVat,
         );
     }
 
     /**
-     * We can consider removing all instance properties and methods and relying on static methods and local vars only -
-     * a static calculator would be clearer. For now, I've hidden the instance in this private method - there's no
-     * public way to get a Calculator instance.
-     *
      * @param numeric-string $amount
-     */
-    private function __construct(
-        string $psp,
-        readonly private ?string $cardBrand,
-        readonly private ?string $cardCountry,
-        readonly private string $amount,
-        readonly private string $currencyCode,
-        readonly private bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
-    ) {
-
-    }
-
-    /**
      * @return numeric-string
      */
-    private function getCoreFee(): string
-    {
+    private static function getCoreFee(
+        string $amount,
+        string $currencyCode,
+        ?string $cardBrand,
+        ?string $cardCountry,
+        bool $hasGiftAid
+    ): string {
         $giftAidFee = '0.00';
 
         // Standard, dynamic fee model. Typically includes fixed amount. Historically may include
         // a fee on Gift Aid. May vary by card type & country.
 
-        $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
+        $currencyCode = strtoupper($currencyCode); // Just in case (Stripe use lowercase internally).
         // Currency code has been compulsory for some time.
         /** @psalm-suppress ImpureMethodCall */
         Assertion::keyExists(self::FEES_FIXED, $currencyCode);
         $feeAmountFixed = self::FEES_FIXED[$currencyCode];
 
         $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_STANDARD, '100', 3);
-        if ($this->cardBrand === 'amex' || !$this->isEU($this->cardCountry)) {
+        if ($cardBrand === 'amex' || !self::isEU($cardCountry)) {
             $feeRatio = bcdiv(self::FEE_MAIN_PERCENTAGE_AMEX_OR_NON_UK_EU, '100', 3);
         }
 
-        if ($this->hasGiftAid) {
+        if ($hasGiftAid) {
             // 4 points needed to handle overall percentages of GA fee like 0.75% == 0.0075 ratio.
             $giftAidFee = bcmul(
                 bcdiv(self::FEE_GIFT_AID_PERCENTAGE, '100', 4),
-                $this->amount,
+                $amount,
                 3,
             );
         }
@@ -141,34 +135,36 @@ class Calculator
         // bcmath truncates values beyond the scale it's working at, so to get x.x% and round
         // in the normal mathematical way we need to start with 3 d.p. scale and round with a
         // workaround.
-        $feeAmountFromPercentageComponent = $this->roundAmount(
-            bcmul($this->amount, $feeRatio, 3)
+        $feeAmountFromPercentageComponent = self::roundAmount(
+            bcmul($amount, $feeRatio, 3)
         );
 
         // Charity fee calculated as:
         // Fixed fee amount + proportion of base donation amount + Gift Aid fee (for Stripe this is £0.00)
-        return $this->roundAmount(
+        return self::roundAmount(
             bcadd(bcadd($feeAmountFixed, $feeAmountFromPercentageComponent, 3), $giftAidFee, 3)
         );
     }
 
     /**
+     * @param numeric-string $coreFee
+     * @param string $currencyCode
      * @return numeric-string
      */
-    private function getFeeVat(): string
+    private static function getFeeVat(string $coreFee, string $currencyCode): string
     {
         // Standard, non-flat-fee logic.
-        $vatRatio = bcdiv($this->getFeeVatPercentage(), '100', 3);
+        $vatRatio = bcdiv(self::getFeeVatPercentage($currencyCode), '100', 3);
 
-        return $this->roundAmount(bcmul($vatRatio, $this->getCoreFee(), 3));
+        return self::roundAmount(bcmul($vatRatio, $coreFee, 3));
     }
 
     /**
      * @return numeric-string
      */
-    private function getFeeVatPercentage(): string
+    private static function getFeeVatPercentage(string $currencyCode): string
     {
-        $currencyCode = strtoupper($this->currencyCode); // Just in case (Stripe use lowercase internally).
+        $currencyCode = strtoupper($currencyCode); // Just in case (Stripe use lowercase internally).
         $currenciesIncurringFeeVat = ['EUR', 'GBP'];
         if (!in_array($currencyCode, $currenciesIncurringFeeVat, true)) {
             return '0';
@@ -185,7 +181,7 @@ class Calculator
      *                          fixed scale and only positive inputs.
      * @return numeric-string
      */
-    #[Pure] private function roundAmount(string $amount): string
+    #[Pure] private static function roundAmount(string $amount): string
     {
         $e = '1000'; // Base 10 ^ 3
 
@@ -196,7 +192,7 @@ class Calculator
      * @param string|null   $cardCountry    ISO 3166-1 alpha-2 country code, or null.
      * @return bool Whether the charge was made using an EU card
      */
-    #[Pure] private function isEU(?string $cardCountry): bool
+    #[Pure] private static function isEU(?string $cardCountry): bool
     {
         if ($cardCountry === null) {
             // Default to 1.5% calculation if card country is not known yet OR remains
@@ -205,5 +201,13 @@ class Calculator
         }
 
         return in_array($cardCountry, self::EU_COUNTRY_CODES, true);
+    }
+
+    /**
+     * @psalm-suppress UnusedConstructor
+     */
+    private function __construct(
+    ) {
+        throw new \Exception("Don't construct, use static methods only");
     }
 }
