@@ -7,6 +7,7 @@ namespace MatchBot\Application\Commands;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Fees\Fees;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
@@ -147,7 +148,7 @@ class ReturnErroneousExcessFees extends LockingCommand
         }
 
         $cardBrand = $card->brand;
-        $cardCountry = $card->country;
+        $cardCountry = Country::fromAlpha2OrNull($card->country);
 
         return Calculator::calculate(
             psp: 'stripe',

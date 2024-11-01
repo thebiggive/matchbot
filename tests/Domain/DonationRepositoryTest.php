@@ -17,6 +17,7 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -214,7 +215,7 @@ class DonationRepositoryTest extends TestCase
         $donation = $this->getTestDonation('987.65');
         ;
         $donation->setTipAmount('10.00');
-        $donation->deriveFees('visa', 'US');
+        $donation->deriveFees('visa', Country::fromAlpha2('US'));
 
         // £987.65 * 3.2%   = £ 31.60 (to 2 d.p.)
         // Fixed fee        = £  0.20

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Fees;
 
 use MatchBot\Application\Fees\Calculator;
+use MatchBot\Domain\Country;
 use MatchBot\Tests\TestCase;
 
 class CalculatorTest extends TestCase
@@ -14,7 +15,7 @@ class CalculatorTest extends TestCase
         $fees = Calculator::calculate(
             'stripe',
             'visa',
-            'GB',
+            Country::fromAlpha2('GB'),
             '123',
             'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
             false,
@@ -30,7 +31,7 @@ class CalculatorTest extends TestCase
         $fees = Calculator::calculate(
             'stripe',
             'visa',
-            'US',
+            Country::fromAlpha2('US'),
             '123',
             'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
             false,
@@ -45,7 +46,7 @@ class CalculatorTest extends TestCase
         $fees = Calculator::calculate(
             'stripe',
             'visa',
-            'US',
+            Country::fromAlpha2('US'),
             '100',
             'GBP', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
             true,
@@ -60,7 +61,7 @@ class CalculatorTest extends TestCase
         $fees = Calculator::calculate(
             'stripe',
             'visa',
-            'GB',
+            Country::fromAlpha2('GB'),
             '123',
             'sek',
             false,
@@ -75,7 +76,7 @@ class CalculatorTest extends TestCase
         $fees = Calculator::calculate(
             'stripe',
             'visa',
-            'US',
+            Country::fromAlpha2('US'),
             '123',
             'SEK', // Comes from Donation so input is uppercase although Stripe is lowercase internally.
             false,
@@ -93,7 +94,7 @@ class CalculatorTest extends TestCase
         $fees = Calculator::calculate(
             'stripe',
             'visa',
-            'US',
+            Country::fromAlpha2('US'),
             '100',
             'USD',
             false,
@@ -113,7 +114,7 @@ class CalculatorTest extends TestCase
         $fees = Calculator::calculate(
             psp: 'stripe',
             cardBrand: 'mastercard',
-            cardCountry: 'GB',
+            cardCountry: Country::fromAlpha2('GB'),
             amount: $donationAmount,
             currencyCode: 'GBP',
             hasGiftAid: false
@@ -134,7 +135,7 @@ class CalculatorTest extends TestCase
         $fees = Calculator::calculate(
             psp: 'stripe',
             cardBrand: 'mastercard',
-            cardCountry: 'GB',
+            cardCountry: Country::fromAlpha2('GB'),
             amount: $donationAmount,
             currencyCode: 'GBP',
             hasGiftAid: true,
@@ -154,7 +155,7 @@ class CalculatorTest extends TestCase
         $fees = Calculator::calculate(
             psp: 'stripe',
             cardBrand: 'mastercard',
-            cardCountry: 'US',
+            cardCountry: Country::fromAlpha2('US'),
             amount: $donationAmount,
             currencyCode: 'GBP',
             hasGiftAid: false
@@ -174,7 +175,7 @@ class CalculatorTest extends TestCase
         Calculator::calculate(
             'stripe',
             'Card brand that doesnt exist',
-            'GB',
+            Country::fromAlpha2('GB'),
             '1',
             'GBP',
             false,

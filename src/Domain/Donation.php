@@ -1351,9 +1351,8 @@ class Donation extends SalesforceWriteProxy
      * when confirming the payment.
      *
      * @param string|null $cardBrand
-     * @param string|null $cardCountry ISO two letter uppercase code
      */
-    public function deriveFees(?string $cardBrand, ?string $cardCountry): void
+    public function deriveFees(?string $cardBrand, ?Country $cardCountry): void
     {
         $incursGiftAidFee = $this->hasGiftAid() && $this->hasTbgShouldProcessGiftAid();
 
@@ -1375,7 +1374,7 @@ class Donation extends SalesforceWriteProxy
         int $totalPaidFractional,
         string $transferId,
         ?string $cardBrand,
-        ?string $cardCountry,
+        ?Country $cardCountry,
         string $originalFeeFractional,
         int $chargeCreationTimestamp
     ): void {

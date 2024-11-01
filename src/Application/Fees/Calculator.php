@@ -6,6 +6,7 @@ namespace MatchBot\Application\Fees;
 
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\Country;
 
 /**
  * @psalm-immutable
@@ -35,15 +36,6 @@ class Calculator
         'USD' => '0.3',
     ];
 
-    /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
-    private const array EU_COUNTRY_CODES = [
-        'AT', 'BE', 'BG', 'CY', 'CZ', 'DK', 'EE',
-        'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT',
-        'LV', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL',
-        'PT', 'RO', 'RU', 'SI', 'SK', 'ES', 'SE',
-        'CH', 'GB',
-    ];
-
     /**
      * From https://stripe.com/docs/api/errors#errors-payment_method-card-brand
      */
@@ -57,7 +49,7 @@ class Calculator
     public static function calculate(
         string $psp,
         ?string $cardBrand,
-        ?string $cardCountry,
+        ?Country $cardCountry,
         string $amount,
         string $currencyCode,
         bool $hasGiftAid, // Whether donation has Gift Aid *and* a fee is to be charged to claim it.
@@ -104,7 +96,7 @@ class Calculator
         string $amount,
         string $currencyCode,
         ?string $cardBrand,
-        ?string $cardCountry,
+        ?Country $cardCountry,
         bool $hasGiftAid
     ): string {
         $giftAidFee = '0.00';
@@ -188,11 +180,7 @@ class Calculator
         return bcdiv(bcadd(bcmul($amount, $e, 0), '5'), $e, 2);
     }
 
-    /**
-     * @param string|null   $cardCountry    ISO 3166-1 alpha-2 country code, or null.
-     * @return bool Whether the charge was made using an EU card
-     */
-    #[Pure] private static function isEU(?string $cardCountry): bool
+    private static function isEU(?Country $cardCountry): bool
     {
         if ($cardCountry === null) {
             // Default to 1.5% calculation if card country is not known yet OR remains
@@ -200,14 +188,14 @@ class Calculator
             return true;
         }
 
-        return in_array($cardCountry, self::EU_COUNTRY_CODES, true);
+        return $cardCountry->isEUOrUK();
     }
 
     /**
      * @psalm-suppress UnusedConstructor
      */
-    private function __construct(
-    ) {
+    private function __construct()
+    {
         throw new \Exception("Don't construct, use static methods only");
     }
 }
