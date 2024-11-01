@@ -32,7 +32,7 @@ enum CardBrand: string
     }
 
     /**
-     * Whether this is amex or not is important Amex is more important to process.
+     * Whether this is amex or not is important Amex is more expensive to process.
      */
     public function isAmex(): bool
     {
