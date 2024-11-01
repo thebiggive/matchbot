@@ -26,6 +26,7 @@ use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestCase;
@@ -34,6 +35,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
+use Stripe\ConfirmationToken;
 use Stripe\Exception\PermissionException;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Messenger\RoutableMessageBus;
@@ -160,11 +162,11 @@ class DonationServiceTest extends TestCase
         $this->expectException(MandateNotActive::class);
         $this->expectExceptionMessage("Not confirming donation as mandate is 'Cancelled', not Active");
 
-        $this->getDonationService(false)->confirmPreAuthorized($donation);
+        $this->getDonationService()->confirmPreAuthorized($donation);
     }
 
     private function getDonationService(
-        bool $withAlwaysCrashingEntityManager,
+        bool $withAlwaysCrashingEntityManager = false,
         LoggerInterface $logger = null,
     ): DonationService {
         $emProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -213,5 +215,58 @@ class DonationServiceTest extends TestCase
             $this->getDonationCreate(),
             TestCase::someCampaign(stripeAccountId: 'STRIPE-ACCOUNT-ID')
         );
+    }
+
+    /**
+     * Not attempting to cover all possible variations here, just one example of confirming via the
+     * \MatchBot\Domain\DonationService::confirmOnSessionDonation . Details of the fee calcuations are
+     * tested directly against the Calculator class.
+     */
+    public function testItConfirmsOnSessionUKVisaDonationChargingApproiateFee(): void
+    {
+        $confirmationTokenId = StripeConfirmationTokenId::of('ctoken_xyz');
+        $paymentIntentId = 'payment_intent_id';
+
+        $donation = TestCase::someDonation('15.00');
+        $donation->setTransactionId($paymentIntentId);
+
+        $this->stripeProphecy->retrieveConfirmationToken($confirmationTokenId)
+            ->will(function () {
+                $confirmationToken = new ConfirmationToken();
+                /** @psalm-suppress InvalidPropertyAssignmentValue */
+                $confirmationToken->payment_method_preview = [
+                    'card' => [
+                        'brand' => 'visa',
+                        'country' => 'gb',
+                    ],
+                ];
+                return $confirmationToken;
+            });
+
+        // Gross fee is £0.52 because in the case of a UK visa card the fee is
+        // 1.5% * the donation amount, plus 20p, plus 20% vat - and we round the net amount to pence
+        // before adding VAT, then round it again after:
+        $this->assertSame(
+            52.0,
+            round(round(15_00 * 1.5 / 100 + 20) * 1.2)
+        );
+
+        $this->stripeProphecy->updatePaymentIntent($paymentIntentId, [
+            'metadata' => [
+                'stripeFeeRechargeGross' => '0.52',
+                'stripeFeeRechargeNet' => '0.43',
+                'stripeFeeRechargeVat' => '0.09',
+            ],
+            'application_fee_amount' => '52',
+        ])->shouldBeCalledOnce();
+
+        $this->stripeProphecy->confirmPaymentIntent($paymentIntentId, [
+            'confirmation_token' => $confirmationTokenId->stripeConfirmationTokenId
+        ])->shouldBeCalledOnce();
+
+        // act
+        $this->getDonationService()->confirmOnSessionDonation($donation, $confirmationTokenId);
+
+        $this->assertEquals('0.52', $donation->getCharityFeeGross());
     }
 }
