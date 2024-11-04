@@ -59,9 +59,14 @@ class PullMetaCampaignFromSF extends LockingCommand
         Assertion::betweenLength($metaCampaginSlug, minLength: 5, maxLength: 50);
         Assertion::regex($metaCampaginSlug, '/^[A-Za-z0-9-]+$/');
 
-        $this->campaignRepository->fetchAllForMetaCampaign($metaCampaginSlug);
+        ['newFetchCount' => $newFetchCount, 'updatedCount' => $updatedCount] =
+            $this->campaignRepository->fetchAllForMetaCampaign($metaCampaginSlug);
 
+        $total = $newFetchCount + $updatedCount;;
 
-        return 1; // implementation not done yet.
+        $output->writeln("Fetched $total campaigns total from Salesforce for for '$metaCampaginSlug'");
+        $output->writeln("$newFetchCount new campaigns added to DB, $updatedCount campaigns updated");
+
+        return 0;
     }
 }

@@ -98,7 +98,14 @@ class CampaignRepository extends SalesforceReadProxyRepository
         return $this->findOneBy(['salesforceId' => $salesforceId->value]);
     }
 
-    public function fetchAllForMetaCampaign(string $metaCampaginSlug): void
+    /**
+     * @param string $metaCampaginSlug
+     * @return array{newFetchCount: int, updatedCount: int}
+ *@throws NotFoundException
+     *
+     * @throws CampaignNotReady
+     */
+    public function fetchAllForMetaCampaign(string $metaCampaginSlug): array
     {
         /** @var list<array{id: string}> $campaignList */
         $campaignList = $this->client->findCampaignsForMetaCampaign($metaCampaginSlug);
@@ -107,15 +114,22 @@ class CampaignRepository extends SalesforceReadProxyRepository
             return Salesforce18Id::ofCampaign($campaign['id']);
         }, $campaignList);
 
+        $newFetchCount = 0;
+        $updatedCount = 0;
+
         foreach ($campaignIds as $id) {
             $existingCampaignInDB = $this->findOneBySalesforceId($id);
 
             if ($existingCampaignInDB) {
-                $this->updateFromSf($existingCampaignInDB);
+                $this->updateFromSf($existingCampaignInDB, withCache: true, autoSave: true);
+                $updatedCount++;
             } else {
                 $this->pullNewFromSf($id);
+                $newFetchCount++;
             }
         }
+
+        return compact('newFetchCount', 'updatedCount');
     }
 
     /**
