@@ -98,6 +98,26 @@ class CampaignRepository extends SalesforceReadProxyRepository
         return $this->findOneBy(['salesforceId' => $salesforceId->value]);
     }
 
+    public function fetchAllForMetaCampaign(string $metaCampaginSlug): void
+    {
+        /** @var list<array{id: string}> $campaignList */
+        $campaignList = $this->client->findCampaignsForMetaCampaign($metaCampaginSlug);
+
+        $campaignIds = array_map(function (array $campaign) {
+            return Salesforce18Id::ofCampaign($campaign['id']);
+        }, $campaignList);
+
+        foreach ($campaignIds as $id) {
+            $existingCampaignInDB = $this->findOneBySalesforceId($id);
+
+            if ($existingCampaignInDB) {
+                $this->updateFromSf($existingCampaignInDB);
+            } else {
+                $this->pullNewFromSf($id);
+            }
+        }
+    }
+
     /**
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
