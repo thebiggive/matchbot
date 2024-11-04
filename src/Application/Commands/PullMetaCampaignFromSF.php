@@ -45,7 +45,7 @@ class PullMetaCampaignFromSF extends LockingCommand
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         // Steps:
-        // 1. Use SF API to get list of campaigns withi meta campaign by hitting e.g.
+        // 1. Use SF API to get list of campaigns within meta campaign by hitting e.g.
         // https://sf-api-production.thebiggive.org.uk/campaigns/services/apexrest/v1.0/campaigns?limit=6&parentSlug=christmas-challenge-2024
         // https://{sf-api-base}}/campaigns/services/apexrest/v1.0/campaigns?limit=6&parentSlug={slug}}
         //
