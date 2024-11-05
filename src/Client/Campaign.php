@@ -51,15 +51,6 @@ class Campaign extends Common
     /**
      * Returns a list of all campaigns associated with the meta-campagin with the given slug.
      *
-     * @todo - consider how to fetch more than 100. Currently not possible with this method as SF API has a built
-     * in max limit of 100 at https://github.com/thebiggive/salesforce/blob/62f7aec4bc8c6c0463f75aab379ac97185b4693c/force-app/main/default/classes/CampaignSearchService.cls#L37
-     * but also calling the search api as here when all we want is the ID is inefficient. So I think we'll need we'll
-     * need either a new API function in SF to give us just IDs, or go the other way and have a new API function to give
-     * us all the data we need to pull into matchbot for many campaigns at once.
-     *
-     * In principle, we could optimise further by not repeating the charity but in practice we don't expect the same
-     * charity to have multiple campaigns within a single metacampaign anyway.
-     *
      * @psalm-suppress MoreSpecificReturnType
      * @psalm-suppress LessSpecificReturnStatement
      * @psalm-suppress MixedReturnTypeCoercion

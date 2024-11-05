@@ -44,16 +44,6 @@ class PullMetaCampaignFromSF extends LockingCommand
     }
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        // Steps:
-        // 1. Use SF API to get list of campaigns within meta campaign by hitting e.g.
-        // https://sf-api-production.thebiggive.org.uk/campaigns/services/apexrest/v1.0/campaigns?limit=6&parentSlug=christmas-challenge-2024
-        // https://{sf-api-base}}/campaigns/services/apexrest/v1.0/campaigns?limit=6&parentSlug={slug}}
-        //
-        // Iterate through each campaign. Check if we already have it in DB. If not call
-        // \MatchBot\Domain\CampaignRepository::pullNewFromSf .
-        // If so call \MatchBot\Domain\SalesforceReadProxyRepository::updateFromSf
-        // output counts of how many campaigns and charities newly pulled and/or updated.
-
         $metaCampaginSlug = $input->getArgument('metaCampaignSlug');
         \assert(is_string($metaCampaginSlug));
         Assertion::betweenLength($metaCampaginSlug, minLength: 5, maxLength: 50);
