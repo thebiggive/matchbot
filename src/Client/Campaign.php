@@ -67,16 +67,37 @@ class Campaign extends Common
      */
     public function findCampaignsForMetaCampaign(string $metaCampaignSlug, int $limit = 100): array
     {
+        $campaigns = [];
         $encodedSlug = urlencode($metaCampaignSlug);
-        $uri = $this->getUri(
-            "{$this->getSetting('campaign', 'baseUri')}?parentSlug=$encodedSlug&limit=$limit",
-            true
-        );
-        $response = $this->getHttpClient()->get($uri);
 
-        $decoded = json_decode((string)$response->getBody(), true);
-        Assertion::isArray($decoded);
+        $offset = 0;
+        $pageSize = 100;
+        $foundEmptyPage = false;
+        while ($offset < $limit) {
+            $uri = $this->getUri(
+                "{$this->getSetting('campaign', 'baseUri')}?parentSlug=$encodedSlug&limit=$pageSize&offset=$offset",
+                true
+            );
+            $response = $this->getHttpClient()->get($uri);
 
-        return $decoded;
+            $decoded = json_decode((string)$response->getBody(), true);
+
+            Assertion::isArray($decoded);
+            if ($decoded === []) {
+                $foundEmptyPage = true;
+                break;
+            }
+
+            $campaigns = [...$campaigns, ...$decoded];
+            $offset += $pageSize;
+        }
+
+        if (! $foundEmptyPage) {
+            throw new \Exception(
+                "Did not find empty page in campaign search results, too many campaigns in metacampaign?"
+            );
+        }
+
+        return $campaigns;
     }
 }

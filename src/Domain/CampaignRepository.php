@@ -108,7 +108,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function fetchAllForMetaCampaign(string $metaCampaginSlug): array
     {
         /** @var list<array{id: string}> $campaignList */
-        $campaignList = $this->client->findCampaignsForMetaCampaign($metaCampaginSlug);
+        $campaignList = $this->client->findCampaignsForMetaCampaign($metaCampaginSlug, limit: 10_000);
 
         $campaignIds = array_map(function (array $campaign) {
             return Salesforce18Id::ofCampaign($campaign['id']);
@@ -117,7 +117,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $newFetchCount = 0;
         $updatedCount = 0;
 
+        $count = count($campaignIds);
+
+        $i = 0;
         foreach ($campaignIds as $id) {
+            $i++;
+            $this->logger->info("Fetching campaign $i of $count\n");
             $existingCampaignInDB = $this->findOneBySalesforceId($id);
 
             if ($existingCampaignInDB) {
