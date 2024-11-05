@@ -64,7 +64,7 @@ class PullMetaCampaignFromSF extends LockingCommand
 
         $total = $newFetchCount + $updatedCount;;
 
-        $output->writeln("Fetched $total campaigns total from Salesforce for for '$metaCampaginSlug'");
+        $output->writeln("Fetched $total campaigns total from Salesforce for '$metaCampaginSlug'");
         $output->writeln("$newFetchCount new campaigns added to DB, $updatedCount campaigns updated");
 
         return 0;
