@@ -11,6 +11,7 @@ use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
 use Psr\Log\LoggerInterface;
 use Stripe\Card;
 use Stripe\StripeClient;
@@ -82,7 +83,22 @@ class ReturnErroneousExcessFees extends LockingCommand
                 continue;
             }
 
-            $feeDifferencePence = $fee->amount - $donation->getAmountToDeductFractional();
+            $tipApplicationFeeOffsetPence = 0;
+            // Currently we only support full refunds which update the overall status, and
+            // tip refunds which don't change status but nonetheless set the refund timestamp.
+            // So this `if` clause is a good early indicator that we might have a tip refund
+            // to consider.
+            if ($donation->getDonationStatus() === DonationStatus::Paid && $donation->hasRefund()) {
+                // Stripe PI metadata has the specific original tip as we don't clear that.
+                $paymentIntent = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
+                $tipAmountInMetadata = $paymentIntent->metadata['tipAmount'] ?? '0';
+                \assert(is_string($tipAmountInMetadata) && is_numeric($tipAmountInMetadata));
+                $tipApplicationFeeOffsetPence = (int) bcmul('100', $tipAmountInMetadata, 2);
+            }
+
+            $feeDifferencePence = $fee->amount -
+                $tipApplicationFeeOffsetPence -
+                $donation->getAmountToDeductFractional();
 
             if ($donation->getCharityFee() !== $this->getCorrectFees($donation, $charge)->coreFee) {
                 $this->logger->error("Donation {$donation->getUuid()} has a different fee than expected");
