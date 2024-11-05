@@ -121,7 +121,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $existingCampaignInDB = $this->findOneBySalesforceId($id);
 
             if ($existingCampaignInDB) {
-                $this->updateFromSf($existingCampaignInDB, withCache: true, autoSave: true);
+                $this->updateFromSf($existingCampaignInDB, withCache: false, autoSave: true);
                 $updatedCount++;
             } else {
                 $this->pullNewFromSf($id);
