@@ -1610,4 +1610,9 @@ class Donation extends SalesforceWriteProxy
     {
         return bccomp($this->amount, $this->getFundingWithdrawalTotal(), 2) === 0;
     }
+
+    public function hasRefund(): bool
+    {
+        return $this->refundedAt !== null;
+    }
 }
