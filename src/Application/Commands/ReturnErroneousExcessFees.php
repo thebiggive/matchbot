@@ -91,8 +91,8 @@ class ReturnErroneousExcessFees extends LockingCommand
             if ($donation->getDonationStatus() === DonationStatus::Paid && $donation->hasRefund()) {
                 // Stripe PI metadata has the specific original tip as we don't clear that.
                 $paymentIntent = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
-                /** @var numeric-string $tipAmountInMetadata */
                 $tipAmountInMetadata = $paymentIntent->metadata['tipAmount'] ?? '0';
+                \assert(is_string($tipAmountInMetadata) && is_numeric($tipAmountInMetadata));
                 $tipApplicationFeeOffsetPence = (int) bcmul('100', $tipAmountInMetadata, 2);
             }
 
