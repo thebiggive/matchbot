@@ -1349,11 +1349,8 @@ class Donation extends SalesforceWriteProxy
      * Updates a donation to set the appropriate fees. If card details are null then we assume for now that a card with
      * the lowest possible fees will be used, and this should be called again with the details of the selected card
      * when confirming the payment.
-     *
-     * @param string|null $cardBrand
-     * @param string|null $cardCountry ISO two letter uppercase code
      */
-    public function deriveFees(?string $cardBrand, ?string $cardCountry): void
+    public function deriveFees(?CardBrand $cardBrand, ?Country $cardCountry): void
     {
         $incursGiftAidFee = $this->hasGiftAid() && $this->hasTbgShouldProcessGiftAid();
 
@@ -1374,8 +1371,8 @@ class Donation extends SalesforceWriteProxy
         string $chargeId,
         int $totalPaidFractional,
         string $transferId,
-        ?string $cardBrand,
-        ?string $cardCountry,
+        ?CardBrand $cardBrand,
+        ?Country $cardCountry,
         string $originalFeeFractional,
         int $chargeCreationTimestamp
     ): void {
@@ -1388,7 +1385,6 @@ class Donation extends SalesforceWriteProxy
         $this->transferId = $transferId;
 
         if ($cardBrand !== null) {
-            /** @psalm-var value-of<Calculator::STRIPE_CARD_BRANDS> $cardBrand */
             $this->deriveFees($cardBrand, $cardCountry);
         }
 

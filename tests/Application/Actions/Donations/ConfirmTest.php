@@ -87,7 +87,7 @@ class ConfirmTest extends TestCase
     {
         // arrange
         $this->fakeStripeClient(
-            cardDetails: ['brand' => 'discover', 'country' => 'XX'],
+            cardDetails: ['brand' => 'discover', 'country' => 'KI'],
             paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_action',
@@ -192,7 +192,7 @@ class ConfirmTest extends TestCase
         // arrange
 
         $this->fakeStripeClient(
-            cardDetails: ['brand' => 'discover', 'country' => 'XX'],
+            cardDetails: ['brand' => 'discover', 'country' => 'KI'],
             paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_payment_method',
@@ -234,7 +234,7 @@ class ConfirmTest extends TestCase
     {
         // arrange
         $this->fakeStripeClient(
-            cardDetails: ['brand' => 'discover', 'country' => 'XX'],
+            cardDetails: ['brand' => 'discover', 'country' => 'KI'],
             paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_payment_method',
@@ -275,7 +275,7 @@ class ConfirmTest extends TestCase
         bool $confirmCallExpected
     ): void {
         $this->fakeStripeClient(
-            cardDetails: ['brand' => 'discover', 'country' => 'XX'],
+            cardDetails: ['brand' => 'discover', 'country' => 'KI'],
             paymentMethodId: self::PAYMENT_METHOD_ID,
             updatedIntentData: [
                 'status' => 'requires_action',
