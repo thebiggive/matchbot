@@ -38,8 +38,7 @@ class PullMetaCampaignFromSF extends LockingCommand
     public function __construct(
         private CampaignRepository $campaignRepository,
         private FundRepository $fundRepository
-    )
-    {
+    ) {
         parent::__construct();
     }
     public function configure(): void
