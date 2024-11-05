@@ -222,7 +222,7 @@ class DonationServiceTest extends TestCase
      * \MatchBot\Domain\DonationService::confirmOnSessionDonation . Details of the fee calcuations are
      * tested directly against the Calculator class.
      */
-    public function testItConfirmsOnSessionUKVisaDonationChargingApproiateFee(): void
+    public function testItConfirmsOnSessionUKVisaDonationChargingAppropriateFee(): void
     {
         $confirmationTokenId = StripeConfirmationTokenId::of('ctoken_xyz');
         $paymentIntentId = 'payment_intent_id';
