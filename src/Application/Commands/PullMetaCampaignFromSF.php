@@ -9,6 +9,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\FundRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -34,7 +35,10 @@ class PullMetaCampaignFromSF extends LockingCommand
     /**
      * @psalm-suppress PossiblyUnusedMethod
      */
-    public function __construct(private CampaignRepository $campaignRepository)
+    public function __construct(
+        private CampaignRepository $campaignRepository,
+        private FundRepository $fundRepository
+    )
     {
         parent::__construct();
     }
@@ -49,10 +53,17 @@ class PullMetaCampaignFromSF extends LockingCommand
         Assertion::betweenLength($metaCampaginSlug, minLength: 5, maxLength: 50);
         Assertion::regex($metaCampaginSlug, '/^[A-Za-z0-9-]+$/');
 
-        ['newFetchCount' => $newFetchCount, 'updatedCount' => $updatedCount] =
+        ['newFetchCount' => $newFetchCount, 'updatedCount' => $updatedCount, 'campaigns' => $campaigns] =
             $this->campaignRepository->fetchAllForMetaCampaign($metaCampaginSlug);
 
         $total = $newFetchCount + $updatedCount;
+
+        $i = 0;
+        foreach ($campaigns as $campaign) {
+            $i++;
+            $output->writeln("Pulling funds for ($i of $total) '{$campaign->getCampaignName()}'");
+            $this->fundRepository->pullForCampaign($campaign);
+        }
 
         $output->writeln("Fetched $total campaigns total from Salesforce for '$metaCampaginSlug'");
         $output->writeln("$newFetchCount new campaigns added to DB, $updatedCount campaigns updated");

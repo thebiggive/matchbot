@@ -100,7 +100,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     /**
      * @param string $metaCampaginSlug
-     * @return array{newFetchCount: int, updatedCount: int}
+     * @return array{newFetchCount: int, updatedCount: int, campaigns: list<Campaign>}
  *@throws NotFoundException
      *
      * @throws CampaignNotReady
@@ -120,21 +120,25 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $count = count($campaignIds);
 
         $i = 0;
+        $campaigns = [];
         foreach ($campaignIds as $id) {
             $i++;
-            $this->logger->info("Fetching campaign $i of $count\n");
-            $existingCampaignInDB = $this->findOneBySalesforceId($id);
 
-            if ($existingCampaignInDB) {
-                $this->updateFromSf($existingCampaignInDB, withCache: false, autoSave: true);
+            $campaign = $this->findOneBySalesforceId($id);
+
+            if ($campaign) {
+                $this->updateFromSf($campaign, withCache: false, autoSave: true);
                 $updatedCount++;
             } else {
-                $this->pullNewFromSf($id);
+                $campaign = $this->pullNewFromSf($id);
                 $newFetchCount++;
             }
+            $this->logger->info("Fetched campaign $i of $count, '{$campaign->getCampaignName()}'\n");
+
+            $campaigns[] = $campaign;
         }
 
-        return compact('newFetchCount', 'updatedCount');
+        return compact('newFetchCount', 'updatedCount', 'campaigns');
     }
 
     /**
