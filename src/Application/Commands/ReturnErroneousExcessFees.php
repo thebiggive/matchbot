@@ -100,10 +100,7 @@ class ReturnErroneousExcessFees extends LockingCommand
                 $tipApplicationFeeOffsetPence -
                 $donation->getAmountToDeductFractional();
 
-            if (
-                $tipApplicationFeeOffsetPence === 0 &&
-                $donation->getCharityFee() !== $this->getCorrectFees($donation, $charge)->coreFee
-            ) {
+            if ($donation->getCharityFee() !== $this->getCorrectFees($donation, $charge)->coreFee) {
                 $this->logger->error("Donation {$donation->getUuid()} has a different fee than expected");
                 continue;
             }
