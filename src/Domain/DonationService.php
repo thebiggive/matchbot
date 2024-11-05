@@ -331,12 +331,10 @@ class DonationService
     }
 
     private function doUpdateDonationFees(
-        string $cardBrand,
+        CardBrand $cardBrand,
         Donation $donation,
-        string $cardCountry,
+        Country $cardCountry,
     ): void {
-        Assertion::inArray($cardBrand, Calculator::STRIPE_CARD_BRANDS);
-        Assertion::regex($cardCountry, '/^[A-Z]{2}$/');
 
         // at present if the following line was left out we would charge a wrong fee in some cases. I'm not happy with
         // that, would like to find a way to make it so if its left out we get an error instead - either by having
@@ -374,16 +372,17 @@ class DonationService
         /** @var StripeObject $card */
         $card = $paymentMethodPreview['card'];
 
-        $cardBrand = $card['brand'];
+        Assertion::string($card['brand']);
+        $cardBrand = CardBrand::from($card['brand']);
         $cardCountry = $card['country'];
 
-        Assertion::string($cardBrand);
         Assertion::string($cardCountry);
+        $cardCountry = Country::fromAlpha2($cardCountry);
 
         $this->logger->info(sprintf(
             'Donation UUID %s has card brand %s and country %s',
             $donation->getUuid(),
-            $cardBrand,
+            $cardBrand->value,
             $cardCountry,
         ));
 
@@ -460,14 +459,11 @@ class DonationService
     /**
      * Sets donation to cancelled in matchbot db, releases match funds, cancels payment in stripe, and updates
      * salesforce.
-     *
-     * Requires an open DB transaction.
      */
     public function cancel(Donation $donation): void
     {
         if ($donation->getDonationStatus() === DonationStatus::Cancelled) {
             $this->logger->info("Donation ID {$donation->getUuid()} was already Cancelled");
-            $this->entityManager->rollback();
 
             return;
         }
@@ -475,7 +471,6 @@ class DonationService
         if ($donation->getDonationStatus()->isSuccessful()) {
             // If a donor uses browser back before loading the thank you page, it is possible for them to get
             // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
-            $this->entityManager->rollback();
 
             throw new DonationAlreadyFinalised(
                 'Donation ID {$donation->getUuid()} could not be cancelled as {$donation->getDonationStatus()->value}'
@@ -541,7 +536,6 @@ class DonationService
         // preferences, so to be safe we persist here first.
         $this->entityManager->persist($donation);
         $this->entityManager->flush();
-        $this->entityManager->commit();
 
         if (!$donation->hasEnoughDataForSalesforce()) {
             return;

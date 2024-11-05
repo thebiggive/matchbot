@@ -954,7 +954,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      * we will want to auto-cancel
      * @return list<Donation>
      */
-    public function findStaleDonationFundsTips(\DateTimeImmutable $atDateTime): array
+    public function findStaleDonationFundsTips(\DateTimeImmutable $atDateTime, \DateInterval $cancelationDelay): array
     {
         $pending = DonationStatus::Pending->value;
 
@@ -967,7 +967,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         DQL
         );
 
-        $query->setParameter('latestCreationDate', $atDateTime->sub(new \DateInterval('P14D')));
+        $query->setParameter('latestCreationDate', $atDateTime->sub($cancelationDelay));
         $query->setMaxResults(100);
 
         /** @var list<Donation> $result */
