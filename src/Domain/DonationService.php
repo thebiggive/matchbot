@@ -179,6 +179,12 @@ class DonationService
         StripeConfirmationTokenId $tokenId
     ): \Stripe\PaymentIntent {
         $this->updateDonationFeesFromConfirmationToken($tokenId, $donation);
+
+        // We flush now to make sure the actual fees we're charging are recorded. If there's any DB error at this point
+        // we prefer to crash without collecting the donation over collecting the donation without a proper record
+        // or what we're charging.
+        $this->entityManager->flush();
+
         return $this->confirm($donation, $tokenId);
     }
 
