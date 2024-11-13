@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MatchBot\Tests\Application\Actions\HttpModels;
+namespace MatchBot\Tests\Application\HttpModels;
 
 use MatchBot\Application\HttpModels\MandateCreate;
 use MatchBot\Tests\TestCase;
