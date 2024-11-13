@@ -4,21 +4,13 @@ namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
 use PrinsFrank\Standards\Country\CountryAlpha2;
+use PrinsFrank\Standards\Country\Groups\EU;
 
 /**
  * A nation state, such as the UK. Currently used in our card fee calculation logic, may be used elsewhere in future.
  */
 readonly class Country
 {
-    /** @var string[]   EU + GB ISO 3166-1 alpha-2 country codes */
-    private const array EU_UK_COUNTRY_CODES = [
-        'AT', 'BE', 'BG', 'CY', 'CZ', 'DK', 'EE',
-        'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT',
-        'LV', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL',
-        'PT', 'RO', 'RU', 'SI', 'SK', 'ES', 'SE',
-        'CH', 'GB',
-    ];
-
     private function __construct(
         public readonly CountryAlpha2 $alpha2
     ) {
@@ -53,7 +45,8 @@ readonly class Country
      */
     public function isEUOrUK(): bool
     {
-        return in_array($this->alpha2->value, self::EU_UK_COUNTRY_CODES, true);
+        // We may want to use EEA later, but need to clarify our Stripe fee schedule first.
+        return $this->alpha2->isMemberOf(EU::class) || $this->alpha2->value === 'GB';
     }
 
     public function __toString(): string
