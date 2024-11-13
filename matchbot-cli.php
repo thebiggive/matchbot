@@ -14,6 +14,7 @@ use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\LockingCommand;
+use MatchBot\Application\Commands\PullMetaCampaignFromSF;
 use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\Commands\ResetMatching;
@@ -104,6 +105,7 @@ $commands = [
     ),
     new ReturnErroneousExcessFees(
         donationRepository: $psr11App->get(DonationRepository::class),
+        logger: $psr11App->get(LoggerInterface::class),
         stripeClient: $psr11App->get(StripeClient::class),
     ),
     new UpdateCampaigns(
@@ -116,6 +118,7 @@ $commands = [
     $psr11App->get(SetupTestMandate::class),
     $psr11App->get(TakeRegularGivingDonations::class),
     $psr11App->get(CancelStaleDonationFundTips::class),
+    $psr11App->get(PullMetaCampaignFromSF::class),
 ];
 
 foreach ($commands as $command) {

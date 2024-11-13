@@ -99,6 +99,49 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
+     * @param string $metaCampaginSlug
+     * @return array{newFetchCount: int, updatedCount: int, campaigns: list<Campaign>}
+ *@throws NotFoundException
+     *
+     * @throws CampaignNotReady
+     */
+    public function fetchAllForMetaCampaign(string $metaCampaginSlug): array
+    {
+        /** @var list<array{id: string}> $campaignList */
+        $campaignList = $this->client->findCampaignsForMetaCampaign($metaCampaginSlug, limit: 10_000);
+
+        $campaignIds = array_map(function (array $campaign) {
+            return Salesforce18Id::ofCampaign($campaign['id']);
+        }, $campaignList);
+
+        $newFetchCount = 0;
+        $updatedCount = 0;
+
+        $count = count($campaignIds);
+
+        $i = 0;
+        $campaigns = [];
+        foreach ($campaignIds as $id) {
+            $i++;
+
+            $campaign = $this->findOneBySalesforceId($id);
+
+            if ($campaign) {
+                $this->updateFromSf($campaign, withCache: false, autoSave: true);
+                $updatedCount++;
+            } else {
+                $campaign = $this->pullNewFromSf($id);
+                $newFetchCount++;
+            }
+            $this->logger->info("Fetched campaign $i of $count, '{$campaign->getCampaignName()}'\n");
+
+            $campaigns[] = $campaign;
+        }
+
+        return compact('newFetchCount', 'updatedCount', 'campaigns');
+    }
+
+    /**
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
      * @throws Client\CampaignNotReady

@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
-use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Fees\Fees;
+use MatchBot\Domain\CardBrand;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationStatus;
+use Psr\Log\LoggerInterface;
 use Stripe\Card;
 use Stripe\StripeClient;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -29,6 +32,7 @@ class ReturnErroneousExcessFees extends LockingCommand
 {
     public function __construct(
         private DonationRepository $donationRepository,
+        private LoggerInterface $logger,
         private readonly StripeClient $stripeClient,
     ) {
         parent::__construct();
@@ -75,14 +79,29 @@ class ReturnErroneousExcessFees extends LockingCommand
 
             if ($fee->amount_refunded > 0) {
                 // Might be because the donation itself was fully refunded and the fee reversed. Carry on.
-                $output->writeln("Donation {$donation->getId()} has already had fee refunded");
+                $output->writeln("Donation {$donation->getUuid()} has already had fee refunded");
                 continue;
             }
 
-            $feeDifferencePence = $fee->amount - $donation->getAmountToDeductFractional();
+            $tipApplicationFeeOffsetPence = 0;
+            // Currently we only support full refunds which update the overall status, and
+            // tip refunds which don't change status but nonetheless set the refund timestamp.
+            // So this `if` clause is a good early indicator that we might have a tip refund
+            // to consider.
+            if ($donation->getDonationStatus() === DonationStatus::Paid && $donation->hasRefund()) {
+                // Stripe PI metadata has the specific original tip as we don't clear that.
+                $paymentIntent = $this->stripeClient->paymentIntents->retrieve($donation->getTransactionId());
+                $tipAmountInMetadata = $paymentIntent->metadata['tipAmount'] ?? '0';
+                \assert(is_string($tipAmountInMetadata) && is_numeric($tipAmountInMetadata));
+                $tipApplicationFeeOffsetPence = (int) bcmul('100', $tipAmountInMetadata, 2);
+            }
+
+            $feeDifferencePence = $fee->amount -
+                $tipApplicationFeeOffsetPence -
+                $donation->getAmountToDeductFractional();
 
             if ($donation->getCharityFee() !== $this->getCorrectFees($donation, $charge)->coreFee) {
-                $output->writeln("Donation {$donation->getId()} has a different fee than expected");
+                $this->logger->error("Donation {$donation->getUuid()} has a different fee than expected");
                 continue;
             }
 
@@ -95,6 +114,17 @@ class ReturnErroneousExcessFees extends LockingCommand
                     'metadata' => ['reason' => 'MAT-383 erroneous fee correction'],
                 ]);
                 $output->writeln("Refunded {$feeDifferencePence} pence for {$donation->getUuid()}");
+
+                $this->stripeClient->paymentIntents->update(
+                    $donation->getTransactionId(),
+                    [
+                        'metadata' => [
+                            'stripeFeeRechargeGross' => $donation->getCharityFeeGross(),
+                            'stripeFeeRechargeNet' => $donation->getCharityFee(),
+                            'stripeFeeRechargeVat' => $donation->getCharityFeeVat(),
+                        ]
+                    ]
+                );
             } else {
                 $output->writeln("Would refund {$feeDifferencePence} pence for {$donation->getUuid()}");
             }
@@ -134,8 +164,8 @@ class ReturnErroneousExcessFees extends LockingCommand
             throw new \LogicException('Cannot continue with no card on charge');
         }
 
-        $cardBrand = $card->brand;
-        $cardCountry = $card->country;
+        $cardBrand = CardBrand::from($card->brand);
+        $cardCountry = Country::fromAlpha2OrNull($card->country);
 
         return Calculator::calculate(
             psp: 'stripe',

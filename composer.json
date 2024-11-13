@@ -39,6 +39,7 @@
         "middlewares/client-ip": "^2.0",
         "monolog/monolog": "^2.2",
         "php-di/php-di": "^7.0",
+        "prinsfrank/standards": "^3.3",
         "psr/container": "^2.0",
         "psr/http-message": "^1.1",
         "psr/http-server-handler": "^1.0",
@@ -142,6 +143,10 @@
         "matchbot:check-out-of-sync-funds": [
           "Composer\\Config::disableProcessTimeout",
           "php matchbot-cli.php matchbot:handle-out-of-sync-funds check"
+        ],
+        "matchbot:pull-meta-campaign-from-sf": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:pull-meta-campaign-from-sf"
         ],
         "matchbot:redistribute-match-funds": [
             "Composer\\Config::disableProcessTimeout",

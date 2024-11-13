@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -38,14 +39,21 @@ class CancelStaleDonationFundTips extends LockingCommand
         private DonationRepository $donationRepository,
         private DonationService $donationService,
         private EntityManagerInterface $entityManager,
-        private \DateTimeImmutable $now
+        private \DateTimeImmutable $now,
+        private Environment $environment,
     ) {
         parent::__construct();
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $staleDonationTips = $this->donationRepository->findStaleDonationFundsTips($this->now);
+        // Cancel tips quicker outside prod to allow for easier testing:
+        $twoWeeks = new \DateInterval('P14D');
+        $tenMinutes = new \DateInterval('PT10M');
+
+        $cancelationDelay = $this->environment == Environment::Production ? $twoWeeks : $tenMinutes;
+
+        $staleDonationTips = $this->donationRepository->findStaleDonationFundsTips($this->now, $cancelationDelay);
 
         foreach ($staleDonationTips as $tipDonation) {
             $this->donationService->cancel($tipDonation);

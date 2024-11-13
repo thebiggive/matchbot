@@ -161,6 +161,7 @@ class Update extends Action
                     try {
                         $this->donationService->cancel($donation);
                     } catch (DonationAlreadyFinalised $e) {
+                        $this->entityManager->rollback();
                         return $this->validationError(
                             $response,
                             $e->getMessage(),
@@ -168,8 +169,10 @@ class Update extends Action
                         );
                     } catch (CouldNotCancelStripePaymentIntent) {
                         $error = new ActionError(ActionError::SERVER_ERROR, 'Could not cancel Stripe Payment Intent');
+                        $this->entityManager->rollback();
                         return $this->respond($response, new ActionPayload(500, null, $error));
                     }
+                    $this->entityManager->commit();
                     return $this->respondWithData($response, $donation->toFrontEndApiModel());
                 }
 
@@ -445,6 +448,8 @@ class Update extends Action
         }
 
         $this->donationService->save($donation);
+        $this->entityManager->commit();
+
 
         return $this->respondWithData($response, $donation->toFrontEndApiModel());
     }
