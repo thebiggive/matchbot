@@ -6,9 +6,9 @@ namespace MatchBot\Tests\Application\Messenger\Middleware;
 
 use MatchBot\Application\Messenger\Middleware\AddOrLogMessageId;
 use MatchBot\Application\Messenger\DonationUpserted;
-use MatchBot\Application\Messenger\Stamp\MessageId;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
+use Messages\Stamp\MessageId;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;

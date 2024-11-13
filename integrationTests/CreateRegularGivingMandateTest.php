@@ -2,14 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MatchBot\Tests\Application\Actions\Donations;
+namespace MatchBot\IntegrationTests;
 
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use GuzzleHttp\Psr7\ServerRequest;
-use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
-use MatchBot\Domain\PersonId;
-use MatchBot\IntegrationTests\IntegrationTest;
 use MatchBot\Tests\TestData;
 use Prophecy\Argument;
 use Psr\Http\Message\ResponseInterface;

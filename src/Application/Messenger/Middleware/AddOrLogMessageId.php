@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Messenger\Middleware;
 
 use MatchBot\Application\Messenger\DonationUpserted;
-use MatchBot\Application\Messenger\Stamp\MessageId;
+use Messages\Stamp\MessageId;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Middleware\MiddlewareInterface;

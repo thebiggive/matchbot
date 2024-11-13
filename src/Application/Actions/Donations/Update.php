@@ -78,7 +78,6 @@ class Update extends Action
         $body = (string) $request->getBody();
 
         try {
-            /** @var HttpModels\Donation $donationData */
             $donationData = $this->serializer->deserialize(
                 $body,
                 HttpModels\Donation::class,
