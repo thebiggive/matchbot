@@ -1383,11 +1383,6 @@ class Donation extends SalesforceWriteProxy
 
         $this->chargeId = $chargeId;
         $this->transferId = $transferId;
-
-        if ($cardBrand !== null) {
-            $this->deriveFees($cardBrand, $cardCountry);
-        }
-
         $this->donationStatus = DonationStatus::Collected;
         $this->collectedAt = (new \DateTimeImmutable("@$chargeCreationTimestamp"));
         $this->setOriginalPspFeeFractional($originalFeeFractional);

@@ -144,6 +144,10 @@
           "Composer\\Config::disableProcessTimeout",
           "php matchbot-cli.php matchbot:handle-out-of-sync-funds check"
         ],
+        "matchbot:pull-meta-campaign-from-sf": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:pull-meta-campaign-from-sf"
+        ],
         "matchbot:redistribute-match-funds": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:redistribute-match-funds"

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MatchBot\Client;
 
 use GuzzleHttp\Exception\RequestException;
+use MatchBot\Application\Assertion;
+use MatchBot\Domain\Salesforce18Id;
 
 class Campaign extends Common
 {
@@ -44,5 +46,49 @@ class Campaign extends Common
         }
 
         return $campaignResponse;
+    }
+
+    /**
+     * Returns a list of all campaigns associated with the meta-campagin with the given slug.
+     *
+     * @psalm-suppress MoreSpecificReturnType
+     * @psalm-suppress LessSpecificReturnStatement
+     * @psalm-suppress MixedReturnTypeCoercion
+     * @return list<array>
+     */
+    public function findCampaignsForMetaCampaign(string $metaCampaignSlug, int $limit = 100): array
+    {
+        $campaigns = [];
+        $encodedSlug = urlencode($metaCampaignSlug);
+
+        $offset = 0;
+        $pageSize = 100;
+        $foundEmptyPage = false;
+        while ($offset < $limit) {
+            $uri = $this->getUri(
+                "{$this->getSetting('campaign', 'baseUri')}?parentSlug=$encodedSlug&limit=$pageSize&offset=$offset",
+                true
+            );
+            $response = $this->getHttpClient()->get($uri);
+
+            $decoded = json_decode((string)$response->getBody(), true);
+
+            Assertion::isArray($decoded);
+            if ($decoded === []) {
+                $foundEmptyPage = true;
+                break;
+            }
+
+            $campaigns = [...$campaigns, ...$decoded];
+            $offset += $pageSize;
+        }
+
+        if (! $foundEmptyPage) {
+            throw new \Exception(
+                "Did not find empty page in campaign search results, too many campaigns in metacampaign?"
+            );
+        }
+
+        return $campaigns;
     }
 }
