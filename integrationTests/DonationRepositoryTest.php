@@ -164,7 +164,7 @@ class DonationRepositoryTest extends IntegrationTest
         $sut = $this->getService(DonationRepository::class);
 
         // act
-        $cancelReadyDonations = $sut->findByDonorCampaignAndMethod(
+        $cancelReadyDonations = $sut->findPendingByDonorCampaignAndMethod(
             self::PSP_CUSTOMER_ID,
             Salesforce18Id::ofCampaign($campaignId),
             PaymentMethodType::CustomerBalance

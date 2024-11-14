@@ -978,7 +978,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * @return list<Donation>
      */
-    public function findByDonorCampaignAndMethod(
+    public function findPendingByDonorCampaignAndMethod(
         string $donorStripeId,
         Salesforce18Id $campaignId,
         PaymentMethodType $paymentMethodType,

@@ -43,7 +43,7 @@ class CancelAll extends Action
         $donorStripeId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PSP_ATTRIBUTE_NAME);
         \assert(is_string($donorStripeId));
 
-        $donations = $this->donationRepository->findByDonorCampaignAndMethod(
+        $donations = $this->donationRepository->findPendingByDonorCampaignAndMethod(
             $donorStripeId,
             $campaign,
             $paymentMethodType,

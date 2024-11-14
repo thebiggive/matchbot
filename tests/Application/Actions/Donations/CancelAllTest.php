@@ -52,7 +52,7 @@ class CancelAllTest extends TestCase
         ];
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->findByDonorCampaignAndMethod(
+        $donationRepoProphecy->findPendingByDonorCampaignAndMethod(
             TestData\Identity::STRIPE_ID,
             Salesforce18Id::ofCampaign(self::SF_CAMPAIGN_ID),
             PaymentMethodType::CustomerBalance,
