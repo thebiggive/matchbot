@@ -16,6 +16,7 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Symfony\Component\Messenger\Envelope;
@@ -23,6 +24,8 @@ use Symfony\Component\Messenger\RoutableMessageBus;
 
 class DonationRepositoryTest extends IntegrationTest
 {
+    private const string PSP_CUSTOMER_ID = 'cus_inttest_1';
+
     public function setUp(): void
     {
         parent::setUp();
@@ -143,6 +146,34 @@ class DonationRepositoryTest extends IntegrationTest
         );
     }
 
+    public function testItFindsDonationsToCancel(): void
+    {
+        // arrange
+        $campaign = $this->makeCampaign();
+        $campaignId = $campaign->getSalesforceId();
+        \assert(is_string($campaignId));
+        $randomEmailAddress = 'email' . random_int(1000, 99999) . '@example.com';
+
+        $this->makeDonation(
+            $randomEmailAddress,
+            $campaign,
+            DonationStatus::Pending,
+            PaymentMethodType::CustomerBalance,
+        );
+
+        $sut = $this->getService(DonationRepository::class);
+
+        // act
+        $cancelReadyDonations = $sut->findByDonorCampaignAndMethod(
+            self::PSP_CUSTOMER_ID,
+            Salesforce18Id::ofCampaign($campaignId),
+            PaymentMethodType::CustomerBalance
+        );
+
+        // assert
+        $this->assertCount(1, $cancelReadyDonations);
+        $this->assertEquals(DonationStatus::Pending, $cancelReadyDonations[0]->getDonationStatus());
+    }
 
     public function makeCampaign(): Campaign
     {
@@ -151,19 +182,26 @@ class DonationRepositoryTest extends IntegrationTest
         $campaign->setStartDate(new \DateTime());
         $campaign->setEndDate(new \DateTime());
         $campaign->setIsMatched(true);
-
         $campaign->setName('Campaign Name');
+        $campaign->setSalesforceId('campaignId12345678');
+
         return $campaign;
     }
 
-    public function makeDonation(string $randomEmailAddress, Campaign $campaign, DonationStatus $donationStatus): void
-    {
+    private function makeDonation(
+        string $randomEmailAddress,
+        Campaign $campaign,
+        DonationStatus $donationStatus,
+        PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
+    ): void {
         $oldPendingDonation = Donation::fromApiModel(
             donationData: new DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: '1',
                 projectId: 'projectID123456789',
                 psp: 'stripe',
+                pspMethodType: $paymentMethodType,
+                pspCustomerId: self::PSP_CUSTOMER_ID,
                 emailAddress: $randomEmailAddress,
             ),
             campaign: $campaign
