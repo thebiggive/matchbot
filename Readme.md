@@ -272,14 +272,8 @@ pattern to ensure this remains true.
 
 ## APIs
 
-The API contracts which the app fulfils are currently kept on SwaggerHub and
-split across two manually-maintained docs:
-
-* payment status update hook: [DonationWebhookSwagger2](https://app.swaggerhub.com/apis/Noel/DonationWebhookSwagger2) –
-  using Swagger 2 for historical reasons; this is now used only with MatchBot as a client to send data to Salesforce.
-  Stripe's incoming webhooks to MatchBot follow the schemas defined in Stripe's documentation.
-
-* everything else: [TBG-Donations](https://app.swaggerhub.com/apis/Noel/TBG-Donations) – using OpenAPI 3
+The API contract which the app fulfils (along with Salesforce) is currently kept on SwaggerHub at [TBG-Donations](https://app.swaggerhub.com/apis/Noel/TBG-Donations).
+It uses OpenAPI 3.
 
 The app also implements *clients* for some endpoints defined in these and some other API
 contracts, including:

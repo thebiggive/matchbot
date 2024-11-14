@@ -1,0 +1,160 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MatchBot\Tests\Application\Actions\Donations;
+
+use DI\Container;
+use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use MatchBot\Client\BadRequestException;
+use MatchBot\Client\Stripe;
+use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Tests\Application\DonationTestDataTrait;
+use MatchBot\Tests\TestCase;
+use MatchBot\Tests\TestData;
+use Prophecy\Argument;
+use Prophecy\Prophecy\ObjectProphecy;
+use Slim\Exception\HttpUnauthorizedException;
+
+class CancelAllTest extends TestCase
+{
+    use DonationTestDataTrait;
+    use PublicJWTAuthTrait;
+
+    private const string SF_CAMPAIGN_ID = '7015B0000017Z3xQAE';
+    private const string ROUTE = '/v1/people/12345678-1234-1234-1234-1234567890ab/donations';
+
+    public function testCancelTwoSuccess(): void
+    {
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+
+        $twoDonations = [
+            $this->getTestDonation(
+                amount: '10',
+                pspMethodType: PaymentMethodType::CustomerBalance,
+                tipAmount: '0', // A Customer Balance Donation may not include a tip
+                collected: false,
+            ),
+            $this->getTestDonation(
+                amount: '20',
+                pspMethodType: PaymentMethodType::CustomerBalance,
+                tipAmount: '0', // A Customer Balance Donation may not include a tip
+                collected: false,
+            ),
+        ];
+
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy->findByDonorCampaignAndMethod(
+            TestData\Identity::STRIPE_ID,
+            Salesforce18Id::ofCampaign(self::SF_CAMPAIGN_ID),
+            PaymentMethodType::CustomerBalance,
+        )
+            ->willReturn($twoDonations);
+        $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))
+            ->shouldBeCalledTimes(2);
+
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+
+        $stripeProphecy = $this->prophesize(Stripe::class);
+        // For now, each test donation retrieved by the above helper uses the same txn ID.
+        $stripeProphecy->cancelPaymentIntent($twoDonations[0]->getTransactionId())
+            ->shouldBeCalledTimes(2);
+
+        $this->setDoublesInContainer($container, $donationRepoProphecy, $entityManagerProphecy, $stripeProphecy);
+
+        // act
+        $request = $this->createRequest('DELETE', self::ROUTE)
+            ->withQueryParams([
+                'campaignId' => self::SF_CAMPAIGN_ID,
+                'paymentMethodType' => PaymentMethodType::CustomerBalance->value,
+            ])
+            ->withHeader('x-tbg-auth', TestData\Identity::getTestIdentityTokenComplete());
+        $response = $app->handle($request);
+
+        // assert
+        $this->assertEquals(200, $response->getStatusCode());
+        $json = (string) $response->getBody();
+        $this->assertJson($json);
+        /** @var array{donations: list<array{donationAmount: float, status: string}>} $payload */
+        $payload = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        $this->assertArrayHasKey('donations', $payload);
+        $this->assertCount(2, $payload['donations']);
+
+        $donationZero = $payload['donations'][0];
+        $this->assertEquals('Cancelled', $donationZero['status']);
+        $this->assertEquals(10.0, $donationZero['donationAmount']);
+    }
+
+    public function testNoAuth(): void
+    {
+        // arrange
+        $app = $this->getAppInstance();
+        $request = $this->createRequest('DELETE', self::ROUTE)
+            ->withQueryParams([
+                'campaignId' => self::SF_CAMPAIGN_ID,
+                'paymentMethodType' => PaymentMethodType::CustomerBalance,
+            ]);
+
+        // assert
+        $this->expectException(HttpUnauthorizedException::class);
+        $this->expectExceptionMessage('Unauthorised');
+
+        // act
+        $app->handle($request);
+    }
+
+    public function testMissingRequiredQueryParam(): void
+    {
+        // arrange
+        $app = $this->getAppInstance();
+        /** @var Container $container */
+        $container = $app->getContainer();
+        $request = $this->createRequest('DELETE', self::ROUTE)
+            ->withQueryParams(['campaignId' => self::SF_CAMPAIGN_ID]) // missing paymentMethodType
+            ->withHeader('x-tbg-auth', TestData\Identity::getTestIdentityTokenComplete());
+
+        $this->setDoublesInContainer(
+            $container,
+            $this->prophesize(DonationRepository::class),
+            $this->prophesize(RetrySafeEntityManager::class)
+        );
+
+        // assert
+        $this->expectException(BadRequestException::class);
+        $this->expectExceptionMessage('Missing campaign ID or payment method type');
+
+        // act
+        $app->handle($request);
+    }
+
+    /**
+     * @param Container $container
+     * @param ObjectProphecy<DonationRepository> $donationRepoProphecy
+     * @param ObjectProphecy<RetrySafeEntityManager> $entityManagerProphecy
+     * @param ObjectProphecy<Stripe>|null $stripeProphecy
+     */
+    private function setDoublesInContainer(
+        Container $container,
+        ObjectProphecy $donationRepoProphecy,
+        ObjectProphecy $entityManagerProphecy,
+        ObjectProphecy $stripeProphecy = null,
+    ): void {
+        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+        $container->set(CampaignRepository::class, $this->prophesize(CampaignRepository::class)->reveal());
+        $container->set(DonorAccountRepository::class, $this->prophesize(DonorAccountRepository::class)->reveal());
+
+        if ($stripeProphecy !== null) {
+            $container->set(Stripe::class, $stripeProphecy->reveal());
+        }
+    }
+}
