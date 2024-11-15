@@ -45,13 +45,28 @@ return function (App $app) {
         })
             ->add(DonationPublicAuthMiddleware::class);
 
-        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donor-account', DonorAccount\Create::class)
-            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
+        /**
+         * Cancel *all* pending donations for the current Donor with the specified query param criteria,
+         * currently taking one campaign ID and most useful for Donation Funds tips.
+         */
+        $versionGroup->delete('/donations', Donations\CancelAll::class)
+            ->add(PersonManagementAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
-        $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/regular-giving', RegularGivingMandate\Create::class)
-            ->add(PersonWithPasswordAuthMiddleware::class)
+        $versionGroup->group('/people/{personId:[a-z0-9-]{36}}', function (RouteCollectorProxy $pwdDonorGroup) {
+            $pwdDonorGroup->post('/donor-account', DonorAccount\Create::class);
+            $pwdDonorGroup->post('/regular-giving', RegularGivingMandate\Create::class);
+            $pwdDonorGroup->get('/donations', Donations\GetAllForUser::class);
+            $pwdDonorGroup->delete('/donations', Donations\CancelAll::class);
+            $pwdDonorGroup->group('/payment_methods', function (RouteCollectorProxy $paymentMethodsGroup) {
+                $paymentMethodUriSuffixPattern = '/{payment_method_id:[a-zA-Z0-9_]{10,50}}';
+                $paymentMethodsGroup->get('', GetPaymentMethods::class);
+                $paymentMethodsGroup->delete($paymentMethodUriSuffixPattern, DeletePaymentMethod::class);
+                $paymentMethodsGroup->put("$paymentMethodUriSuffixPattern/billing_details", UpdatePaymentMethod::class);
+            });
+        })
+            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
 
@@ -60,23 +75,6 @@ return function (App $app) {
         $versionGroup->get('/regular-giving/my-donation-mandates', RegularGivingMandate\GetAllForUser::class)
             ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
-            ->add(RateLimitMiddleware::class);
-
-        $versionGroup->get('/people/{personId:[a-z0-9-]{36}}/donations', Donations\GetAllForUser::class)
-            ->add(PersonWithPasswordAuthMiddleware::class)
-            ->add($ipMiddleware);
-
-        $versionGroup->group(
-            '/people/{personId:[a-z0-9-]{36}}/payment_methods',
-            function (RouteCollectorProxy $paymentMethodsGroup) {
-                $paymentMethodUriSuffixPattern = '/{payment_method_id:[a-zA-Z0-9_]{10,50}}';
-
-                $paymentMethodsGroup->get('', GetPaymentMethods::class);
-                $paymentMethodsGroup->delete($paymentMethodUriSuffixPattern, DeletePaymentMethod::class);
-                $paymentMethodsGroup->put("$paymentMethodUriSuffixPattern/billing_details", UpdatePaymentMethod::class);
-            }
-        )
-            ->add(PersonWithPasswordAuthMiddleware::class) // Runs last
             ->add(RateLimitMiddleware::class);
     });
 
