@@ -46,7 +46,7 @@ readonly class Country
     public function isEUOrUK(): bool
     {
         // We may want to use EEA later, but need to clarify our Stripe fee schedule first.
-        return $this->alpha2->isMemberOf(EU::class) || $this->alpha2->value === 'GB';
+        return $this->alpha2->isMemberOf(EU::class) || $this->alpha2 === CountryAlpha2::United_Kingdom;
     }
 
     public function __toString(): string
