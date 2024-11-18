@@ -18,6 +18,7 @@ use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
+use MatchBot\Domain\DomainException\MissingTransactionId;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -476,6 +477,9 @@ class Donation extends SalesforceWriteProxy
         }
     }
 
+    /**
+     * @throws MissingTransactionId
+     */
     public function toSFApiModel(): array
     {
         $data = [...$this->toFrontEndApiModel(), 'originalPspFee' => (float) $this->getOriginalPspFee()];
@@ -487,6 +491,9 @@ class Donation extends SalesforceWriteProxy
         return $data;
     }
 
+    /**
+     * @throws MissingTransactionId
+     */
     public function toFrontEndApiModel(): array
     {
         $totalPaidByDonor = $this->getTotalPaidByDonor();
@@ -778,14 +785,14 @@ class Donation extends SalesforceWriteProxy
     /**
      * We may call this safely *only* after a donation has a PSP's transaction ID.
      * Stripe assigns the ID before we return a usable donation object to the Donate client,
-     * so this should be true in most of the app.
+     * so this should be true in most of the app for usable donations.
      *
-     * @throws \LogicException if the transaction ID is not set
+     * @throws MissingTransactionId if the transaction ID is not set
      */
     public function getTransactionId(): string
     {
-        if (!$this->transactionId) {
-            throw new \LogicException('Transaction ID not set for donation ' . ($this->id ?? 'null'));
+        if ($this->transactionId === null) {
+            throw new MissingTransactionId('Transaction ID not set for donation ' . ($this->id ?? 'null'));
         }
 
         return $this->transactionId;
