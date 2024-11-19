@@ -84,10 +84,7 @@ class StripePayoutHandler
             // Outside of production we expect Stripe to combine things from multiple test environments
             // (staging & regtest) into one, so we may get pings re payouts where we don't recognise any
             // donations.
-            $isAfter18Nov = new \DateTimeImmutable('now') > new \DateTimeImmutable('2024-11-19T00:00:00+00:00');
-            $logLevel = (getenv('APP_ENV') === 'production' && $isAfter18Nov)
-                ? LogLevel::ERROR
-                : LogLevel::INFO;
+            $logLevel = (getenv('APP_ENV') === 'production') ? LogLevel::ERROR : LogLevel::INFO;
             $this->logger->log($logLevel, sprintf(
                 'Payout: Exited with no original donation charge IDs for Payout ID %s, account %s',
                 $payoutId,
