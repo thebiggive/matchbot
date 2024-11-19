@@ -31,7 +31,7 @@ class DonationToken
         $claims = [
             'iss' => getenv('BASE_URI'),
             'iat' => time(),
-            'exp' => time() + (30 * 86400), // Expire in 30 days
+            'exp' => time() + 8 * 60 * 60, // eight hours
             'sub' => [
                 'donationId' => $donationId,
             ],
