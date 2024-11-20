@@ -72,8 +72,10 @@ EOT
                             $salesforceId
                         ));
                     } else {
-                        $this->logger->error(sprintf(
-                            'Skipping unknown PRODUCTION campaign %s – charity inactive?',
+                        // TODO perhaps make this a warning, so it shows on dashboards but not alarm channels, and
+                        // also inactivate the Campaign? While we are leaving the data as-is, warning is too noisy.
+                        $this->logger->info(sprintf(
+                            'Skipping unknown PRODUCTION campaign %s – charity inactive or rejected offer?',
                             $salesforceId
                         ));
                     }
