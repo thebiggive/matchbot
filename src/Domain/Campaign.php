@@ -39,6 +39,18 @@ class Campaign extends SalesforceReadProxy
     protected ?string $currencyCode;
 
     /**
+     * Status as sent from SF API. Not currently used in matchbot but here for ad-hoc DB queries and
+     * possible future use.
+     *
+     * Consider converting to enum or value object before using in any logic.
+     *
+     * Default null because campaigns not recently updated in matchbot have not pulled this field from SF.
+     * @psalm-suppress UnusedProperty
+     */
+    #[ORM\Column(type: 'string', length: 64, nullable: true, options: ['default' => null])]
+    private ?string $status = null;
+
+    /**
      * @var string
      */
     #[ORM\Column(type: 'string')]
@@ -226,6 +238,7 @@ class Campaign extends SalesforceReadProxy
     public function updateFromSfPull(
         Charity $charity,
         string $currencyCode,
+        string $status,
         \DateTimeInterface $endDate,
         bool $isMatched,
         string $name,
@@ -239,10 +252,16 @@ class Campaign extends SalesforceReadProxy
         $this->name = $name;
         $this->startDate = $startDate;
         $this->ready = $ready;
+        $this->status = $status;
     }
 
     public function setReady(bool $isReady): void
     {
         $this->ready = $isReady;
+    }
+
+    public function getStatus(): ?string
+    {
+        return $this->status;
     }
 }

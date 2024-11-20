@@ -183,6 +183,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $campaign->updateFromSfPull(
             charity: $charity,
+            status: $campaignData['status'],
             currencyCode: $campaignData['currencyCode'] ?? 'GBP',
             endDate: new DateTime($campaignData['endDate']),
             isMatched: $campaignData['isMatched'],
