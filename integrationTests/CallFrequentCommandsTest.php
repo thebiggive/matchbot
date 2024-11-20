@@ -41,8 +41,8 @@ class CallFrequentCommandsTest extends IntegrationTest
             'matchbot:expire-match-funds starting!',
             'Released 0 donations\' matching',
             'matchbot:expire-match-funds complete!',
-//            'matchbot:cancel-stale-donation-fund-tips starting!', // commented out temporarily
-//            'matchbot:cancel-stale-donation-fund-tips complete!',
+            'matchbot:cancel-stale-donation-fund-tips starting!',
+            'matchbot:cancel-stale-donation-fund-tips complete!',
             'matchbot:tick complete!',
             '',
         ]);
