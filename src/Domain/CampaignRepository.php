@@ -142,7 +142,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
      *
-     * @psalm-suppress MixedArgument - Argument 1 of MatchBot\Domain\Campaign::setReady cannot be mixed, expecting bool
      * fix before merge.
      */
     protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
@@ -177,7 +176,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             regulatorNumber: $campaignData['charity']['regulatorNumber'],
         );
 
-        /** @var float|null $feePercentage */
         $feePercentage = $campaignData['feePercentage'] ?? null;
         Assertion::null($feePercentage, "Fee percentages are no-longer supported, should always be null");
 
