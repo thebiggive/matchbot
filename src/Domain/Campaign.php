@@ -60,6 +60,7 @@ class Campaign extends SalesforceReadProxy
      * Dictates whether campaign is/will be ready to accept donations. Currently calculated in SF Apex code
      * based on status. A campaign may be ready but not yet open, in which case it will not accept donations right now.
      */
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $ready = true;
 
     /**
@@ -215,6 +216,29 @@ class Campaign extends SalesforceReadProxy
     public function getEndDate(): DateTimeInterface
     {
         return $this->endDate;
+    }
+
+    public function isReady(): bool
+    {
+        return $this->ready;
+    }
+
+    public function updateFromSfPull(
+        Charity $charity,
+        string $currencyCode,
+        \DateTimeInterface $endDate,
+        bool $isMatched,
+        string $name,
+        \DateTimeInterface $startDate,
+        bool $ready,
+    ): void {
+        $this->charity = $charity;
+        $this->currencyCode = $currencyCode;
+        $this->endDate = $endDate;
+        $this->isMatched = $isMatched;
+        $this->name = $name;
+        $this->startDate = $startDate;
+        $this->ready = $ready;
     }
 
     public function setReady(bool $isReady): void

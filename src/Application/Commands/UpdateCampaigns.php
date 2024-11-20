@@ -8,7 +8,6 @@ use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Exception\TransferException;
-use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -61,11 +60,8 @@ EOT
 
             try {
                 $this->pull($campaign, $output);
-            } catch (NotFoundException | CampaignNotReady $exception) {
+            } catch (NotFoundException) {
                 if (getenv('APP_ENV') === 'production') {
-                    // This is currently possible if a charity had a campaign already launchable
-                    // before, but no longer meets the requirements to run it. Our Saleforce APIs
-                    // will then 404 and no longer return current data for the campaign.
                     if ($campaign->getEndDate() < new \DateTime()) {
                         $this->logger->info(sprintf(
                             'Skipping unknown PRODUCTION campaign %s whose end date had passed – charity inactive?',
@@ -117,7 +113,6 @@ EOT
     }
 
     /**
-     * @throws CampaignNotReady
      * @throws NotFoundException
      */
     protected function pull(Campaign $campaign, OutputInterface $output): void

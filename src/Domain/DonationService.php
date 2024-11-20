@@ -11,7 +11,6 @@ use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
-use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\Stripe;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -76,7 +75,7 @@ class DonationService
      * @throws TransportExceptionInterface
      * @throws RateLimitExceededException
      * @throws WrongCampaignType
-     * @throws CampaignNotReady|\MatchBot\Client\NotFoundException
+     * @throws \MatchBot\Client\NotFoundException
      */
     public function createDonation(DonationCreate $donationData, string $pspCustomerId): Donation
     {
@@ -252,7 +251,6 @@ class DonationService
      * - Creating Stripe Payment intent
      *
      * @throws CampaignNotOpen
-     * @throws CampaignNotReady
      * @throws CharityAccountLacksNeededCapaiblities
      * @throws CouldNotMakeStripePaymentIntent
      * @throws DBALServerException

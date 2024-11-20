@@ -33,7 +33,6 @@ readonly class RegularGivingService
      * @throws NotFullyMatched
      * @throws \Doctrine\DBAL\Exception\ServerException
      * @throws \Doctrine\ORM\Exception\ORMException
-     * @throws \MatchBot\Client\CampaignNotReady
      * @throws \MatchBot\Client\NotFoundException
      * @throws \Symfony\Component\Notifier\Exception\TransportExceptionInterface
      */
