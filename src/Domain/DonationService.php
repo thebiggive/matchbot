@@ -265,7 +265,7 @@ class DonationService
     {
         $campaign = $donation->getCampaign();
 
-        if (!$campaign->isOpen()) {
+        if (!$campaign->isOpen(new \DateTimeImmutable())) {
             throw new CampaignNotOpen("Campaign {$campaign->getSalesforceId()} is not open");
         }
 
@@ -406,7 +406,7 @@ class DonationService
     {
         Assertion::same($donation->getPsp(), 'stripe');
 
-        if (!$donation->getCampaign()->isOpen()) {
+        if (!$donation->getCampaign()->isOpen(new \DateTimeImmutable())) {
             throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
         }
 
