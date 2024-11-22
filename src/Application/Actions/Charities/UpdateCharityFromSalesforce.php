@@ -31,7 +31,7 @@ class UpdateCharityFromSalesforce extends Action
         $salesforceId = $args['salesforceId'] ?? null;
 
         if (! is_string($salesforceId)) {
-            throw new DomainRecordNotFoundException('Missing donation ID');
+            throw new DomainRecordNotFoundException('Missing charity ID');
         }
 
         try {
