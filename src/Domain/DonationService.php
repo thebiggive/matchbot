@@ -58,6 +58,8 @@ class DonationService
         'The confirmation token has already been used to confirm a previous PaymentIntent',
         'This PaymentIntent\'s radar_options could not be updated because it has a status of canceled.',
         'This PaymentIntent\'s amount could not be updated because it has a status of canceled.',
+        // phpcs:ignore
+        'The parameter application_fee_amount cannot be updated on a PaymentIntent after a capture has already been made.',
     ];
 
     public function __construct(
