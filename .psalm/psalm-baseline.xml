@@ -223,33 +223,12 @@
       <code><![CDATA[$campaignData['charity']['regulatorNumber']]]></code>
       <code><![CDATA[$campaignData['charity']['regulatorRegion']]]></code>
       <code><![CDATA[$campaignData['charity']['stripeAccountId']]]></code>
-      <code><![CDATA[$campaignData['currencyCode']]]></code>
-      <code><![CDATA[$campaignData['currencyCode'] ?? 'GBP']]></code>
-      <code><![CDATA[$campaignData['endDate']]]></code>
-      <code><![CDATA[$campaignData['id']]]></code>
-      <code><![CDATA[$campaignData['isMatched']]]></code>
-      <code><![CDATA[$campaignData['startDate']]]></code>
-      <code><![CDATA[$campaignData['title']]]></code>
     </MixedArgument>
-    <MixedArrayAccess>
-      <code><![CDATA[$campaignData['charity']['giftAidOnboardingStatus']]]></code>
-      <code><![CDATA[$campaignData['charity']['hmrcReferenceNumber']]]></code>
-      <code><![CDATA[$campaignData['charity']['id']]]></code>
-      <code><![CDATA[$campaignData['charity']['name']]]></code>
-      <code><![CDATA[$campaignData['charity']['regulatorNumber']]]></code>
-      <code><![CDATA[$campaignData['charity']['regulatorRegion']]]></code>
-      <code><![CDATA[$campaignData['charity']['stripeAccountId']]]></code>
-    </MixedArrayAccess>
   </file>
   <file src="src/Domain/Charity.php">
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[empty($hmrcReferenceNumber)]]></code>
       <code><![CDATA[empty($hmrcReferenceNumber)]]></code>
-    </RiskyTruthyFalsyComparison>
-  </file>
-  <file src="src/Domain/Donation.php">
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[!$this->transactionId]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
   <file src="src/Domain/DonationRepository.php">

@@ -22,14 +22,12 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
      * @psalm-param T $proxy
      * @throws UniqueConstraintViolationException occasionally if 2 requests try to create the same
      *                                            Salesforce object in parallel.
-     * @throws Client\CampaignNotReady
      */
     abstract protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void;
 
     /**
      * @psalm-param T $proxy
      * @throws Client\NotFoundException
-     * @throws Client\CampaignNotReady
      */
     public function updateFromSf(
         SalesforceReadProxy $proxy,

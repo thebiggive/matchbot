@@ -5,7 +5,6 @@ namespace MatchBot\Application\Messenger\Handler;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
 use MatchBot\Application\Messenger\CharityUpdated;
-use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\CampaignRepository;
 use Psr\Container\ContainerInterface;
@@ -51,10 +50,6 @@ class CharityUpdatedHandler
                     // we don't expect to delete campaigns in prod
                     throw $e;
                 }
-            } catch (CampaignNotReady $e) {
-                // but it is possible for campaigns in prod to go from ready to not ready, e.g. if a charity's
-                // Stripe status changes or they unexpectedly withdraw late
-                $this->logger->warning("{$e->getMessage()} while updating charity {$sfId->value}");
             }
         }
 
