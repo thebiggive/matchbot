@@ -2,7 +2,7 @@ openapi: 3.0.0
 servers:
   # Added by API Auto Mocking Plugin
   - description: SwaggerHub API Auto Mocking
-    url: https://virtserver.swaggerhub.com/Noel/TBG-Donations/1.0.12
+    url: https://virtserver.swaggerhub.com/Noel/TBG-Donations/1.0.13
   - description: "MatchBot staging"
     url: https://matchbot-staging.thebiggivetest.org.uk/v1
   - description: "Salesforce Full (staging)"
@@ -18,7 +18,7 @@ info:
     As Salesforce & MatchBot share a Donation schema, endpoints for both are documented here
     together; however operation `salesforceUpsert` is implemented only in Salesforce
     and all others are implemented only in MatchBot.
-  version: 1.0.12
+  version: 1.0.13
   title: Donations
   contact:
     email: tech@thebiggive.org.uk
@@ -75,6 +75,40 @@ paths:
                       $ref: '#/components/schemas/Donation'
         '400':
           description: Required parameters not set as expected
+
+    delete:
+      operationId: deleteDonations
+      summary: Delete all donations by current donor for given campaign & payment method type
+      tags: [Past donations]
+      parameters:
+        - name: campaignId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Identifier of the campaign
+        - name: paymentMethodType
+          in: query
+          schema:
+            type: string
+            enum: ["card", "customer_balance"]
+          description: Type of payment method
+      security:
+        - JWT: []
+      responses:
+        '200':
+          description: List of cancelled donations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  donations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Donation'
+        '400':
+          description: Missing required parameters
 
   /donations/{donationId}:
     parameters:

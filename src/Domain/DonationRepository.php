@@ -981,4 +981,30 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $result = $query->getResult();
         return $result;
     }
+
+    /**
+     * @return list<Donation>
+     */
+    public function findPendingByDonorCampaignAndMethod(
+        string $donorStripeId,
+        Salesforce18Id $campaignId,
+        PaymentMethodType $paymentMethodType,
+    ): array {
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT donation from Matchbot\Domain\Donation donation
+            INNER JOIN donation.campaign campaign
+            WHERE donation.donationStatus = :donationStatus
+            AND donation.pspCustomerId = :donorStripeId
+            AND campaign.salesforceId = :campaignId
+            AND donation.paymentMethodType = :paymentMethodType
+        DQL);
+        $query->setParameter('donationStatus', DonationStatus::Pending->value);
+        $query->setParameter('donorStripeId', $donorStripeId);
+        $query->setParameter('campaignId', $campaignId->value);
+        $query->setParameter('paymentMethodType', $paymentMethodType->value);
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
 }

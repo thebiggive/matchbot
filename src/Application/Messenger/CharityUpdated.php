@@ -5,12 +5,13 @@ namespace MatchBot\Application\Messenger;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Salesforce18Id;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageDeduplicationAwareInterface;
+use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;
 
 /**
  * Message dispatched when Salesforce tells us that something material to donation processing or
  * Gift Aid changed about the {@see Charity}.
  */
-readonly class CharityUpdated implements MessageDeduplicationAwareInterface
+readonly class CharityUpdated implements MessageDeduplicationAwareInterface, MessageGroupAwareInterface
 {
     public function __construct(public Salesforce18Id $charityAccountId, private ?string $requestTraceId)
     {
@@ -25,5 +26,10 @@ readonly class CharityUpdated implements MessageDeduplicationAwareInterface
     public function getMessageDeduplicationId(): ?string
     {
         return $this->requestTraceId;
+    }
+
+    public function getMessageGroupId(): ?string
+    {
+        return 'charity.updated.' . $this->charityAccountId->value;
     }
 }
