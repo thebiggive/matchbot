@@ -10,6 +10,7 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Stripe\PaymentMethod;
 use Stripe\StripeClient;
 
 class GetPaymentMethods extends Action
@@ -38,6 +39,15 @@ class GetPaymentMethods extends Action
             ['type' => 'card'],
         );
 
-        return $this->respondWithData($response, $paymentMethods);
+        $paymentMethodArray = $paymentMethods->toArray()['data'];
+        \assert(is_array($paymentMethodArray));
+
+        // exclude payment methods with 'allow_redisplay' set to limited:
+        $displayableMethods = array_values(array_filter(
+            $paymentMethodArray,
+            static fn(array $paymentMethod) => in_array($paymentMethod['allow_redisplay'], ['always', 'unspecified'])
+        ));
+
+        return $this->respondWithData($response, ['data' => $displayableMethods]);
     }
 }
