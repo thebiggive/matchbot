@@ -111,7 +111,7 @@ final class Version20241126163843 extends AbstractMigration
         Assertion::count($deleteSets, 14);
 
         foreach ($deleteSets as $deleteSet) {
-            $this->addSql('DELETE FROM Campaign_CampaignFunding WHERE campaign_id = :campaignId AND campaign_funding_id = :campaignFundingId LIMIT 1', $deleteSet);
+            $this->addSql('DELETE FROM Campaign_CampaignFunding WHERE campaign_id = :campaignId AND campaignfunding_id = :campaignFundingId LIMIT 1', $deleteSet);
             $this->addSql('DELETE FROM CampaignFunding WHERE id = :campaignFundingId AND fund_id = :fundId AND amount = :amount LIMIT 1', $deleteSet);
             $this->addSql('DELETE FROM Fund WHERE fundType = "pledge" AND id = :fundId LIMIT 1', $deleteSet);
         }
