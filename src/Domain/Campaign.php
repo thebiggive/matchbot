@@ -238,7 +238,7 @@ class Campaign extends SalesforceReadProxy
     public function updateFromSfPull(
         Charity $charity,
         string $currencyCode,
-        string $status,
+        ?string $status,
         \DateTimeInterface $endDate,
         bool $isMatched,
         string $name,
