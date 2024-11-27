@@ -177,6 +177,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $feePercentage = $campaignData['feePercentage'] ?? null;
         Assertion::null($feePercentage, "Fee percentages are no-longer supported, should always be null");
 
+        $this->logger->info("campaign data keys:" . json_encode(array_keys($campaignData)));
+
         $campaign->updateFromSfPull(
             charity: $charity,
             status: $campaignData['status'],
