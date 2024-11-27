@@ -7,6 +7,7 @@ namespace MatchBot\Application\Actions\Donations;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
+use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
@@ -436,6 +437,25 @@ class Update extends Action
                         $error = new ActionError(ActionError::SERVER_ERROR, 'Could not confirm Stripe Payment Intent');
 
                         return $this->respond($response, new ActionPayload(500, null, $error));
+                    }
+                    if (DonationService::errorMessageFromStripeIsExpected($exception)) {
+                        $exceptionClass = get_class($exception);
+                        $this->logger->warning(sprintf(
+                            'Stripe %s on Update for donation %s (%s): %s',
+                            $exceptionClass,
+                            $donation->getUuid(),
+                            $donation->getTransactionId(),
+                            $exception->getMessage(),
+                        ));
+
+                        $this->entityManager->rollback();
+
+                        return new JsonResponse([
+                            'error' => [
+                                'message' => $exception->getMessage(),
+                                'code' => $exception->getStripeCode()
+                            ],
+                        ], 402);
                     }
 
                     throw $exception;

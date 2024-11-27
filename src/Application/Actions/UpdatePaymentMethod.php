@@ -66,8 +66,15 @@ class UpdatePaymentMethod extends Action
 
         // We don't need to know the details inside the billing details - we are just a thin layer between the front end
         // and Stripe here.
-
-        $newBillingDetails = json_decode($body, true, 512, \JSON_THROW_ON_ERROR);
+        try {
+            $newBillingDetails = json_decode($body, true, 512, \JSON_THROW_ON_ERROR);
+        } catch (\JsonException $_exception) {
+            return $this->respondWithData(
+                $response,
+                ['error' => 'Invalid JSON in request body'],
+                StatusCodeInterface::STATUS_BAD_REQUEST
+            );
+        }
 
         assert(is_array($newBillingDetails));
 

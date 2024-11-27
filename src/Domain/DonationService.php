@@ -11,7 +11,6 @@ use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
-use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\Stripe;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -29,6 +28,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Messenger\Envelope;
@@ -42,6 +42,24 @@ use Symfony\Component\RateLimiter\RateLimiterFactory;
 class DonationService
 {
     private const int MAX_RETRY_COUNT = 3;
+    /**
+     * Message excerpts that we expect to see sometimes from stripe on InvalidRequestExceptions. An exception
+     * containing any of these strings should not generate an alarm.
+     */
+    public const array EXPECTED_STRIPE_INVALID_REQUEST_MESSAGES = [
+        'The provided PaymentMethod has failed authentication',
+        'You must collect the security code (CVC) for this card from the cardholder before you can use it',
+
+        // When a donation is cancelled we update it to cancelled in the DB, which stops it being confirmed later. But
+        // we can still get this error if the cancellation is too late to stop us attempting to confirm.
+        // phpcs:ignore
+        'This PaymentIntent\'s payment_method could not be updated because it has a status of canceled. You may only update the payment_method of a PaymentIntent with one of the following statuses: requires_payment_method, requires_confirmation, requires_action.',
+        'The confirmation token has already been used to confirm a previous PaymentIntent',
+        'This PaymentIntent\'s radar_options could not be updated because it has a status of canceled.',
+        'This PaymentIntent\'s amount could not be updated because it has a status of canceled.',
+        // phpcs:ignore
+        'The parameter application_fee_amount cannot be updated on a PaymentIntent after a capture has already been made.',
+    ];
 
     public function __construct(
         private DonationRepository $donationRepository,
@@ -76,7 +94,7 @@ class DonationService
      * @throws TransportExceptionInterface
      * @throws RateLimitExceededException
      * @throws WrongCampaignType
-     * @throws CampaignNotReady|\MatchBot\Client\NotFoundException
+     * @throws \MatchBot\Client\NotFoundException
      */
     public function createDonation(DonationCreate $donationData, string $pspCustomerId): Donation
     {
@@ -252,7 +270,6 @@ class DonationService
      * - Creating Stripe Payment intent
      *
      * @throws CampaignNotOpen
-     * @throws CampaignNotReady
      * @throws CharityAccountLacksNeededCapaiblities
      * @throws CouldNotMakeStripePaymentIntent
      * @throws DBALServerException
@@ -265,7 +282,7 @@ class DonationService
     {
         $campaign = $donation->getCampaign();
 
-        if (!$campaign->isOpen()) {
+        if (!$campaign->isOpen(new \DateTimeImmutable())) {
             throw new CampaignNotOpen("Campaign {$campaign->getSalesforceId()} is not open");
         }
 
@@ -406,7 +423,7 @@ class DonationService
     {
         Assertion::same($donation->getPsp(), 'stripe');
 
-        if (!$donation->getCampaign()->isOpen()) {
+        if (!$donation->getCampaign()->isOpen(new \DateTimeImmutable())) {
             throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
         }
 
@@ -550,5 +567,25 @@ class DonationService
         $donationUpserted = DonationUpserted::fromDonation($donation);
         $envelope = new Envelope($donationUpserted);
         $this->bus->dispatch($envelope);
+    }
+
+    /**
+     * InvalidRequestException can have various possible messages. If it's one we've seen before that we don't believe
+     * indicates a bug or failure in matchbot then we just send an error message to the client. If it's something we
+     * haven't seen before or didn't expect then we will also generate an alarm for Big Give devs to deal with.
+     * @param InvalidRequestException $exception
+     * @return bool
+     */
+    public static function errorMessageFromStripeIsExpected(InvalidRequestException $exception): bool
+    {
+        $exceptionMessage = $exception->getMessage();
+
+        foreach (DonationService::EXPECTED_STRIPE_INVALID_REQUEST_MESSAGES as $expectedMessage) {
+            if (str_contains($exceptionMessage, $expectedMessage)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

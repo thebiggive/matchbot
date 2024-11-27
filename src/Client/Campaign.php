@@ -6,15 +6,28 @@ namespace MatchBot\Client;
 
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Assertion;
-use MatchBot\Domain\Salesforce18Id;
+
+/**
+ * @psalm-type SFCampaignApiResponse = array{
+ *     charity: array,
+ *     endDate: string,
+ *     feePercentage: ?float,
+ *     id: string,
+ *     isMatched: bool,
+ *     ready: bool,
+ *     startDate: string,
+ *     status: string,
+ *     title: string,
+*      currencyCode: string,
+ *     }
+ */
 
 class Campaign extends Common
 {
     /**
      * @param string $id
-     * @return array Single Campaign response object as associative array
+     * @return SFCampaignApiResponse Single Campaign response object as associative array
      * @throws NotFoundException if Campaign with given ID not found
-     * @throws CampaignNotReady if campaign found in SF but not ready for use in matchbot.
      */
     public function getById(string $id, bool $withCache): array
     {
@@ -32,18 +45,9 @@ class Campaign extends Common
         }
 
         /**
-         * @var array{status: string, ready: bool} $campaignResponse
-         * (other properties exist and are needed but not documented here yet.)
+         * @var SFCampaignApiResponse $campaignResponse
          */
         $campaignResponse = json_decode((string)$response->getBody(), true, flags: JSON_THROW_ON_ERROR);
-
-        if (!$campaignResponse['ready']) {
-            throw new CampaignNotReady(sprintf(
-                'Campaign ID %s not ready to pull to matchbot, status: %s',
-                $id,
-                $campaignResponse['status'] ?? 'no_status'
-            ));
-        }
 
         return $campaignResponse;
     }

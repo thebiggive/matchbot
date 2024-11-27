@@ -39,6 +39,18 @@ class Campaign extends SalesforceReadProxy
     protected ?string $currencyCode;
 
     /**
+     * Status as sent from SF API. Not currently used in matchbot but here for ad-hoc DB queries and
+     * possible future use.
+     *
+     * Consider converting to enum or value object before using in any logic.
+     *
+     * Default null because campaigns not recently updated in matchbot have not pulled this field from SF.
+     * @psalm-suppress UnusedProperty
+     */
+    #[ORM\Column(type: 'string', length: 64, nullable: true, options: ['default' => null])]
+    private ?string $status = null;
+
+    /**
      * @var string
      */
     #[ORM\Column(type: 'string')]
@@ -57,15 +69,33 @@ class Campaign extends SalesforceReadProxy
     protected bool $isMatched;
 
     /**
+     * Dictates whether campaign is/will be ready to accept donations. Currently calculated in SF Apex code
+     * based on status. A campaign may be ready but not yet open, in which case it will not accept donations right now.
+     */
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
+    private bool $ready = true;
+
+    /**
      * Every campaign must have a charity, but we pass null when we don't know the charity because
      * the campaign is just a near empty placeholder to be filled by a pull from Salesforce.
      */
-    public function __construct(?Charity $charity)
-    {
+    public function __construct(
+        ?Charity $charity,
+        ?\DateTimeImmutable $startDate = null,
+        ?\DateTimeImmutable $endDate = null
+    ) {
         $this->createdNow();
         $this->campaignFundings = new ArrayCollection();
         if ($charity) {
             $this->charity = $charity;
+        }
+
+        if ($startDate) {
+            $this->startDate = $startDate;
+        }
+
+        if ($endDate) {
+            $this->endDate = $endDate;
         }
     }
 
@@ -177,9 +207,12 @@ class Campaign extends SalesforceReadProxy
         return $this->name;
     }
 
-    public function isOpen(): bool
+    /**
+     * Is the campaign open to accept donations at the given time?
+     */
+    public function isOpen(\DateTimeImmutable $at): bool
     {
-        return ($this->startDate <= new DateTime('now') && $this->endDate > new DateTime('now'));
+        return $this->ready && $this->startDate <= $at && $this->endDate > $at;
     }
 
     public function getCurrencyCode(): ?string
@@ -195,5 +228,40 @@ class Campaign extends SalesforceReadProxy
     public function getEndDate(): DateTimeInterface
     {
         return $this->endDate;
+    }
+
+    public function isReady(): bool
+    {
+        return $this->ready;
+    }
+
+    public function updateFromSfPull(
+        Charity $charity,
+        string $currencyCode,
+        string $status,
+        \DateTimeInterface $endDate,
+        bool $isMatched,
+        string $name,
+        \DateTimeInterface $startDate,
+        bool $ready,
+    ): void {
+        $this->charity = $charity;
+        $this->currencyCode = $currencyCode;
+        $this->endDate = $endDate;
+        $this->isMatched = $isMatched;
+        $this->name = $name;
+        $this->startDate = $startDate;
+        $this->ready = $ready;
+        $this->status = $status;
+    }
+
+    public function setReady(bool $isReady): void
+    {
+        $this->ready = $isReady;
+    }
+
+    public function getStatus(): ?string
+    {
+        return $this->status;
     }
 }

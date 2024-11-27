@@ -7,7 +7,6 @@ namespace MatchBot\Domain;
 use DateTime;
 use MatchBot\Application\Assertion;
 use MatchBot\Client;
-use MatchBot\Client\CampaignNotReady;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
@@ -77,7 +76,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
-     * @throws CampaignNotReady
      * @throws NotFoundException
      */
     public function pullNewFromSf(Salesforce18Id $salesforceId): Campaign
@@ -103,7 +101,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
      * @return array{newFetchCount: int, updatedCount: int, campaigns: list<Campaign>}
  *@throws NotFoundException
      *
-     * @throws CampaignNotReady
      */
     public function fetchAllForMetaCampaign(string $metaCampaginSlug): array
     {
@@ -144,7 +141,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
     /**
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
-     * @throws Client\CampaignNotReady
      */
     protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
     {
@@ -178,16 +174,19 @@ class CampaignRepository extends SalesforceReadProxyRepository
             regulatorNumber: $campaignData['charity']['regulatorNumber'],
         );
 
-        $campaign->setCharity($charity);
-        $campaign->setCurrencyCode($campaignData['currencyCode'] ?? 'GBP');
-        $campaign->setEndDate(new DateTime($campaignData['endDate']));
-        /** @var float|null $feePercentage */
         $feePercentage = $campaignData['feePercentage'] ?? null;
         Assertion::null($feePercentage, "Fee percentages are no-longer supported, should always be null");
 
-        $campaign->setIsMatched($campaignData['isMatched']);
-        $campaign->setName($campaignData['title']);
-        $campaign->setStartDate(new DateTime($campaignData['startDate']));
+        $campaign->updateFromSfPull(
+            charity: $charity,
+            status: $campaignData['status'],
+            currencyCode: $campaignData['currencyCode'] ?? 'GBP',
+            endDate: new DateTime($campaignData['endDate']),
+            isMatched: $campaignData['isMatched'],
+            name: $campaignData['title'],
+            startDate: new DateTime($campaignData['startDate']),
+            ready: $campaignData['ready'],
+        );
     }
 
     /**
