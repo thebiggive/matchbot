@@ -231,8 +231,11 @@ abstract class IntegrationTest extends TestCase
      * @psalm-suppress MoreSpecificReturnType
      * @psalm-suppress LessSpecificReturnStatement
      */
-    public function addFundedCampaignAndCharityToDB(string $campaignSfId, int $fundWithAmountInPounds = 100_000, bool $isRegularGiving = false): array
-    {
+    public function addFundedCampaignAndCharityToDB(
+        string $campaignSfId,
+        int $fundWithAmountInPounds = 100_000,
+        bool $isRegularGiving = false
+    ): array {
         ['charityId' => $charityId, 'campaignId' => $campaignId] = $this->addCampaignAndCharityToDB(
             campaignSfId: $campaignSfId,
             campaignOpen: true,
