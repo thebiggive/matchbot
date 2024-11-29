@@ -115,7 +115,10 @@ class Campaign extends SalesforceReadProxy
      */
     public function isOneOffGiving(): bool
     {
-        return !$this->isRegularGiving;
+        /* @todo-regular-giving - use isRegularGiving property pulled from the Salesforce instead
+         *
+         */
+        return true;
     }
 
     /**
