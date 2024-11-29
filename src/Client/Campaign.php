@@ -16,7 +16,7 @@ use MatchBot\Application\Assertion;
  *     isMatched: bool,
  *     ready: bool,
  *     startDate: string,
- *     status: string,
+ *     status: string|null,
  *     title: string,
 *      currencyCode: string,
  *     }
