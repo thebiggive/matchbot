@@ -50,7 +50,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
     ): ResponseInterface {
         $campaignId = $this->randomString();
 
-        $this->addFundedCampaignAndCharityToDB($campaignId);
+        $this->addFundedCampaignAndCharityToDB($campaignId, isRegularGiving: true);
 
         return $this->getApp()->handle(
             new ServerRequest(
