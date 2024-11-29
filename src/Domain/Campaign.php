@@ -75,6 +75,8 @@ class Campaign extends SalesforceReadProxy
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $ready = true;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $isRegularGiving = false;
     /**
      * Every campaign must have a charity, but we pass null when we don't know the charity because
      * the campaign is just a near empty placeholder to be filled by a pull from Salesforce.
@@ -113,6 +115,9 @@ class Campaign extends SalesforceReadProxy
      */
     public function isOneOffGiving(): bool
     {
+        /* @todo-regular-giving - use isRegularGiving property pulled from the Salesforce instead
+         *
+         */
         return true;
     }
 
@@ -121,10 +126,7 @@ class Campaign extends SalesforceReadProxy
      */
     public function isRegularGiving(): bool
     {
-        /* @todo-regular-giving - make this a property pulled from the Salesforce campaign when available.
-         *                        then update @see self::isOneOffGiving() to return the opposite of this
-         */
-        return true;
+        return $this->isRegularGiving;
     }
 
     /**

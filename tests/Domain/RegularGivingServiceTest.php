@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DayOfMonth;
+use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationSequenceNumber;
 use MatchBot\Domain\DonationService;
@@ -24,6 +25,7 @@ use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 
 /**
 
@@ -66,6 +68,23 @@ class RegularGivingServiceTest extends TestCase
             ->willReturn($this->donorAccount);
         $this->campaignRepositoryProphecy->findOneBySalesforceId($this->campaignId)
             ->willReturn(TestCase::someCampaign());
+    }
+
+    public function testCannotMakeAMandateForNonRegularGivingCampaign(): void
+    {
+        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 BST'));
+        $campaign = TestCase::someCampaign();
+
+        $this->expectException(WrongCampaignType::class);
+
+        // By default campaign is not a regular giving campaign
+        $regularGivingService->setupNewMandate(
+            PersonId::of(Uuid::uuid4()->toString()),
+            Money::fromPoundsGBP(50),
+            $campaign,
+            giftAid: false,
+            dayOfMonth: DayOfMonth::of(12)
+        );
     }
     public function testMakingNextDonationForMandate(): void
     {
