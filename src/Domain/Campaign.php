@@ -124,7 +124,7 @@ class Campaign extends SalesforceReadProxy
         /* @todo-regular-giving - make this a property pulled from the Salesforce campaign when available.
          *                        then update @see self::isOneOffGiving() to return the opposite of this
          */
-        return true;
+        return false;
     }
 
     /**
