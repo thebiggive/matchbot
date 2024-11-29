@@ -73,8 +73,11 @@ class RegularGivingServiceTest extends TestCase
     public function testCannotMakeAMandateForNonRegularGivingCampaign(): void
     {
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 BST'));
-        $this->expectException(WrongCampaignType::class);
         $campaign = TestCase::someCampaign();
+
+        $this->expectException(WrongCampaignType::class);
+
+        // By default campaign is not a regular giving campaign
         $regularGivingService->setupNewMandate(
             PersonId::of(Uuid::uuid4()->toString()),
             Money::fromPoundsGBP(50),
