@@ -21,6 +21,7 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 
@@ -164,7 +165,7 @@ class DonationTest extends TestCase
                 projectId: 'doesnt0matter12345',
                 psp: 'paypal',
             ),
-            new Campaign(TestCase::someCharity())
+            new Campaign(Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'), TestCase::someCharity())
         );
     }
 
@@ -751,7 +752,7 @@ class DonationTest extends TestCase
             donationAmount: '1.0',
             projectId: 'testProject1234567',
             psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        ), new Campaign(Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'), TestCase::someCharity()));
 
         $this->assertSame($expected, $donation->getDonorCountryCode());
     }
@@ -768,7 +769,7 @@ class DonationTest extends TestCase
             donationAmount: '1.0',
             projectId: 'testProject1234567',
             psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        ), new Campaign(sfId: Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'), charity: TestCase::someCharity()));
 
         $this->expectExceptionMessage('Cannot Claim Gift Aid Without Home Address');
 
@@ -786,7 +787,7 @@ class DonationTest extends TestCase
             donationAmount: '1.0',
             projectId: 'testProject1234567',
             psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        ), new Campaign(Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'), TestCase::someCharity()));
 
         $this->expectExceptionMessage('Cannot Claim Gift Aid Without Home Address');
 
@@ -805,7 +806,7 @@ class DonationTest extends TestCase
             donationAmount: '1.0',
             projectId: 'testProject1234567',
             psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        ), new Campaign(Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'), TestCase::someCharity()));
 
         $donation->collectFromStripeCharge(
             chargeId: 'irrelevant',

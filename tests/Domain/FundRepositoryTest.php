@@ -14,6 +14,7 @@ use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Psr\Log\LoggerInterface;
@@ -21,12 +22,14 @@ use Psr\Log\NullLogger;
 
 class FundRepositoryTest extends TestCase
 {
+    public const string CAMPAIGN_SF_ID = 'sfFakeId987xxxxxxx';
+
     public function testPull(): void
     {
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $fundClientProphecy = $this->prophesize(Client\Fund::class);
         $fundClientProphecy
-            ->getById('sfFakeId987', withCache: true)
+            ->getById(self::CAMPAIGN_SF_ID, withCache: true)
             ->shouldBeCalledOnce()
             ->willReturn([
                 'name' => 'API Fund Name',
@@ -42,7 +45,7 @@ class FundRepositoryTest extends TestCase
 
         // Quickest way to ensure this behaves like a newly-found Fund without having to partially mock / prophesise
         // `FundRepository` such that `doPull()` is a real call but `pull()` doesn't try a real DB engine lookup.
-        $fund->setSalesforceId('sfFakeId987');
+        $fund->setSalesforceId(self::CAMPAIGN_SF_ID);
 
         $repo->updateFromSf($fund, autoSave: false); // Don't auto-save as non-DB-backed tests can't persist
 
@@ -92,8 +95,7 @@ class FundRepositoryTest extends TestCase
             null
         );
 
-        $campaign = new Campaign(charity: null);
-        $campaign->setSalesforceId('sfFakeId987');
+        $campaign = new Campaign(Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID), charity: null);
 
         $repo->pullForCampaign($campaign);
 
@@ -142,8 +144,7 @@ class FundRepositoryTest extends TestCase
             $this->getExistingFund(true),
         );
 
-        $campaign = new Campaign(charity: null);
-        $campaign->setSalesforceId('sfFakeId987');
+        $campaign = new Campaign(Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID), charity: null);
 
         $repo->pullForCampaign($campaign);
     }
@@ -170,7 +171,7 @@ class FundRepositoryTest extends TestCase
 
         $campaignFundingRepoProphecy
             ->getFundingForCampaign(
-                Argument::which('getSalesforceId', 'sfFakeId987'),
+                Argument::which('getSalesforceId', self::CAMPAIGN_SF_ID),
                 Argument::which('getSalesforceId', 'sfFundId123')
             )
             ->willReturn($this->getExistingCampaignFunding(false))
@@ -200,8 +201,7 @@ class FundRepositoryTest extends TestCase
             $this->getExistingFund(true),
         );
 
-        $campaign = new Campaign(charity: null);
-        $campaign->setSalesforceId('sfFakeId987');
+        $campaign = new Campaign(Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID), charity: null);
 
         $repo->pullForCampaign($campaign);
     }
@@ -251,8 +251,7 @@ class FundRepositoryTest extends TestCase
             false, // No persists in this scenario
         );
 
-        $campaign = new Campaign(charity: null);
-        $campaign->setSalesforceId('sfFakeId987');
+        $campaign = new Campaign(Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID), charity: null);
 
         $repo->pullForCampaign($campaign);
     }
@@ -289,7 +288,7 @@ class FundRepositoryTest extends TestCase
     private function getFundClientForPerCampaignLookup(string $currencyCode = 'GBP'): Client\Fund
     {
         $fundClientProphecy = $this->prophesize(Client\Fund::class);
-        $fundClientProphecy->getForCampaign('sfFakeId987')->willReturn([
+        $fundClientProphecy->getForCampaign(self::CAMPAIGN_SF_ID)->willReturn([
             [
                 'id' => 'sfFundId123',
                 'type' => 'championFund',

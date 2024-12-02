@@ -80,8 +80,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function pullNewFromSf(Salesforce18Id $salesforceId): Campaign
     {
-        $campaign = new Campaign(charity: null);
-        $campaign->setSalesforceId($salesforceId->value);
+        $campaign = new Campaign($salesforceId, charity: null);
 
         $this->updateFromSf($campaign);
 

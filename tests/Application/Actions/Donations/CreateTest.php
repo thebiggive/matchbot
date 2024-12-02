@@ -23,6 +23,7 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
@@ -1027,10 +1028,9 @@ class CreateTest extends TestCase
         $charity->setName('Create test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
-        $campaign = new Campaign(charity: $charity);
+        $campaign = new Campaign(sfId: Salesforce18Id::ofCampaign('123CampaignId12345'), charity: $charity);
         $campaign->setName('123CampaignName');
         $campaign->setIsMatched($campaignMatched);
-        $campaign->setSalesforceId('123CampaignId12345');
         $campaign->setStartDate((new \DateTime())->sub(new \DateInterval('P2D')));
         if ($campaignOpen) {
             $campaign->setEndDate((new \DateTime())->add(new \DateInterval('P1D')));

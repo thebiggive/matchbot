@@ -20,6 +20,7 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -106,7 +107,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $charity->setSalesforceId('DONATE_LINK_ID');
         $charity->setName('Charity name');
 
-        $campaign = new Campaign(charity: $charity);
+        $campaign = new Campaign(sfId: Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'), charity: $charity);
         $campaign->setIsMatched(true);
 
         $donation = TestCase::someDonation('1');

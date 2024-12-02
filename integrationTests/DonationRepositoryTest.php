@@ -67,9 +67,8 @@ class DonationRepositoryTest extends IntegrationTest
 
     private function prepareCampaign(Charity $charity): Campaign
     {
-        $campaign = new Campaign(charity: $charity);
+        $campaign = new Campaign(Salesforce18Id::ofCampaign('ccampaign123456789'), charity: $charity);
         $campaign->setName('Campaign Name');
-        $campaign->setSalesforceId('ccampaign123456789');
         $campaign->setCurrencyCode('GBP');
         $campaign->setStartDate((new \DateTime())->sub(new \DateInterval('P16D')));
         $campaign->setEndDate((new \DateTime())->add(new \DateInterval('P15D')));
@@ -177,13 +176,12 @@ class DonationRepositoryTest extends IntegrationTest
 
     public function makeCampaign(): Campaign
     {
-        $campaign = new Campaign(TestCase::someCharity());
+        $campaign = new Campaign(Salesforce18Id::ofCampaign('campaignId12345678'), TestCase::someCharity());
         $campaign->setCurrencyCode('GBP');
         $campaign->setStartDate(new \DateTime());
         $campaign->setEndDate(new \DateTime());
         $campaign->setIsMatched(true);
         $campaign->setName('Campaign Name');
-        $campaign->setSalesforceId('campaignId12345678');
 
         return $campaign;
     }

@@ -13,6 +13,7 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -23,8 +24,7 @@ class UpdateCampaignsTest extends TestCase
 {
     public function testSingleUpdateSuccess(): void
     {
-        $campaign = new Campaign(charity: null);
-        $campaign->setSalesforceId('someCampaignId');
+        $campaign = new Campaign(Salesforce18Id::ofCampaign('someCampaignIdxxxx'), charity: null);
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findRecentLiveAndPendingGiftAidApproval()
             ->willReturn([$campaign])
@@ -48,7 +48,7 @@ class UpdateCampaignsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:update-campaigns starting!',
-            'Updated campaign someCampaignId',
+            'Updated campaign someCampaignIdxxxx',
             'matchbot:update-campaigns complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -59,8 +59,7 @@ class UpdateCampaignsTest extends TestCase
     {
         // This case should be skipped over without crashing, in non-production envs.
 
-        $campaign = new Campaign(charity: null);
-        $campaign->setSalesforceId('missingOnSfCampaignId');
+        $campaign = new Campaign(sfId: Salesforce18Id::ofCampaign('missingOnSfIDxxxxx'), charity: null);
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findRecentLiveAndPendingGiftAidApproval()
             ->willReturn([$campaign])
@@ -84,7 +83,7 @@ class UpdateCampaignsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:update-campaigns starting!',
-            'Skipping unknown sandbox campaign missingOnSfCampaignId',
+            'Skipping unknown sandbox campaign missingOnSfIDxxxxx',
             'matchbot:update-campaigns complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -99,8 +98,7 @@ class UpdateCampaignsTest extends TestCase
             new Request('GET', 'https://example.com'),
         );
 
-        $campaign = new Campaign(charity: null);
-        $campaign->setSalesforceId('someCampaignId');
+        $campaign = new Campaign(sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'), charity: null);
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findRecentLiveAndPendingGiftAidApproval()
             ->willReturn([$campaign])
@@ -126,7 +124,7 @@ class UpdateCampaignsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:update-campaigns starting!',
-            'Skipping campaign someCampaignId due to 2nd transfer error "dummy exc message"',
+            'Skipping campaign someCampaignIdxxxx due to 2nd transfer error "dummy exc message"',
             'matchbot:update-campaigns complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -145,8 +143,7 @@ class UpdateCampaignsTest extends TestCase
             new Request('GET', 'https://example.com'),
         );
 
-        $campaign = new Campaign(charity: null);
-        $campaign->setSalesforceId('someCampaignId');
+        $campaign = new Campaign(sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'), charity: null);
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -183,7 +180,7 @@ class UpdateCampaignsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:update-campaigns starting!',
-            'Updated campaign someCampaignId',
+            'Updated campaign someCampaignIdxxxx',
             'matchbot:update-campaigns complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -192,8 +189,7 @@ class UpdateCampaignsTest extends TestCase
 
     public function testSingleUpdateSuccessWithAllOption(): void
     {
-        $campaign = new Campaign(charity: null);
-        $campaign->setSalesforceId('someCampaignId');
+        $campaign = new Campaign(sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'), charity: null);
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findAll()
             ->willReturn([$campaign])
@@ -217,7 +213,7 @@ class UpdateCampaignsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:update-campaigns starting!',
-            'Updated campaign someCampaignId',
+            'Updated campaign someCampaignIdxxxx',
             'matchbot:update-campaigns complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());

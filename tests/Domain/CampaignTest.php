@@ -3,6 +3,7 @@
 namespace Domain;
 
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 
 class CampaignTest extends TestCase
@@ -10,6 +11,7 @@ class CampaignTest extends TestCase
     public function testOpenCampaign(): void
     {
         $campaign = new Campaign(
+            sfId: Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
@@ -20,6 +22,7 @@ class CampaignTest extends TestCase
     public function testNonReadyCampaignIsNotOpen(): void
     {
         $campaign = new Campaign(
+            sfId: Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
@@ -33,6 +36,7 @@ class CampaignTest extends TestCase
     public function testCampaignIsNotOpenBeforeStartDate(): void
     {
         $campaign = new Campaign(
+            sfId: Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
@@ -44,6 +48,7 @@ class CampaignTest extends TestCase
     public function testCampaignIsNotOpenAtEndDate(): void
     {
         $campaign = new Campaign(
+            sfId: Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),

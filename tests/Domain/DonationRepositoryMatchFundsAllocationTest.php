@@ -13,8 +13,9 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\Matching\ArrayMatchingStorage;
-use PHPUnit\Framework\TestCase;
+use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -66,7 +67,10 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $this->sut->setMatchingAdapter($matchingAdapter);
         $this->sut->setLogger(new NullLogger());
 
-        $this->campaign = new Campaign(\MatchBot\Tests\TestCase::someCharity());
+        $this->campaign = new Campaign(
+            Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
+            TestCase::someCharity()
+        );
     }
 
     public function testItAllocatesZeroWhenNoMatchFundsAvailable(): void

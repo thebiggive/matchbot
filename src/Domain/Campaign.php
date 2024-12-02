@@ -80,8 +80,10 @@ class Campaign extends SalesforceReadProxy
     /**
      * Every campaign must have a charity, but we pass null when we don't know the charity because
      * the campaign is just a near empty placeholder to be filled by a pull from Salesforce.
+     * @param Salesforce18Id $sfId
      */
     public function __construct(
+        Salesforce18Id $sfId,
         ?Charity $charity,
         ?\DateTimeImmutable $startDate = null,
         ?\DateTimeImmutable $endDate = null
@@ -99,6 +101,8 @@ class Campaign extends SalesforceReadProxy
         if ($endDate) {
             $this->endDate = $endDate;
         }
+
+        $this->salesforceId = $sfId->value;
     }
 
     /**
@@ -107,6 +111,15 @@ class Campaign extends SalesforceReadProxy
     public function __toString(): string
     {
         return "Campaign ID #{$this->id}, SFId: {$this->salesforceId}";
+    }
+
+    /**
+     * @deprecated
+     */
+    #[\Override]
+    public function setSalesforceId(string $salesforceId): void
+    {
+        throw new \Exception("Campaign sf ID is set at creation time, doesn't need to be changed later");
     }
 
     /**
