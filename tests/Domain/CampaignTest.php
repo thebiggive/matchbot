@@ -20,6 +20,8 @@ class CampaignTest extends TestCase
             status: 'status',
             name: 'Test campaign',
             currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
         );
 
         $this->assertTrue($campaign->isOpen(new \DateTimeImmutable('2025-01-01')));
@@ -36,6 +38,8 @@ class CampaignTest extends TestCase
             status: 'status',
             name: 'Test campaign',
             currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
         );
 
         $this->assertFalse($campaign->isOpen(at: new \DateTimeImmutable('2025-01-01')));
@@ -53,6 +57,8 @@ class CampaignTest extends TestCase
             status: 'status',
             name: 'Test campaign',
             currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
         );
 
         $this->assertFalse($campaign->isOpen(at: new \DateTimeImmutable('2019-12-31T23:59:59')));
@@ -65,11 +71,13 @@ class CampaignTest extends TestCase
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
-            ready: true,
-            currencyCode: 'GBP',
-            status: 'status',
             isMatched: true,
+            ready: true,
+            status: 'status',
             name: 'campaign name',
+            currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
         );
 
         $this->assertFalse($campaign->isOpen(at: new \DateTimeImmutable('2030-12-31')));

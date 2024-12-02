@@ -227,6 +227,8 @@ class TestCase extends PHPUnitTestCase
             status: 'status',
             name: 'someCampaign',
             currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
         );
     }
 

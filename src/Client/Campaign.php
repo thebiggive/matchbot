@@ -8,6 +8,8 @@ use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Assertion;
 
 /**
+ * // Some fields in the following type are marked optional because they do not yet exist in our prod SF org. They
+ * // may also separately be nullable.
  * @psalm-type SFCampaignApiResponse = array{
  *     charity: array{
  *      id: string,
@@ -28,6 +30,8 @@ use MatchBot\Application\Assertion;
  *     status: string|null,
  *     title: string,
 *      currencyCode: string,
+ *     isRegularGiving?: boolean,
+ *     regularGivingCollectionEnd?: ?string
  *     }
  */
 

@@ -141,6 +141,8 @@ trait DonationTestDataTrait
             status: 'status',
             name: 'Test campaign',
             currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
         );
 
         $donation = TestCase::someDonation('124.56');

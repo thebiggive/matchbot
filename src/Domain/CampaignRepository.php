@@ -86,6 +86,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $charity = $this->pullCharity($campaignData);
 
+        $regularGivingCollectionEnd = $campaignData['regularGivingCollectionEnd'] ?? null;
+        $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
+            null : new \DateTimeImmutable($regularGivingCollectionEnd);
+
         $campaign = new Campaign(
             sfId: $salesforceId,
             charity: $charity,
@@ -96,6 +100,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             status: $campaignData['status'],
             name: $campaignData['title'],
             currencyCode: $campaignData['currencyCode'],
+            isRegularGiving: $campaignData['isRegularGiving'] ?? false,
+            regularGivingCollectionEnd: $regularGivingCollectionObject,
         );
 
         $this->updateFromSf($campaign);
@@ -240,6 +246,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $this->logger->debug("null status from SF for campaign " . $campaignData['id']);
         }
 
+        $regularGivingCollectionEnd = $campaignData['regularGivingCollectionEnd'] ?? null;
+        $regularGivingCollectionObject = $regularGivingCollectionEnd === null ?
+            null : new \DateTimeImmutable($regularGivingCollectionEnd);
+
+
         $campaign->updateFromSfPull(
             status: $campaignData['status'],
             currencyCode: $campaignData['currencyCode'] ?? 'GBP',
@@ -248,6 +259,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             name: $campaignData['title'],
             startDate: new DateTime($campaignData['startDate']),
             ready: $campaignData['ready'],
+            isRegularGiving: $campaignData['isRegularGiving'] ?? false,
+            regularGivingCollectionEnd: $regularGivingCollectionObject,
         );
 
         $this->getEntityManager()->flush();

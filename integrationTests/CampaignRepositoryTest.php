@@ -30,6 +30,8 @@ class CampaignRepositoryTest extends IntegrationTest
             status: 'status',
             name: 'Campaign Name',
             currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
         );
 
 
@@ -65,13 +67,15 @@ class CampaignRepositoryTest extends IntegrationTest
         $campaign = new Campaign(
             Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
             $this->getCharityAwaitingGiftAidApproval(),
-            startDate: new \DateTimeImmutable('-9 months'),
+            startDate: new \DateTimeImmutable('-11 months'),
             endDate: new \DateTimeImmutable('-10 months'),
             isMatched: true,
             ready: true,
             status: 'status',
             name: 'Campaign Name',
             currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
         );
 
         $em = $this->getService(EntityManagerInterface::class);

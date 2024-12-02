@@ -166,13 +166,15 @@ class DonationRepositoryTest extends IntegrationTest
         return new Campaign(
             Salesforce18Id::ofCampaign('campaignId12345678'),
             $charity ?? TestCase::someCharity(),
-            currencyCode: 'GBP',
             startDate: new \DateTimeImmutable('now'),
             endDate: new \DateTimeImmutable('now'),
             isMatched: true,
-            name: 'Campaign Name',
             ready: true,
             status: 'status',
+            name: 'Campaign Name',
+            currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
         );
     }
 
