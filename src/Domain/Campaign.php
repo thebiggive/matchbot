@@ -10,6 +10,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
+use MatchBot\Application\Assertion;
 
 #[ORM\Table]
 #[ORM\Index(name: 'end_date_and_is_matched', columns: ['endDate', 'isMatched'])]
@@ -73,32 +74,56 @@ class Campaign extends SalesforceReadProxy
      * based on status. A campaign may be ready but not yet open, in which case it will not accept donations right now.
      */
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
-    private bool $ready = true;
+    private bool $ready;
 
-    #[ORM\Column(type: 'boolean', options: ['default' => false])]
-    private bool $isRegularGiving = false;
+    #[ORM\Column()]
+    private bool $isRegularGiving;
+
     /**
-     * Every campaign must have a charity, but we pass null when we don't know the charity because
-     * the campaign is just a near empty placeholder to be filled by a pull from Salesforce.
+     * Date at which we want to stop collecting payments for this regular giving campaign. Must be null if
+     * this is not regular giving, will also be null if this is regular giving and we plan to continue collecting
+     * donations indefinitely.
+     *
+     * @psalm-suppress PossiblyUnusedProperty
+     * @todo-regular-giving - stop collecting donations if/when this date passes and remove the suppress above.
+     */
+    #[ORM\Column(nullable: true)]
+    protected ?\DateTimeImmutable $regularGivingCollectionEnd;
+
+    /**
+     * @param \DateTimeImmutable|null $regularGivingCollectionEnd
+     * @param Salesforce18Id<Campaign> $sfId
+     * @param bool $isRegularGiving
      */
     public function __construct(
-        ?Charity $charity,
-        ?\DateTimeImmutable $startDate = null,
-        ?\DateTimeImmutable $endDate = null
+        Salesforce18Id $sfId,
+        Charity $charity,
+        \DateTimeImmutable $startDate,
+        \DateTimeImmutable $endDate,
+        bool $isMatched,
+        bool $ready,
+        ?string $status,
+        string $name,
+        string $currencyCode,
+        bool $isRegularGiving,
+        ?\DateTimeImmutable $regularGivingCollectionEnd,
     ) {
         $this->createdNow();
         $this->campaignFundings = new ArrayCollection();
-        if ($charity) {
-            $this->charity = $charity;
-        }
+        $this->charity = $charity;
+        $this->salesforceId = $sfId->value;
 
-        if ($startDate) {
-            $this->startDate = $startDate;
-        }
-
-        if ($endDate) {
-            $this->endDate = $endDate;
-        }
+        $this->updateFromSfPull(
+            currencyCode: $currencyCode,
+            status: $status,
+            endDate: $endDate,
+            isMatched: $isMatched,
+            name: $name,
+            startDate: $startDate,
+            ready: $ready,
+            isRegularGiving: $isRegularGiving,
+            regularGivingCollectionEnd: $regularGivingCollectionEnd,
+        );
     }
 
     /**
@@ -110,15 +135,21 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
+     * @deprecated
+     */
+    #[\Override]
+    public function setSalesforceId(string $salesforceId): void
+    {
+        throw new \Exception("Campaign sf ID is set at creation time, doesn't need to be changed later");
+    }
+
+    /**
      * @return bool does this campaign accept one-off giving, i.e. non-regular giving.
      * @see self::isRegularGiving()
      */
     public function isOneOffGiving(): bool
     {
-        /* @todo-regular-giving - use isRegularGiving property pulled from the Salesforce instead
-         *
-         */
-        return true;
+        return ! $this->isRegularGiving;
     }
 
     /**
@@ -157,14 +188,6 @@ class Campaign extends SalesforceReadProxy
     public function isMatched(): bool
     {
         return $this->isMatched;
-    }
-
-    /**
-     * @param Charity $charity
-     */
-    public function setCharity(Charity $charity): void
-    {
-        $this->charity = $charity;
     }
 
     /**
@@ -237,8 +260,7 @@ class Campaign extends SalesforceReadProxy
         return $this->ready;
     }
 
-    public function updateFromSfPull(
-        Charity $charity,
+    final public function updateFromSfPull(
         string $currencyCode,
         ?string $status,
         \DateTimeInterface $endDate,
@@ -246,8 +268,26 @@ class Campaign extends SalesforceReadProxy
         string $name,
         \DateTimeInterface $startDate,
         bool $ready,
+        bool $isRegularGiving,
+        ?\DateTimeImmutable $regularGivingCollectionEnd,
     ): void {
-        $this->charity = $charity;
+        Assertion::lessOrEqualThan(
+            $startDate,
+            $endDate,
+            "Campaign may not end before it starts {$this->salesforceId}"
+        );
+
+        Assertion::eq($currencyCode, 'GBP', 'Only GBP currency supported at present');
+        Assertion::nullOrRegex($status, "/^[A-Za-z]{2,30}$/");
+        Assertion::betweenLength($name, 2, 255);
+
+        if (! $isRegularGiving) {
+            Assertion::null(
+                $regularGivingCollectionEnd,
+                "Can't have a regular giving collection end date for non-regular campaign {$this->salesforceId}"
+            );
+        }
+
         $this->currencyCode = $currencyCode;
         $this->endDate = $endDate;
         $this->isMatched = $isMatched;
@@ -255,11 +295,8 @@ class Campaign extends SalesforceReadProxy
         $this->startDate = $startDate;
         $this->ready = $ready;
         $this->status = $status;
-    }
-
-    public function setReady(bool $isReady): void
-    {
-        $this->ready = $isReady;
+        $this->isRegularGiving = $isRegularGiving;
+        $this->regularGivingCollectionEnd = $regularGivingCollectionEnd;
     }
 
     public function getStatus(): ?string
