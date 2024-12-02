@@ -77,30 +77,33 @@ class Campaign extends SalesforceReadProxy
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $isRegularGiving = false;
+
     /**
-     * Every campaign must have a charity, but we pass null when we don't know the charity because
-     * the campaign is just a near empty placeholder to be filled by a pull from Salesforce.
-     * @param Salesforce18Id $sfId
+     * @param Salesforce18Id<Campaign> $sfId
      */
     public function __construct(
         Salesforce18Id $sfId,
         Charity $charity,
-        ?\DateTimeImmutable $startDate = null,
-        ?\DateTimeImmutable $endDate = null
+        \DateTimeImmutable $startDate,
+        \DateTimeImmutable $endDate,
+        bool $isMatched,
+        bool $ready,
+        ?string $status,
+        string $name,
+        string $currencyCode,
     ) {
         $this->createdNow();
         $this->campaignFundings = new ArrayCollection();
+
         $this->charity = $charity;
-
-        if ($startDate) {
-            $this->startDate = $startDate;
-        }
-
-        if ($endDate) {
-            $this->endDate = $endDate;
-        }
-
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
         $this->salesforceId = $sfId->value;
+        $this->isMatched = $isMatched;
+        $this->ready = $ready;
+        $this->status = $status;
+        $this->name = $name;
+        $this->currencyCode = $currencyCode;
     }
 
     /**
@@ -256,11 +259,6 @@ class Campaign extends SalesforceReadProxy
         $this->startDate = $startDate;
         $this->ready = $ready;
         $this->status = $status;
-    }
-
-    public function setReady(bool $isReady): void
-    {
-        $this->ready = $isReady;
     }
 
     public function getStatus(): ?string

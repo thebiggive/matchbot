@@ -318,7 +318,9 @@ class CreateTest extends TestCase
         $campaignRepoProphecy->updateFromSf(Argument::type(Campaign::class))
             ->will(/**
              * @param array{0: Campaign} $args
-             */                fn (array $args) => $args[0]->getCharity()->setStripeAccountId('unitTest_newStripeAccount_456')
+             */
+                fn (array $args) => $args[0]->getCharity()
+                    ->setStripeAccountId('unitTest_newStripeAccount_456')
             );
 
         // Need to override stock EM to get campaign repo behaviour
@@ -1021,7 +1023,7 @@ class CreateTest extends TestCase
         $charity->setName('Create test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
-        $campaign = new Campaign(sfId: Salesforce18Id::ofCampaign('123CampaignId12345'), charity: $charity);
+        $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('123CampaignId12345'), charity: $charity);
         $campaign->setName('123CampaignName');
         $campaign->setIsMatched($campaignMatched);
         $campaign->setStartDate((new \DateTime())->sub(new \DateInterval('P2D')));

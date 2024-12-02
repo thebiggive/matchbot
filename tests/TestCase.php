@@ -176,7 +176,9 @@ class TestCase extends PHPUnitTestCase
     {
         $charity = self::someCharity();
         $charity->setTbgClaimingGiftAid(false);
-        $campaign = new Campaign(Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'), $charity);
+        $campaign = TestCase::someCampaign(
+            charity: $charity
+        );
         $campaign->setIsMatched(false);
 
         return $campaign;
@@ -203,23 +205,30 @@ class TestCase extends PHPUnitTestCase
         );
     }
 
-    public static function someCampaign(?string $stripeAccountId = null): Campaign
-    {
+    /**
+     * @param ?Salesforce18Id<Campaign> $sfId
+     */
+    public static function someCampaign(
+        ?string $stripeAccountId = null,
+        ?Salesforce18Id $sfId = null,
+        ?Charity $charity = null
+    ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
         \assert(is_string($randomString));
-        $id = Salesforce18Id::ofCampaign('1CampaignId' . $randomString);
-        $campaign = new Campaign($id, self::someCharity(stripeAccountId: $stripeAccountId));
+        $sfId ??= Salesforce18Id::ofCampaign('1CampaignId' . $randomString);
 
-        $campaign->setIsMatched(false);
-        $campaign->setName('someCampaign');
-        $campaign->setStartDate(new \DateTimeImmutable('2020-01-01'));
-        $campaign->setEndDate(new \DateTimeImmutable('3000-01-01'));
-        $campaign->setCurrencyCode('GBP');
-
-
-        return $campaign;
+        return new Campaign(
+            $sfId,
+            $charity ?? self::someCharity(stripeAccountId: $stripeAccountId),
+            startDate: new \DateTimeImmutable('2020-01-01'),
+            endDate: new \DateTimeImmutable('3000-01-01'),
+            isMatched: false,
+            ready: true,
+            status: 'status',
+            name: 'someCampaign',
+            currencyCode: 'GBP',
+        );
     }
-
 
     /**
      * @param numeric-string $amount

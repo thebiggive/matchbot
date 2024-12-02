@@ -77,6 +77,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
+     * @param Salesforce18Id<Campaign> $salesforceId
      * @throws NotFoundException
      */
     public function pullNewFromSf(Salesforce18Id $salesforceId): Campaign
@@ -85,7 +86,17 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $charity = $this->pullCharity($campaignData);
 
-        $campaign = new Campaign($salesforceId, $charity);
+        $campaign = new Campaign(
+            sfId: $salesforceId,
+            charity: $charity,
+            startDate: new \DateTimeImmutable($campaignData['startDate']),
+            endDate: new \DateTimeImmutable($campaignData['endDate']),
+            isMatched: $campaignData['isMatched'],
+            ready: $campaignData['ready'],
+            status: $campaignData['status'],
+            name: $campaignData['title'],
+            currencyCode: $campaignData['currencyCode'],
+        );
 
         $this->updateFromSf($campaign);
 

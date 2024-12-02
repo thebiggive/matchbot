@@ -64,22 +64,9 @@ class DonationRepositoryTest extends IntegrationTest
 
         return $charity;
     }
-
-    private function prepareCampaign(Charity $charity): Campaign
-    {
-        $campaign = new Campaign(Salesforce18Id::ofCampaign('ccampaign123456789'), charity: $charity);
-        $campaign->setName('Campaign Name');
-        $campaign->setCurrencyCode('GBP');
-        $campaign->setStartDate((new \DateTime())->sub(new \DateInterval('P16D')));
-        $campaign->setEndDate((new \DateTime())->add(new \DateInterval('P15D')));
-        $campaign->setIsMatched(true);
-
-        return $campaign;
-    }
-
     private function prepareAndPersistDonation(Charity $charity): Donation
     {
-        $campaign = $this->prepareCampaign($charity);
+        $campaign = $this->makeCampaign($charity);
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($campaign);
@@ -174,16 +161,19 @@ class DonationRepositoryTest extends IntegrationTest
         $this->assertEquals(DonationStatus::Pending, $cancelReadyDonations[0]->getDonationStatus());
     }
 
-    public function makeCampaign(): Campaign
+    public function makeCampaign(?Charity $charity = null): Campaign
     {
-        $campaign = new Campaign(Salesforce18Id::ofCampaign('campaignId12345678'), TestCase::someCharity());
-        $campaign->setCurrencyCode('GBP');
-        $campaign->setStartDate(new \DateTime());
-        $campaign->setEndDate(new \DateTime());
-        $campaign->setIsMatched(true);
-        $campaign->setName('Campaign Name');
-
-        return $campaign;
+        return new Campaign(
+            Salesforce18Id::ofCampaign('campaignId12345678'),
+            $charity ?? TestCase::someCharity(),
+            currencyCode: 'GBP',
+            startDate: new \DateTimeImmutable('now'),
+            endDate: new \DateTimeImmutable('now'),
+            isMatched: true,
+            name: 'Campaign Name',
+            ready: true,
+            status: 'status',
+        );
     }
 
     private function makeDonation(

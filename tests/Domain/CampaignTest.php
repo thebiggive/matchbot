@@ -15,6 +15,11 @@ class CampaignTest extends TestCase
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
+            isMatched: true,
+            ready: true,
+            status: 'status',
+            name: 'Test campaign',
+            currencyCode: 'GBP',
         );
 
         $this->assertTrue($campaign->isOpen(new \DateTimeImmutable('2025-01-01')));
@@ -26,9 +31,12 @@ class CampaignTest extends TestCase
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
+            isMatched: true,
+            ready: false,
+            status: 'status',
+            name: 'Test campaign',
+            currencyCode: 'GBP',
         );
-
-        $campaign->setReady(false);
 
         $this->assertFalse($campaign->isOpen(at: new \DateTimeImmutable('2025-01-01')));
     }
@@ -40,6 +48,11 @@ class CampaignTest extends TestCase
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
+            isMatched: true,
+            ready: true,
+            status: 'status',
+            name: 'Test campaign',
+            currencyCode: 'GBP',
         );
 
         $this->assertFalse($campaign->isOpen(at: new \DateTimeImmutable('2019-12-31T23:59:59')));
@@ -52,6 +65,11 @@ class CampaignTest extends TestCase
             charity: TestCase::someCharity(),
             startDate: new \DateTimeImmutable('2020-01-01'),
             endDate: new \DateTimeImmutable('2030-12-31'),
+            ready: true,
+            currencyCode: 'GBP',
+            status: 'status',
+            isMatched: true,
+            name: 'campaign name',
         );
 
         $this->assertFalse($campaign->isOpen(at: new \DateTimeImmutable('2030-12-31')));

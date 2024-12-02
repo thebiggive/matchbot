@@ -23,12 +23,15 @@ class CampaignRepositoryTest extends IntegrationTest
         $campaign = new Campaign(
             $this->randomCampaignId(),
             $this->getCharityAwaitingGiftAidApproval(),
+            startDate: new \DateTimeImmutable('-10 months'),
+            endDate: new \DateTimeImmutable('-9 months'),
+            isMatched: true,
+            ready: true,
+            status: 'status',
+            name: 'Campaign Name',
+            currencyCode: 'GBP',
         );
-        $campaign->setIsMatched(true);
-        $campaign->setName('Campaign Name');
-        $campaign->setCurrencyCode('GBP');
-        $campaign->setStartDate(new \DateTimeImmutable('-10 months'));
-        $campaign->setEndDate(new \DateTimeImmutable('-9 months'));
+
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($campaign);
@@ -61,13 +64,15 @@ class CampaignRepositoryTest extends IntegrationTest
 
         $campaign = new Campaign(
             Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
-            $this->getCharityAwaitingGiftAidApproval()
+            $this->getCharityAwaitingGiftAidApproval(),
+            startDate: new \DateTimeImmutable('-9 months'),
+            endDate: new \DateTimeImmutable('-10 months'),
+            isMatched: true,
+            ready: true,
+            status: 'status',
+            name: 'Campaign Name',
+            currencyCode: 'GBP',
         );
-        $campaign->setIsMatched(true);
-        $campaign->setName('Campaign Name');
-        $campaign->setCurrencyCode('GBP');
-        $campaign->setStartDate(new \DateTimeImmutable('-9 months'));
-        $campaign->setEndDate(new \DateTimeImmutable('-10 months'));
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($campaign);
@@ -97,6 +102,9 @@ class CampaignRepositoryTest extends IntegrationTest
         return $charity;
     }
 
+    /**
+     * @return Salesforce18Id<Campaign>
+     */
     public function randomCampaignId(): Salesforce18Id
     {
         $id = (new Randomizer())->getBytesFromString('abcdef01234567890', 18);

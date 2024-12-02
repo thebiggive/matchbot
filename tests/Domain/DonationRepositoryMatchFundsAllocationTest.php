@@ -67,10 +67,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $this->sut->setMatchingAdapter($matchingAdapter);
         $this->sut->setLogger(new NullLogger());
 
-        $this->campaign = new Campaign(
-            Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
-            TestCase::someCharity()
-        );
+        $this->campaign = TestCase::someCampaign();
     }
 
     public function testItAllocatesZeroWhenNoMatchFundsAvailable(): void

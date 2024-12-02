@@ -24,7 +24,7 @@ class UpdateCampaignsTest extends TestCase
 {
     public function testSingleUpdateSuccess(): void
     {
-        $campaign = new Campaign(Salesforce18Id::ofCampaign('someCampaignIdxxxx'), charity: TestCase::someCharity());
+        $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'));
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findRecentLiveAndPendingGiftAidApproval()
             ->willReturn([$campaign])
@@ -59,7 +59,9 @@ class UpdateCampaignsTest extends TestCase
     {
         // This case should be skipped over without crashing, in non-production envs.
 
-        $campaign = new Campaign(sfId: Salesforce18Id::ofCampaign('missingOnSfIDxxxxx'), charity: TestCase::someCharity());
+        $campaign = TestCase::someCampaign(
+            sfId: Salesforce18Id::ofCampaign('missingOnSfIDxxxxx'),
+        );
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findRecentLiveAndPendingGiftAidApproval()
             ->willReturn([$campaign])
@@ -98,7 +100,10 @@ class UpdateCampaignsTest extends TestCase
             new Request('GET', 'https://example.com'),
         );
 
-        $campaign = new Campaign(sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'), charity: TestCase::someCharity());
+        $campaign = TestCase::someCampaign(
+            sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'),
+        )
+        ;
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findRecentLiveAndPendingGiftAidApproval()
             ->willReturn([$campaign])
@@ -143,7 +148,9 @@ class UpdateCampaignsTest extends TestCase
             new Request('GET', 'https://example.com'),
         );
 
-        $campaign = new Campaign(sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'), charity: TestCase::someCharity());
+        $campaign = TestCase::someCampaign(
+            sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'),
+        );
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
@@ -183,13 +190,18 @@ class UpdateCampaignsTest extends TestCase
             'Updated campaign someCampaignIdxxxx',
             'matchbot:update-campaigns complete!',
         ];
-        $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
+        $this->assertEquals(
+            implode("\n", $expectedOutputLines) . "\n",
+            $commandTester->getDisplay()
+        );
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
     public function testSingleUpdateSuccessWithAllOption(): void
     {
-        $campaign = new Campaign(sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'), charity: TestCase::someCharity());
+        $campaign = TestCase::someCampaign(
+            sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'),
+        );
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->findAll()
             ->willReturn([$campaign])
