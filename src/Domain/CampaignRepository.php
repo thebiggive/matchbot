@@ -103,8 +103,12 @@ class CampaignRepository extends SalesforceReadProxyRepository
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
         );
+        $campaign->setSalesforceLastPull(new \DateTime());
 
-        $this->updateFromSf($campaign);
+        $this->getEntityManager()->persist($campaign);
+        $this->getEntityManager()->flush();
+
+        $this->logInfo('Done persisting new campiagn ' . $campaign->getSalesforceId());
 
         return $campaign;
     }
@@ -220,12 +224,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $campaign = $proxy;
 
         $client = $this->getClient();
-        $salesforceId = $campaign->getSalesforceId();
-        if ($salesforceId === null) {
-            throw new \Exception("Cannot update campaign with missing salesforce ID");
-        }
-
-        $campaignData = $client->getById($salesforceId, $withCache);
+        $campaignData = $client->getById($campaign->getSalesforceId(), $withCache);
 
         $this->updateCharityFromCampaignData($proxy->getCharity(), $campaignData);
 
