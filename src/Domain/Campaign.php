@@ -84,15 +84,13 @@ class Campaign extends SalesforceReadProxy
      */
     public function __construct(
         Salesforce18Id $sfId,
-        ?Charity $charity,
+        Charity $charity,
         ?\DateTimeImmutable $startDate = null,
         ?\DateTimeImmutable $endDate = null
     ) {
         $this->createdNow();
         $this->campaignFundings = new ArrayCollection();
-        if ($charity) {
-            $this->charity = $charity;
-        }
+        $this->charity = $charity;
 
         if ($startDate) {
             $this->startDate = $startDate;
@@ -173,14 +171,6 @@ class Campaign extends SalesforceReadProxy
     }
 
     /**
-     * @param Charity $charity
-     */
-    public function setCharity(Charity $charity): void
-    {
-        $this->charity = $charity;
-    }
-
-    /**
      * @param bool $isMatched
      */
     public function setIsMatched(bool $isMatched): void
@@ -251,7 +241,6 @@ class Campaign extends SalesforceReadProxy
     }
 
     public function updateFromSfPull(
-        Charity $charity,
         string $currencyCode,
         ?string $status,
         \DateTimeInterface $endDate,
@@ -260,7 +249,6 @@ class Campaign extends SalesforceReadProxy
         \DateTimeInterface $startDate,
         bool $ready,
     ): void {
-        $this->charity = $charity;
         $this->currencyCode = $currencyCode;
         $this->endDate = $endDate;
         $this->isMatched = $isMatched;

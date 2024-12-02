@@ -156,7 +156,10 @@ class DonationRepositoryTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Currency CAD is invalid for campaign');
 
-        $dummyCampaign = new Campaign(sfId: Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'), charity: null);
+        $dummyCampaign = new Campaign(
+            sfId: Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
+            charity: TestCase::someCharity()
+        );
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.

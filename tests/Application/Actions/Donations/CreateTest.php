@@ -314,18 +314,11 @@ class CreateTest extends TestCase
         $container = $app->getContainer();
         \assert($container instanceof Container);
 
-        // Cloning & use of new objects is necessary here, so we don't set
-        // the Stripe value on the copy of the object which is meant to be
-        // missing it for the test to follow that logic branch.
-        $charityWhichNowHasStripeAccountID = clone $donation->getCampaign()->getCharity();
-        $charityWhichNowHasStripeAccountID
-            ->setStripeAccountId('unitTest_newStripeAccount_456');
-
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->updateFromSf(Argument::type(Campaign::class))
             ->will(/**
              * @param array{0: Campaign} $args
-             */                fn (array $args) => $args[0]->setCharity($charityWhichNowHasStripeAccountID)
+             */                fn (array $args) => $args[0]->getCharity()->setStripeAccountId('unitTest_newStripeAccount_456')
             );
 
         // Need to override stock EM to get campaign repo behaviour

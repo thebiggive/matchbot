@@ -9,7 +9,16 @@ use MatchBot\Application\Assertion;
 
 /**
  * @psalm-type SFCampaignApiResponse = array{
- *     charity: array,
+ *     charity: array{
+ *      id: string,
+ *      name: string,
+ *      stripeAccountId: string,
+ *      hmrcReferenceNumber: string,
+ *      giftAidOnboardingStatus: string,
+ *      regulator: string,
+ *      regulatorRegion: string,
+ *      regulatorNumber: string,
+ *     },
  *     endDate: string,
  *     feePercentage: ?float,
  *     id: string,

@@ -11,6 +11,7 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
 /**
+ * @psalm-import-type SFCampaignApiResponse from Client\Campaign
  * @template-extends SalesforceReadProxyRepository<Campaign, Client\Campaign>
  */
 class CampaignRepository extends SalesforceReadProxyRepository
@@ -80,7 +81,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function pullNewFromSf(Salesforce18Id $salesforceId): Campaign
     {
-        $campaign = new Campaign($salesforceId, charity: null);
+        $campaignData = $this->getClient()->getById($salesforceId->value, true);
+
+        $charity = $this->pullCharity($campaignData);
+
+        $campaign = new Campaign($salesforceId, $charity);
 
         $this->updateFromSf($campaign);
 
@@ -138,6 +143,58 @@ class CampaignRepository extends SalesforceReadProxyRepository
     }
 
     /**
+     * @param  SFCampaignApiResponse $campaignData
+     */
+    public function pullCharity(array $campaignData): Charity
+    {
+        $charity = $this->getEntityManager()
+            ->getRepository(Charity::class)
+            ->findOneBy(['salesforceId' => $campaignData['charity']['id']]);
+        if (!$charity) {
+            $charity = $this->newCharityFromCampaignData($campaignData);
+        } else {
+            $this->updateCharityFromCampaignData($charity, $campaignData);
+        }
+
+        $this->getEntityManager()->persist($charity);
+
+        return $charity;
+    }
+
+    /**
+     * @param SFCampaignApiResponse $campaignData
+     */
+    public function newCharityFromCampaignData(array $campaignData): Charity
+    {
+        return new Charity(
+            salesforceId: $campaignData['charity']['id'],
+            charityName: $campaignData['charity']['name'],
+            stripeAccountId: $campaignData['charity']['stripeAccountId'],
+            hmrcReferenceNumber: $campaignData['charity']['hmrcReferenceNumber'],
+            giftAidOnboardingStatus: $campaignData['charity']['giftAidOnboardingStatus'],
+            regulator: $this->getRegulatorHMRCIdentifier($campaignData['charity']['regulatorRegion']),
+            regulatorNumber: $campaignData['charity']['regulatorNumber'],
+            time: new \DateTime('now'),
+        );
+    }
+
+    /**
+     * @param SFCampaignApiResponse $campaignData
+     */
+    public function updateCharityFromCampaignData(Charity $charity, array $campaignData): void
+    {
+        $charity->updateFromSfPull(
+            charityName: $campaignData['charity']['name'],
+            stripeAccountId: $campaignData['charity']['stripeAccountId'],
+            hmrcReferenceNumber: $campaignData['charity']['hmrcReferenceNumber'],
+            giftAidOnboardingStatus: $campaignData['charity']['giftAidOnboardingStatus'],
+            regulator: $this->getRegulatorHMRCIdentifier($campaignData['charity']['regulatorRegion']),
+            regulatorNumber: $campaignData['charity']['regulatorNumber'],
+            time: new \DateTime('now'),
+        );
+    }
+
+    /**
      * @throws Client\NotFoundException if Campaign not found on Salesforce
      * @throws \Exception if start or end dates' formats are invalid
      */
@@ -153,6 +210,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $campaignData = $client->getById($salesforceId, $withCache);
 
+        $this->updateCharityFromCampaignData($proxy->getCharity(), $campaignData);
+
         if ($campaign->hasBeenPersisted() && $campaign->getCurrencyCode() !== $campaignData['currencyCode']) {
             $this->logWarning(sprintf(
                 'Refusing to update campaign currency to %s for SF ID %s',
@@ -163,16 +222,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
             throw new DomainCurrencyMustNotChangeException();
         }
 
-        $charity = $this->pullCharity(
-            salesforceCharityId: $campaignData['charity']['id'],
-            charityName: $campaignData['charity']['name'],
-            stripeAccountId: $campaignData['charity']['stripeAccountId'],
-            giftAidOnboardingStatus: $campaignData['charity']['giftAidOnboardingStatus'],
-            hmrcReferenceNumber: $campaignData['charity']['hmrcReferenceNumber'],
-            regulator: $campaignData['charity']['regulatorRegion'],
-            regulatorNumber: $campaignData['charity']['regulatorNumber'],
-        );
-
         $feePercentage = $campaignData['feePercentage'] ?? null;
         Assertion::null($feePercentage, "Fee percentages are no-longer supported, should always be null");
 
@@ -181,7 +230,6 @@ class CampaignRepository extends SalesforceReadProxyRepository
         }
 
         $campaign->updateFromSfPull(
-            charity: $charity,
             status: $campaignData['status'],
             currencyCode: $campaignData['currencyCode'] ?? 'GBP',
             endDate: new DateTime($campaignData['endDate']),
@@ -190,51 +238,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             startDate: new DateTime($campaignData['startDate']),
             ready: $campaignData['ready'],
         );
-    }
 
-    /**
-     * Upsert a Charity based on ID & name, persist and return it.
-     *
-     * @throws \Doctrine\ORM\ORMException on failed persist()
-     */
-    private function pullCharity(
-        string $salesforceCharityId,
-        string $charityName,
-        ?string $stripeAccountId,
-        ?string $giftAidOnboardingStatus,
-        ?string $hmrcReferenceNumber,
-        string $regulator,
-        ?string $regulatorNumber,
-    ): Charity {
-        $charity = $this->getEntityManager()
-            ->getRepository(Charity::class)
-            ->findOneBy(['salesforceId' => $salesforceCharityId]);
-        if (!$charity) {
-            $charity = new Charity(
-                salesforceId: $salesforceCharityId,
-                charityName: $charityName,
-                stripeAccountId: $stripeAccountId,
-                hmrcReferenceNumber: $hmrcReferenceNumber,
-                giftAidOnboardingStatus: $giftAidOnboardingStatus,
-                regulator: $this->getRegulatorHMRCIdentifier($regulator),
-                regulatorNumber: $regulatorNumber,
-                time: new \DateTime('now'),
-            );
-        } else {
-            $charity->updateFromSfPull(
-                charityName: $charityName,
-                stripeAccountId: $stripeAccountId,
-                hmrcReferenceNumber: $hmrcReferenceNumber,
-                giftAidOnboardingStatus: $giftAidOnboardingStatus,
-                regulator: $this->getRegulatorHMRCIdentifier($regulator),
-                regulatorNumber: $regulatorNumber,
-                time: new \DateTime('now'),
-            );
-        }
-
-        $this->getEntityManager()->persist($charity);
-
-        return $charity;
+        $this->getEntityManager()->flush();
     }
 
     protected function getRegulatorHMRCIdentifier(string $regulatorName): ?string

@@ -95,7 +95,7 @@ class FundRepositoryTest extends TestCase
             null
         );
 
-        $campaign = new Campaign(Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID), charity: null);
+        $campaign = new Campaign(Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID), charity: TestCase::someCharity());
 
         $repo->pullForCampaign($campaign);
 
@@ -144,7 +144,7 @@ class FundRepositoryTest extends TestCase
             $this->getExistingFund(true),
         );
 
-        $campaign = new Campaign(Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID), charity: null);
+        $campaign = new Campaign(Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID), charity: TestCase::someCharity());
 
         $repo->pullForCampaign($campaign);
     }
@@ -201,7 +201,7 @@ class FundRepositoryTest extends TestCase
             $this->getExistingFund(true),
         );
 
-        $campaign = new Campaign(Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID), charity: null);
+        $campaign = new Campaign(Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID), charity: TestCase::someCharity());
 
         $repo->pullForCampaign($campaign);
     }
@@ -251,7 +251,7 @@ class FundRepositoryTest extends TestCase
             false, // No persists in this scenario
         );
 
-        $campaign = new Campaign(Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID), charity: null);
+        $campaign = new Campaign(Salesforce18Id::ofCampaign(self::CAMPAIGN_SF_ID), charity: TestCase::someCharity());
 
         $repo->pullForCampaign($campaign);
     }
