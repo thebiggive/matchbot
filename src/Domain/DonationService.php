@@ -22,6 +22,7 @@ use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
+use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
@@ -257,6 +258,21 @@ class DonationService
             throw new \MatchBot\Domain\NoRegularGivingPaymentMethod(
                 "Cannot confirm donation {$donation->getUuid()} for " .
                 "{$donorAccount->stripeCustomerId->stripeCustomerId}, no payment method"
+            );
+        }
+
+        $campaign = $donation->getCampaign();
+        if ($campaign->regularGivingCollectionIsEndedAt($this->clock->now())) {
+            $collectionEnd = $campaign->getRegularGivingCollectionEnd();
+            Assertion::notNull($collectionEnd);
+
+            $donation->cancel();
+            $mandate->campaignEnded();
+
+            throw new RegularGivingCollectionEndPassed(
+                "Cannot confirm a donation now, " .
+                "regular giving collections for campaign {$campaign->getSalesforceId()} ended " .
+                "at {$collectionEnd->format('Y-m-d')}"
             );
         }
 
