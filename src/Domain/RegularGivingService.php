@@ -65,9 +65,7 @@ readonly class RegularGivingService
         $mandate = new RegularGivingMandate(
             donorId: $donorID,
             amount: $amount,
-            campaignId: Salesforce18Id::ofCampaign(
-                $campaign->getSalesforceId() ?? throw new \Exception('missing campaign SF ID')
-            ),
+            campaignId: Salesforce18Id::ofCampaign($campaign->getSalesforceId()),
             charityId: $charityId,
             giftAid: $giftAid,
             dayOfMonth: $dayOfMonth,

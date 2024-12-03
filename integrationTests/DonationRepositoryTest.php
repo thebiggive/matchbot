@@ -137,7 +137,6 @@ class DonationRepositoryTest extends IntegrationTest
         // arrange
         $campaign = $this->makeCampaign();
         $campaignId = $campaign->getSalesforceId();
-        \assert(is_string($campaignId));
         $randomEmailAddress = 'email' . random_int(1000, 99999) . '@example.com';
 
         $this->makeDonation(

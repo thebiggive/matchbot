@@ -303,4 +303,13 @@ class Campaign extends SalesforceReadProxy
     {
         return $this->status;
     }
+
+    #[\Override]
+    public function getSalesforceId(): string
+    {
+        // salesforce ID is set in Campaign constructor, so should never be null.
+        Assertion::string($this->salesforceId);
+
+        return $this->salesforceId;
+    }
 }
