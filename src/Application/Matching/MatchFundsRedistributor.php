@@ -148,9 +148,10 @@ class MatchFundsRedistributor
 
         $this->donationRepository->releaseMatchFunds($donation);
 
-        // Remove Redis copy of the balance for CampaignFunding ID 30768. Then the allocation
-        // will check the database for a new balance, which should be correct following the release above.
+        // Remove Redis & DB copies of the balance for CampaignFunding ID 30768. Then the allocation
+        // will check the database for a new available balance, which should be correct.
         $this->matchingAdapter->deleteByFundingId(30768);
+        $this->campaignFundingRepository->reduceCampaignFundingAmountAvailableFor4Dec();
 
         $this->donationRepository->allocateMatchFunds($donation);
     }
