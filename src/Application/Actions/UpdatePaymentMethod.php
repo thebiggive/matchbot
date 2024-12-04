@@ -21,6 +21,7 @@ class UpdatePaymentMethod extends Action
         'Your card has expired.',
         'Your card does not support this type of purchase.',
         'Your card\'s expiration month is invalid.',
+        'Invalid account',
     ];
 
     #[Pure]
