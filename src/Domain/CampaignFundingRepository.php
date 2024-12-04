@@ -74,10 +74,10 @@ class CampaignFundingRepository extends EntityRepository
     {
         $campaignFundingId = 30768;
 
-        $amountBeforeUpdate = null;
+        $availableBeforeUpdate = null;
         $fundingForInfo = $this->getEntityManager()->find(CampaignFunding::class, $campaignFundingId);
         if ($fundingForInfo) {
-            $amountBeforeUpdate = (float) $fundingForInfo->getAmountAvailable();
+            $availableBeforeUpdate = (float) $fundingForInfo->getAmountAvailable();
         }
 
         $query = $this->getEntityManager()->createQuery(<<<EOT
@@ -87,6 +87,6 @@ class CampaignFundingRepository extends EntityRepository
         EOT);
         $query->execute();
 
-        return $amountBeforeUpdate;
+        return $availableBeforeUpdate;
     }
 }
