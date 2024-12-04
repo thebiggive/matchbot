@@ -60,6 +60,6 @@ class RedistributeMatchFunds extends LockingCommand
             resource: 'redistribute-2024-12-04-patch',
             ttl: 2 * 24 * 60 * 60, // 2 days
         );
-        $oneTimeFixLock->acquire();
+        $oneTimeFixLock->acquire(blocking: true);
     }
 }
