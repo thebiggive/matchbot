@@ -13,12 +13,14 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
+use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
 use MatchBot\Tests\Application\Matching\ArrayMatchingStorage;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
+use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\RoutableMessageBus;
 
 /**
@@ -64,6 +66,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             new ClassMetadata(Donation::class),
         );
         $this->sut->setMatchingAdapter($matchingAdapter);
+        $this->sut->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $this->sut->setLogger(new NullLogger());
 
         $this->campaign = new Campaign(\MatchBot\Tests\TestCase::someCharity());
