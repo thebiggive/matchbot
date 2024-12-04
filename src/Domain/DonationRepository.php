@@ -20,6 +20,7 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\MissingTransactionId;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\LockInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -134,7 +135,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // is most often empty (for new donations) so this will frequently be 0.00.
         $amountMatchedAtStart = $donation->getFundingWithdrawalTotal();
 
-
         $lockStartTime = 0; // dummy value, should always be overwritten before usage.
         try {
             /** @var list<CampaignFunding> $likelyAvailableFunds */
@@ -180,6 +180,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $this->getEntityManager()->flush();
 
+        $this->unlockReleasingMatchFundsIfNecessary($donation);
+
         return $amountNewlyMatched;
     }
 
@@ -208,9 +210,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // this returns false, we are in the contested lock case and know to drop this attempt.
 
         $fundsReleaseLock = $this->lockFactory->createLock("release-funds-{$donation->getUuid()}");
+        $longerLock = $this->getLongerReleaseLock($donation);
 
         try {
-            $gotLock = $fundsReleaseLock->acquire(false);
+            $gotLocks = $fundsReleaseLock->acquire(false) && $longerLock->acquire(false);
         } catch (LockAcquiringException $exception) {
             // According to the method (but not the exception) docs, `LockConflictedException` is thrown only
             // "If the lock is acquired by someone else in blocking mode", and so should not be expected for
@@ -224,7 +227,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             return;
         }
 
-        if (!$gotLock) {
+        if (!$gotLocks) {
             $this->logger->warning(sprintf(
                 'Skipped releasing match funds for donation ID %s as lock was not acquired',
                 $donation->getUuid(),
@@ -256,6 +259,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $this->logInfo('Deallocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
 
         $fundsReleaseLock->release();
+        // Leave $longerLock to auto-release to reduce risk of double expiry. Only when newly allocating funds
+        // will we explicitly release that one.
     }
 
     /**
@@ -478,10 +483,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
-     * Taking a now-ish input that's typically the floor of the current minute and
-     * looking between $nowish-16 minutes and
-     * $nowish-1 minutes for donations with >£0 matching assigned, returns:
-     * * if there are less than 20 such donations, null; or
+     * Takes a now-ish input that's typically the floor of the current minute and
+     * looks for donations *created* between $nowish-16 minutes and $nowish-1 minutes, with >£0 matching assigned.
+     * Returns:
+     * * if there are fewer than 20 such donations, null; or
      * * if there are 20+ such donations, the ratio of those which are complete.
      */
     public function getRecentHighVolumeCompletionRatio(\DateTimeImmutable $nowish): ?float
@@ -491,9 +496,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
             SELECT
-            COUNT(d.id) as donationCount, 
+            COUNT(d.id) as donationCount,
             SUM(CASE WHEN d.donationStatus IN (:completeStatuses) THEN 1 ELSE 0 END) as completeCount
-            FROM MatchBot\Domain\Donation d 
+            FROM MatchBot\Domain\Donation d
             LEFT JOIN d.fundingWithdrawals fw
             WHERE d.createdAt >= :start
             AND d.createdAt < :end
@@ -1005,5 +1010,20 @@ class DonationRepository extends SalesforceWriteProxyRepository
         /** @var list<Donation> $result */
         $result = $query->getResult();
         return $result;
+    }
+
+    private function unlockReleasingMatchFundsIfNecessary(Donation $donation): void
+    {
+        // I think that `delete()` on the RedisStore adapter for the Key will quietly do nothing, so
+        // we can call this without calling `isAcquired()` first.
+        $this->getLongerReleaseLock($donation)->release();
+    }
+
+    private function getLongerReleaseLock(Donation $donation): LockInterface
+    {
+        return $this->lockFactory->createLock(
+            resource: "release-funds-longer-lock-{$donation->getUuid()}",
+            ttl: 60, // auto-release true; the default
+        );
     }
 }
