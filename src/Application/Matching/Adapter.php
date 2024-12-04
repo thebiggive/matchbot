@@ -5,14 +5,11 @@ declare(strict_types=1);
 namespace MatchBot\Application\Matching;
 
 use Doctrine\ORM\EntityManagerInterface;
-use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\RealTimeMatchingStorage;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Donation;
-use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
-use Redis;
 
 /**
  * This adapter does not lock but uses atomic Redis `MULTI` operations to detect parallel changes in allocations.
@@ -204,6 +201,14 @@ class Adapter
     }
 
     /**
+     * We'll delete this fn asap on/after 4/12/24.
+     */
+    public function deleteByFundingId(int $fundingId): void
+    {
+        $this->storage->del("fund-$fundingId-available-opt");
+    }
+
+    /**
      * Converts e.g. pounds to pence – but is currency-agnostic except for currently assuming
      * a 100-fold multiplication is reasonable.
      *
@@ -270,7 +275,7 @@ class Adapter
             $amount = $fundingAndAmount['amount'];
             $funding = $fundingAndAmount['campaignFunding'];
 
-            $this->logger->warning("Released newly allocated funds of $amount for funding# {$funding->getId()}");
+            $this->logger->warning("Released newly allocated funds of $amount for funding ID {$funding->getId()}");
 
             $this->addAmountWithoutSavingFundingsToDB($funding, $amount);
         }
