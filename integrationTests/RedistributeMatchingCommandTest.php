@@ -70,6 +70,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
 
         // act
         $command = new RedistributeMatchFunds(
+            new LockFactory(new AlwaysAvailableLockStore()),
             new MatchFundsRedistributor(
                 chatter: $this->createStub(ChatterInterface::class),
                 donationRepository: $this->getService(DonationRepository::class),
@@ -78,6 +79,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
                 logger: $this->getService(LoggerInterface::class),
                 entityManager: $this->createStub(EntityManagerInterface::class),
                 bus: $this->messageBusProphecy->reveal(),
+                matchingAdapter: $this->createStub(Adapter::class),
             ),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
@@ -119,6 +121,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
 
         // act
         $command = new RedistributeMatchFunds(
+            new LockFactory(new AlwaysAvailableLockStore()),
             new MatchFundsRedistributor(
                 chatter: $this->createStub(ChatterInterface::class),
                 campaignFundingRepository: $this->campaignFundingRepository,
@@ -127,6 +130,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
                 donationRepository: $this->getService(DonationRepository::class),
                 logger: $this->getService(LoggerInterface::class),
                 bus: $this->messageBusProphecy->reveal(),
+                matchingAdapter: $this->createStub(Adapter::class),
             ),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));

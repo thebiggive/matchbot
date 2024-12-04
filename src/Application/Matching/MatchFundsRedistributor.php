@@ -4,6 +4,7 @@ namespace MatchBot\Application\Matching;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\DonationRepository;
@@ -26,6 +27,7 @@ class MatchFundsRedistributor
         private LoggerInterface $logger,
         private EntityManagerInterface $entityManager,
         private RoutableMessageBus $bus,
+        private Matching\Adapter $matchingAdapter,
     ) {
     }
 
@@ -134,5 +136,22 @@ class MatchFundsRedistributor
         $chatMessage->options($options);
 
         $this->chatter->send($chatMessage);
+    }
+
+    public function patch4DecemberDonation(): void
+    {
+        $donation = $this->donationRepository->find(912046);
+        if ($donation === null) {
+            // Probably not Production.
+            return;
+        }
+
+        $this->donationRepository->releaseMatchFunds($donation);
+
+        // Remove Redis copy of the balance for CampaignFunding ID 30768. Then the allocation
+        // will check the database for a new balance, which should be correct following the release above.
+        $this->matchingAdapter->deleteByFundingId(30768);
+
+        $this->donationRepository->allocateMatchFunds($donation);
     }
 }
