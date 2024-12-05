@@ -127,7 +127,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      *                              return value.
      * @see CampaignFundingRepository::getAvailableFundings() for lock acquisition detail
      */
-    public function allocateMatchFunds(Donation $donation): string
+    public function allocateMatchFunds(Donation $donation, bool $mistrustOrmFundingCopies = false): string
     {
         // We look up matching withdrawals to allow for the case where retrospective matching was required
         // and the donation is not new, and *some* (or full) matching already occurred. The collection of withdrawals
@@ -140,7 +140,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
             /** @var list<CampaignFunding> $likelyAvailableFunds */
             $likelyAvailableFunds = $this->getEntityManager()
                 ->getRepository(CampaignFunding::class)
-                ->getAvailableFundings($donation->getCampaign());
+                ->getAvailableFundings(
+                    campaign: $donation->getCampaign(),
+                    mistrustOrmCopies: $mistrustOrmFundingCopies,
+                );
 
             foreach ($likelyAvailableFunds as $funding) {
                 if ($funding->getCurrencyCode() !== $donation->getCurrencyCode()) {

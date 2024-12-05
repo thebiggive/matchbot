@@ -149,16 +149,18 @@ class MatchFundsRedistributor
         $this->donationRepository->releaseMatchFunds($donation);
         $this->entityManager->flush();
 
-        // Remove Redis & DB copies of the balance for CampaignFunding ID 30768. Then the allocation
+        $campaignFundingId = 30768;
+        // Remove Redis & DB copies of the balance for CampaignFunding ID $campaignFundingId. Then the allocation
         // will check the database for a new available balance, which should be correct.
-        $this->matchingAdapter->deleteByFundingId(30768);
-        $this->logger->info('Deleted Redis cache for CampaignFunding ID 30768');
+        $this->matchingAdapter->deleteByFundingId($campaignFundingId);
+        $this->logger->info('Deleted Redis cache for CampaignFunding ID ' . $campaignFundingId);
         $availableBeforeDbUpdate = $this->campaignFundingRepository->reduceCampaignFundingAmountAvailableFor4Dec();
         $this->logger->info(sprintf(
-            'Reduced CampaignFunding ID 30768 amount available from £%s to £50',
+            'Reduced CampaignFunding ID %d amount available from £%s to £50',
+            $campaignFundingId,
             $availableBeforeDbUpdate ?? 'no value',
         ));
 
-        $this->donationRepository->allocateMatchFunds($donation);
+        $this->donationRepository->allocateMatchFunds(donation: $donation, mistrustOrmFundingCopies: true);
     }
 }
