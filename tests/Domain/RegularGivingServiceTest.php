@@ -16,6 +16,7 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\RegularGivingMandateRepository;
+use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
@@ -137,6 +138,7 @@ class RegularGivingServiceTest extends TestCase
             donationService: $this->createStub(DonationService::class),
             log: $this->createStub(LoggerInterface::class),
             regularGivingMandateRepository: $this->createStub(RegularGivingMandateRepository::class),
+            regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
         );
     }
 
