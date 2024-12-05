@@ -127,7 +127,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      *                              return value.
      * @see CampaignFundingRepository::getAvailableFundings() for lock acquisition detail
      */
-    public function allocateMatchFunds(Donation $donation, bool $mistrustOrmFundingCopies = false): string
+    public function allocateMatchFunds(Donation $donation): string
     {
         // We look up matching withdrawals to allow for the case where retrospective matching was required
         // and the donation is not new, and *some* (or full) matching already occurred. The collection of withdrawals
@@ -140,10 +140,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             /** @var list<CampaignFunding> $likelyAvailableFunds */
             $likelyAvailableFunds = $this->getEntityManager()
                 ->getRepository(CampaignFunding::class)
-                ->getAvailableFundings(
-                    campaign: $donation->getCampaign(),
-                    mistrustOrmCopies: $mistrustOrmFundingCopies,
-                );
+                ->getAvailableFundings($donation->getCampaign());
 
             foreach ($likelyAvailableFunds as $funding) {
                 if ($funding->getCurrencyCode() !== $donation->getCurrencyCode()) {
@@ -840,7 +837,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
-     * Sets a Salesforce ID (and general status things)without its own lock and importantly without the ORM, using
+     * Sets a Salesforce ID (and general status things) without its own lock and importantly without the ORM, using
      * a raw DQL `UPDATE` that should make it safe irrespective of ORM work that could also be happening on the record.
      *
      * @throws DBALException\LockWaitTimeoutException if some other transaction is holding a lock

@@ -4,7 +4,6 @@ namespace MatchBot\Application\Matching;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\DonationRepository;
@@ -27,7 +26,6 @@ class MatchFundsRedistributor
         private LoggerInterface $logger,
         private EntityManagerInterface $entityManager,
         private RoutableMessageBus $bus,
-        private Matching\Adapter $matchingAdapter,
     ) {
     }
 
@@ -136,31 +134,5 @@ class MatchFundsRedistributor
         $chatMessage->options($options);
 
         $this->chatter->send($chatMessage);
-    }
-
-    public function patch4DecemberDonation(): void
-    {
-        $donation = $this->donationRepository->find(912046);
-        if ($donation === null) {
-            // Probably not Production.
-            return;
-        }
-
-        $this->donationRepository->releaseMatchFunds($donation);
-        $this->entityManager->flush();
-
-        $campaignFundingId = 30768;
-        // Remove Redis & DB copies of the balance for CampaignFunding ID $campaignFundingId. Then the allocation
-        // will check the database for a new available balance, which should be correct.
-        $this->matchingAdapter->deleteByFundingId($campaignFundingId);
-        $this->logger->info('Deleted Redis cache for CampaignFunding ID ' . $campaignFundingId);
-        $availableBeforeDbUpdate = $this->campaignFundingRepository->reduceCampaignFundingAmountAvailableFor4Dec();
-        $this->logger->info(sprintf(
-            'Reduced CampaignFunding ID %d amount available from £%s to £50',
-            $campaignFundingId,
-            $availableBeforeDbUpdate ?? 'no value',
-        ));
-
-        $this->donationRepository->allocateMatchFunds(donation: $donation, mistrustOrmFundingCopies: true);
     }
 }

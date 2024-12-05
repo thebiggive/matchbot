@@ -25,11 +25,10 @@ class CampaignFundingRepository extends EntityRepository
      * no-floating-point-maths approach we've taken to ensure accuracy.
      *
      * @param Campaign $campaign
-     * @param bool $mistrustOrmCopies Temporary flag to refresh() every CampaignFunding we see.
      * @return CampaignFunding[]    Sorted in the order funds should be allocated
      * @throws \Doctrine\ORM\TransactionRequiredException if called this outside a surrounding transaction
      */
-    public function getAvailableFundings(Campaign $campaign, bool $mistrustOrmCopies = false): array
+    public function getAvailableFundings(Campaign $campaign): array
     {
         $query = $this->getEntityManager()->createQuery('
             SELECT cf FROM MatchBot\Domain\CampaignFunding cf
@@ -39,16 +38,7 @@ class CampaignFundingRepository extends EntityRepository
         ');
         $query->setParameter('campaign', $campaign->getId());
 
-        /** @var CampaignFunding[] $fundings */
-        $fundings = $query->getResult();
-
-        if ($mistrustOrmCopies) {
-            foreach ($fundings as $funding) {
-                $this->getEntityManager()->refresh($funding);
-            }
-        }
-
-        return $fundings;
+        return $query->getResult();
     }
 
     public function getFunding(Fund $fund): ?CampaignFunding
@@ -75,28 +65,5 @@ class CampaignFundingRepository extends EntityRepository
         $query->execute();
 
         return $query->getOneOrNullResult();
-    }
-
-    /**
-     * Correct the amount available for out of sync CampaignFunding ID 30768 from £100 to £50.
-     */
-    public function reduceCampaignFundingAmountAvailableFor4Dec(): ?float
-    {
-        $campaignFundingId = 30768;
-
-        $availableBeforeUpdate = null;
-        $fundingForInfo = $this->getEntityManager()->find(CampaignFunding::class, $campaignFundingId);
-        if ($fundingForInfo) {
-            $availableBeforeUpdate = (float) $fundingForInfo->getAmountAvailable();
-        }
-
-        $query = $this->getEntityManager()->createQuery(<<<EOT
-            UPDATE MatchBot\Domain\CampaignFunding cf
-            SET cf.amountAvailable = 50
-            WHERE cf.id = $campaignFundingId AND cf.amountAvailable = 100
-        EOT);
-        $query->execute();
-
-        return $availableBeforeUpdate;
     }
 }
