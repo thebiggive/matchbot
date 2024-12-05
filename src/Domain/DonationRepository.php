@@ -218,7 +218,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $fundsReleaseLock = $this->getFundsReleaseLock($donation);
 
         try {
-            // We no longer `release()` the lock, holding it for the default 5 mins instead unless a thread newly
+            // We don't `release()` the lock, holding it for the default 5 mins instead unless a thread newly
             // allocates funds during that time. This avoids race condition bugs between explicit cancel actions by
             // donors and funds auto expiry.
             $gotLock = $fundsReleaseLock->acquire(false);
