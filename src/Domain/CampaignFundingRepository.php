@@ -25,10 +25,11 @@ class CampaignFundingRepository extends EntityRepository
      * no-floating-point-maths approach we've taken to ensure accuracy.
      *
      * @param Campaign $campaign
+     * @param bool $mistrustOrmCopies Temporary flag to refresh() every CampaignFunding we see.
      * @return CampaignFunding[]    Sorted in the order funds should be allocated
      * @throws \Doctrine\ORM\TransactionRequiredException if called this outside a surrounding transaction
      */
-    public function getAvailableFundings(Campaign $campaign): array
+    public function getAvailableFundings(Campaign $campaign, bool $mistrustOrmCopies = false): array
     {
         $query = $this->getEntityManager()->createQuery('
             SELECT cf FROM MatchBot\Domain\CampaignFunding cf
@@ -38,7 +39,16 @@ class CampaignFundingRepository extends EntityRepository
         ');
         $query->setParameter('campaign', $campaign->getId());
 
-        return $query->getResult();
+        /** @var CampaignFunding[] $fundings */
+        $fundings = $query->getResult();
+
+        if ($mistrustOrmCopies) {
+            foreach ($fundings as $funding) {
+                $this->getEntityManager()->refresh($funding);
+            }
+        }
+
+        return $fundings;
     }
 
     public function getFunding(Fund $fund): ?CampaignFunding
