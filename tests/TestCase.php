@@ -211,7 +211,9 @@ class TestCase extends PHPUnitTestCase
     public static function someCampaign(
         ?string $stripeAccountId = null,
         ?Salesforce18Id $sfId = null,
-        ?Charity $charity = null
+        ?Charity $charity = null,
+        bool $isRegularGiving = false,
+        ?\DateTimeImmutable $regularGivingCollectionEnd = null,
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
         \assert(is_string($randomString));
@@ -227,8 +229,8 @@ class TestCase extends PHPUnitTestCase
             status: 'status',
             name: 'someCampaign',
             currencyCode: 'GBP',
-            isRegularGiving: false,
-            regularGivingCollectionEnd: null,
+            isRegularGiving: $isRegularGiving,
+            regularGivingCollectionEnd: $regularGivingCollectionEnd,
         );
     }
 
