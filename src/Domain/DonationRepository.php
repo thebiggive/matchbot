@@ -218,9 +218,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $fundsReleaseLock = $this->getFundsReleaseLock($donation);
 
         try {
-            // We don't `release()` the lock, holding it for the default 5 mins instead unless a thread newly
+            // We don't `release()` the lock, holding it for 5 mins instead unless a thread newly
             // allocates funds during that time. This avoids race condition bugs between explicit cancel actions by
-            // donors and funds auto expiry.
+            // donors and any automatic match funds expiry that may have got a donation list before we released funds.
             $gotLock = $fundsReleaseLock->acquire(false);
         } catch (LockAcquiringException $exception) {
             // According to the method (but not the exception) docs, `LockConflictedException` is thrown only
@@ -1023,6 +1023,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     private function getFundsReleaseLock(Donation $donation): LockInterface
     {
-        return $this->lockFactory->createLock("release-funds-{$donation->getUuid()}");
+        return $this->lockFactory->createLock(
+            resource: "release-funds-{$donation->getUuid()}",
+            ttl: 300.0, // 5 minutes – comfortably over typical `:tick` duration and any web request's.
+        );
     }
 }
