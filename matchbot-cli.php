@@ -79,7 +79,6 @@ $commands = [
     new ExpireMatchFunds($psr11App->get(DonationRepository::class)),
     $psr11App->get(HandleOutOfSyncFunds::class),
     new RedistributeMatchFunds(
-        lockFactory: $psr11App->get(LockFactory::class),
         matchFundsRedistributor: $psr11App->get(MatchFundsRedistributor::class),
     ),
     new ScheduledOutOfSyncFundsCheck(

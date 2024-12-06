@@ -13,14 +13,12 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
-use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
 use MatchBot\Tests\Application\Matching\ArrayMatchingStorage;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
-use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\RoutableMessageBus;
 
 /**
@@ -66,7 +64,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             new ClassMetadata(Donation::class),
         );
         $this->sut->setMatchingAdapter($matchingAdapter);
-        $this->sut->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $this->sut->setLogger(new NullLogger());
 
         $this->campaign = new Campaign(\MatchBot\Tests\TestCase::someCharity());
@@ -75,7 +72,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
     public function testItAllocatesZeroWhenNoMatchFundsAvailable(): void
     {
         // arrange
-        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign, false)->willReturn([]);
+        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([]);
 
         $donation = Donation::fromApiModel(
             new \MatchBot\Application\HttpModels\DonationCreate(
@@ -111,7 +108,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         );
         $campaignFunding->setId(1);
 
-        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign, false)->willReturn([
+        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
             $campaignFunding
         ]);
         $this->emProphecy->persist($campaignFunding)->shouldBeCalled();
@@ -201,7 +198,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $campaignFunding1->setId(1);
 
 
-        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign, false)->willReturn([
+        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
             $campaignFunding0,
             $campaignFunding1,
         ]);
@@ -250,7 +247,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         );
         $campaignFunding->setId(1);
 
-        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign, false)->willReturn([
+        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
             $campaignFunding
         ]);
         $this->emProphecy->persist($campaignFunding)->shouldBeCalled();
@@ -294,7 +291,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             allocationOrder: 100
         );
 
-        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign, false)->willReturn([
+        $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
             $campaignFunding
         ]);
         $donation = Donation::fromApiModel(

@@ -20,6 +20,7 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\MissingTransactionId;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\LockInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -127,7 +128,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      *                              return value.
      * @see CampaignFundingRepository::getAvailableFundings() for lock acquisition detail
      */
-    public function allocateMatchFunds(Donation $donation, bool $mistrustOrmFundingCopies = false): string
+    public function allocateMatchFunds(Donation $donation): string
     {
         // We look up matching withdrawals to allow for the case where retrospective matching was required
         // and the donation is not new, and *some* (or full) matching already occurred. The collection of withdrawals
@@ -140,10 +141,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             /** @var list<CampaignFunding> $likelyAvailableFunds */
             $likelyAvailableFunds = $this->getEntityManager()
                 ->getRepository(CampaignFunding::class)
-                ->getAvailableFundings(
-                    campaign: $donation->getCampaign(),
-                    mistrustOrmCopies: $mistrustOrmFundingCopies,
-                );
+                ->getAvailableFundings($donation->getCampaign());
 
             foreach ($likelyAvailableFunds as $funding) {
                 if ($funding->getCurrencyCode() !== $donation->getCurrencyCode()) {
@@ -210,9 +208,12 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // were able to observe. This is why we now go straight to trying to `acquire()`. If
         // this returns false, we are in the contested lock case and know to drop this attempt.
 
-        $fundsReleaseLock = $this->lockFactory->createLock("release-funds-{$donation->getUuid()}");
+        $fundsReleaseLock = $this->getFundsReleaseLock($donation);
 
         try {
+            // We don't `release()` the lock, holding it for 5 mins instead unless a thread newly
+            // allocates funds during that time. This avoids race condition bugs between explicit cancel actions by
+            // donors and any automatic match funds expiry that may have got a donation list before we released funds.
             $gotLock = $fundsReleaseLock->acquire(false);
         } catch (LockAcquiringException $exception) {
             // According to the method (but not the exception) docs, `LockConflictedException` is thrown only
@@ -257,8 +258,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $this->logInfo("Taking from ID {$donation->getUuid()} released match funds totalling {$totalAmountReleased}");
         $this->logInfo('Deallocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
-
-        $fundsReleaseLock->release();
     }
 
     /**
@@ -481,10 +480,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
-     * Taking a now-ish input that's typically the floor of the current minute and
-     * looking between $nowish-16 minutes and
-     * $nowish-1 minutes for donations with >£0 matching assigned, returns:
-     * * if there are less than 20 such donations, null; or
+     * Takes a now-ish input that's typically the floor of the current minute and
+     * looks for donations *created* between $nowish-16 minutes and $nowish-1 minutes, with >£0 matching assigned.
+     * Returns:
+     * * if there are fewer than 20 such donations, null; or
      * * if there are 20+ such donations, the ratio of those which are complete.
      */
     public function getRecentHighVolumeCompletionRatio(\DateTimeImmutable $nowish): ?float
@@ -494,9 +493,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
             SELECT
-            COUNT(d.id) as donationCount, 
+            COUNT(d.id) as donationCount,
             SUM(CASE WHEN d.donationStatus IN (:completeStatuses) THEN 1 ELSE 0 END) as completeCount
-            FROM MatchBot\Domain\Donation d 
+            FROM MatchBot\Domain\Donation d
             LEFT JOIN d.fundingWithdrawals fw
             WHERE d.createdAt >= :start
             AND d.createdAt < :end
@@ -840,7 +839,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
-     * Sets a Salesforce ID (and general status things)without its own lock and importantly without the ORM, using
+     * Sets a Salesforce ID (and general status things) without its own lock and importantly without the ORM, using
      * a raw DQL `UPDATE` that should make it safe irrespective of ORM work that could also be happening on the record.
      *
      * @throws DBALException\LockWaitTimeoutException if some other transaction is holding a lock
@@ -1008,5 +1007,18 @@ class DonationRepository extends SalesforceWriteProxyRepository
         /** @var list<Donation> $result */
         $result = $query->getResult();
         return $result;
+    }
+
+    /**
+     * Gets a lock for releasing match funds just once per donation, which lasts the default 5 minutes
+     * with auto-release on. Our new approach is to `acquire()` it on release and only explicitly
+     * `release()` it early upon allocation of *different* match funds.
+     */
+    private function getFundsReleaseLock(Donation $donation): LockInterface
+    {
+        return $this->lockFactory->createLock(
+            resource: "release-funds-{$donation->getUuid()}",
+            ttl: 300.0, // 5 minutes – comfortably over typical `:tick` duration and any web request's.
+        );
     }
 }
