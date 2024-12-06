@@ -18,6 +18,8 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\MissingTransactionId;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
@@ -261,14 +263,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
-     * @return Donation[]
+     * @return UuidInterface[]
      */
     public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
         $cutoff = $now->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
 
         $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('d')
+            ->select('d.uuid')
             ->from(Donation::class, 'd')
             // Only select donations with 1+ FWs. We don't need any further info about the FWs.
             ->innerJoin('d.fundingWithdrawals', 'fw')
@@ -283,9 +285,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // `ExpireMatchFunds`, it makes more sense to opt it out of result caching
         // here rather than take the performance hit of a full query cache clear
         // after every single persisted donation.
-        return $qb->getQuery()
+        /** @var list<array{uuid: UuidInterface}> $rows */
+        $rows = $qb->getQuery()
             ->disableResultCache()
             ->getResult();
+
+        $uuids = array_map(static fn(array $row): UuidInterface => $row['uuid'], $rows);
+
+        return $uuids;
     }
 
     /**

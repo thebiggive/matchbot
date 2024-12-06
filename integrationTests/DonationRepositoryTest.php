@@ -115,7 +115,8 @@ class DonationRepositoryTest extends IntegrationTest
         $thirtyThreeMinsInFuture = (new \DateTimeImmutable('now'))->modify('+33 minute');
 
         // act
-        $expiredDonations = $sut->findWithExpiredMatching($thirtyThreeMinsInFuture);
+        $expiredDonationsIDs = $sut->findWithExpiredMatching($thirtyThreeMinsInFuture);
+        $expiredDonations = $sut->findBy(['uuid' => $expiredDonationsIDs]);
 
         // assert
         $expiredDonationStatuses = array_map(

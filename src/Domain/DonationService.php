@@ -26,6 +26,7 @@ use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Ramsey\Uuid\UuidInterface;
 use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
@@ -593,5 +594,17 @@ class DonationService
         }
 
         return false;
+    }
+
+    public function releaseMatchFunds(UuidInterface $donationId): void
+    {
+        $this->entityManager->beginTransaction();
+        $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $donationId->toString()]);
+        Assertion::notNull($donation);
+
+        $this->donationRepository->releaseMatchFunds($donation);
+
+        $this->entityManager->flush();
+        $this->entityManager->commit();
     }
 }
