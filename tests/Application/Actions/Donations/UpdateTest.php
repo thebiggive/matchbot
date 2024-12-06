@@ -73,7 +73,7 @@ class UpdateTest extends TestCase
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
 
-        $request = $this->createRequest('PUT', '/v1/donations/' . self::DONATION_UUID . '');
+        $request = $this->createRequest('PUT', '/v1/donations/' . self::DONATION_UUID);
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
 
         $this->expectException(HttpUnauthorizedException::class);
@@ -100,7 +100,7 @@ class UpdateTest extends TestCase
 
         $jwtWithBadSignature = DonationToken::create(self::DONATION_UUID) . 'x';
 
-        $request = self::createRequest('PUT', '/v1/donations/' . self::DONATION_UUID . '')
+        $request = self::createRequest('PUT', '/v1/donations/' . self::DONATION_UUID)
             ->withHeader('x-tbg-auth', $jwtWithBadSignature);
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
 
@@ -128,7 +128,7 @@ class UpdateTest extends TestCase
 
         $jwtForAnotherDonation = DonationToken::create('87654321-1234-1234-1234-ba0987654321');
 
-        $request = self::createRequest('PUT', '/v1/donations/' . self::DONATION_UUID . '')
+        $request = self::createRequest('PUT', '/v1/donations/' . self::DONATION_UUID)
             ->withHeader('x-tbg-auth', $jwtForAnotherDonation);
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
 
@@ -200,7 +200,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -246,7 +246,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donationData),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -308,7 +308,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -360,7 +360,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -425,7 +425,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -498,7 +498,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -560,7 +560,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -659,7 +659,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donationInRequest->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -707,7 +707,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donationData),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -757,7 +757,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             $body,
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -805,7 +805,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donationData),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -853,7 +853,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             $putJSON,
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -934,7 +934,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -1114,7 +1114,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -1207,7 +1207,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -1297,7 +1297,7 @@ class UpdateTest extends TestCase
 
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($donation->toFrontEndApiModel()),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
@@ -1664,7 +1664,7 @@ class UpdateTest extends TestCase
         $requestPayload['autoConfirmFromCashBalance'] = true;
         $request = $this->createRequest(
             'PUT',
-            '/v1/donations/' . self::DONATION_UUID . '',
+            '/v1/donations/' . self::DONATION_UUID,
             json_encode($requestPayload),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));

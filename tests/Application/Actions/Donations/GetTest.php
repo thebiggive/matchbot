@@ -67,7 +67,7 @@ class GetTest extends TestCase
 
         $jwtWithBadSignature = DonationToken::create(self::DONATION_UUID) . 'x';
 
-        $request = $this->createRequest('GET', '/v1/donations/' . self::DONATION_UUID . '')
+        $request = $this->createRequest('GET', '/v1/donations/' . self::DONATION_UUID)
             ->withHeader('x-tbg-auth', $jwtWithBadSignature);
         $route = $this->getRouteWithDonationId('get', self::DONATION_UUID);
 
@@ -92,7 +92,7 @@ class GetTest extends TestCase
 
         $jwtForAnotherDonation = DonationToken::create('87654321-1234-1234-1234-ba0987654321');
 
-        $request = $this->createRequest('GET', '/v1/donations/' . self::DONATION_UUID . '')
+        $request = $this->createRequest('GET', '/v1/donations/' . self::DONATION_UUID)
             ->withHeader('x-tbg-auth', $jwtForAnotherDonation);
         $route = $this->getRouteWithDonationId('get', self::DONATION_UUID);
 
