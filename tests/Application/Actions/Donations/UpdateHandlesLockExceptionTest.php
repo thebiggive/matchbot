@@ -62,7 +62,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
     public function testRetriesOnUpdateStillPendingLockException(): void
     {
         // arrange
-        $donationId = 'donation_id';
+        $donationId = Uuid::uuid4()->toString();
 
         $donation = $this->getDonation();
 
@@ -82,7 +82,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
     public function testRetriesOnUpdateToCancelledLockException(): void
     {
         // arrange
-        $donationId = 'donation_id';
+        $donationId = Uuid::uuid4()->toString();
 
         $donation = $this->getDonation();
 
@@ -154,7 +154,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
         Donation $donation,
         DonationStatus $newStatus,
     ): void {
-        $this->donationRepositoryProphecy->findAndLockOneBy(['uuid' => $donationId])
+        $this->donationRepositoryProphecy->findAndLockOneByUUID(Uuid::fromString($donationId))
             ->will(function () use ($donation) {
                 $donation->setDonationStatus(DonationStatus::Pending); // simulate loading pending donation from DB.
 

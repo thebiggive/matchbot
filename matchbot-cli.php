@@ -76,7 +76,7 @@ $commands = [
         $psr11App->get(LoggerInterface::class),
         $psr11App->get(StripeClient::class),
     ),
-    new ExpireMatchFunds($psr11App->get(DonationRepository::class)),
+    $psr11App->get(ExpireMatchFunds::class),
     $psr11App->get(HandleOutOfSyncFunds::class),
     new RedistributeMatchFunds(
         matchFundsRedistributor: $psr11App->get(MatchFundsRedistributor::class),

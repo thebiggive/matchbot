@@ -25,6 +25,7 @@ use MatchBot\Domain\PaymentMethodType;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
@@ -114,7 +115,7 @@ class Update extends Action
             $this->entityManager->beginTransaction();
 
             try {
-                $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $args['donationId']]);
+                $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($args['donationId']));
 
                 if (!$donation) {
                     $this->entityManager->rollback();

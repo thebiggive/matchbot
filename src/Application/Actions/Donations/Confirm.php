@@ -5,6 +5,7 @@ namespace MatchBot\Application\Actions\Donations;
 use Doctrine\ORM\EntityManagerInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\LazyAssertionException;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\NotFoundException;
@@ -15,6 +16,7 @@ use MatchBot\Domain\StripeConfirmationTokenId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpBadRequestException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
@@ -60,7 +62,8 @@ class Confirm extends Action
 
         $this->entityManager->beginTransaction();
 
-        $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $args['donationId']]);
+        Assertion::string($args['donationId']);
+        $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($args['donationId']));
         if (! $donation) {
             throw new NotFoundException();
         }
