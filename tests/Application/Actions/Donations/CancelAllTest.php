@@ -58,7 +58,17 @@ class CancelAllTest extends TestCase
             PaymentMethodType::CustomerBalance,
         )
             ->willReturn($twoDonations);
-        $donationRepoProphecy->safelyReleaseMatchFunds(Argument::any())
+        $donationRepoProphecy->findAndLockOneBy(Argument::type('array'))
+            ->will(function (array $args) use ($twoDonations) {
+                foreach ($twoDonations as $d) {
+                    if ($d->getUuid() === $args[0]['uuid']) {
+                        return $d;
+                    }
+                }
+                throw new \Exception("not found!");
+            });
+
+        $donationRepoProphecy->releaseMatchFunds(Argument::any())
             ->shouldBeCalledTimes(2);
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -85,6 +95,7 @@ class CancelAllTest extends TestCase
         $this->assertJson($json);
         /** @var array{donations: list<array{donationAmount: float, status: string}>} $payload */
         $payload = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+//        echo json_encode($payload, JSON_PRETTY_PRINT);
         $this->assertArrayHasKey('donations', $payload);
         $this->assertCount(2, $payload['donations']);
 
@@ -124,7 +135,7 @@ class CancelAllTest extends TestCase
         $this->setDoublesInContainer(
             $container,
             $this->prophesize(DonationRepository::class),
-            $this->prophesize(RetrySafeEntityManager::class)
+            $this->prophesize(RetrySafeEntityManager::class),
         );
 
         // assert
