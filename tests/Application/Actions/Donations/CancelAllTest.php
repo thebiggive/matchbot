@@ -21,6 +21,8 @@ use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use Slim\Exception\HttpUnauthorizedException;
 
 class CancelAllTest extends TestCase
@@ -60,15 +62,18 @@ class CancelAllTest extends TestCase
             Salesforce18Id::ofCampaign(self::SF_CAMPAIGN_ID),
             PaymentMethodType::CustomerBalance,
         )
-            ->willReturn([$twoDonations[0]->getUuid(), $twoDonations[1]->getUuid()]);
+            ->willReturn([
+                Uuid::fromString($twoDonations[0]->getUuid()),
+                    Uuid::fromString($twoDonations[1]->getUuid())
+                ]);
 
-        $donationRepoProphecy->findAndLockOneBy(Argument::type('array'))
+        $donationRepoProphecy->findAndLockOneByUUID(Argument::type(UuidInterface::class))
             ->will(/**
-             * @param Donation[][] $args
+             * @param Uuid[] $args
              */
                 function ($args) use ($twoDonations) {
                     foreach ($twoDonations as $donation) {
-                        if ($donation->getUUID() == $args[0]['uuid']) {
+                        if ($donation->getUUID() == $args[0]->toString()) {
                             return $donation;
                         }
                     }

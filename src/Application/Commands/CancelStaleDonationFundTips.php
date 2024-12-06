@@ -58,7 +58,7 @@ class CancelStaleDonationFundTips extends LockingCommand
 
         foreach ($staleDonationTipsUUIDS as $tipDonationUUID) {
             $this->entityManager->wrapInTransaction(function () use ($tipDonationUUID): void {
-                $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $tipDonationUUID->toString()]);
+                $donation = $this->donationRepository->findAndLockOneByUUID($tipDonationUUID);
                 Assertion::notNull($donation);
 
                 $this->donationService->cancel($donation);

@@ -1030,4 +1030,9 @@ class DonationRepository extends SalesforceWriteProxyRepository
             ttl: 300.0, // 5 minutes – comfortably over typical `:tick` duration and any web request's.
         );
     }
+
+    public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation
+    {
+        return $this->findAndLockOneBy(['uuid' => $donationId->toString()]);
+    }
 }

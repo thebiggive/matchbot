@@ -55,7 +55,7 @@ class CancelAll extends Action
         $donations = [];
         foreach ($uuids as $uuid) {
             $donation = $this->entityManager->wrapInTransaction(function () use ($uuid): Donation {
-                $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $uuid->toString()]);
+                $donation = $this->donationRepository->findAndLockOneByUUID($uuid);
                 Assertion::notNull($donation);
                 $this->donationService->cancel($donation);
 

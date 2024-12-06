@@ -609,7 +609,8 @@ class DonationService
     public function releaseMatchFundsInTransaction(UuidInterface $donationId): void
     {
         $this->entityManager->wrapInTransaction(function () use ($donationId) {
-            $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $donationId->toString()]);
+            $donationRepository = $this->donationRepository;
+            $donation = $donationRepository->findAndLockOneByUUID($donationId);
             Assertion::notNull($donation);
 
             $this->donationRepository->releaseMatchFunds($donation);
