@@ -184,10 +184,6 @@ class DonationRepository extends SalesforceWriteProxyRepository
 
         $this->getEntityManager()->flush();
 
-        // After new funds are allocated, we want releasing them to be allowed without waiting for lock expiry, in case
-        // e.g. a donor changes their donation amount for a second time within that window.
-        $this->getFundsReleaseLock($donation)->release();
-
         return $amountNewlyMatched;
     }
 
