@@ -7,9 +7,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\DonationRepository;
-use MatchBot\Domain\DonationService;
 use Psr\Log\LoggerInterface;
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
@@ -28,7 +26,6 @@ class MatchFundsRedistributor
         private LoggerInterface $logger,
         private EntityManagerInterface $entityManager,
         private RoutableMessageBus $bus,
-        private DonationService $donationService,
     ) {
     }
 
@@ -91,7 +88,7 @@ class MatchFundsRedistributor
             // have closed. If we ever relax the latter condition, the worst case scenario is that we
             // inaccurately tell two donors they received matching. We log an error if this happens so we can
             // take action.
-            $this->donationService->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()));
+            $this->donationRepository->releaseMatchFunds($donation);
             $amountMatchedAfterRedistribution = $this->donationRepository->allocateMatchFunds($donation);
 
             // If the new allocation is less, log an error but still count the donation and continue with the loop.

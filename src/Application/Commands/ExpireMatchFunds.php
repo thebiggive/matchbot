@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use MatchBot\Domain\DonationRepository;
-use MatchBot\Domain\DonationService;
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -21,8 +19,7 @@ class ExpireMatchFunds extends LockingCommand
     protected static $defaultName = 'matchbot:expire-match-funds';
 
     public function __construct(
-        private DonationRepository $donationRepository,
-        private DonationService $donationService,
+        private DonationRepository $donationRepository
     ) {
         parent::__construct();
     }
@@ -36,16 +33,8 @@ class ExpireMatchFunds extends LockingCommand
     {
         $toRelease = $this->donationRepository->findWithExpiredMatching(new \DateTimeImmutable('now'));
 
-        $output->writeln("DEBUG: about to sleep");
-        $donationIdsAndStatuses = array_map(fn($donation) => $donation->getUuid() . ' ' . $donation->getDonationStatus()->value, $toRelease);
-        foreach ($donationIdsAndStatuses as $donationIdAndStatus) {
-            $output->writeln("DEBUG: next donation: $donationIdAndStatus");
-        }
-//        sleep(60);
-        $output->writeln("DEBUG: waking up");
-
         foreach ($toRelease as $donation) {
-            $this->donationService->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()));
+            $this->donationRepository->releaseMatchFunds($donation);
         }
 
         $numberExpired = count($toRelease);

@@ -26,8 +26,6 @@ use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
-use Ramsey\Uuid\Uuid;
-use Ramsey\Uuid\UuidInterface;
 use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
@@ -516,7 +514,7 @@ class DonationService
         $this->save($donation);
 
         if ($donation->getCampaign()->isMatched()) {
-            $this->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()));
+            $this->donationRepository->releaseMatchFunds($donation);
         }
 
         if ($donation->getPsp() === 'stripe') {
@@ -595,20 +593,5 @@ class DonationService
         }
 
         return false;
-    }
-
-    /**
-     * @throws \Assert\AssertionFailedException if donation UUID does not exist.
-     */
-    public function safelyReleaseMatchFunds(UuidInterface $uuid): void
-    {
-        $this->entityManager->beginTransaction();
-        $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $uuid->toString()]);
-        Assertion::isInstanceOf($donation, Donation::class);
-
-        $this->donationRepository->releaseMatchFunds($donation);
-
-        $this->entityManager->flush();
-        $this->entityManager->commit();
     }
 }

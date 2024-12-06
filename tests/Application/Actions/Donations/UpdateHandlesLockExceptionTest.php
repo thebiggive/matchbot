@@ -88,8 +88,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Cancelled);
 
-        $this->donationRepositoryProphecy->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()))
-            ->shouldBeCalled();
+        $this->donationRepositoryProphecy->releaseMatchFunds($donation)->shouldBeCalled();
 
         $updateAction = $this->makeUpdateAction();
 

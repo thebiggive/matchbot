@@ -65,7 +65,7 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -91,7 +91,7 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -119,7 +119,7 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -148,7 +148,7 @@ class UpdateTest extends TestCase
             ->willReturn(null)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -187,7 +187,7 @@ class UpdateTest extends TestCase
             ->willReturn($this->getTestDonation()) // Get a new mock object so it's 'Collected'.
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -231,7 +231,7 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(Argument::cetera())
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -295,7 +295,7 @@ class UpdateTest extends TestCase
             ->willReturn($donationResponse)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -347,7 +347,7 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
         // Cancel is a no-op -> no fund release or push to SF
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -406,7 +406,7 @@ class UpdateTest extends TestCase
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -472,7 +472,7 @@ class UpdateTest extends TestCase
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -533,7 +533,7 @@ class UpdateTest extends TestCase
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -591,7 +591,7 @@ class UpdateTest extends TestCase
             ->willReturn($responseDonation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -646,7 +646,7 @@ class UpdateTest extends TestCase
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -690,7 +690,7 @@ class UpdateTest extends TestCase
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -740,7 +740,7 @@ class UpdateTest extends TestCase
             ->findAndLockOneBy(Argument::cetera())
             ->shouldNotBeCalled();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -788,7 +788,7 @@ class UpdateTest extends TestCase
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -898,7 +898,7 @@ class UpdateTest extends TestCase
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -1068,7 +1068,7 @@ class UpdateTest extends TestCase
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         // Internal persist still goes ahead.
@@ -1254,7 +1254,7 @@ class UpdateTest extends TestCase
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         // Internal persist still goes ahead.
@@ -1436,7 +1436,7 @@ class UpdateTest extends TestCase
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
@@ -1856,7 +1856,7 @@ class UpdateTest extends TestCase
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->releaseMatchFunds(Argument::any())
+            ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);

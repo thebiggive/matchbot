@@ -7,13 +7,10 @@ namespace MatchBot\Tests\Domain;
 use DI\Container;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Persisters\Entity\EntityPersister;
 use Doctrine\ORM\QueryBuilder;
-use Doctrine\ORM\UnitOfWork;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Messenger\DonationUpserted;
@@ -33,7 +30,6 @@ use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
-use Ramsey\Uuid\Uuid;
 use Symfony\Component\Lock\Exception\LockAcquiringException;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
@@ -56,19 +52,6 @@ class DonationRepositoryTest extends TestCase
 
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $this->entityManagerProphecy->getConnection()->willReturn($connectionWhichUpdatesFine->reveal());
-
-        // These all called when we're locking donations for fund release, in `EntityRepository::findOneBy()`
-        $this->entityManagerProphecy->beginTransaction()->willReturn(null);
-        $persisterProphecy = $this->prophesize(EntityPersister::class);
-        $persisterProphecy->load(Argument::cetera())->willReturn($this->getTestDonation());
-        $unitOfWorkProphecy = $this->prophesize(UnitOfWork::class);
-        $unitOfWorkProphecy->getEntityPersister(Argument::any())
-            ->willReturn($persisterProphecy->reveal());
-        $this->entityManagerProphecy->getUnitOfWork()->willReturn($unitOfWorkProphecy->reveal());
-        $this->entityManagerProphecy->refresh(Argument::type(Donation::class), LockMode::PESSIMISTIC_WRITE)
-            ->willReturn(null);
-        $this->entityManagerProphecy->flush()->willReturn(null);
-        $this->entityManagerProphecy->commit()->willReturn(null);
 
         $salesforceIdSettingQuery = $this->prophesize(AbstractQuery::class);
         $salesforceIdSettingQuery->setParameter(Argument::type('string'), Argument::type('string'));
@@ -342,7 +325,14 @@ class DonationRepositoryTest extends TestCase
 
     public function testReleaseMatchFundsSuccess(): void
     {
+        $lockProphecy = $this->prophesize(LockInterface::class);
+        $lockProphecy->acquire(false)->willReturn(true)->shouldBeCalledOnce();
+        $lockProphecy->release()->shouldNotBeCalled(); // We only do this on new funds allocation now.
+
         $lockFactoryProphecy = $this->prophesize(LockFactory::class);
+        $lockFactoryProphecy->createLock(Argument::type('string'), 300.0)
+            ->willReturn($lockProphecy->reveal())
+            ->shouldBeCalledOnce();
 
         $matchingAdapterProphecy = $this->prophesize(Adapter::class);
         $matchingAdapterProphecy->releaseAllFundsForDonation(Argument::cetera())
@@ -361,7 +351,57 @@ class DonationRepositoryTest extends TestCase
         );
 
         $donation = $this->getTestDonation();
-        $repo->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()));
+        $repo->releaseMatchFunds($donation);
+    }
+
+    public function testReleaseMatchFundsLockNotAcquired(): void
+    {
+        $lockProphecy = $this->prophesize(LockInterface::class);
+        $lockProphecy->acquire(false)->willReturn(false)->shouldBeCalledOnce();
+        $lockProphecy->release()->shouldNotBeCalled();
+
+        $lockFactoryProphecy = $this->prophesize(LockFactory::class);
+        $lockFactoryProphecy->createLock(Argument::type('string'), 300.0)
+            ->willReturn($lockProphecy->reveal())
+            ->shouldBeCalledOnce();
+
+        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
+        $matchingAdapterProphecy->subtractAmountWithoutSavingToDB(Argument::cetera())
+            ->shouldNotBeCalled();
+
+        $repo = $this->getRepo(
+            matchingAdapterProphecy: $matchingAdapterProphecy,
+            lockFactoryProphecy: $lockFactoryProphecy,
+        );
+
+        $donation = $this->getTestDonation();
+        $repo->releaseMatchFunds($donation);
+    }
+
+    public function testReleaseMatchFundsLockHitsAcquiringException(): void
+    {
+        $lockProphecy = $this->prophesize(LockInterface::class);
+        $lockProphecy->acquire(false)
+            ->willThrow(LockAcquiringException::class)
+            ->shouldBeCalledOnce();
+        $lockProphecy->release()->shouldNotBeCalled();
+
+        $lockFactoryProphecy = $this->prophesize(LockFactory::class);
+        $lockFactoryProphecy->createLock(Argument::type('string'), 300.0)
+            ->willReturn($lockProphecy->reveal())
+            ->shouldBeCalledOnce();
+
+        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
+        $matchingAdapterProphecy->subtractAmountWithoutSavingToDB(Argument::cetera())
+            ->shouldNotBeCalled();
+
+        $repo = $this->getRepo(
+            matchingAdapterProphecy: $matchingAdapterProphecy,
+            lockFactoryProphecy: $lockFactoryProphecy,
+        );
+
+        $donation = $this->getTestDonation();
+        $repo->releaseMatchFunds($donation);
     }
 
     public function testAbandonOldCancelled(): void
