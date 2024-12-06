@@ -37,7 +37,7 @@ class ExpireMatchFunds extends LockingCommand
         $toRelease = $this->donationRepository->findWithExpiredMatching(new \DateTimeImmutable('now'));
 
         foreach ($toRelease as $donationUUID) {
-            $this->donationService->releaseMatchFunds($donationUUID);
+            $this->donationService->releaseMatchFundsInTransaction($donationUUID);
         }
 
         $numberExpired = count($toRelease);

@@ -596,15 +596,22 @@ class DonationService
         return false;
     }
 
-    public function releaseMatchFunds(UuidInterface $donationId): void
+    /**
+     * Within a transaction, loads a donation from the DB and then releases any funding matched to it.
+     *
+     * If the matching for the donation has already been released (e.g. by another process after the donationId
+     * was found but before we lock the donation here) then this should be a no-op because Donation::fundingWithdrawals
+     * are eagerly loaded with the donation so will be empty.
+     */
+    public function releaseMatchFundsInTransaction(UuidInterface $donationId): void
     {
-        $this->entityManager->beginTransaction();
-        $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $donationId->toString()]);
-        Assertion::notNull($donation);
+        $this->entityManager->wrapInTransaction(function () use ($donationId) {
+            $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $donationId->toString()]);
+            Assertion::notNull($donation);
 
-        $this->donationRepository->releaseMatchFunds($donation);
+            $this->donationRepository->releaseMatchFunds($donation);
 
-        $this->entityManager->flush();
-        $this->entityManager->commit();
+            $this->entityManager->flush();
+        });
     }
 }

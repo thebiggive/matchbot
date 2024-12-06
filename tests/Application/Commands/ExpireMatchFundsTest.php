@@ -27,7 +27,7 @@ class ExpireMatchFundsTest extends TestCase
             ->shouldBeCalledOnce();
 
         $donationServiceProphecy = $this->prophesize(DonationService::class);
-        $donationServiceProphecy->releaseMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
+        $donationServiceProphecy->releaseMatchFundsInTransaction(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $commandTester = new CommandTester($this->getCommand($donationRepoProphecy, $donationServiceProphecy));
         $commandTester->execute([]);
@@ -50,7 +50,7 @@ class ExpireMatchFundsTest extends TestCase
         ]);
 
         $donationServiceProphecy = $this->prophesize(DonationService::class);
-        $donationServiceProphecy->releaseMatchFunds(Argument::type(UuidInterface::class))
+        $donationServiceProphecy->releaseMatchFundsInTransaction(Argument::type(UuidInterface::class))
             ->shouldBeCalledTimes(2);
 
         $commandTester = new CommandTester($this->getCommand($donationRepoProphecy, $donationServiceProphecy));
