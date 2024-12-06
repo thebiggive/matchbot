@@ -201,14 +201,6 @@ class Adapter
     }
 
     /**
-     * We'll delete this fn asap on/after 4/12/24.
-     */
-    public function deleteByFundingId(int $fundingId): void
-    {
-        $this->storage->del("fund-$fundingId-available-opt");
-    }
-
-    /**
      * Converts e.g. pounds to pence – but is currency-agnostic except for currently assuming
      * a 100-fold multiplication is reasonable.
      *

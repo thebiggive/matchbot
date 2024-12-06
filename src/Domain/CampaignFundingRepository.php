@@ -66,27 +66,4 @@ class CampaignFundingRepository extends EntityRepository
 
         return $query->getOneOrNullResult();
     }
-
-    /**
-     * Correct the amount available for out of sync CampaignFunding ID 30768 from £100 to £50.
-     */
-    public function reduceCampaignFundingAmountAvailableFor4Dec(): ?float
-    {
-        $campaignFundingId = 30768;
-
-        $availableBeforeUpdate = null;
-        $fundingForInfo = $this->getEntityManager()->find(CampaignFunding::class, $campaignFundingId);
-        if ($fundingForInfo) {
-            $availableBeforeUpdate = (float) $fundingForInfo->getAmountAvailable();
-        }
-
-        $query = $this->getEntityManager()->createQuery(<<<EOT
-            UPDATE MatchBot\Domain\CampaignFunding cf
-            SET cf.amountAvailable = 50
-            WHERE cf.id = $campaignFundingId AND cf.amountAvailable = 100
-        EOT);
-        $query->execute();
-
-        return $availableBeforeUpdate;
-    }
 }
