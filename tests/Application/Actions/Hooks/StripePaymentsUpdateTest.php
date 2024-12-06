@@ -253,7 +253,7 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $donationServiceProphecy = $this->prophesize(DonationService::class);
         $donationServiceProphecy
-            ->releaseMatchFundsInTransaction(Uuid::fromString($donation->getUuid()))
+            ->releaseMatchFundsInTransaction($donation->getUuid())
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -377,7 +377,7 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $donationServiceProphecy = $this->prophesize(DonationService::class);
         $donationServiceProphecy
-            ->releaseMatchFundsInTransaction(Uuid::fromString($donation->getUuid()))
+            ->releaseMatchFundsInTransaction($donation->getUuid())
             ->shouldBeCalledOnce();
 
 
@@ -466,7 +466,7 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $donationServiceProphecy = $this->prophesize(DonationService::class);
         $donationServiceProphecy
-            ->releaseMatchFundsInTransaction(Uuid::fromString($donation->getUuid()))
+            ->releaseMatchFundsInTransaction($donation->getUuid())
             ->shouldBeCalledOnce();
 
 
@@ -528,7 +528,7 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $donationServiceProphecy = $this->prophesize(DonationService::class);
         $donationServiceProphecy
-            ->releaseMatchFundsInTransaction(Uuid::fromString($donation->getUuid()))
+            ->releaseMatchFundsInTransaction($donation->getUuid())
             ->shouldBeCalledOnce();
 
 

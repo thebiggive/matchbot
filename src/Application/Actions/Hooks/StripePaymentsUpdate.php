@@ -512,7 +512,7 @@ class StripePaymentsUpdate extends Stripe
             $donation->getDonationStatus()->isReversed() &&
             $donation->getCampaign()->isMatched()
         ) {
-            $this->donationService->releaseMatchFundsInTransaction(Uuid::fromString($donation->getUuid()));
+            $this->donationService->releaseMatchFundsInTransaction($donation->getUuid());
         }
 
         $this->entityManager->flush();

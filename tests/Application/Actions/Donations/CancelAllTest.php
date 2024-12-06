@@ -63,8 +63,8 @@ class CancelAllTest extends TestCase
             PaymentMethodType::CustomerBalance,
         )
             ->willReturn([
-                Uuid::fromString($twoDonations[0]->getUuid()),
-                    Uuid::fromString($twoDonations[1]->getUuid())
+                $twoDonations[0]->getUuid(),
+                $twoDonations[1]->getUuid()
                 ]);
 
         $donationRepoProphecy->findAndLockOneByUUID(Argument::type(UuidInterface::class))
@@ -73,7 +73,7 @@ class CancelAllTest extends TestCase
              */
                 function ($args) use ($twoDonations) {
                     foreach ($twoDonations as $donation) {
-                        if ($donation->getUUID() == $args[0]->toString()) {
+                        if ($donation->getUuid() == $args[0]->toString()) {
                             return $donation;
                         }
                     }
