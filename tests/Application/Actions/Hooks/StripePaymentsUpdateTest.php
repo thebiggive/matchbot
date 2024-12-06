@@ -8,12 +8,16 @@ use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Notifier\StripeChatterInterface;
+use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use Prophecy\Argument;
 use Psr\Container\ContainerInterface;
+use Ramsey\Uuid\Uuid;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\StripeClient;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
@@ -23,6 +27,15 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 
 class StripePaymentsUpdateTest extends StripeTest
 {
+    public function setUp(): void
+    {
+        parent::setUp();
+        $container = $this->getContainer();
+        \assert($container instanceof Container);
+        $container->set(RetrySafeEntityManager::class, $this->createStub(RetrySafeEntityManager::class));
+        $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
+    }
+
     public function testUnsupportedAction(): void
     {
         $app = $this->getAppInstance();
@@ -236,14 +249,16 @@ class StripePaymentsUpdateTest extends StripeTest
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
-        $donationRepoProphecy
-            ->releaseMatchFunds($donation)
+        $donationServiceProphecy = $this->prophesize(DonationService::class);
+        $donationServiceProphecy
+            ->releaseMatchFundsInTransaction(Uuid::fromString($donation->getUuid()))
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $container->set(DonationService::class, $donationServiceProphecy->reveal());
 
         $request = self::createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));
@@ -357,15 +372,19 @@ class StripePaymentsUpdateTest extends StripeTest
             ->findAndLockOneBy(['transactionId' => 'pi_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->releaseMatchFunds($donation)
+
+        $donationServiceProphecy = $this->prophesize(DonationService::class);
+        $donationServiceProphecy
+            ->releaseMatchFundsInTransaction(Uuid::fromString($donation->getUuid()))
             ->shouldBeCalledOnce();
+
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
+        $container->set(DonationService::class, $donationServiceProphecy->reveal());
 
         // act
         $request = self::createRequest('POST', '/hooks/stripe', $body)
@@ -443,15 +462,18 @@ class StripePaymentsUpdateTest extends StripeTest
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
-        $donationRepoProphecy
-            ->releaseMatchFunds($donation)
+        $donationServiceProphecy = $this->prophesize(DonationService::class);
+        $donationServiceProphecy
+            ->releaseMatchFundsInTransaction(Uuid::fromString($donation->getUuid()))
             ->shouldBeCalledOnce();
+
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
+        $container->set(DonationService::class, $donationServiceProphecy->reveal());
 
         // act
         $request = self::createRequest('POST', '/hooks/stripe', $body)
@@ -502,15 +524,18 @@ class StripePaymentsUpdateTest extends StripeTest
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
-        $donationRepoProphecy
-            ->releaseMatchFunds($donation)
+        $donationServiceProphecy = $this->prophesize(DonationService::class);
+        $donationServiceProphecy
+            ->releaseMatchFundsInTransaction(Uuid::fromString($donation->getUuid()))
             ->shouldBeCalledOnce();
+
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
+        $container->set(DonationService::class, $donationServiceProphecy->reveal());
 
         // act
         $request = self::createRequest('POST', '/hooks/stripe', $body)

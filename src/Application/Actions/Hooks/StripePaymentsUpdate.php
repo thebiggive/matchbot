@@ -16,6 +16,7 @@ use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\Money;
@@ -24,6 +25,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Stripe\Card;
 use Stripe\Charge;
 use Stripe\Dispute;
@@ -51,6 +53,7 @@ class StripePaymentsUpdate extends Stripe
 
     public function __construct(
         protected DonationRepository $donationRepository,
+        private DonationService $donationService,
         private DonorAccountRepository $donorAccountRepository,
         protected EntityManagerInterface $entityManager,
         protected StripeClient $stripeClient,
@@ -509,7 +512,7 @@ class StripePaymentsUpdate extends Stripe
             $donation->getDonationStatus()->isReversed() &&
             $donation->getCampaign()->isMatched()
         ) {
-            $this->donationRepository->releaseMatchFunds($donation);
+            $this->donationService->releaseMatchFundsInTransaction(Uuid::fromString($donation->getUuid()));
         }
 
         $this->entityManager->flush();
