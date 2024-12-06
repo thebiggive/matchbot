@@ -9,7 +9,9 @@ use MatchBot\Application\Assertion;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
+use Random\Randomizer;
 
 class CampaignRepositoryTest extends IntegrationTest
 {
@@ -18,12 +20,20 @@ class CampaignRepositoryTest extends IntegrationTest
         // arrange
         $sut = $this->getService(CampaignRepository::class);
 
-        $campaign = new Campaign($this->getCharityAwaitingGiftAidApproval());
-        $campaign->setIsMatched(true);
-        $campaign->setName('Campaign Name');
-        $campaign->setCurrencyCode('GBP');
-        $campaign->setStartDate(new \DateTimeImmutable('-10 months'));
-        $campaign->setEndDate(new \DateTimeImmutable('-9 months'));
+        $campaign = new Campaign(
+            $this->randomCampaignId(),
+            $this->getCharityAwaitingGiftAidApproval(),
+            startDate: new \DateTimeImmutable('-10 months'),
+            endDate: new \DateTimeImmutable('-9 months'),
+            isMatched: true,
+            ready: true,
+            status: 'status',
+            name: 'Campaign Name',
+            currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
+        );
+
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($campaign);
@@ -54,12 +64,19 @@ class CampaignRepositoryTest extends IntegrationTest
         // arrange
         $sut = $this->getService(CampaignRepository::class);
 
-        $campaign = new Campaign($this->getCharityAwaitingGiftAidApproval());
-        $campaign->setIsMatched(true);
-        $campaign->setName('Campaign Name');
-        $campaign->setCurrencyCode('GBP');
-        $campaign->setStartDate(new \DateTimeImmutable('-9 months'));
-        $campaign->setEndDate(new \DateTimeImmutable('-10 months'));
+        $campaign = new Campaign(
+            Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
+            $this->getCharityAwaitingGiftAidApproval(),
+            startDate: new \DateTimeImmutable('-11 months'),
+            endDate: new \DateTimeImmutable('-10 months'),
+            isMatched: true,
+            ready: true,
+            status: 'status',
+            name: 'Campaign Name',
+            currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
+        );
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($campaign);
@@ -87,5 +104,15 @@ class CampaignRepositoryTest extends IntegrationTest
         $charity->setTbgApprovedToClaimGiftAid(false);
 
         return $charity;
+    }
+
+    /**
+     * @return Salesforce18Id<Campaign>
+     */
+    public function randomCampaignId(): Salesforce18Id
+    {
+        $id = (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
+        \assert(is_string($id));
+        return Salesforce18Id::ofCampaign($id);
     }
 }

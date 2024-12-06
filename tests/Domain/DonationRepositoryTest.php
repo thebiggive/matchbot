@@ -87,7 +87,8 @@ class DonationRepositoryTest extends TestCase
 
     public function testBuildFromApiRequestSuccess(): void
     {
-        $dummyCampaign = new Campaign(charity: \MatchBot\Tests\TestCase::someCharity());
+        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
+
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -97,12 +98,12 @@ class DonationRepositoryTest extends TestCase
         $createPayload = new DonationCreate(
             currencyCode: 'USD',
             donationAmount: '123',
-            pspMethodType: PaymentMethodType::Card,
             projectId: 'testProject1234567',
             psp: 'stripe',
+            pspMethodType: PaymentMethodType::Card,
         );
 
-        $donation = $this->getRepo(null, false, $campaignRepoProphecy)
+        $donation = $this->getRepo(null, $campaignRepoProphecy)
             ->buildFromApiRequest($createPayload);
 
         $this->assertEquals('USD', $donation->getCurrencyCode());
@@ -116,9 +117,8 @@ class DonationRepositoryTest extends TestCase
         $fundRepositoryProphecy = $this->prophesize(FundRepository::class);
         $this->entityManagerProphecy->flush()->shouldBeCalled();
 
-        $dummyCampaign = new Campaign(TestCase::someCharity());
+        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
         $dummyCampaign->setCurrencyCode('GBP');
-        $dummyCampaign->setSalesforceId('testProject1234567');
 
 
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -132,9 +132,9 @@ class DonationRepositoryTest extends TestCase
         $createPayload = new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '123',
-            pspMethodType: PaymentMethodType::Card,
             projectId: 'testProject1234567',
             psp: 'stripe',
+            pspMethodType: PaymentMethodType::Card,
         );
 
         $donationRepository = $this->getRepo(
@@ -153,7 +153,8 @@ class DonationRepositoryTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Currency CAD is invalid for campaign');
 
-        $dummyCampaign = new Campaign(charity: null);
+        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
+
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -164,12 +165,12 @@ class DonationRepositoryTest extends TestCase
         $createPayload = new DonationCreate(
             currencyCode: 'CAD',
             donationAmount: '144.0',
-            pspMethodType: PaymentMethodType::Card,
             projectId: 'testProject1234567',
             psp: 'stripe',
+            pspMethodType: PaymentMethodType::Card,
         );
 
-        $this->getRepo(null, false, $campaignRepoProphecy)
+        $this->getRepo(campaignRepoProphecy: $campaignRepoProphecy)
             ->buildFromApiRequest($createPayload);
     }
 
@@ -193,7 +194,7 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');
-        ;
+
         $donation->setTipAmount('10.00');
         $donation->deriveFees(CardBrand::amex, null);
 
@@ -214,7 +215,7 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');
-        ;
+
         $donation->setTipAmount('10.00');
         $donation->deriveFees(CardBrand::visa, Country::fromAlpha2('US'));
 
@@ -234,7 +235,7 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');
-        ;
+
         $donation->setTipAmount('10.00');
         $donation->deriveFees(null, null);
 
@@ -254,7 +255,7 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');
-        ;
+
         $donation->setTipAmount('10.00');
 
         $donation->deriveFees(null, null);
@@ -275,7 +276,7 @@ class DonationRepositoryTest extends TestCase
     public function testStripeAmountForCharityWithoutTip(): void
     {
         $donation = $this->getTestDonation('987.65');
-        ;
+
         $donation->setTipAmount('0.00');
         $donation->deriveFees(null, null);
 
@@ -345,11 +346,8 @@ class DonationRepositoryTest extends TestCase
         );
 
         $repo = $this->getRepo(
-            null,
-            false,
-            null,
-            $matchingAdapterProphecy,
-            $lockFactoryProphecy,
+            matchingAdapterProphecy: $matchingAdapterProphecy,
+            lockFactoryProphecy: $lockFactoryProphecy,
         );
 
         $donation = $this->getTestDonation();
@@ -372,11 +370,8 @@ class DonationRepositoryTest extends TestCase
             ->shouldNotBeCalled();
 
         $repo = $this->getRepo(
-            null,
-            false,
-            null,
-            $matchingAdapterProphecy,
-            $lockFactoryProphecy,
+            matchingAdapterProphecy: $matchingAdapterProphecy,
+            lockFactoryProphecy: $lockFactoryProphecy,
         );
 
         $donation = $this->getTestDonation();
@@ -401,11 +396,8 @@ class DonationRepositoryTest extends TestCase
             ->shouldNotBeCalled();
 
         $repo = $this->getRepo(
-            null,
-            false,
-            null,
-            $matchingAdapterProphecy,
-            $lockFactoryProphecy,
+            matchingAdapterProphecy: $matchingAdapterProphecy,
+            lockFactoryProphecy: $lockFactoryProphecy,
         );
 
         $donation = $this->getTestDonation();
@@ -562,7 +554,6 @@ class DonationRepositoryTest extends TestCase
      */
     private function getRepo(
         ?ObjectProphecy $donationClientProphecy = null,
-        bool $vatLive = false,
         ?ObjectProphecy $campaignRepoProphecy = null,
         ?ObjectProphecy $matchingAdapterProphecy = null,
         ?ObjectProphecy $lockFactoryProphecy = null,

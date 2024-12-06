@@ -286,9 +286,15 @@ class DonationService
             throw new CampaignNotOpen("Campaign {$campaign->getSalesforceId()} is not open");
         }
 
-        if (! $campaign->isOneOffGiving()) {
+        if ($donation->getMandate() === null && $campaign->isRegularGiving()) {
             throw new WrongCampaignType(
                 "Campaign {$campaign->getSalesforceId()} does not accept one-off giving (regular-giving only)"
+            );
+        }
+
+        if ($donation->getMandate() !== null && $campaign->isOneOffGiving()) {
+            throw new WrongCampaignType(
+                "Campaign {$campaign->getSalesforceId()} does not accept regular giving (one-off only)"
             );
         }
 

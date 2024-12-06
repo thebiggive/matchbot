@@ -23,6 +23,7 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
@@ -313,18 +314,13 @@ class CreateTest extends TestCase
         $container = $app->getContainer();
         \assert($container instanceof Container);
 
-        // Cloning & use of new objects is necessary here, so we don't set
-        // the Stripe value on the copy of the object which is meant to be
-        // missing it for the test to follow that logic branch.
-        $charityWhichNowHasStripeAccountID = clone $donation->getCampaign()->getCharity();
-        $charityWhichNowHasStripeAccountID
-            ->setStripeAccountId('unitTest_newStripeAccount_456');
-
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->updateFromSf(Argument::type(Campaign::class))
             ->will(/**
              * @param array{0: Campaign} $args
-             */                fn (array $args) => $args[0]->setCharity($charityWhichNowHasStripeAccountID)
+             */
+                fn (array $args) => $args[0]->getCharity()
+                    ->setStripeAccountId('unitTest_newStripeAccount_456')
             );
 
         // Need to override stock EM to get campaign repo behaviour
@@ -1027,10 +1023,9 @@ class CreateTest extends TestCase
         $charity->setName('Create test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
-        $campaign = new Campaign(charity: $charity);
+        $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('123CampaignId12345'), charity: $charity);
         $campaign->setName('123CampaignName');
         $campaign->setIsMatched($campaignMatched);
-        $campaign->setSalesforceId('123CampaignId12345');
         $campaign->setStartDate((new \DateTime())->sub(new \DateInterval('P2D')));
         if ($campaignOpen) {
             $campaign->setEndDate((new \DateTime())->add(new \DateInterval('P1D')));

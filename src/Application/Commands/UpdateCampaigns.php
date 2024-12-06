@@ -54,9 +54,6 @@ EOT
 
         foreach ($campaigns as $campaign) {
             $salesforceId = $campaign->getSalesforceId();
-            if ($salesforceId === null) {
-                throw new \Exception("Missing Salesforce ID for campaign ID " . ($campaign->getId() ?? 'null'));
-            }
 
             try {
                 $this->pull($campaign, $output);
