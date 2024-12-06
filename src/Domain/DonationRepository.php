@@ -187,12 +187,17 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
+     *
      * Internally this method uses Doctrine transactionally to ensure the database updates are
      * self-consistent. But it also first acquires an exclusive lock on the fund release process
      * for the specific donation using the Symfony Lock library. If another thread is already
      * releasing funds for the same donation, we log this fact but consider it safe to return
      * without releasing any funds.
      *
+     * Should mostly be thoght of as internal to `releaseMatchFundsInTransaction` - call that rather than calling
+     * this directly.
+     *
+     * @psalm-internal MatchBot\Domain
      * @param Donation $donation
      * @throws Matching\TerminalLockException
      */

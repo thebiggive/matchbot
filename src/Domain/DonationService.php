@@ -518,6 +518,7 @@ class DonationService
         $this->save($donation);
 
         if ($donation->getCampaign()->isMatched()) {
+            /** @psalm-suppress InternalMethod */
             $this->donationRepository->releaseMatchFunds($donation);
         }
 

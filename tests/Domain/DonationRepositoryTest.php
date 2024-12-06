@@ -351,6 +351,8 @@ class DonationRepositoryTest extends TestCase
         );
 
         $donation = $this->getTestDonation();
+
+        /** @psalm-suppress InternalMethod */
         $repo->releaseMatchFunds($donation);
     }
 
@@ -375,6 +377,8 @@ class DonationRepositoryTest extends TestCase
         );
 
         $donation = $this->getTestDonation();
+
+        /** @psalm-suppress InternalMethod */
         $repo->releaseMatchFunds($donation);
     }
 
@@ -401,6 +405,8 @@ class DonationRepositoryTest extends TestCase
         );
 
         $donation = $this->getTestDonation();
+
+        /** @psalm-suppress InternalMethod */
         $repo->releaseMatchFunds($donation);
     }
 
