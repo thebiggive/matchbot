@@ -184,20 +184,13 @@ class DonationRepository extends SalesforceWriteProxyRepository
         return $amountNewlyMatched;
     }
 
-    /**
-     * @throws \Assert\AssertionFailedException if donation UUID does not exist.
-     */
-    public function safelyReleaseMatchFunds(UuidInterface $uuid): void
-    {
-        $this->getEntityManager()->beginTransaction();
-        $donation = $this->findAndLockOneBy(['uuid' => $uuid->toString()]);
-        Assertion::isInstanceOf($donation, Donation::class);
-        $this->releaseMatchFunds($donation);
-        $this->getEntityManager()->flush();
-        $this->getEntityManager()->commit();
-    }
 
     /**
+     * Donation should be locked before calling this otherwise amounts available can end up wrong due
+     * to race condition.
+     *
+     * @psalm-internal \MatchBot\Domain\DonationService::safelyReleaseMatchFunds
+     *
      * Internally this method uses Doctrine transactionally to ensure the database updates are
      * self-consistent. But it also first acquires an exclusive lock on the fund release process
      * for the specific donation using the Symfony Lock library. If another thread is already

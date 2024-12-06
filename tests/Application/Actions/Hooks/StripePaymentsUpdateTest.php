@@ -14,7 +14,6 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use Prophecy\Argument;
 use Psr\Container\ContainerInterface;
-use Ramsey\Uuid\Uuid;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\StripeClient;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
@@ -238,7 +237,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldBeCalledOnce();
 
         $donationRepoProphecy
-            ->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()))
+            ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -276,7 +275,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldNotBeCalled();
 
         $donationRepoProphecy
-            ->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()))
+            ->releaseMatchFunds($donation)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -359,7 +358,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()))
+            ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -399,7 +398,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldBeCalledOnce();
 
         $donationRepoProphecy
-            ->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()))
+            ->releaseMatchFunds($donation)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -445,7 +444,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldBeCalledOnce();
 
         $donationRepoProphecy
-            ->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()))
+            ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -504,7 +503,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldBeCalledOnce();
 
         $donationRepoProphecy
-            ->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()))
+            ->releaseMatchFunds($donation)
             ->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -548,7 +547,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldBeCalledOnce();
 
         $donationRepoProphecy
-            ->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()))
+            ->releaseMatchFunds($donation)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -625,7 +624,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->shouldBeCalledOnce();
 
         $donationRepoProphecy
-            ->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()))
+            ->releaseMatchFunds($donation)
             ->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);

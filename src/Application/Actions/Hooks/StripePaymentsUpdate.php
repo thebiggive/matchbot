@@ -16,6 +16,7 @@ use MatchBot\Domain\Currency;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\Money;
@@ -59,6 +60,7 @@ class StripePaymentsUpdate extends Stripe
         ContainerInterface $container,
         LoggerInterface $logger,
         private RoutableMessageBus $bus,
+        private DonationService $donationService,
     ) {
         /**
          * @var ChatterInterface $chatter
@@ -510,7 +512,7 @@ class StripePaymentsUpdate extends Stripe
             $donation->getDonationStatus()->isReversed() &&
             $donation->getCampaign()->isMatched()
         ) {
-            $this->donationRepository->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()));
+            $this->donationService->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()));
         }
 
         $this->entityManager->flush();
