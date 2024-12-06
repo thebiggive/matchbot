@@ -89,27 +89,32 @@ abstract class IntegrationTest extends TestCase
 
     private function fakeApiClientSettingsThatAlwaysThrow(): array
     {
-        return ['global' => new /** @implements ArrayAccess<string, never> */ class implements ArrayAccess {
-            public function offsetExists(mixed $offset): bool
-            {
-                return true;
-            }
+        return [
+            'global' => new /** @implements ArrayAccess<string, never> */ class implements ArrayAccess {
+                public function offsetExists(mixed $offset): bool
+                {
+                    return true;
+                }
 
-            public function offsetGet(mixed $offset): never
-            {
-                throw new \Exception("Do not use real API client in tests");
-            }
+                public function offsetGet(mixed $offset): never
+                {
+                    throw new \Exception("Do not use real API client in tests");
+                }
 
-            public function offsetSet(mixed $offset, mixed $value): never
-            {
-                throw new \Exception("Do not use real API client in tests");
-            }
+                public function offsetSet(mixed $offset, mixed $value): never
+                {
+                    throw new \Exception("Do not use real API client in tests");
+                }
 
-            public function offsetUnset(mixed $offset): never
-            {
-                throw new \Exception("Do not use real API client in tests");
-            }
-        }];
+                public function offsetUnset(mixed $offset): never
+                {
+                    throw new \Exception("Do not use real API client in tests");
+                }
+            },
+            'mailer' => [
+                'baseUri' => 'dummy-mailer-base-uri',
+            ],
+        ];
     }
 
     protected function getContainer(): Container
