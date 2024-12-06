@@ -329,7 +329,7 @@ class DonationRepositoryTest extends TestCase
         $lockProphecy->release()->shouldNotBeCalled(); // We only do this on new funds allocation now.
 
         $lockFactoryProphecy = $this->prophesize(LockFactory::class);
-        $lockFactoryProphecy->createLock(Argument::type('string'))
+        $lockFactoryProphecy->createLock(Argument::type('string'), 300.0)
             ->willReturn($lockProphecy->reveal())
             ->shouldBeCalledOnce();
 
@@ -363,7 +363,7 @@ class DonationRepositoryTest extends TestCase
         $lockProphecy->release()->shouldNotBeCalled();
 
         $lockFactoryProphecy = $this->prophesize(LockFactory::class);
-        $lockFactoryProphecy->createLock(Argument::type('string'))
+        $lockFactoryProphecy->createLock(Argument::type('string'), 300.0)
             ->willReturn($lockProphecy->reveal())
             ->shouldBeCalledOnce();
 
@@ -392,7 +392,7 @@ class DonationRepositoryTest extends TestCase
         $lockProphecy->release()->shouldNotBeCalled();
 
         $lockFactoryProphecy = $this->prophesize(LockFactory::class);
-        $lockFactoryProphecy->createLock(Argument::type('string'))
+        $lockFactoryProphecy->createLock(Argument::type('string'), 300.0)
             ->willReturn($lockProphecy->reveal())
             ->shouldBeCalledOnce();
 
