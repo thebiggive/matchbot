@@ -528,7 +528,8 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);;
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);
+        ;
 
         $stripeErrorMessage = 'You cannot cancel this PaymentIntent because it has a status of ' .
             'canceled. Only a PaymentIntent with one of the following statuses may be canceled: ' .
@@ -582,7 +583,8 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);;
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);
+        ;
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->cancelPaymentIntent('pi_stripe_pending_123')
@@ -960,7 +962,8 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         // Persist as normal.
-        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);;
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);
+        ;
 
         $stripeErrorMessage = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
             'after a capture has already been made.';
@@ -1140,7 +1143,8 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         // Persist as normal.
-        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);;
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);
+        ;
 
 
         $mockPI = new PaymentIntent();
@@ -1315,7 +1319,8 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         // Persist as normal.
-        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);;
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);
+        ;
 
 
         $mockPI = new PaymentIntent();
@@ -1402,7 +1407,8 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);;
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);
+        ;
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
@@ -1887,7 +1893,7 @@ class UpdateTest extends TestCase
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
 
-        if ($persist){
+        if ($persist) {
             $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         }
 
@@ -1898,7 +1904,7 @@ class UpdateTest extends TestCase
         if ($commit) {
             $entityManagerProphecy->commit()->shouldBeCalledOnce();
         }
-        
+
         return $entityManagerProphecy;
     }
 }
