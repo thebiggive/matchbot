@@ -158,7 +158,13 @@ class DonationRepositoryTest extends IntegrationTest
 
         // assert
         $this->assertCount(1, $cancelReadyDonations);
-        $this->assertEquals(DonationStatus::Pending, $cancelReadyDonations[0]->getDonationStatus());
+        $donation = $sut->findOneBy(['uuid' => $cancelReadyDonations[0]]);
+        \assert($donation !== null);
+
+        $this->assertEquals(
+            DonationStatus::Pending,
+            $donation->getDonationStatus()
+        );
     }
 
     public function makeCampaign(?Charity $charity = null): Campaign

@@ -489,6 +489,9 @@ class DonationService
     /**
      * Sets donation to cancelled in matchbot db, releases match funds, cancels payment in stripe, and updates
      * salesforce.
+     *
+     * Call this from inside a transaction and with a locked donation to avoid double releasing funds associated with
+     * the donation.
      */
     public function cancel(Donation $donation): void
     {

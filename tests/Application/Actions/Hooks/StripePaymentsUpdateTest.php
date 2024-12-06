@@ -27,6 +27,8 @@ use Symfony\Component\Notifier\Message\ChatMessage;
 
 class StripePaymentsUpdateTest extends StripeTest
 {
+    private const string DONATION_UUID = '5cacc86a-b405-11ef-a4a5-9fcdb7039df1';
+
     public function setUp(): void
     {
         parent::setUp();
@@ -348,7 +350,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_dispute_closed_lost_higher_amount');
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(uuid: Uuid::fromString(self::DONATION_UUID));
         $webhookSecret = $this->getValidWebhookSecret($container);
         $time = (string) time();
 
@@ -357,7 +359,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $options = (new SlackOptions())
             ->block((new SlackHeaderBlock('[test] Over-refund detected')))
             ->block((new SlackSectionBlock())->text(
-                'Over-refund detected for donation 12345678-1234-1234-1234-1234567890ab based on ' .
+                'Over-refund detected for donation ' . self::DONATION_UUID . ' based on ' .
                 'charge.dispute.closed (lost) hook. Donation inc. tip was 124.45 GBP and refund or dispute was ' .
                 '124.46 GBP'
             ))
@@ -446,7 +448,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_refunded');
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(uuid: Uuid::fromString(self::DONATION_UUID));
         $webhookSecret = $this->getValidWebhookSecret($container);
         $time = (string) time();
 
@@ -502,7 +504,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $container = $this->getContainer();
 
         $body = $this->getStripeHookMock('ch_over_refunded');
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(uuid: Uuid::fromString(self::DONATION_UUID));
         $webhookSecret = $this->getValidWebhookSecret($container);
         $time = (string) time();
 
@@ -511,7 +513,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $options = (new SlackOptions())
             ->block((new SlackHeaderBlock('[test] Over-refund detected')))
             ->block((new SlackSectionBlock())->text(
-                'Over-refund detected for donation 12345678-1234-1234-1234-1234567890ab based on ' .
+                'Over-refund detected for donation ' . self::DONATION_UUID . ' based on ' .
                 'charge.refunded hook. Donation inc. tip was 124.45 GBP and refund or dispute was 134.45 GBP'
             ))
             ->iconEmoji(':o');

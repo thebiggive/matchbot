@@ -17,6 +17,8 @@ class GetTest extends TestCase
     use DonationTestDataTrait;
     use PublicJWTAuthTrait;
 
+    public const string DONATION_UUID = '2c6f3408-b405-11ef-a2fe-6b6ac08448a0';
+
     public function testMissingId(): void
     {
         $app = $this->getAppInstance();
@@ -36,13 +38,13 @@ class GetTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findOneBy(['uuid' => self::DONATION_UUID])
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $request = $this->createRequest('GET', '/v1/donations/12345678-1234-1234-1234-1234567890ab');
-        $route = $this->getRouteWithDonationId('get', '12345678-1234-1234-1234-1234567890ab');
+        $request = $this->createRequest('GET', '/v1/donations/' . self::DONATION_UUID);
+        $route = $this->getRouteWithDonationId('get', self::DONATION_UUID);
 
         $this->expectException(HttpUnauthorizedException::class);
         $this->expectExceptionMessage('Unauthorised');
@@ -58,16 +60,16 @@ class GetTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findOneBy(['uuid' => self::DONATION_UUID])
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $jwtWithBadSignature = DonationToken::create('12345678-1234-1234-1234-1234567890ab') . 'x';
+        $jwtWithBadSignature = DonationToken::create(self::DONATION_UUID) . 'x';
 
-        $request = $this->createRequest('GET', '/v1/donations/12345678-1234-1234-1234-1234567890ab')
+        $request = $this->createRequest('GET', '/v1/donations/' . self::DONATION_UUID . '')
             ->withHeader('x-tbg-auth', $jwtWithBadSignature);
-        $route = $this->getRouteWithDonationId('get', '12345678-1234-1234-1234-1234567890ab');
+        $route = $this->getRouteWithDonationId('get', self::DONATION_UUID);
 
         $this->expectException(HttpUnauthorizedException::class);
         $this->expectExceptionMessage('Unauthorised');
@@ -83,16 +85,16 @@ class GetTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findOneBy(['uuid' => self::DONATION_UUID])
             ->shouldNotBeCalled();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
         $jwtForAnotherDonation = DonationToken::create('87654321-1234-1234-1234-ba0987654321');
 
-        $request = $this->createRequest('GET', '/v1/donations/12345678-1234-1234-1234-1234567890ab')
+        $request = $this->createRequest('GET', '/v1/donations/' . self::DONATION_UUID . '')
             ->withHeader('x-tbg-auth', $jwtForAnotherDonation);
-        $route = $this->getRouteWithDonationId('get', '12345678-1234-1234-1234-1234567890ab');
+        $route = $this->getRouteWithDonationId('get', self::DONATION_UUID);
 
         $this->expectException(HttpUnauthorizedException::class);
         $this->expectExceptionMessage('Unauthorised');
@@ -133,15 +135,15 @@ class GetTest extends TestCase
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $testDonation = $this->getTestDonation(charityComms: true);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findOneBy(['uuid' => self::DONATION_UUID])
             ->willReturn($testDonation)
             ->shouldBeCalledOnce();
 
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $request = $this->createRequest('GET', '/v1/donations/12345678-1234-1234-1234-1234567890ab')
-            ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ab'));
-        $route = $this->getRouteWithDonationId('get', '12345678-1234-1234-1234-1234567890ab');
+        $request = $this->createRequest('GET', '/v1/donations/' . self::DONATION_UUID)
+            ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
+        $route = $this->getRouteWithDonationId('get', self::DONATION_UUID);
 
         $response = $app->handle($request->withAttribute('route', $route));
         $payload = (string) $response->getBody();

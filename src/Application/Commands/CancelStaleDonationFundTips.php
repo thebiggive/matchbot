@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
@@ -53,11 +54,16 @@ class CancelStaleDonationFundTips extends LockingCommand
 
         $cancelationDelay = $this->environment == Environment::Production ? $twoWeeks : $tenMinutes;
 
-        $staleDonationTips = $this->donationRepository->findStaleDonationFundsTips($this->now, $cancelationDelay);
+        $staleDonationTipsUUIDS = $this->donationRepository->findStaleDonationFundsTips($this->now, $cancelationDelay);
 
-        foreach ($staleDonationTips as $tipDonation) {
-            $this->donationService->cancel($tipDonation);
-            $output->writeln("Cancelled tip donation {$tipDonation->getUuid()}");
+        foreach ($staleDonationTipsUUIDS as $tipDonationUUID) {
+            $this->entityManager->wrapInTransaction(function () use ($tipDonationUUID): void {
+                $donation = $this->donationRepository->findAndLockOneBy(['uuid' => $tipDonationUUID]);
+                Assertion::notNull($donation);
+
+                $this->donationService->cancel($donation);
+            });
+            $output->writeln("Cancelled tip donation {$tipDonationUUID->toString()}");
         }
 
         $this->entityManager->flush();

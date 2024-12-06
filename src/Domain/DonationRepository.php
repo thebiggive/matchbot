@@ -967,14 +967,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
     /**
      * Returns a limited size list of donation fund tip donations that have been left unpaid for some time and
      * we will want to auto-cancel
-     * @return list<Donation>
+     * @return list<UuidInterface>
      */
     public function findStaleDonationFundsTips(\DateTimeImmutable $atDateTime, \DateInterval $cancelationDelay): array
     {
         $pending = DonationStatus::Pending->value;
 
         $query = $this->getEntityManager()->createQuery(<<<DQL
-            SELECT donation from Matchbot\Domain\Donation donation join donation.campaign c
+            SELECT donation.uuid from Matchbot\Domain\Donation donation join donation.campaign c
             WHERE donation.donationStatus = '$pending'
             AND donation.paymentMethodType = 'customer_balance'
             AND c.name = 'Big Give General Donations'
@@ -985,13 +985,14 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $query->setParameter('latestCreationDate', $atDateTime->sub($cancelationDelay));
         $query->setMaxResults(100);
 
-        /** @var list<Donation> $result */
+        /** @var list<array{uuid: UuidInterface}> $result */
         $result = $query->getResult();
-        return $result;
+
+        return array_map(static fn(array $array): UuidInterface => $array['uuid'], $result);
     }
 
     /**
-     * @return list<Donation>
+     * @return list<UuidInterface>
      */
     public function findPendingByDonorCampaignAndMethod(
         string $donorStripeId,
@@ -999,7 +1000,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
         PaymentMethodType $paymentMethodType,
     ): array {
         $query = $this->getEntityManager()->createQuery(<<<DQL
-            SELECT donation from Matchbot\Domain\Donation donation
+            SELECT donation.uuid from Matchbot\Domain\Donation donation
             INNER JOIN donation.campaign campaign
             WHERE donation.donationStatus = :donationStatus
             AND donation.pspCustomerId = :donorStripeId
@@ -1011,9 +1012,10 @@ class DonationRepository extends SalesforceWriteProxyRepository
         $query->setParameter('campaignId', $campaignId->value);
         $query->setParameter('paymentMethodType', $paymentMethodType->value);
 
-        /** @var list<Donation> $result */
+        /** @var list<array{uuid: UuidInterface}> $result */
         $result = $query->getResult();
-        return $result;
+
+        return array_map(static fn(array $row) => $row['uuid'], $result);
     }
 
     /**

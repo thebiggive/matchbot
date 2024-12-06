@@ -15,6 +15,7 @@ use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use Stripe\Charge;
 
 trait DonationTestDataTrait
@@ -70,6 +71,7 @@ trait DonationTestDataTrait
         bool $collected = true,
         DateTime $tbgGiftAidRequestConfirmedCompleteAt = null,
         bool $charityComms = false,
+        ?UuidInterface $uuid = null,
     ): Donation {
         $charity = TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
@@ -123,7 +125,9 @@ trait DonationTestDataTrait
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
         $donation->setTipAmount($tipAmount);
         $donation->setTransactionId('pi_externalId_123');
-        $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
+        if ($uuid) {
+            $donation->setUuid($uuid);
+        }
         $donation->setTbgGiftAidRequestConfirmedCompleteAt($tbgGiftAidRequestConfirmedCompleteAt);
 
         return $donation;
