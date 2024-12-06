@@ -154,8 +154,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $this->setDoublesInContainer($container, $donationRepoProphecy, $entityManagerProphecy);
@@ -193,8 +192,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $this->setDoublesInContainer($container, $donationRepoProphecy, $entityManagerProphecy);
@@ -301,8 +299,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $this->setDoublesInContainer($container, $donationRepoProphecy, $entityManagerProphecy);
@@ -353,8 +350,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->commit()->shouldBeCalledOnce();
 
         $this->setDoublesInContainer($container, $donationRepoProphecy, $entityManagerProphecy);
@@ -412,11 +408,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->cancelPaymentIntent('pi_externalId_123')
@@ -478,10 +470,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true);
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $stripeErrorMessage = 'You cannot cancel this PaymentIntent because it has a status of ' .
@@ -539,11 +528,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);;
 
         $stripeErrorMessage = 'You cannot cancel this PaymentIntent because it has a status of ' .
             'canceled. Only a PaymentIntent with one of the following statuses may be canceled: ' .
@@ -597,11 +582,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);;
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->cancelPaymentIntent('pi_stripe_pending_123')
@@ -652,8 +633,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $this->setDoublesInContainer($container, $donationRepoProphecy, $entityManagerProphecy);
@@ -696,8 +676,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $this->setDoublesInContainer($container, $donationRepoProphecy, $entityManagerProphecy);
@@ -794,8 +773,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $this->setDoublesInContainer($container, $donationRepoProphecy, $entityManagerProphecy);
@@ -842,8 +820,7 @@ class UpdateTest extends TestCase
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $this->setDoublesInContainer($container, $donationRepoProphecy, $entityManagerProphecy);
@@ -904,8 +881,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
@@ -984,11 +960,7 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         // Persist as normal.
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);;
 
         $stripeErrorMessage = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
             'after a capture has already been made.';
@@ -1075,8 +1047,7 @@ class UpdateTest extends TestCase
             ->shouldNotBeCalled();
 
         // Internal persist still goes ahead.
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
         $stripeErrorMessage = 'The parameter application_fee_amount cannot be updated on a PaymentIntent ' .
@@ -1169,12 +1140,7 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         // Persist as normal.
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
-
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);;
 
 
         $mockPI = new PaymentIntent();
@@ -1261,8 +1227,7 @@ class UpdateTest extends TestCase
             ->shouldNotBeCalled();
 
         // Internal persist still goes ahead.
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
 
 
@@ -1350,12 +1315,7 @@ class UpdateTest extends TestCase
             ->shouldBeCalledOnce();
 
         // Persist as normal.
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
-
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);;
 
 
         $mockPI = new PaymentIntent();
@@ -1442,11 +1402,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
-        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $entityManagerProphecy->flush()->shouldBeCalledOnce();
-        $entityManagerProphecy->commit()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM(persist: true, flush: true, commit: true);;
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', [
@@ -1646,8 +1602,7 @@ class UpdateTest extends TestCase
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
@@ -1709,8 +1664,7 @@ class UpdateTest extends TestCase
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
@@ -1777,8 +1731,7 @@ class UpdateTest extends TestCase
             ->willReturn($donationInRepo)
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
         $entityManagerProphecy->rollback()->shouldBeCalledOnce();
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
@@ -1862,8 +1815,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+        $entityManagerProphecy = $this->prophesizeEM();
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', Argument::type('array'))
@@ -1925,5 +1877,28 @@ class UpdateTest extends TestCase
         $container->set(CampaignRepository::class, $this->prophesize(CampaignRepository::class)->reveal());
         $container->set(DonorAccountRepository::class, $this->prophesize(DonorAccountRepository::class)->reveal());
         $container->set(ClockInterface::class, new MockClock());
+    }
+
+    /**
+     * @return ObjectProphecy<RetrySafeEntityManager>
+     */
+    public function prophesizeEM(bool $persist = false, bool $flush = false, bool $commit = false): ObjectProphecy
+    {
+        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
+
+        if ($persist){
+            $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
+        }
+
+        if ($flush) {
+            $entityManagerProphecy->flush()->shouldBeCalledOnce();
+        }
+
+        if ($commit) {
+            $entityManagerProphecy->commit()->shouldBeCalledOnce();
+        }
+        
+        return $entityManagerProphecy;
     }
 }
