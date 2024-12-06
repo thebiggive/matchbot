@@ -18,7 +18,7 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\DomainException\MissingTransactionId;
-use Symfony\Component\Lock\Exception\LockAcquiringException;
+use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\LockInterface;
 use Symfony\Component\Messenger\Envelope;
@@ -185,6 +185,19 @@ class DonationRepository extends SalesforceWriteProxyRepository
     }
 
     /**
+     * @throws \Assert\AssertionFailedException if donation UUID does not exist.
+     */
+    public function safelyReleaseMatchFunds(UuidInterface $uuid): void
+    {
+        $this->getEntityManager()->beginTransaction();
+        $donation = $this->findAndLockOneBy(['uuid' => $uuid->toString()]);
+        Assertion::isInstanceOf($donation, Donation::class);
+        $this->releaseMatchFunds($donation);
+        $this->getEntityManager()->flush();
+        $this->getEntityManager()->commit();
+    }
+
+    /**
      * Internally this method uses Doctrine transactionally to ensure the database updates are
      * self-consistent. But it also first acquires an exclusive lock on the fund release process
      * for the specific donation using the Symfony Lock library. If another thread is already
@@ -208,34 +221,34 @@ class DonationRepository extends SalesforceWriteProxyRepository
         // were able to observe. This is why we now go straight to trying to `acquire()`. If
         // this returns false, we are in the contested lock case and know to drop this attempt.
 
-        $fundsReleaseLock = $this->getFundsReleaseLock($donation);
+//        $fundsReleaseLock = $this->getFundsReleaseLock($donation);
 
-        try {
-            // We don't `release()` the lock, holding it for 5 mins instead unless a thread newly
-            // allocates funds during that time. This avoids race condition bugs between explicit cancel actions by
-            // donors and any automatic match funds expiry that may have got a donation list before we released funds.
-            $gotLock = $fundsReleaseLock->acquire(false);
-        } catch (LockAcquiringException $exception) {
-            // According to the method (but not the exception) docs, `LockConflictedException` is thrown only
-            // "If the lock is acquired by someone else in blocking mode", and so should not be expected for
-            // our use case or caught here.
-            $this->logger->warning(sprintf(
-                'Skipped releasing match funds for donation ID %s due to %s acquiring lock',
-                $donation->getUuid(),
-                get_class($exception),
-            ));
-
-            return;
-        }
-
-        if (!$gotLock) {
-            $this->logger->warning(sprintf(
-                'Skipped releasing match funds for donation ID %s as lock was not acquired',
-                $donation->getUuid(),
-            ));
-
-            return;
-        }
+//        try {
+//            // We don't `release()` the lock, holding it for 5 mins instead unless a thread newly
+//            // allocates funds during that time. This avoids race condition bugs between explicit cancel actions by
+//            // donors and any automatic match funds expiry that may have got a donation list before we released funds.
+//            $gotLock = $fundsReleaseLock->acquire(false);
+//        } catch (LockAcquiringException $exception) {
+//            // According to the method (but not the exception) docs, `LockConflictedException` is thrown only
+//            // "If the lock is acquired by someone else in blocking mode", and so should not be expected for
+//            // our use case or caught here.
+//            $this->logger->warning(sprintf(
+//                'Skipped releasing match funds for donation ID %s due to %s acquiring lock',
+//                $donation->getUuid(),
+//                get_class($exception),
+//            ));
+//
+//            return;
+//        }
+//
+//        if (!$gotLock) {
+//            $this->logger->warning(sprintf(
+//                'Skipped releasing match funds for donation ID %s as lock was not acquired',
+//                $donation->getUuid(),
+//            ));
+//
+//            return;
+//        }
 
         $lockStartTime = microtime(true);
         try {
@@ -265,7 +278,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
      */
     public function findWithExpiredMatching(\DateTimeImmutable $now): array
     {
-        $cutoff = $now->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
+        //$cutoff = $now->sub(new \DateInterval('PT' . self::EXPIRY_SECONDS . 'S'));
+        $cutoff = $now;
 
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('d')
@@ -1018,7 +1032,8 @@ class DonationRepository extends SalesforceWriteProxyRepository
     {
         return $this->lockFactory->createLock(
             resource: "release-funds-{$donation->getUuid()}",
-            ttl: 300.0, // 5 minutes – comfortably over typical `:tick` duration and any web request's.
+//            ttl: 300.0, // 5 minutes – comfortably over typical `:tick` duration and any web request's.
+            ttl: 1,
         );
     }
 }

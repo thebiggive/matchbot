@@ -26,6 +26,7 @@ use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Ramsey\Uuid\Uuid;
 use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
@@ -514,7 +515,7 @@ class DonationService
         $this->save($donation);
 
         if ($donation->getCampaign()->isMatched()) {
-            $this->donationRepository->releaseMatchFunds($donation);
+            $this->donationRepository->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()));
         }
 
         if ($donation->getPsp() === 'stripe') {

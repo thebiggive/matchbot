@@ -24,6 +24,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Stripe\Card;
 use Stripe\Charge;
 use Stripe\Dispute;
@@ -509,7 +510,7 @@ class StripePaymentsUpdate extends Stripe
             $donation->getDonationStatus()->isReversed() &&
             $donation->getCampaign()->isMatched()
         ) {
-            $this->donationRepository->releaseMatchFunds($donation);
+            $this->donationRepository->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()));
         }
 
         $this->entityManager->flush();

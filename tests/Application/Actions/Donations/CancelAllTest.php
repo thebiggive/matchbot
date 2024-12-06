@@ -58,7 +58,7 @@ class CancelAllTest extends TestCase
             PaymentMethodType::CustomerBalance,
         )
             ->willReturn($twoDonations);
-        $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))
+        $donationRepoProphecy->safelyReleaseMatchFunds(Argument::any())
             ->shouldBeCalledTimes(2);
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);

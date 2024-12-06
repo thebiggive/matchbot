@@ -22,7 +22,7 @@ class ExpireMatchFundsTest extends TestCase
         $donationRepoProphecy->findWithExpiredMatching(Argument::type(\DateTimeImmutable::class))
             ->willReturn([])
             ->shouldBeCalledOnce();
-        $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
+        $donationRepoProphecy->safelyReleaseMatchFunds(Argument::any())->shouldNotBeCalled();
 
         $commandTester = new CommandTester($this->getCommand($donationRepoProphecy));
         $commandTester->execute([]);
@@ -43,7 +43,7 @@ class ExpireMatchFundsTest extends TestCase
             TestCase::someDonation('1'),
             TestCase::someDonation('1')
         ]);
-        $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))
+        $donationRepoProphecy->safelyReleaseMatchFunds(Argument::any())
             ->shouldBeCalledTimes(2);
 
         $commandTester = new CommandTester($this->getCommand($donationRepoProphecy));

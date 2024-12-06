@@ -22,6 +22,7 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
@@ -53,7 +54,7 @@ class RedistributeMatchFundsTest extends TestCase
         )
             ->willReturn([])
             ->shouldBeCalledOnce();
-        $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
+        $donationRepoProphecy->safelyReleaseMatchFunds(Argument::any())->shouldNotBeCalled();
 
         $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->shouldNotBeCalled();
 
@@ -84,7 +85,7 @@ class RedistributeMatchFundsTest extends TestCase
             $this->earlyNovemberNoon,
         )->willReturn([$donation]);
 
-        $donationRepoProphecy->releaseMatchFunds($donation)
+        $donationRepoProphecy->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()))
             ->shouldBeCalledOnce();
         $donationRepoProphecy->allocateMatchFunds($donation)
             ->shouldBeCalledOnce()
@@ -141,7 +142,7 @@ class RedistributeMatchFundsTest extends TestCase
             $this->earlyNovemberNoon,
         )->willReturn([$donation]);
 
-        $donationRepoProphecy->releaseMatchFunds($donation)
+        $donationRepoProphecy->safelyReleaseMatchFunds(Uuid::fromString($donation->getUuid()))
             ->shouldBeCalledOnce();
         $donationRepoProphecy->allocateMatchFunds($donation)
             ->shouldBeCalledOnce()
