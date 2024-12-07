@@ -14,6 +14,7 @@ use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\LockingCommand;
+use MatchBot\Application\Commands\PullIndividualCampaignFromSF;
 use MatchBot\Application\Commands\PullMetaCampaignFromSF;
 use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
@@ -120,6 +121,7 @@ $commands = [
     $psr11App->get(TakeRegularGivingDonations::class),
     $psr11App->get(CancelStaleDonationFundTips::class),
     $psr11App->get(PullMetaCampaignFromSF::class),
+    $psr11App->get(PullIndividualCampaignFromSF::class),
 ];
 
 foreach ($commands as $command) {

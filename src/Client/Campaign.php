@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Client;
 
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Assertion;
 
