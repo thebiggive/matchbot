@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\CancelStaleDonationFundTips;
 use MatchBot\Application\Commands\ClaimGiftAid;
+use MatchBot\Application\Commands\Command;
 use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
@@ -33,9 +34,16 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawalRepository;
 use MatchBot\Domain\FundRepository;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+use Psr\Http\Message\StreamInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Stripe\StripeClient;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\ConsoleEvents;
+use Symfony\Component\Console\Event\ConsoleEvent;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Command\ConsumeMessagesCommand;
@@ -43,7 +51,6 @@ use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Notifier\ChatterInterface;
 
-$cliApp = new Application();
 
 $messengerReceiverKey = 'receiver';
 $messengerReceiverLocator = new Container();
@@ -52,10 +59,34 @@ $messengerReceiverLocator->set($messengerReceiverKey, $psr11App->get(TransportIn
 $chatter = $psr11App->get(ChatterInterface::class);
 assert($chatter instanceof ChatterInterface);
 
+$dispatcher = new EventDispatcher();
+$dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleEvent $event) use ($psr11App) {
+    $logger = $psr11App->get(Logger::class);
+    $input = $event->getInput();
+
+    if ($input->getOption(Command::CLI_OPTION_NOLOG)) {
+        array_filter(
+            $logger->getHandlers(),
+            (static fn ($handler) => $handler instanceof StreamHandler)
+        )[0]->setLevel(LogLevel::WARNING);
+    }
+});
+
+$cliApp = new Application();
+$cliApp->setDispatcher($dispatcher);
+$cliApp->getDefinition()->addOption(
+    new InputOption(
+        Command::CLI_OPTION_NOLOG,
+        'l',
+        InputOption::VALUE_NONE,
+        'Suppresses debug & info log, show only warnings and errors'
+    )
+);
+
 /**
  * @psalm-suppress MixedArgument - too many of these to fix here. At some point we could fix on mass
- * by using a stub psr11 with generics. It's also not very important to fix for this statement as it is called inside
- * any loop or conditional. If it's broken we'll know about it.
+ * by using a stub psr11 with generics. It's also not very important to fix for this statement as it is not called
+ * inside any loop or conditional. If it's broken we'll know about it.
  */
 $now = new \DateTimeImmutable('now');
 $commands = [
@@ -132,5 +163,6 @@ foreach ($commands as $command) {
 
     $cliApp->add($command);
 }
+
 
 $cliApp->run();

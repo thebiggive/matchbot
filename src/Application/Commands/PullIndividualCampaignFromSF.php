@@ -65,7 +65,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
 
         if ($campaign) {
             $this->campaignRepository->updateFromSf($campaign);
-            $output->writeln("Campaign {$this->campaignFullName($campaign)} found locally, updated from SF}");
+            $output->writeln("Campaign {$this->campaignFullName($campaign)} found locally, updated from SF");
         } else {
             try {
                 $campaign = $this->campaignRepository->pullNewFromSf($campaignId);
