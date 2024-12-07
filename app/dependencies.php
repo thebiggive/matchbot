@@ -52,6 +52,8 @@ use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\DoctrineDbalStore;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Middleware\AddFifoStampMiddleware;
@@ -504,6 +506,8 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         ClockInterface::class => fn() => new NativeClock(),
+
+        EventDispatcherInterface::class => fn() => new EventDispatcher(),
 
         Auth\SalesforceAuthMiddleware::class =>
             function (ContainerInterface $c) {
