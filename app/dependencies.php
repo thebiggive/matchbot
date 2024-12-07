@@ -216,7 +216,7 @@ return function (ContainerBuilder $containerBuilder) {
             return $factory;
         },
 
-        LoggerInterface::class => function (ContainerInterface $c): Logger {
+        Logger::class => function (ContainerInterface $c): Logger {
 
             $commitId = $c->get('commit-id');
             \assert(is_string($commitId));
@@ -265,6 +265,8 @@ return function (ContainerBuilder $containerBuilder) {
 
             return $logger;
         },
+
+        LoggerInterface::class => fn (ContainerInterface $c): LoggerInterface => $c->get(Logger::class),
 
         Environment::class => function (ContainerInterface $_c): Environment {
             /** @psalm-suppress PossiblyFalseArgument - we expect APP_ENV to be set everywhere */

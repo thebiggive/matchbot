@@ -17,8 +17,13 @@ class Salesforce18Id implements JsonSerializable
      */
     private function __construct(public readonly string $value, ?string $_entityClass)
     {
-        Assertion::length($value, 18);
-        Assertion::regex($value, '/[a-zA-Z0-9]{18}/');
+        Assertion::length($value, 18, self::lengthErrorMessage(...));
+
+        Assertion::regex(
+            $value,
+            '/[a-zA-Z0-9]{18}/',
+            static fn(array $args) => "{$args['value']} does not match pattern for a Salesforce ID"
+        );
     }
 
     /**
@@ -59,5 +64,14 @@ class Salesforce18Id implements JsonSerializable
     public function jsonSerialize(): string
     {
         return $this->value;
+    }
+
+
+    /**
+     * @param array{length: int, value: string} $args
+     */
+    private static function lengthErrorMessage(array $args): string
+    {
+        return "Salesforce ID should have {$args['length']} chars, '{$args['value']}' has " . strlen($args['value']);
     }
 }

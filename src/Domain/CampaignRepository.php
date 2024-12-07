@@ -78,7 +78,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
     /**
      * @param Salesforce18Id<Campaign> $salesforceId
-     * @throws NotFoundException
+     * @throws NotFoundException // why not?
      */
     public function pullNewFromSf(Salesforce18Id $salesforceId): Campaign
     {
