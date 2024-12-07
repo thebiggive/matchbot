@@ -40,7 +40,33 @@ use Symfony\Component\Notifier\ChatterInterface;
 
 $psr11App = require __DIR__ . '/bootstrap.php';
 
-\assert($psr11App instanceof DI\Container);
+$commands = array_map($psr11App->get(...), [
+    // Alphabetical list:
+    CallFrequentTasks::class,
+    CancelStaleDonationFundTips::class,
+    ClaimGiftAid::class,
+    ConsumeMessagesCommand::class,
+
+    DeleteStalePaymentDetails::class,
+    ExpireMatchFunds::class,
+    HandleOutOfSyncFunds::class,
+    PullIndividualCampaignFromSF::class,
+
+    PullMetaCampaignFromSF::class,
+    PushDonations::class,
+    RedistributeMatchFunds::class,
+    ResetMatching::class,
+
+    RetrospectivelyMatch::class,
+    ReturnErroneousExcessFees::class,
+    ScheduledOutOfSyncFundsCheck::class,
+    SendStatistics::class,
+
+    SetupTestMandate::class,
+    TakeRegularGivingDonations::class,
+    UpdateCampaigns::class,
+]);
+
 
 $messengerReceiverKey = 'receiver';
 $messengerReceiverLocator = new Container();
@@ -72,31 +98,6 @@ $cliApp->getDefinition()->addOption(
         'Suppresses debug & info log, show only warnings and errors'
     )
 );
-
-$commands = array_map($psr11App->get(...), [
-    CallFrequentTasks::class,
-    ClaimGiftAid::class,
-    ConsumeMessagesCommand::class,
-    DeleteStalePaymentDetails::class,
-    ExpireMatchFunds::class,
-
-    HandleOutOfSyncFunds::class,
-    RedistributeMatchFunds::class,
-    ScheduledOutOfSyncFundsCheck::class,
-    PushDonations::class,
-    ResetMatching::class,
-
-    RetrospectivelyMatch::class,
-    ReturnErroneousExcessFees::class,
-    UpdateCampaigns::class,
-    SendStatistics::class,
-    SetupTestMandate::class,
-
-    TakeRegularGivingDonations::class,
-    CancelStaleDonationFundTips::class,
-    PullMetaCampaignFromSF::class,
-    PullIndividualCampaignFromSF::class,
-]);
 
 foreach ($commands as $command) {
     if ($command instanceof LockingCommand) { // i.e. not Symfony Messenger's built-in consumer.

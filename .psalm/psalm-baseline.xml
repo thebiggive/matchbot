@@ -142,9 +142,6 @@
     <MixedArgument>
       <code><![CDATA[static::$defaultName]]></code>
     </MixedArgument>
-    <PossiblyNullOperand>
-      <code><![CDATA[$campaign->getSalesforceId()]]></code>
-    </PossiblyNullOperand>
   </file>
   <file src="src/Application/Handlers/HttpErrorHandler.php">
     <PropertyNotSetInConstructor>
@@ -190,16 +187,6 @@
       <code><![CDATA[json_decode((string) $response->getBody(), true)]]></code>
     </MixedReturnStatement>
   </file>
-  <file src="src/Domain/Campaign.php">
-    <PropertyNotSetInConstructor>
-      <code><![CDATA[$charity]]></code>
-      <code><![CDATA[$currencyCode]]></code>
-      <code><![CDATA[$endDate]]></code>
-      <code><![CDATA[$isMatched]]></code>
-      <code><![CDATA[$name]]></code>
-      <code><![CDATA[$startDate]]></code>
-    </PropertyNotSetInConstructor>
-  </file>
   <file src="src/Domain/CampaignFundingRepository.php">
     <MixedInferredReturnType>
       <code><![CDATA[?CampaignFunding]]></code>
@@ -213,17 +200,6 @@
       <code><![CDATA[$query->getResult()]]></code>
       <code><![CDATA[CampaignFunding[]]]></code>
     </MixedReturnTypeCoercion>
-  </file>
-  <file src="src/Domain/CampaignRepository.php">
-    <MixedArgument>
-      <code><![CDATA[$campaignData['charity']['giftAidOnboardingStatus']]]></code>
-      <code><![CDATA[$campaignData['charity']['hmrcReferenceNumber']]]></code>
-      <code><![CDATA[$campaignData['charity']['id']]]></code>
-      <code><![CDATA[$campaignData['charity']['name']]]></code>
-      <code><![CDATA[$campaignData['charity']['regulatorNumber']]]></code>
-      <code><![CDATA[$campaignData['charity']['regulatorRegion']]]></code>
-      <code><![CDATA[$campaignData['charity']['stripeAccountId']]]></code>
-    </MixedArgument>
   </file>
   <file src="src/Domain/Charity.php">
     <RiskyTruthyFalsyComparison>
@@ -278,7 +254,6 @@
       <code><![CDATA[$fundData['id']]]></code>
     </MixedOperand>
     <PossiblyNullOperand>
-      <code><![CDATA[$campaign->getId()]]></code>
       <code><![CDATA[$fund->getId()]]></code>
     </PossiblyNullOperand>
   </file>
