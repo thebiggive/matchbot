@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use UnexpectedValueException;
@@ -213,8 +214,18 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $offset = $sequenceNumber->number - 2;
 
         $preAuthorizationdate = $secondDonationDate->modify("+$offset months");
+        Assertion::isInstanceOf($preAuthorizationdate, \DateTimeImmutable::class);
 
-        \assert($preAuthorizationdate instanceof \DateTimeImmutable);
+        if ($campaign->regularGivingCollectionIsEndedAt($preAuthorizationdate)) {
+            $collectionEnd = $campaign->getRegularGivingCollectionEnd();
+            Assertion::notNull($collectionEnd);
+
+            throw new RegularGivingCollectionEndPassed(
+                "Cannot pre-authorize a donation for {$preAuthorizationdate->format('Y-m-d')}, " .
+                "regular giving collections for campaign {$campaign->getSalesforceId()} end " .
+                "at {$collectionEnd->format('Y-m-d')}"
+            );
+        }
 
         $donation->preAuthorize($preAuthorizationdate);
 
@@ -252,5 +263,10 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public function getStatus(): MandateStatus
     {
         return $this->status;
+    }
+
+    public function campaignEnded(): void
+    {
+        $this->status = MandateStatus::CampaignEnded;
     }
 }
