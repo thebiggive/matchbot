@@ -14,10 +14,13 @@ use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 
 class GiftAidResultHandlerTest extends TestCase
 {
     use DonationTestDataTrait;
+
+    public const string DONATION_UUID = 'ae3aefc2-b405-11ef-8184-0718548b46e9';
 
     /**
      * Check that no Gift Aid fields are set if we just get back a message with no new relevant
@@ -38,7 +41,7 @@ class GiftAidResultHandlerTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findOneBy(['uuid' => self::DONATION_UUID])
             ->willReturn($testDonationPassedToProphecy)
             ->shouldBeCalledOnce();
 
@@ -53,7 +56,8 @@ class GiftAidResultHandlerTest extends TestCase
             $container->get(LoggerInterface::class),
         );
 
-        $donationMessage = $this->getTestDonation()->toClaimBotModel();
+        $donationMessage = $this->getTestDonation(uuid:Uuid::fromString(self::DONATION_UUID))
+            ->toClaimBotModel();
         $giftAidErrorHandler($donationMessage);
 
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
@@ -76,12 +80,12 @@ class GiftAidResultHandlerTest extends TestCase
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
-        $testDonationPassedToProphecy = $this->getTestDonation();
+        $testDonationPassedToProphecy = $this->getTestDonation(uuid: Uuid::fromString(self::DONATION_UUID));
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findOneBy(['uuid' => self::DONATION_UUID])
             ->willReturn($testDonationPassedToProphecy)
             ->shouldBeCalledOnce();
 
@@ -95,8 +99,8 @@ class GiftAidResultHandlerTest extends TestCase
             $container->get(EntityManagerInterface::class),
             $container->get(LoggerInterface::class),
         );
-
-        $donationMessage = $this->getTestDonation()->toClaimBotModel();
+        $donationMessage = $this->getTestDonation(uuid:Uuid::fromString(self::DONATION_UUID))
+            ->toClaimBotModel();
         $donationMessage->submission_correlation_id = 'failingCorrId';
         $donationMessage->response_success = false;
         $donationMessage->response_detail = 'Donation error deets';
@@ -119,12 +123,12 @@ class GiftAidResultHandlerTest extends TestCase
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
-        $testDonationPassedToProphecy = $this->getTestDonation();
+        $testDonationPassedToProphecy = $this->getTestDonation(uuid:Uuid::fromString(self::DONATION_UUID));
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => '12345678-1234-1234-1234-1234567890ab'])
+            ->findOneBy(['uuid' => self::DONATION_UUID])
             ->willReturn($testDonationPassedToProphecy)
             ->shouldBeCalledOnce();
 
@@ -139,7 +143,7 @@ class GiftAidResultHandlerTest extends TestCase
             $container->get(LoggerInterface::class),
         );
 
-        $donationMessage = $this->getTestDonation()->toClaimBotModel();
+        $donationMessage = $this->getTestDonation(uuid:Uuid::fromString(self::DONATION_UUID))->toClaimBotModel();
         $donationMessage->submission_correlation_id = 'goodCorrId';
         $donationMessage->response_success = true;
         $donationMessage->response_detail = 'Thx for ur submission';

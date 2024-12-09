@@ -44,6 +44,7 @@ use UnexpectedValueException;
 class CreateTest extends TestCase
 {
     public const string PSPCUSTOMERID = 'cus_aaaaaaaaaaaa11';
+    public const string DONATION_UUID = '1822c3b6-b405-11ef-9766-63f04fc63fc3';
     private static array $somePaymentIntentArgs;
     /**
      * @var PaymentIntent Mock result, most properites we don't use omitted.
@@ -66,14 +67,14 @@ class CreateTest extends TestCase
                 'allow_redirects' => 'never',
             ],
             'customer' => self::PSPCUSTOMERID,
-            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
             'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
-                'donationId' => '12345678-1234-1234-1234-1234567890ab',
+                'donationId' => self::DONATION_UUID,
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '0.00',
                 'stripeFeeRechargeGross' => '0.43', // Includes Gift Aid processing fee
@@ -337,14 +338,14 @@ class CreateTest extends TestCase
                 'allow_redirects' => 'never',
             ],
             'customer' => self::PSPCUSTOMERID,
-            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
             'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
-                'donationId' => '12345678-1234-1234-1234-1234567890ab',
+                'donationId' => self::DONATION_UUID,
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '8.00',
                 'stripeFeeRechargeGross' => '0.38',
@@ -400,7 +401,7 @@ class CreateTest extends TestCase
         $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
-        $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
+        $this->assertEquals(self::DONATION_UUID, $payloadArray['donation']['donationId']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -443,14 +444,14 @@ class CreateTest extends TestCase
             'on_behalf_of' => 'unitTest_stripeAccount_123',
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
-            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
             'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
-                'donationId' => '12345678-1234-1234-1234-1234567890ab',
+                'donationId' => self::DONATION_UUID,
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '8.00',
                 'stripeFeeRechargeGross' => '0.38',
@@ -494,7 +495,7 @@ class CreateTest extends TestCase
         $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
-        $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
+        $this->assertEquals(self::DONATION_UUID, $payloadArray['donation']['donationId']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -538,14 +539,14 @@ class CreateTest extends TestCase
                 'allow_redirects' => 'never',
             ],
             'customer' => self::PSPCUSTOMERID,
-            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
             'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
-                'donationId' => '12345678-1234-1234-1234-1234567890ab',
+                'donationId' => self::DONATION_UUID,
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '8.00',
                 'stripeFeeRechargeGross' => '0.38',
@@ -591,7 +592,7 @@ class CreateTest extends TestCase
         $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
-        $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
+        $this->assertEquals(self::DONATION_UUID, $payloadArray['donation']['donationId']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -716,14 +717,14 @@ class CreateTest extends TestCase
                 'allow_redirects' => 'never',
             ],
             'customer' => self::PSPCUSTOMERID,
-            'description' => 'Donation 12345678-1234-1234-1234-1234567890ab to Create test charity',
+            'description' => 'Donation ' . self::DONATION_UUID . ' to Create test charity',
             'capture_method' => 'automatic',
             'metadata' => [
                 'campaignId' => '123CampaignId12345',
                 'campaignName' => '123CampaignName',
                 'charityId' => '567CharitySFID',
                 'charityName' => 'Create test charity',
-                'donationId' => '12345678-1234-1234-1234-1234567890ab',
+                'donationId' => self::DONATION_UUID,
                 'environment' => getenv('APP_ENV'),
                 'matchedAmount' => '8.00',
                 'stripeFeeRechargeGross' => '0.38',
@@ -768,7 +769,7 @@ class CreateTest extends TestCase
         $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
-        $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
+        $this->assertEquals(self::DONATION_UUID, $payloadArray['donation']['donationId']);
         $this->assertEquals('8', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -822,7 +823,7 @@ class CreateTest extends TestCase
         $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
-        $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
+        $this->assertEquals(self::DONATION_UUID, $payloadArray['donation']['donationId']);
         $this->assertEquals('0', $payloadArray['donation']['matchReservedAmount']);
         $this->assertTrue($payloadArray['donation']['optInCharityEmail']);
         $this->assertFalse($payloadArray['donation']['optInChampionEmail']);
@@ -879,7 +880,7 @@ class CreateTest extends TestCase
         $this->assertEquals(0, $payloadArray['donation']['charityFeeVat']);
         $this->assertEquals('GB', $payloadArray['donation']['countryCode']);
         $this->assertEquals('12', $payloadArray['donation']['donationAmount']);
-        $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $payloadArray['donation']['donationId']);
+        $this->assertEquals(self::DONATION_UUID, $payloadArray['donation']['donationId']);
         $this->assertEquals('0', $payloadArray['donation']['matchReservedAmount']);
         $this->assertEquals('1.11', $payloadArray['donation']['tipAmount']);
         $this->assertEquals('567CharitySFID', $payloadArray['donation']['charityId']);
@@ -1045,7 +1046,7 @@ class CreateTest extends TestCase
 
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCampaign($campaign);
-        $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
+        $donation->setUuid(Uuid::fromString(self::DONATION_UUID));
         $donation->setDonorCountryCode('GB');
         $donation->setTipAmount('1.11');
         $donation->setTransactionId('pi_stripe_pending_123');

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;

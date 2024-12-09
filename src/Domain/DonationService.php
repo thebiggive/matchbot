@@ -27,6 +27,7 @@ use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Ramsey\Uuid\UuidInterface;
 use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
@@ -504,6 +505,9 @@ class DonationService
     /**
      * Sets donation to cancelled in matchbot db, releases match funds, cancels payment in stripe, and updates
      * salesforce.
+     *
+     * Call this from inside a transaction and with a locked donation to avoid double releasing funds associated with
+     * the donation.
      */
     public function cancel(Donation $donation): void
     {
@@ -530,6 +534,7 @@ class DonationService
         $this->save($donation);
 
         if ($donation->getCampaign()->isMatched()) {
+            /** @psalm-suppress InternalMethod */
             $this->donationRepository->releaseMatchFunds($donation);
         }
 
@@ -609,5 +614,25 @@ class DonationService
         }
 
         return false;
+    }
+
+    /**
+     * Within a transaction, loads a donation from the DB and then releases any funding matched to it.
+     *
+     * If the matching for the donation has already been released (e.g. by another process after the donationId
+     * was found but before we lock the donation here) then this should be a no-op because Donation::fundingWithdrawals
+     * are eagerly loaded with the donation so will be empty.
+     */
+    public function releaseMatchFundsInTransaction(UuidInterface $donationId): void
+    {
+        $this->entityManager->wrapInTransaction(function () use ($donationId) {
+            $donationRepository = $this->donationRepository;
+            $donation = $donationRepository->findAndLockOneByUUID($donationId);
+            Assertion::notNull($donation);
+
+            $this->donationRepository->releaseMatchFunds($donation);
+
+            $this->entityManager->flush();
+        });
     }
 }
