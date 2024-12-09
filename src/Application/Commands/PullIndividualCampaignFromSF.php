@@ -16,9 +16,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/**
- *
- */
 #[AsCommand(
     name: 'matchbot:pull-campaign-from-sf',
     description: 'Pulls an in individual campaigns) from Salesforce into the
