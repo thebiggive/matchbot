@@ -1512,6 +1512,7 @@ class UpdateTest extends TestCase
             'route' => $route,
             'stripeProphecy' => $stripeProphecy,
             'entityManagerProphecy' => $entityManagerProphecy,
+            'donationRepoProphecy' => $donationRepoProphecy,
         ] =
             $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
                 newPaymentIntentStatus: PaymentIntent::STATUS_PROCESSING,
@@ -1524,6 +1525,8 @@ class UpdateTest extends TestCase
         } catch (HttpBadRequestException $exception) {
             $this->assertStringContainsString("Status was processing, expected succeeded", $exception->getMessage());
         }
+
+        $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
 
         $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldBeCalled();
         $entityManagerProphecy->flush()->shouldBeCalled(); // flushes cancelled donation to DB.
@@ -1573,7 +1576,8 @@ class UpdateTest extends TestCase
             'request' => $request,
             'route' => $route,
             'stripeProphecy' => $stripeProphecy,
-            'entityManagerProphecy' => $entityManagerProphecy
+            'entityManagerProphecy' => $entityManagerProphecy,
+            'donationRepoProphecy' => $donationRepoProphecy,
         ] = $this->setupTestDoublesForConfirmingPaymentFromDonationFunds(
             newPaymentIntentStatus: PaymentIntent::STATUS_REQUIRES_ACTION,
             nextActionRequired: 'any_unexpected_action',
@@ -1581,6 +1585,7 @@ class UpdateTest extends TestCase
 
         $entityManagerProphecy->flush()->shouldBeCalled();
         $stripeProphecy->cancelPaymentIntent('pi_externalId_123')->shouldBeCalled();
+        $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))->shouldBeCalled();
 
 
         $this->expectException(HttpBadRequestException::class);
@@ -1821,7 +1826,7 @@ class UpdateTest extends TestCase
             ->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesizeEM();
+        $entityManagerProphecy = $this->prophesizeEM(persist: true);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->updatePaymentIntent('pi_externalId_123', Argument::type('array'))
