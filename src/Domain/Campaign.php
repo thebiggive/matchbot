@@ -83,9 +83,6 @@ class Campaign extends SalesforceReadProxy
      * Date at which we want to stop collecting payments for this regular giving campaign. Must be null if
      * this is not regular giving, will also be null if this is regular giving and we plan to continue collecting
      * donations indefinitely.
-     *
-     * @psalm-suppress PossiblyUnusedProperty
-     * @todo-regular-giving - stop collecting donations if/when this date passes and remove the suppress above.
      */
     #[ORM\Column(nullable: true)]
     protected ?\DateTimeImmutable $regularGivingCollectionEnd;
@@ -311,5 +308,15 @@ class Campaign extends SalesforceReadProxy
         Assertion::string($this->salesforceId);
 
         return $this->salesforceId;
+    }
+
+    public function regularGivingCollectionIsEndedAt(\DateTimeImmutable $date): bool
+    {
+        return $this->regularGivingCollectionEnd !== null && $this->regularGivingCollectionEnd <= $date;
+    }
+
+    public function getRegularGivingCollectionEnd(): ?\DateTimeImmutable
+    {
+        return $this->regularGivingCollectionEnd;
     }
 }

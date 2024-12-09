@@ -5,6 +5,7 @@ namespace MatchBot\Tests\Domain;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
+use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DonationSequenceNumber;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorName;
@@ -63,12 +64,7 @@ class RegularGivingMandateTest extends TestCase
             '2024-08-23T17:30:00Z',
         ))->setTimezone(new \DateTimeZone('Europe/London')));
 
-        $donor = new DonorAccount(
-            null,
-            EmailAddress::of('fred@example.com'),
-            DonorName::of('FirstName', 'LastName'),
-            StripeCustomerId::of('cus_1234'),
-        );
+        $donor = $this->someDonor();
 
         $this->expectExceptionMessage('Cannot generate pre-authorized first donation');
 
@@ -76,6 +72,40 @@ class RegularGivingMandateTest extends TestCase
             DonationSequenceNumber::of(1),
             $donor,
             $this->createStub(Campaign::class)
+        );
+    }
+
+    public function testCannotMakeDonationForAfterCollectionEnd(): void
+    {
+        //arrange
+        $campaignId = Salesforce18Id::ofCampaign('a01234567890123AAB');
+        $mandate = new RegularGivingMandate(
+            PersonId::of(Uuid::NIL),
+            Money::fromPoundsGBP(1),
+            $campaignId,
+            Salesforce18Id::ofCharity('a01234567890123AAB'),
+            false,
+            DayOfMonth::of(2),
+        );
+        $mandate->activate((new \DateTimeImmutable('2020-01-01')));
+
+        $campaign = TestCase::someCampaign(
+            sfId: $campaignId,
+            isRegularGiving: true,
+            regularGivingCollectionEnd: new \DateTimeImmutable('2020-01-01'),
+        );
+
+        // assert
+        $this->expectException(RegularGivingCollectionEndPassed::class);
+        $this->expectExceptionMessage(
+            'Cannot pre-authorize a donation for 2020-01-02, regular giving collections for campaign a01234567890123AAB end at 2020-01-01'
+        );
+
+        // act
+        $mandate->createPreAuthorizedDonation(
+            DonationSequenceNumber::of(2),
+            $this->someDonor(),
+            $campaign
         );
     }
 
@@ -103,17 +133,7 @@ class RegularGivingMandateTest extends TestCase
             $activationTime,
         ))->setTimezone(new \DateTimeZone('Europe/London')));
 
-        $donor = new DonorAccount(
-            null,
-            EmailAddress::of('fred@example.com'),
-            DonorName::of('FirstName', 'LastName'),
-            StripeCustomerId::of('cus_1234'),
-        );
-
-        $donor->setHomePostcode('SW1A 1AA');
-        $donor->setBillingPostcode('SW1A 1AA');
-        $donor->setHomeAddressLine1('Address line 1');
-        $donor->setBillingCountryCode('GB');
+        $donor = $this->someDonor();
 
         $donation = $mandate->createPreAuthorizedDonation(
             DonationSequenceNumber::of($sequenceNo),
@@ -233,5 +253,21 @@ class RegularGivingMandateTest extends TestCase
             ['2024-08-23T17:30:00Z', 23, 2, '2024-09-23T06:00:00+0100'],
             ['2024-08-23T17:30:00Z', 23, 3, '2024-10-23T06:00:00+0100'],
         ];
+    }
+
+    public function someDonor(): DonorAccount
+    {
+        $donor = new DonorAccount(
+            null,
+            EmailAddress::of('fred@example.com'),
+            DonorName::of('FirstName', 'LastName'),
+            StripeCustomerId::of('cus_1234'),
+        );
+        $donor->setHomePostcode('SW1A 1AA');
+        $donor->setBillingPostcode('SW1A 1AA');
+        $donor->setHomeAddressLine1('Address line 1');
+        $donor->setBillingCountryCode('GB');
+
+        return $donor;
     }
 }
