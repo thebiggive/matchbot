@@ -160,6 +160,8 @@ class Update extends Action
 
                 if ($donationData->status === DonationStatus::Cancelled->value) {
                     try {
+                        // note this cancel is safe only because we fetched the donation in a transaction with
+                        // findAndLockOneByUUID . See comments about lock above where that method is called.
                         $this->donationService->cancel($donation);
                     } catch (DonationAlreadyFinalised $e) {
                         $this->entityManager->rollback();
@@ -573,11 +575,9 @@ class Update extends Action
 
     private function cancelDonationAndPaymentIntent(Donation $donation, PaymentIntent $confirmedPaymentIntent): void
     {
-        $this->stripe->cancelPaymentIntent($donation->getTransactionId());
-
         // note this cancel is safe only because we fetched the donation in a transaction with
         // findAndLockOneByUUID . See comments about lock above where that method is called.
-        $donation->cancel();
+        $this->donationService->cancel($donation);
 
         $this->entityManager->flush();
 
