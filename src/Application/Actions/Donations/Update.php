@@ -115,6 +115,9 @@ class Update extends Action
             $this->entityManager->beginTransaction();
 
             try {
+                // This lock is important particularly if the donation is cancelled, because cancelling a donation
+                // without locking the row risks multiple cancellation which means we'd end up increasing the value
+                // stored in DB column CampaignFunding.amountAvailable by too much.
                 $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($args['donationId']));
 
                 if (!$donation) {
@@ -571,7 +574,11 @@ class Update extends Action
     private function cancelDonationAndPaymentIntent(Donation $donation, PaymentIntent $confirmedPaymentIntent): void
     {
         $this->stripe->cancelPaymentIntent($donation->getTransactionId());
+
+        // note this cancel is safe only because we fetched the donation in a transaction with
+        // findAndLockOneByUUID . See comments about lock above where that method is called.
         $donation->cancel();
+
         $this->entityManager->flush();
 
         $this->logger->warning(
