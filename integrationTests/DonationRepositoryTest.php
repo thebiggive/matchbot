@@ -64,23 +64,9 @@ class DonationRepositoryTest extends IntegrationTest
 
         return $charity;
     }
-
-    private function prepareCampaign(Charity $charity): Campaign
-    {
-        $campaign = new Campaign(charity: $charity);
-        $campaign->setName('Campaign Name');
-        $campaign->setSalesforceId('ccampaign123456789');
-        $campaign->setCurrencyCode('GBP');
-        $campaign->setStartDate((new \DateTime())->sub(new \DateInterval('P16D')));
-        $campaign->setEndDate((new \DateTime())->add(new \DateInterval('P15D')));
-        $campaign->setIsMatched(true);
-
-        return $campaign;
-    }
-
     private function prepareAndPersistDonation(Charity $charity): Donation
     {
-        $campaign = $this->prepareCampaign($charity);
+        $campaign = $this->makeCampaign($charity);
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($campaign);
@@ -129,7 +115,8 @@ class DonationRepositoryTest extends IntegrationTest
         $thirtyThreeMinsInFuture = (new \DateTimeImmutable('now'))->modify('+33 minute');
 
         // act
-        $expiredDonations = $sut->findWithExpiredMatching($thirtyThreeMinsInFuture);
+        $expiredDonationsIDs = $sut->findWithExpiredMatching($thirtyThreeMinsInFuture);
+        $expiredDonations = $sut->findBy(['uuid' => $expiredDonationsIDs]);
 
         // assert
         $expiredDonationStatuses = array_map(
@@ -151,7 +138,6 @@ class DonationRepositoryTest extends IntegrationTest
         // arrange
         $campaign = $this->makeCampaign();
         $campaignId = $campaign->getSalesforceId();
-        \assert(is_string($campaignId));
         $randomEmailAddress = 'email' . random_int(1000, 99999) . '@example.com';
 
         $this->makeDonation(
@@ -172,20 +158,30 @@ class DonationRepositoryTest extends IntegrationTest
 
         // assert
         $this->assertCount(1, $cancelReadyDonations);
-        $this->assertEquals(DonationStatus::Pending, $cancelReadyDonations[0]->getDonationStatus());
+        $donation = $sut->findOneBy(['uuid' => $cancelReadyDonations[0]]);
+        \assert($donation !== null);
+
+        $this->assertEquals(
+            DonationStatus::Pending,
+            $donation->getDonationStatus()
+        );
     }
 
-    public function makeCampaign(): Campaign
+    public function makeCampaign(?Charity $charity = null): Campaign
     {
-        $campaign = new Campaign(TestCase::someCharity());
-        $campaign->setCurrencyCode('GBP');
-        $campaign->setStartDate(new \DateTime());
-        $campaign->setEndDate(new \DateTime());
-        $campaign->setIsMatched(true);
-        $campaign->setName('Campaign Name');
-        $campaign->setSalesforceId('campaignId12345678');
-
-        return $campaign;
+        return new Campaign(
+            Salesforce18Id::ofCampaign('campaignId12345678'),
+            $charity ?? TestCase::someCharity(),
+            startDate: new \DateTimeImmutable('now'),
+            endDate: new \DateTimeImmutable('now'),
+            isMatched: true,
+            ready: true,
+            status: 'status',
+            name: 'Campaign Name',
+            currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
+        );
     }
 
     private function makeDonation(

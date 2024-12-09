@@ -15,11 +15,14 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Tests\Application\Auth\IdentityTokenTest;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use Slim\Exception\HttpUnauthorizedException;
 
 class CancelAllTest extends TestCase
@@ -28,7 +31,8 @@ class CancelAllTest extends TestCase
     use PublicJWTAuthTrait;
 
     private const string SF_CAMPAIGN_ID = '7015B0000017Z3xQAE';
-    private const string ROUTE = '/v1/people/12345678-1234-1234-1234-1234567890ab/donations';
+
+    private const string ROUTE = '/v1/people/' . IdentityTokenTest::PERSON_UUID . '/donations';
 
     public function testCancelTwoSuccess(): void
     {
@@ -36,6 +40,7 @@ class CancelAllTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
+        /** @var list<Donation> $twoDonations */
         $twoDonations = [
             $this->getTestDonation(
                 amount: '10',
@@ -57,11 +62,40 @@ class CancelAllTest extends TestCase
             Salesforce18Id::ofCampaign(self::SF_CAMPAIGN_ID),
             PaymentMethodType::CustomerBalance,
         )
-            ->willReturn($twoDonations);
+            ->willReturn([
+                $twoDonations[0]->getUuid(),
+                $twoDonations[1]->getUuid()
+                ]);
+
+        $donationRepoProphecy->findAndLockOneByUUID(Argument::type(UuidInterface::class))
+            ->will(/**
+             * @param Uuid[] $args
+             */
+                function ($args) use ($twoDonations) {
+                    foreach ($twoDonations as $donation) {
+                        if ($donation->getUuid() == $args[0]->toString()) {
+                            return $donation;
+                        }
+                    }
+                    throw new \Exception("not found");
+                }
+            );
+
         $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledTimes(2);
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+
+        /**
+         * @psalm-suppress MixedFunctionCall
+         */
+        $entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))
+            ->will(function (array $args): mixed {
+                return $args[0]();
+            });
+
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
+        $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         // For now, each test donation retrieved by the above helper uses the same txn ID.

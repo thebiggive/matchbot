@@ -32,7 +32,9 @@
         </UnusedClass>
         <PossiblyUnusedMethod>
             <errorLevel type="suppress">
+                <!-- Constructors in the following directories are called by the DI container not by us -->
                 <directory name="src/Application/Actions"/>
+                <directory name="src/Application/Commands"/>
             </errorLevel>
         </PossiblyUnusedMethod>
     </issueHandlers>

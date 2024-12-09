@@ -70,6 +70,7 @@ class RetrySafeEntityManager extends EntityManagerDecorator
      * @psalm-param callable(): RETURN $func
      * @psalm-return RETURN
      *
+     * @psalm-suppress PossiblyUnusedReturnValue
      * @psalm-suppress MoreSpecificImplementedParamType
      */
     public function wrapInTransaction(callable $func)

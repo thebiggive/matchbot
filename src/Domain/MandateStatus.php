@@ -22,6 +22,12 @@ enum MandateStatus: string
      */
     case Cancelled = 'cancelled';
 
+    /**
+     * Mandate ended because the last collection date for the campaign has passed or is due to pass before the next
+     * collection of this mandate
+     */
+    case CampaignEnded = 'campaign-ended';
+
     public function apiName(): string
     {
         return $this->value;

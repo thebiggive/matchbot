@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Commands;
 use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Commands\ClaimGiftAid;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
@@ -18,6 +19,7 @@ use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Messenger\Stamp\BusNameStamp;
+use Symfony\Component\Messenger\Stamp\StampInterface;
 use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 
 class ClaimGiftAidTest extends TestCase
@@ -41,7 +43,7 @@ class ClaimGiftAidTest extends TestCase
         $testDonation->setTbgShouldProcessGiftAid(true);
         $envelope = new Envelope(
             $testDonation->toClaimBotModel(),
-            $this->getExpectedStamps($testDonation->getUuid()),
+            $this->getExpectedStamps($testDonation->getUuid()->toString()),
         );
         $bus->dispatch($envelope)->shouldNotBeCalled();
 
@@ -75,7 +77,7 @@ class ClaimGiftAidTest extends TestCase
 
         $envelope = new Envelope(
             $testDonation->toClaimBotModel(),
-            $this->getExpectedStamps($testDonation->getUuid()),
+            $this->getExpectedStamps($testDonation->getUuid()->toString()),
         );
         $bus->dispatch($envelope)
             ->shouldBeCalledOnce()
@@ -111,7 +113,7 @@ class ClaimGiftAidTest extends TestCase
 
         $envelope = new Envelope(
             $testDonation->toClaimBotModel(),
-            $this->getExpectedStamps($testDonation->getUuid()),
+            $this->getExpectedStamps($testDonation->getUuid()->toString()),
         );
         $bus->dispatch($envelope)
             ->shouldBeCalledOnce()
@@ -153,6 +155,10 @@ class ClaimGiftAidTest extends TestCase
         return $command;
     }
 
+    /**
+     * @param string $uuid
+     * @return StampInterface[]
+     */
     #[Pure] private function getExpectedStamps(string $uuid): array
     {
         return [

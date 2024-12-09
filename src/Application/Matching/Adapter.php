@@ -32,7 +32,12 @@ class Adapter
      *          value could be problematic (race conditions with high volume access) should not overlap with the case
      *          where Redis copies of available fund balances are expired and have to be re-fetched.
      */
-    private static int $storageDurationSeconds = 86_400; // 1 day
+    public const int STORAGE_DURATION_SECONDS = 86_400; // 1 day
+
+    public const array REDIS_OPTIONS_FOR_LIMITED_DURATION_STORAGE = [
+        'nx', // Only set the key if it doesn't exist already in redis, i.e seen for the first time or record expired.
+        'ex' => self::STORAGE_DURATION_SECONDS // expire after given duration.
+    ];
 
     /**
      * @var list<array{campaignFunding: CampaignFunding, amount:numeric-string}>
@@ -73,11 +78,10 @@ class Adapter
          * @psalm-suppress PossiblyInvalidMethodCall
          */
         [$_initResponse, $fundBalanceFractional] = $this->storage->multi()
-            // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),
                 $this->toCurrencyFractionalUnit($funding->getAmountAvailable()),
-                ['nx', 'ex' => self::$storageDurationSeconds],
+                self::REDIS_OPTIONS_FOR_LIMITED_DURATION_STORAGE,
             )
             ->incrBy($this->buildKey($funding), $incrementFractional)
             ->exec();
@@ -106,11 +110,10 @@ class Adapter
          * @psalm-suppress PossiblyInvalidMethodCall
          */
         [$_initResponse, $fundBalanceFractional] = $this->storage->multi()
-            // Init if and only if new to Redis or expired (after 24 hours), using database value.
             ->set(
                 $this->buildKey($funding),
                 $this->toCurrencyFractionalUnit($funding->getAmountAvailable()),
-                ['nx', 'ex' => self::$storageDurationSeconds],
+                self::REDIS_OPTIONS_FOR_LIMITED_DURATION_STORAGE
             )
             ->decrBy($this->buildKey($funding), $decrementFractional)
             ->exec();

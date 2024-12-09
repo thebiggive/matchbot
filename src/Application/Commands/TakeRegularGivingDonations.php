@@ -8,6 +8,7 @@ use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DomainException\MandateNotActive;
+use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
@@ -131,6 +132,8 @@ class TakeRegularGivingDonations extends LockingCommand
                 } catch (MandateNotActive $exception) {
                     $io->info($exception->getMessage());
                     continue;
+                } catch (RegularGivingCollectionEndPassed) {
+                    continue;
                 }
             } catch (\Exception $exception) {
                 $io->error('Exception, skipping donation: ' . $exception->getMessage());
@@ -151,11 +154,10 @@ class TakeRegularGivingDonations extends LockingCommand
         \assert($this->mandateService !== null);
 
         $donation = $this->mandateService->makeNextDonationForMandate($mandate);
-        if (! $donation) {
-            return null;
+        if ($donation) {
+            $this->em->persist($donation);
         }
 
-        $this->em->persist($donation);
         $this->em->flush();
 
         return $donation;

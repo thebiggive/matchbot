@@ -19,7 +19,7 @@ class DonationUpserted extends AbstractStateChanged implements MessageGroupAware
     public static function fromDonation(Donation $donation): self
     {
         return new self(
-            uuid: $donation->getUuid(),
+            uuid: $donation->getUuid()->toString(),
             jsonSnapshot: $donation->toSFApiModel(),
         );
     }

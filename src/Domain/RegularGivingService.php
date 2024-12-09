@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\NotFullyMatched;
+use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 
@@ -65,9 +66,7 @@ readonly class RegularGivingService
         $mandate = new RegularGivingMandate(
             donorId: $donorID,
             amount: $amount,
-            campaignId: Salesforce18Id::ofCampaign(
-                $campaign->getSalesforceId() ?? throw new \Exception('missing campaign SF ID')
-            ),
+            campaignId: Salesforce18Id::ofCampaign($campaign->getSalesforceId()),
             charityId: $charityId,
             giftAid: $giftAid,
             dayOfMonth: $dayOfMonth,
@@ -128,11 +127,17 @@ readonly class RegularGivingService
         $this->entityManager->persist($mandate);
         $this->entityManager->persist($campaign);
 
-        $donation = $mandate->createPreAuthorizedDonation(
-            $lastSequenceNumber->next(),
-            $donor,
-            $campaign,
-        );
+        try {
+            $donation = $mandate->createPreAuthorizedDonation(
+                $lastSequenceNumber->next(),
+                $donor,
+                $campaign,
+            );
+        } catch (RegularGivingCollectionEndPassed $e) {
+            $mandate->campaignEnded();
+            $this->log->info($e->getMessage());
+            return null;
+        }
         $preAuthorizationDate = $donation->getPreAuthorizationDate();
         \assert($preAuthorizationDate instanceof \DateTimeImmutable);
 
