@@ -172,7 +172,6 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * Whether the Donor has asked for Gift Aid to be claimed about this donation.
-     * @var bool
      */
     #[ORM\Column()]
     protected bool $giftAid = false;
@@ -357,6 +356,10 @@ class Donation extends SalesforceWriteProxy
         ?string $tipAmount,
         ?RegularGivingMandate $mandate,
         ?DonationSequenceNumber $mandateSequenceNumber,
+        ?bool $giftAid = null,
+        ?bool $tipGiftAid = null,
+        ?string $homeAddress = null,
+        ?string $homePostcode = null,
     ) {
         $this->setUuid(Uuid::uuid4());
         $this->fundingWithdrawals = new ArrayCollection();
@@ -389,6 +392,10 @@ class Donation extends SalesforceWriteProxy
         $this->setDonorName($donorName);
         $this->setDonorEmailAddress($emailAddress);
 
+        $this->giftAid = $giftAid ?? false;
+        $this->tipGiftAid = $tipGiftAid;
+        $this->donorHomeAddressLine1 = $homeAddress;
+        $this->donorHomePostcode = $homePostcode;
 
         // We probably don't need to test for all these, just replicationg behaviour of `empty` that was used before.
         if ($countryCode !== '' && $countryCode !== null && $countryCode !== '0') {
@@ -425,6 +432,12 @@ class Donation extends SalesforceWriteProxy
             tipAmount: $donationData->tipAmount,
             mandate: null,
             mandateSequenceNumber: null,
+            giftAid: $donationData->giftAid,
+            // Not meaningfully used yet (typical donations set it on Update instead; Donation Funds
+            // tips don't have a "tip" because the donation is to BG), but map just in case.
+            tipGiftAid: $donationData->tipGiftAid,
+            homeAddress: $donationData->homeAddress,
+            homePostcode: $donationData->homePostcode,
         );
     }
 
