@@ -375,13 +375,6 @@
       <code><![CDATA[$webhookSecret]]></code>
     </MixedAssignment>
   </file>
-  <file src="tests/Application/Commands/ClaimGiftAidTest.php">
-    <MixedArgumentTypeCoercion>
-      <code><![CDATA[$this->getExpectedStamps($testDonation->getUuid())]]></code>
-      <code><![CDATA[$this->getExpectedStamps($testDonation->getUuid())]]></code>
-      <code><![CDATA[$this->getExpectedStamps($testDonation->getUuid())]]></code>
-    </MixedArgumentTypeCoercion>
-  </file>
   <file src="tests/Application/Persistence/RetrySafeEntityManagerTest.php">
     <MixedArgument>
       <code><![CDATA[$container->get('settings')['doctrine']['connection']]]></code>

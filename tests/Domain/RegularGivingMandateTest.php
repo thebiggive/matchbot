@@ -163,7 +163,7 @@ class RegularGivingMandateTest extends TestCase
             giftAid: true,
         );
 
-        $uuid = $mandate->getUuid()->toString();
+        $uuid = $mandate->getUuid();
 
         $now = new \DateTimeImmutable('2024-08-12', new \DateTimeZone('Europe/London'));
 

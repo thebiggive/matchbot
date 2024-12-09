@@ -115,7 +115,8 @@ class DonationRepositoryTest extends IntegrationTest
         $thirtyThreeMinsInFuture = (new \DateTimeImmutable('now'))->modify('+33 minute');
 
         // act
-        $expiredDonations = $sut->findWithExpiredMatching($thirtyThreeMinsInFuture);
+        $expiredDonationsIDs = $sut->findWithExpiredMatching($thirtyThreeMinsInFuture);
+        $expiredDonations = $sut->findBy(['uuid' => $expiredDonationsIDs]);
 
         // assert
         $expiredDonationStatuses = array_map(
@@ -157,7 +158,13 @@ class DonationRepositoryTest extends IntegrationTest
 
         // assert
         $this->assertCount(1, $cancelReadyDonations);
-        $this->assertEquals(DonationStatus::Pending, $cancelReadyDonations[0]->getDonationStatus());
+        $donation = $sut->findOneBy(['uuid' => $cancelReadyDonations[0]]);
+        \assert($donation !== null);
+
+        $this->assertEquals(
+            DonationStatus::Pending,
+            $donation->getDonationStatus()
+        );
     }
 
     public function makeCampaign(?Charity $charity = null): Campaign

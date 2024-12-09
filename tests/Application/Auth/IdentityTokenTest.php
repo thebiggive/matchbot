@@ -14,6 +14,8 @@ use Psr\Log\NullLogger;
  */
 class IdentityTokenTest extends TestCase
 {
+    public const string PERSON_UUID = '12345678-1234-1234-1234-1234567890ab';
+
     public function testCheckFailsWhenWrongDonationId(): void
     {
         $tokenHelper = new IdentityToken('https://unit-test-fake-id-sub.thebiggivetest.org.uk');
@@ -33,7 +35,7 @@ class IdentityTokenTest extends TestCase
 
         $this->assertFalse(
             $tokenHelper->check(
-                '12345678-1234-1234-1234-1234567890ab',
+                self::PERSON_UUID,
                 TestData\Identity::getTestIdentityTokenIncomplete(),
                 new NullLogger(),
             ),
@@ -47,7 +49,7 @@ class IdentityTokenTest extends TestCase
 
         $this->assertFalse(
             $tokenHelper->check(
-                '12345678-1234-1234-1234-1234567890ab',
+                self::PERSON_UUID,
                 $badToken,
                 new NullLogger(),
             ),

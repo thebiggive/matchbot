@@ -2,8 +2,10 @@
 
 namespace MatchBot\Application\Actions\Donations;
 
+use Doctrine\ORM\EntityManagerInterface;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Domain\Donation;
@@ -22,6 +24,7 @@ class CancelAll extends Action
 {
     #[Pure]
     public function __construct(
+        private EntityManagerInterface $entityManager,
         private DonationRepository $donationRepository,
         private DonationService $donationService,
         LoggerInterface $logger,
@@ -43,13 +46,26 @@ class CancelAll extends Action
         $donorStripeId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PSP_ATTRIBUTE_NAME);
         \assert(is_string($donorStripeId));
 
-        $donations = $this->donationRepository->findPendingByDonorCampaignAndMethod(
+        $uuids = $this->donationRepository->findPendingByDonorCampaignAndMethod(
             $donorStripeId,
             $campaign,
             $paymentMethodType,
         );
-        foreach ($donations as $donation) {
-            $this->donationService->cancel($donation);
+
+        $donations = [];
+        foreach ($uuids as $uuid) {
+            $donation = $this->entityManager->wrapInTransaction(function () use ($uuid): Donation {
+                $donation = $this->donationRepository->findAndLockOneByUUID($uuid);
+                Assertion::notNull($donation);
+                $this->donationService->cancel($donation);
+
+                return $donation;
+            });
+
+
+            Assertion::isInstanceOf($donation, Donation::class);
+
+            $donations[] = $donation;
         }
 
         return $this->respondWithData($response, [
