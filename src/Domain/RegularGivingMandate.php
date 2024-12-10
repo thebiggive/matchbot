@@ -34,7 +34,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public PersonId $donorId;
 
     #[ORM\Embedded(columnPrefix: '')]
-    private readonly Money $amount;
+    private readonly Money $donationAmount;
 
     /**
      * @var string 18 digit salesforce ID of campaign
@@ -86,7 +86,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
         $this->uuid = Uuid::uuid4();
 
-        $this->amount = $amount;
+        $this->donationAmount = $amount;
         $this->campaignId = $campaignId->value;
         $this->charityId = $charityId->value;
         $this->giftAid = $giftAid;
@@ -113,7 +113,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         return [
             'id' => $this->uuid->toString(),
             'donorId' => $this->donorId->id,
-            'amount' => $this->amount,
+            'donationAmount' => $this->donationAmount,
             'campaignId' => $this->campaignId,
             'charityId' => $this->charityId,
             'schedule' => [
@@ -171,8 +171,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
         Campaign $campaign
     ): Donation {
         $donation = new Donation(
-            amount: $this->amount->toNumericString(),
-            currencyCode: $this->amount->currency->isoCode(),
+            amount: $this->donationAmount->toNumericString(),
+            currencyCode: $this->donationAmount->currency->isoCode(),
             paymentMethodType: PaymentMethodType::Card,
             campaign: $campaign,
             charityComms: false,
@@ -245,9 +245,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
         return $this->uuid;
     }
 
-    public function getAmount(): Money
+    public function getDonationAmount(): Money
     {
-        return $this->amount;
+        return $this->donationAmount;
     }
 
     public function getCharityId(): string
