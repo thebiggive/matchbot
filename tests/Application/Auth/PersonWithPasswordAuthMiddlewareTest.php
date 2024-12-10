@@ -22,6 +22,8 @@ use Slim\Routing\RoutingResults;
  */
 class PersonWithPasswordAuthMiddlewareTest extends TestCase
 {
+    public const string PERSON_UUID = '95cf1f30-b405-11ef-9714-07396f7daadc';
+
     public function testNoRouteInContext(): void
     {
         $this->expectException(HttpUnauthorizedException::class);
@@ -52,7 +54,7 @@ class PersonWithPasswordAuthMiddlewareTest extends TestCase
         $this->expectException(HttpUnauthorizedException::class);
         $this->expectExceptionMessage('Unauthorised');
 
-        $request = $this->createRequest('GET', '/v1/people/12345678-1234-1234-1234-1234567890ab/payment_methods')
+        $request = $this->createRequest('GET', '/v1/people/' . self::PERSON_UUID . '/payment_methods')
             ->withHeader('x-tbg-auth', TestData\Identity::getTestIdentityTokenIncomplete());
 
         // Because the error ends the request, we can dispatch this against realistic, full app
@@ -67,7 +69,7 @@ class PersonWithPasswordAuthMiddlewareTest extends TestCase
         $this->expectException(HttpUnauthorizedException::class);
         $this->expectExceptionMessage('Unauthorised');
 
-        $request = $this->createRequest('GET', '/v1/people/12345678-1234-1234-1234-1234567890ab/payment_methods');
+        $request = $this->createRequest('GET', '/v1/people/' . self::PERSON_UUID . '/payment_methods');
 
         // Because the error ends the request, we can dispatch this against realistic, full app
         // middleware and test this piece of middleware in the process.
@@ -83,7 +85,7 @@ class PersonWithPasswordAuthMiddlewareTest extends TestCase
     {
         return new Route(
             ['GET'],
-            '/v1/people/12345678-1234-1234-1234-1234567890ab/payment_methods',
+            '/v1/people/' . self::PERSON_UUID . '/payment_methods',
             static function () {
                 return new Response(200);
             },

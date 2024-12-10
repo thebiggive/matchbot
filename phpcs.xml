@@ -4,6 +4,7 @@
     <rule ref="PSR12">
         <exclude name="Squiz.Functions.FunctionDeclarationArgumentSpacing.SpaceAfterEquals" />
         <exclude name="Squiz.Functions.FunctionDeclarationArgumentSpacing.SpaceBeforeEquals" />
+        <exclude name="Generic.Files.LineLength"/>
     </rule>
     <rule ref="Generic.Arrays.DisallowLongArraySyntax" />
     <exclude-pattern>src/Migrations/*</exclude-pattern>

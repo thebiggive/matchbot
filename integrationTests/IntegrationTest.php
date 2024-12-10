@@ -89,27 +89,32 @@ abstract class IntegrationTest extends TestCase
 
     private function fakeApiClientSettingsThatAlwaysThrow(): array
     {
-        return ['global' => new /** @implements ArrayAccess<string, never> */ class implements ArrayAccess {
-            public function offsetExists(mixed $offset): bool
-            {
-                return true;
-            }
+        return [
+            'global' => new /** @implements ArrayAccess<string, never> */ class implements ArrayAccess {
+                public function offsetExists(mixed $offset): bool
+                {
+                    return true;
+                }
 
-            public function offsetGet(mixed $offset): never
-            {
-                throw new \Exception("Do not use real API client in tests");
-            }
+                public function offsetGet(mixed $offset): never
+                {
+                    throw new \Exception("Do not use real API client in tests");
+                }
 
-            public function offsetSet(mixed $offset, mixed $value): never
-            {
-                throw new \Exception("Do not use real API client in tests");
-            }
+                public function offsetSet(mixed $offset, mixed $value): never
+                {
+                    throw new \Exception("Do not use real API client in tests");
+                }
 
-            public function offsetUnset(mixed $offset): never
-            {
-                throw new \Exception("Do not use real API client in tests");
-            }
-        }];
+                public function offsetUnset(mixed $offset): never
+                {
+                    throw new \Exception("Do not use real API client in tests");
+                }
+            },
+            'mailer' => [
+                'baseUri' => 'dummy-mailer-base-uri',
+            ],
+        ];
     }
 
     protected function getContainer(): Container
@@ -187,12 +192,13 @@ abstract class IntegrationTest extends TestCase
         string $campaignSfId,
         bool $campaignOpen = true,
         string $charitySfId = null,
-        string $charityName = 'Some Charity'
+        string $charityName = 'Some Charity',
+        bool $isRegularGiving = false
     ): array {
         $charityId = random_int(1000, 100000);
         $charitySfId ??= $this->randomString();
         $charityStripeId = $this->randomString();
-
+        $isRegularGivingInt = $isRegularGiving ? 1 : 0;
         $db = $this->db();
 
         $nyd = '2023-01-01'; // specific date doesn't matter.
@@ -212,9 +218,9 @@ abstract class IntegrationTest extends TestCase
 
         $db->executeStatement(<<<EOF
             INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull,
-                                  createdAt, updatedAt, currencyCode) 
+                                  createdAt, updatedAt, currencyCode, isRegularGiving) 
             VALUES ('$charityId', 'some charity', '$nyd', '$closeDate', '$matched', '$campaignSfId', '$nyd',
-                    '$nyd', '$nyd', 'GBP')
+                    '$nyd', '$nyd', 'GBP',  '$isRegularGivingInt')
             EOF
         );
 
@@ -230,11 +236,15 @@ abstract class IntegrationTest extends TestCase
      * @psalm-suppress MoreSpecificReturnType
      * @psalm-suppress LessSpecificReturnStatement
      */
-    public function addFundedCampaignAndCharityToDB(string $campaignSfId, int $fundWithAmountInPounds = 100_000): array
-    {
+    public function addFundedCampaignAndCharityToDB(
+        string $campaignSfId,
+        int $fundWithAmountInPounds = 100_000,
+        bool $isRegularGiving = false
+    ): array {
         ['charityId' => $charityId, 'campaignId' => $campaignId] = $this->addCampaignAndCharityToDB(
             campaignSfId: $campaignSfId,
             campaignOpen: true,
+            isRegularGiving: $isRegularGiving
         );
         ['fundId' => $fundId, 'campaignFundingId' => $campaignFundingId] =
             $this->addFunding($campaignId, $fundWithAmountInPounds, 1, Pledge::DISCRIMINATOR_VALUE);

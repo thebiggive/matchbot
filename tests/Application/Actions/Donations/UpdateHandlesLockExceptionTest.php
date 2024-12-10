@@ -20,6 +20,7 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -61,7 +62,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
     public function testRetriesOnUpdateStillPendingLockException(): void
     {
         // arrange
-        $donationId = 'donation_id';
+        $donationId = Uuid::uuid4()->toString();
 
         $donation = $this->getDonation();
 
@@ -81,7 +82,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
     public function testRetriesOnUpdateToCancelledLockException(): void
     {
         // arrange
-        $donationId = 'donation_id';
+        $donationId = Uuid::uuid4()->toString();
 
         $donation = $this->getDonation();
 
@@ -106,7 +107,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $charity->setSalesforceId('DONATE_LINK_ID');
         $charity->setName('Charity name');
 
-        $campaign = new Campaign(charity: $charity);
+        $campaign = TestCase::someCampaign(charity: $charity);
         $campaign->setIsMatched(true);
 
         $donation = TestCase::someDonation('1');
@@ -153,7 +154,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
         Donation $donation,
         DonationStatus $newStatus,
     ): void {
-        $this->donationRepositoryProphecy->findAndLockOneBy(['uuid' => $donationId])
+        $this->donationRepositoryProphecy->findAndLockOneByUUID(Uuid::fromString($donationId))
             ->will(function () use ($donation) {
                 $donation->setDonationStatus(DonationStatus::Pending); // simulate loading pending donation from DB.
 

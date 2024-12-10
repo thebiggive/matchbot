@@ -32,7 +32,7 @@ abstract class LockingCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->start($output);
+        $this->start($input, $output);
         if ($this->getLock()) {
             $return = $this->doExecute($input, $output);
             $this->releaseLock();
@@ -42,7 +42,7 @@ abstract class LockingCommand extends Command
             $this->logger->warning($message);
             return 0; // Log at warning level to help monitoring volume but don't fire error alarms.
         }
-        $this->finish($output);
+        $this->finish($input, $output);
 
         return $return;
     }

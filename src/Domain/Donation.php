@@ -12,6 +12,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Actions\Hooks\StripePaymentsUpdate;
 use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
@@ -820,14 +821,6 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string
-     */
-    public function getUuid(): string
-    {
-        return $this->uuid->toString();
-    }
-
-    /**
      * @param UuidInterface $uuid
      */
     public function setUuid(UuidInterface $uuid): void
@@ -1632,5 +1625,10 @@ class Donation extends SalesforceWriteProxy
     public function hasRefund(): bool
     {
         return $this->refundedAt !== null;
+    }
+
+    public function getUuid(): UuidInterface
+    {
+        return $this->uuid;
     }
 }

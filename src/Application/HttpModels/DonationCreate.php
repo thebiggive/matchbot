@@ -6,6 +6,7 @@ namespace MatchBot\Application\HttpModels;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\PaymentMethodType;
@@ -17,6 +18,7 @@ use MatchBot\Domain\Salesforce18Id;
  */
 readonly class DonationCreate
 {
+    /** @var Salesforce18Id<Campaign>  */
     public readonly Salesforce18Id $projectId;
     public readonly ?DonorName $donorName;
     public readonly ?EmailAddress $emailAddress;

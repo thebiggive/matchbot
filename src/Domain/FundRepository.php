@@ -41,12 +41,6 @@ class FundRepository extends SalesforceReadProxyRepository
         $client = $this->getClient();
 
         $campaignSFId = $campaign->getSalesforceId();
-        if ($campaignSFId === null) {
-            $this->logWarning(
-                'Cannot pullForCampaign() funds for campaign without SF ID for internal ID ' . $campaign->getId()
-            );
-            return;
-        }
 
         $fundsData = $client->getForCampaign($campaignSFId);
         foreach ($fundsData as $fundData) {

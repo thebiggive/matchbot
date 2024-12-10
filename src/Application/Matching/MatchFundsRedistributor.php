@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\CampaignFundingRepository;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Envelope;
@@ -88,6 +89,8 @@ class MatchFundsRedistributor
             // have closed. If we ever relax the latter condition, the worst case scenario is that we
             // inaccurately tell two donors they received matching. We log an error if this happens so we can
             // take action.
+
+            /** @psalm-suppress InternalMethod */
             $this->donationRepository->releaseMatchFunds($donation);
             $amountMatchedAfterRedistribution = $this->donationRepository->allocateMatchFunds($donation);
 
