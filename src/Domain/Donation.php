@@ -172,7 +172,6 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * Whether the Donor has asked for Gift Aid to be claimed about this donation.
-     * @var bool
      */
     #[ORM\Column()]
     protected bool $giftAid = false;
@@ -357,6 +356,10 @@ class Donation extends SalesforceWriteProxy
         ?string $tipAmount,
         ?RegularGivingMandate $mandate,
         ?DonationSequenceNumber $mandateSequenceNumber,
+        bool $giftAid = false,
+        ?bool $tipGiftAid = null,
+        ?string $homeAddress = null,
+        ?string $homePostcode = null,
     ) {
         $this->setUuid(Uuid::uuid4());
         $this->fundingWithdrawals = new ArrayCollection();
@@ -389,6 +392,10 @@ class Donation extends SalesforceWriteProxy
         $this->setDonorName($donorName);
         $this->setDonorEmailAddress($emailAddress);
 
+        $this->giftAid = $giftAid;
+        $this->tipGiftAid = $tipGiftAid;
+        $this->donorHomeAddressLine1 = $homeAddress;
+        $this->donorHomePostcode = $homePostcode;
 
         // We probably don't need to test for all these, just replicationg behaviour of `empty` that was used before.
         if ($countryCode !== '' && $countryCode !== null && $countryCode !== '0') {
@@ -425,6 +432,15 @@ class Donation extends SalesforceWriteProxy
             tipAmount: $donationData->tipAmount,
             mandate: null,
             mandateSequenceNumber: null,
+            // Main form starts off with this null on init in the API model, so effectively it's ignored here
+            // then as `false` is also the constructor's default. Donation Funds tips should send a bool value
+            // from the start.
+            giftAid: $donationData->giftAid ?? false,
+            // Not meaningfully used yet (typical donations set it on Update instead; Donation Funds
+            // tips don't have a "tip" because the donation is to BG), but map just in case.
+            tipGiftAid: $donationData->tipGiftAid,
+            homeAddress: $donationData->homeAddress,
+            homePostcode: $donationData->homePostcode,
         );
     }
 
