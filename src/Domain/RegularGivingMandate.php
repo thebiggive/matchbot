@@ -33,7 +33,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Embedded(columnPrefix: 'person')]
     public PersonId $donorId;
 
-    #[ORM\Embedded(columnPrefix: '')]
+    #[ORM\Embedded(columnPrefix: 'amount_')]
     private readonly Money $donationAmount;
 
     /**

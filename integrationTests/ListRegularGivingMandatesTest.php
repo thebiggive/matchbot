@@ -67,7 +67,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                 'donorId' => $this->donorId->id,
                 'campaignId' => $campaignSfId,
                 'charityId' => $charitySfId,
-                'amount' => [
+                'donationAmount' => [
                     'amountInPence' => 500_00,
                     'currency' => 'GBP',
                 ],
