@@ -30,8 +30,10 @@ final class Version20241206101546 extends AbstractMigration
             ['uuid' => '3c22adf8-129b-4e71-85a1-77d648b96dc5', 'transactionId' => 'pi_3QSMkOKkGuKkxwBN0YiPubBG'],
             ['uuid' => '31ef0f2a-c2da-4d4e-9b7a-07faa8c48c14', 'transactionId' => 'pi_3QSMo4KkGuKkxwBN0Wndxcjc'],
             ['uuid' => '5a7bf322-17d0-462f-9dbc-4c2db1a6a1d8', 'transactionId' => 'pi_3QTq9YKkGuKkxwBN1wjOfgzJ'],
+            ['uuid' => 'd33a3b39-b914-41b3-9cfa-b0073a29b392', 'transactionId' => 'pi_3QU9r7KkGuKkxwBN0RPJjyf5'],
+            ['uuid' => '8d5aa18c-c055-4d49-ab96-1db28a4ae89a', 'transactionId' => 'pi_3QTjMGKkGuKkxwBN0yUymRO7'],
         ];
-        Assertion::count($idPairs, 6);
+        Assertion::count($idPairs, 8);
 
         foreach ($idPairs as $idPair) {
             $this->addSql(<<<EOT
