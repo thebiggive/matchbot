@@ -108,7 +108,7 @@ class DonationMatchingTest extends IntegrationTest
                 $this->wrappedAdapter->delete($funding);
             }
 
-            public function subtractAmountWithoutSavingToDB(CampaignFunding $funding, string $amount): string
+            public function subtractAmountWithoutSavingToDB(CampaignFunding $funding, string $amount): never
             {
                 $this->wrappedAdapter->subtractAmountWithoutSavingToDB($funding, $amount);
 
