@@ -269,4 +269,14 @@ class RegularGivingMandate extends SalesforceWriteProxy
     {
         $this->status = MandateStatus::CampaignEnded;
     }
+
+    public function getActiveFrom(): ?\DateTimeImmutable
+    {
+        return $this->activeFrom;
+    }
+
+    public function describeSchedule(): string
+    {
+        return "Monthly on day #{$this->dayOfMonth->value}";
+    }
 }
