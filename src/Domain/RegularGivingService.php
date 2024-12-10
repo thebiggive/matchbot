@@ -22,6 +22,7 @@ readonly class RegularGivingService
         private DonationService $donationService,
         private LoggerInterface $log,
         private RegularGivingMandateRepository $regularGivingMandateRepository,
+        private RegularGivingNotifier $regularGivingNotifier,
     ) {
     }
 
@@ -101,7 +102,11 @@ readonly class RegularGivingService
         // @todo-regular-giving - do same for 2nd and third donations except those are just to be preauthed and enrolled
         //                        and checked for matching, not collected at this point.
 
+        $mandate->activate($this->now);
+
         $this->entityManager->flush();
+
+        $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign);
 
         return $mandate;
     }

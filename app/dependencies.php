@@ -506,6 +506,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         ClockInterface::class => fn() => new NativeClock(),
+        Psr\Clock\ClockInterface::class  => fn() => new NativeClock(),
 
         EventDispatcherInterface::class => fn() => new EventDispatcher(),
 
