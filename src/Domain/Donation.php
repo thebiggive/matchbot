@@ -356,7 +356,7 @@ class Donation extends SalesforceWriteProxy
         ?string $tipAmount,
         ?RegularGivingMandate $mandate,
         ?DonationSequenceNumber $mandateSequenceNumber,
-        ?bool $giftAid = null,
+        bool $giftAid = false,
         ?bool $tipGiftAid = null,
         ?string $homeAddress = null,
         ?string $homePostcode = null,
@@ -392,7 +392,7 @@ class Donation extends SalesforceWriteProxy
         $this->setDonorName($donorName);
         $this->setDonorEmailAddress($emailAddress);
 
-        $this->giftAid = $giftAid ?? false;
+        $this->giftAid = $giftAid;
         $this->tipGiftAid = $tipGiftAid;
         $this->donorHomeAddressLine1 = $homeAddress;
         $this->donorHomePostcode = $homePostcode;
@@ -432,7 +432,10 @@ class Donation extends SalesforceWriteProxy
             tipAmount: $donationData->tipAmount,
             mandate: null,
             mandateSequenceNumber: null,
-            giftAid: $donationData->giftAid,
+            // Main form starts off with this null on init in the API model, so effectively it's ignored here
+            // then as `false` is also the constructor's default. Donation Funds tips should send a bool value
+            // from the start.
+            giftAid: $donationData->giftAid ?? false,
             // Not meaningfully used yet (typical donations set it on Update instead; Donation Funds
             // tips don't have a "tip" because the donation is to BG), but map just in case.
             tipGiftAid: $donationData->tipGiftAid,
