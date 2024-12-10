@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Ramsey\Uuid\UuidInterface;
 
 /**
  * Note this is different from other repositories we have so far as it encapsulates Doctrine's repository
@@ -51,6 +52,14 @@ class RegularGivingMandateRepository
         $query->setParameter('donorId', $donor->id);
 
         return $this->getMandatesWithCharities($query);
+    }
+
+    /**
+     * @param UuidInterface $uuid
+     * @return RegularGivingMandate|object|null
+     */
+    public function findOneBy(UuidInterface $uuid) {
+        return $this->doctrineRepository->findOneBy(['id' => $uuid]);
     }
 
     /**
