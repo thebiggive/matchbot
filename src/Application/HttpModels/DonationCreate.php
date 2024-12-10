@@ -43,7 +43,11 @@ readonly class DonationCreate
         public ?string $tipAmount = '0.00',
         ?string $firstName = null,
         ?string $lastName = null,
-        ?string $emailAddress = null
+        ?string $emailAddress = null,
+        public ?bool $giftAid = null,
+        public ?bool $tipGiftAid = null,
+        public ?string $homeAddress = null,
+        public ?string $homePostcode = null,
     ) {
         $this->emailAddress = (! is_null($emailAddress) && ! ($emailAddress === '')) ?
             EmailAddress::of($emailAddress) :
