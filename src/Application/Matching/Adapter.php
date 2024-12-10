@@ -98,7 +98,7 @@ class Adapter
      *
      * @param CampaignFunding $funding
      * @param numeric-string $amount
-     * @return string New fund balance as bcmath-ready string
+     * @return numeric-string New fund balance as bcmath-ready string
      */
     public function subtractAmountWithoutSavingToDB(CampaignFunding $funding, string $amount): string
     {
@@ -279,7 +279,7 @@ class Adapter
     }
 
     /**
-     * @return string
+     * @return numeric-string The total amount released
      */
     public function releaseAllFundsForDonation(Donation $donation): string
     {
@@ -288,8 +288,10 @@ class Adapter
             $funding = $fundingWithdrawal->getCampaignFunding();
             $fundingWithDrawalAmount = $fundingWithdrawal->getAmount();
             Assertion::numeric($fundingWithDrawalAmount);
+
             $newTotal = $this->addAmountWithoutSavingFundingsToDB($funding, $fundingWithDrawalAmount);
             $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithDrawalAmount, 2);
+
             $this->logger->info("Released {$fundingWithDrawalAmount} to funding {$funding->getId()}");
             $this->logger->info("New fund total for {$funding->getId()}: $newTotal");
         }
