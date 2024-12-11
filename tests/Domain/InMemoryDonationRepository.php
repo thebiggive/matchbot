@@ -2,10 +2,8 @@
 
 namespace MatchBot\Tests\Domain;
 
-use Assert\Assertion;
 use DateTime;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -15,8 +13,6 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
-use PHPUnit\Util\Exception;
-use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -64,11 +60,6 @@ class InMemoryDonationRepository implements DonationRepository
     #[\Override] public function releaseMatchFunds(Donation $donation): void
     {
         $this->matchFundsReleased = bcadd($this->matchFundsReleased, $donation->getAmount());
-    }
-
-    #[\Override] public function setMatchingAdapter(Matching\Adapter $adapter): void
-    {
-        throw new \Exception("Method not implemented in test double");
     }
 
     #[\Override] public function buildFromApiRequest(DonationCreate $donationData): Donation

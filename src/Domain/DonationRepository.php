@@ -17,8 +17,6 @@ use Symfony\Component\Messenger\MessageBusInterface;
  */
 interface DonationRepository
 {
-    public function setMatchingAdapter(Matching\Adapter $adapter): void;
-
     /**
      * @param DonationCreate $donationData
      * @return Donation
