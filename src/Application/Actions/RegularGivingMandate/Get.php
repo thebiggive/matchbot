@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 namespace App\Application\Actions\RegularGivingMandate;
+
+use MatchBot\Domain\RegularGivingMandateRepository;
 use JetBrains\PhpStorm\Pure;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
@@ -16,9 +18,11 @@ class Get extends Action {
 
     #[Pure]
     public function __construct(
+        RegularGivingMandateRepository $regularGivingMandateRepository,
         LoggerInterface $logger
     ) {
         parent::__construct($logger);
+        $this->regularGivingMandateRepository = $regularGivingMandateRepository;
     }
 
     protected function action(Request $request, Response $response, array $args): Response
@@ -33,7 +37,7 @@ class Get extends Action {
         $donorId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
         \assert($donorId instanceof PersonId);
 
-        $mandate = $this->regularGivingMandateRepository->findOneBy(['uuid' => $args['mandateId']]);
+        $mandate = $this->regularGivingMandateRepository->findOneByUuid(['uuid' => $args['mandateId']]);
 
         if (!$mandate) {
             throw new DomainRecordNotFoundException('Mandate not found');

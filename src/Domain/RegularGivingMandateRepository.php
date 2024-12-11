@@ -54,11 +54,7 @@ class RegularGivingMandateRepository
         return $this->getMandatesWithCharities($query);
     }
 
-    /**
-     * @param UuidInterface $uuid
-     * @return RegularGivingMandate|object|null
-     */
-    public function findOneBy(UuidInterface $uuid) {
+    public function findOneByUuid(UuidInterface $uuid) {
         return $this->doctrineRepository->findOneBy(['id' => $uuid]);
     }
 
