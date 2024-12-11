@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace App\Application\Actions\RegularGivingMandate;
 
 use MatchBot\Domain\RegularGivingMandateRepository;
@@ -14,8 +16,8 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpNotFoundException;
 
-class Get extends Action {
-
+class Get extends Action
+{
     #[Pure]
     public function __construct(
         RegularGivingMandateRepository $regularGivingMandateRepository,
@@ -47,5 +49,4 @@ class Get extends Action {
             'mandate' => $mandate
         ]);
     }
-
 }
