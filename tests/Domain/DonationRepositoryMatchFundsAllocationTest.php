@@ -8,6 +8,7 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
+use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
@@ -59,7 +60,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             new NullLogger(),
         );
 
-        $this->sut = new DonationRepository(
+        $this->sut = new DoctrineDonationRepository(
             $this->emProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
