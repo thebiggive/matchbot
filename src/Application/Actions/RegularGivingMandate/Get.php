@@ -15,6 +15,7 @@ use MatchBot\Domain\PersonId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpNotFoundException;
 
 class Get extends Action
@@ -39,8 +40,8 @@ class Get extends Action
 
         $donorId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
         \assert($donorId instanceof PersonId);
-
-        $mandate = $this->regularGivingMandateRepository->findOneByUuid(uuid: (string) $args['mandateId']);
+        $uuid = Uuid::fromString($args['mandateId']);
+        $mandate = $this->regularGivingMandateRepository->findOneByUuid($uuid);
 
         if (!$mandate) {
             throw new DomainRecordNotFoundException('Mandate not found');
