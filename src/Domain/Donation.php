@@ -505,6 +505,12 @@ class Donation extends SalesforceWriteProxy
         // confusion around values that are too temporary to be useful in a CRM anyway.
         unset($data['matchReservedAmount']);
 
+        if ($this->mandate) {
+            $data['mandate'] =  [
+              'salesforceId' => $this->mandate->getSalesforceId(),
+            ];
+        }
+
         return $data;
     }
 
@@ -560,6 +566,15 @@ class Donation extends SalesforceWriteProxy
 
         if (in_array($this->getDonationStatus(), [DonationStatus::Pending, DonationStatus::PreAuthorized], true)) {
             $data['matchReservedAmount'] = (float) $this->getFundingWithdrawalTotal();
+        }
+
+        if ($this->mandate) {
+            // Not including the entire mandate details as that would be wasteful, just parts FE needs to display with
+            // the donation.
+            $data['mandate']['uuid'] = $this->mandate->getUuid()->toString();
+            $data['mandate']['activeFrom'] = $this->mandate->getActiveFrom()?->format(DateTimeInterface::ATOM);
+        } else {
+            $data['mandate'] = null;
         }
 
         return $data;
