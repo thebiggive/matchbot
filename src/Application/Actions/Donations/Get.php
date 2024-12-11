@@ -14,6 +14,7 @@ use MatchBot\Domain\DonationService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 
 class Get extends Action
 {
@@ -38,7 +39,7 @@ class Get extends Action
             throw new DomainRecordNotFoundException('Missing donation ID');
         }
 
-        $toFrontEndApiModel = $this->donationService->donationAsApiModel($donationUUID);
+        $toFrontEndApiModel = $this->donationService->donationAsApiModel(Uuid::fromString($donationUUID));
 
         return $this->respondWithData($response, $toFrontEndApiModel);
     }

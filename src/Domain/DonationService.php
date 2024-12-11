@@ -639,7 +639,7 @@ class DonationService
         });
     }
 
-    public function donationAsApiModel(mixed $donationUUID): array
+    public function donationAsApiModel(UuidInterface $donationUUID): array
     {
         $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
 

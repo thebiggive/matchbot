@@ -473,7 +473,7 @@ class Update extends Action
         $this->entityManager->commit();
 
 
-        return $this->respondWithData($response, $this->donationService->donationAsApiModel($donation));
+        return $this->respondWithData($response, $this->donationService->donationToFEApiModel($donation));
     }
 
 
