@@ -22,8 +22,8 @@ class Get extends Action
     #[Pure]
     public function __construct(
         private readonly RegularGivingMandateRepository $regularGivingMandateRepository,
-        private readonly Environment                    $environment,
-        LoggerInterface                                 $logger
+        private readonly Environment $environment,
+        LoggerInterface $logger
     ) {
         parent::__construct($logger);
     }
