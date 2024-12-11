@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Actions\RegularGivingMandate;
 
 use MatchBot\Application\Environment;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use JetBrains\PhpStorm\Pure;
 use Laminas\Diactoros\Response\JsonResponse;
@@ -24,6 +25,8 @@ class Get extends Action
     public function __construct(
         private readonly RegularGivingMandateRepository $regularGivingMandateRepository,
         private readonly Environment $environment,
+        private CampaignRepository $campaignRepository,
+        private \DateTimeImmutable $now,
         LoggerInterface $logger
     ) {
         parent::__construct($logger);
@@ -40,15 +43,18 @@ class Get extends Action
 
         $donorId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
         \assert($donorId instanceof PersonId);
-        $uuid = Uuid::fromString($args['mandateId']);
+        $uuid = Uuid::fromString((string) $args['mandateId']);
         $mandate = $this->regularGivingMandateRepository->findOneByUuid($uuid);
 
         if (!$mandate) {
             throw new DomainRecordNotFoundException('Mandate not found');
         }
 
+        $campaign = $this->campaignRepository->findOneBySalesforceId($mandate->getCampaignId());
+        assert($campaign !==null);
+        $charity = $campaign->getCharity();
         return new JsonResponse([
-            'mandate' => $mandate
+            'mandate' => $mandate->toFrontEndApiModel($charity, $this->now)
         ]);
     }
 }
