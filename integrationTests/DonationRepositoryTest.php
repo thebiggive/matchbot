@@ -11,6 +11,7 @@ use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
@@ -19,6 +20,7 @@ use MatchBot\Domain\Pledge;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 
@@ -285,7 +287,14 @@ class DonationRepositoryTest extends IntegrationTest
         }
 
         // act
-        $sut->pushSalesforcePending(now: $simulatedNow, bus: $busProphecy->reveal());
+        $donationServiceProphecy = $this->prophesize(DonationService::class);
+        $donationServiceProphecy->upsertedMessageFromDonation(Argument::type(Donation::class))->willReturn(new DonationUpserted($donationUUID, []));
+        $donationService = $donationServiceProphecy->reveal();
+        $sut->pushSalesforcePending(
+            now: $simulatedNow,
+            bus: $busProphecy->reveal(),
+            donationService: $donationService
+        );
     }
 
     /**

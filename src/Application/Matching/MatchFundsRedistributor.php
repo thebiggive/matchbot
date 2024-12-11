@@ -8,6 +8,7 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
@@ -22,6 +23,7 @@ class MatchFundsRedistributor
     public function __construct(
         private ChatterInterface $chatter,
         private DonationRepository $donationRepository,
+        private DonationService $donationService,
         private \DateTimeImmutable $now,
         private CampaignFundingRepository $campaignFundingRepository,
         private LoggerInterface $logger,
@@ -107,7 +109,7 @@ class MatchFundsRedistributor
             }
 
             $this->entityManager->flush();
-            $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
+            $this->bus->dispatch(new Envelope($this->donationService->upsertedMessageFromDonation($donation)));
             $donationsAmended++;
         }
 

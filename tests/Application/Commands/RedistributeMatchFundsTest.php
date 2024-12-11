@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
+use JmesPath\Env;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
@@ -15,6 +16,7 @@ use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\Pledge;
 use MatchBot\Tests\TestCase;
@@ -93,8 +95,7 @@ class RedistributeMatchFundsTest extends TestCase
         $loggerProphecy = $this->prophesize(LoggerInterface::class);
         $loggerProphecy->error(Argument::type('string'))->shouldNotBeCalled();
 
-        $message = new Envelope(DonationUpserted::fromDonation($donation));
-        $this->messageBusProphecy->dispatch($message)->shouldBeCalledOnce()->willReturnArgument();
+        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->shouldBeCalledOnce()->willReturnArgument();
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
         $campaignFundingRepoProphecy->getAvailableFundings(Argument::type(Campaign::class))
@@ -152,8 +153,7 @@ class RedistributeMatchFundsTest extends TestCase
         $loggerProphecy->error("Donation $uuid had redistributed match funds reduced from 10.00 to 5.00 (GBP)")
             ->shouldBeCalledOnce();
 
-        $message = new Envelope(DonationUpserted::fromDonation($donation));
-        $this->messageBusProphecy->dispatch($message)->shouldBeCalledOnce()->willReturnArgument();
+        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->shouldBeCalledOnce()->willReturnArgument();
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
         $campaignFundingRepoProphecy->getAvailableFundings(Argument::type(Campaign::class))
@@ -237,6 +237,7 @@ class RedistributeMatchFundsTest extends TestCase
                 logger: $loggerProphecy->reveal(),
                 entityManager: $this->createStub(EntityManagerInterface::class),
                 bus: $this->messageBusProphecy->reveal(),
+                donationService: $this->createStub(DonationService::class),
             ),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));

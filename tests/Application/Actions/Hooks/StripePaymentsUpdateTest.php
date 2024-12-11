@@ -7,6 +7,7 @@ namespace MatchBot\Tests\Application\Actions\Hooks;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Domain\CampaignRepository;
@@ -16,6 +17,7 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use Prophecy\Argument;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Container\ContainerInterface;
 use Ramsey\Uuid\Uuid;
 use Stripe\Service\BalanceTransactionService;
@@ -251,7 +253,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
-        $donationServiceProphecy = $this->prophesize(DonationService::class);
+        $donationServiceProphecy = $this->getDonationServiceProphecy();
         $donationServiceProphecy
             ->releaseMatchFundsInTransaction($donation->getUuid())
             ->shouldBeCalledOnce();
@@ -375,7 +377,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
-        $donationServiceProphecy = $this->prophesize(DonationService::class);
+        $donationServiceProphecy = $this->getDonationServiceProphecy();
         $donationServiceProphecy
             ->releaseMatchFundsInTransaction($donation->getUuid())
             ->shouldBeCalledOnce();
@@ -464,7 +466,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
-        $donationServiceProphecy = $this->prophesize(DonationService::class);
+        $donationServiceProphecy = $this->getDonationServiceProphecy();
         $donationServiceProphecy
             ->releaseMatchFundsInTransaction($donation->getUuid())
             ->shouldBeCalledOnce();
@@ -526,7 +528,7 @@ class StripePaymentsUpdateTest extends StripeTest
             ->willReturn($donation)
             ->shouldBeCalledOnce();
 
-        $donationServiceProphecy = $this->prophesize(DonationService::class);
+        $donationServiceProphecy = $this->getDonationServiceProphecy();
         $donationServiceProphecy
             ->releaseMatchFundsInTransaction($donation->getUuid())
             ->shouldBeCalledOnce();
@@ -692,5 +694,19 @@ class StripePaymentsUpdateTest extends StripeTest
         $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
 
         return $container;
+    }
+
+    /**
+     * @return ObjectProphecy<DonationService>
+     */
+    public function getDonationServiceProphecy(): ObjectProphecy
+    {
+        $donationServiceProphecy = $this->prophesize(DonationService::class);
+        $donationServiceProphecy->upsertedMessageFromDonation(Argument::type(Donation::class))
+            ->willReturn(
+                new DonationUpserted(uuid: Uuid::uuid4()->toString(), jsonSnapshot: [])
+            );
+
+        return $donationServiceProphecy;
     }
 }

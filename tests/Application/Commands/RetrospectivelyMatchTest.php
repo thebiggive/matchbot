@@ -10,6 +10,7 @@ use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -123,11 +124,12 @@ class RetrospectivelyMatchTest extends TestCase
     private function getCommandTester(bool $matchingIsAllocated): CommandTester
     {
         $command = new RetrospectivelyMatch(
-            $this->getDonationRepo($matchingIsAllocated),
-            $this->chatter,
-            $this->messageBusProphecy->reveal(),
-            $this->createStub(EntityManagerInterface::class),
-            $this->matchFundsRedistributorProphecy->reveal()
+            donationRepository: $this->getDonationRepo($matchingIsAllocated),
+            donationService: $this->createStub(DonationService::class),
+            chatter: $this->chatter,
+            bus: $this->messageBusProphecy->reveal(),
+            entityManager: $this->createStub(EntityManagerInterface::class),
+            matchFundsRedistributor: $this->matchFundsRedistributorProphecy->reveal()
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());

@@ -12,6 +12,7 @@ use Messages\Stamp\MessageId;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Middleware\StackMiddleware;
 
@@ -30,7 +31,7 @@ class AddOrLogMessageIdTest extends TestCase
 
         $middleware = new AddOrLogMessageId($loggerProphecy->reveal());
 
-        $envelope = new Envelope(DonationUpserted::fromDonation($this->getTestDonation()));
+        $envelope = new Envelope(new DonationUpserted(Uuid::uuid4()->toString(), []));
         $middleware->handle($envelope, $this->createStack($middleware));
     }
 
@@ -44,7 +45,7 @@ class AddOrLogMessageIdTest extends TestCase
         );
         $middleware = new AddOrLogMessageId($loggerProphecy->reveal());
 
-        $envelope = new Envelope(DonationUpserted::fromDonation($this->getTestDonation()));
+        $envelope = new Envelope(new DonationUpserted(Uuid::uuid4()->toString(), []));
         $envelope = $envelope->with(new MessageId());
         $middleware->handle($envelope, $this->createStack($middleware));
     }

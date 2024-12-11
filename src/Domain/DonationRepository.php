@@ -695,7 +695,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
      *
      * @return int  Number of objects pushed
      */
-    public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus): int
+    public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus, DonationService $donationService): int
     {
         // We don't want to push donations that were created or modified in the last 5 minutes,
         // to avoid collisions with other pushes.
@@ -730,7 +730,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
             }
 
             try {
-                $newDonation = DonationUpserted::fromDonation($proxy);
+                $newDonation = $donationService->upsertedMessageFromDonation($proxy);
             } catch (MissingTransactionId) {
                 $this->logger->warning("Missing transaction id for donation {$proxy->getId()}, cannot push to SF");
                 continue;
@@ -749,7 +749,7 @@ class DonationRepository extends SalesforceWriteProxyRepository
                 continue;
             }
 
-            $bus->dispatch(new Envelope(DonationUpserted::fromDonation($proxy)));
+            $bus->dispatch(new Envelope($donationService->upsertedMessageFromDonation($proxy)));
         }
 
         return count($proxiesToCreate) + count($proxiesToUpdate);

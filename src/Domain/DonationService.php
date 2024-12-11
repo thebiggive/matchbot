@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\Exception\ORMException;
+use MatchBot\Application\Actions\Donations\Get;
 use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Fees\Calculator;
@@ -18,9 +19,11 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
+use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\MandateNotActive;
+use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
@@ -591,7 +594,7 @@ class DonationService
             return;
         }
 
-        $donationUpserted = DonationUpserted::fromDonation($donation);
+        $donationUpserted = $this->upsertedMessageFromDonation($donation);
         $envelope = new Envelope($donationUpserted);
         $this->bus->dispatch($envelope);
     }
@@ -634,5 +637,40 @@ class DonationService
 
             $this->entityManager->flush();
         });
+    }
+
+    public function donationAsApiModel(mixed $donationUUID): array
+    {
+        $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
+
+        if (!$donation) {
+            throw new DomainRecordNotFoundException('Donation not foundxxx');
+        }
+
+        return $this->donationToFEApiModel($donation);
+    }
+
+    public function findAllCompleteForCustomerAsAPIModels(StripeCustomerId $stripeCustomerId): array
+    {
+        $donations = $this->donationRepository->findAllCompleteForCustomer($stripeCustomerId);
+
+        return array_map($this->donationToFEApiModel(...), $donations);
+    }
+
+    public function donationToFEApiModel(Donation $donation): array
+    {
+        return $donation->toFrontEndApiModel();
+    }
+
+
+    /**
+     * @throws MissingTransactionId
+     */
+    public function upsertedMessageFromDonation(Donation $donation): DonationUpserted
+    {
+        return new DonationUpserted(
+            uuid: $donation->getUuid()->toString(),
+            jsonSnapshot: $donation->toSFApiModel(),
+        );
     }
 }

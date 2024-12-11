@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Commands;
 
 use MatchBot\Application\Commands\PushDonations;
+use MatchBot\Client\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Lock\LockFactory;
@@ -16,17 +20,14 @@ class PushDonationsTest extends TestCase
 {
     public function testSinglePush(): void
     {
-        $bus = $this->prophesize(RoutableMessageBus::class)->reveal();
-        $now = new \DateTimeImmutable();
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->abandonOldCancelled()
-            ->willReturn(0)
-            ->shouldBeCalledOnce();
-        $donationRepoProphecy->pushSalesforcePending(now: $now, bus: $bus,)
-            ->willReturn(1)
-            ->shouldBeCalledOnce();
+        list($bus, $now, $donationRepoProphecy) = $this->getTestDoubles(numberCancelled: 0);
 
-        $command = new PushDonations(bus: $bus, now: $now, donationRepository: $donationRepoProphecy->reveal());
+        $command = new PushDonations(
+            bus: $bus,
+            now: $now,
+            donationRepository: $donationRepoProphecy->reveal(),
+            donationService: $this->createStub(DonationService::class),
+        );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
 
@@ -44,17 +45,14 @@ class PushDonationsTest extends TestCase
 
     public function testPushWithOneCancelledAbandonedDonation(): void
     {
-        $bus = $this->prophesize(RoutableMessageBus::class)->reveal();
-        $now = new \DateTimeImmutable();
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->abandonOldCancelled()
-            ->willReturn(1)
-            ->shouldBeCalledOnce();
-        $donationRepoProphecy->pushSalesforcePending($now, $bus)
-            ->willReturn(1)
-            ->shouldBeCalledOnce();
+        list($bus, $now, $donationRepoProphecy) = $this->getTestDoubles(numberCancelled: 1);
 
-        $command = new PushDonations($bus, $now, $donationRepoProphecy->reveal());
+        $command = new PushDonations(
+            bus: $bus,
+            now: $now,
+            donationRepository: $donationRepoProphecy->reveal(),
+            donationService: $this->createStub(DonationService::class)
+        );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
 
@@ -69,5 +67,27 @@ class PushDonationsTest extends TestCase
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
         $this->assertEquals(0, $commandTester->getStatusCode());
+    }
+
+    /**
+     * @return list{
+     *     \Symfony\Component\Messenger\RoutableMessageBus,
+     *     \DateTimeImmutable,
+     *     \Prophecy\Prophecy\ObjectProphecy<\MatchBot\Domain\DonationRepository>
+     * }
+     */
+    public function getTestDoubles(int $numberCancelled): array
+    {
+        $bus = $this->prophesize(RoutableMessageBus::class)->reveal();
+        $now = new \DateTimeImmutable();
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy->abandonOldCancelled()
+            ->willReturn($numberCancelled)
+            ->shouldBeCalledOnce();
+        $donationRepoProphecy->pushSalesforcePending($now, $bus, Argument::type(DonationService::class))
+            ->willReturn(1)
+            ->shouldBeCalledOnce();
+
+        return [$bus, $now, $donationRepoProphecy];
     }
 }

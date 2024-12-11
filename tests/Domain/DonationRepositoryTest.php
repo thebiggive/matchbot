@@ -30,6 +30,7 @@ use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
+use Ramsey\Uuid\Uuid;
 
 class DonationRepositoryTest extends TestCase
 {
@@ -68,7 +69,7 @@ class DonationRepositoryTest extends TestCase
             ->willReturn(Salesforce18Id::of('sfDonation36912345'));
 
         // Just confirm it doesn't throw.
-        $this->getRepo($donationClientProphecy)->push(DonationUpserted::fromDonation($this->getTestDonation()), false);
+        $this->getRepo($donationClientProphecy)->push(new DonationUpserted(Uuid::uuid4()->toString(), []), false);
     }
 
     public function testExistingPush404InSandbox(): void

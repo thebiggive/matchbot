@@ -176,7 +176,7 @@ class Update extends Action
                         return $this->respond($response, new ActionPayload(500, null, $error));
                     }
                     $this->entityManager->commit();
-                    return $this->respondWithData($response, $donation->toFrontEndApiModel());
+                    return $this->respondWithData($response, $this->donationService->donationToFEApiModel($donation));
                 }
 
                 return $this->addData($donation, $donationData, $args, $response, $request);
@@ -473,7 +473,7 @@ class Update extends Action
         $this->entityManager->commit();
 
 
-        return $this->respondWithData($response, $donation->toFrontEndApiModel());
+        return $this->respondWithData($response, $this->donationService->donationAsApiModel($donation));
     }
 
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests;
 
+use Cassandra\Uuid;
 use DI\ContainerBuilder;
 use Exception;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -262,10 +263,7 @@ class TestCase extends PHPUnitTestCase
 
     public static function someUpsertedMessage(): DonationUpserted
     {
-        $donation = self::someDonation();
-        $donation->setTransactionId('pi_1234');
-
-        return DonationUpserted::fromDonation($donation);
+        return new DonationUpserted(\Ramsey\Uuid\Uuid::uuid4()->toString(), []);
     }
 
     /**

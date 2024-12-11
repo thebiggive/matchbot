@@ -522,7 +522,7 @@ class StripePaymentsUpdate extends Stripe
     private function queueSalesforceUpdate(Donation $donation): void
     {
         $this->bus->dispatch(new Envelope(
-            DonationUpserted::fromDonation($donation),
+            $this->donationService->upsertedMessageFromDonation($donation),
             [new DelayStamp(3_000)], // 3s delay to reduce risk of Donation\Update trying to reverse status change.
         ));
     }

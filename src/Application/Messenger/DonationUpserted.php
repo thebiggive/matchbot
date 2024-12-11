@@ -8,20 +8,9 @@ use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;
 
 class DonationUpserted extends AbstractStateChanged implements MessageGroupAwareInterface
 {
-    private function __construct(public string $uuid, public array $jsonSnapshot)
+    public function __construct(public string $uuid, public array $jsonSnapshot)
     {
         parent::__construct($uuid, $jsonSnapshot);
-    }
-
-    /**
-     * @throws MissingTransactionId
-     */
-    public static function fromDonation(Donation $donation): self
-    {
-        return new self(
-            uuid: $donation->getUuid()->toString(),
-            jsonSnapshot: $donation->toSFApiModel(),
-        );
     }
 
     public function getMessageGroupId(): ?string

@@ -185,14 +185,14 @@ class Create extends Action
             );
         }
 
-        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
+        $this->bus->dispatch(new Envelope($this->donationService->upsertedMessageFromDonation($donation)));
 
         $stripeCustomerId = $donation->getPspCustomerId();
         \assert($stripeCustomerId !== null);
         $customerSession = $this->stripe->createCustomerSession($stripeCustomerId);
 
         $data = new DonationCreatedResponse(
-            donation: $donation->toFrontEndApiModel(),
+            donation: $this->donationService->donationToFEApiModel($donation),
             jwt: DonationToken::create($donation->getUuid()->toString()),
             stripeSessionSecret: $customerSession->client_secret,
         );

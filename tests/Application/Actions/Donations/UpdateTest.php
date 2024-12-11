@@ -63,7 +63,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy(null);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->shouldNotBeCalled();
@@ -89,7 +89,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy(null);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->shouldNotBeCalled();
@@ -117,7 +117,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy(null);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->shouldNotBeCalled();
@@ -145,7 +145,7 @@ class UpdateTest extends TestCase
         /** @var Container $container */
         $container = $app->getContainer();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy(null);
         $donationRepoProphecy
             ->findAndLockOneByUUID(Uuid::fromString('87654321-1234-1234-1234-ba0987654321'))
             ->willReturn(null)
@@ -183,7 +183,7 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation();
         $donation->setDonationStatus(DonationStatus::Failed);
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($this->getTestDonation()) // Get a new mock object so it's 'Collected'.
@@ -227,7 +227,7 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation();
         $donation->setDonationStatus(DonationStatus::Pending);
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneBy(Argument::cetera())
             ->shouldNotBeCalled();
@@ -290,7 +290,7 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation();
         $donation->cancel();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($donationResponse)
@@ -340,7 +340,7 @@ class UpdateTest extends TestCase
         $responseDonation = $this->getTestDonation(charityComms: true);
         $responseDonation->cancel();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($responseDonation)
@@ -399,7 +399,7 @@ class UpdateTest extends TestCase
         // mock donation.
         $responseDonation->setDonationStatus(DonationStatus::Pending);
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($responseDonation)
@@ -461,7 +461,7 @@ class UpdateTest extends TestCase
         // mock donation.
         $responseDonation->setDonationStatus(DonationStatus::Pending);
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($responseDonation)
@@ -519,7 +519,7 @@ class UpdateTest extends TestCase
         // mock donation.
         $responseDonation->setDonationStatus(DonationStatus::Pending);
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($responseDonation)
@@ -574,7 +574,7 @@ class UpdateTest extends TestCase
 
         $responseDonation = $this->getAnonymousPendingTestDonation();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUUID(Uuid::fromString('12345678-1234-1234-1234-1234567890ac'))
             ->willReturn($responseDonation)
@@ -625,7 +625,7 @@ class UpdateTest extends TestCase
         $donationInRequest = $this->getTestDonation('99.99');
 
         $donationInRepo = $this->getTestDonation(); //  // Get a new mock object so it's £123.45.
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donationInRepo);
 
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
@@ -669,7 +669,7 @@ class UpdateTest extends TestCase
 
         $donation = $this->getTestDonation();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($donation)
@@ -719,7 +719,7 @@ class UpdateTest extends TestCase
 
         $donation = $this->getTestDonation();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneBy(Argument::cetera())
             ->shouldNotBeCalled();
@@ -766,7 +766,7 @@ class UpdateTest extends TestCase
 
         $donation = $this->getTestDonation();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($donation)
@@ -815,8 +815,9 @@ class UpdateTest extends TestCase
         // values over the max donation amount.
         $donation = $this->getTestDonation();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+
         $donationInRepo = $this->getTestDonation();  // Get a new mock object so it's £123.45.
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donationInRepo);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($donationInRepo)
@@ -874,7 +875,7 @@ class UpdateTest extends TestCase
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($donation)
@@ -955,7 +956,7 @@ class UpdateTest extends TestCase
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($donation)
@@ -1040,7 +1041,7 @@ class UpdateTest extends TestCase
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($donation)
@@ -1136,7 +1137,7 @@ class UpdateTest extends TestCase
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($donation)
@@ -1221,7 +1222,7 @@ class UpdateTest extends TestCase
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($donation)
@@ -1312,7 +1313,7 @@ class UpdateTest extends TestCase
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($donation)
@@ -1398,7 +1399,7 @@ class UpdateTest extends TestCase
         $donation->setCharityComms(false);
         $donation->setChampionComms(false);
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($donation)
@@ -1603,7 +1604,7 @@ class UpdateTest extends TestCase
 
         $donation = $this->getTestDonation();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         // Get a new mock object so DB has old values. Make it explicit that the payment method type is (the
         // unsupported for auto-confirms) "card".
         $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::Card);
@@ -1664,7 +1665,7 @@ class UpdateTest extends TestCase
 
         $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         $donationInRepo = $this->getTestDonation(pspMethodType: PaymentMethodType::Card);
         // Get a new mock object so DB has old values.
         // Make it explicit that the payment method type is (the unsupported
@@ -1728,7 +1729,7 @@ class UpdateTest extends TestCase
             collected: false,
         );
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donation);
         // Get a new mock object so DB has old values. Make it explicit that the payment method type is (the
         // unsupported for auto-confirms) "card".
         $donationInRepo = $this->getTestDonation(
@@ -1811,12 +1812,12 @@ class UpdateTest extends TestCase
             )
             : $this->getPendingBigGiveGeneralCustomerBalanceDonation();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationInRepo = $this->getTestDonation(
             pspMethodType: PaymentMethodType::CustomerBalance,
             tipAmount: '0',
             collected: false,
         );  // Get a new mock object so DB has old values.
+        $donationRepoProphecy = $this->getDonationRepoProphecy($donationInRepo);
 
         $donationRepoProphecy
             ->findAndLockOneByUuid(Uuid::fromString(self::DONATION_UUID))
@@ -1911,5 +1912,20 @@ class UpdateTest extends TestCase
         }
 
         return $entityManagerProphecy;
+    }
+
+    /**
+     * @param Donation|null $donationInRepo
+     * @return ObjectProphecy<DonationRepository>
+     */
+    public function getDonationRepoProphecy(?Donation $donationInRepo): ObjectProphecy
+    {
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+
+        if ($donationInRepo) {
+            $donationRepoProphecy->findOneBy(Argument::type('array'))->willReturn($donationInRepo);
+        }
+
+        return $donationRepoProphecy;
     }
 }
