@@ -93,7 +93,7 @@ $cliApp->setDispatcher($dispatcher);
 $cliApp->getDefinition()->addOption(
     new InputOption(
         Command::CLI_OPTION_NOLOG,
-        'l',
+        null,
         InputOption::VALUE_NONE,
         'Suppresses debug & info log, show only warnings and errors'
     )
