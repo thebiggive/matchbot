@@ -67,11 +67,6 @@ $commands = array_map($psr11App->get(...), [
     UpdateCampaigns::class,
 ]);
 
-
-$messengerReceiverKey = 'receiver';
-$messengerReceiverLocator = new Container();
-$messengerReceiverLocator->set($messengerReceiverKey, $psr11App->get(TransportInterface::class));
-
 $chatter = $psr11App->get(ChatterInterface::class);
 assert($chatter instanceof ChatterInterface);
 
