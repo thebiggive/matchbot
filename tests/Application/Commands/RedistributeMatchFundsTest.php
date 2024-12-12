@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Commands;
 
 use Doctrine\ORM\EntityManagerInterface;
-use JmesPath\Env;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
