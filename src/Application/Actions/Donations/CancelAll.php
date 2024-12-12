@@ -69,7 +69,7 @@ class CancelAll extends Action
         }
 
         return $this->respondWithData($response, [
-            'donations' => array_map(fn(Donation $donation) => $donation->toFrontEndApiModel(), $donations),
+            'donations' => array_map(static fn(Donation $d) => $d->toFrontEndApiModel(), $donations),
         ]);
     }
 }

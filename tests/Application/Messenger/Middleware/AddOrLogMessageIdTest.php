@@ -31,7 +31,7 @@ class AddOrLogMessageIdTest extends TestCase
 
         $middleware = new AddOrLogMessageId($loggerProphecy->reveal());
 
-        $envelope = new Envelope(new DonationUpserted(Uuid::uuid4()->toString(), []));
+        $envelope = new Envelope(DonationUpserted::fromDonation($this->getTestDonation()));
         $middleware->handle($envelope, $this->createStack($middleware));
     }
 
@@ -45,7 +45,7 @@ class AddOrLogMessageIdTest extends TestCase
         );
         $middleware = new AddOrLogMessageId($loggerProphecy->reveal());
 
-        $envelope = new Envelope(new DonationUpserted(Uuid::uuid4()->toString(), []));
+        $envelope = new Envelope(DonationUpserted::fromDonation($this->getTestDonation()));
         $envelope = $envelope->with(new MessageId());
         $middleware->handle($envelope, $this->createStack($middleware));
     }

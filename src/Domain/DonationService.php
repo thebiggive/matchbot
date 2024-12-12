@@ -591,10 +591,7 @@ class DonationService
             return;
         }
 
-        $donationUpserted = new DonationUpserted(
-            uuid: $donation->getUuid()->toString(),
-            jsonSnapshot: $donation->toSFApiModel(),
-        );
+        $donationUpserted = DonationUpserted::fromDonation($donation);
         $envelope = new Envelope($donationUpserted);
         $this->bus->dispatch($envelope);
     }

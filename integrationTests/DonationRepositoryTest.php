@@ -292,10 +292,7 @@ class DonationRepositoryTest extends IntegrationTest
         }
 
         // act
-        $sut->pushSalesforcePending(
-            now: $simulatedNow,
-            bus: $busProphecy->reveal(),
-        );
+        $sut->pushSalesforcePending(now: $simulatedNow, bus: $busProphecy->reveal());
     }
 
     /**

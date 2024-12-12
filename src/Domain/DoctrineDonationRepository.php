@@ -90,9 +90,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             // it is the one place outside of `UpdateCampaigns` where we clear the whole
             // result cache. It's currently the only user-invoked or single item place where
             // we do so.
-            /**
-             * @var CacheProvider $cacheDriver
-             */
+            /** @var CacheProvider $cacheDriver */
             $cacheDriver = $this->getEntityManager()->getConfiguration()->getResultCacheImpl();
             $cacheDriver->deleteAll();
         }
@@ -652,10 +650,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             }
 
             try {
-                $newDonation = new DonationUpserted(
-                    uuid: $proxy->getUuid()->toString(),
-                    jsonSnapshot: $proxy->toSFApiModel(),
-                );
+                $newDonation = DonationUpserted::fromDonation($proxy);
             } catch (MissingTransactionId) {
                 $this->logger->warning("Missing transaction id for donation {$proxy->getId()}, cannot push to SF");
                 continue;
@@ -674,10 +669,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
                 continue;
             }
 
-            $bus->dispatch(new Envelope(new DonationUpserted(
-                uuid: $proxy->getUuid()->toString(),
-                jsonSnapshot: $proxy->toSFApiModel(),
-            )));
+            $bus->dispatch(new Envelope(DonationUpserted::fromDonation($proxy)));
         }
 
         return count($proxiesToCreate) + count($proxiesToUpdate);
