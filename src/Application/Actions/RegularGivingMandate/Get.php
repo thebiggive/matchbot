@@ -50,7 +50,7 @@ class Get extends Action
         }
 
         $campaign = $this->campaignRepository->findOneBySalesforceId($mandate->getCampaignId());
-        assert($campaign !==null);
+        assert($campaign !== null);
         $charity = $campaign->getCharity();
         return new JsonResponse([
             'mandate' => $mandate->toFrontEndApiModel($charity, $this->now)
