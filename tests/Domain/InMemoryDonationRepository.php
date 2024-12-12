@@ -49,6 +49,35 @@ class InMemoryDonationRepository implements DonationRepository
         $this->donations[$id] = $donation;
     }
 
+    #[\Override] public function findOneBy(array $criteria, ?array $orderBy = null): ?Donation
+    {
+        if (array_keys($criteria) === ['transactionId']) {
+            foreach ($this->donations as $donation) {
+                if ($donation->getTransactionId() === $criteria['transactionId']) {
+                    return $donation;
+                }
+            }
+            return null;
+        }
+
+        if (array_keys($criteria) === ['chargeId']) {
+            foreach ($this->donations as $donation) {
+                if ($donation->getChargeId() === $criteria['chargeId']) {
+                    return $donation;
+                }
+            }
+            return null;
+        }
+
+        throw new \Exception("Method not implemented in test double");
+    }
+
+    #[\Override]
+    public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation
+    {
+        return $this->findOneBy($criteria);
+    }
+
     /**
      * @return numeric-string
      */
@@ -132,11 +161,6 @@ class InMemoryDonationRepository implements DonationRepository
         throw new \Exception("Method not implemented in test double");
     }
 
-    #[\Override] public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation
-    {
-        throw new \Exception("Method not implemented in test double");
-    }
-
     #[\Override] public function removeAllFundingWithdrawalsForDonation(Donation $donation): void
     {
         throw new \Exception("Method not implemented in test double");
@@ -183,11 +207,6 @@ class InMemoryDonationRepository implements DonationRepository
     }
 
     #[\Override] public function findBy(array $criteria)
-    {
-        throw new \Exception("Method not implemented in test double");
-    }
-
-    #[\Override] public function findOneBy(array $criteria)
     {
         throw new \Exception("Method not implemented in test double");
     }
