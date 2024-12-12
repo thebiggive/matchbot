@@ -11,6 +11,7 @@ use MatchBot\Application\Environment;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\StripeCustomerId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -25,7 +26,7 @@ class GetAllForUser extends Action
 {
     #[Pure]
     public function __construct(
-        private DonationRepository $donationRepository,
+        private DonationService $donationService,
         LoggerInterface $logger
     ) {
         parent::__construct($logger);
@@ -45,11 +46,9 @@ class GetAllForUser extends Action
 
         $stripeCustomerId = StripeCustomerId::of($customerId);
 
-        $donations = $this->donationRepository->findAllCompleteForCustomer($stripeCustomerId);
-
         // this does expose more data than we currently need to display, but it's the same as was exposed in the API
         // at the time they created the donation, so nothing we mind the donor having access to.
-        $apiModels = array_map(static fn(Donation $d) => $d->toFrontEndApiModel(), $donations);
+        $apiModels = $this->donationService->findAllCompleteForCustomerAsAPIModels($stripeCustomerId);
 
         return $this->respondWithData($response, ['donations' => $apiModels]);
     }

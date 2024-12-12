@@ -6,7 +6,6 @@ namespace MatchBot\Tests;
 
 use DI\ContainerBuilder;
 use Exception;
-use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;

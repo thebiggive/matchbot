@@ -4,13 +4,17 @@ namespace MatchBot\IntegrationTests;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\DoctrineDonationRepository;
+use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
@@ -19,6 +23,7 @@ use MatchBot\Domain\Pledge;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 
@@ -246,6 +251,8 @@ class DonationRepositoryTest extends IntegrationTest
         \assert(is_string($donationUUID));
 
         $sut = $this->getService(DonationRepository::class);
+        Assertion::isInstanceOf($sut, DoctrineDonationRepository::class);
+
         $donationClientProphecy = $this->prophesize(\MatchBot\Client\Donation::class);
 
         $busProphecy = $this->prophesize(RoutableMessageBus::class);
