@@ -13,6 +13,14 @@ class DonationUpserted extends AbstractStateChanged implements MessageGroupAware
         parent::__construct($uuid, $jsonSnapshot);
     }
 
+    public static function fromDonation(Donation $donation): self
+    {
+        return new self(
+            uuid: $donation->getUuid()->toString(),
+            jsonSnapshot: $donation->toSFApiModel(),
+        );
+    }
+
     public function getMessageGroupId(): ?string
     {
         return 'donation.upserted.' . $this->uuid;

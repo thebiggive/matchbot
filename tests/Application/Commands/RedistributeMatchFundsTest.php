@@ -237,7 +237,6 @@ class RedistributeMatchFundsTest extends TestCase
                 logger: $loggerProphecy->reveal(),
                 entityManager: $this->createStub(EntityManagerInterface::class),
                 bus: $this->messageBusProphecy->reveal(),
-                donationService: $this->createStub(DonationService::class),
             ),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));

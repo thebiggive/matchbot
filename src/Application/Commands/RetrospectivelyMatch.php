@@ -9,6 +9,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Domain\DomainException\MissingTransactionId;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -39,7 +41,6 @@ class RetrospectivelyMatch extends LockingCommand
 {
     public function __construct(
         private DonationRepository $donationRepository,
-        private DonationService $donationService,
         private ChatterInterface $chatter,
         private RoutableMessageBus $bus,
         private EntityManagerInterface $entityManager,
@@ -86,7 +87,7 @@ class RetrospectivelyMatch extends LockingCommand
 
             if (bccomp($amountAllocated, '0.00', 2) === 1) {
                 $this->entityManager->flush();
-                $this->bus->dispatch(new Envelope($this->donationService->upsertedMessageFromDonation($donation)));
+                $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
                 $numWithMatchingAllocated++;
                 $totalNewMatching = bcadd($totalNewMatching, $amountAllocated, 2);
 

@@ -591,7 +591,10 @@ class DonationService
             return;
         }
 
-        $donationUpserted = $this->upsertedMessageFromDonation($donation);
+        $donationUpserted = new DonationUpserted(
+            uuid: $donation->getUuid()->toString(),
+            jsonSnapshot: $donation->toSFApiModel(),
+        );
         $envelope = new Envelope($donationUpserted);
         $this->bus->dispatch($envelope);
     }
@@ -644,30 +647,13 @@ class DonationService
             throw new DomainRecordNotFoundException('Donation not found');
         }
 
-        return $this->donationToFEApiModel($donation);
+        return $donation->toFrontEndApiModel();
     }
 
     public function findAllCompleteForCustomerAsAPIModels(StripeCustomerId $stripeCustomerId): array
     {
         $donations = $this->donationRepository->findAllCompleteForCustomer($stripeCustomerId);
 
-        return array_map($this->donationToFEApiModel(...), $donations);
-    }
-
-    public function donationToFEApiModel(Donation $donation): array
-    {
-        return $donation->toFrontEndApiModel();
-    }
-
-
-    /**
-     * @throws MissingTransactionId
-     */
-    public function upsertedMessageFromDonation(Donation $donation): DonationUpserted
-    {
-        return new DonationUpserted(
-            uuid: $donation->getUuid()->toString(),
-            jsonSnapshot: $donation->toSFApiModel(),
-        );
+        return array_map(fn(Donation $donation) => $donation->toFrontEndApiModel(), $donations);
     }
 }

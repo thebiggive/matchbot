@@ -177,7 +177,7 @@ class InMemoryDonationRepository implements DonationRepository
         throw new \Exception("Method not implemented in test double");
     }
 
-    #[\Override] public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus, DonationService $donationService): int
+    #[\Override] public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus): int
     {
         throw new \Exception("Method not implemented in test double");
     }

@@ -143,7 +143,7 @@ interface DonationRepository
      * \MatchBot\Application\Commands\PushDonations::doExecute
      *
      */
-    public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus, DonationService $donationService): int;
+    public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus): int;
 
     /**
      * Finds all successful donations from the donor with the given stripe customer ID.

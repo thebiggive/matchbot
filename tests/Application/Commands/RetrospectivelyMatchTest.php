@@ -125,7 +125,6 @@ class RetrospectivelyMatchTest extends TestCase
     {
         $command = new RetrospectivelyMatch(
             donationRepository: $this->getDonationRepo($matchingIsAllocated),
-            donationService: $this->createStub(DonationService::class),
             chatter: $this->chatter,
             bus: $this->messageBusProphecy->reveal(),
             entityManager: $this->createStub(EntityManagerInterface::class),

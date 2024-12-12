@@ -617,7 +617,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
     /**
      * @psalm-suppress PossiblyUnusedReturnValue Psalm bug? Value is used in \MatchBot\Application\Commands\PushDonations::doExecute
      */
-    public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus, DonationService $donationService): int
+    public function pushSalesforcePending(\DateTimeImmutable $now, MessageBusInterface $bus): int
     {
         // We don't want to push donations that were created or modified in the last 5 minutes,
         // to avoid collisions with other pushes.
@@ -652,7 +652,10 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             }
 
             try {
-                $newDonation = $donationService->upsertedMessageFromDonation($proxy);
+                $newDonation = new DonationUpserted(
+                    uuid: $proxy->getUuid()->toString(),
+                    jsonSnapshot: $proxy->toSFApiModel(),
+                );
             } catch (MissingTransactionId) {
                 $this->logger->warning("Missing transaction id for donation {$proxy->getId()}, cannot push to SF");
                 continue;
@@ -671,7 +674,10 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
                 continue;
             }
 
-            $bus->dispatch(new Envelope($donationService->upsertedMessageFromDonation($proxy)));
+            $bus->dispatch(new Envelope(new DonationUpserted(
+                uuid: $proxy->getUuid()->toString(),
+                jsonSnapshot: $proxy->toSFApiModel(),
+            )));
         }
 
         return count($proxiesToCreate) + count($proxiesToUpdate);

@@ -21,6 +21,7 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
+use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\Donation;
@@ -185,14 +186,14 @@ class Create extends Action
             );
         }
 
-        $this->bus->dispatch(new Envelope($this->donationService->upsertedMessageFromDonation($donation)));
+        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
 
         $stripeCustomerId = $donation->getPspCustomerId();
         \assert($stripeCustomerId !== null);
         $customerSession = $this->stripe->createCustomerSession($stripeCustomerId);
 
         $data = new DonationCreatedResponse(
-            donation: $this->donationService->donationToFEApiModel($donation),
+            donation: $donation->toFrontEndApiModel(),
             jwt: DonationToken::create($donation->getUuid()->toString()),
             stripeSessionSecret: $customerSession->client_secret,
         );

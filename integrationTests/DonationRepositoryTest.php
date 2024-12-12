@@ -11,6 +11,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\DoctrineDonationRepository;
+use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
@@ -291,13 +292,9 @@ class DonationRepositoryTest extends IntegrationTest
         }
 
         // act
-        $donationServiceProphecy = $this->prophesize(DonationService::class);
-        $donationServiceProphecy->upsertedMessageFromDonation(Argument::type(Donation::class))->willReturn(new DonationUpserted($donationUUID, []));
-        $donationService = $donationServiceProphecy->reveal();
         $sut->pushSalesforcePending(
             now: $simulatedNow,
             bus: $busProphecy->reveal(),
-            donationService: $donationService
         );
     }
 

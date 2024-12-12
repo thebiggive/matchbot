@@ -26,7 +26,6 @@ class PushDonationsTest extends TestCase
             bus: $bus,
             now: $now,
             donationRepository: $donationRepoProphecy->reveal(),
-            donationService: $this->createStub(DonationService::class),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
@@ -51,7 +50,6 @@ class PushDonationsTest extends TestCase
             bus: $bus,
             now: $now,
             donationRepository: $donationRepoProphecy->reveal(),
-            donationService: $this->createStub(DonationService::class)
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
         $command->setLogger(new NullLogger());
@@ -84,7 +82,7 @@ class PushDonationsTest extends TestCase
         $donationRepoProphecy->abandonOldCancelled()
             ->willReturn($numberCancelled)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy->pushSalesforcePending($now, $bus, Argument::type(DonationService::class))
+        $donationRepoProphecy->pushSalesforcePending($now, $bus)
             ->willReturn(1)
             ->shouldBeCalledOnce();
 

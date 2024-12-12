@@ -236,7 +236,6 @@ class RedistributeMatchingCommandTest extends IntegrationTest
                 logger: $this->getService(LoggerInterface::class),
                 entityManager: $this->createStub(EntityManagerInterface::class),
                 bus: $this->messageBusProphecy->reveal(),
-                donationService: $this->getService(DonationService::class),
             ),
         );
         $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));

@@ -9,6 +9,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\LazyAssertionException;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\NotFoundException;
+use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
@@ -149,7 +150,7 @@ EOF
         $this->entityManager->flush();
         $this->entityManager->commit();
 
-        $this->bus->dispatch(new Envelope($this->donationService->upsertedMessageFromDonation($donation)));
+        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
 
         return new JsonResponse([
             'paymentIntent' => [
