@@ -80,12 +80,20 @@ class Campaign extends SalesforceReadProxy
     private bool $isRegularGiving;
 
     /**
+     * Custom message from the charity to donors thanking them for donating. Used here for regular giving
+     * confirmation emails, also used from SF for ad-hoc giving thanks pages and emails.
+     */
+    #[ORM\Column(type: 'string', length: 500, nullable: true, options: ['default' => null])]
+    private ?string $thankYouMessage;
+
+    /**
      * Date at which we want to stop collecting payments for this regular giving campaign. Must be null if
      * this is not regular giving, will also be null if this is regular giving and we plan to continue collecting
      * donations indefinitely.
      */
     #[ORM\Column(nullable: true)]
     protected ?\DateTimeImmutable $regularGivingCollectionEnd;
+
 
     /**
      * @param \DateTimeImmutable|null $regularGivingCollectionEnd
@@ -104,6 +112,7 @@ class Campaign extends SalesforceReadProxy
         string $currencyCode,
         bool $isRegularGiving,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
+        ?string $thankYouMessage = null,
     ) {
         $this->createdNow();
         $this->campaignFundings = new ArrayCollection();
@@ -118,6 +127,7 @@ class Campaign extends SalesforceReadProxy
             name: $name,
             startDate: $startDate,
             ready: $ready,
+            thankYouMessage: $thankYouMessage,
             isRegularGiving: $isRegularGiving,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
         );
@@ -267,6 +277,7 @@ class Campaign extends SalesforceReadProxy
         bool $ready,
         bool $isRegularGiving,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
+        ?string $thankYouMessage,
     ): void {
         Assertion::lessOrEqualThan(
             $startDate,
@@ -277,6 +288,7 @@ class Campaign extends SalesforceReadProxy
         Assertion::eq($currencyCode, 'GBP', 'Only GBP currency supported at present');
         Assertion::nullOrRegex($status, "/^[A-Za-z]{2,30}$/");
         Assertion::betweenLength($name, 2, 255);
+        Assertion::nullOrMaxLength($thankYouMessage, 500);
 
         if (! $isRegularGiving) {
             Assertion::null(
@@ -292,6 +304,7 @@ class Campaign extends SalesforceReadProxy
         $this->startDate = $startDate;
         $this->ready = $ready;
         $this->status = $status;
+        $this->thankYouMessage = $thankYouMessage;
         $this->isRegularGiving = $isRegularGiving;
         $this->regularGivingCollectionEnd = $regularGivingCollectionEnd;
     }
@@ -318,5 +331,10 @@ class Campaign extends SalesforceReadProxy
     public function getRegularGivingCollectionEnd(): ?\DateTimeImmutable
     {
         return $this->regularGivingCollectionEnd;
+    }
+
+    public function getThankYouMessage(): ?string
+    {
+        return $this->thankYouMessage;
     }
 }

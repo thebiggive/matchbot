@@ -213,6 +213,7 @@ class TestCase extends PHPUnitTestCase
         ?Charity $charity = null,
         bool $isRegularGiving = false,
         ?\DateTimeImmutable $regularGivingCollectionEnd = null,
+        string $thankYouMessage = null,
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
         \assert(is_string($randomString));
@@ -230,6 +231,7 @@ class TestCase extends PHPUnitTestCase
             currencyCode: 'GBP',
             isRegularGiving: $isRegularGiving,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
+            thankYouMessage: $thankYouMessage,
         );
     }
 

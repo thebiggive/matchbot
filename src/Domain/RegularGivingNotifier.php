@@ -31,11 +31,7 @@ class RegularGivingNotifier
                     'charityName' => $charity->getName(),
                     'campaignName' => $campaign->getCampaignName(),
                     'charityNumber' => $charity->getRegulatorNumber(),
-                    'campaignThankYouMessage' => '', // @todo-regular-giving: fix this and other empty strings.
-                                                     // Either bring data proactively into matchbot (which I think
-                                                     // is my preference) or we may have to delete this function
-                                                     // and send from Salesforce instead.
-                    'campaignThankYouEmail' => '',
+                    'campaignThankYouMessage' => $campaign->getThankYouMessage(),
                     'signupDate' => $signUpDate->format('d/m/Y H:i'),
                     'schedule' => $mandate->describeSchedule(),
                     'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())->format('d/m/Y'),

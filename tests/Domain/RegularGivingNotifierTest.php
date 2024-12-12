@@ -26,7 +26,7 @@ class RegularGivingNotifierTest extends TestCase
         $clock = new MockClock('2024-12-01');
         $sut = new RegularGivingNotifier($mailerProphecy->reveal(), $clock);
 
-        $campaign = TestCase::someCampaign();
+        $campaign = TestCase::someCampaign(thankYouMessage: 'Thank you for setting up your regular donation to us!');
         $personId = PersonId::of(Uuid::uuid4()->toString());
         $donor = new DonorAccount(
             uuid: $personId,
@@ -50,15 +50,15 @@ class RegularGivingNotifierTest extends TestCase
         $mandate->activate($clock->now());
 
         // assert
-        $mailerProphecy->sendEmail([
-            'templateKey' => 'donor-mandate-confirmation',
-            'recipientEmailAddress' => 'donor@example.com',
-            'params' => [
+        $mailerProphecy->sendEmail(
+            [
+                "templateKey" => "donor-mandate-confirmation",
+                "recipientEmailAddress" => "donor@example.com",
+                "params" => [
                     "charityName" => "Charity Name",
                     "campaignName" => "someCampaign",
                     "charityNumber" => "Reg-no",
-                    "campaignThankYouMessage" => "",
-                    "campaignThankYouEmail" => "",
+                    "campaignThankYouMessage" => 'Thank you for setting up your regular donation to us!',
                     "signupDate" => "01/12/2024 00:00",
                     "schedule" => "Monthly on day #12",
                     "nextPaymentDate" => "12/12/2024",
@@ -70,22 +70,23 @@ class RegularGivingNotifierTest extends TestCase
                     "charityPhoneNumber" => "",
                     "charityEMailAddress" => "",
                     "charityWebsite" => "",
-                    'firstDonation' => [
+                    "firstDonation" => [
                         // mostly same keys as used on the donorDonationSuccess email
                         // @todo -- fill in properties below in implementation
-//                        'donationDatetime' => new \DateTimeImmutable('2023-01-30'),
-//                        'currencyCode' => 'GBP',
-//                        'charityName' => '[Charity Name]',
-//                        'donationAmount' => 25_000,
-//                        'giftAidAmountClaimed' => 1_000,
-//                        'totalWithGiftAid' => 26_000,
-//                        'matchedAmount' => 25_000,
-//                        'totalCharityValueAmount' => 50_000,
-//                        'transactionId' => '[PSP Transaction ID]',
-//                        'statementReference' => 'The Big Give [Charity Name]'
-                    ],
+            //                        'donationDatetime' => new \DateTimeImmutable('2023-01-30'),
+            //                        'currencyCode' => 'GBP',
+            //                        'charityName' => '[Charity Name]',
+            //                        'donationAmount' => 25_000,
+            //                        'giftAidAmountClaimed' => 1_000,
+            //                        'totalWithGiftAid' => 26_000,
+            //                        'matchedAmount' => 25_000,
+            //                        'totalCharityValueAmount' => 50_000,
+            //                        'transactionId' => '[PSP Transaction ID]',
+            //                        'statementReference' => 'The Big Give [Charity Name]'
+                    ]
                 ]
-        ])->shouldBeCalledOnce();
+            ],
+        )->shouldBeCalledOnce();
 
         //act
         $sut->notifyNewMandateCreated($mandate, $donor, $campaign);
