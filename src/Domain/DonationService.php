@@ -644,7 +644,7 @@ class DonationService
         $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
 
         if (!$donation) {
-            throw new DomainRecordNotFoundException('Donation not foundxxx');
+            throw new DomainRecordNotFoundException('Donation not found');
         }
 
         return $this->donationToFEApiModel($donation);

@@ -69,7 +69,18 @@ class InMemoryDonationRepository implements DonationRepository
             return null;
         }
 
-        throw new \Exception("Method not implemented in test double");
+
+        if (array_keys($criteria) === ['uuid']) {
+            foreach ($this->donations as $donation) {
+                /** @psalm-suppress MixedArgument */
+                if ($donation->getUuid()->equals($criteria['uuid'])) {
+                    return $donation;
+                }
+            }
+            return null;
+        }
+
+        throw new \Exception("Method not implemented in test double with criteria: " . json_encode($criteria));
     }
 
     #[\Override]

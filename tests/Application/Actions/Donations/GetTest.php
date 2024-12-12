@@ -10,6 +10,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
+use MatchBot\Tests\Domain\InMemoryDonationRepository;
 use MatchBot\Tests\TestCase;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Exception\HttpUnauthorizedException;
@@ -20,53 +21,42 @@ class GetTest extends TestCase
     use PublicJWTAuthTrait;
 
     public const string DONATION_UUID = '2c6f3408-b405-11ef-a2fe-6b6ac08448a0';
+    private InMemoryDonationRepository $donationRepository;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        $container = $this->getContainer();
+        assert($container instanceof Container);
+        $this->donationRepository = new InMemoryDonationRepository();
+
+        $container->set(DonationRepository::class, $this->donationRepository);
+        $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
+        $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
+    }
 
     public function testMissingId(): void
     {
-        $app = $this->getAppInstance();
-
-        // Route not matched at all
         $this->expectException(HttpNotFoundException::class);
 
         $request = $this->createRequest('GET', '/v1/404');
-        $app->handle($request);
+        $this->getAppInstance()->handle($request);
     }
 
     public function testNoAuth(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
-
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->findOneBy(['uuid' => self::DONATION_UUID])
-            ->shouldNotBeCalled();
-
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-
         $request = $this->createRequest('GET', '/v1/donations/' . self::DONATION_UUID);
         $route = $this->getRouteWithDonationId('get', self::DONATION_UUID);
 
         $this->expectException(HttpUnauthorizedException::class);
         $this->expectExceptionMessage('Unauthorised');
 
-        $app->handle($request->withAttribute('route', $route));
+        $this->getAppInstance()->handle($request->withAttribute('route', $route));
     }
 
     public function testInvalidAuth(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
-
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->findOneBy(['uuid' => self::DONATION_UUID])
-            ->shouldNotBeCalled();
-
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-
         $jwtWithBadSignature = DonationToken::create(self::DONATION_UUID) . 'x';
 
         $request = $this->createRequest('GET', '/v1/donations/' . self::DONATION_UUID)
@@ -76,22 +66,11 @@ class GetTest extends TestCase
         $this->expectException(HttpUnauthorizedException::class);
         $this->expectExceptionMessage('Unauthorised');
 
-        $app->handle($request->withAttribute('route', $route));
+        $this->getAppInstance()->handle($request->withAttribute('route', $route));
     }
 
     public function testAuthForWrongDonation(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
-
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->findOneBy(['uuid' => self::DONATION_UUID])
-            ->shouldNotBeCalled();
-
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-
         $jwtForAnotherDonation = DonationToken::create('87654321-1234-1234-1234-ba0987654321');
 
         $request = $this->createRequest('GET', '/v1/donations/' . self::DONATION_UUID)
@@ -101,25 +80,11 @@ class GetTest extends TestCase
         $this->expectException(HttpUnauthorizedException::class);
         $this->expectExceptionMessage('Unauthorised');
 
-        $app->handle($request->withAttribute('route', $route));
+        $this->getAppInstance()->handle($request->withAttribute('route', $route));
     }
 
     public function testIdNotFound(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
-
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->findOneBy(['uuid' => '87654321-1234-1234-1234-ba0987654321'])
-            ->willReturn(null)
-            ->shouldBeCalledOnce();
-
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
-        $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
-
         $request = $this->createRequest('GET', '/v1/donations/87654321-1234-1234-1234-ba0987654321')
             ->withHeader('x-tbg-auth', DonationToken::create('87654321-1234-1234-1234-ba0987654321'));
 
@@ -127,25 +92,16 @@ class GetTest extends TestCase
         $this->expectExceptionMessage('Donation not found');
 
         $route = $this->getRouteWithDonationId('get', '87654321-1234-1234-1234-ba0987654321');
-        $app->handle($request->withAttribute('route', $route));
+        $this->getAppInstance()->handle($request->withAttribute('route', $route));
     }
 
     public function testSuccess(): void
     {
         $app = $this->getAppInstance();
         /** @var Container $container */
-        $container = $app->getContainer();
 
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $testDonation = $this->getTestDonation(charityComms: true);
-        $donationRepoProphecy
-            ->findOneBy(['uuid' => self::DONATION_UUID])
-            ->willReturn($testDonation)
-            ->shouldBeCalledOnce();
-
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
-        $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
+        $testDonation = $this->getTestDonation(charityComms: true, uuid: self::DONATION_UUID);
+        $this->donationRepository->store($testDonation);
 
         $request = $this->createRequest('GET', '/v1/donations/' . self::DONATION_UUID)
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
