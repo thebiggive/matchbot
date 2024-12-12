@@ -4,10 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\Exception\ORMException;
-use MatchBot\Application\Actions\Donations\Get;
-use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
