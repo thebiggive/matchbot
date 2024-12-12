@@ -67,11 +67,6 @@ $commands = array_map($psr11App->get(...), [
     UpdateCampaigns::class,
 ]);
 
-
-$messengerReceiverKey = 'receiver';
-$messengerReceiverLocator = new Container();
-$messengerReceiverLocator->set($messengerReceiverKey, $psr11App->get(TransportInterface::class));
-
 $chatter = $psr11App->get(ChatterInterface::class);
 assert($chatter instanceof ChatterInterface);
 
@@ -93,7 +88,7 @@ $cliApp->setDispatcher($dispatcher);
 $cliApp->getDefinition()->addOption(
     new InputOption(
         Command::CLI_OPTION_NOLOG,
-        'l',
+        null,
         InputOption::VALUE_NONE,
         'Suppresses debug & info log, show only warnings and errors'
     )
