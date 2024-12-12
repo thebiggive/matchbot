@@ -32,7 +32,8 @@ use MatchBot\Application\Assertion;
  *     title: string,
 *      currencyCode: string,
  *     isRegularGiving?: boolean,
- *     regularGivingCollectionEnd?: ?string
+ *     regularGivingCollectionEnd?: ?string,
+ *     thankYouMessage: ?string
  *     }
  */
 

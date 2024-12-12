@@ -109,6 +109,19 @@ It's pretty fast when a large instance is used, but in very large load tests it 
 locking errors. Retries could make this workable up to pretty high volumes, but using Redis as the matching adapter
 offers a way to avoid locks in all cases and retries in a much higher proportion of cases.
 
+### Doctrine ORM
+
+Our MySQL DB schema is generated from annotations on Doctrine Entities (Campaign, Donation etc). 
+To update the schema, edit the properties on the entity, then run:
+
+```shell
+vendor/bin/doctrine-migrations diff
+vendor/bin/doctrine-migrations migrate
+```
+
+This will generate and run new migration file for changing the DB schema from what you had before to the one required
+for your updated entity classes.
+
 ### Redis
 
 Redis is used for Doctrine caches but also for real-time matching allocations, to enable very high volume use without

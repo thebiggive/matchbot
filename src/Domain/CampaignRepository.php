@@ -251,17 +251,17 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
 
         $campaign->updateFromSfPull(
-            status: $campaignData['status'],
             currencyCode: $campaignData['currencyCode'] ?? 'GBP',
+            status: $campaignData['status'],
             endDate: new DateTime($campaignData['endDate']),
             isMatched: $campaignData['isMatched'],
             name: $campaignData['title'],
             startDate: new DateTime($campaignData['startDate']),
             ready: $campaignData['ready'],
+            thankYouMessage: $campaignData['thankYouMessage'],
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
         );
-
         $this->getEntityManager()->flush();
     }
 
