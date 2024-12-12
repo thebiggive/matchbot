@@ -261,7 +261,10 @@ class TestCase extends PHPUnitTestCase
 
     public static function someUpsertedMessage(): DonationUpserted
     {
-        return new DonationUpserted(\Ramsey\Uuid\Uuid::uuid4()->toString(), []);
+        $donation = self::someDonation();
+        $donation->setTransactionId('pi_1234');
+
+        return DonationUpserted::fromDonation($donation);
     }
 
     /**
