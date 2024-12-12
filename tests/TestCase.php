@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests;
 
-use Cassandra\Uuid;
 use DI\ContainerBuilder;
 use Exception;
-use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
