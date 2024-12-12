@@ -21,7 +21,6 @@ use Slim\Exception\HttpNotFoundException;
 
 class Get extends Action
 {
-    #[Pure]
     public function __construct(
         private readonly RegularGivingMandateRepository $regularGivingMandateRepository,
         private readonly Environment $environment,
