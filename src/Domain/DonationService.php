@@ -4,9 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\Exception\ORMException;
-use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -18,9 +16,11 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
+use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\MandateNotActive;
+use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
@@ -634,5 +634,23 @@ class DonationService
 
             $this->entityManager->flush();
         });
+    }
+
+    public function donationAsApiModel(UuidInterface $donationUUID): array
+    {
+        $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
+
+        if (!$donation) {
+            throw new DomainRecordNotFoundException('Donation not found');
+        }
+
+        return $donation->toFrontEndApiModel();
+    }
+
+    public function findAllCompleteForCustomerAsAPIModels(StripeCustomerId $stripeCustomerId): array
+    {
+        $donations = $this->donationRepository->findAllCompleteForCustomer($stripeCustomerId);
+
+        return array_map(fn(Donation $donation) => $donation->toFrontEndApiModel(), $donations);
     }
 }

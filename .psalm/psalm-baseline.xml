@@ -207,26 +207,10 @@
       <code><![CDATA[empty($hmrcReferenceNumber)]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
-  <file src="src/Domain/DonationRepository.php">
+  <file src="src/Domain/DoctrineDonationRepository.php">
     <DeprecatedMethod>
       <code><![CDATA[getResultCacheImpl]]></code>
     </DeprecatedMethod>
-    <MixedReturnTypeCoercion>
-      <code><![CDATA[$qb->getQuery()
-            ->disableResultCache()
-            ->getResult()]]></code>
-      <code><![CDATA[$qb->getQuery()
-            ->disableResultCache()
-            ->getResult()]]></code>
-      <code><![CDATA[$qb->getQuery()
-            ->disableResultCache()
-            ->getResult()]]></code>
-      <code><![CDATA[$qb->getQuery()->getResult()]]></code>
-      <code><![CDATA[Donation[]]]></code>
-      <code><![CDATA[Donation[]]]></code>
-      <code><![CDATA[Donation[]]]></code>
-      <code><![CDATA[Donation[]]]></code>
-    </MixedReturnTypeCoercion>
   </file>
   <file src="src/Domain/FundRepository.php">
     <MissingConstructor>

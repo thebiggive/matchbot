@@ -66,6 +66,9 @@ class UpdateHandlesLockExceptionTest extends TestCase
 
         $donation = $this->getDonation();
 
+        // ideally we should use a more specific argumetn below, for some reason I had trouble getting that to work.
+        $this->donationRepositoryProphecy->findOneBy(Argument::type('array'))->willReturn($donation);
+
         $this->setExpectationsForPersistAfterRetry($donationId, $donation, DonationStatus::Pending);
 
         $updateAction = $this->makeUpdateAction();

@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\Pledge;
@@ -179,6 +180,7 @@ abstract class IntegrationTest extends TestCase
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
         $donationRepo = $container->get(DonationRepository::class);
+        Assertion::isInstanceOf($donationRepo, DoctrineDonationRepository::class);
         $donationRepo->setClient($donationClientProphecy->reveal());
         return $campaignId;
     }
@@ -415,6 +417,7 @@ abstract class IntegrationTest extends TestCase
         $container->set(\MatchBot\Client\Donation::class, $donationClientProphecy->reveal());
 
         $donationRepo = $container->get(DonationRepository::class);
+        Assertion::isInstanceOf($donationRepo, DoctrineDonationRepository::class);
         $donationRepo->setClient($donationClientProphecy->reveal());
 
         return $this->getApp()->handle(

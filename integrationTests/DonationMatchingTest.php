@@ -8,6 +8,7 @@ use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
+use MatchBot\Domain\DoctrineDonationRepository;
 use Psr\Log\LoggerInterface;
 use Redis;
 
@@ -54,7 +55,9 @@ class DonationMatchingTest extends IntegrationTest
         // arrange
         $this->matchingAdapater = $this->makeAdapterThatThrowsAfterSubtractingFunds($this->matchingAdapater);
         $this->setInContainer(Adapter::class, $this->matchingAdapater);
-        $this->getService(\MatchBot\Domain\DonationRepository::class)->setMatchingAdapter($this->matchingAdapater);
+        $donationRepository = $this->getService(\MatchBot\Domain\DonationRepository::class);
+        Assertion::isInstanceOf($donationRepository, DoctrineDonationRepository::class);
+        $donationRepository->setMatchingAdapter($this->matchingAdapater);
 
         $campaignInfo = $this->addFundedCampaignAndCharityToDB(
             campaignSfId: $this->randomString(),
