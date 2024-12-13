@@ -83,7 +83,7 @@ class RegularGivingNotifierTest extends TestCase
         $this->whenWeNotifyThemThatTheMandateWasCreated($clock, $mandate, $donor, $campaign, $firstDonation);
     }
 
-    public function markDonationCollected(Donation $firstDonation, \DateTimeImmutable $collectionDate): void
+    private function markDonationCollected(Donation $firstDonation, \DateTimeImmutable $collectionDate): void
     {
         $firstDonation->collectFromStripeCharge(
             'chargeID',
@@ -123,7 +123,7 @@ class RegularGivingNotifierTest extends TestCase
         $fundingWithdrawals->add($withdrawal);
     }
 
-    public function givenADonor(): DonorAccount
+    private function givenADonor(): DonorAccount
     {
         $donor = new DonorAccount(
             uuid: $this->personId,
@@ -138,7 +138,7 @@ class RegularGivingNotifierTest extends TestCase
     /**
      * @return list{Campaign, RegularGivingMandate, Donation, ClockInterface}
      */
-    public function andGivenAnActivatedMandate(PersonId $personId, DonorAccount $donor): array
+    private function andGivenAnActivatedMandate(PersonId $personId, DonorAccount $donor): array
     {
         $campaign = TestCase::someCampaign(thankYouMessage: 'Thank you for setting up your regular donation to us!');
         /**
@@ -180,12 +180,12 @@ class RegularGivingNotifierTest extends TestCase
         return [$campaign, $mandate, $firstDonation, $clock];
     }
 
-    public function thenThisRequestShouldBeSentToMatchbot(array $requestBody): void
+    private function thenThisRequestShouldBeSentToMatchbot(array $requestBody): void
     {
         $this->mailerProphecy->sendEmail($requestBody)->shouldBeCalledOnce();
     }
 
-    public function whenWeNotifyThemThatTheMandateWasCreated(
+    private function whenWeNotifyThemThatTheMandateWasCreated(
         ClockInterface $clock,
         RegularGivingMandate $mandate,
         DonorAccount $donor,
