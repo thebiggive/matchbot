@@ -29,6 +29,7 @@ use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Clock\ClockInterface;
 use Ramsey\Uuid\Uuid;
@@ -60,8 +61,8 @@ class RegularGivingNotifierTest extends TestCase
                 "schedule" => "Monthly on day #12",
                 "nextPaymentDate" => "12/12/2024",
                 "amount" => "£64.00",
-//                "giftAidValue" => "", // see @todo in SUT
-//                "totalIncGiftAd" => "", // see @todo in SUT
+                "giftAidValue" => "£16.00",
+                "totalIncGiftAd" => "£80.00",
                 "totalCharged" => "£64.00",
                 "firstDonation" => [
                     // mostly same keys as used on the donorDonationSuccess email currently sent via Salesforce.
@@ -72,10 +73,8 @@ class RegularGivingNotifierTest extends TestCase
                     'matchedAmount' => 64,
                     'transactionId' => '[PSP Transaction ID]',
                     'statementReference' => 'Big Give Charity Name',
-                    // @todo -- fill in properties below in implementation
                     'giftAidAmountClaimed' => 16.00,
-//                        'totalCharityValueAmount' => 50_000, // see @todo in SUT
-
+                    'totalCharityValueAmount' => 144.00,
                 ]
             ]
         ]);
@@ -182,7 +181,9 @@ class RegularGivingNotifierTest extends TestCase
 
     private function thenThisRequestShouldBeSentToMatchbot(array $requestBody): void
     {
-        $this->mailerProphecy->sendEmail($requestBody)->shouldBeCalledOnce();
+        $this->mailerProphecy->sendEmail(Argument::any())
+            ->shouldBeCalledOnce()
+            ->will(fn(array $args) => TestCase::assertEqualsCanonicalizing($args[0], $requestBody));
     }
 
     private function whenWeNotifyThemThatTheMandateWasCreated(

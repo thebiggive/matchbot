@@ -454,6 +454,18 @@ class Donation extends SalesforceWriteProxy
         };
     }
 
+    /**
+     * Multiples by 25%
+     *
+     * @param numeric-string $amount
+     * @return numeric-string
+     */
+    public static function donationAmountToGiftAidValue(string $amount): string
+    {
+        $giftAidFactor = bcdiv(self::GIFT_AID_PERCENTAGE, '100', 2);
+        return bcmul($amount, $giftAidFactor, 2);
+    }
+
     public function __toString(): string
     {
         // if we're in __toString then probably something has already gone wrong, and we don't want to allow
@@ -1660,7 +1672,22 @@ class Donation extends SalesforceWriteProxy
             return '0.00';
         }
 
-        $giftAidFactor = bcdiv(self::GIFT_AID_PERCENTAGE, '100', 2);
-        return bcmul($this->amount, $giftAidFactor, 2);
+        $amount = $this->amount;
+
+        return self::donationAmountToGiftAidValue($amount);
+    }
+
+    /**
+     * @return numeric-string
+     */
+    public function totalCharityValueAmount(): string
+    {
+        return Money::sum(
+            ...array_map(Money::fromNumericStringGBP(...), [
+                $this->amount,
+                $this->getGiftAidValue(),
+                $this->getFundingWithdrawalTotal()
+            ])
+        )->toNumericString();
     }
 }
