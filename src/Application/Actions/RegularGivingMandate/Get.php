@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\RegularGivingMandate;
 
+use Assert\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\RegularGivingMandateRepository;
@@ -36,6 +37,10 @@ class Get extends Action
         if (! $this->environment->isFeatureEnabledRegularGiving()) {
             throw new HttpNotFoundException($request);
         }
+
+        Assertion::keyExists($args, "mandateId");
+        $mandateId = $args["mandateId"];
+        Assertion::string($mandateId);
         if (empty($args['mandateId'])) {
             throw new DomainRecordNotFoundException('Missing mandate ID' + $args['mandateId']);
         }
