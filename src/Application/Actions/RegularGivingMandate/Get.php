@@ -37,7 +37,7 @@ class Get extends Action
             throw new HttpNotFoundException($request);
         }
         if (empty($args['mandateId'])) {
-            throw new DomainRecordNotFoundException('Missing donation ID');
+            throw new DomainRecordNotFoundException('Missing mandate ID' + $args['mandateId']);
         }
 
         $donorId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
@@ -46,7 +46,7 @@ class Get extends Action
         $mandate = $this->regularGivingMandateRepository->findOneByUuid($uuid);
 
         if (!$mandate) {
-            throw new DomainRecordNotFoundException('Mandate not found');
+            throw new DomainRecordNotFoundException('Mandate not found for uuid: ' + $args['mandateId']);
         }
 
         $campaign = $this->campaignRepository->findOneBySalesforceId($mandate->getCampaignId());
