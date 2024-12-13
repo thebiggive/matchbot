@@ -47,6 +47,7 @@ class Donation extends SalesforceWriteProxy
 
     public const int MAXIMUM_CUSTOMER_BALANCE_DONATION = 200_000;
     public const int MINUMUM_AMOUNT = 1;
+    public const string GIFT_AID_PERCENTAGE = '25';
 
     private array $possiblePSPs = ['stripe'];
 
@@ -1645,5 +1646,21 @@ class Donation extends SalesforceWriteProxy
     public function getUuid(): UuidInterface
     {
         return $this->uuid;
+    }
+
+    /**
+     * @return numeric-string The amount of gift aid claimable (or claimed) from HMRC to increase the gift aid value.
+     *
+     * Assumes that the Gift Aid percentage is unchanging and applies to all past donations. We need to
+     * add more complexity if it does change.
+     */
+    public function getGiftAidValue(): string
+    {
+        if (! $this->giftAid) {
+            return '0.00';
+        }
+
+        $giftAidFactor = bcdiv(self::GIFT_AID_PERCENTAGE, '100', 2);
+        return bcmul($this->amount, $giftAidFactor, 2);
     }
 }

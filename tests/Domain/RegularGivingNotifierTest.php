@@ -71,9 +71,9 @@ class RegularGivingNotifierTest extends TestCase
                     'charityName' => 'Charity Name',
                     'matchedAmount' => 64,
                     'transactionId' => '[PSP Transaction ID]',
-                    'statementReference' => 'Big Give Charity Name'
+                    'statementReference' => 'Big Give Charity Name',
                     // @todo -- fill in properties below in implementation
-//                        'giftAidAmountClaimed' => 1_000, // see @todo in SUT
+                    'giftAidAmountClaimed' => 16.00,
 //                        'totalCharityValueAmount' => 50_000, // see @todo in SUT
 
                 ]
@@ -167,7 +167,8 @@ class RegularGivingNotifierTest extends TestCase
             countryCode: $donor->getBillingCountryCode(),
             tipAmount: '0',
             mandate: $mandate,
-            mandateSequenceNumber: DonationSequenceNumber::of(1)
+            mandateSequenceNumber: DonationSequenceNumber::of(1),
+            giftAid: true,
         );
         $firstDonation->setTransactionId('[PSP Transaction ID]');
         $this->addFundingWithdrawal($firstDonation, '64');

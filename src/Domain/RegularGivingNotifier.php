@@ -83,7 +83,7 @@ class RegularGivingNotifier
             // @todo-regular-giving - implement giftAidAmountClaimed. I think we want to store
             // this in the DB, not rely on being able to calculate in demand, to allow for the
             // tax rate to change.
-            //                        'giftAidAmountClaimed' => $firstDonation->giftAidAmount(),
+            'giftAidAmountClaimed' => $firstDonation->getGiftAidValue(),
             //                           'totalWithGiftAid' => $firstDonation->totalWithGiftAid(),
 
             // @todo-regular-giving - implement totalCharityValueAmount as amount + total matched + gift aid
