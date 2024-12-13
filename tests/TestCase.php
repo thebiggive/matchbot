@@ -241,7 +241,8 @@ class TestCase extends PHPUnitTestCase
     public static function someDonation(
         string $amount = '1',
         string $currencyCode = 'GBP',
-        PaymentMethodType $paymentMethodType = PaymentMethodType::Card
+        PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
+        bool $giftAid = false,
     ): Donation {
         return new Donation(
             amount: $amount,
@@ -258,6 +259,7 @@ class TestCase extends PHPUnitTestCase
             tipAmount: '0',
             mandate: null,
             mandateSequenceNumber: null,
+            giftAid: $giftAid,
         );
     }
 

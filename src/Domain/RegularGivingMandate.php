@@ -279,4 +279,23 @@ class RegularGivingMandate extends SalesforceWriteProxy
     {
         return "Monthly on day #{$this->dayOfMonth->value}";
     }
+
+    /**
+     * @return Money amount we expect to be claimable in gift aid per donation.
+     */
+    public function getGiftAidAmount(): Money
+    {
+        if (! $this->giftAid) {
+            return Money::fromPoundsGBP(0);
+        }
+
+        return $this->amount->withPence(
+            (int) (100 * Donation::donationAmountToGiftAidValue(amount: $this->amount->toNumericString()))
+        );
+    }
+
+    public function totalIncGiftAd(): Money
+    {
+        return $this->amount->plus($this->getGiftAidAmount());
+    }
 }

@@ -2,39 +2,144 @@
 
 namespace Domain;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use MatchBot\Application\Assertion;
 use MatchBot\Client\Mailer;
+use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignFunding;
+use MatchBot\Domain\CardBrand;
+use MatchBot\Domain\ChampionFund;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\DayOfMonth;
+use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationSequenceNumber;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\Fund;
+use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\MandateStatus;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\Pledge;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
+use Prophecy\Prophecy\ObjectProphecy;
+use Psr\Clock\ClockInterface;
 use Ramsey\Uuid\Uuid;
+use Symfony\Component\Clock\Clock;
 use Symfony\Component\Clock\MockClock;
 
 class RegularGivingNotifierTest extends TestCase
 {
+    /** @var ObjectProphecy<Mailer> */
+    private ObjectProphecy $mailerProphecy;
+
+    /** @var PersonId  */
+    private PersonId $personId;
+
     public function testItNotifiesOfNewDonationMandate(): void
     {
-        $mailerProphecy = $this->prophesize(Mailer::class);
+        $donor = $this->givenADonor();
+        list($campaign, $mandate, $firstDonation, $clock) = $this->andGivenAnActivatedMandate($this->personId, $donor);
 
-        $clock = new MockClock('2024-12-01');
-        $sut = new RegularGivingNotifier($mailerProphecy->reveal(), $clock);
+        $this->thenThisRequestShouldBeSentToMatchbot([
+            "templateKey" => "donor-mandate-confirmation",
+            "recipientEmailAddress" => "donor@example.com",
+            "params" => [
+                "charityName" => "Charity Name",
+                "campaignName" => "someCampaign",
+                "charityNumber" => "Reg-no",
+                "campaignThankYouMessage" => 'Thank you for setting up your regular donation to us!',
+                "signupDate" => "01/12/2024 00:00",
+                "schedule" => "Monthly on day #12",
+                "nextPaymentDate" => "12/12/2024",
+                "amount" => "£64.00",
+                "giftAidValue" => "£16.00",
+                "totalIncGiftAd" => "£80.00",
+                "totalCharged" => "£64.00",
+                "firstDonation" => [
+                    // mostly same keys as used on the donorDonationSuccess email currently sent via Salesforce.
+                    'currencyCode' => 'GBP',
+                    'donationAmount' => 64,
+                    'donationDatetime' => '2025-01-01T09:00:00+00:00',
+                    'charityName' => 'Charity Name',
+                    'matchedAmount' => 64,
+                    'transactionId' => '[PSP Transaction ID]',
+                    'statementReference' => 'Big Give Charity Name',
+                    'giftAidAmountClaimed' => 16.00,
+                    'totalCharityValueAmount' => 144.00,
+                ]
+            ]
+        ]);
 
-        $campaign = TestCase::someCampaign(thankYouMessage: 'Thank you for setting up your regular donation to us!');
-        $personId = PersonId::of(Uuid::uuid4()->toString());
+        $this->whenWeNotifyThemThatTheMandateWasCreated($clock, $mandate, $donor, $campaign, $firstDonation);
+    }
+
+    private function markDonationCollected(Donation $firstDonation, \DateTimeImmutable $collectionDate): void
+    {
+        $firstDonation->collectFromStripeCharge(
+            'chargeID',
+            99,
+            'transfer-id',
+            CardBrand::amex,
+            Country::fromAlpha2('GB'),
+            '99',
+            $collectionDate->getTimestamp(),
+        );
+    }
+
+    /**
+     * Using reflection to add funding withdrawals to donation. In prod code we rely on the ORM to link
+     * Funding withdrawals to donations.
+     *
+     * @param numeric-string $amount
+     */
+    private function addFundingWithdrawal(Donation $donation, string $amount): void
+    {
+        $withdrawal = new FundingWithdrawal(
+            new CampaignFunding(
+                new Pledge('GBP', 'some pledge'),
+                '100',
+                '100',
+                1,
+            )
+        );
+        $withdrawal->setAmount($amount);
+
+        $reflectionClass = new \ReflectionClass($donation);
+        $property = $reflectionClass->getProperty('fundingWithdrawals');
+
+        /** @var Collection<int, FundingWithdrawal> $fundingWithdrawals */
+        $fundingWithdrawals = $property->getValue($donation);
+        Assertion::isInstanceOf($fundingWithdrawals, Collection::class);
+        $fundingWithdrawals->add($withdrawal);
+    }
+
+    private function givenADonor(): DonorAccount
+    {
         $donor = new DonorAccount(
-            uuid: $personId,
+            uuid: $this->personId,
             emailAddress: EmailAddress::of('donor@example.com'),
             donorName: DonorName::of('Jenny', 'Generous'),
             stripeCustomerId: StripeCustomerId::of('cus_anyid'),
         );
+        $donor->setHomeAddressLine1('pretty how town');
+        return $donor;
+    }
 
+    /**
+     * @return list{Campaign, RegularGivingMandate, Donation, ClockInterface}
+     */
+    private function andGivenAnActivatedMandate(PersonId $personId, DonorAccount $donor): array
+    {
+        $campaign = TestCase::someCampaign(thankYouMessage: 'Thank you for setting up your regular donation to us!');
         /**
          * @psalm-suppress PossiblyNullArgument
          */
@@ -47,48 +152,57 @@ class RegularGivingNotifierTest extends TestCase
             dayOfMonth: DayOfMonth::of(12),
         );
 
-        $mandate->activate($clock->now());
+        $firstDonation = new Donation(
+            amount: '64',
+            currencyCode: 'GBP',
+            paymentMethodType: PaymentMethodType::Card,
+            campaign: $campaign,
+            charityComms: false,
+            championComms: false,
+            pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            optInTbgEmail: false,
+            donorName: $donor->donorName,
+            emailAddress: $donor->emailAddress,
+            countryCode: $donor->getBillingCountryCode(),
+            tipAmount: '0',
+            mandate: $mandate,
+            mandateSequenceNumber: DonationSequenceNumber::of(1),
+            giftAid: true,
+        );
+        $firstDonation->setTransactionId('[PSP Transaction ID]');
+        $this->addFundingWithdrawal($firstDonation, '64');
 
-        // assert
-        $mailerProphecy->sendEmail(
-            [
-                "templateKey" => "donor-mandate-confirmation",
-                "recipientEmailAddress" => "donor@example.com",
-                "params" => [
-                    "charityName" => "Charity Name",
-                    "campaignName" => "someCampaign",
-                    "charityNumber" => "Reg-no",
-                    "campaignThankYouMessage" => 'Thank you for setting up your regular donation to us!',
-                    "signupDate" => "01/12/2024 00:00",
-                    "schedule" => "Monthly on day #12",
-                    "nextPaymentDate" => "12/12/2024",
-                    "amount" => "£64.00",
-                    "giftAidValue" => "",
-                    "totalIncGiftAd" => "",
-                    "totalCharged" => "£64.00",
-                    "charityPostalAddress" => "",
-                    "charityPhoneNumber" => "",
-                    "charityEMailAddress" => "",
-                    "charityWebsite" => "",
-                    "firstDonation" => [
-                        // mostly same keys as used on the donorDonationSuccess email
-                        // @todo -- fill in properties below in implementation
-            //                        'donationDatetime' => new \DateTimeImmutable('2023-01-30'),
-            //                        'currencyCode' => 'GBP',
-            //                        'charityName' => '[Charity Name]',
-            //                        'donationAmount' => 25_000,
-            //                        'giftAidAmountClaimed' => 1_000,
-            //                        'totalWithGiftAid' => 26_000,
-            //                        'matchedAmount' => 25_000,
-            //                        'totalCharityValueAmount' => 50_000,
-            //                        'transactionId' => '[PSP Transaction ID]',
-            //                        'statementReference' => 'The Big Give [Charity Name]'
-                    ]
-                ]
-            ],
-        )->shouldBeCalledOnce();
+        $this->markDonationCollected($firstDonation, new \DateTimeImmutable('2025-01-01 09:00:00'));
+
+        $clock = new MockClock('2024-12-01');
+        $mandate->activate($clock->now());
+        return [$campaign, $mandate, $firstDonation, $clock];
+    }
+
+    private function thenThisRequestShouldBeSentToMatchbot(array $requestBody): void
+    {
+        $this->mailerProphecy->sendEmail(Argument::any())
+            ->shouldBeCalledOnce()
+            ->will(fn(array $args) => TestCase::assertEqualsCanonicalizing($args[0], $requestBody));
+    }
+
+    private function whenWeNotifyThemThatTheMandateWasCreated(
+        ClockInterface $clock,
+        RegularGivingMandate $mandate,
+        DonorAccount $donor,
+        Campaign $campaign,
+        Donation $firstDonation
+    ): void {
+        $sut = new RegularGivingNotifier($this->mailerProphecy->reveal(), $clock);
 
         //act
-        $sut->notifyNewMandateCreated($mandate, $donor, $campaign);
+        $sut->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->mailerProphecy = $this->prophesize(Mailer::class);
+        $this->personId = PersonId::of(Uuid::uuid4()->toString());
     }
 }

@@ -106,7 +106,7 @@ readonly class RegularGivingService
 
         $this->entityManager->flush();
 
-        $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign);
+        $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
 
         return $mandate;
     }
