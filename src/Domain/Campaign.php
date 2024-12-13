@@ -117,7 +117,7 @@ class Campaign extends SalesforceReadProxy
         $this->createdNow();
         $this->campaignFundings = new ArrayCollection();
         $this->charity = $charity;
-        $this->salesforceId = $sfId->value;
+        parent::setSalesforceId($sfId->value);
 
         $this->updateFromSfPull(
             currencyCode: $currencyCode,
@@ -138,7 +138,7 @@ class Campaign extends SalesforceReadProxy
      */
     public function __toString(): string
     {
-        return "Campaign ID #{$this->id}, SFId: {$this->salesforceId}";
+        return "Campaign ID #{$this->id}, SFId: {$this->getSalesforceId()}";
     }
 
     /**
@@ -184,7 +184,7 @@ class Campaign extends SalesforceReadProxy
             $_charity = $this->charity;
         } catch (\Error $e) {
             throw new \Exception(
-                "Error on attempt to persist campaign #{$this->id}, sfID {$this->salesforceId}: \n{$e}"
+                "Error on attempt to persist campaign #{$this->id}, sfID {$this->getSalesforceId()}: \n{$e}"
             );
         }
     }
@@ -282,7 +282,7 @@ class Campaign extends SalesforceReadProxy
         Assertion::lessOrEqualThan(
             $startDate,
             $endDate,
-            "Campaign may not end before it starts {$this->salesforceId}"
+            "Campaign may not end before it starts {$this->getSalesforceId()}"
         );
 
         Assertion::eq($currencyCode, 'GBP', 'Only GBP currency supported at present');
@@ -293,7 +293,7 @@ class Campaign extends SalesforceReadProxy
         if (! $isRegularGiving) {
             Assertion::null(
                 $regularGivingCollectionEnd,
-                "Can't have a regular giving collection end date for non-regular campaign {$this->salesforceId}"
+                "Can't have a regular giving collection end date for non-regular campaign {$this->getSalesforceId()}"
             );
         }
 
@@ -318,9 +318,10 @@ class Campaign extends SalesforceReadProxy
     public function getSalesforceId(): string
     {
         // salesforce ID is set in Campaign constructor, so should never be null.
-        Assertion::string($this->salesforceId);
+        $salesforceId = parent::getSalesforceId();
+        Assertion::string($salesforceId);
 
-        return $this->salesforceId;
+        return $salesforceId;
     }
 
     public function regularGivingCollectionIsEndedAt(\DateTimeImmutable $date): bool

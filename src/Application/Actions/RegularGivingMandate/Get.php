@@ -42,16 +42,17 @@ class Get extends Action
         $mandateId = $args["mandateId"];
         Assertion::string($mandateId);
         if (empty($args['mandateId'])) {
-            throw new DomainRecordNotFoundException('Missing mandate ID' + $args['mandateId']);
+            throw new DomainRecordNotFoundException('Missing mandate ID ' . $mandateId);
         }
 
+        // @todo-regular-giving: make sure that the donor requesting the mandate is the owner of the mandate
         $donorId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
         \assert($donorId instanceof PersonId);
         $uuid = Uuid::fromString((string) $args['mandateId']);
         $mandate = $this->regularGivingMandateRepository->findOneByUuid($uuid);
 
         if (!$mandate) {
-            throw new DomainRecordNotFoundException('Mandate not found for uuid: ' + $args['mandateId']);
+            throw new DomainRecordNotFoundException('Mandate not found for uuid: ' . $mandateId);
         }
 
         $campaign = $this->campaignRepository->findOneBySalesforceId($mandate->getCampaignId());
