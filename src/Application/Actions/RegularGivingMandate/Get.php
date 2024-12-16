@@ -53,7 +53,7 @@ class Get extends Action
         if ($mandate === null) {
             throw new DomainRecordNotFoundException('Mandate not found');
         }
-        if ($donorId !== $mandate->donorId) {
+        if ($donorId->id !== $mandate->donorId->id) {
             throw new HttpUnauthorizedException($request);
         }
 
