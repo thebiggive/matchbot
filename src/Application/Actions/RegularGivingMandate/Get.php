@@ -51,6 +51,10 @@ class Get extends Action
         $uuid = Uuid::fromString((string) $args['mandateId']);
         $mandate = $this->regularGivingMandateRepository->findOneByUuid($uuid);
 
+        \assert($donorId === $mandate->donorId);
+        if ($donorId !== $mandate->donorId) {
+            throw new DomainRecordNotFoundException('Donor Id: ' . $donorId . ' on request does not match donor Id on the mandate: ' . $mandate->donorId);
+        }
         if (!$mandate) {
             throw new DomainRecordNotFoundException('Mandate not found for uuid: ' . $mandateId);
         }
