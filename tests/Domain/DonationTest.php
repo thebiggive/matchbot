@@ -50,6 +50,18 @@ class DonationTest extends TestCase
         $this->assertNull($donation->getTbgComms());
     }
 
+    /**
+     * @dataProvider giftAidProvider
+     * @param numeric-string $donationAmount
+     * @param numeric-string $expectedGAAmount
+     */
+    public function testCalculatesGiftAid(string $donationAmount, bool $hasGiftAid, string $expectedGAAmount): void
+    {
+        $donation = TestCase::someDonation(amount: $donationAmount, giftAid: $hasGiftAid);
+
+        $this->assertSame($expectedGAAmount, $donation->getGiftAidValue());
+    }
+
     public function testValidDataPersisted(): void
     {
         $donation = $this->getTestDonation('100.00');
@@ -980,5 +992,21 @@ class DonationTest extends TestCase
         $isFullyMatched = $donation->isFullyMatched();
 
         $this->assertTrue($isFullyMatched);
+    }
+
+    /**
+     * @return list<array{0: numeric-string, 1: bool, 2: numeric-string}>
+     */
+    public function giftAidProvider(): array
+    {
+        // including cases with fractional donation amounts, but as we do not allow such donations the actual
+        // rounding method used is probably not critcal.
+        return [
+            ['1.00', true, '0.25'],
+            ['1.03', true, '0.25'],
+            ['1.04', true, '0.26'],
+
+            ['1.00', false, '0.00'],
+        ];
     }
 }

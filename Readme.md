@@ -79,6 +79,18 @@ Docker container, or just flush the data store:
     docker compose exec redis redis-cli FLUSHALL
 ```
 
+## Run Checks
+
+To run multiple checks as circleCI does when you push any commit, use:
+
+```shell
+docker compose exec app composer run check
+```
+
+Currently, this includes automated tests, static analysis and code linting.
+
+For individual checks see following sections.
+
 ## Run unit tests
 
 Once you have the app running, you can test with: 
