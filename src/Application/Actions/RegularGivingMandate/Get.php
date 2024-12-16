@@ -45,7 +45,6 @@ class Get extends Action
             throw new DomainRecordNotFoundException('Missing mandate ID ' . $mandateId);
         }
 
-        // @todo-regular-giving: make sure that the donor requesting the mandate is the owner of the mandate
         $donorId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
         \assert($donorId instanceof PersonId);
         $uuid = Uuid::fromString((string) $args['mandateId']);
