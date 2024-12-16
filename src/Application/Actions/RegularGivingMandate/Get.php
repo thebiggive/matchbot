@@ -18,6 +18,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpNotFoundException;
+use Slim\Exception\HttpUnauthorizedException;
 
 class Get extends Action
 {
@@ -49,11 +50,14 @@ class Get extends Action
         \assert($donorId instanceof PersonId);
         $uuid = Uuid::fromString((string) $args['mandateId']);
         $mandate = $this->regularGivingMandateRepository->findOneByUuid($uuid);
-        \assert($mandate !== null);
-        \assert($donorId === $mandate->donorId);
-        if ($donorId !== $mandate->donorId) {
-            throw new DomainRecordNotFoundException('Donor Id: ' . strval($donorId) . ' on request does not match donor Id on the mandate: ' . strval($mandate->donorId));
+
+        if ($mandate === null) {
+            throw new DomainRecordNotFoundException('Mandate not found');
         }
+        if ($donorId !== $mandate->donorId) {
+            throw new HttpUnauthorizedException($request);
+        }
+
         $campaign = $this->campaignRepository->findOneBySalesforceId($mandate->getCampaignId());
         assert($campaign !== null);
         $charity = $campaign->getCharity();
