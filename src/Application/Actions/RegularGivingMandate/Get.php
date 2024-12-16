@@ -8,7 +8,6 @@ use Assert\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\RegularGivingMandateRepository;
-use JetBrains\PhpStorm\Pure;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
@@ -50,15 +49,11 @@ class Get extends Action
         \assert($donorId instanceof PersonId);
         $uuid = Uuid::fromString((string) $args['mandateId']);
         $mandate = $this->regularGivingMandateRepository->findOneByUuid($uuid);
-
+        \assert($mandate !== null);
         \assert($donorId === $mandate->donorId);
         if ($donorId !== $mandate->donorId) {
-            throw new DomainRecordNotFoundException('Donor Id: ' . $donorId . ' on request does not match donor Id on the mandate: ' . $mandate->donorId);
+            throw new DomainRecordNotFoundException('Donor Id: ' . strval($donorId) . ' on request does not match donor Id on the mandate: ' . strval($mandate->donorId));
         }
-        if (!$mandate) {
-            throw new DomainRecordNotFoundException('Mandate not found for uuid: ' . $mandateId);
-        }
-
         $campaign = $this->campaignRepository->findOneBySalesforceId($mandate->getCampaignId());
         assert($campaign !== null);
         $charity = $campaign->getCharity();
