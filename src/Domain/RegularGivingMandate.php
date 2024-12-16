@@ -108,7 +108,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     public function toFrontEndApiModel(Charity $charity, \DateTimeImmutable $now): array
     {
-        Assertion::same($charity->salesforceId, $this->charityId);
+        Assertion::same($charity->getSalesforceId(), $this->charityId);
 
         return [
             'id' => $this->uuid->toString(),

@@ -76,7 +76,7 @@ return function (App $app) {
             ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
-        $versionGroup->get('/regular-giving/my-donation-mandates/{uuid:[a-z0-9-]{36}}', RegularGivingMandate\Get::class)
+        $versionGroup->get('/regular-giving/my-donation-mandates/{mandateId:[a-z0-9-]{36}}', RegularGivingMandate\Get::class)
             ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);

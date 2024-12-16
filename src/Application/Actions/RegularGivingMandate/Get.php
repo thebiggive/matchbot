@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\RegularGivingMandate;
 
+use Assert\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\RegularGivingMandateRepository;
-use JetBrains\PhpStorm\Pure;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
@@ -18,6 +18,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\Exception\HttpNotFoundException;
+use Slim\Exception\HttpUnauthorizedException;
 
 class Get extends Action
 {
@@ -36,8 +37,12 @@ class Get extends Action
         if (! $this->environment->isFeatureEnabledRegularGiving()) {
             throw new HttpNotFoundException($request);
         }
+
+        Assertion::keyExists($args, "mandateId");
+        $mandateId = $args["mandateId"];
+        Assertion::string($mandateId);
         if (empty($args['mandateId'])) {
-            throw new DomainRecordNotFoundException('Missing donation ID');
+            throw new DomainRecordNotFoundException('Missing mandate ID ' . $mandateId);
         }
 
         $donorId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
@@ -45,8 +50,11 @@ class Get extends Action
         $uuid = Uuid::fromString((string) $args['mandateId']);
         $mandate = $this->regularGivingMandateRepository->findOneByUuid($uuid);
 
-        if (!$mandate) {
+        if ($mandate === null) {
             throw new DomainRecordNotFoundException('Mandate not found');
+        }
+        if ($donorId->id !== $mandate->donorId->id) {
+            throw new HttpUnauthorizedException($request);
         }
 
         $campaign = $this->campaignRepository->findOneBySalesforceId($mandate->getCampaignId());
