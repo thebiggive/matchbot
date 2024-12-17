@@ -86,7 +86,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
         $this->uuid = Uuid::uuid4();
 
-        $this->amount = $amount;
+        $this->dontationAmount = $amount;
         $this->campaignId = $campaignId->value;
         $this->charityId = $charityId->value;
         $this->giftAid = $giftAid;
@@ -113,7 +113,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
         return [
             'id' => $this->uuid->toString(),
             'donorId' => $this->donorId->id,
-            'amount' => $this->amount,
+            'donationAmount' => $this->dontationAmount,
+            'matchedAmount' => $this->getMatchedAmount(),
             'campaignId' => $this->campaignId,
             'charityId' => $this->charityId,
             'schedule' => [
@@ -171,8 +172,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
         Campaign $campaign
     ): Donation {
         $donation = new Donation(
-            amount: $this->amount->toNumericString(),
-            currencyCode: $this->amount->currency->isoCode(),
+            amount: $this->dontationAmount->toNumericString(),
+            currencyCode: $this->dontationAmount->currency->isoCode(),
             paymentMethodType: PaymentMethodType::Card,
             campaign: $campaign,
             charityComms: false,
@@ -247,7 +248,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     public function getAmount(): Money
     {
-        return $this->amount;
+        return $this->dontationAmount;
     }
 
     public function getCharityId(): string
@@ -289,13 +290,22 @@ class RegularGivingMandate extends SalesforceWriteProxy
             return Money::fromPoundsGBP(0);
         }
 
-        return $this->amount->withPence(
-            (int) (100 * Donation::donationAmountToGiftAidValue(amount: $this->amount->toNumericString()))
+        return $this->dontationAmount->withPence(
+            (int) (100 * Donation::donationAmountToGiftAidValue(amount: $this->dontationAmount->toNumericString()))
         );
     }
 
     public function totalIncGiftAd(): Money
     {
-        return $this->amount->plus($this->getGiftAidAmount());
+        return $this->dontationAmount->plus($this->getGiftAidAmount());
+    }
+
+    /**
+     * @return Money
+     */
+    public function getMatchedAmount(): Money
+    {
+        // @todo-regular-giving: use matchedAmount that comes from Donation
+        return $this->dontationAmount;
     }
 }
