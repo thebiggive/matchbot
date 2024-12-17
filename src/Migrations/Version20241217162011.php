@@ -9,7 +9,7 @@ use Doctrine\Migrations\AbstractMigration;
 use MatchBot\Application\Assertion;
 
 /**
- * MAT-398 – remove Gift Aid from 2 donations
+ * MAT-398 – remove Gift Aid from 2 donations, and tip from 1 missed donation
  *
  * @see Version20241206101546 which Gift Aid patch approach is copied from.
  */
@@ -17,7 +17,7 @@ final class Version20241217162011 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Remove Gift Aid from 2 donations';
+        return 'Remove Gift Aid from 2 donations, and tip from 1';
     }
 
     public function up(Schema $schema): void
@@ -40,6 +40,14 @@ final class Version20241217162011 extends AbstractMigration
             EOT
             );
         }
+
+        $this->addSql(<<<EOT
+            UPDATE Donation
+            SET salesforcePushStatus = 'pending-update', tipAmount = 0
+            WHERE uuid = 'b17948f2-8871-41c3-b190-c0383ffb73d2' AND transactionId = 'pi_3QRxU2KkGuKkxwBN1Rw88X1Y'
+            LIMIT 1
+        EOT
+        );
     }
 
     public function down(Schema $schema): void
