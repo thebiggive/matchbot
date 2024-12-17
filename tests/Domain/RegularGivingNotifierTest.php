@@ -145,7 +145,7 @@ class RegularGivingNotifierTest extends TestCase
          */
         $mandate = new RegularGivingMandate(
             donorId: $personId,
-            amount: Money::fromPoundsGBP(64),
+            donationAmount: Money::fromPoundsGBP(64),
             campaignId: Salesforce18Id::ofCampaign($campaign->getSalesforceId()),
             charityId: Salesforce18Id::ofCharity($campaign->getCharity()->getSalesforceId()),
             giftAid: true,
