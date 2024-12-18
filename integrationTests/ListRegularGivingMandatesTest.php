@@ -67,7 +67,11 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                 'donorId' => $this->donorId->id,
                 'campaignId' => $campaignSfId,
                 'charityId' => $charitySfId,
-                'amount' => [
+                'donationAmount' => [
+                    'amountInPence' => 500_00,
+                    'currency' => 'GBP',
+                ],
+                'matchedAmount' => [
                     'amountInPence' => 500_00,
                     'currency' => 'GBP',
                 ],
@@ -109,7 +113,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
     ): UuidInterface {
         $mandate = new RegularGivingMandate(
             donorId: $personId,
-            amount: Money::fromPoundsGBP(500),
+            donationAmount: Money::fromPoundsGBP(500),
             campaignId: Salesforce18Id::ofCampaign($campaignId),
             charityId: Salesforce18Id::ofCharity($charityId),
             giftAid: true,

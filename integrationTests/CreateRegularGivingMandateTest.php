@@ -42,12 +42,12 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         // assert
         $this->assertSame(201, $response->getStatusCode());
         $mandateDatabaseRows = $this->db()->executeQuery(
-            "SELECT * from RegularGivingMandate where amount_amountInPence = ?",
+            "SELECT * from RegularGivingMandate where donationAmount_amountInPence = ?",
             [$pencePerMonth]
         )
             ->fetchAllAssociative();
         $this->assertNotEmpty($mandateDatabaseRows);
-        $this->assertSame($pencePerMonth, $mandateDatabaseRows[0]['amount_amountInPence']);
+        $this->assertSame($pencePerMonth, $mandateDatabaseRows[0]['donationAmount_amountInPence']);
     }
 
 

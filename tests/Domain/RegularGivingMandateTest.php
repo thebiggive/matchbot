@@ -154,7 +154,7 @@ class RegularGivingMandateTest extends TestCase
 
         $mandate = new RegularGivingMandate(
             donorId: PersonId::of('2c2b4832-563c-11ef-96a4-07141f9e507e'),
-            amount: Money::fromPoundsGBP(500),
+            donationAmount: Money::fromPoundsGBP(500),
             dayOfMonth: DayOfMonth::of(12),
             campaignId: Salesforce18Id::ofCampaign('campaign9012345678'),
             charityId: Salesforce18Id::ofCharity(
@@ -172,7 +172,11 @@ class RegularGivingMandateTest extends TestCase
                 {
                   "id": "$uuid",
                   "donorId": "2c2b4832-563c-11ef-96a4-07141f9e507e",
-                  "amount": {
+                  "donationAmount": {
+                    "amountInPence": 50000,
+                    "currency": "GBP"
+                  },
+                  "matchedAmount": {
                     "amountInPence": 50000,
                     "currency": "GBP"
                   },
@@ -200,7 +204,7 @@ class RegularGivingMandateTest extends TestCase
 
         new RegularGivingMandate(
             donorId: PersonId::of('2c2b4832-563c-11ef-96a4-07141f9e507e'),
-            amount: Money::fromPence($pence, Currency::GBP),
+            donationAmount: Money::fromPence($pence, Currency::GBP),
             dayOfMonth: DayOfMonth::of(12),
             campaignId: Salesforce18Id::ofCampaign('campaign9012345678'),
             charityId: Salesforce18Id::ofCharity('charity09012345678'),

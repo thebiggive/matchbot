@@ -66,7 +66,7 @@ readonly class RegularGivingService
 
         $mandate = new RegularGivingMandate(
             donorId: $donorID,
-            amount: $amount,
+            donationAmount: $amount,
             campaignId: Salesforce18Id::ofCampaign($campaign->getSalesforceId()),
             charityId: $charityId,
             giftAid: $giftAid,

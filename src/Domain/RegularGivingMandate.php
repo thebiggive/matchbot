@@ -34,7 +34,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public PersonId $donorId;
 
     #[ORM\Embedded(columnPrefix: '')]
-    private readonly Money $amount;
+    private readonly Money $donationAmount;
 
     /**
      * @var string 18 digit salesforce ID of campaign
@@ -69,7 +69,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
      */
     public function __construct(
         PersonId $donorId,
-        Money $amount,
+        Money $donationAmount,
         Salesforce18Id $campaignId,
         Salesforce18Id $charityId,
         bool $giftAid,
@@ -78,15 +78,15 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->createdNow();
         $minAmount = Money::fromPence(self::MIN_AMOUNT_PENCE, Currency::GBP);
         $maxAmount = Money::fromPence(self::MAX_AMOUNT_PENCE, Currency::GBP);
-        if ($amount->lessThan($minAmount) || $amount->moreThan($maxAmount)) {
+        if ($donationAmount->lessThan($minAmount) || $donationAmount->moreThan($maxAmount)) {
             throw new UnexpectedValueException(
-                "Amount {$amount} is out of allowed range {$minAmount}-{$maxAmount}"
+                "Amount {$donationAmount} is out of allowed range {$minAmount}-{$maxAmount}"
             );
         }
 
         $this->uuid = Uuid::uuid4();
 
-        $this->amount = $amount;
+        $this->donationAmount = $donationAmount;
         $this->campaignId = $campaignId->value;
         $this->charityId = $charityId->value;
         $this->giftAid = $giftAid;
@@ -113,7 +113,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
         return [
             'id' => $this->uuid->toString(),
             'donorId' => $this->donorId->id,
-            'amount' => $this->amount,
+            'donationAmount' => $this->donationAmount,
+            'matchedAmount' => $this->getMatchedAmount(),
             'campaignId' => $this->campaignId,
             'charityId' => $this->charityId,
             'schedule' => [
@@ -171,8 +172,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
         Campaign $campaign
     ): Donation {
         $donation = new Donation(
-            amount: $this->amount->toNumericString(),
-            currencyCode: $this->amount->currency->isoCode(),
+            amount: $this->donationAmount->toNumericString(),
+            currencyCode: $this->donationAmount->currency->isoCode(),
             paymentMethodType: PaymentMethodType::Card,
             campaign: $campaign,
             charityComms: false,
@@ -245,9 +246,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
         return $this->uuid;
     }
 
-    public function getAmount(): Money
+    public function getDonationAmount(): Money
     {
-        return $this->amount;
+        return $this->donationAmount;
     }
 
     public function getCharityId(): string
@@ -289,13 +290,22 @@ class RegularGivingMandate extends SalesforceWriteProxy
             return Money::fromPoundsGBP(0);
         }
 
-        return $this->amount->withPence(
-            (int) (100 * Donation::donationAmountToGiftAidValue(amount: $this->amount->toNumericString()))
+        return $this->donationAmount->withPence(
+            (int) (100 * Donation::donationAmountToGiftAidValue(amount: $this->donationAmount->toNumericString()))
         );
     }
 
     public function totalIncGiftAd(): Money
     {
-        return $this->amount->plus($this->getGiftAidAmount());
+        return $this->donationAmount->plus($this->getGiftAidAmount());
+    }
+
+    /**
+     * @return Money
+     */
+    public function getMatchedAmount(): Money
+    {
+        // @todo-regular-giving: use matchedAmount that comes from Donation
+        return $this->donationAmount;
     }
 }
