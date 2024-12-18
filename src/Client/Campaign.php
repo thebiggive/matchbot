@@ -4,12 +4,24 @@ declare(strict_types=1);
 
 namespace MatchBot\Client;
 
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Assertion;
 
 /**
+ * // Some fields in the following type are marked optional because they do not yet exist in our prod SF org. They
+ * // may also separately be nullable.
  * @psalm-type SFCampaignApiResponse = array{
- *     charity: array,
+ *     charity: array{
+ *      id: string,
+ *      name: string,
+ *      stripeAccountId: string,
+ *      hmrcReferenceNumber: string,
+ *      giftAidOnboardingStatus: string,
+ *      regulator: string,
+ *      regulatorRegion: string,
+ *      regulatorNumber: string,
+ *     },
  *     endDate: string,
  *     feePercentage: ?float,
  *     id: string,
@@ -19,6 +31,9 @@ use MatchBot\Application\Assertion;
  *     status: string|null,
  *     title: string,
 *      currencyCode: string,
+ *     isRegularGiving?: boolean,
+ *     regularGivingCollectionEnd?: ?string,
+ *     thankYouMessage: ?string
  *     }
  */
 

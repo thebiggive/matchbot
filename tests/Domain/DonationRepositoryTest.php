@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Domain;
 
+use Assert\Assertion;
 use DI\Container;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Connection;
@@ -19,6 +20,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
+use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -30,9 +32,8 @@ use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
-use Symfony\Component\Lock\Exception\LockAcquiringException;
-use Symfony\Component\Lock\LockFactory;
-use Symfony\Component\Lock\LockInterface;
+use Ramsey\Uuid\Uuid;
+use Symfony\Component\Messenger\Envelope;
 
 class DonationRepositoryTest extends TestCase
 {
@@ -87,7 +88,8 @@ class DonationRepositoryTest extends TestCase
 
     public function testBuildFromApiRequestSuccess(): void
     {
-        $dummyCampaign = new Campaign(charity: \MatchBot\Tests\TestCase::someCharity());
+        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
+
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -97,12 +99,12 @@ class DonationRepositoryTest extends TestCase
         $createPayload = new DonationCreate(
             currencyCode: 'USD',
             donationAmount: '123',
-            pspMethodType: PaymentMethodType::Card,
             projectId: 'testProject1234567',
             psp: 'stripe',
+            pspMethodType: PaymentMethodType::Card,
         );
 
-        $donation = $this->getRepo(null, false, $campaignRepoProphecy)
+        $donation = $this->getRepo(null, $campaignRepoProphecy)
             ->buildFromApiRequest($createPayload);
 
         $this->assertEquals('USD', $donation->getCurrencyCode());
@@ -116,9 +118,8 @@ class DonationRepositoryTest extends TestCase
         $fundRepositoryProphecy = $this->prophesize(FundRepository::class);
         $this->entityManagerProphecy->flush()->shouldBeCalled();
 
-        $dummyCampaign = new Campaign(TestCase::someCharity());
+        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
         $dummyCampaign->setCurrencyCode('GBP');
-        $dummyCampaign->setSalesforceId('testProject1234567');
 
 
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -132,14 +133,15 @@ class DonationRepositoryTest extends TestCase
         $createPayload = new DonationCreate(
             currencyCode: 'GBP',
             donationAmount: '123',
-            pspMethodType: PaymentMethodType::Card,
             projectId: 'testProject1234567',
             psp: 'stripe',
+            pspMethodType: PaymentMethodType::Card,
         );
 
         $donationRepository = $this->getRepo(
             campaignRepoProphecy: $campaignRepoProphecy,
         );
+        Assertion::isInstanceOf($donationRepository, DoctrineDonationRepository::class);
         $donationRepository->setFundRepository($fundRepositoryProphecy->reveal());
 
         $donation = $donationRepository
@@ -153,7 +155,8 @@ class DonationRepositoryTest extends TestCase
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Currency CAD is invalid for campaign');
 
-        $dummyCampaign = new Campaign(charity: null);
+        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
+
         $dummyCampaign->setCurrencyCode('USD');
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -164,12 +167,12 @@ class DonationRepositoryTest extends TestCase
         $createPayload = new DonationCreate(
             currencyCode: 'CAD',
             donationAmount: '144.0',
-            pspMethodType: PaymentMethodType::Card,
             projectId: 'testProject1234567',
             psp: 'stripe',
+            pspMethodType: PaymentMethodType::Card,
         );
 
-        $this->getRepo(null, false, $campaignRepoProphecy)
+        $this->getRepo(campaignRepoProphecy: $campaignRepoProphecy)
             ->buildFromApiRequest($createPayload);
     }
 
@@ -193,7 +196,7 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');
-        ;
+
         $donation->setTipAmount('10.00');
         $donation->deriveFees(CardBrand::amex, null);
 
@@ -214,7 +217,7 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');
-        ;
+
         $donation->setTipAmount('10.00');
         $donation->deriveFees(CardBrand::visa, Country::fromAlpha2('US'));
 
@@ -234,7 +237,7 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');
-        ;
+
         $donation->setTipAmount('10.00');
         $donation->deriveFees(null, null);
 
@@ -254,7 +257,7 @@ class DonationRepositoryTest extends TestCase
         // N.B. tip to TBG should not change the amount the charity receives, and the tip
         // is not included in the core donation amount set by `setAmount()`.
         $donation = $this->getTestDonation('987.65');
-        ;
+
         $donation->setTipAmount('10.00');
 
         $donation->deriveFees(null, null);
@@ -275,7 +278,7 @@ class DonationRepositoryTest extends TestCase
     public function testStripeAmountForCharityWithoutTip(): void
     {
         $donation = $this->getTestDonation('987.65');
-        ;
+
         $donation->setTipAmount('0.00');
         $donation->deriveFees(null, null);
 
@@ -324,15 +327,6 @@ class DonationRepositoryTest extends TestCase
 
     public function testReleaseMatchFundsSuccess(): void
     {
-        $lockProphecy = $this->prophesize(LockInterface::class);
-        $lockProphecy->acquire(false)->willReturn(true)->shouldBeCalledOnce();
-        $lockProphecy->release()->shouldNotBeCalled(); // We only do this on new funds allocation now.
-
-        $lockFactoryProphecy = $this->prophesize(LockFactory::class);
-        $lockFactoryProphecy->createLock(Argument::type('string'), 300.0)
-            ->willReturn($lockProphecy->reveal())
-            ->shouldBeCalledOnce();
-
         $matchingAdapterProphecy = $this->prophesize(Adapter::class);
         $matchingAdapterProphecy->releaseAllFundsForDonation(Argument::cetera())
             ->willReturn('0.00')
@@ -345,70 +339,12 @@ class DonationRepositoryTest extends TestCase
         );
 
         $repo = $this->getRepo(
-            null,
-            false,
-            null,
-            $matchingAdapterProphecy,
-            $lockFactoryProphecy,
+            matchingAdapterProphecy: $matchingAdapterProphecy,
         );
 
         $donation = $this->getTestDonation();
-        $repo->releaseMatchFunds($donation);
-    }
 
-    public function testReleaseMatchFundsLockNotAcquired(): void
-    {
-        $lockProphecy = $this->prophesize(LockInterface::class);
-        $lockProphecy->acquire(false)->willReturn(false)->shouldBeCalledOnce();
-        $lockProphecy->release()->shouldNotBeCalled();
-
-        $lockFactoryProphecy = $this->prophesize(LockFactory::class);
-        $lockFactoryProphecy->createLock(Argument::type('string'), 300.0)
-            ->willReturn($lockProphecy->reveal())
-            ->shouldBeCalledOnce();
-
-        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
-        $matchingAdapterProphecy->subtractAmountWithoutSavingToDB(Argument::cetera())
-            ->shouldNotBeCalled();
-
-        $repo = $this->getRepo(
-            null,
-            false,
-            null,
-            $matchingAdapterProphecy,
-            $lockFactoryProphecy,
-        );
-
-        $donation = $this->getTestDonation();
-        $repo->releaseMatchFunds($donation);
-    }
-
-    public function testReleaseMatchFundsLockHitsAcquiringException(): void
-    {
-        $lockProphecy = $this->prophesize(LockInterface::class);
-        $lockProphecy->acquire(false)
-            ->willThrow(LockAcquiringException::class)
-            ->shouldBeCalledOnce();
-        $lockProphecy->release()->shouldNotBeCalled();
-
-        $lockFactoryProphecy = $this->prophesize(LockFactory::class);
-        $lockFactoryProphecy->createLock(Argument::type('string'), 300.0)
-            ->willReturn($lockProphecy->reveal())
-            ->shouldBeCalledOnce();
-
-        $matchingAdapterProphecy = $this->prophesize(Adapter::class);
-        $matchingAdapterProphecy->subtractAmountWithoutSavingToDB(Argument::cetera())
-            ->shouldNotBeCalled();
-
-        $repo = $this->getRepo(
-            null,
-            false,
-            null,
-            $matchingAdapterProphecy,
-            $lockFactoryProphecy,
-        );
-
-        $donation = $this->getTestDonation();
+        /** @psalm-suppress InternalMethod */
         $repo->releaseMatchFunds($donation);
     }
 
@@ -447,7 +383,7 @@ class DonationRepositoryTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $repo = new DonationRepository(
+        $repo = new DoctrineDonationRepository(
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
@@ -502,7 +438,7 @@ class DonationRepositoryTest extends TestCase
         $entityManagerProphecy->createQueryBuilder()->shouldBeCalledOnce()
             ->willReturn($queryBuilderProphecy->reveal());
 
-        $repo = new DonationRepository(
+        $repo = new DoctrineDonationRepository(
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
@@ -543,7 +479,7 @@ class DonationRepositoryTest extends TestCase
         $entityManagerProphecy->createQueryBuilder()->shouldBeCalledOnce()
             ->willReturn($queryBuilderProphecy->reveal());
 
-        $repo = new DonationRepository(
+        $repo = new DoctrineDonationRepository(
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
@@ -557,15 +493,12 @@ class DonationRepositoryTest extends TestCase
     /**
      * @param ObjectProphecy<Client\Donation> $donationClientProphecy
      * @param ObjectProphecy<Adapter> $matchingAdapterProphecy
-     * @param ObjectProphecy<LockFactory> $lockFactoryProphecy
      * @param ObjectProphecy<CampaignRepository> $campaignRepoProphecy
      */
     private function getRepo(
         ?ObjectProphecy $donationClientProphecy = null,
-        bool $vatLive = false,
         ?ObjectProphecy $campaignRepoProphecy = null,
         ?ObjectProphecy $matchingAdapterProphecy = null,
-        ?ObjectProphecy $lockFactoryProphecy = null,
     ): DonationRepository {
         if (!$donationClientProphecy) {
             $donationClientProphecy = $this->prophesize(Client\Donation::class);
@@ -578,7 +511,7 @@ class DonationRepositoryTest extends TestCase
         $entityManagerProphecy = $this->entityManagerProphecy;
 
         $entityManagerProphecy->getConfiguration()->willReturn($config);
-        $repo = new DonationRepository(
+        $repo = new DoctrineDonationRepository(
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
@@ -591,10 +524,6 @@ class DonationRepositoryTest extends TestCase
 
         if ($matchingAdapterProphecy) {
             $repo->setMatchingAdapter($matchingAdapterProphecy->reveal());
-        }
-
-        if ($lockFactoryProphecy) {
-            $repo->setLockFactory($lockFactoryProphecy->reveal());
         }
 
         return $repo;

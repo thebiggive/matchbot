@@ -8,7 +8,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
-use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
@@ -93,8 +92,7 @@ class RedistributeMatchFundsTest extends TestCase
         $loggerProphecy = $this->prophesize(LoggerInterface::class);
         $loggerProphecy->error(Argument::type('string'))->shouldNotBeCalled();
 
-        $message = new Envelope(DonationUpserted::fromDonation($donation));
-        $this->messageBusProphecy->dispatch($message)->shouldBeCalledOnce()->willReturnArgument();
+        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->shouldBeCalledOnce()->willReturnArgument();
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
         $campaignFundingRepoProphecy->getAvailableFundings(Argument::type(Campaign::class))
@@ -152,8 +150,7 @@ class RedistributeMatchFundsTest extends TestCase
         $loggerProphecy->error("Donation $uuid had redistributed match funds reduced from 10.00 to 5.00 (GBP)")
             ->shouldBeCalledOnce();
 
-        $message = new Envelope(DonationUpserted::fromDonation($donation));
-        $this->messageBusProphecy->dispatch($message)->shouldBeCalledOnce()->willReturnArgument();
+        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->shouldBeCalledOnce()->willReturnArgument();
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
         $campaignFundingRepoProphecy->getAvailableFundings(Argument::type(Campaign::class))

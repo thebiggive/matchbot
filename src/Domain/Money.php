@@ -41,6 +41,20 @@ readonly class Money implements \JsonSerializable, \Stringable
         return new self($pounds * 100, Currency::GBP);
     }
 
+    public static function sum(self ...$amounts): self
+    {
+        return array_reduce(
+            $amounts,
+            static fn (self $a, self $b): self => $a->plus($b),
+            self::zero(),
+        );
+    }
+
+    private static function zero(): self
+    {
+        return new self(0, Currency::GBP);
+    }
+
     /**
      * @return string Human-readable amount for use in English, e.g. "£17,000.00"
      */
@@ -94,5 +108,31 @@ readonly class Money implements \JsonSerializable, \Stringable
     public function toNumericString(): string
     {
         return bcdiv((string) $this->amountInPence, '100', 2);
+    }
+
+    /**
+     * @param numeric-string $amount
+     */
+    public static function fromNumericStringGBP(string $amount): self
+    {
+        $amountInPence = bcmul($amount, '100', 2);
+
+        /** @psalm-suppress ImpureMethodCall */
+        Assertion::integerish((float) $amountInPence);
+
+        return new self((int) $amountInPence, Currency::GBP);
+    }
+
+    public function withPence(int $amountInPence): self
+    {
+        return new self($amountInPence, $this->currency);
+    }
+
+    public function plus(self $that): self
+    {
+        /** @psalm-suppress ImpureMethodCall */
+        Assertion::same($this->currency, $that->currency);
+
+        return new self($this->amountInPence +  $that->amountInPence, $this->currency);
     }
 }

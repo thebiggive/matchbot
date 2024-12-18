@@ -6,7 +6,6 @@ namespace MatchBot\Tests;
 
 use DI\ContainerBuilder;
 use Exception;
-use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
@@ -20,6 +19,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Random\Randomizer;
 use Redis;
 use Slim\App;
 use Slim\Factory\AppFactory;
@@ -175,7 +175,9 @@ class TestCase extends PHPUnitTestCase
     {
         $charity = self::someCharity();
         $charity->setTbgClaimingGiftAid(false);
-        $campaign = new Campaign($charity);
+        $campaign = TestCase::someCampaign(
+            charity: $charity
+        );
         $campaign->setIsMatched(false);
 
         return $campaign;
@@ -202,20 +204,36 @@ class TestCase extends PHPUnitTestCase
         );
     }
 
-    public static function someCampaign(?string $stripeAccountId = null): Campaign
-    {
-        $campaign = new Campaign(self::someCharity(stripeAccountId: $stripeAccountId));
+    /**
+     * @param ?Salesforce18Id<Campaign> $sfId
+     */
+    public static function someCampaign(
+        ?string $stripeAccountId = null,
+        ?Salesforce18Id $sfId = null,
+        ?Charity $charity = null,
+        bool $isRegularGiving = false,
+        ?\DateTimeImmutable $regularGivingCollectionEnd = null,
+        string $thankYouMessage = null,
+    ): Campaign {
+        $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
+        \assert(is_string($randomString));
+        $sfId ??= Salesforce18Id::ofCampaign('1CampaignId' . $randomString);
 
-        $campaign->setIsMatched(false);
-        $campaign->setName('someCampaign');
-        $campaign->setStartDate(new \DateTimeImmutable('2020-01-01'));
-        $campaign->setEndDate(new \DateTimeImmutable('3000-01-01'));
-        $campaign->setCurrencyCode('GBP');
-        $campaign->setSalesforceId('1CampaignId' .  self::randomHex(3));
-
-        return $campaign;
+        return new Campaign(
+            $sfId,
+            $charity ?? self::someCharity(stripeAccountId: $stripeAccountId),
+            startDate: new \DateTimeImmutable('2020-01-01'),
+            endDate: new \DateTimeImmutable('3000-01-01'),
+            isMatched: false,
+            ready: true,
+            status: 'status',
+            name: 'someCampaign',
+            currencyCode: 'GBP',
+            isRegularGiving: $isRegularGiving,
+            regularGivingCollectionEnd: $regularGivingCollectionEnd,
+            thankYouMessage: $thankYouMessage,
+        );
     }
-
 
     /**
      * @param numeric-string $amount
@@ -223,7 +241,8 @@ class TestCase extends PHPUnitTestCase
     public static function someDonation(
         string $amount = '1',
         string $currencyCode = 'GBP',
-        PaymentMethodType $paymentMethodType = PaymentMethodType::Card
+        PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
+        bool $giftAid = false,
     ): Donation {
         return new Donation(
             amount: $amount,
@@ -240,6 +259,7 @@ class TestCase extends PHPUnitTestCase
             tipAmount: '0',
             mandate: null,
             mandateSequenceNumber: null,
+            giftAid: $giftAid,
         );
     }
 

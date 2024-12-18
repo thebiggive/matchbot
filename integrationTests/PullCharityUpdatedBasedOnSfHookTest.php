@@ -97,6 +97,7 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
             'title' => 'Campaign title not relavent',
             'status' => 'Preview',
             'ready' => false,
+            'thankYouMessage' => 'Test thank you message',
             'charity' => [
                 'id' => $sfId,
                 'name' => $newCharityName,
@@ -105,7 +106,7 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
                 'hmrcReferenceNumber' => null,
                 'regulatorRegion' => 'England and Wales',
                 'regulatorNumber' => null,
-            ]
+            ],
         ];
     }
 

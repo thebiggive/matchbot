@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use UnexpectedValueException;
@@ -107,7 +108,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     public function toFrontEndApiModel(Charity $charity, \DateTimeImmutable $now): array
     {
-        Assertion::same($charity->salesforceId, $this->charityId);
+        Assertion::same($charity->getSalesforceId(), $this->charityId);
 
         return [
             'id' => $this->uuid->toString(),
@@ -213,8 +214,18 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $offset = $sequenceNumber->number - 2;
 
         $preAuthorizationdate = $secondDonationDate->modify("+$offset months");
+        Assertion::isInstanceOf($preAuthorizationdate, \DateTimeImmutable::class);
 
-        \assert($preAuthorizationdate instanceof \DateTimeImmutable);
+        if ($campaign->regularGivingCollectionIsEndedAt($preAuthorizationdate)) {
+            $collectionEnd = $campaign->getRegularGivingCollectionEnd();
+            Assertion::notNull($collectionEnd);
+
+            throw new RegularGivingCollectionEndPassed(
+                "Cannot pre-authorize a donation for {$preAuthorizationdate->format('Y-m-d')}, " .
+                "regular giving collections for campaign {$campaign->getSalesforceId()} end " .
+                "at {$collectionEnd->format('Y-m-d')}"
+            );
+        }
 
         $donation->preAuthorize($preAuthorizationdate);
 
@@ -252,5 +263,39 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public function getStatus(): MandateStatus
     {
         return $this->status;
+    }
+
+    public function campaignEnded(): void
+    {
+        $this->status = MandateStatus::CampaignEnded;
+    }
+
+    public function getActiveFrom(): ?\DateTimeImmutable
+    {
+        return $this->activeFrom;
+    }
+
+    public function describeSchedule(): string
+    {
+        return "Monthly on day #{$this->dayOfMonth->value}";
+    }
+
+    /**
+     * @return Money amount we expect to be claimable in gift aid per donation.
+     */
+    public function getGiftAidAmount(): Money
+    {
+        if (! $this->giftAid) {
+            return Money::fromPoundsGBP(0);
+        }
+
+        return $this->amount->withPence(
+            (int) (100 * Donation::donationAmountToGiftAidValue(amount: $this->amount->toNumericString()))
+        );
+    }
+
+    public function totalIncGiftAd(): Money
+    {
+        return $this->amount->plus($this->getGiftAidAmount());
     }
 }

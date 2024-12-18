@@ -12,6 +12,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
+use MatchBot\Application\Actions\Hooks\StripePaymentsUpdate;
 use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
@@ -33,7 +34,7 @@ use function sprintf;
 #[ORM\Index(name: 'updated_date_and_status', columns: ['updatedAt', 'donationStatus'])]
 #[ORM\Index(name: 'salesforcePushStatus', columns: ['salesforcePushStatus'])]
 #[ORM\Index(name: 'pspCustomerId', columns: ['pspCustomerId'])]
-#[ORM\Entity(repositoryClass: DonationRepository::class)]
+#[ORM\Entity(repositoryClass: DoctrineDonationRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class Donation extends SalesforceWriteProxy
 {
@@ -46,6 +47,7 @@ class Donation extends SalesforceWriteProxy
 
     public const int MAXIMUM_CUSTOMER_BALANCE_DONATION = 200_000;
     public const int MINUMUM_AMOUNT = 1;
+    public const string GIFT_AID_PERCENTAGE = '25';
 
     private array $possiblePSPs = ['stripe'];
 
@@ -172,7 +174,6 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * Whether the Donor has asked for Gift Aid to be claimed about this donation.
-     * @var bool
      */
     #[ORM\Column()]
     protected bool $giftAid = false;
@@ -357,6 +358,10 @@ class Donation extends SalesforceWriteProxy
         ?string $tipAmount,
         ?RegularGivingMandate $mandate,
         ?DonationSequenceNumber $mandateSequenceNumber,
+        bool $giftAid = false,
+        ?bool $tipGiftAid = null,
+        ?string $homeAddress = null,
+        ?string $homePostcode = null,
     ) {
         $this->setUuid(Uuid::uuid4());
         $this->fundingWithdrawals = new ArrayCollection();
@@ -389,6 +394,10 @@ class Donation extends SalesforceWriteProxy
         $this->setDonorName($donorName);
         $this->setDonorEmailAddress($emailAddress);
 
+        $this->giftAid = $giftAid;
+        $this->tipGiftAid = $tipGiftAid;
+        $this->donorHomeAddressLine1 = $homeAddress;
+        $this->donorHomePostcode = $homePostcode;
 
         // We probably don't need to test for all these, just replicationg behaviour of `empty` that was used before.
         if ($countryCode !== '' && $countryCode !== null && $countryCode !== '0') {
@@ -425,6 +434,15 @@ class Donation extends SalesforceWriteProxy
             tipAmount: $donationData->tipAmount,
             mandate: null,
             mandateSequenceNumber: null,
+            // Main form starts off with this null on init in the API model, so effectively it's ignored here
+            // then as `false` is also the constructor's default. Donation Funds tips should send a bool value
+            // from the start.
+            giftAid: $donationData->giftAid ?? false,
+            // Not meaningfully used yet (typical donations set it on Update instead; Donation Funds
+            // tips don't have a "tip" because the donation is to BG), but map just in case.
+            tipGiftAid: $donationData->tipGiftAid,
+            homeAddress: $donationData->homeAddress,
+            homePostcode: $donationData->homePostcode,
         );
     }
 
@@ -434,6 +452,18 @@ class Donation extends SalesforceWriteProxy
             PaymentMethodType::CustomerBalance => self::MAXIMUM_CUSTOMER_BALANCE_DONATION,
             PaymentMethodType::Card => self::MAXIMUM_CARD_DONATION,
         };
+    }
+
+    /**
+     * Multiples by 25%
+     *
+     * @param numeric-string $amount
+     * @return numeric-string
+     */
+    public static function donationAmountToGiftAidValue(string $amount): string
+    {
+        $giftAidFactor = bcdiv(self::GIFT_AID_PERCENTAGE, '100', 2);
+        return bcmul($amount, $giftAidFactor, 2);
     }
 
     public function __toString(): string
@@ -487,6 +517,12 @@ class Donation extends SalesforceWriteProxy
         // As of mid 2024 only the actual donate frontend gets this value, to avoid
         // confusion around values that are too temporary to be useful in a CRM anyway.
         unset($data['matchReservedAmount']);
+
+        if ($this->mandate) {
+            $data['mandate'] =  [
+              'salesforceId' => $this->mandate->getSalesforceId(),
+            ];
+        }
 
         return $data;
     }
@@ -543,6 +579,15 @@ class Donation extends SalesforceWriteProxy
 
         if (in_array($this->getDonationStatus(), [DonationStatus::Pending, DonationStatus::PreAuthorized], true)) {
             $data['matchReservedAmount'] = (float) $this->getFundingWithdrawalTotal();
+        }
+
+        if ($this->mandate) {
+            // Not including the entire mandate details as that would be wasteful, just parts FE needs to display with
+            // the donation.
+            $data['mandate']['uuid'] = $this->mandate->getUuid()->toString();
+            $data['mandate']['activeFrom'] = $this->mandate->getActiveFrom()?->format(DateTimeInterface::ATOM);
+        } else {
+            $data['mandate'] = null;
         }
 
         return $data;
@@ -801,14 +846,6 @@ class Donation extends SalesforceWriteProxy
     public function getChargeId(): ?string
     {
         return $this->chargeId;
-    }
-
-    /**
-     * @return string
-     */
-    public function getUuid(): string
-    {
-        return $this->uuid->toString();
     }
 
     /**
@@ -1616,5 +1653,41 @@ class Donation extends SalesforceWriteProxy
     public function hasRefund(): bool
     {
         return $this->refundedAt !== null;
+    }
+
+    public function getUuid(): UuidInterface
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * @return numeric-string The amount of gift aid claimable (or claimed) from HMRC to increase the gift aid value.
+     *
+     * Assumes that the Gift Aid percentage is unchanging and applies to all past donations. We need to
+     * add more complexity if it does change.
+     */
+    public function getGiftAidValue(): string
+    {
+        if (! $this->giftAid) {
+            return '0.00';
+        }
+
+        $amount = $this->amount;
+
+        return self::donationAmountToGiftAidValue($amount);
+    }
+
+    /**
+     * @return numeric-string
+     */
+    public function totalCharityValueAmount(): string
+    {
+        return Money::sum(
+            ...array_map(Money::fromNumericStringGBP(...), [
+                $this->amount,
+                $this->getGiftAidValue(),
+                $this->getFundingWithdrawalTotal()
+            ])
+        )->toNumericString();
     }
 }

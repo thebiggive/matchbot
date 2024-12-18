@@ -4,9 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\Exception\ORMException;
-use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -18,14 +16,18 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
+use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\MandateNotActive;
+use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
+use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Ramsey\Uuid\UuidInterface;
 use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
@@ -260,6 +262,21 @@ class DonationService
             );
         }
 
+        $campaign = $donation->getCampaign();
+        if ($campaign->regularGivingCollectionIsEndedAt($this->clock->now())) {
+            $collectionEnd = $campaign->getRegularGivingCollectionEnd();
+            Assertion::notNull($collectionEnd);
+
+            $donation->cancel();
+            $mandate->campaignEnded();
+
+            throw new RegularGivingCollectionEndPassed(
+                "Cannot confirm a donation now, " .
+                "regular giving collections for campaign {$campaign->getSalesforceId()} ended " .
+                "at {$collectionEnd->format('Y-m-d')}"
+            );
+        }
+
         $this->confirm($donation, $paymentMethod);
     }
 
@@ -286,9 +303,15 @@ class DonationService
             throw new CampaignNotOpen("Campaign {$campaign->getSalesforceId()} is not open");
         }
 
-        if (! $campaign->isOneOffGiving()) {
+        if ($donation->getMandate() === null && $campaign->isRegularGiving()) {
             throw new WrongCampaignType(
                 "Campaign {$campaign->getSalesforceId()} does not accept one-off giving (regular-giving only)"
+            );
+        }
+
+        if ($donation->getMandate() !== null && $campaign->isOneOffGiving()) {
+            throw new WrongCampaignType(
+                "Campaign {$campaign->getSalesforceId()} does not accept regular giving (one-off only)"
             );
         }
 
@@ -482,6 +505,9 @@ class DonationService
     /**
      * Sets donation to cancelled in matchbot db, releases match funds, cancels payment in stripe, and updates
      * salesforce.
+     *
+     * Call this from inside a transaction and with a locked donation to avoid double releasing funds associated with
+     * the donation.
      */
     public function cancel(Donation $donation): void
     {
@@ -508,6 +534,7 @@ class DonationService
         $this->save($donation);
 
         if ($donation->getCampaign()->isMatched()) {
+            /** @psalm-suppress InternalMethod */
             $this->donationRepository->releaseMatchFunds($donation);
         }
 
@@ -587,5 +614,43 @@ class DonationService
         }
 
         return false;
+    }
+
+    /**
+     * Within a transaction, loads a donation from the DB and then releases any funding matched to it.
+     *
+     * If the matching for the donation has already been released (e.g. by another process after the donationId
+     * was found but before we lock the donation here) then this should be a no-op because Donation::fundingWithdrawals
+     * are eagerly loaded with the donation so will be empty.
+     */
+    public function releaseMatchFundsInTransaction(UuidInterface $donationId): void
+    {
+        $this->entityManager->wrapInTransaction(function () use ($donationId) {
+            $donationRepository = $this->donationRepository;
+            $donation = $donationRepository->findAndLockOneByUUID($donationId);
+            Assertion::notNull($donation);
+
+            $this->donationRepository->releaseMatchFunds($donation);
+
+            $this->entityManager->flush();
+        });
+    }
+
+    public function donationAsApiModel(UuidInterface $donationUUID): array
+    {
+        $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
+
+        if (!$donation) {
+            throw new DomainRecordNotFoundException('Donation not found');
+        }
+
+        return $donation->toFrontEndApiModel();
+    }
+
+    public function findAllCompleteForCustomerAsAPIModels(StripeCustomerId $stripeCustomerId): array
+    {
+        $donations = $this->donationRepository->findAllCompleteForCustomer($stripeCustomerId);
+
+        return array_map(fn(Donation $donation) => $donation->toFrontEndApiModel(), $donations);
     }
 }

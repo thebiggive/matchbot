@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\IntegrationTests;
 
 use GuzzleHttp\Psr7\ServerRequest;
+use MatchBot\Client\Mailer;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Tests\TestData;
 use Prophecy\Argument;
@@ -14,6 +15,11 @@ use Stripe\PaymentIntent;
 
 class CreateRegularGivingMandateTest extends IntegrationTest
 {
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->getContainer()->set(Mailer::class, $this->createStub(Mailer::class));
+    }
     public function testItCreatesRegularGivingMandate(): void
     {
         // arrange
@@ -50,7 +56,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
     ): ResponseInterface {
         $campaignId = $this->randomString();
 
-        $this->addFundedCampaignAndCharityToDB($campaignId);
+        $this->addFundedCampaignAndCharityToDB($campaignId, isRegularGiving: true);
 
         return $this->getApp()->handle(
             new ServerRequest(

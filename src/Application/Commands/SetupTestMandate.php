@@ -108,9 +108,7 @@ class SetupTestMandate extends LockingCommand
         $mandate = new RegularGivingMandate(
             $donorId,
             Money::fromPoundsGBP($amount),
-            Salesforce18Id::ofCampaign(
-                $campaign->getSalesforceId() ?? throw new \Exception('Missing campaign sf ID')
-            ),
+            Salesforce18Id::ofCampaign($campaign->getSalesforceId()),
             Salesforce18Id::ofCharity(
                 $charity->getSalesforceId() ?? throw new \Exception('Missing charity sf ID')
             ),

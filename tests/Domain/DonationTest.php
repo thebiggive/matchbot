@@ -21,12 +21,16 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
+use Ramsey\Uuid\Uuid;
 
 class DonationTest extends TestCase
 {
     use DonationTestDataTrait;
+
+    public const string DONATION_UUID = 'c6479a48-b405-11ef-a911-8b225323866a';
 
     public function testBasicsAsExpectedOnInstantion(): void
     {
@@ -44,6 +48,18 @@ class DonationTest extends TestCase
         $this->assertFalse($donation->hasGiftAid());
         $this->assertNull($donation->getCharityComms());
         $this->assertNull($donation->getTbgComms());
+    }
+
+    /**
+     * @dataProvider giftAidProvider
+     * @param numeric-string $donationAmount
+     * @param numeric-string $expectedGAAmount
+     */
+    public function testCalculatesGiftAid(string $donationAmount, bool $hasGiftAid, string $expectedGAAmount): void
+    {
+        $donation = TestCase::someDonation(amount: $donationAmount, giftAid: $hasGiftAid);
+
+        $this->assertSame($expectedGAAmount, $donation->getGiftAidValue());
     }
 
     public function testValidDataPersisted(): void
@@ -164,7 +180,7 @@ class DonationTest extends TestCase
                 projectId: 'doesnt0matter12345',
                 psp: 'paypal',
             ),
-            new Campaign(TestCase::someCharity())
+            TestCase::someCampaign()
         );
     }
 
@@ -299,7 +315,7 @@ class DonationTest extends TestCase
 
     public function testToClaimBotModelUK(): void
     {
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(uuid: Uuid::fromString(self::DONATION_UUID));
 
         $donation->getCampaign()->getCharity()->setTbgClaimingGiftAid(true);
         $donation->getCampaign()->getCharity()->setHmrcReferenceNumber('AB12345');
@@ -310,7 +326,7 @@ class DonationTest extends TestCase
         $claimBotMessage = $donation->toClaimBotModel();
 
         $nowInYmd = date('Y-m-d');
-        $this->assertEquals('12345678-1234-1234-1234-1234567890ab', $claimBotMessage->id); // UUID
+        $this->assertEquals(self::DONATION_UUID, $claimBotMessage->id);
         $this->assertEquals($nowInYmd, $claimBotMessage->donation_date);
         $this->assertEquals('', $claimBotMessage->title);
         $this->assertEquals('John', $claimBotMessage->first_name);
@@ -751,7 +767,7 @@ class DonationTest extends TestCase
             donationAmount: '1.0',
             projectId: 'testProject1234567',
             psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        ), TestCase::someCampaign());
 
         $this->assertSame($expected, $donation->getDonorCountryCode());
     }
@@ -768,7 +784,7 @@ class DonationTest extends TestCase
             donationAmount: '1.0',
             projectId: 'testProject1234567',
             psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        ), TestCase::someCampaign());
 
         $this->expectExceptionMessage('Cannot Claim Gift Aid Without Home Address');
 
@@ -780,13 +796,16 @@ class DonationTest extends TestCase
 
     public function testCannotRequestGiftAidWithWhitespaceOnlyHomeAddress(): void
     {
-        $donation = Donation::fromApiModel(new DonationCreate(
-            countryCode: 'GB',
-            currencyCode: 'GBP',
-            donationAmount: '1.0',
-            projectId: 'testProject1234567',
-            psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        $donation = Donation::fromApiModel(
+            new DonationCreate(
+                countryCode: 'GB',
+                currencyCode: 'GBP',
+                donationAmount: '1.0',
+                projectId: 'testProject1234567',
+                psp: 'stripe',
+            ),
+            TestCase::someCampaign()
+        );
 
         $this->expectExceptionMessage('Cannot Claim Gift Aid Without Home Address');
 
@@ -805,7 +824,7 @@ class DonationTest extends TestCase
             donationAmount: '1.0',
             projectId: 'testProject1234567',
             psp: 'stripe',
-        ), new Campaign(TestCase::someCharity()));
+        ), TestCase::someCampaign());
 
         $donation->collectFromStripeCharge(
             chargeId: 'irrelevant',
@@ -973,5 +992,21 @@ class DonationTest extends TestCase
         $isFullyMatched = $donation->isFullyMatched();
 
         $this->assertTrue($isFullyMatched);
+    }
+
+    /**
+     * @return list<array{0: numeric-string, 1: bool, 2: numeric-string}>
+     */
+    public function giftAidProvider(): array
+    {
+        // including cases with fractional donation amounts, but as we do not allow such donations the actual
+        // rounding method used is probably not critcal.
+        return [
+            ['1.00', true, '0.25'],
+            ['1.03', true, '0.25'],
+            ['1.04', true, '0.26'],
+
+            ['1.00', false, '0.00'],
+        ];
     }
 }

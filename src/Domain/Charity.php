@@ -110,7 +110,7 @@ class Charity extends SalesforceReadProxy
 
     public function __toString(): string
     {
-        return "Charity sfID ($this->salesforceId}";
+        return "Charity sfID ({$this->getSalesforceId()})";
     }
 
     /**

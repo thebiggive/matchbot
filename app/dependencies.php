@@ -52,11 +52,14 @@ use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\DoctrineDbalStore;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Middleware\AddFifoStampMiddleware;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsTransportFactory;
 use Symfony\Component\Messenger\Bridge\Redis\Transport\RedisTransportFactory;
+use Symfony\Component\Messenger\Command\ConsumeMessagesCommand;
 use Symfony\Component\Messenger\Handler\HandlersLocator;
 use Symfony\Component\Messenger\MessageBus;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -112,6 +115,20 @@ return function (ContainerBuilder $containerBuilder) {
             );
 
             return new Chatter($transport);
+        },
+
+        ConsumeMessagesCommand::class => static function (ContainerInterface $c): ConsumeMessagesCommand {
+            $messengerReceiverKey = 'receiver';
+            $messengerReceiverLocator = new Container();
+            $messengerReceiverLocator->set($messengerReceiverKey, $c->get(TransportInterface::class));
+
+            return new ConsumeMessagesCommand(
+                $c->get(RoutableMessageBus::class),
+                $messengerReceiverLocator,
+                new EventDispatcher(),
+                $c->get(LoggerInterface::class),
+                [$messengerReceiverKey],
+            );
         },
 
         // Don't inject this directly for now, since its return type doesn't actually implement
@@ -216,7 +233,7 @@ return function (ContainerBuilder $containerBuilder) {
             return $factory;
         },
 
-        LoggerInterface::class => function (ContainerInterface $c): Logger {
+        Logger::class => function (ContainerInterface $c): Logger {
 
             $commitId = $c->get('commit-id');
             \assert(is_string($commitId));
@@ -265,6 +282,8 @@ return function (ContainerBuilder $containerBuilder) {
 
             return $logger;
         },
+
+        LoggerInterface::class => fn (ContainerInterface $c): LoggerInterface => $c->get(Logger::class),
 
         Environment::class => function (ContainerInterface $_c): Environment {
             /** @psalm-suppress PossiblyFalseArgument - we expect APP_ENV to be set everywhere */
@@ -502,6 +521,9 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         ClockInterface::class => fn() => new NativeClock(),
+        Psr\Clock\ClockInterface::class  => fn() => new NativeClock(),
+
+        EventDispatcherInterface::class => fn() => new EventDispatcher(),
 
         Auth\SalesforceAuthMiddleware::class =>
             function (ContainerInterface $c) {

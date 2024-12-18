@@ -192,7 +192,7 @@ class Create extends Action
 
         $data = new DonationCreatedResponse(
             donation: $donation->toFrontEndApiModel(),
-            jwt: DonationToken::create($donation->getUuid()),
+            jwt: DonationToken::create($donation->getUuid()->toString()),
             stripeSessionSecret: $customerSession->client_secret,
         );
 

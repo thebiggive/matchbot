@@ -12,6 +12,7 @@ use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\CharityRepository;
+use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccount;
@@ -55,12 +56,11 @@ return static function (ContainerBuilder $containerBuilder) {
         DonationRepository::class => static function (ContainerInterface $c): DonationRepository {
             $repo = $c->get(EntityManagerInterface::class)->getRepository(Donation::class);
 
-            \assert($repo instanceof DonationRepository);
+            \assert($repo instanceof DoctrineDonationRepository);
 
             $repo->setCampaignRepository($c->get(CampaignRepository::class));
             $repo->setClient($c->get(Client\Donation::class));
             $repo->setFundRepository($c->get(FundRepository::class));
-            $repo->setLockFactory($c->get(LockFactory::class));
             $repo->setLogger($c->get(LoggerInterface::class));
             $repo->setMatchingAdapter($c->get(Matching\Adapter::class));
 

@@ -12,6 +12,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\EntityManagerClosed;
 use Doctrine\ORM\Repository\RepositoryFactory;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
@@ -237,7 +238,7 @@ class RetrySafeEntityManagerTest extends TestCase
         $repoFactoryProphecy->getRepository(
             Argument::type(RetrySafeEntityManager::class),
             Donation::class,
-        )->willReturn($this->prophesize(DonationRepository::class)->reveal());
+        )->willReturn($this->prophesize(DoctrineDonationRepository::class)->reveal());
 
         $config = $container->get(Configuration::class);
         $config->setRepositoryFactory($repoFactoryProphecy->reveal());

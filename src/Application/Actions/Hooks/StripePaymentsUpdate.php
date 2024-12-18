@@ -13,9 +13,11 @@ use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\Currency;
+use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\Money;
@@ -24,6 +26,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Stripe\Card;
 use Stripe\Charge;
 use Stripe\Dispute;
@@ -51,6 +54,7 @@ class StripePaymentsUpdate extends Stripe
 
     public function __construct(
         protected DonationRepository $donationRepository,
+        private DonationService $donationService,
         private DonorAccountRepository $donorAccountRepository,
         protected EntityManagerInterface $entityManager,
         protected StripeClient $stripeClient,
@@ -509,7 +513,7 @@ class StripePaymentsUpdate extends Stripe
             $donation->getDonationStatus()->isReversed() &&
             $donation->getCampaign()->isMatched()
         ) {
-            $this->donationRepository->releaseMatchFunds($donation);
+            $this->donationService->releaseMatchFundsInTransaction($donation->getUuid());
         }
 
         $this->entityManager->flush();
@@ -518,10 +522,12 @@ class StripePaymentsUpdate extends Stripe
 
     private function queueSalesforceUpdate(Donation $donation): void
     {
-        $this->bus->dispatch(new Envelope(
-            DonationUpserted::fromDonation($donation),
-            [new DelayStamp(3_000)], // 3s delay to reduce risk of Donation\Update trying to reverse status change.
-        ));
+        $this->bus->dispatch(
+            new Envelope(
+                DonationUpserted::fromDonation($donation),
+                [new DelayStamp(3_000)], // 3s delay to reduce risk of Donation\Update trying to reverse status change.
+            )
+        );
     }
 
     private function handleCashBalanceUpdate(Event $event, Response $response): Response

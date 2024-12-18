@@ -57,9 +57,21 @@ class HttpErrorHandler extends SlimErrorHandler
             && $this->displayErrorDetails
         ) {
             $error->setDescription($exception->getMessage());
+
+            $trace = array_map(
+                /** @psalm-suppress PossiblyUndefinedArrayOffset
+                 * Offsets defined at https://www.php.net/manual/en/exception.gettrace.php
+                 */
+                fn(array $frame) => "{$frame['class']}::{$frame['function']} {$frame['file']}:{$frame['line']}",
+                $exception->getTrace()
+            );
+
+            $data = ['error' => $error, 'trace' => $trace];
+        } else {
+            $data = null;
         }
 
-        $payload = new ActionPayload($statusCode, null, $error);
+        $payload = new ActionPayload($statusCode, $data, $error);
         try {
             $encodedPayload = json_encode($payload, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
         } catch (\JsonException $exception) {

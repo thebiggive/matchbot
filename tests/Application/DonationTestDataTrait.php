@@ -11,9 +11,11 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\SalesforceWriteProxy;
 use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use Stripe\Charge;
 
 trait DonationTestDataTrait
@@ -37,8 +39,9 @@ trait DonationTestDataTrait
         string $currencyCode = 'GBP',
     ): Donation {
         $campaignId = 'testProject1234567';
-        $campaign = new Campaign(charity: TestCase::someCharity());
-        $campaign->setSalesforceId($campaignId);
+        $campaign = TestCase::someCampaign(
+            sfId: Salesforce18Id::ofCampaign($campaignId),
+        );
         $campaign->setIsMatched(false);
         $campaign->setName('Big Give General Donations');
 
@@ -68,18 +71,18 @@ trait DonationTestDataTrait
         bool $collected = true,
         DateTime $tbgGiftAidRequestConfirmedCompleteAt = null,
         bool $charityComms = false,
+        null|UuidInterface|string $uuid = null,
     ): Donation {
         $charity = TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
         $charity->setName('Test charity');
         $charity->setStripeAccountId('unitTest_stripeAccount_123');
 
-        $campaign = new Campaign(charity: $charity);
+        $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('234567890ProjectId'), charity: $charity);
         $campaign->setIsMatched(true);
         // This name ensures that if an auto-confirm Update specifically hits the display_bank_transfer_instructions
         // next action, we don't cancel the pending donation.
         $campaign->setName('Big Give General Donations');
-        $campaign->setSalesforceId('456ProjectId');
 
         /** @psalm-suppress DeprecatedMethod **/
         $donation = TestCase::someDonation(
@@ -122,7 +125,12 @@ trait DonationTestDataTrait
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
         $donation->setTipAmount($tipAmount);
         $donation->setTransactionId('pi_externalId_123');
-        $donation->setUuid(Uuid::fromString('12345678-1234-1234-1234-1234567890ab'));
+        if ($uuid instanceof UuidInterface) {
+            $donation->setUuid($uuid);
+        }
+        if (is_string($uuid)) {
+            $donation->setUuid(Uuid::fromString($uuid));
+        }
         $donation->setTbgGiftAidRequestConfirmedCompleteAt($tbgGiftAidRequestConfirmedCompleteAt);
 
         return $donation;
@@ -130,10 +138,19 @@ trait DonationTestDataTrait
 
     protected function getAnonymousPendingTestDonation(): Donation
     {
-        $campaign = new Campaign(charity: TestCase::someCharity());
-        $campaign->setIsMatched(true);
-        $campaign->setName('Test campaign');
-        $campaign->setSalesforceId('456ProjectId');
+        $campaign = new Campaign(
+            Salesforce18Id::ofCampaign('234567890ProjectId'),
+            charity: TestCase::someCharity(),
+            startDate: new \DateTimeImmutable(),
+            endDate: new \DateTimeImmutable(),
+            isMatched: true,
+            ready: true,
+            status: 'status',
+            name: 'Test campaign',
+            currencyCode: 'GBP',
+            isRegularGiving: false,
+            regularGivingCollectionEnd: null,
+        );
 
         $donation = TestCase::someDonation('124.56');
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks

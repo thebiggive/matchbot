@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Actions\Donations;
 
+use Assert\AssertionFailedException;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Donations\Confirm;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -19,9 +20,13 @@ use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Tests\TestCase;
+use PhpParser\Node\Arg;
+use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\NullLogger;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Psr7\Response;
 use Stripe\ConfirmationToken;
@@ -49,10 +54,12 @@ class ConfirmTest extends TestCase
 
     /** @var ObjectProphecy<EntityManagerInterface>  */
     private ObjectProphecy $entityManagerProphecy;
+    private \Ramsey\Uuid\UuidInterface $donationId;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->donationId = Uuid::uuid4();
         $this->stripeProphecy = $this->prophesize(Stripe::class);
         $messageBusStub = $this->createStub(RoutableMessageBus::class);
         $messageBusStub->method('dispatch')->willReturnArgument(0);
@@ -393,32 +400,34 @@ class ConfirmTest extends TestCase
         $donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
 
         $testCase = $this;
-        $donationRepositoryProphecy->findAndLockOneBy(['uuid' => 'DONATION_ID'])->will(function () use ($testCase) {
-            $donation = Donation::fromApiModel(
-                new DonationCreate(
-                    currencyCode: 'GBP',
-                    donationAmount: '63.0',
-                    projectId: 'doesnt0matter12345',
-                    psp: 'stripe',
-                    countryCode: 'GB',
-                ),
-                $testCase->getMinimalCampaign(),
-            );
+        $donationRepositoryProphecy->findAndLockOneByUUID($this->donationId)
+            ->will(function () use ($testCase) {
+                $donation = Donation::fromApiModel(
+                    new DonationCreate(
+                        currencyCode: 'GBP',
+                        donationAmount: '63.0',
+                        projectId: 'doesnt0matter12345',
+                        psp: 'stripe',
+                        countryCode: 'GB',
+                    ),
+                    $testCase->getMinimalCampaign(),
+                );
+                $donation->setUuid($testCase->donationId);
 
-            $donation->update(
-                giftAid: false,
-                donorBillingPostcode: 'SW1 1AA',
-                donorName: DonorName::of('Charlie', 'The Charitable'),
-                donorEmailAddress: EmailAddress::of('user@example.com'),
-            );
+                $donation->update(
+                    giftAid: false,
+                    donorBillingPostcode: 'SW1 1AA',
+                    donorName: DonorName::of('Charlie', 'The Charitable'),
+                    donorEmailAddress: EmailAddress::of('user@example.com'),
+                );
 
-            $donation->setTransactionId('PAYMENT_INTENT_ID');
-            if ($testCase->donationIsCancelled) {
-                $donation->cancel();
-            }
+                $donation->setTransactionId('PAYMENT_INTENT_ID');
+                if ($testCase->donationIsCancelled) {
+                    $donation->cancel();
+                }
 
-            return $donation;
-        });
+                return $donation;
+            });
 
         return $donationRepositoryProphecy->reveal();
     }
@@ -434,7 +443,7 @@ class ConfirmTest extends TestCase
                 ])
             ),
             new Response(),
-            ['donationId' => 'DONATION_ID']
+            ['donationId' => $this->donationId->toString()]
         );
     }
 }

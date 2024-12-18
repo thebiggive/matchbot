@@ -6,6 +6,7 @@ namespace MatchBot\Application\HttpModels;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\PaymentMethodType;
@@ -17,6 +18,7 @@ use MatchBot\Domain\Salesforce18Id;
  */
 readonly class DonationCreate
 {
+    /** @var Salesforce18Id<Campaign>  */
     public readonly Salesforce18Id $projectId;
     public readonly ?DonorName $donorName;
     public readonly ?EmailAddress $emailAddress;
@@ -41,7 +43,11 @@ readonly class DonationCreate
         public ?string $tipAmount = '0.00',
         ?string $firstName = null,
         ?string $lastName = null,
-        ?string $emailAddress = null
+        ?string $emailAddress = null,
+        public ?bool $giftAid = null,
+        public ?bool $tipGiftAid = null,
+        public ?string $homeAddress = null,
+        public ?string $homePostcode = null,
     ) {
         $this->emailAddress = (! is_null($emailAddress) && ! ($emailAddress === '')) ?
             EmailAddress::of($emailAddress) :

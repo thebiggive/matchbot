@@ -222,6 +222,12 @@
         "mutation-test": [
             "Composer\\Config::disableProcessTimeout",
             "vendor/bin/infection --threads=4"
+        ],
+        "check": [
+            "@test",
+            "@integration-test",
+            "@sa:check",
+            "@lint:check"
         ]
     }
 }
