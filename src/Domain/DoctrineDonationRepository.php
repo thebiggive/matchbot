@@ -374,28 +374,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         return $donations;
     }
 
-    public function findWithFeePossiblyOverchaged(): array
-    {
-        $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT d
-            FROM MatchBot\Domain\Donation d 
-            WHERE d.collectedAt >= :start
-            AND d.donationStatus IN (:completeStatuses)
-            AND d.paymentMethodType = 'card'
-            AND d.transactionId NOT LIKE 'pi_stub_%'
-        DQL
-        );
-        $query->setParameter('start', new \DateTimeImmutable('2024-09-06 00:00:00'));
-        $query->setParameter(
-            'completeStatuses',
-            array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES),
-        );
-
-        /** @var list<Donation> $result */
-        $result = $query->getResult();
-        return $result;
-    }
-
     public function getRecentHighVolumeCompletionRatio(\DateTimeImmutable $nowish): ?float
     {
         $oneMinutePrior = $nowish->sub(new \DateInterval('PT1M'));

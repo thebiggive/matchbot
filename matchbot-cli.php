@@ -18,7 +18,6 @@ use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
-use MatchBot\Application\Commands\ReturnErroneousExcessFees;
 use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
 use MatchBot\Application\Commands\SendStatistics;
 use MatchBot\Application\Commands\SetupTestMandate;
@@ -58,7 +57,6 @@ $commands = array_map($psr11App->get(...), [
     ResetMatching::class,
 
     RetrospectivelyMatch::class,
-    ReturnErroneousExcessFees::class,
     ScheduledOutOfSyncFundsCheck::class,
     SendStatistics::class,
 
