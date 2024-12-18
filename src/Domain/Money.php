@@ -115,9 +115,10 @@ readonly class Money implements \JsonSerializable, \Stringable
      */
     public static function fromNumericStringGBP(string $amount): self
     {
-        $amountInPence = $amount * 100;
+        $amountInPence = bcmul($amount, '100', 2);
+
         /** @psalm-suppress ImpureMethodCall */
-        Assertion::integerish($amountInPence);
+        Assertion::integerish((float) $amountInPence);
 
         return new self((int) $amountInPence, Currency::GBP);
     }
