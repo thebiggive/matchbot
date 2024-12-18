@@ -8,6 +8,9 @@ use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+/**
+ * Sends donations to Salesforce.
+ */
 #[AsMessageHandler]
 readonly class DonationUpsertedHandler
 {

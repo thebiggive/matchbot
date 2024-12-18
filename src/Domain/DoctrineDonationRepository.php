@@ -45,7 +45,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
 
     private Matching\Adapter $matchingAdapter;
     /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
-    private array $queuedForPersist;
+    private array $queuedForPersist = [];
 
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
@@ -115,7 +115,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         // is most often empty (for new donations) so this will frequently be 0.00.
         $amountMatchedAtStart = $donation->getFundingWithdrawalTotal();
 
-
         $lockStartTime = 0; // dummy value, should always be overwritten before usage.
         try {
             /** @var list<CampaignFunding> $likelyAvailableFunds */
@@ -156,10 +155,12 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawalAmount, 2);
         }
 
+        if (count($newWithdrawals) > 0) {
+            $this->getEntityManager()->flush();
+        }
+
         $this->logInfo('ID ' . $donation->getUuid() . ' allocated new match funds totalling ' . $amountNewlyMatched);
         $this->logInfo('Allocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
-
-        $this->getEntityManager()->flush();
 
         return $amountNewlyMatched;
     }
@@ -527,6 +528,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         $currentFundingIndex = 0;
         /** @var FundingWithdrawal[] $newWithdrawals Track these to persist outside the lock window, to keep it short */
         $newWithdrawals = [];
+        $withdrewAnything = false;
 
         // Loop as long as there are still campaign funds not allocated and we have allocated less than the donation
         // amount
@@ -555,6 +557,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             $amountLeftToMatch = bcsub($amountLeftToMatch, $amountAllocated, 2);
 
             if (bccomp($amountAllocated, '0.00', 2) === 1) {
+                $withdrewAnything = true;
                 $withdrawal = new FundingWithdrawal($funding);
                 $withdrawal->setDonation($donation);
                 $withdrawal->setAmount($amountAllocated);
@@ -566,9 +569,11 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             $currentFundingIndex++;
         }
 
-        $this->queueForPersist($donation);
+        if ($withdrewAnything) {
+            $this->queueForPersist($donation);
+            $this->matchingAdapter->saveFundingsToDatabase();
+        }
 
-        $this->matchingAdapter->saveFundingsToDatabase();
         return $newWithdrawals;
     }
 

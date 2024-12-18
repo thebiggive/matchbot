@@ -6,6 +6,9 @@ use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\Donation;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;
 
+/**
+ * Message to tell workers to push a change to Salesforce.
+ */
 class DonationUpserted extends AbstractStateChanged implements MessageGroupAwareInterface
 {
     private function __construct(public string $uuid, public array $jsonSnapshot)
