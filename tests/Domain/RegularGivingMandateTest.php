@@ -172,7 +172,7 @@ class RegularGivingMandateTest extends TestCase
                 {
                   "id": "$uuid",
                   "donorId": "2c2b4832-563c-11ef-96a4-07141f9e507e",
-                  "amount": {
+                  "donationAmount": {
                     "amountInPence": 50000,
                     "currency": "GBP"
                   },
