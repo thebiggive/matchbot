@@ -151,9 +151,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawalAmount, 2);
         }
 
-        if (count($newWithdrawals) > 0) {
-            $this->getEntityManager()->flush();
-        }
+        $this->getEntityManager()->flush(); // Flush `$newWithdrawals` if any.
 
         $this->logInfo('ID ' . $donation->getUuid() . ' allocated new match funds totalling ' . $amountNewlyMatched);
         $this->logInfo('Allocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');

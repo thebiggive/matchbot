@@ -86,7 +86,8 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             $this->campaign,
         );
 
-        $this->emProphecy->flush()->shouldNotBeCalled(); // No change in this case.
+        // No entities to actually change but we always flush & let Doctrine check that.
+        $this->emProphecy->flush()->shouldBeCalledOnce();
 
         // act
         $amountMatched = $this->sut->allocateMatchFunds($donation);
