@@ -64,6 +64,8 @@ readonly class RegularGivingService
             throw new \Exception("donor not found with ID {$donorID->id}");
         }
 
+        $donor->assertHasRequiredInfoForRegularGiving();
+
         $mandate = new RegularGivingMandate(
             donorId: $donorID,
             donationAmount: $amount,
@@ -89,18 +91,35 @@ readonly class RegularGivingService
             countryCode: $donor->getBillingCountryCode(),
             tipAmount: '0',
             mandate: $mandate,
-            mandateSequenceNumber: DonationSequenceNumber::of(1)
+            mandateSequenceNumber: DonationSequenceNumber::of(1),
+            billingPostcode: $donor->getBillingPostcode(),
         );
-        $this->donationService->enrollNewDonation($firstDonation);
-        if (! $firstDonation->isFullyMatched()) {
-            throw new NotFullyMatched(
-                "Donation could not be fully matched, need to match {$firstDonation->getAmount()}," .
-                " only matched {$firstDonation->getFundingWithdrawalTotal()}"
-            );
+
+        $secondDonation = $this->createFutureDonationInAdvanceOfActivation($mandate, 2, $donor, $campaign);
+        $thirdDonation = $this->createFutureDonationInAdvanceOfActivation($mandate, 3, $donor, $campaign);
+
+        $donations = [$firstDonation, $secondDonation, $thirdDonation];
+
+        try {
+            foreach ($donations as $donation) {
+                $this->donationService->enrollNewDonation($donation);
+                if (!$donation->isFullyMatched()) {
+                    throw new NotFullyMatched(
+                        "Donation could not be fully matched, need to match {$donation->getAmount()}," .
+                        " only matched {$donation->getFundingWithdrawalTotal()}"
+                    );
+                }
+            }
+        } catch (\Throwable $e) {
+            foreach ($donations as $donation) {
+                $this->donationService->cancel($donation);
+                $mandate->cancel();
+            }
+            $this->entityManager->persist($mandate);
+            throw $e;
         }
+
         // @todo-regular-giving - collect first donation (currently created as pending, not collected)
-        // @todo-regular-giving - do same for 2nd and third donations except those are just to be preauthed and enrolled
-        //                        and checked for matching, not collected at this point.
 
         $mandate->activate($this->now);
 
@@ -174,6 +193,17 @@ readonly class RegularGivingService
          * @return array
          */            static fn(array $tuple) => $tuple[0]->toFrontendApiModel($tuple[1], $currentUKTime),
             $mandatesWithCharities
+        );
+    }
+
+    public function createFutureDonationInAdvanceOfActivation(RegularGivingMandate $mandate, int $number, DonorAccount $donor, Campaign $campaign): Donation
+    {
+        return $mandate->createPreAuthorizedDonation(
+            DonationSequenceNumber::of($number),
+            $donor,
+            $campaign,
+            requireActiveMandate: false,
+            expectedActivationDate: $this->now
         );
     }
 }

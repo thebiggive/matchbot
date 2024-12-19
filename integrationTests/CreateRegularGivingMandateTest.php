@@ -26,12 +26,11 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $pencePerMonth = random_int(1_00, 500_00);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
-        $paymentIntentId = 'payment-intent-id-' . $this->randomString();
         $stripeProphecy->createPaymentIntent(
             Argument::that(fn(array $payload) => ($payload['amount'] === $pencePerMonth))
         )
-            ->shouldBeCalledOnce()
-            ->willReturn(new PaymentIntent($paymentIntentId));
+            ->shouldBeCalledTimes(3)
+            ->will(fn() => new PaymentIntent('payment-intent-id-' . IntegrationTest::randomString()));
         $this->getContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
         $this->ensureDbHasDonorAccount();

@@ -260,6 +260,10 @@ class TestCase extends PHPUnitTestCase
             mandate: null,
             mandateSequenceNumber: null,
             giftAid: $giftAid,
+            tipGiftAid: null,
+            homeAddress: null,
+            homePostcode: null,
+            billingPostcode: null,
         );
     }
 

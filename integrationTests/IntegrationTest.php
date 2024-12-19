@@ -326,7 +326,7 @@ abstract class IntegrationTest extends TestCase
         return $stripePaymentIntentsProphecy;
     }
 
-    public function randomString(): string
+    public static function randomString(): string
     {
         $randomString = (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
 
