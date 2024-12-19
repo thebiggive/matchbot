@@ -169,7 +169,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public function createPreAuthorizedDonation(
         DonationSequenceNumber $sequenceNumber,
         DonorAccount $donor,
-        Campaign $campaign
+        Campaign $campaign,
+        bool $requireActiveMandate = true,
+        \DateTimeImmutable $expectedActivationDate = null,
     ): Donation {
         $donation = new Donation(
             amount: $this->donationAmount->toNumericString(),
@@ -193,6 +195,12 @@ class RegularGivingMandate extends SalesforceWriteProxy
             billingPostcode: null,
         );
 
+        Assertion::true(
+            ($requireActiveMandate && is_null($expectedActivationDate)) ||
+            (!$requireActiveMandate && !is_null($expectedActivationDate)),
+            'When creating donations for an already active mandate require the mandate to be active, otherwise pass the activation date'
+        );
+
         $donation->update(
             giftAid: $this->giftAid,
             tipGiftAid: false,
@@ -206,11 +214,11 @@ class RegularGivingMandate extends SalesforceWriteProxy
             donorBillingPostcode: $donor->getBillingPostcode(),
         );
 
-        if ($this->activeFrom === null) {
+        if ($this->activeFrom === null && $requireActiveMandate) {
             throw new \Exception('Missing activation date - is this an active mandate?');
         }
 
-        $secondDonationDate = $this->firstPaymentDayAfter($this->activeFrom);
+        $secondDonationDate = $this->firstPaymentDayAfter($this->activeFrom ?? $expectedActivationDate);
 
         if ($sequenceNumber->number < 2) {
             // first donation in mandate should be taken on-session, not pre-authorized.

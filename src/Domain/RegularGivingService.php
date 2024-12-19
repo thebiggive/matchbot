@@ -94,65 +94,30 @@ readonly class RegularGivingService
             mandateSequenceNumber: DonationSequenceNumber::of(1),
             billingPostcode: $donor->getBillingPostcode(),
         );
-        $secondDonation = new Donation(
-            amount: $amount->toNumericString(),
-            currencyCode: $amount->currency->isoCode(),
-            paymentMethodType: PaymentMethodType::Card,
-            campaign: $campaign,
-            charityComms: false,
-            championComms: false,
-            pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
-            optInTbgEmail: false,
-            donorName: $donor->donorName,
-            emailAddress: $donor->emailAddress,
-            countryCode: $donor->getBillingCountryCode(),
-            tipAmount: '0',
-            mandate: $mandate,
-            mandateSequenceNumber: DonationSequenceNumber::of(2),
-            billingPostcode: $donor->getBillingPostcode(),
-        );
-        $thirdDonation = new Donation(
-            amount: $amount->toNumericString(),
-            currencyCode: $amount->currency->isoCode(),
-            paymentMethodType: PaymentMethodType::Card,
-            campaign: $campaign,
-            charityComms: false,
-            championComms: false,
-            pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
-            optInTbgEmail: false,
-            donorName: $donor->donorName,
-            emailAddress: $donor->emailAddress,
-            countryCode: $donor->getBillingCountryCode(),
-            tipAmount: '0',
-            mandate: $mandate,
-            mandateSequenceNumber: DonationSequenceNumber::of(3),
-            billingPostcode: $donor->getBillingPostcode(),
-        );
 
-        // @todo-regular-giving - release match funds reserved in following lines if anything later throws.
-        $this->donationService->enrollNewDonation($firstDonation);
-        $this->donationService->enrollNewDonation($secondDonation);
-        $this->donationService->enrollNewDonation($thirdDonation);
-        // also enrol 2nd and 3rd
+        $secondDonation = $this->createFutureDonationInAdvanceOfActivation($mandate, 2, $donor, $campaign);
+        $thirdDonation = $this->createFutureDonationInAdvanceOfActivation($mandate, 3, $donor, $campaign);
 
-        $paymentDateForSecondDonation = $mandate->firstPaymentDayAfter($this->now);
-        $paymentDateForThirdDonation = $mandate->firstPaymentDayAfter($paymentDateForSecondDonation);
+        $donations = [$firstDonation, $secondDonation, $thirdDonation];
 
-        $secondDonation->preAuthorize($paymentDateForSecondDonation);
-        $thirdDonation->preAuthorize($paymentDateForThirdDonation);
-
-        foreach ([$firstDonation, $secondDonation, $thirdDonation] as $donation) {
-            if (!$donation->isFullyMatched()) {
-                throw new NotFullyMatched(
-                    "Donation could not be fully matched, need to match {$donation->getAmount()}," .
-                    " only matched {$donation->getFundingWithdrawalTotal()}"
-                );
+        try {
+            foreach ($donations as $donation) {
+                $this->donationService->enrollNewDonation($donation);
+                if (!$donation->isFullyMatched()) {
+                    throw new NotFullyMatched(
+                        "Donation could not be fully matched, need to match {$donation->getAmount()}," .
+                        " only matched {$donation->getFundingWithdrawalTotal()}"
+                    );
+                }
             }
+        } catch (\Throwable $e) {
+            foreach ($donations as $donation) {
+                $this->donationService->cancel($donation);
+            }
+            throw $e;
         }
 
         // @todo-regular-giving - collect first donation (currently created as pending, not collected)
-        // @todo-regular-giving - do same for 2nd and third donations except those are just to be preauthed and enrolled
-        //                        and checked for matching, not collected at this point.
 
         $mandate->activate($this->now);
 
@@ -226,6 +191,17 @@ readonly class RegularGivingService
          * @return array
          */            static fn(array $tuple) => $tuple[0]->toFrontendApiModel($tuple[1], $currentUKTime),
             $mandatesWithCharities
+        );
+    }
+
+    public function createFutureDonationInAdvanceOfActivation(RegularGivingMandate $mandate, int $number, DonorAccount $donor, Campaign $campaign): Donation
+    {
+        return $mandate->createPreAuthorizedDonation(
+            DonationSequenceNumber::of($number),
+            $donor,
+            $campaign,
+            requireActiveMandate: false,
+            expectedActivationDate: $this->now
         );
     }
 }
