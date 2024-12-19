@@ -789,10 +789,12 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
     public function findPreAuthorizedDonationsReadyToConfirm(\DateTimeImmutable $atDateTime, int $limit): array
     {
         $preAuthorized = DonationStatus::PreAuthorized->value;
+        $active = MandateStatus::Active->value;
 
         $query = $this->getEntityManager()->createQuery(<<<DQL
-            SELECT donation from Matchbot\Domain\Donation donation
+            SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'
+            AND mandate.status = '$active'
             AND donation.preAuthorizationDate <= :now
         DQL
         );

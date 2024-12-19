@@ -218,7 +218,11 @@ class RegularGivingMandate extends SalesforceWriteProxy
             throw new \Exception('Missing activation date - is this an active mandate?');
         }
 
-        $secondDonationDate = $this->firstPaymentDayAfter($this->activeFrom ?? $expectedActivationDate);
+        $assumedActivateDate = $this->activeFrom ?? $expectedActivationDate;
+
+        \assert($assumedActivateDate !== null); // can't be null based on combination of previous assertions.
+
+        $secondDonationDate = $this->firstPaymentDayAfter($assumedActivateDate);
 
         if ($sequenceNumber->number < 2) {
             // first donation in mandate should be taken on-session, not pre-authorized.

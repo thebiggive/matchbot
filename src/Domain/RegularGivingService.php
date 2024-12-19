@@ -113,7 +113,9 @@ readonly class RegularGivingService
         } catch (\Throwable $e) {
             foreach ($donations as $donation) {
                 $this->donationService->cancel($donation);
+                $mandate->cancel();
             }
+            $this->entityManager->persist($mandate);
             throw $e;
         }
 
