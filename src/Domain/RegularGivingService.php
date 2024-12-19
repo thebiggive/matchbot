@@ -75,6 +75,8 @@ readonly class RegularGivingService
 
         $this->entityManager->persist($mandate);
 
+        $billingPostcode = $donor->getBillingPostcode();
+
         $firstDonation = new Donation(
             amount: $amount->toNumericString(),
             currencyCode: $amount->currency->isoCode(),
@@ -89,15 +91,65 @@ readonly class RegularGivingService
             countryCode: $donor->getBillingCountryCode(),
             tipAmount: '0',
             mandate: $mandate,
-            mandateSequenceNumber: DonationSequenceNumber::of(1)
+            mandateSequenceNumber: DonationSequenceNumber::of(1),
+            billingPostcode: $billingPostcode,
         );
+        $secondDonation = new Donation(
+            amount: $amount->toNumericString(),
+            currencyCode: $amount->currency->isoCode(),
+            paymentMethodType: PaymentMethodType::Card,
+            campaign: $campaign,
+            charityComms: false,
+            championComms: false,
+            pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            optInTbgEmail: false,
+            donorName: $donor->donorName,
+            emailAddress: $donor->emailAddress,
+            countryCode: $donor->getBillingCountryCode(),
+            tipAmount: '0',
+            mandate: $mandate,
+            mandateSequenceNumber: DonationSequenceNumber::of(2),
+            billingPostcode: $billingPostcode,
+        );
+        $thirdDonation = new Donation(
+            amount: $amount->toNumericString(),
+            currencyCode: $amount->currency->isoCode(),
+            paymentMethodType: PaymentMethodType::Card,
+            campaign: $campaign,
+            charityComms: false,
+            championComms: false,
+            pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            optInTbgEmail: false,
+            donorName: $donor->donorName,
+            emailAddress: $donor->emailAddress,
+            countryCode: $donor->getBillingCountryCode(),
+            tipAmount: '0',
+            mandate: $mandate,
+            mandateSequenceNumber: DonationSequenceNumber::of(3),
+            billingPostcode: $billingPostcode,
+        );
+
+        // @todo-regular-giving - release match funds reserved in following lines if anything later throws.
         $this->donationService->enrollNewDonation($firstDonation);
-        if (! $firstDonation->isFullyMatched()) {
-            throw new NotFullyMatched(
-                "Donation could not be fully matched, need to match {$firstDonation->getAmount()}," .
-                " only matched {$firstDonation->getFundingWithdrawalTotal()}"
-            );
+        $this->donationService->enrollNewDonation($secondDonation);
+        $this->donationService->enrollNewDonation($thirdDonation);
+        // also enrol 2nd and 3rd
+
+        $paymentDateForSecondDonation = $mandate->firstPaymentDayAfter($this->now);
+        $paymentDateForThirdDonation = $mandate->firstPaymentDayAfter($paymentDateForSecondDonation);
+
+        $secondDonation->preAuthorize($paymentDateForSecondDonation);
+        $thirdDonation->preAuthorize($paymentDateForThirdDonation);
+
+        foreach ([$firstDonation, $secondDonation, $thirdDonation] as $donation) {
+            if (!$donation->isFullyMatched()) {
+                throw new NotFullyMatched(
+                    "Donation could not be fully matched, need to match {$donation->getAmount()}," .
+                    " only matched {$donation->getFundingWithdrawalTotal()}"
+                );
+            }
         }
+
         // @todo-regular-giving - collect first donation (currently created as pending, not collected)
         // @todo-regular-giving - do same for 2nd and third donations except those are just to be preauthed and enrolled
         //                        and checked for matching, not collected at this point.

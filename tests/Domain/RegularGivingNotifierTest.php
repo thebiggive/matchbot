@@ -167,7 +167,7 @@ class RegularGivingNotifierTest extends TestCase
             tipAmount: '0',
             mandate: $mandate,
             mandateSequenceNumber: DonationSequenceNumber::of(1),
-            giftAid: true,
+            giftAid: true, tipGiftAid: null, homeAddress: null, homePostcode: null, billingPostcode: null,
         );
         $firstDonation->setTransactionId('[PSP Transaction ID]');
         $this->addFundingWithdrawal($firstDonation, '64');

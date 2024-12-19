@@ -259,7 +259,7 @@ class TestCase extends PHPUnitTestCase
             tipAmount: '0',
             mandate: null,
             mandateSequenceNumber: null,
-            giftAid: $giftAid,
+            giftAid: $giftAid, tipGiftAid: null, homeAddress: null, homePostcode: null, billingPostcode: null,
         );
     }
 
