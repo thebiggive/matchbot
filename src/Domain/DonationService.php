@@ -161,6 +161,12 @@ class DonationService
                 $retryable();
                 return;
             } catch (ORMException | DBALServerException $exception) {
+                if ($exception instanceof UniqueConstraintViolationException) {
+                    // no-point on a UniqueConstraintViolationException, throw straight away to make issue more obvious
+                    throw $exception;
+                }
+
+
                 $retryCount++;
                 $this->logger->info(
                     sprintf(
