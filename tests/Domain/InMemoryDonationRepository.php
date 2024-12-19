@@ -142,11 +142,6 @@ class InMemoryDonationRepository implements DonationRepository
         throw new \Exception("Method not implemented in test double");
     }
 
-    #[\Override] public function findWithFeePossiblyOverchaged(): array
-    {
-        throw new \Exception("Method not implemented in test double");
-    }
-
     #[\Override] public function getRecentHighVolumeCompletionRatio(\DateTimeImmutable $nowish): ?float
     {
         throw new \Exception("Method not implemented in test double");

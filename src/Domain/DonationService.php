@@ -345,6 +345,8 @@ class DonationService
                         // would be reduced again when the donation expires.
                         $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
 
+                        $this->entityManager->flush();
+
                         throw $t;
                     }
                 },

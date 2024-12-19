@@ -337,6 +337,7 @@ class DonationRepositoryTest extends TestCase
          * @return mixed
          */            fn(array $args) => $args[0]()
         );
+        $this->entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $repo = $this->getRepo(
             matchingAdapterProphecy: $matchingAdapterProphecy,

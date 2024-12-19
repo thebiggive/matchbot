@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Commands;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Domain\CampaignFunding;
@@ -276,6 +277,7 @@ class HandleOutOfSyncFundsTest extends TestCase
 
         $command = new HandleOutOfSyncFunds(
             $campaignRepo,
+            $this->createStub(EntityManagerInterface::class),
             $withdrawalRepo,
             $adapter,
         );

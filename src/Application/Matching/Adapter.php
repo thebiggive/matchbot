@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Matching;
 
-use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\RealTimeMatchingStorage;
 use MatchBot\Domain\CampaignFunding;
@@ -22,8 +21,6 @@ use Psr\Log\LoggerInterface;
  */
 class Adapter
 {
-    /** @var CampaignFunding[] */
-    private array $fundingsToPersist = [];
     /** @var int Number of times to immediately try to allocate a smaller amount if the fund's running low */
     private int $maxPartialAllocateTries = 5;
     /**
@@ -46,29 +43,19 @@ class Adapter
 
     public function __construct(
         private RealTimeMatchingStorage $storage,
-        private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
     ) {
     }
 
     /**
-     * @param numeric-string $amount
-     */
-    public function addAmount(CampaignFunding $funding, string $amount): string
-    {
-        $fundBalance = $this->addAmountWithoutSavingFundingsToDB($funding, $amount);
-        $this->saveFundingsToDatabase();
-
-        return $fundBalance;
-    }
-
-
-    /**
+     * Callers are responsible for flushing after this works on `CampaignFunding`s – typically once per larger operation
+     * if looping over many.
+     *
      * @param CampaignFunding $funding
      * @param numeric-string $amount
      * @return numeric-string New fund balance
      */
-    private function addAmountWithoutSavingFundingsToDB(CampaignFunding $funding, string $amount): string
+    public function addAmount(CampaignFunding $funding, string $amount): string
     {
         $incrementFractional = $this->toCurrencyFractionalUnit($amount);
 
@@ -236,28 +223,11 @@ class Adapter
     }
 
     /**
-     * After completing fund allocation, update the database funds available to our last known values, without locks.
-     * This is not guaranteed to *always* be a match for the real-time Redis store since we make no effort to fix race
-     * conditions on the database when using Redis as the source of truth for matching allocation.
-     */
-    public function saveFundingsToDatabase(): void
-    {
-        $this->entityManager->wrapInTransaction(function () {
-            foreach ($this->fundingsToPersist as $funding) {
-                $this->entityManager->persist($funding);
-            }
-        });
-    }
-
-    /**
      * @psalm-param numeric-string $newValue
      */
     private function setFundingValue(CampaignFunding $funding, string $newValue): void
     {
         $funding->setAmountAvailable($newValue);
-        if (!in_array($funding, $this->fundingsToPersist, true)) {
-            $this->fundingsToPersist[] = $funding;
-        }
     }
 
     /**
@@ -272,10 +242,8 @@ class Adapter
 
             $this->logger->warning("Released newly allocated funds of $amount for funding ID {$funding->getId()}");
 
-            $this->addAmountWithoutSavingFundingsToDB($funding, $amount);
+            $this->addAmount($funding, $amount);
         }
-
-        $this->saveFundingsToDatabase();
     }
 
     /**
@@ -289,14 +257,12 @@ class Adapter
             $fundingWithDrawalAmount = $fundingWithdrawal->getAmount();
             Assertion::numeric($fundingWithDrawalAmount);
 
-            $newTotal = $this->addAmountWithoutSavingFundingsToDB($funding, $fundingWithDrawalAmount);
+            $newTotal = $this->addAmount($funding, $fundingWithDrawalAmount);
             $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithDrawalAmount, 2);
 
             $this->logger->info("Released {$fundingWithDrawalAmount} to funding {$funding->getId()}");
             $this->logger->info("New fund total for {$funding->getId()}: $newTotal");
         }
-
-        $this->saveFundingsToDatabase();
 
         return $totalAmountReleased;
     }
