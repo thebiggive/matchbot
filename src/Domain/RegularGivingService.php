@@ -76,6 +76,9 @@ readonly class RegularGivingService
         $this->entityManager->persist($mandate);
 
         $billingPostcode = $donor->getBillingPostcode();
+        Assertion::notNull($billingPostcode);
+        $billingCountryCode = $donor->getBillingCountryCode();
+        Assertion::notNull($billingCountryCode);
 
         $firstDonation = new Donation(
             amount: $amount->toNumericString(),
@@ -88,7 +91,7 @@ readonly class RegularGivingService
             optInTbgEmail: false,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,
-            countryCode: $donor->getBillingCountryCode(),
+            countryCode: $billingCountryCode,
             tipAmount: '0',
             mandate: $mandate,
             mandateSequenceNumber: DonationSequenceNumber::of(1),
@@ -105,7 +108,7 @@ readonly class RegularGivingService
             optInTbgEmail: false,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,
-            countryCode: $donor->getBillingCountryCode(),
+            countryCode: $billingCountryCode,
             tipAmount: '0',
             mandate: $mandate,
             mandateSequenceNumber: DonationSequenceNumber::of(2),
@@ -122,7 +125,7 @@ readonly class RegularGivingService
             optInTbgEmail: false,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,
-            countryCode: $donor->getBillingCountryCode(),
+            countryCode: $billingCountryCode,
             tipAmount: '0',
             mandate: $mandate,
             mandateSequenceNumber: DonationSequenceNumber::of(3),
