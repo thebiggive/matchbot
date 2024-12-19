@@ -48,23 +48,14 @@ class Adapter
     }
 
     /**
-     * @param numeric-string $amount
-     */
-    public function addAmount(CampaignFunding $funding, string $amount): string
-    {
-        return $this->addAmountWithoutSavingFundingsToDB($funding, $amount);
-    }
-
-    /**
-     * Note that we use Doctrine in deferred implicit mode – so the name of this fn is meant as a
-     * reminder to flush work overall. Specific per-entity action isn't needed if Doctrine already
-     * knows the `$funding`.
+     * Callers are responsible for flushing after this works on `CampaignFunding`s – typically once per larger operation
+     * if looping over many.
      *
      * @param CampaignFunding $funding
      * @param numeric-string $amount
      * @return numeric-string New fund balance
      */
-    private function addAmountWithoutSavingFundingsToDB(CampaignFunding $funding, string $amount): string
+    public function addAmount(CampaignFunding $funding, string $amount): string
     {
         $incrementFractional = $this->toCurrencyFractionalUnit($amount);
 
@@ -251,7 +242,7 @@ class Adapter
 
             $this->logger->warning("Released newly allocated funds of $amount for funding ID {$funding->getId()}");
 
-            $this->addAmountWithoutSavingFundingsToDB($funding, $amount);
+            $this->addAmount($funding, $amount);
         }
     }
 
@@ -266,7 +257,7 @@ class Adapter
             $fundingWithDrawalAmount = $fundingWithdrawal->getAmount();
             Assertion::numeric($fundingWithDrawalAmount);
 
-            $newTotal = $this->addAmountWithoutSavingFundingsToDB($funding, $fundingWithDrawalAmount);
+            $newTotal = $this->addAmount($funding, $fundingWithDrawalAmount);
             $totalAmountReleased = bcadd($totalAmountReleased, $fundingWithDrawalAmount, 2);
 
             $this->logger->info("Released {$fundingWithDrawalAmount} to funding {$funding->getId()}");

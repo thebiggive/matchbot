@@ -164,6 +164,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         $startTime = microtime(true);
         try {
             $totalAmountReleased = $this->matchingAdapter->releaseAllFundsForDonation($donation);
+            $this->getEntityManager()->flush();
             $endTime = microtime(true);
 
             try {
