@@ -64,6 +64,8 @@ readonly class RegularGivingService
             throw new \Exception("donor not found with ID {$donorID->id}");
         }
 
+        $donor->assertHasRequiredInfoForRegularGiving();
+
         $mandate = new RegularGivingMandate(
             donorId: $donorID,
             donationAmount: $amount,
@@ -74,11 +76,6 @@ readonly class RegularGivingService
         );
 
         $this->entityManager->persist($mandate);
-
-        $billingPostcode = $donor->getBillingPostcode();
-        Assertion::notNull($billingPostcode);
-        $billingCountryCode = $donor->getBillingCountryCode();
-        Assertion::notNull($billingCountryCode);
 
         $firstDonation = new Donation(
             amount: $amount->toNumericString(),
@@ -91,11 +88,11 @@ readonly class RegularGivingService
             optInTbgEmail: false,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,
-            countryCode: $billingCountryCode,
+            countryCode: $donor->getBillingCountryCode(),
             tipAmount: '0',
             mandate: $mandate,
             mandateSequenceNumber: DonationSequenceNumber::of(1),
-            billingPostcode: $billingPostcode,
+            billingPostcode: $donor->getBillingPostcode(),
         );
         $secondDonation = new Donation(
             amount: $amount->toNumericString(),
@@ -108,11 +105,11 @@ readonly class RegularGivingService
             optInTbgEmail: false,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,
-            countryCode: $billingCountryCode,
+            countryCode: $donor->getBillingCountryCode(),
             tipAmount: '0',
             mandate: $mandate,
             mandateSequenceNumber: DonationSequenceNumber::of(2),
-            billingPostcode: $billingPostcode,
+            billingPostcode: $donor->getBillingPostcode(),
         );
         $thirdDonation = new Donation(
             amount: $amount->toNumericString(),
@@ -125,11 +122,11 @@ readonly class RegularGivingService
             optInTbgEmail: false,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,
-            countryCode: $billingCountryCode,
+            countryCode: $donor->getBillingCountryCode(),
             tipAmount: '0',
             mandate: $mandate,
             mandateSequenceNumber: DonationSequenceNumber::of(3),
-            billingPostcode: $billingPostcode,
+            billingPostcode: $donor->getBillingPostcode(),
         );
 
         // @todo-regular-giving - release match funds reserved in following lines if anything later throws.
