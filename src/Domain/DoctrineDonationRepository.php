@@ -44,8 +44,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
     private const int EXPIRY_SECONDS = 32 * 60; // 32 minutes: 30 min official timed window plus 2 mins grace.
 
     private Matching\Adapter $matchingAdapter;
-    /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
-    private array $queuedForPersist = [];
 
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
@@ -131,8 +129,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             $lockStartTime = microtime(true);
             $newWithdrawals = $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart);
             $lockEndTime = microtime(true);
-
-            $this->persistQueuedDonations();
         } catch (Matching\TerminalLockException $exception) {
             $waitTime = round(microtime(true) - $lockStartTime, 6);
             $this->logError(
@@ -506,7 +502,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         $currentFundingIndex = 0;
         /** @var FundingWithdrawal[] $newWithdrawals Track these to persist outside the lock window, to keep it short */
         $newWithdrawals = [];
-        $withdrewAnything = false;
 
         // Loop as long as there are still campaign funds not allocated and we have allocated less than the donation
         // amount
@@ -535,7 +530,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             $amountLeftToMatch = bcsub($amountLeftToMatch, $amountAllocated, 2);
 
             if (bccomp($amountAllocated, '0.00', 2) === 1) {
-                $withdrewAnything = true;
                 $withdrawal = new FundingWithdrawal($funding);
                 $withdrawal->setDonation($donation);
                 $withdrawal->setAmount($amountAllocated);
@@ -547,28 +541,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             $currentFundingIndex++;
         }
 
-        if ($withdrewAnything) {
-            $this->queueForPersist($donation);
-            $this->matchingAdapter->saveFundingsToDatabase();
-        }
-
         return $newWithdrawals;
-    }
-
-    private function queueForPersist(Donation $donation): void
-    {
-        $this->queuedForPersist[] = $donation;
-    }
-
-    private function persistQueuedDonations(): void
-    {
-        if (count($this->queuedForPersist) === 0) {
-            return;
-        }
-
-        foreach ($this->queuedForPersist as $donation) {
-            $this->getEntityManager()->persist($donation);
-        }
     }
 
     public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation

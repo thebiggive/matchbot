@@ -316,7 +316,6 @@ return function (ContainerBuilder $containerBuilder) {
             static function (ContainerInterface $c): Matching\Adapter {
                 return new Matching\Adapter(
                     $c->get(RealTimeMatchingStorage::class),
-                    $c->get(RetrySafeEntityManager::class),
                     $c->get(LoggerInterface::class)
                 );
             },

@@ -12,7 +12,6 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
-use MatchBot\Application\Actions\Hooks\StripePaymentsUpdate;
 use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;

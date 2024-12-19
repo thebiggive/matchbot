@@ -57,7 +57,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         );
         $matchingAdapter = new Adapter(
             new ArrayMatchingStorage(),
-            $this->emProphecy->reveal(),
             new NullLogger(),
         );
 
@@ -87,7 +86,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             $this->campaign,
         );
 
-        $this->emProphecy->persist($donation)->shouldNotBeCalled(); // No change in this case.
+        $this->emProphecy->flush()->shouldNotBeCalled(); // No change in this case.
 
         // act
         $amountMatched = $this->sut->allocateMatchFunds($donation);
@@ -112,7 +111,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
             $campaignFunding
         ]);
-        $this->emProphecy->persist($campaignFunding)->shouldBeCalled();
         $this->emProphecy->persist(Argument::type(FundingWithdrawal::class))->shouldBeCalled();
 
         $donation = Donation::fromApiModel(
@@ -126,7 +124,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             $this->campaign,
         );
 
-        $this->emProphecy->persist($donation)->shouldBeCalled();
         $this->emProphecy->flush()->shouldBeCalled();
 
         // act
@@ -203,8 +200,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             $campaignFunding0,
             $campaignFunding1,
         ]);
-        $this->emProphecy->persist($campaignFunding0)->shouldBeCalled();
-        $this->emProphecy->persist($campaignFunding1)->shouldBeCalled();
         $this->emProphecy->persist(Argument::type(FundingWithdrawal::class))->shouldBeCalled();
 
         $donation = Donation::fromApiModel(
@@ -218,7 +213,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             $this->campaign,
         );
 
-        $this->emProphecy->persist($donation)->shouldBeCalled();
         $this->emProphecy->flush()->shouldBeCalled();
 
         // act
@@ -251,7 +245,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
             $campaignFunding
         ]);
-        $this->emProphecy->persist($campaignFunding)->shouldBeCalled();
         $this->emProphecy->persist(Argument::type(FundingWithdrawal::class))->shouldBeCalled();
 
         $donation = Donation::fromApiModel(
@@ -268,7 +261,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $fundingWithdrawal->setAmount('1.00');
         $donation->addFundingWithdrawal($fundingWithdrawal);
 
-        $this->emProphecy->persist($donation)->shouldBeCalled();
         $this->emProphecy->flush()->shouldBeCalled();
 
         // act
