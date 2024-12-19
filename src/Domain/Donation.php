@@ -345,24 +345,24 @@ class Donation extends SalesforceWriteProxy
      * @psalm-param ?numeric-string $tipAmount
      */
     public function __construct(
-        string                  $amount,
-        string                  $currencyCode,
-        PaymentMethodType       $paymentMethodType,
-        Campaign                $campaign,
-        ?bool                   $charityComms,
-        ?bool                   $championComms,
-        ?string                 $pspCustomerId,
-        ?bool                   $optInTbgEmail,
-        ?DonorName              $donorName,
-        ?EmailAddress           $emailAddress,
-        ?string                 $countryCode,
-        ?string                 $tipAmount,
-        ?RegularGivingMandate   $mandate,
+        string $amount,
+        string $currencyCode,
+        PaymentMethodType $paymentMethodType,
+        Campaign $campaign,
+        ?bool $charityComms,
+        ?bool $championComms,
+        ?string $pspCustomerId,
+        ?bool $optInTbgEmail,
+        ?DonorName $donorName,
+        ?EmailAddress $emailAddress,
+        ?string $countryCode,
+        ?string $tipAmount,
+        ?RegularGivingMandate $mandate,
         ?DonationSequenceNumber $mandateSequenceNumber,
-        bool                    $giftAid = false,
-        ?bool                   $tipGiftAid = null,
-        ?string                 $homeAddress = null,
-        ?string                 $homePostcode = null,
+        bool $giftAid = false,
+        ?bool $tipGiftAid = null,
+        ?string $homeAddress = null,
+        ?string $homePostcode = null,
         ?string $billingPostcode = null,
     ) {
         $this->setUuid(Uuid::uuid4());
@@ -445,7 +445,8 @@ class Donation extends SalesforceWriteProxy
             // tips don't have a "tip" because the donation is to BG), but map just in case.
             tipGiftAid: $donationData->tipGiftAid,
             homeAddress: $donationData->homeAddress,
-            homePostcode: $donationData->homePostcode, billingPostcode: null,
+            homePostcode: $donationData->homePostcode,
+            billingPostcode: null,
         );
     }
 

@@ -199,7 +199,12 @@ class SetupTestMandate extends LockingCommand
             countryCode: 'GB',
             tipAmount: '0',
             mandate: $mandate,
-            mandateSequenceNumber: $number, giftAid: false, tipGiftAid: null, homeAddress: null, homePostcode: null, billingPostcode: null,
+            mandateSequenceNumber: $number,
+            giftAid: false,
+            tipGiftAid: null,
+            homeAddress: null,
+            homePostcode: null,
+            billingPostcode: null,
         );
 
         $donation->update(

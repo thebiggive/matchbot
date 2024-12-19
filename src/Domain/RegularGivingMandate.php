@@ -185,7 +185,12 @@ class RegularGivingMandate extends SalesforceWriteProxy
             countryCode: $donor->getBillingCountryCode(),
             tipAmount: '0',
             mandate: $this,
-            mandateSequenceNumber: $sequenceNumber, giftAid: false, tipGiftAid: null, homeAddress: null, homePostcode: null, billingPostcode: null,
+            mandateSequenceNumber: $sequenceNumber,
+            giftAid: false,
+            tipGiftAid: null,
+            homeAddress: null,
+            homePostcode: null,
+            billingPostcode: null,
         );
 
         $donation->update(
