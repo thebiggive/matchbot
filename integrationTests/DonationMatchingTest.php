@@ -4,7 +4,6 @@ namespace MatchBot\IntegrationTests;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Adapter;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
@@ -111,9 +110,9 @@ class DonationMatchingTest extends IntegrationTest
                 $this->wrappedAdapter->delete($funding);
             }
 
-            public function subtractAmountWithoutSavingToDB(CampaignFunding $funding, string $amount): never
+            public function subtractAmount(CampaignFunding $funding, string $amount): never
             {
-                $this->wrappedAdapter->subtractAmountWithoutSavingToDB($funding, $amount);
+                $this->wrappedAdapter->subtractAmount($funding, $amount);
 
                 throw new \Exception("Throwing after subtracting funds to test how our system handles the crash");
             }
@@ -132,12 +131,11 @@ class DonationMatchingTest extends IntegrationTest
         $c = $this->getContainer();
 
         $redis = $c->get(Redis::class);
-        $entityManager = $c->get(RetrySafeEntityManager::class);
         $logger = $c->get(LoggerInterface::class);
 
         $this->setInContainer(
             Adapter::class,
-            new Adapter(new RedisMatchingStorage($redis), $entityManager, $logger),
+            new Adapter(new RedisMatchingStorage($redis), $logger),
         );
     }
 }

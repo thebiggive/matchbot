@@ -44,8 +44,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
     private const int EXPIRY_SECONDS = 32 * 60; // 32 minutes: 30 min official timed window plus 2 mins grace.
 
     private Matching\Adapter $matchingAdapter;
-    /** @var Donation[] Tracks donations to persist outside the time-critical transaction / lock window */
-    private array $queuedForPersist;
 
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
@@ -115,7 +113,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         // is most often empty (for new donations) so this will frequently be 0.00.
         $amountMatchedAtStart = $donation->getFundingWithdrawalTotal();
 
-
         $lockStartTime = 0; // dummy value, should always be overwritten before usage.
         try {
             /** @var list<CampaignFunding> $likelyAvailableFunds */
@@ -132,8 +129,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             $lockStartTime = microtime(true);
             $newWithdrawals = $this->safelyAllocateFunds($donation, $likelyAvailableFunds, $amountMatchedAtStart);
             $lockEndTime = microtime(true);
-
-            $this->persistQueuedDonations();
         } catch (Matching\TerminalLockException $exception) {
             $waitTime = round(microtime(true) - $lockStartTime, 6);
             $this->logError(
@@ -156,10 +151,10 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             $amountNewlyMatched = bcadd($amountNewlyMatched, $newWithdrawalAmount, 2);
         }
 
+        $this->getEntityManager()->flush(); // Flush `$newWithdrawals` if any.
+
         $this->logInfo('ID ' . $donation->getUuid() . ' allocated new match funds totalling ' . $amountNewlyMatched);
         $this->logInfo('Allocation took ' . round($lockEndTime - $lockStartTime, 6) . ' seconds');
-
-        $this->getEntityManager()->flush();
 
         return $amountNewlyMatched;
     }
@@ -169,6 +164,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         $startTime = microtime(true);
         try {
             $totalAmountReleased = $this->matchingAdapter->releaseAllFundsForDonation($donation);
+            $this->getEntityManager()->flush();
             $endTime = microtime(true);
 
             try {
@@ -373,28 +369,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         return $donations;
     }
 
-    public function findWithFeePossiblyOverchaged(): array
-    {
-        $query = $this->getEntityManager()->createQuery(<<<'DQL'
-            SELECT d
-            FROM MatchBot\Domain\Donation d 
-            WHERE d.collectedAt >= :start
-            AND d.donationStatus IN (:completeStatuses)
-            AND d.paymentMethodType = 'card'
-            AND d.transactionId NOT LIKE 'pi_stub_%'
-        DQL
-        );
-        $query->setParameter('start', new \DateTimeImmutable('2024-09-06 00:00:00'));
-        $query->setParameter(
-            'completeStatuses',
-            array_map(static fn(DonationStatus $s) => $s->value, DonationStatus::SUCCESS_STATUSES),
-        );
-
-        /** @var list<Donation> $result */
-        $result = $query->getResult();
-        return $result;
-    }
-
     public function getRecentHighVolumeCompletionRatio(\DateTimeImmutable $nowish): ?float
     {
         $oneMinutePrior = $nowish->sub(new \DateInterval('PT1M'));
@@ -542,7 +516,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
 
             $newTotal = '[new total not defined]';
             try {
-                $newTotal = $this->matchingAdapter->subtractAmountWithoutSavingToDB($funding, $amountToAllocateNow);
+                $newTotal = $this->matchingAdapter->subtractAmount($funding, $amountToAllocateNow);
                 $amountAllocated = $amountToAllocateNow; // If no exception thrown
             } catch (Matching\LessThanRequestedAllocatedException $exception) {
                 $amountAllocated = $exception->getAmountAllocated();
@@ -566,26 +540,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             $currentFundingIndex++;
         }
 
-        $this->queueForPersist($donation);
-
-        $this->matchingAdapter->saveFundingsToDatabase();
         return $newWithdrawals;
-    }
-
-    private function queueForPersist(Donation $donation): void
-    {
-        $this->queuedForPersist[] = $donation;
-    }
-
-    private function persistQueuedDonations(): void
-    {
-        if (count($this->queuedForPersist) === 0) {
-            return;
-        }
-
-        foreach ($this->queuedForPersist as $donation) {
-            $this->getEntityManager()->persist($donation);
-        }
     }
 
     public function findAndLockOneBy(array $criteria, ?array $orderBy = null): ?Donation

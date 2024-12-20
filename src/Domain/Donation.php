@@ -12,7 +12,6 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use JetBrains\PhpStorm\Pure;
-use MatchBot\Application\Actions\Hooks\StripePaymentsUpdate;
 use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
@@ -1652,11 +1651,6 @@ class Donation extends SalesforceWriteProxy
     public function isFullyMatched(): bool
     {
         return bccomp($this->amount, $this->getFundingWithdrawalTotal(), 2) === 0;
-    }
-
-    public function hasRefund(): bool
-    {
-        return $this->refundedAt !== null;
     }
 
     public function getUuid(): UuidInterface

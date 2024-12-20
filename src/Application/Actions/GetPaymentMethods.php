@@ -10,7 +10,6 @@ use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Stripe\PaymentMethod;
 use Stripe\StripeClient;
 
 class GetPaymentMethods extends Action
