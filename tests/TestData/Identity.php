@@ -73,4 +73,18 @@ class Identity
 
         return $secret;
     }
+
+    public static function donorAccount(): DonorAccount
+    {
+        $donorAccount = new DonorAccount(
+            PersonId::of(self::IDENTITY_UUID),
+            EmailAddress::of('email@example.com'),
+            DonorName::of('John', 'Doe'),
+            StripeCustomerId::of(self::STRIPE_ID),
+        );
+        $donorAccount->setBillingPostcode('E17');
+        $donorAccount->setBillingCountryCode('GB');
+
+        return $donorAccount;
+    }
 }
