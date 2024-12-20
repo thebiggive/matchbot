@@ -74,7 +74,7 @@ class Adapter
             ->exec();
 
         $fundBalance = $this->toCurrencyWholeUnit((int)$fundBalanceFractional);
-        $this->setFundingValue($funding, $fundBalance);
+        $funding->setAmountAvailable($fundBalance);
 
         return $fundBalance;
     }
@@ -137,14 +137,14 @@ class Adapter
                     $this->buildKey($funding),
                     $amountAllocatedFractional,
                 );
-                $this->setFundingValue($funding, $this->toCurrencyWholeUnit($fundBalanceFractional));
+                $funding->setAmountAvailable($this->toCurrencyWholeUnit($fundBalanceFractional));
                 throw new TerminalLockException(
                     "Fund {$funding->getId()} balance sub-zero after $retries attempts. " .
                     "Releasing final $amountAllocatedFractional 'cents'"
                 );
             }
 
-            $this->setFundingValue($funding, $this->toCurrencyWholeUnit($fundBalanceFractional));
+            $funding->setAmountAvailable($this->toCurrencyWholeUnit($fundBalanceFractional));
             throw new LessThanRequestedAllocatedException(
                 $this->toCurrencyWholeUnit($amountAllocatedFractional)
             );
@@ -153,7 +153,7 @@ class Adapter
         $this->amountsSubtractedInCurrentProcess[] = ['campaignFunding' => $funding, 'amount' => $amount];
 
         $fundBalance = $this->toCurrencyWholeUnit($fundBalanceFractional);
-        $this->setFundingValue($funding, $fundBalance);
+        $funding->setAmountAvailable($fundBalance);
 
         return $fundBalance;
     }
@@ -220,14 +220,6 @@ class Adapter
         Assertion::notNull($id, "Funding ID must be non-null to build key");
 
         return "fund-{$id}-available-opt";
-    }
-
-    /**
-     * @psalm-param numeric-string $newValue
-     */
-    private function setFundingValue(CampaignFunding $funding, string $newValue): void
-    {
-        $funding->setAmountAvailable($newValue);
     }
 
     /**
