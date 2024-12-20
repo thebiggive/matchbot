@@ -91,6 +91,8 @@ class DonorAccount extends Model
      * Returns the UUID of this person as held in Identity service. Use with care as throws is Matchbot doesn't (yet)
      * have that UUID on record
      *
+     * @psalm-suppress PossiblyUnusedMethod - this is unused but leaving in as may be useful later.
+     *
      * @todo-regular-giving - consider filling in all values in prod and making $this->uuid non-nullable.
      */
     public function id(): PersonId
