@@ -47,6 +47,25 @@ class CreateRegularGivingMandateTest extends IntegrationTest
             ->fetchAllAssociative();
         $this->assertNotEmpty($mandateDatabaseRows);
         $this->assertSame($pencePerMonth, $mandateDatabaseRows[0]['donationAmount_amountInPence']);
+
+        $donationDatabaseRows = $this->db()->executeQuery(
+            "SELECT * from Donation where Donation.mandate_id = ? ORDER BY mandateSequenceNumber asc",
+            [$mandateDatabaseRows[0]['id']]
+        )->fetchAllAssociative();
+
+        $this->assertCount(3, $donationDatabaseRows);
+
+        $this->assertSame('Pending', $donationDatabaseRows[0]['donationStatus']); // see @todo in SUT - should be collected not pending
+        $this->assertSame('PreAuthorized', $donationDatabaseRows[1]['donationStatus']);
+        $this->assertSame('PreAuthorized', $donationDatabaseRows[2]['donationStatus']);
+
+        $this->assertNull($donationDatabaseRows[0]['preAuthorizationDate']);
+        $this->assertNotNull($donationDatabaseRows[1]['preAuthorizationDate']);
+        $this->assertNotNull($donationDatabaseRows[2]['preAuthorizationDate']);
+
+        $this->assertSame((string)($pencePerMonth / 100), $donationDatabaseRows[0]['amount']);
+        $this->assertSame((string)($pencePerMonth / 100), $donationDatabaseRows[1]['amount']);
+        $this->assertSame((string)($pencePerMonth / 100), $donationDatabaseRows[2]['amount']);
     }
 
 
