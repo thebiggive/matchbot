@@ -4,13 +4,20 @@ declare(strict_types=1);
 
 namespace MatchBot\IntegrationTests;
 
+use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Client\Mailer;
+use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\PersonId;
+use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestData;
 use Prophecy\Argument;
 use Psr\Http\Message\ResponseInterface;
 use MatchBot\Client\Stripe;
+use Ramsey\Uuid\Uuid;
 use Stripe\PaymentIntent;
 
 class CreateRegularGivingMandateTest extends IntegrationTest
@@ -33,7 +40,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
             ->will(fn() => new PaymentIntent('payment-intent-id-' . IntegrationTest::randomString()));
         $this->getContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
-        $this->ensureDbHasDonorAccount();
+        $this->createDonorAccount();
 
         // act
         $response = $this->createRegularGivingMandate($pencePerMonth);
@@ -99,16 +106,23 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         );
     }
 
-    private function ensureDbHasDonorAccount(): void
+    private function createDonorAccount(): void
     {
-        $donorAccount = TestData\Identity::donorAccount();
-        $repository = $this->getService(DonorAccountRepository::class);
+        $this->getService(DonorAccountRepository::class)->save(self::donorAccount());
+    }
 
-        // previously I did a try-catch for UniqueConstraintViolationException but that's no good,
-        // the entity manager goes away when it throws that.
 
-        if (! $repository->findByPersonId($donorAccount->id())) {
-            $repository->save($donorAccount);
-        }
+    public static function donorAccount(): DonorAccount
+    {
+        $donorAccount = new DonorAccount(
+            PersonId::of(Uuid::uuid4()->toString()),
+            EmailAddress::of('email@example.com'),
+            DonorName::of('John', 'Doe'),
+            StripeCustomerId::of('cus_' . self::randomString()),
+        );
+        $donorAccount->setBillingPostcode('E17');
+        $donorAccount->setBillingCountryCode('GB');
+
+        return $donorAccount;
     }
 }
