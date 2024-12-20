@@ -5,6 +5,7 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
+use PHPUnit\Util\Exception;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -169,9 +170,11 @@ class DonorAccount extends Model
      */
     public function assertHasRequiredInfoForRegularGiving(): void
     {
-        Assert::lazy()
-            ->that($this->billingPostcode)->notNull()
-            ->that($this->billingCountryCode)->notNull()
-            ->verifyNow();
+        if ($this->billingCountryCode === null) {
+            throw new Exception('Missing billing country code');
+        }
+        if ($this->billingCountryCode === null) {
+            throw new Exception('Missing billing country code');
+        }
     }
 }
