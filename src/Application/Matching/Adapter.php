@@ -87,7 +87,7 @@ class Adapter
      * @param numeric-string $amount
      * @return numeric-string New fund balance as bcmath-ready string
      */
-    public function subtractAmountWithoutSavingToDB(CampaignFunding $funding, string $amount): string
+    public function subtractAmount(CampaignFunding $funding, string $amount): string
     {
         $decrementFractional = $this->toCurrencyFractionalUnit($amount);
 

@@ -70,7 +70,7 @@ class AdapterTest extends TestCase
         $funding->setId(1);
         $amountToSubtract = "10.10";
 
-        $fundBalanceReturned = $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+        $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract);
 
         \assert(50 - 10.10 === 39.9);
         $this->assertSame('39.90', $this->sut->getAmountAvailable($funding));
@@ -88,12 +88,12 @@ class AdapterTest extends TestCase
         $funding->setId(1);
         $amountToSubtract = "30";
 
-        $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+        $this->sut->subtractAmount($funding, $amountToSubtract);
 
         try {
             // this second subtraction will take the fund negative in redis temporarily, but our Adapter will add
             // back the 30 just subtracted.
-            $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+            $this->sut->subtractAmount($funding, $amountToSubtract);
             $this->fail("should have thrown exception on attempt to allocate more than available");
         } catch (LessThanRequestedAllocatedException $exception) {
             $this->assertStringContainsString("Less than requested was allocated", $exception->getMessage());
@@ -123,10 +123,10 @@ class AdapterTest extends TestCase
         $funding->setAmountAvailable('50');
         $amountToSubtract = "30";
 
-        $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+        $this->sut->subtractAmount($funding, $amountToSubtract);
 
         try {
-            $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+            $this->sut->subtractAmount($funding, $amountToSubtract);
             $this->fail("should have thrown exception on attempt to allocate more than available");
         } catch (TerminalLockException $exception) {
             // this -140_00 number is not very important - we already released part of the funds earlier,
@@ -178,7 +178,7 @@ class AdapterTest extends TestCase
         $funding->setId(1);
         $amountToSubtract = "10.10";
 
-        $fundBalanceReturned = $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+        $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract);
 
         // act
         $this->sut->releaseNewlyAllocatedFunds();

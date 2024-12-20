@@ -516,7 +516,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
 
             $newTotal = '[new total not defined]';
             try {
-                $newTotal = $this->matchingAdapter->subtractAmountWithoutSavingToDB($funding, $amountToAllocateNow);
+                $newTotal = $this->matchingAdapter->subtractAmount($funding, $amountToAllocateNow);
                 $amountAllocated = $amountToAllocateNow; // If no exception thrown
             } catch (Matching\LessThanRequestedAllocatedException $exception) {
                 $amountAllocated = $exception->getAmountAllocated();
