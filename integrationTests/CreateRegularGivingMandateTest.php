@@ -23,15 +23,14 @@ class CreateRegularGivingMandateTest extends IntegrationTest
     public function testItCreatesRegularGivingMandate(): void
     {
         // arrange
-        $pencePerMonth = random_int(1_00, 500_00);
+        $pencePerMonth = random_int(1, 500) * 100;
 
         $stripeProphecy = $this->prophesize(Stripe::class);
-        $paymentIntentId = 'payment-intent-id-' . $this->randomString();
         $stripeProphecy->createPaymentIntent(
             Argument::that(fn(array $payload) => ($payload['amount'] === $pencePerMonth))
         )
-            ->shouldBeCalledOnce()
-            ->willReturn(new PaymentIntent($paymentIntentId));
+            ->shouldBeCalledTimes(3)
+            ->will(fn() => new PaymentIntent('payment-intent-id-' . IntegrationTest::randomString()));
         $this->getContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
         $this->ensureDbHasDonorAccount();
@@ -42,12 +41,31 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         // assert
         $this->assertSame(201, $response->getStatusCode());
         $mandateDatabaseRows = $this->db()->executeQuery(
-            "SELECT * from RegularGivingMandate where amount_amountInPence = ?",
+            "SELECT * from RegularGivingMandate where donationAmount_amountInPence = ?",
             [$pencePerMonth]
         )
             ->fetchAllAssociative();
         $this->assertNotEmpty($mandateDatabaseRows);
-        $this->assertSame($pencePerMonth, $mandateDatabaseRows[0]['amount_amountInPence']);
+        $this->assertSame($pencePerMonth, $mandateDatabaseRows[0]['donationAmount_amountInPence']);
+
+        $donationDatabaseRows = $this->db()->executeQuery(
+            "SELECT * from Donation where Donation.mandate_id = ? ORDER BY mandateSequenceNumber asc",
+            [$mandateDatabaseRows[0]['id']]
+        )->fetchAllAssociative();
+
+        $this->assertCount(3, $donationDatabaseRows);
+
+        $this->assertSame('Pending', $donationDatabaseRows[0]['donationStatus']); // see @todo in SUT - should be collected not pending
+        $this->assertSame('PreAuthorized', $donationDatabaseRows[1]['donationStatus']);
+        $this->assertSame('PreAuthorized', $donationDatabaseRows[2]['donationStatus']);
+
+        $this->assertNull($donationDatabaseRows[0]['preAuthorizationDate']);
+        $this->assertNotNull($donationDatabaseRows[1]['preAuthorizationDate']);
+        $this->assertNotNull($donationDatabaseRows[2]['preAuthorizationDate']);
+
+        $this->assertEquals((float)($pencePerMonth / 100), $donationDatabaseRows[0]['amount']);
+        $this->assertEquals((float)($pencePerMonth / 100), $donationDatabaseRows[1]['amount']);
+        $this->assertEquals((float)($pencePerMonth / 100), $donationDatabaseRows[2]['amount']);
     }
 
 

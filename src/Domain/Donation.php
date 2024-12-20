@@ -340,6 +340,7 @@ class Donation extends SalesforceWriteProxy
     private ?DateTimeImmutable $preAuthorizationDate = null;
 
     /**
+     * @param string|null $billingPostcode
      * @psalm-param numeric-string $amount
      * @psalm-param ?numeric-string $tipAmount
      */
@@ -362,6 +363,7 @@ class Donation extends SalesforceWriteProxy
         ?bool $tipGiftAid = null,
         ?string $homeAddress = null,
         ?string $homePostcode = null,
+        ?string $billingPostcode = null,
     ) {
         $this->setUuid(Uuid::uuid4());
         $this->fundingWithdrawals = new ArrayCollection();
@@ -410,6 +412,7 @@ class Donation extends SalesforceWriteProxy
 
         $this->mandate = $mandate;
         $this->mandateSequenceNumber = $mandateSequenceNumber?->number;
+        $this->donorBillingPostcode = $billingPostcode;
     }
 
     /**
@@ -443,6 +446,7 @@ class Donation extends SalesforceWriteProxy
             tipGiftAid: $donationData->tipGiftAid,
             homeAddress: $donationData->homeAddress,
             homePostcode: $donationData->homePostcode,
+            billingPostcode: null, // no support for billing post code on donation creation in API - only on update.
         );
     }
 

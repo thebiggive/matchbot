@@ -186,7 +186,7 @@ class SetupTestMandate extends LockingCommand
         DonationSequenceNumber $number
     ): void {
         $donation = new Donation(
-            amount: (string)($mandate->getAmount()->amountInPence / 100),
+            amount: (string)($mandate->getDonationAmount()->amountInPence / 100),
             currencyCode: 'GBP',
             paymentMethodType: PaymentMethodType::Card,
             campaign: $campaign,
@@ -200,6 +200,11 @@ class SetupTestMandate extends LockingCommand
             tipAmount: '0',
             mandate: $mandate,
             mandateSequenceNumber: $number,
+            giftAid: false,
+            tipGiftAid: null,
+            homeAddress: null,
+            homePostcode: null,
+            billingPostcode: null,
         );
 
         $donation->update(

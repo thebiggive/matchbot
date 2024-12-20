@@ -39,10 +39,10 @@ class RegularGivingNotifier
                     'signupDate' => $signUpDate->format('d/m/Y H:i'),
                     'schedule' => $mandate->describeSchedule(),
                     'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())->format('d/m/Y'),
-                    'amount' => $mandate->getAmount()->format(),
+                    'amount' => $mandate->getDonationAmount()->format(),
                     'giftAidValue' => $mandate->getGiftAidAmount()->format(),
                     'totalIncGiftAd' => $mandate->totalIncGiftAd()->format(),
-                    'totalCharged' => $mandate->getAmount()->format(),
+                    'totalCharged' => $mandate->getDonationAmount()->format(),
                     'firstDonation' => $this->donationToConfirmationEmailFields(
                         $firstDonation,
                         $charity,
