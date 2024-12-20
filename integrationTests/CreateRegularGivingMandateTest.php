@@ -23,7 +23,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
     public function testItCreatesRegularGivingMandate(): void
     {
         // arrange
-        $pencePerMonth = random_int(1_00, 500_00);
+        $pencePerMonth = random_int(1, 500) * 100;
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(
@@ -63,9 +63,9 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $this->assertNotNull($donationDatabaseRows[1]['preAuthorizationDate']);
         $this->assertNotNull($donationDatabaseRows[2]['preAuthorizationDate']);
 
-        $this->assertSame((string)($pencePerMonth / 100), $donationDatabaseRows[0]['amount']);
-        $this->assertSame((string)($pencePerMonth / 100), $donationDatabaseRows[1]['amount']);
-        $this->assertSame((string)($pencePerMonth / 100), $donationDatabaseRows[2]['amount']);
+        $this->assertEquals((float)($pencePerMonth / 100), $donationDatabaseRows[0]['amount']);
+        $this->assertEquals((float)($pencePerMonth / 100), $donationDatabaseRows[1]['amount']);
+        $this->assertEquals((float)($pencePerMonth / 100), $donationDatabaseRows[2]['amount']);
     }
 
 
