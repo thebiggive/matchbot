@@ -115,7 +115,7 @@ readonly class RegularGivingService
                 $this->donationService->cancel($donation);
                 $mandate->cancel();
             }
-            $this->entityManager->persist($mandate);
+            $this->entityManager->flush();
             throw $e;
         }
 

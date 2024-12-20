@@ -7,6 +7,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DayOfMonth;
+use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -62,6 +63,8 @@ class RegularGivingServiceTest extends TestCase
     /** @var ObjectProphecy<DonationService> */
     private ObjectProphecy $donationServiceProphecy;
 
+    private CampaignFunding $campaignFunding;
+
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
@@ -87,39 +90,30 @@ class RegularGivingServiceTest extends TestCase
         $this->regularGivingNotifierProphecy = $this->prophesize(RegularGivingNotifier::class);
         $this->donationServiceProphecy = $this->prophesize(DonationService::class);
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $this->campaignFunding = $this->createStub(CampaignFunding::class);
     }
 
     public function testItCreatesRegularGivingMandate(): void
     {
         // arrange
-        $donorId = PersonId::of(Uuid::uuid4()->toString());
-        $donorAccount = new DonorAccount(
-            $donorId,
-            EmailAddress::of('email@example.com'),
-            DonorName::of('First', 'Last'),
-            StripeCustomerId::of('cus_x')
-        );
-        $donorAccount->setBillingCountryCode('GB');
-        $donorAccount->setBillingPostcode('SW11AA');
-        $donorAccount->setHomeAddressLine1('Home address');
+        $donorId = $this->prepareDonorAccount();
 
-        $campaignFunding = $this->createStub(CampaignFunding::class);
-
-        /** @var Donation[] $donations */
+        /** @var Donation[] $donations*/
         $donations = [];
+        $testCase = $this;
         $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class))
             ->will(/**
              * @param Donation[] $args
-             */ function ($args) use ($campaignFunding, &$donations) {
-                $withdrawal = new FundingWithdrawal($campaignFunding);
-                $withdrawal->setAmount('42.00');
-                $args[0]->addFundingWithdrawal($withdrawal);
+             */
+                function ($args) use ($testCase, &$donations) {
+                    $withdrawal = new FundingWithdrawal($testCase->campaignFunding);
+                    $withdrawal->setAmount('42.00');
+                    $args[0]->addFundingWithdrawal($withdrawal);
 
-                $donations[] = $args[0];
-            });
-
-        $this->donorAccountRepositoryProphecy->findByPersonId($donorId)
-            ->willReturn($donorAccount);
+                    $donations[] = $args[0];
+                }
+            );
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 BST'));
 
@@ -151,6 +145,47 @@ class RegularGivingServiceTest extends TestCase
         $this->assertSame(MandateStatus::Active, $mandate->getStatus());
 
         $this->regularGivingNotifierProphecy->notifyNewMandateCreated(Argument::cetera())->shouldBeCalled();
+    }
+
+    public function testItCancelsAllDonationsOneIsNotFullyMatched(): void
+    {
+        // arrange
+        $donorId = $this->prepareDonorAccount();
+
+        $testCase = $this;
+        /** @var Donation[] $donations */
+        $donations = [];
+        $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class))
+            ->will(/**
+             * @param Donation[] $args
+             */
+                function ($args) use ($testCase, &$donations) {
+                    $withdrawal = new FundingWithdrawal($testCase->campaignFunding);
+                    $withdrawal->setAmount($args[0]->getMandateSequenceNumber()?->number == 3 ? '42.99' : '42.00');
+                    $args[0]->addFundingWithdrawal($withdrawal);
+
+                    $donations[] = $args[0];
+                }
+            );
+
+        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 BST'));
+
+        $this->donationServiceProphecy->cancel(Argument::type(Donation::class))
+            ->shouldBeCalledTimes(3);
+
+        // act
+        try {
+            $regularGivingService->setupNewMandate(
+                $donorId,
+                Money::fromPoundsGBP(42),
+                TestCase::someCampaign(isRegularGiving: true),
+                true,
+                DayOfMonth::of(20),
+            );
+            $this->fail('Should throw NotFullyMatched');
+        } catch (NotFullyMatched $e) {
+            // no-op
+        }
     }
 
     public function testCannotMakeAMandateForNonRegularGivingCampaign(): void
@@ -242,5 +277,22 @@ class RegularGivingServiceTest extends TestCase
         $this->donationRepositoryProphecy->maxSequenceNumberForMandate($mandateId)
             ->willReturn(DonationSequenceNumber::of($maxSequenceNumber));
         return $mandate;
+    }
+
+    public function prepareDonorAccount(): PersonId
+    {
+        $donorId = PersonId::of(Uuid::uuid4()->toString());
+        $donorAccount = new DonorAccount(
+            $donorId,
+            EmailAddress::of('email@example.com'),
+            DonorName::of('First', 'Last'),
+            StripeCustomerId::of('cus_x')
+        );
+        $donorAccount->setBillingCountryCode('GB');
+        $donorAccount->setBillingPostcode('SW11AA');
+        $donorAccount->setHomeAddressLine1('Home address');
+        $this->donorAccountRepositoryProphecy->findByPersonId($donorId)
+            ->willReturn($donorAccount);
+        return $donorId;
     }
 }
