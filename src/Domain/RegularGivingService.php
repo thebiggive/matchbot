@@ -98,6 +98,7 @@ readonly class RegularGivingService
         $secondDonation = $this->createFutureDonationInAdvanceOfActivation($mandate, 2, $donor, $campaign);
         $thirdDonation = $this->createFutureDonationInAdvanceOfActivation($mandate, 3, $donor, $campaign);
 
+        /** @var Donation[] $donations */
         $donations = [$firstDonation, $secondDonation, $thirdDonation];
 
         try {
@@ -109,6 +110,11 @@ readonly class RegularGivingService
                         " only matched {$donation->getFundingWithdrawalTotal()}"
                     );
                 }
+
+                Assertion::same(
+                    $donation->getFundingWithdrawalTotal(),
+                    $mandate->getMatchedAmount()->toNumericString()
+                );
             }
         } catch (\Throwable $e) {
             foreach ($donations as $donation) {

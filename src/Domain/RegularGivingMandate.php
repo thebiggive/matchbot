@@ -322,7 +322,6 @@ class RegularGivingMandate extends SalesforceWriteProxy
      */
     public function getMatchedAmount(): Money
     {
-        // @todo-regular-giving: use matchedAmount that comes from Donation
         return $this->donationAmount;
     }
 }
