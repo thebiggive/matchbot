@@ -446,7 +446,7 @@ class Donation extends SalesforceWriteProxy
             tipGiftAid: $donationData->tipGiftAid,
             homeAddress: $donationData->homeAddress,
             homePostcode: $donationData->homePostcode,
-            billingPostcode: null,
+            billingPostcode: null, // no support for billing post code on donation creation in API - only on update.
         );
     }
 
