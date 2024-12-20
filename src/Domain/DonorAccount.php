@@ -3,6 +3,7 @@
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
+use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -159,5 +160,18 @@ class DonorAccount extends Model
     {
         Assertion::nullOrBetweenLength($billingPostcode, 1, 15);
         $this->billingPostcode = $billingPostcode;
+    }
+
+    /**
+     * Throws if the donor does not have required fields set to allow automated donation creation.
+     *
+     * Fields will need to be set either during or in advance of the regular giving mandate creation process.
+     */
+    public function assertHasRequiredInfoForRegularGiving(): void
+    {
+        Assert::lazy()
+            ->that($this->billingPostcode)->notNull()
+            ->that($this->billingCountryCode)->notNull()
+            ->verifyNow();
     }
 }

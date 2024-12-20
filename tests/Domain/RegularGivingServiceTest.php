@@ -4,9 +4,12 @@ namespace MatchBot\Tests\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DayOfMonth;
+use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\WrongCampaignType;
+use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationSequenceNumber;
 use MatchBot\Domain\DonationService;
@@ -15,6 +18,8 @@ use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\MandateStatus;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\RegularGivingService;
@@ -24,6 +29,7 @@ use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
@@ -47,6 +53,18 @@ class RegularGivingServiceTest extends TestCase
     /** @var Salesforce18Id<Campaign> */
     private Salesforce18Id $campaignId;
 
+    /** @var ObjectProphecy<RegularGivingNotifier> */
+    private ObjectProphecy $regularGivingNotifierProphecy;
+
+    /** @var ObjectProphecy<EntityManagerInterface> */
+    private ObjectProphecy $entityManagerProphecy;
+
+
+    /** @var ObjectProphecy<DonationService> */
+    private ObjectProphecy $donationServiceProphecy;
+
+    private CampaignFunding $campaignFunding;
+
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
@@ -69,11 +87,110 @@ class RegularGivingServiceTest extends TestCase
             ->willReturn($this->donorAccount);
         $this->campaignRepositoryProphecy->findOneBySalesforceId($this->campaignId)
             ->willReturn(TestCase::someCampaign());
+        $this->regularGivingNotifierProphecy = $this->prophesize(RegularGivingNotifier::class);
+        $this->donationServiceProphecy = $this->prophesize(DonationService::class);
+        $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $this->campaignFunding = $this->createStub(CampaignFunding::class);
+    }
+
+    public function testItCreatesRegularGivingMandate(): void
+    {
+        // arrange
+        $donorId = $this->prepareDonorAccount();
+
+        /** @var Donation[] $donations*/
+        $donations = [];
+        $testCase = $this;
+        $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class))
+            ->will(/**
+             * @param Donation[] $args
+             */
+                function ($args) use ($testCase, &$donations) {
+                    $withdrawal = new FundingWithdrawal($testCase->campaignFunding);
+                    $withdrawal->setAmount('42.00');
+                    $args[0]->addFundingWithdrawal($withdrawal);
+
+                    $donations[] = $args[0];
+                }
+            );
+
+        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+
+        // act
+        $mandate = $regularGivingService->setupNewMandate(
+            $donorId,
+            Money::fromPoundsGBP(42),
+            TestCase::someCampaign(isRegularGiving: true),
+            true,
+            DayOfMonth::of(20),
+        );
+
+        // assert
+        $this->assertCount(3, $donations);
+        $this->assertSame(DonationStatus::Pending, $donations[0]->getDonationStatus());
+        $this->assertSame(DonationStatus::PreAuthorized, $donations[1]->getDonationStatus());
+        $this->assertSame(DonationStatus::PreAuthorized, $donations[2]->getDonationStatus());
+
+        $this->assertEquals(
+            new \DateTimeImmutable('2024-12-20T06:00:00 GMT'),
+            $donations[1]->getPreAuthorizationDate()
+        );
+
+        $this->assertEquals(
+            new \DateTimeImmutable('2025-01-20T06:00:00 GMT'),
+            $donations[2]->getPreAuthorizationDate()
+        );
+
+        $this->assertSame(MandateStatus::Active, $mandate->getStatus());
+
+        $this->regularGivingNotifierProphecy->notifyNewMandateCreated(Argument::cetera())->shouldBeCalled();
+    }
+
+    public function testItCancelsAllDonationsOneIsNotFullyMatched(): void
+    {
+        // arrange
+        $donorId = $this->prepareDonorAccount();
+
+        $testCase = $this;
+        /** @var Donation[] $donations */
+        $donations = [];
+        $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class))
+            ->will(/**
+             * @param Donation[] $args
+             */
+                function ($args) use ($testCase, &$donations) {
+                    $withdrawal = new FundingWithdrawal($testCase->campaignFunding);
+                    $withdrawal->setAmount($args[0]->getMandateSequenceNumber()?->number == 3 ? '42.99' : '42.00');
+                    $args[0]->addFundingWithdrawal($withdrawal);
+
+                    $donations[] = $args[0];
+                }
+            );
+
+        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+
+        $this->donationServiceProphecy->cancel(Argument::type(Donation::class))
+            ->shouldBeCalledTimes(3);
+
+        // act
+        try {
+            $regularGivingService->setupNewMandate(
+                $donorId,
+                Money::fromPoundsGBP(42),
+                TestCase::someCampaign(isRegularGiving: true),
+                true,
+                DayOfMonth::of(20),
+            );
+            $this->fail('Should throw NotFullyMatched');
+        } catch (NotFullyMatched $e) {
+            // no-op
+        }
     }
 
     public function testCannotMakeAMandateForNonRegularGivingCampaign(): void
     {
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 BST'));
+        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $campaign = TestCase::someCampaign();
 
         $this->expectException(WrongCampaignType::class);
@@ -134,11 +251,11 @@ class RegularGivingServiceTest extends TestCase
             donationRepository: $this->donationRepositoryProphecy->reveal(),
             donorAccountRepository: $this->donorAccountRepositoryProphecy->reveal(),
             campaignRepository: $this->campaignRepositoryProphecy->reveal(),
-            entityManager: $this->createStub(EntityManagerInterface::class),
-            donationService: $this->createStub(DonationService::class),
+            entityManager: $this->entityManagerProphecy->reveal(),
+            donationService: $this->donationServiceProphecy->reveal(),
             log: $this->createStub(LoggerInterface::class),
             regularGivingMandateRepository: $this->createStub(RegularGivingMandateRepository::class),
-            regularGivingNotifier: $this->createStub(RegularGivingNotifier::class),
+            regularGivingNotifier: $this->regularGivingNotifierProphecy->reveal(),
         );
     }
 
@@ -160,5 +277,22 @@ class RegularGivingServiceTest extends TestCase
         $this->donationRepositoryProphecy->maxSequenceNumberForMandate($mandateId)
             ->willReturn(DonationSequenceNumber::of($maxSequenceNumber));
         return $mandate;
+    }
+
+    public function prepareDonorAccount(): PersonId
+    {
+        $donorId = PersonId::of(Uuid::uuid4()->toString());
+        $donorAccount = new DonorAccount(
+            $donorId,
+            EmailAddress::of('email@example.com'),
+            DonorName::of('First', 'Last'),
+            StripeCustomerId::of('cus_x')
+        );
+        $donorAccount->setBillingCountryCode('GB');
+        $donorAccount->setBillingPostcode('SW11AA');
+        $donorAccount->setHomeAddressLine1('Home address');
+        $this->donorAccountRepositoryProphecy->findByPersonId($donorId)
+            ->willReturn($donorAccount);
+        return $donorId;
     }
 }
