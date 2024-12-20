@@ -317,9 +317,6 @@ class RegularGivingMandate extends SalesforceWriteProxy
         return $this->donationAmount->plus($this->getGiftAidAmount());
     }
 
-    /**
-     * @return Money
-     */
     public function getMatchedAmount(): Money
     {
         return $this->donationAmount;
