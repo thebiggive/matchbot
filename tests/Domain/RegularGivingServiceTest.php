@@ -115,7 +115,7 @@ class RegularGivingServiceTest extends TestCase
                 }
             );
 
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 BST'));
+        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
 
         // act
         $mandate = $regularGivingService->setupNewMandate(
@@ -133,12 +133,12 @@ class RegularGivingServiceTest extends TestCase
         $this->assertSame(DonationStatus::PreAuthorized, $donations[2]->getDonationStatus());
 
         $this->assertEquals(
-            new \DateTimeImmutable('2024-12-20T06:00:00 BST'),
+            new \DateTimeImmutable('2024-12-20T06:00:00 GMT'),
             $donations[1]->getPreAuthorizationDate()
         );
 
         $this->assertEquals(
-            new \DateTimeImmutable('2025-01-20T06:00:00 BST'),
+            new \DateTimeImmutable('2025-01-20T06:00:00 GMT'),
             $donations[2]->getPreAuthorizationDate()
         );
 
@@ -168,7 +168,7 @@ class RegularGivingServiceTest extends TestCase
                 }
             );
 
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 BST'));
+        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
 
         $this->donationServiceProphecy->cancel(Argument::type(Donation::class))
             ->shouldBeCalledTimes(3);
@@ -190,7 +190,7 @@ class RegularGivingServiceTest extends TestCase
 
     public function testCannotMakeAMandateForNonRegularGivingCampaign(): void
     {
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 BST'));
+        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $campaign = TestCase::someCampaign();
 
         $this->expectException(WrongCampaignType::class);
