@@ -170,11 +170,11 @@ class DonorAccount extends Model
      */
     public function assertHasRequiredInfoForRegularGiving(): void
     {
-        if ($this->billingCountryCode === null) {
-            throw new Exception('Missing billing country code');
+        if ($this->billingCountryCode == '') {
+            throw new \Exception('Missing billing country code');
         }
-        if ($this->billingCountryCode === null) {
-            throw new Exception('Missing billing country code');
+        if ($this->billingCountryCode == '') {
+            throw new \Exception('Missing billing country code');
         }
     }
 }
