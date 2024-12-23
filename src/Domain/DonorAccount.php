@@ -5,6 +5,7 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\DomainException\AccountNotReadyToDonate;
 use PHPUnit\Util\Exception;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -171,10 +172,10 @@ class DonorAccount extends Model
     public function assertHasRequiredInfoForRegularGiving(): void
     {
         if ($this->billingCountryCode == '') {
-            throw new \Exception('Missing billing country code');
+            throw new AccountNotReadyToDonate('Missing billing country code');
         }
         if ($this->billingCountryCode == '') {
-            throw new \Exception('Missing billing country code');
+            throw new AccountNotReadyToDonate('Missing billing country code');
         }
     }
 }
