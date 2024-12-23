@@ -57,7 +57,7 @@ readonly class RegularGivingService
 
         /**
          * For now we assume this exists - @todo-regular-giving ensure that for all accounts (or all accounts that
-         * might need it) the account is in the DB with the UUID filled in before this point.
+         * might need it) the account is in the DB with the UUID filled in before this point. Ticket MAT-379
          */
         $donor = $this->donorAccountRepository->findByPersonId($donorID);
         if ($donor === null) {
@@ -98,6 +98,7 @@ readonly class RegularGivingService
         $secondDonation = $this->createFutureDonationInAdvanceOfActivation($mandate, 2, $donor, $campaign);
         $thirdDonation = $this->createFutureDonationInAdvanceOfActivation($mandate, 3, $donor, $campaign);
 
+        /** @var Donation[] $donations */
         $donations = [$firstDonation, $secondDonation, $thirdDonation];
 
         try {
@@ -109,6 +110,11 @@ readonly class RegularGivingService
                         " only matched {$donation->getFundingWithdrawalTotal()}"
                     );
                 }
+
+                Assertion::same(
+                    $donation->getFundingWithdrawalTotal(),
+                    $mandate->getMatchedAmount()->toNumericString()
+                );
             }
         } catch (\Throwable $e) {
             foreach ($donations as $donation) {
@@ -130,10 +136,16 @@ readonly class RegularGivingService
         return $mandate;
     }
 
+    /**
+     * @param RegularGivingMandate $mandate A Regular Giving Mandate. Must have status 'active'.
+     */
     public function makeNextDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
         $mandateId = $mandate->getId();
         Assertion::notNull($mandateId);
+
+        // safe to assert as we assume any caller to this will have selected an active mandate from the DB.
+        Assertion::same(MandateStatus::Active, $mandate->getStatus());
 
         $lastSequenceNumber = $this->donationRepository->maxSequenceNumberForMandate($mandateId);
         if ($lastSequenceNumber === null) {

@@ -108,7 +108,6 @@ class TakeRegularGivingDonations extends LockingCommand
         /* @todo-regular-giving
             Still to do to improve this before launch:
             - Record unsuccessful payment attempts to limit number or time extent of retries
-            - Send metadata to stripe so to identify the payment as regular giving when we view it there.
             - Ensure we don't send emails that are meant for confirmation of on-session donations
             - Probably other things.
         */
