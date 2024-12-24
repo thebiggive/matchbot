@@ -172,9 +172,6 @@ class DonorAccount extends Model
     {
             Assert::lazy()
                 ->that($this->billingPostcode, null, 'Missing billing postcode')->notNull()
-                ->setExceptionClass('AccountNotReadyToDonate')
-                ->verifyNow();
-            Assert::lazy()
                 ->that($this->billingCountryCode, null, 'Missing billing country code')->notNull()
                 ->setExceptionClass('AccountNotReadyToDonate')
                 ->verifyNow();
