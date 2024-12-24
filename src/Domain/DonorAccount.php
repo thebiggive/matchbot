@@ -171,7 +171,7 @@ class DonorAccount extends Model
     public function assertHasRequiredInfoForRegularGiving(): void
     {
             Assert::lazy()
-                ->that($this->billingPostcode, null,'Missing billing postcode')->notNull()
+                ->that($this->billingPostcode, null, 'Missing billing postcode')->notNull()
                 ->setExceptionClass('AccountNotReadyToDonate')
                 ->verifyNow();
             Assert::lazy()
