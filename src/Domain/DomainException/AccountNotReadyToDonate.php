@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain\DomainException;
 
-class AccountNotReadyToDonate extends DomainException
+use MatchBot\Application\LazyAssertionException;
+
+class AccountNotReadyToDonate extends LazyAssertionException
 {
 }
