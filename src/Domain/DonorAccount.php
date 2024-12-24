@@ -170,9 +170,15 @@ class DonorAccount extends Model
     public function assertHasRequiredInfoForRegularGiving(): void
     {
         if ($this->billingPostcode == '') {
+            Assert::lazy()
+                ->that($this->billingPostcode)->notNull()
+                ->verifyNow();
             throw new AccountNotReadyToDonate('Missing billing country code');
         }
         if ($this->billingCountryCode == '') {
+            Assert::lazy()
+                ->that($this->billingCountryCode)->notNull()
+                ->verifyNow();
             throw new AccountNotReadyToDonate('Missing billing country code');
         }
     }
