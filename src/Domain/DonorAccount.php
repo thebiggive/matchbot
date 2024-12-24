@@ -3,6 +3,7 @@
 namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
+use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\DomainException\AccountNotReadyToDonate;
 use Ramsey\Uuid\Uuid;
@@ -169,17 +170,13 @@ class DonorAccount extends Model
      */
     public function assertHasRequiredInfoForRegularGiving(): void
     {
-        if ($this->billingPostcode == '') {
             Assert::lazy()
-                ->that($this->billingPostcode)->notNull()
+                ->that($this->billingPostcode, null,'Missing billing postcode')->notNull()
+                ->setExceptionClass('AccountNotReadyToDonate')
                 ->verifyNow();
-            throw new AccountNotReadyToDonate('Missing billing country code');
-        }
-        if ($this->billingCountryCode == '') {
             Assert::lazy()
-                ->that($this->billingCountryCode)->notNull()
+                ->that($this->billingCountryCode, null, 'Missing billing country code')->notNull()
+                ->setExceptionClass('AccountNotReadyToDonate')
                 ->verifyNow();
-            throw new AccountNotReadyToDonate('Missing billing country code');
-        }
     }
 }
