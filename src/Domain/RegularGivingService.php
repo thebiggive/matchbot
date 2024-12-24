@@ -191,7 +191,6 @@ readonly class RegularGivingService
             return null;
         }
 
-        $this->donationService->createPaymentIntent($donation);
         $mandate->setDonationsCreatedUpTo($preAuthorizationDate);
 
         return $donation;

@@ -82,6 +82,7 @@ class TakeRegularGivingDonations extends LockingCommand
         $now = $this->container->get(\DateTimeImmutable::class);
 
         $this->createNewDonationsAccordingToRegularGivingMandates($now, $io);
+        $this->setPaymentIntentWhenReachedPaymentDate($now, $io);
         $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($now, $io);
 
         return 0;
@@ -98,6 +99,19 @@ class TakeRegularGivingDonations extends LockingCommand
             if ($donation) {
                 $io->writeln("created donation {$donation}");
             }
+        }
+    }
+
+    private function setPaymentIntentWhenReachedPaymentDate(
+        \DateTimeImmutable $now,
+        SymfonyStyle $io
+    ): void {
+        $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($now, limit:20);
+        $io->block(count($donations) . " donations are due to have Payment Intent set at this time");
+
+        foreach ($donations as $donation) {
+            $this->donationService->createPaymentIntent($donation);
+            $io->writeln("setting payment intent on donation #{$donation->getId()}");
         }
     }
 
