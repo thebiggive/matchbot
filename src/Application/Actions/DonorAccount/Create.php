@@ -23,6 +23,8 @@ use Slim\Exception\HttpBadRequestException;
  * Creates a record that a donor has (or intends to have) an account to transfer funds by bank transfer
  * in advance of donating to charity, or to make Regular Giving arrangements. We need this to
  * email them a confirmation when the funds are received or to manage capturing off-session donations.
+ *
+ * @deprecated We should stop using this once syncing via the queue is stable in Production.
  */
 class Create extends Action
 {
