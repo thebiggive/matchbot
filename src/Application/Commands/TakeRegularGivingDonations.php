@@ -28,6 +28,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class TakeRegularGivingDonations extends LockingCommand
 {
     private ?RegularGivingService $mandateService = null;
+    private int $limit = 20;
 
     /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
     public function __construct(
@@ -90,7 +91,7 @@ class TakeRegularGivingDonations extends LockingCommand
 
     private function createNewDonationsAccordingToRegularGivingMandates(\DateTimeImmutable $now, SymfonyStyle $io): void
     {
-        $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($now, limit: 20);
+        $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($now, $this->limit);
 
         $io->block(count($mandates) . " mandates may have donations to create at this time");
 
@@ -106,7 +107,7 @@ class TakeRegularGivingDonations extends LockingCommand
         \DateTimeImmutable $now,
         SymfonyStyle $io
     ): void {
-        $donations = $this->donationRepository->findDonationsToSetPaymentIntent($now, limit:20);
+        $donations = $this->donationRepository->findDonationsToSetPaymentIntent($now, $this->limit);
         $io->block(count($donations) . " donations are due to have Payment Intent set at this time");
 
         foreach ($donations as $donation) {
