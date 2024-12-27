@@ -31,6 +31,7 @@ use Ramsey\Uuid\UuidInterface;
 use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
+use Stripe\PaymentIntent;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Messenger\Envelope;
@@ -257,10 +258,14 @@ class DonationService
             );
         }
 
-        $this->stripe->confirmPaymentIntent(
+        $paymentIntent = $this->stripe->confirmPaymentIntent(
             $donation->getTransactionId(),
             ['payment_method' => $paymentMethod->stripePaymentMethodId]
         );
+        if ($paymentIntent->status !== 'succeeded') {
+            // TODO: create a new db field on Donation - e.g. payment_attempt_count and update here
+            // decide on a limit and log an error (or warning) if exceeded
+        }
     }
 
     /**

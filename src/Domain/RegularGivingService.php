@@ -157,7 +157,6 @@ readonly class RegularGivingService
         // would only be null if donor was deleted after mandate created.
         Assertion::notNull($donor, "donor not found for id {$mandate->donorId->id}");
 
-        /** @todo-regular-giving Throw a more specific exception if this fails and handle instead of crashing */
         $donor->assertHasRequiredInfoForRegularGiving();
 
         $campaign = $this->campaignRepository->findOneBySalesforceId($mandate->getCampaignId());
