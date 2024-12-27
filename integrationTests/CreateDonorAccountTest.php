@@ -48,6 +48,7 @@ class CreateDonorAccountTest extends IntegrationTest
 
     public function requestFromController(string $body, string $stripeID): \Psr\Http\Message\ResponseInterface
     {
+        /** @psalm-suppress DeprecatedClass Until we delete Donate use & the endpoint */
         return $this->getService(DonorAccount\Create::class)->__invoke(
             (new ServerRequest(
                 method: 'POST',
