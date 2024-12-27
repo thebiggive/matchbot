@@ -106,7 +106,7 @@ class TakeRegularGivingDonations extends LockingCommand
         \DateTimeImmutable $now,
         SymfonyStyle $io
     ): void {
-        $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($now, limit:20);
+        $donations = $this->donationRepository->findDonationsToSetPaymentIntent($now, limit:20);
         $io->block(count($donations) . " donations are due to have Payment Intent set at this time");
 
         foreach ($donations as $donation) {

@@ -741,6 +741,36 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         return $result;
     }
 
+    /**
+     * We only set Payment Intent on the day of the payment due to stripe limitations, see
+     * @param \DateTimeImmutable $atDateTime
+     * @param int $limit
+     * @return Donation[]
+     */
+    public function findDonationsToSetPaymentIntent(\DateTimeImmutable $atDateTime, int $limit): array
+    {
+        $preAuthorized = DonationStatus::PreAuthorized->value;
+        $active = MandateStatus::Active->value;
+        $currentDateTime = new \DateTimeImmutable('now');
+        $dayOfMonthToday = $currentDateTime->format('d');
+
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
+            WHERE donation.donationStatus = '$preAuthorized'
+            AND mandate.status = '$active'
+            AND mandate.dayOfMonth = '$dayOfMonthToday'
+            AND donation.preAuthorizationDate <= :now
+        DQL
+        );
+
+        $query->setParameter('now', $atDateTime);
+        $query->setMaxResults($limit);
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
+
     public function findPreAuthorizedDonationsReadyToConfirm(\DateTimeImmutable $atDateTime, int $limit): array
     {
         $preAuthorized = DonationStatus::PreAuthorized->value;
