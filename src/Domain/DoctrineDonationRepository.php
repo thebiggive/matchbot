@@ -743,9 +743,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
 
     /**
      * We only set Payment Intent on the day of the payment due to stripe limitations, see
-     * @param \DateTimeImmutable $atDateTime
-     * @param int $limit
-     * @return Donation[]
      */
     public function findDonationsToSetPaymentIntent(\DateTimeImmutable $atDateTime, int $limit): array
     {
