@@ -1,11 +1,9 @@
 <?php
 
-namespace Domain;
+namespace MatchBot\Tests\Domain;
 
-use BigGive\Identity\Domain\DomainException\DomainException;
 use MatchBot\Domain\Country;
 use MatchBot\Tests\TestCase;
-use PrinsFrank\Standards\Country\CountryAlpha2;
 
 class CountryTest extends TestCase
 {

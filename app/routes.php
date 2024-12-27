@@ -55,6 +55,7 @@ return function (App $app) {
             ->add(RateLimitMiddleware::class);
 
         $versionGroup->group('/people/{personId:[a-z0-9-]{36}}', function (RouteCollectorProxy $pwdDonorGroup) {
+            /** @psalm-suppress DeprecatedClass Until we delete Donate use & the endpoint */
             $pwdDonorGroup->post('/donor-account', DonorAccount\Create::class);
             $pwdDonorGroup->post('/regular-giving', RegularGivingMandate\Create::class);
             $pwdDonorGroup->get('/donations', Donations\GetAllForUser::class);

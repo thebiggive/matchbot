@@ -1,15 +1,13 @@
 <?php
 
-namespace Domain;
+namespace MatchBot\Tests\Domain;
 
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use MatchBot\Application\Assertion;
 use MatchBot\Client\Mailer;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CardBrand;
-use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Donation;
@@ -17,9 +15,7 @@ use MatchBot\Domain\DonationSequenceNumber;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
-use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
-use MatchBot\Domain\MandateStatus;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
@@ -33,7 +29,6 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Clock\ClockInterface;
 use Ramsey\Uuid\Uuid;
-use Symfony\Component\Clock\Clock;
 use Symfony\Component\Clock\MockClock;
 
 class RegularGivingNotifierTest extends TestCase

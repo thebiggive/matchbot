@@ -328,7 +328,7 @@ class Donation extends SalesforceWriteProxy
     private ?\DateTimeImmutable $refundedAt = null;
 
     /**
-     * We only have permission to collect a preAuthorized donation on or after the given date. Intented to be used
+     * We only have permission to collect a preAuthorized donation on or after the given date. Intended to be used
      * with regular giving.
      *
      * @psalm-suppress UnusedProperty (will use soon)

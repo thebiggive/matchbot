@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cba90e3bbada3d091a3409285ee47488",
+    "content-hash": "b6396cf53177cdc96faf357b2ba85a8a",
     "packages": [
         {
             "name": "async-aws/core",
@@ -6702,16 +6702,16 @@
         },
         {
             "name": "thebiggive/messages",
-            "version": "v3.1.0",
+            "version": "v3.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thebiggive/messages.git",
-                "reference": "1922ab26ef01bc2c41839fa0dc0fed00a5cc85e2"
+                "reference": "82b413ca05058d518bb6424d3f093f4e15aaea7f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thebiggive/messages/zipball/1922ab26ef01bc2c41839fa0dc0fed00a5cc85e2",
-                "reference": "1922ab26ef01bc2c41839fa0dc0fed00a5cc85e2",
+                "url": "https://api.github.com/repos/thebiggive/messages/zipball/82b413ca05058d518bb6424d3f093f4e15aaea7f",
+                "reference": "82b413ca05058d518bb6424d3f093f4e15aaea7f",
                 "shasum": ""
             },
             "require": {
@@ -6741,9 +6741,9 @@
             "description": "Shared message / model classes for cross-service communication",
             "support": {
                 "issues": "https://github.com/thebiggive/messages/issues",
-                "source": "https://github.com/thebiggive/messages/tree/v3.1.0"
+                "source": "https://github.com/thebiggive/messages/tree/v3.2.0"
             },
-            "time": "2024-10-30T13:12:01+00:00"
+            "time": "2024-12-27T08:14:49+00:00"
         },
         {
             "name": "webmozart/assert",
@@ -11547,7 +11547,7 @@
         "ext-pdo_mysql": "*",
         "ext-redis": "*"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "platform-overrides": {
         "php": "8.3.1"
     },
