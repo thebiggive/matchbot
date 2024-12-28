@@ -2,6 +2,7 @@
 
 namespace MatchBot\Tests\Application\Messenger\Handler;
 
+use DI\Container;
 use MatchBot\Application\Messenger\Handler\PersonHandler;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
@@ -37,10 +38,10 @@ class PersonHandlerTest extends TestCase
             ->save(Argument::type(DonorAccount::class))
             ->shouldBeCalledOnce();
 
-        $sut = new PersonHandler(
-            $this->donorAccountRepositoryProphecy->reveal(),
-            new NullLogger(),
-        );
+        $container = new Container();
+        $container->set(DonorAccountRepository::class, $this->donorAccountRepositoryProphecy->reveal());
+
+        $sut = new PersonHandler($container, new NullLogger());
 
         $sut->__invoke($message);
     }

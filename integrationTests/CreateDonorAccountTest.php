@@ -16,7 +16,7 @@ class CreateDonorAccountTest extends IntegrationTest
     public function testItcreatesADonorAccount(): void
     {
         $stripeID = "cus_" . random_int(1000, 9999);
-        $emailAddress = 'donor' . random_int(1000, 9999) . '@eamil-for-generous-people.com';
+        $emailAddress = 'donor' . random_int(1000, 9999) . '@email-for-generous-people.example.com';
 
         $response = $this->requestFromController(
             body: json_encode([
