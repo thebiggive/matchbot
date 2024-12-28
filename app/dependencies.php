@@ -462,13 +462,13 @@ return function (ContainerBuilder $containerBuilder) {
             $busContainer = new Container();
             $bus = $c->get(MessageBusInterface::class);
 
-            $busContainer->set('claimbot.donation.claim', $c->get(MessageBusInterface::class));
-            $busContainer->set('claimbot.donation.result', $c->get(MessageBusInterface::class));
-            $busContainer->set(\Stripe\Event::PAYOUT_PAID, $c->get(MessageBusInterface::class));
+            $busContainer->set('claimbot.donation.claim', $bus);
+            $busContainer->set('claimbot.donation.result', $bus);
+            $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
 
             /**
              * Every message defaults to our only bus, so we think these are technically redundant for
-             * now. The list is possibly not exhaustive.
+             * now. The list is not exhaustive.
              */
             $busContainer->set('claimbot.donation.claim', $bus);
             $busContainer->set('claimbot.donation.result', $bus);
