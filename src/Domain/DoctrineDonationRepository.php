@@ -748,15 +748,14 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
     {
         $preAuthorized = DonationStatus::PreAuthorized->value;
         $active = MandateStatus::Active->value;
-        $currentDateTime = new \DateTimeImmutable('now');
-        $dayOfMonthToday = $currentDateTime->format('d');
+        $dayOfMonthToday = $atDateTime->format('d');
 
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'
             AND mandate.status = '$active'
             AND mandate.dayOfMonth = '$dayOfMonthToday'
-            AND donation.preAuthorizationDate <= :now
+            AND donation.preAuthorizationDate <= :atDateTime
         DQL
         );
 
