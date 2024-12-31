@@ -21,6 +21,19 @@ services:
     networks:
       - matchbot
 
+  consumer:
+    image: thebiggive/php:dev-8.3
+    command: composer run messenger:consume
+    volumes:
+      - .:/var/www/html
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    networks:
+      - matchbot
+
   db:
     image: mysql:8.0
     platform: linux/amd64

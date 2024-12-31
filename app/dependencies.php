@@ -19,6 +19,7 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
+use MatchBot\Application\Messenger\Handler\PersonHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\Middleware\AddOrLogMessageId;
 use MatchBot\Application\Messenger\StripePayout;
@@ -338,6 +339,7 @@ return function (ContainerBuilder $containerBuilder) {
                 [
                     CharityUpdated::class => [$c->get(CharityUpdatedHandler::class)],
                     Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
+                    Messages\Person::class => [$c->get(PersonHandler::class)],
                     StripePayout::class => [$c->get(StripePayoutHandler::class)],
                     DonationUpserted::class => [$c->get(DonationUpsertedHandler::class)],
                 ],
@@ -460,13 +462,13 @@ return function (ContainerBuilder $containerBuilder) {
             $busContainer = new Container();
             $bus = $c->get(MessageBusInterface::class);
 
-            $busContainer->set('claimbot.donation.claim', $c->get(MessageBusInterface::class));
-            $busContainer->set('claimbot.donation.result', $c->get(MessageBusInterface::class));
-            $busContainer->set(\Stripe\Event::PAYOUT_PAID, $c->get(MessageBusInterface::class));
+            $busContainer->set('claimbot.donation.claim', $bus);
+            $busContainer->set('claimbot.donation.result', $bus);
+            $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
 
             /**
              * Every message defaults to our only bus, so we think these are technically redundant for
-             * now. The list is possibly not exhaustive.
+             * now. The list is not exhaustive.
              */
             $busContainer->set('claimbot.donation.claim', $bus);
             $busContainer->set('claimbot.donation.result', $bus);
