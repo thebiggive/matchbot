@@ -248,7 +248,7 @@ class TestCase extends PHPUnitTestCase
             amount: $amount,
             currencyCode: $currencyCode,
             paymentMethodType: $paymentMethodType,
-            campaign: self::someCampaign('123456789012345678'),
+            campaign: self::someCampaign(),
             charityComms: null,
             championComms: null,
             pspCustomerId: null,
