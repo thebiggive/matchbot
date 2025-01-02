@@ -51,9 +51,7 @@ readonly class RegularGivingService
             );
         }
 
-        $charityId = Salesforce18Id::ofCharity(
-            $campaign->getCharity()->getSalesforceId() ?? throw new \Exception('missing charity SF ID')
-        );
+        $charityId = Salesforce18Id::ofCharity($campaign->getCharity()->getSalesforceId());
 
         /**
          * For now we assume this exists - @todo-regular-giving ensure that for all accounts (or all accounts that
