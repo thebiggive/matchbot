@@ -31,8 +31,6 @@ class DoctrineDonationRepositoryTest extends IntegrationTest
         $atDateTime = new \DateTimeImmutable('now');
         $sut = $this->getService(DonationRepository::class);
 
-        $amount = '20';
-
         $campaign = TestCase::someCampaign(
             sfId: Salesforce18Id::ofCampaign('123456789012345678')
         );
@@ -41,7 +39,7 @@ class DoctrineDonationRepositoryTest extends IntegrationTest
 
         $mandate = new \MatchBot\Domain\RegularGivingMandate(
             donorId: PersonId::of(Uuid::uuid4()->toString()),
-            donationAmount: Money::fromPoundsGBP($amount),
+            donationAmount: Money::fromPoundsGBP(20),
             campaignId: Salesforce18Id::ofCampaign($campaign->getSalesforceId()),
             charityId: Salesforce18Id::ofCharity($campaign->getCharity()->getSalesforceId()),
             giftAid: false,
