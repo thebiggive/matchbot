@@ -18,6 +18,7 @@ services:
     depends_on:
       - db
       - redis
+      - consumer
     networks:
       - matchbot
 
