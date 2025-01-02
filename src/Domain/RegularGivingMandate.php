@@ -321,9 +321,4 @@ class RegularGivingMandate extends SalesforceWriteProxy
     {
         return $this->donationAmount;
     }
-
-    public function getDayOfMonth(): DayOfMonth
-    {
-        return $this->dayOfMonth;
-    }
 }

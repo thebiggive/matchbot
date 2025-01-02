@@ -3,12 +3,20 @@
 namespace MatchBot\IntegrationTests;
 
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Domain\DoctrineDonationRepository;
-use MatchBot\Domain\Donation;
+use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationSequenceNumber;
+use MatchBot\Domain\DonationStatus;
+use MatchBot\Domain\DonorAccount;
+use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
+use Ramsey\Uuid\Uuid;
 
 class DoctrineDonationRepositoryTest extends IntegrationTest
 {
@@ -17,53 +25,55 @@ class DoctrineDonationRepositoryTest extends IntegrationTest
         parent::setUp();
     }
 
-    public function testFindDonationsToSetPaymentIntent()
+    public function testFindDonationsToSetPaymentIntent(): void
     {
         // arrange
         $atDateTime = new \DateTimeImmutable('now');
         $sut = $this->getService(DonationRepository::class);
 
         $amount = '20';
-        $currencyCode = 'GBP';
-        $paymentMethodType = PaymentMethodType::Card;
-        $giftAid = false;
 
         $campaign = TestCase::someCampaign(
-            sfId: Salesforce18Id::ofCampaign('123456789012345678'),
+            sfId: Salesforce18Id::ofCampaign('123456789012345678')
         );
 
         $em = $this->getService(EntityManagerInterface::class);
-        $em->persist($campaign);
-        $em->flush();
 
-        $donation = new Donation(
-            amount: $amount,
-            currencyCode: $currencyCode,
-            paymentMethodType: $paymentMethodType,
-            campaign: $campaign,
-            charityComms: null,
-            championComms: null,
-            pspCustomerId: null,
-            optInTbgEmail: null,
-            donorName: null,
-            emailAddress: null,
-            countryCode: null,
-            tipAmount: '0',
-            mandate: null,
-            mandateSequenceNumber: null,
-            giftAid: $giftAid,
-            tipGiftAid: null,
-            homeAddress: null,
-            homePostcode: null,
-            billingPostcode: null
+        $mandate = new \MatchBot\Domain\RegularGivingMandate(
+            donorId: PersonId::of(Uuid::uuid4()->toString()),
+            donationAmount: Money::fromPoundsGBP($amount),
+            campaignId: Salesforce18Id::ofCampaign($campaign->getSalesforceId()),
+            charityId: Salesforce18Id::ofCharity($campaign->getCharity()->getSalesforceId()),
+            giftAid: false,
+            dayOfMonth: DayOfMonth::of(2)
+        );
+        $donor = new DonorAccount(
+            uuid: $mandate->donorId,
+            emailAddress: EmailAddress::of('emailAddress@test.com'),
+            donorName: DonorName::of('donorFName-test', 'donorLName-test'),
+            stripeCustomerId: StripeCustomerId::of('cus_' . self::randomString())
+        );
+        $donor->setBillingCountryCode('GB');
+        $donor->setBillingPostcode('W1 5YU');
+        $mandate->activate($atDateTime);
+
+        $donation = $mandate->createPreAuthorizedDonation(
+            DonationSequenceNumber::of(2),
+            $donor,
+            $campaign
         );
 
+        $donation->preAuthorize($atDateTime);
+
+        $em->persist($donor);
+        $em->persist($mandate);
+        $em->persist($campaign);
         $em->persist($donation);
         $em->flush();
 
         $donations = $sut->findDonationsToSetPaymentIntent($atDateTime, 10);
-//
-//        $this->assertNotNull($donations[0]);
-//        $this->assertEquals(, $donations[0]->getDonationStatus());
+
+        $this->assertNotEmpty($donations);
+        $this->assertEquals($donation->getUuid(), $donations[0]->getUuid());
     }
 }

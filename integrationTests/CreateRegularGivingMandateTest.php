@@ -37,7 +37,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
         // act
         $response = $this->createRegularGivingMandate($pencePerMonth);
-
+        //var_dump($response->getBody()->getContents());
         // assert
         $this->assertSame(201, $response->getStatusCode());
         $mandateDatabaseRows = $this->db()->executeQuery(
@@ -75,7 +75,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $campaignId = $this->randomString();
 
         $this->addFundedCampaignAndCharityToDB($campaignId, isRegularGiving: true);
-
+        //var_dump($campaignId);
         return $this->getApp()->handle(
             new ServerRequest(
                 'POST',
