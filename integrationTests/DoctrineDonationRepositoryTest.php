@@ -12,7 +12,6 @@ use MatchBot\Tests\TestCase;
 
 class DoctrineDonationRepositoryTest extends IntegrationTest
 {
-
     public function setUp(): void
     {
         parent::setUp();
