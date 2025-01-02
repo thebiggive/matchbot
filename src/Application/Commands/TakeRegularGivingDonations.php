@@ -96,6 +96,7 @@ class TakeRegularGivingDonations extends LockingCommand
         $io->block(count($mandates) . " mandates may have donations to create at this time");
 
         foreach ($mandates as [$mandate]) {
+            // @todo-regular-giving: catch the exception when missing address on account
             $donation = $this->makeDonationForMandate($mandate);
             if ($donation) {
                 $io->writeln("created donation {$donation}");

@@ -754,11 +754,10 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'
             AND mandate.status = '$active'
-            AND mandate.dayOfMonth = '$dayOfMonthToday'
+            AND mandate.dayOfMonth.value = '$dayOfMonthToday'
         DQL
         );
 
-        $query->setParameter('now', $atDateTime);
         $query->setMaxResults($limit);
 
         /** @var list<Donation> $result */
