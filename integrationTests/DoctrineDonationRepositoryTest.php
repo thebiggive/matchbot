@@ -28,13 +28,19 @@ class DoctrineDonationRepositoryTest extends IntegrationTest
         $paymentMethodType = PaymentMethodType::Card;
         $giftAid = false;
 
+        $campaign = TestCase::someCampaign(
+            sfId: Salesforce18Id::ofCampaign('123456789012345678'),
+        );
+
+        $em = $this->getService(EntityManagerInterface::class);
+        $em->persist($campaign);
+        $em->flush();
+
         $donation = new Donation(
             amount: $amount,
             currencyCode: $currencyCode,
             paymentMethodType: $paymentMethodType,
-            campaign: TestCase::someCampaign(
-                sfId: Salesforce18Id::ofCampaign('123456789012345678'),
-            ),
+            campaign: $campaign,
             charityComms: null,
             championComms: null,
             pspCustomerId: null,
@@ -51,11 +57,11 @@ class DoctrineDonationRepositoryTest extends IntegrationTest
             homePostcode: null,
             billingPostcode: null
         );
-        $em = $this->getService(EntityManagerInterface::class);
-//        $em->persist($donation);
-//        $em->flush();
 
-//        $donations = $sut->findDonationsToSetPaymentIntent($atDateTime, 10);
+        $em->persist($donation);
+        $em->flush();
+
+        $donations = $sut->findDonationsToSetPaymentIntent($atDateTime, 10);
 //
 //        $this->assertNotNull($donations[0]);
 //        $this->assertEquals(, $donations[0]->getDonationStatus());

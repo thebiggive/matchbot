@@ -755,7 +755,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             WHERE donation.donationStatus = '$preAuthorized'
             AND mandate.status = '$active'
             AND mandate.dayOfMonth = '$dayOfMonthToday'
-            AND donation.preAuthorizationDate <= :atDateTime
         DQL
         );
 
