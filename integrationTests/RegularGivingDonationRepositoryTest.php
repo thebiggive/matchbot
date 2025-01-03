@@ -18,7 +18,7 @@ use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
 
-class DoctrineDonationRepositoryTest extends IntegrationTest
+class RegularGivingDonationRepositoryTest extends IntegrationTest
 {
     public function setUp(): void
     {
