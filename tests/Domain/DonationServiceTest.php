@@ -10,6 +10,7 @@ use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\MandateNotActive;
@@ -147,7 +148,7 @@ class DonationServiceTest extends TestCase
             $stripeCustomerId,
         );
         $donor->setBillingPostcode('SW11AA');
-        $donor->setBillingCountryCode('GB');
+        $donor->setBillingCountry(Country::GB());
         $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_paymentMethodID'));
 
         $donation = $mandate->createPreAuthorizedDonation(
