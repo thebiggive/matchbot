@@ -27,8 +27,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 class TakeRegularGivingDonations extends LockingCommand
 {
+    private const int MAXBATCHSIZE = 20;
     private ?RegularGivingService $mandateService = null;
-    private int $limit = 20;
+
 
     /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
     public function __construct(
@@ -91,7 +92,7 @@ class TakeRegularGivingDonations extends LockingCommand
 
     private function createNewDonationsAccordingToRegularGivingMandates(\DateTimeImmutable $now, SymfonyStyle $io): void
     {
-        $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($now, $this->limit);
+        $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($now, self::MAXBATCHSIZE);
 
         $io->block(count($mandates) . " mandates may have donations to create at this time");
 
@@ -108,7 +109,7 @@ class TakeRegularGivingDonations extends LockingCommand
         \DateTimeImmutable $now,
         SymfonyStyle $io
     ): void {
-        $donations = $this->donationRepository->findDonationsToSetPaymentIntent($now, $this->limit);
+        $donations = $this->donationRepository->findDonationsToSetPaymentIntent($now, self::MAXBATCHSIZE);
         $io->block(count($donations) . " donations are due to have Payment Intent set at this time");
 
         foreach ($donations as $donation) {
@@ -127,7 +128,7 @@ class TakeRegularGivingDonations extends LockingCommand
             - Ensure we don't send emails that are meant for confirmation of on-session donations
             - Probably other things.
         */
-        $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($now, limit:20);
+        $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($now, self::MAXBATCHSIZE);
 
         $io->block(count($donations) . " donations are due to be confirmed at this time");
 
