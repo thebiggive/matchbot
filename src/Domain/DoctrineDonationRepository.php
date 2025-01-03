@@ -754,12 +754,12 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'
             AND donation.transactionId = null
-            AND donation.preAuthorizationDate <= $atDateTime
+            AND donation.preAuthorizationDate < 'atDateTime'
             AND mandate.status = '$active'
-            AND mandate.dayOfMonth.value = '$dayOfMonthToday'
+            // @todo-regular-giving: add constraint on late donation collections
         DQL
         );
-
+        $query->setParameter('atDateTime', $atDateTime);
         $query->setMaxResults($maxBatchSize);
 
         /** @var list<Donation> $result */
@@ -776,11 +776,12 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'
             AND mandate.status = '$active'
-            AND donation.preAuthorizationDate <= :now
+            AND donation.transactionId != null
+            AND donation.preAuthorizationDate <= :atDateTime
         DQL
         );
 
-        $query->setParameter('now', $atDateTime);
+        $query->setParameter('atDateTime', $atDateTime);
         $query->setMaxResults($limit);
 
         /** @var list<Donation> $result */
