@@ -752,7 +752,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'
-            AND donation.transactionId = null
+            AND donation.transactionId is null
             AND donation.preAuthorizationDate < :atDateTime
             AND mandate.status = '$active'  
         DQL
@@ -774,7 +774,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'
             AND mandate.status = '$active'
-            AND donation.transactionId != null
+            AND donation.transactionId is not null
             AND donation.preAuthorizationDate <= :atDateTime
         DQL
         );
