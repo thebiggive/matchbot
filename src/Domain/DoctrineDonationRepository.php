@@ -748,15 +748,13 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
     {
         $preAuthorized = DonationStatus::PreAuthorized->value;
         $active = MandateStatus::Active->value;
-        $dayOfMonthToday = $atDateTime->format('d');
-
+        // @todo-regular-giving: add constraint on late donation collections
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'
             AND donation.transactionId = null
-            AND donation.preAuthorizationDate < 'atDateTime'
-            AND mandate.status = '$active'
-            // @todo-regular-giving: add constraint on late donation collections
+            AND donation.preAuthorizationDate < :atDateTime
+            AND mandate.status = '$active'  
         DQL
         );
         $query->setParameter('atDateTime', $atDateTime);

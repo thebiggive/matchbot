@@ -23,7 +23,7 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
     public function testFindDonationsToSetPaymentIntent(): void
     {
         // arrange
-        $atDateTime = new \DateTimeImmutable('2025-01-03T00:11:11+0100');
+        $atDateTime = new \DateTimeImmutable('2025-01-03T00:11:11');
         $sut = $this->getService(DonationRepository::class);
 
         $campaign = TestCase::someCampaign(
@@ -65,8 +65,7 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
         $em->flush();
 
         $donations = $sut->findDonationsToSetPaymentIntent($atDateTime, 10);
-
-        $this->assertNotEmpty($donations);
+        $this->assertCount(1, $donations);
         $this->assertEquals($donation->getUuid(), $donations[0]->getUuid());
     }
 }
