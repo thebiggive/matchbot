@@ -753,7 +753,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'
             AND donation.transactionId is null
-            AND donation.preAuthorizationDate < :atDateTime
+            AND donation.preAuthorizationDate <= :atDateTime
             AND mandate.status = '$active'  
         DQL
         );
