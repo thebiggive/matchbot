@@ -189,4 +189,16 @@ class DonorAccount extends Model
             ->setExceptionClass(AccountNotReadyToDonate::class)
             ->verifyNow();
     }
+
+    public function toFrontEndApiModel(): array
+    {
+        return [
+            'id' => $this->uuid?->toString(),
+            'fullName' => $this->donorName->fullName(),
+            'stripeCustomerId' => $this->stripeCustomerId->stripeCustomerId,
+            'regularGivingPaymentMethod' => $this->regularGivingPaymentMethod,
+            'billingPostCode' => $this->billingPostcode,
+            'billingCountryCode' => $this->billingCountryCode,
+        ];
+    }
 }

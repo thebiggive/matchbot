@@ -79,6 +79,8 @@ class Create extends Action
         // create donor account if not existing. For now we assume the donor account already exists in the Matchbot DB.
 
         try {
+            // @todo-regular-giving - take the billing postcode & country from mandateData if non-null and store them on
+            // the account, BUT throw if the account already has non-null details that don't match those given.
             $mandate = $this->mandateService->setupNewMandate(
                 donorID: PersonId::of($donorIdString),
                 amount: $mandateData->amount,
