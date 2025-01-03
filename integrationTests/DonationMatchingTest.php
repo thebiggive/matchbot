@@ -4,10 +4,10 @@ namespace MatchBot\IntegrationTests;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Adapter;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
+use MatchBot\Domain\DoctrineDonationRepository;
 use Psr\Log\LoggerInterface;
 use Redis;
 
@@ -54,7 +54,9 @@ class DonationMatchingTest extends IntegrationTest
         // arrange
         $this->matchingAdapater = $this->makeAdapterThatThrowsAfterSubtractingFunds($this->matchingAdapater);
         $this->setInContainer(Adapter::class, $this->matchingAdapater);
-        $this->getService(\MatchBot\Domain\DonationRepository::class)->setMatchingAdapter($this->matchingAdapater);
+        $donationRepository = $this->getService(\MatchBot\Domain\DonationRepository::class);
+        Assertion::isInstanceOf($donationRepository, DoctrineDonationRepository::class);
+        $donationRepository->setMatchingAdapter($this->matchingAdapater);
 
         $campaignInfo = $this->addFundedCampaignAndCharityToDB(
             campaignSfId: $this->randomString(),
@@ -108,9 +110,9 @@ class DonationMatchingTest extends IntegrationTest
                 $this->wrappedAdapter->delete($funding);
             }
 
-            public function subtractAmountWithoutSavingToDB(CampaignFunding $funding, string $amount): string
+            public function subtractAmount(CampaignFunding $funding, string $amount): never
             {
-                $this->wrappedAdapter->subtractAmountWithoutSavingToDB($funding, $amount);
+                $this->wrappedAdapter->subtractAmount($funding, $amount);
 
                 throw new \Exception("Throwing after subtracting funds to test how our system handles the crash");
             }
@@ -129,12 +131,11 @@ class DonationMatchingTest extends IntegrationTest
         $c = $this->getContainer();
 
         $redis = $c->get(Redis::class);
-        $entityManager = $c->get(RetrySafeEntityManager::class);
         $logger = $c->get(LoggerInterface::class);
 
         $this->setInContainer(
             Adapter::class,
-            new Adapter(new RedisMatchingStorage($redis), $entityManager, $logger),
+            new Adapter(new RedisMatchingStorage($redis), $logger),
         );
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
@@ -42,6 +43,7 @@ class HandleOutOfSyncFunds extends LockingCommand
 
     public function __construct(
         private CampaignFundingRepository $campaignFundingRepository,
+        private EntityManagerInterface $entityManager,
         private FundingWithdrawalRepository $fundingWithdrawalRepository,
         private Matching\Adapter $matchingAdapter
     ) {
@@ -136,6 +138,8 @@ class HandleOutOfSyncFunds extends LockingCommand
         if ($numFundingsOvermatched > 0 || $numFundingsUndermatched > 0) {
             $this->outOfSyncFundFound = true;
         }
+
+        $this->entityManager->flush();
 
         return 0;
     }

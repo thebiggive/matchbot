@@ -176,6 +176,10 @@ class RegularGivingMandateTest extends TestCase
                     "amountInPence": 50000,
                     "currency": "GBP"
                   },
+                  "matchedAmount": {
+                    "amountInPence": 50000,
+                    "currency": "GBP"
+                  },
                   "campaignId": "campaign9012345678",
                   "charityId": "charity89012345678",
                   "schedule": {

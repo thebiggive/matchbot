@@ -71,7 +71,7 @@ trait DonationTestDataTrait
         bool $collected = true,
         DateTime $tbgGiftAidRequestConfirmedCompleteAt = null,
         bool $charityComms = false,
-        ?UuidInterface $uuid = null,
+        null|UuidInterface|string $uuid = null,
     ): Donation {
         $charity = TestCase::someCharity();
         $charity->setSalesforceId('123CharityId');
@@ -125,8 +125,11 @@ trait DonationTestDataTrait
         $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_COMPLETE);
         $donation->setTipAmount($tipAmount);
         $donation->setTransactionId('pi_externalId_123');
-        if ($uuid) {
+        if ($uuid instanceof UuidInterface) {
             $donation->setUuid($uuid);
+        }
+        if (is_string($uuid)) {
+            $donation->setUuid(Uuid::fromString($uuid));
         }
         $donation->setTbgGiftAidRequestConfirmedCompleteAt($tbgGiftAidRequestConfirmedCompleteAt);
 

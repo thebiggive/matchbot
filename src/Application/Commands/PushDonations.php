@@ -16,7 +16,7 @@ class PushDonations extends LockingCommand
     public function __construct(
         private RoutableMessageBus $bus,
         private \DateTimeImmutable $now,
-        private DonationRepository $donationRepository
+        private DonationRepository $donationRepository,
     ) {
         parent::__construct();
     }
@@ -33,6 +33,7 @@ class PushDonations extends LockingCommand
         }
 
         $numberPushed = $this->donationRepository->pushSalesforcePending(now: $this->now, bus: $this->bus);
+
         $output->writeln("Pushed $numberPushed donations to Salesforce");
 
         return 0;

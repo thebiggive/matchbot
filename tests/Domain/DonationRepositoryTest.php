@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Domain;
 
+use Assert\Assertion;
 use DI\Container;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Connection;
@@ -19,6 +20,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
+use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -30,6 +32,8 @@ use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
+use Ramsey\Uuid\Uuid;
+use Symfony\Component\Messenger\Envelope;
 
 class DonationRepositoryTest extends TestCase
 {
@@ -137,6 +141,7 @@ class DonationRepositoryTest extends TestCase
         $donationRepository = $this->getRepo(
             campaignRepoProphecy: $campaignRepoProphecy,
         );
+        Assertion::isInstanceOf($donationRepository, DoctrineDonationRepository::class);
         $donationRepository->setFundRepository($fundRepositoryProphecy->reveal());
 
         $donation = $donationRepository
@@ -332,6 +337,7 @@ class DonationRepositoryTest extends TestCase
          * @return mixed
          */            fn(array $args) => $args[0]()
         );
+        $this->entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $repo = $this->getRepo(
             matchingAdapterProphecy: $matchingAdapterProphecy,
@@ -378,7 +384,7 @@ class DonationRepositoryTest extends TestCase
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $repo = new DonationRepository(
+        $repo = new DoctrineDonationRepository(
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
@@ -433,7 +439,7 @@ class DonationRepositoryTest extends TestCase
         $entityManagerProphecy->createQueryBuilder()->shouldBeCalledOnce()
             ->willReturn($queryBuilderProphecy->reveal());
 
-        $repo = new DonationRepository(
+        $repo = new DoctrineDonationRepository(
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
@@ -474,7 +480,7 @@ class DonationRepositoryTest extends TestCase
         $entityManagerProphecy->createQueryBuilder()->shouldBeCalledOnce()
             ->willReturn($queryBuilderProphecy->reveal());
 
-        $repo = new DonationRepository(
+        $repo = new DoctrineDonationRepository(
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
@@ -506,7 +512,7 @@ class DonationRepositoryTest extends TestCase
         $entityManagerProphecy = $this->entityManagerProphecy;
 
         $entityManagerProphecy->getConfiguration()->willReturn($config);
-        $repo = new DonationRepository(
+        $repo = new DoctrineDonationRepository(
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );

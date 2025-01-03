@@ -55,6 +55,7 @@ return function (App $app) {
             ->add(RateLimitMiddleware::class);
 
         $versionGroup->group('/people/{personId:[a-z0-9-]{36}}', function (RouteCollectorProxy $pwdDonorGroup) {
+            /** @psalm-suppress DeprecatedClass Until we delete Donate use & the endpoint */
             $pwdDonorGroup->post('/donor-account', DonorAccount\Create::class);
             $pwdDonorGroup->post('/regular-giving', RegularGivingMandate\Create::class);
             $pwdDonorGroup->get('/donations', Donations\GetAllForUser::class);
@@ -73,6 +74,10 @@ return function (App $app) {
         // TODO Discuss moving this to e.g. /people/{personId}/mandates for consistency & easier understanding
         // of the available endpoints.
         $versionGroup->get('/regular-giving/my-donation-mandates', RegularGivingMandate\GetAllForUser::class)
+            ->add(PersonWithPasswordAuthMiddleware::class)
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
+        $versionGroup->get('/regular-giving/my-donation-mandates/{mandateId:[a-z0-9-]{36}}', RegularGivingMandate\Get::class)
             ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);

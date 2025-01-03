@@ -3,7 +3,6 @@
 
 declare(strict_types=1);
 
-use DI\Container;
 use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\CancelStaleDonationFundTips;
 use MatchBot\Application\Commands\ClaimGiftAid;
@@ -18,7 +17,6 @@ use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\Commands\ResetMatching;
 use MatchBot\Application\Commands\RetrospectivelyMatch;
-use MatchBot\Application\Commands\ReturnErroneousExcessFees;
 use MatchBot\Application\Commands\ScheduledOutOfSyncFundsCheck;
 use MatchBot\Application\Commands\SendStatistics;
 use MatchBot\Application\Commands\SetupTestMandate;
@@ -35,7 +33,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Command\ConsumeMessagesCommand;
-use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Notifier\ChatterInterface;
 
 $psr11App = require __DIR__ . '/bootstrap.php';
@@ -58,7 +55,6 @@ $commands = array_map($psr11App->get(...), [
     ResetMatching::class,
 
     RetrospectivelyMatch::class,
-    ReturnErroneousExcessFees::class,
     ScheduledOutOfSyncFundsCheck::class,
     SendStatistics::class,
 
@@ -66,11 +62,6 @@ $commands = array_map($psr11App->get(...), [
     TakeRegularGivingDonations::class,
     UpdateCampaigns::class,
 ]);
-
-
-$messengerReceiverKey = 'receiver';
-$messengerReceiverLocator = new Container();
-$messengerReceiverLocator->set($messengerReceiverKey, $psr11App->get(TransportInterface::class));
 
 $chatter = $psr11App->get(ChatterInterface::class);
 assert($chatter instanceof ChatterInterface);
@@ -93,7 +84,7 @@ $cliApp->setDispatcher($dispatcher);
 $cliApp->getDefinition()->addOption(
     new InputOption(
         Command::CLI_OPTION_NOLOG,
-        'l',
+        null,
         InputOption::VALUE_NONE,
         'Suppresses debug & info log, show only warnings and errors'
     )

@@ -2,44 +2,25 @@
 
 namespace MatchBot\Tests\Application\Matching;
 
-use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Matching\LessThanRequestedAllocatedException;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Matching\TerminalLockException;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Pledge;
 use PHPUnit\Framework\TestCase;
-use Prophecy\Argument;
-use Prophecy\PhpUnit\ProphecyTrait;
-use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\NullLogger;
 
 class AdapterTest extends TestCase
 {
-    use ProphecyTrait;
-
     private ArrayMatchingStorage $storage;
     private Adapter $sut;
-
-    /**
-     * @var ObjectProphecy<EntityManagerInterface>
-     */
-    private ObjectProphecy $entityManagerProphecy;
 
     public function setUp(): void
     {
         $this->storage = new ArrayMatchingStorage();
 
-        $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
-        $this->entityManagerProphecy->wrapInTransaction(Argument::type(\Closure::class))->will(function (array $args) {
-            $closure = $args[0];
-            \assert($closure instanceof \Closure);
-            $closure();
-        });
-
         $this->sut = new Adapter(
             $this->storage,
-            $this->entityManagerProphecy->reveal(),
             new NullLogger(),
         );
     }
@@ -69,7 +50,6 @@ class AdapterTest extends TestCase
         );
         $funding->setId(1);
         $this->sut->addAmount($funding, '12.53');
-        $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
 
         // set the amount available in the funding to something different so we know the
         // amount returned in the getAmountAvailable call has to be from the realtime storage.
@@ -81,49 +61,46 @@ class AdapterTest extends TestCase
 
     public function testItSubtractsAmountForFunding(): void
     {
-            $funding = new CampaignFunding(
-                fund: new Pledge('GBP', 'some pledge'),
-                amount: '1000',
-                amountAvailable: '50',
-                allocationOrder: 100,
-            );
-            $funding->setId(1);
-            $amountToSubtract = "10.10";
+        $funding = new CampaignFunding(
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '1000',
+            amountAvailable: '50',
+            allocationOrder: 100,
+        );
+        $funding->setId(1);
+        $amountToSubtract = "10.10";
 
-            $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
-            $fundBalanceReturned = $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
-            $this->sut->saveFundingsToDatabase();
+        $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract);
 
-            \assert(50 - 10.10 === 39.9);
-            $this->assertSame('39.90', $this->sut->getAmountAvailable($funding));
-            $this->assertSame('39.90', $fundBalanceReturned);
+        \assert(50 - 10.10 === 39.9);
+        $this->assertSame('39.90', $this->sut->getAmountAvailable($funding));
+        $this->assertSame('39.90', $fundBalanceReturned);
     }
 
     public function testItReleasesFundsInCaseOfRaceCondition(): void
     {
-                $funding = new CampaignFunding(
-                    fund: new Pledge('GBP', 'some pledge'),
-                    amount: '1000',
-                    amountAvailable: '50',
-                    allocationOrder: 100,
-                );
-                $funding->setId(1);
-                $amountToSubtract = "30";
+        $funding = new CampaignFunding(
+            fund: new Pledge('GBP', 'some pledge'),
+            amount: '1000',
+            amountAvailable: '50',
+            allocationOrder: 100,
+        );
+        $funding->setId(1);
+        $amountToSubtract = "30";
 
-            $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
-            $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
-            $this->sut->saveFundingsToDatabase();
+        $this->sut->subtractAmount($funding, $amountToSubtract);
+
         try {
             // this second subtraction will take the fund negative in redis temporarily, but our Adapter will add
             // back the 30 just subtracted.
-            $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+            $this->sut->subtractAmount($funding, $amountToSubtract);
             $this->fail("should have thrown exception on attempt to allocate more than available");
         } catch (LessThanRequestedAllocatedException $exception) {
             $this->assertStringContainsString("Less than requested was allocated", $exception->getMessage());
         }
 
-                $this->assertSame('0.00', $funding->getAmountAvailable());
-                $this->assertSame('0.00', $this->sut->getAmountAvailable($funding));
+        $this->assertSame('0.00', $funding->getAmountAvailable());
+        $this->assertSame('0.00', $this->sut->getAmountAvailable($funding));
     }
 
 
@@ -146,10 +123,10 @@ class AdapterTest extends TestCase
         $funding->setAmountAvailable('50');
         $amountToSubtract = "30";
 
-        $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+        $this->sut->subtractAmount($funding, $amountToSubtract);
 
         try {
-            $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+            $this->sut->subtractAmount($funding, $amountToSubtract);
             $this->fail("should have thrown exception on attempt to allocate more than available");
         } catch (TerminalLockException $exception) {
             // this -140_00 number is not very important - we already released part of the funds earlier,
@@ -180,7 +157,6 @@ class AdapterTest extends TestCase
             allocationOrder: 100,
         );
         $funding->setId(1);
-        $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
         $this->sut->addAmount($funding, '5');
 
         $funding->setAmountAvailable('53');
@@ -202,8 +178,7 @@ class AdapterTest extends TestCase
         $funding->setId(1);
         $amountToSubtract = "10.10";
 
-        $this->entityManagerProphecy->persist($funding)->shouldBeCalled();
-        $fundBalanceReturned = $this->sut->subtractAmountWithoutSavingToDB($funding, $amountToSubtract);
+        $fundBalanceReturned = $this->sut->subtractAmount($funding, $amountToSubtract);
 
         // act
         $this->sut->releaseNewlyAllocatedFunds();

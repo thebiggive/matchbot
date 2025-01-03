@@ -4,9 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\Exception\ORMException;
-use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -18,9 +16,11 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
+use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\MandateNotActive;
+use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
@@ -205,30 +205,10 @@ class DonationService
         // or what we're charging.
         $this->entityManager->flush();
 
-        return $this->confirm($donation, $tokenId);
-    }
-
-    /**
-     * Finalized a donation, instructing stripe to attempt to take payment.
-     *
-     * $tokenId will be StripeConformationTokenId for one off payments, StripePaymentMethodId for regular giving.
-     * @todo-regular-giving separate out into two functions and avoid instanceof
-     */
-    private function confirm(
-        Donation $donation,
-        StripePaymentMethodId|StripeConfirmationTokenId $tokenId
-    ): \Stripe\PaymentIntent {
-        $params = [
-            ...($tokenId instanceof StripePaymentMethodId ?
-                ['payment_method' => $tokenId->stripePaymentMethodId] : []),
-
-            ...($tokenId instanceof StripeConfirmationTokenId ?
-                ['confirmation_token' => $tokenId->stripeConfirmationTokenId] : []),
-        ];
-
-        $paymentIntentId = $donation->getTransactionId();
-
-        return $this->stripe->confirmPaymentIntent($paymentIntentId, $params);
+        return $this->stripe->confirmPaymentIntent(
+            $donation->getTransactionId(),
+            ['confirmation_token' => $tokenId->stripeConfirmationTokenId]
+        );
     }
 
     /**
@@ -277,7 +257,10 @@ class DonationService
             );
         }
 
-        $this->confirm($donation, $paymentMethod);
+        $this->stripe->confirmPaymentIntent(
+            $donation->getTransactionId(),
+            ['payment_method' => $paymentMethod->stripePaymentMethodId]
+        );
     }
 
     /**
@@ -344,6 +327,8 @@ class DonationService
                         // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
                         // would be reduced again when the donation expires.
                         $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
+
+                        $this->entityManager->flush();
 
                         throw $t;
                     }
@@ -634,5 +619,23 @@ class DonationService
 
             $this->entityManager->flush();
         });
+    }
+
+    public function donationAsApiModel(UuidInterface $donationUUID): array
+    {
+        $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
+
+        if (!$donation) {
+            throw new DomainRecordNotFoundException('Donation not found');
+        }
+
+        return $donation->toFrontEndApiModel();
+    }
+
+    public function findAllCompleteForCustomerAsAPIModels(StripeCustomerId $stripeCustomerId): array
+    {
+        $donations = $this->donationRepository->findAllCompleteForCustomer($stripeCustomerId);
+
+        return array_map(fn(Donation $donation) => $donation->toFrontEndApiModel(), $donations);
     }
 }

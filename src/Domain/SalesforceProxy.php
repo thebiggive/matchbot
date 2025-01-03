@@ -13,6 +13,11 @@ use Doctrine\ORM\Mapping as ORM;
 abstract class SalesforceProxy extends Model
 {
     /**
+     * @deprecated - treat as private, access via getters and setters unless you know the instance
+     * is already loaded from the DB, to allow Doctrine Proxies to do their lazy-loading thing.
+     *
+     * Actually setting as private breaks use of this property by the ORM for child classes.
+     *
      * @var string|null Nullable because write proxies may be created before the first Salesforce push
      */
     #[ORM\Column(type: 'string', length: 18, unique: true, nullable: true)]
@@ -23,6 +28,7 @@ abstract class SalesforceProxy extends Model
      */
     public function getSalesforceId(): ?string
     {
+        /** @psalm-suppress DeprecatedProperty */
         return $this->salesforceId;
     }
 
@@ -31,6 +37,7 @@ abstract class SalesforceProxy extends Model
      */
     public function setSalesforceId(string $salesforceId): void
     {
+        /** @psalm-suppress DeprecatedProperty */
         $this->salesforceId = $salesforceId;
     }
 }

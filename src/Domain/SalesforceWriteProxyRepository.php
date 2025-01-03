@@ -18,6 +18,9 @@ abstract class SalesforceWriteProxyRepository extends SalesforceProxyRepository
 
     abstract public function doUpdate(AbstractStateChanged $changeMessage): void;
 
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - used via DonationRepository interface
+     */
     public function push(AbstractStateChanged $changeMessage, bool $isNew): void
     {
         if ($isNew) {

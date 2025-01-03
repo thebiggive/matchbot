@@ -4,10 +4,12 @@ namespace MatchBot\Tests\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
+use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
@@ -55,11 +57,10 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         );
         $matchingAdapter = new Adapter(
             new ArrayMatchingStorage(),
-            $this->emProphecy->reveal(),
             new NullLogger(),
         );
 
-        $this->sut = new DonationRepository(
+        $this->sut = new DoctrineDonationRepository(
             $this->emProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
@@ -75,7 +76,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([]);
 
         $donation = Donation::fromApiModel(
-            new \MatchBot\Application\HttpModels\DonationCreate(
+            new DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: '1',
                 projectId: 'projectid012345678',
@@ -85,8 +86,8 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             $this->campaign,
         );
 
-        $this->emProphecy->persist($donation)->shouldBeCalled();
-        $this->emProphecy->flush()->shouldBeCalled();
+        // No entities to actually change but we always flush & let Doctrine check that.
+        $this->emProphecy->flush()->shouldBeCalledOnce();
 
         // act
         $amountMatched = $this->sut->allocateMatchFunds($donation);
@@ -111,11 +112,10 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
             $campaignFunding
         ]);
-        $this->emProphecy->persist($campaignFunding)->shouldBeCalled();
         $this->emProphecy->persist(Argument::type(FundingWithdrawal::class))->shouldBeCalled();
 
         $donation = Donation::fromApiModel(
-            new \MatchBot\Application\HttpModels\DonationCreate(
+            new DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: '1',
                 projectId: 'projectid012345678',
@@ -125,7 +125,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             $this->campaign,
         );
 
-        $this->emProphecy->persist($donation)->shouldBeCalled();
         $this->emProphecy->flush()->shouldBeCalled();
 
         // act
@@ -202,12 +201,10 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             $campaignFunding0,
             $campaignFunding1,
         ]);
-        $this->emProphecy->persist($campaignFunding0)->shouldBeCalled();
-        $this->emProphecy->persist($campaignFunding1)->shouldBeCalled();
         $this->emProphecy->persist(Argument::type(FundingWithdrawal::class))->shouldBeCalled();
 
         $donation = Donation::fromApiModel(
-            new \MatchBot\Application\HttpModels\DonationCreate(
+            new DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: $donationAmount,
                 projectId: 'projectid012345678',
@@ -217,7 +214,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             $this->campaign,
         );
 
-        $this->emProphecy->persist($donation)->shouldBeCalled();
         $this->emProphecy->flush()->shouldBeCalled();
 
         // act
@@ -250,11 +246,10 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([
             $campaignFunding
         ]);
-        $this->emProphecy->persist($campaignFunding)->shouldBeCalled();
         $this->emProphecy->persist(Argument::type(FundingWithdrawal::class))->shouldBeCalled();
 
         $donation = Donation::fromApiModel(
-            new \MatchBot\Application\HttpModels\DonationCreate(
+            new DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: '2.00',
                 projectId: 'projectid012345678',
@@ -267,7 +262,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $fundingWithdrawal->setAmount('1.00');
         $donation->addFundingWithdrawal($fundingWithdrawal);
 
-        $this->emProphecy->persist($donation)->shouldBeCalled();
         $this->emProphecy->flush()->shouldBeCalled();
 
         // act
@@ -295,7 +289,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             $campaignFunding
         ]);
         $donation = Donation::fromApiModel(
-            new \MatchBot\Application\HttpModels\DonationCreate(
+            new DonationCreate(
                 currencyCode: 'GBP',
                 donationAmount: '1',
                 projectId: 'projectid012345678',

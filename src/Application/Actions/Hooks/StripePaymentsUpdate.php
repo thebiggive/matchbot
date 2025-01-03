@@ -13,6 +13,7 @@ use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\Currency;
+use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationFundsNotifier;
 use MatchBot\Domain\DonationRepository;
@@ -521,10 +522,12 @@ class StripePaymentsUpdate extends Stripe
 
     private function queueSalesforceUpdate(Donation $donation): void
     {
-        $this->bus->dispatch(new Envelope(
-            DonationUpserted::fromDonation($donation),
-            [new DelayStamp(3_000)], // 3s delay to reduce risk of Donation\Update trying to reverse status change.
-        ));
+        $this->bus->dispatch(
+            new Envelope(
+                DonationUpserted::fromDonation($donation),
+                [new DelayStamp(3_000)], // 3s delay to reduce risk of Donation\Update trying to reverse status change.
+            )
+        );
     }
 
     private function handleCashBalanceUpdate(Event $event, Response $response): Response

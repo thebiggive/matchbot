@@ -15,6 +15,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
@@ -25,6 +26,7 @@ use Psr\Log\LoggerInterface;
 use Random\Randomizer;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
@@ -66,22 +68,9 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $this->assertSame('250.00', $donation->getFundingWithdrawalTotal());
         $this->assertSame(250.00, $hook['amountMatchedByChampionFunds']);
         $this->assertSame(0.00, $hook['amountMatchedByPledges']);
-        $output = new BufferedOutput();
 
         // act
-        $command = new RedistributeMatchFunds(
-            new MatchFundsRedistributor(
-                chatter: $this->createStub(ChatterInterface::class),
-                donationRepository: $this->getService(DonationRepository::class),
-                now: new \DateTimeImmutable('now'),
-                campaignFundingRepository: $this->campaignFundingRepository,
-                logger: $this->getService(LoggerInterface::class),
-                entityManager: $this->createStub(EntityManagerInterface::class),
-                bus: $this->messageBusProphecy->reveal(),
-            ),
-        );
-        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
-        $command->run(new ArrayInput([]), $output);
+        $output = $this->runCommand();
 
         // assert
         $updatedDonation = $this->getService(DonationRepository::class)->find($donation->getId());
@@ -115,22 +104,9 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $this->assertSame('250.00', $donation->getFundingWithdrawalTotal());
         $this->assertSame(250.00, $hook['amountMatchedByChampionFunds']);
         $this->assertSame(0.00, $hook['amountMatchedByPledges']);
-        $output = new BufferedOutput();
 
         // act
-        $command = new RedistributeMatchFunds(
-            new MatchFundsRedistributor(
-                chatter: $this->createStub(ChatterInterface::class),
-                campaignFundingRepository: $this->campaignFundingRepository,
-                entityManager: $this->createStub(EntityManagerInterface::class),
-                now: new \DateTimeImmutable('now'),
-                donationRepository: $this->getService(DonationRepository::class),
-                logger: $this->getService(LoggerInterface::class),
-                bus: $this->messageBusProphecy->reveal(),
-            ),
-        );
-        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
-        $command->run(new ArrayInput([]), $output);
+        $output = $this->runCommand();
 
         // assert
         $updatedDonation = $this->getService(DonationRepository::class)->find($donation->getId());
@@ -201,7 +177,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
 
         // Withdraw the donation value from the champion fund in Redis.
         $matchingAdapter = $this->getService(Adapter::class);
-        $matchingAdapter->subtractAmountWithoutSavingToDB($championFundCampaignFunding, (string) $amount);
+        $matchingAdapter->subtractAmount($championFundCampaignFunding, (string) $amount);
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($championFundWithdrawal);
@@ -246,5 +222,25 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         Assertion::notNull($championFundCampaignFunding);
 
         return [$campaign, $championFundCampaignFunding];
+    }
+
+    public function runCommand(): BufferedOutput
+    {
+        $output = new BufferedOutput();
+        $command = new RedistributeMatchFunds(
+            new MatchFundsRedistributor(
+                chatter: $this->createStub(ChatterInterface::class),
+                donationRepository: $this->getService(DonationRepository::class),
+                now: new \DateTimeImmutable('now'),
+                campaignFundingRepository: $this->campaignFundingRepository,
+                logger: $this->getService(LoggerInterface::class),
+                entityManager: $this->createStub(EntityManagerInterface::class),
+                bus: $this->messageBusProphecy->reveal(),
+            ),
+        );
+        $command->setLockFactory(new LockFactory(new AlwaysAvailableLockStore()));
+        $command->run(new ArrayInput([]), $output);
+
+        return $output;
     }
 }

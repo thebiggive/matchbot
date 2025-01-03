@@ -33,7 +33,7 @@ abstract class Action
         try {
             return $this->action($request, $response, $args);
         } catch (DomainRecordNotFoundException $e) {
-            throw new HttpNotFoundException($request, $e->getMessage());
+            throw new HttpNotFoundException($request, $e->getMessage(), $e);
         }
     }
 

@@ -33,7 +33,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Embedded(columnPrefix: 'person')]
     public PersonId $donorId;
 
-    #[ORM\Embedded(columnPrefix: 'amount_')]
+    #[ORM\Embedded(columnPrefix: '')]
     private readonly Money $donationAmount;
 
     /**
@@ -69,7 +69,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
      */
     public function __construct(
         PersonId $donorId,
-        Money $amount,
+        Money $donationAmount,
         Salesforce18Id $campaignId,
         Salesforce18Id $charityId,
         bool $giftAid,
@@ -78,15 +78,15 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->createdNow();
         $minAmount = Money::fromPence(self::MIN_AMOUNT_PENCE, Currency::GBP);
         $maxAmount = Money::fromPence(self::MAX_AMOUNT_PENCE, Currency::GBP);
-        if ($amount->lessThan($minAmount) || $amount->moreThan($maxAmount)) {
+        if ($donationAmount->lessThan($minAmount) || $donationAmount->moreThan($maxAmount)) {
             throw new UnexpectedValueException(
-                "Amount {$amount} is out of allowed range {$minAmount}-{$maxAmount}"
+                "Amount {$donationAmount} is out of allowed range {$minAmount}-{$maxAmount}"
             );
         }
 
         $this->uuid = Uuid::uuid4();
 
-        $this->donationAmount = $amount;
+        $this->donationAmount = $donationAmount;
         $this->campaignId = $campaignId->value;
         $this->charityId = $charityId->value;
         $this->giftAid = $giftAid;
@@ -108,12 +108,13 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     public function toFrontEndApiModel(Charity $charity, \DateTimeImmutable $now): array
     {
-        Assertion::same($charity->salesforceId, $this->charityId);
+        Assertion::same($charity->getSalesforceId(), $this->charityId);
 
         return [
             'id' => $this->uuid->toString(),
             'donorId' => $this->donorId->id,
             'donationAmount' => $this->donationAmount,
+            'matchedAmount' => $this->getMatchedAmount(),
             'campaignId' => $this->campaignId,
             'charityId' => $this->charityId,
             'schedule' => [
@@ -168,7 +169,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public function createPreAuthorizedDonation(
         DonationSequenceNumber $sequenceNumber,
         DonorAccount $donor,
-        Campaign $campaign
+        Campaign $campaign,
+        bool $requireActiveMandate = true,
+        \DateTimeImmutable $expectedActivationDate = null,
     ): Donation {
         $donation = new Donation(
             amount: $this->donationAmount->toNumericString(),
@@ -185,6 +188,17 @@ class RegularGivingMandate extends SalesforceWriteProxy
             tipAmount: '0',
             mandate: $this,
             mandateSequenceNumber: $sequenceNumber,
+            giftAid: false,
+            tipGiftAid: null,
+            homeAddress: null,
+            homePostcode: null,
+            billingPostcode: null,
+        );
+
+        Assertion::true(
+            ($requireActiveMandate && is_null($expectedActivationDate)) ||
+            (!$requireActiveMandate && !is_null($expectedActivationDate)),
+            'When creating donations for an already active mandate require the mandate to be active, otherwise pass the activation date'
         );
 
         $donation->update(
@@ -200,11 +214,15 @@ class RegularGivingMandate extends SalesforceWriteProxy
             donorBillingPostcode: $donor->getBillingPostcode(),
         );
 
-        if ($this->activeFrom === null) {
+        if ($this->activeFrom === null && $requireActiveMandate) {
             throw new \Exception('Missing activation date - is this an active mandate?');
         }
 
-        $secondDonationDate = $this->firstPaymentDayAfter($this->activeFrom);
+        $assumedActivateDate = $this->activeFrom ?? $expectedActivationDate;
+
+        \assert($assumedActivateDate !== null); // can't be null based on combination of previous assertions.
+
+        $secondDonationDate = $this->firstPaymentDayAfter($assumedActivateDate);
 
         if ($sequenceNumber->number < 2) {
             // first donation in mandate should be taken on-session, not pre-authorized.
@@ -268,5 +286,39 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public function campaignEnded(): void
     {
         $this->status = MandateStatus::CampaignEnded;
+    }
+
+    public function getActiveFrom(): ?\DateTimeImmutable
+    {
+        return $this->activeFrom;
+    }
+
+    public function describeSchedule(): string
+    {
+        return "Monthly on day #{$this->dayOfMonth->value}";
+    }
+
+    /**
+     * @return Money amount we expect to be claimable in gift aid per donation.
+     */
+    public function getGiftAidAmount(): Money
+    {
+        if (! $this->giftAid) {
+            return Money::fromPoundsGBP(0);
+        }
+
+        return $this->donationAmount->withPence(
+            (int) (100 * Donation::donationAmountToGiftAidValue(amount: $this->donationAmount->toNumericString()))
+        );
+    }
+
+    public function totalIncGiftAd(): Money
+    {
+        return $this->donationAmount->plus($this->getGiftAidAmount());
+    }
+
+    public function getMatchedAmount(): Money
+    {
+        return $this->donationAmount;
     }
 }

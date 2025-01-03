@@ -6,7 +6,6 @@ namespace MatchBot\Tests;
 
 use DI\ContainerBuilder;
 use Exception;
-use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
@@ -111,7 +110,7 @@ class TestCase extends PHPUnitTestCase
             {
                 throw new \Exception("Please provide fake clock for your test");
             }
-            #[\Override] public function now(): never
+            #[\Override] public function now(): \DateTimeImmutable
             {
                 throw new \Exception("Please provide fake clock for your test");
             }
@@ -214,6 +213,7 @@ class TestCase extends PHPUnitTestCase
         ?Charity $charity = null,
         bool $isRegularGiving = false,
         ?\DateTimeImmutable $regularGivingCollectionEnd = null,
+        string $thankYouMessage = null,
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
         \assert(is_string($randomString));
@@ -231,6 +231,7 @@ class TestCase extends PHPUnitTestCase
             currencyCode: 'GBP',
             isRegularGiving: $isRegularGiving,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
+            thankYouMessage: $thankYouMessage,
         );
     }
 
@@ -240,7 +241,8 @@ class TestCase extends PHPUnitTestCase
     public static function someDonation(
         string $amount = '1',
         string $currencyCode = 'GBP',
-        PaymentMethodType $paymentMethodType = PaymentMethodType::Card
+        PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
+        bool $giftAid = false,
     ): Donation {
         return new Donation(
             amount: $amount,
@@ -257,6 +259,11 @@ class TestCase extends PHPUnitTestCase
             tipAmount: '0',
             mandate: null,
             mandateSequenceNumber: null,
+            giftAid: $giftAid,
+            tipGiftAid: null,
+            homeAddress: null,
+            homePostcode: null,
+            billingPostcode: null,
         );
     }
 
