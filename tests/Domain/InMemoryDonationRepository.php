@@ -187,7 +187,7 @@ class InMemoryDonationRepository implements DonationRepository
         throw new \Exception("Method not implemented in test double");
     }
 
-    #[\Override] public function findDonationsToSetPaymentIntent(\DateTimeImmutable $atDateTime, int $limit): array
+    #[\Override] public function findDonationsToSetPaymentIntent(\DateTimeImmutable $atDateTime, int $maxBatchSize): array
     {
         throw new \Exception("Method not implemented in test double");
     }
