@@ -20,11 +20,6 @@ use Ramsey\Uuid\Uuid;
 
 class RegularGivingDonationRepositoryTest extends IntegrationTest
 {
-    public function setUp(): void
-    {
-        parent::setUp();
-    }
-
     public function testFindDonationsToSetPaymentIntent(): void
     {
         // arrange
