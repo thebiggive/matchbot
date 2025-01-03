@@ -20,12 +20,21 @@ use Ramsey\Uuid\Uuid;
 
 class RegularGivingDonationRepositoryTest extends IntegrationTest
 {
-    public function testFindDonationsToSetPaymentIntent(): void
+    public function setUp(): void
     {
-        // arrange
-        $atDateTime = new \DateTimeImmutable('2025-01-03T00:11:11');
-        $sut = $this->getService(DonationRepository::class);
+        parent::setUp();
+        $this->arrange();
+    }
 
+    /**
+     * @return array
+     * @throws \Assert\AssertionFailedException
+     * @throws \MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed
+     */
+    public function arrange(): array
+    {
+    // arrange
+        $atDateTime = new \DateTimeImmutable('2025-01-03T00:11:11');
         $campaign = TestCase::someCampaign(
             sfId: Salesforce18Id::ofCampaign('123456789012345678')
         );
@@ -49,14 +58,11 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
         $donor->setBillingCountryCode('GB');
         $donor->setBillingPostcode('W1 5YU');
         $mandate->activate($atDateTime);
-
         $donation = $mandate->createPreAuthorizedDonation(
             DonationSequenceNumber::of(2),
             $donor,
             $campaign
         );
-
-        $donation->preAuthorize($atDateTime);
 
         $em->persist($donor);
         $em->persist($mandate);
@@ -64,8 +70,28 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
         $em->persist($donation);
         $em->flush();
 
+        return [$mandate, &$donation, $atDateTime];
+    }
+
+    public function testFindDonationsToSetPaymentIntent(): void
+    {
+
+        list($mandate, $donation, $atDateTime) = $this->arrange();
+        $sut = $this->getService(DonationRepository::class);
+
+        $donation->preAuthorize($atDateTime);
+
         $donations = $sut->findDonationsToSetPaymentIntent($atDateTime, 10);
+
         $this->assertCount(1, $donations);
         $this->assertEquals($donation->getUuid(), $donations[0]->getUuid());
     }
+
+//    public function testDoesntFindDonationsForPaymentIntentIfNotPreAuthorised(): void {
+//
+//    }
+
+//    public function testDoesntFindDonationsForPaymentIntentIfStatusNotActive(): void {
+//
+//    }
 }
