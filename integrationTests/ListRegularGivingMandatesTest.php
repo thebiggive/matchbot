@@ -113,7 +113,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
     ): UuidInterface {
         $mandate = new RegularGivingMandate(
             donorId: $personId,
-            amount: Money::fromPoundsGBP(500),
+            donationAmount: Money::fromPoundsGBP(500),
             campaignId: Salesforce18Id::ofCampaign($campaignId),
             charityId: Salesforce18Id::ofCharity($charityId),
             giftAid: true,
