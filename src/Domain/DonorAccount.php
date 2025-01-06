@@ -97,6 +97,15 @@ class DonorAccount extends Model
 
     public function updateFromPersonMessage(Person $personMessage): void
     {
+        /**
+         * @todo-id-48: Delete next four lines and make uuid column non-nullable once all records in prod have uuids
+         * set
+         */
+        if ($this->uuid === null) {
+            $this->uuid = $personMessage->id;
+        }
+        Assertion::eq($this->uuid, $personMessage->id);
+
         $this->emailAddress = EmailAddress::of($personMessage->email_address);
         $this->donorName = DonorName::of($personMessage->first_name, $personMessage->last_name);
     }
