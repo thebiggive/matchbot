@@ -14,6 +14,7 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
@@ -27,7 +28,7 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
     }
 
     /**
-     * @return array
+     * @return list{ Donation, RegularGivingMandate }
      * @throws \Assert\AssertionFailedException
      * @throws \MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed
      */
@@ -59,14 +60,24 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
 
         if ($activateMandate) {
             $mandate->activate($atDateTime);
+
+            $donation = $mandate->createPreAuthorizedDonation(
+                DonationSequenceNumber::of(2),
+                $donor,
+                $campaign,
+                requireActiveMandate: true
+            );
+        } else {
+            $donation = $mandate->createPreAuthorizedDonation(
+                DonationSequenceNumber::of(2),
+                $donor,
+                $campaign,
+                requireActiveMandate: false,
+                expectedActivationDate: $atDateTime
+            );
         }
 
-        $donation = $mandate->createPreAuthorizedDonation(
-            DonationSequenceNumber::of(2),
-            $donor,
-            $campaign,
-            $activateMandate ? true : false
-        );
+
 
         $em->persist($donor);
         $em->persist($mandate);
@@ -74,13 +85,13 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
         $em->persist($donation);
         $em->flush();
 
-        return [&$mandate, &$donation];
+        return [$donation, $mandate];
     }
 
     public function testFindDonationsToSetPaymentIntent(): void
     {
         $atDateTime = new \DateTimeImmutable('2025-01-03T00:11:11');
-        list(&$mandate, $donation) = $this->arrange(true, $atDateTime);
+        list($donation) = $this->arrange(true, $atDateTime);
         $sut = $this->getService(DonationRepository::class);
 
         $donation->preAuthorize($atDateTime);
@@ -95,7 +106,7 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
     {
 
         $atDateTime = new \DateTimeImmutable('2025-01-03T00:11:11');
-        list($mandate, $donation) = $this->arrange(false, $atDateTime);
+        list($donation) = $this->arrange(false, $atDateTime);
         $sut = $this->getService(DonationRepository::class);
 
 
@@ -109,7 +120,7 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
     {
 
         $atDateTime = new \DateTimeImmutable('2025-01-03T00:11:11');
-        list($mandate, $donation, $atDateTime) = $this->arrange(false, $atDateTime);
+        list($donation) = $this->arrange(false, $atDateTime);
         $sut = $this->getService(DonationRepository::class);
 
 
