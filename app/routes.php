@@ -58,6 +58,7 @@ return function (App $app) {
             /** @psalm-suppress DeprecatedClass Until we delete Donate use & the endpoint */
             $pwdDonorGroup->post('/donor-account', DonorAccount\Create::class);
             $pwdDonorGroup->get('/donor-account', DonorAccount\Get::class);
+            $pwdDonorGroup->post('/create-customer-session', RegularGivingMandate\CreateCustomerSession::class);
             $pwdDonorGroup->post('/regular-giving', RegularGivingMandate\Create::class);
             $pwdDonorGroup->get('/donations', Donations\GetAllForUser::class);
             $pwdDonorGroup->delete('/donations', Donations\CancelAll::class);
