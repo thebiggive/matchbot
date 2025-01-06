@@ -8,6 +8,7 @@ use Assert\Assertion;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
+use MatchBot\Application\Security\SecurityService;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -18,6 +19,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
+use Security;
 use Slim\Exception\HttpUnauthorizedException;
 
 class Get extends Action
@@ -26,26 +28,17 @@ class Get extends Action
     public function __construct(
         private DonorAccountRepository $donorAccountRepository,
         LoggerInterface $logger,
+        private SecurityService $security,
     ) {
         parent::__construct($logger);
     }
 
     protected function action(Request $request, Response $response, array $args): Response
     {
-
-        $authedUserId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
-        \assert(is_string($authedUserId));
-
-        $authedUserId = PersonId::of($authedUserId); // I'm failing to understand why this line is needed,
-        // we have similar without it in \MatchBot\Application\Actions\RegularGivingMandate\GetAllForUser::action
-
-        // \assert($authedUserId instanceof PersonId);
-
-        Assertion::keyExists($args, "personId");
-
+        $authedUser = $this->security->requireAuthenticatedDonorAccountWithPassword($request);
         $requestedUserId = PersonId::of((string) $args['personId']);
 
-        if (! $authedUserId->equals($requestedUserId)) {
+        if (! $authedUser->id()->equals($requestedUserId)) {
             throw new HttpUnauthorizedException($request);
         }
 
