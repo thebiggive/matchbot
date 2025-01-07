@@ -27,7 +27,7 @@ class CreateCustomerSession extends Action
     {
         $donor = $this->security->requireAuthenticatedDonorAccountWithPassword($request);
 
-        $customerSession = $this->stripeClient->createCustomerSession($donor->stripeCustomerId);
+        $customerSession = $this->stripeClient->createRegularGivingCustomerSession($donor->stripeCustomerId);
 
         return new JsonResponse(['stripeSessionSecret' =>  $customerSession->client_secret]);
     }
