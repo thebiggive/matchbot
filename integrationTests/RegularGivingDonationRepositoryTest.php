@@ -77,8 +77,6 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
             );
         }
 
-
-
         $em->persist($donor);
         $em->persist($mandate);
         $em->persist($campaign);
@@ -97,36 +95,36 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
         $donation->preAuthorize($atDateTime);
         $this->getService(EntityManagerInterface::class)->flush();
         $donations = $sut->findDonationsToSetPaymentIntent($atDateTime, 10);
+        $relevantDonations = array_values(array_filter($donations, fn(Donation $d) => ($d === $donation)));
 
-        $this->assertCount(1, $donations);
-        $this->assertEquals($donation->getUuid(), $donations[0]->getUuid());
+        $this->assertCount(1, $relevantDonations);
+        $this->assertEquals($donation->getUuid(), $relevantDonations[0]->getUuid());
     }
 
     public function testDoesntFindDonationsForPaymentIntentIfNotPreAuthorised(): void
     {
-        $this->markTestIncomplete('will continue work');
         $atDateTime = new \DateTimeImmutable('2025-01-03T00:11:11');
-        list($donation) = $this->arrange(false, $atDateTime);
+        list($donation) = $this->arrange(activateMandate: true, atDateTime: $atDateTime);
         $sut = $this->getService(DonationRepository::class);
 
-
         $donations = $sut->findDonationsToSetPaymentIntent($atDateTime, 10);
+        $relevantDonations = array_filter($donations, fn(Donation $d) => ($d === $donation));
 
-        $this->assertCount(0, $donations);
-        $this->assertEquals($donation->getUuid(), $donations[0]->getUuid());
+        $this->assertCount(0, $relevantDonations);
     }
 
     public function testDoesntFindDonationsForPaymentIntentIfStatusNotActive(): void
     {
-        $this->markTestIncomplete('will continue work');
-
         $atDateTime = new \DateTimeImmutable('2025-01-03T00:11:11');
         list($donation) = $this->arrange(false, $atDateTime);
         $sut = $this->getService(DonationRepository::class);
 
+        $donation->preAuthorize($atDateTime);
+        $this->getService(EntityManagerInterface::class)->flush();
 
         $donations = $sut->findDonationsToSetPaymentIntent($atDateTime, 10);
-        $this->assertCount(0, $donations);
-        $this->assertEquals($donation->getUuid(), $donations[0]->getUuid());
+        $relevantDonations = array_filter($donations, fn(Donation $d) => ($d === $donation));
+
+        $this->assertCount(0, $relevantDonations);
     }
 }
