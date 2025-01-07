@@ -17,7 +17,6 @@ use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
-use MatchBot\Domain\DomainException\MissingTransactionId;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -604,13 +603,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
                 continue;
             }
 
-            try {
-                $newDonation = DonationUpserted::fromDonation($proxy);
-            } catch (MissingTransactionId) {
-                $this->logger->warning("Missing transaction id for donation {$proxy->getId()}, cannot push to SF");
-                continue;
-            }
-            $bus->dispatch(new Envelope($newDonation));
+            $bus->dispatch(new Envelope(DonationUpserted::fromDonation($proxy)));
         }
 
         $proxiesToUpdate = $this->findBy(
