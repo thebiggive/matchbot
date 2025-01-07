@@ -51,5 +51,10 @@ interface Stripe
 
     public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession;
 
+    /**
+     * Creates a customer session that will save the given payment method for off-session use.
+     */
+    public function createRegularGivingCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession;
+
     public function retrieveConfirmationToken(StripeConfirmationTokenId $confirmationTokenId): ConfirmationToken;
 }

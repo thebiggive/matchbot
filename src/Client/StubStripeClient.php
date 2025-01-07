@@ -77,4 +77,9 @@ class StubStripeClient implements Stripe
 
         return $confirmationToken;
     }
+
+    public function createRegularGivingCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
+    {
+        return $this->createCustomerSession($stripeCustomerId);
+    }
 }

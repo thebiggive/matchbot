@@ -12,6 +12,8 @@ use Psr\Log\LoggerInterface;
  * @template T of SalesforceProxy
  * @template C of Client\Common
  * @template-extends EntityRepository<T>
+ *
+ * @psalm-suppress MissingConstructor - these repositories have to have setters called after construction
  */
 abstract class SalesforceProxyRepository extends EntityRepository
 {
