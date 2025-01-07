@@ -89,11 +89,6 @@ interface DonationRepository
     public function findWithTransferIdInArray(array $transferIds): array;
 
     /**
-     * @return Donation[]
-     */
-    public function findWithFeePossiblyOverchaged(): array;
-
-    /**
      * Takes a now-ish input that's typically the floor of the current minute and
      * looks for donations *created* between $nowish-16 minutes and $nowish-1 minutes, with >£0 matching assigned.
      * Returns:

@@ -5,19 +5,17 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assert;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\DomainException\AccountNotReadyToDonate;
+use Messages\Person;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
 /**
- * This is new, about to be brought into use.
- * @psalm-suppress PossiblyUnusedProperty
- *
  * Holds details of an account set at Stripe by a donor through our system so that they can transfer funds using a
- * bank transfer and later donate those funds (or parts of those funds) to charities.
+ * bank transfer and later donate those funds (or parts of those funds) to charities; and for Regular Giving.
  *
  * This class originally created for the use case of mapping from stripe IDs to email addresses and names, so that
- * we can send out confirmation emails when bank transfers are recieved into the account - but may well grow to support
- * other related uses.
+ * we can send out confirmation emails when bank transfers are recieved into the account.
  */
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Entity(repositoryClass: DonorAccountRepository::class)]
@@ -34,10 +32,10 @@ class DonorAccount extends Model
     protected ?UuidInterface $uuid = null;
 
     #[ORM\Embedded(class: 'EmailAddress', columnPrefix: false)]
-    public readonly EmailAddress $emailAddress;
+    public EmailAddress $emailAddress;
 
     #[ORM\Embedded(class: 'DonorName')]
-    public readonly DonorName $donorName;
+    public DonorName $donorName;
 
     #[ORM\Embedded(class: 'StripeCustomerId', columnPrefix: false)]
     public readonly StripeCustomerId $stripeCustomerId;
@@ -85,6 +83,31 @@ class DonorAccount extends Model
         $this->stripeCustomerId = $stripeCustomerId;
         $this->donorName = $donorName;
         $this->uuid = is_null($uuid) ? null : Uuid::fromString($uuid->id);
+    }
+
+    public static function fromPersonMessage(Person $person): self
+    {
+        return new self(
+            PersonId::of($person->id->toString()),
+            EmailAddress::of($person->email_address),
+            DonorName::of($person->first_name, $person->last_name),
+            StripeCustomerId::of($person->stripe_customer_id),
+        );
+    }
+
+    public function updateFromPersonMessage(Person $personMessage): void
+    {
+        /**
+         * @todo-id-48: Delete next four lines and make uuid column non-nullable once all records in prod have uuids
+         * set
+         */
+        if ($this->uuid === null) {
+            $this->uuid = $personMessage->id;
+        }
+        Assertion::eq($this->uuid, $personMessage->id);
+
+        $this->emailAddress = EmailAddress::of($personMessage->email_address);
+        $this->donorName = DonorName::of($personMessage->first_name, $personMessage->last_name);
     }
 
     /**
@@ -170,8 +193,9 @@ class DonorAccount extends Model
     public function assertHasRequiredInfoForRegularGiving(): void
     {
         Assert::lazy()
-            ->that($this->billingPostcode)->notNull()
-            ->that($this->billingCountryCode)->notNull()
+            ->that($this->billingPostcode, null, 'Missing billing postcode')->notNull()
+            ->that($this->billingCountryCode, null, 'Missing billing country code')->notNull()
+            ->setExceptionClass(AccountNotReadyToDonate::class)
             ->verifyNow();
     }
 }

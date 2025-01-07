@@ -94,9 +94,9 @@ class StripePayoutHandler
             return;
         }
 
-        foreach ($chargeIds as $chargeId) {
-            $this->entityManager->beginTransaction();
+        $this->entityManager->beginTransaction();
 
+        foreach ($chargeIds as $chargeId) {
             $donation = $this->donationRepository->findAndLockOneBy(['chargeId' => $chargeId]);
 
             // If a donation was not found, then it's most likely from a different
@@ -113,7 +113,6 @@ class StripePayoutHandler
                     sprintf('Payout: Donation not found with Charge ID %s', $chargeId ?? 'null')
                 );
 
-                $this->entityManager->commit();
                 continue;
             }
 
@@ -123,18 +122,12 @@ class StripePayoutHandler
                 $donation->setDonationStatus(DonationStatus::Paid);
 
                 $donation->setSalesforcePushStatus(SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
-                $this->entityManager->persist($donation);
-                $this->entityManager->flush();
-                $this->entityManager->commit();
 
                 $this->logger->info("Marked donation #{$donation->getId()} paid based on stripe payout #{$payoutId}");
 
                 $count++;
                 continue;
             }
-
-            // Else commit the txn without persisting anything, ready for a new one.
-            $this->entityManager->commit();
 
             if ($donation->getDonationStatus() !== DonationStatus::Paid) {
                 // Skip updating donations in non-Paid statuses but continue to check the remainder.
@@ -153,6 +146,9 @@ class StripePayoutHandler
                 );
             }
         }
+
+        $this->entityManager->flush();
+        $this->entityManager->commit();
 
         $this->logger->info(sprintf(
             'Payout: Updating paid donations complete for stripe payout #%s, persisted %d',

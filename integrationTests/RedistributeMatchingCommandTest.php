@@ -177,7 +177,7 @@ class RedistributeMatchingCommandTest extends IntegrationTest
 
         // Withdraw the donation value from the champion fund in Redis.
         $matchingAdapter = $this->getService(Adapter::class);
-        $matchingAdapter->subtractAmountWithoutSavingToDB($championFundCampaignFunding, (string) $amount);
+        $matchingAdapter->subtractAmount($championFundCampaignFunding, (string) $amount);
 
         $em = $this->getService(EntityManagerInterface::class);
         $em->persist($championFundWithdrawal);

@@ -110,7 +110,7 @@ class TestCase extends PHPUnitTestCase
             {
                 throw new \Exception("Please provide fake clock for your test");
             }
-            #[\Override] public function now(): never
+            #[\Override] public function now(): \DateTimeImmutable
             {
                 throw new \Exception("Please provide fake clock for your test");
             }

@@ -205,30 +205,10 @@ class DonationService
         // or what we're charging.
         $this->entityManager->flush();
 
-        return $this->confirm($donation, $tokenId);
-    }
-
-    /**
-     * Finalized a donation, instructing stripe to attempt to take payment.
-     *
-     * $tokenId will be StripeConformationTokenId for one off payments, StripePaymentMethodId for regular giving.
-     * @todo-regular-giving separate out into two functions and avoid instanceof
-     */
-    private function confirm(
-        Donation $donation,
-        StripePaymentMethodId|StripeConfirmationTokenId $tokenId
-    ): \Stripe\PaymentIntent {
-        $params = [
-            ...($tokenId instanceof StripePaymentMethodId ?
-                ['payment_method' => $tokenId->stripePaymentMethodId] : []),
-
-            ...($tokenId instanceof StripeConfirmationTokenId ?
-                ['confirmation_token' => $tokenId->stripeConfirmationTokenId] : []),
-        ];
-
-        $paymentIntentId = $donation->getTransactionId();
-
-        return $this->stripe->confirmPaymentIntent($paymentIntentId, $params);
+        return $this->stripe->confirmPaymentIntent(
+            $donation->getTransactionId(),
+            ['confirmation_token' => $tokenId->stripeConfirmationTokenId]
+        );
     }
 
     /**
@@ -277,7 +257,10 @@ class DonationService
             );
         }
 
-        $this->confirm($donation, $paymentMethod);
+        $this->stripe->confirmPaymentIntent(
+            $donation->getTransactionId(),
+            ['payment_method' => $paymentMethod->stripePaymentMethodId]
+        );
     }
 
     /**
@@ -344,6 +327,8 @@ class DonationService
                         // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
                         // would be reduced again when the donation expires.
                         $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
+
+                        $this->entityManager->flush();
 
                         throw $t;
                     }
