@@ -3,6 +3,7 @@
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
@@ -270,7 +271,7 @@ class RegularGivingMandateTest extends TestCase
         $donor->setHomePostcode('SW1A 1AA');
         $donor->setBillingPostcode('SW1A 1AA');
         $donor->setHomeAddressLine1('Address line 1');
-        $donor->setBillingCountryCode('GB');
+        $donor->setBillingCountry(Country::GB());
 
         return $donor;
     }

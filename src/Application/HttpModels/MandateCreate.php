@@ -3,6 +3,7 @@
 namespace MatchBot\Application\HttpModels;
 
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Money;
@@ -18,6 +19,7 @@ readonly class MandateCreate
 
     /** @var Salesforce18Id<Campaign>  */
     public Salesforce18Id $campaignId;
+    public ?Country $billingCountry;
 
     /**
      * @psalm-suppress PossiblyUnusedMethod - called by Symfony Serializer
@@ -29,10 +31,13 @@ readonly class MandateCreate
         string $currency,
         int $dayOfMonth,
         public bool $giftAid,
-        string $campaignId
+        string $campaignId,
+        ?string $billingCountry,
+        public ?string $billingPostcode,
     ) {
         $this->dayOfMonth = DayOfMonth::of($dayOfMonth);
         $this->amount = Money::fromPence($amountInPence, Currency::fromIsoCode($currency));
         $this->campaignId = Salesforce18Id::ofCampaign($campaignId);
+        $this->billingCountry = Country::fromAlpha2OrNull($billingCountry);
     }
 }
