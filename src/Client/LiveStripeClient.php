@@ -81,6 +81,9 @@ class LiveStripeClient implements Stripe
     {
         $components = self::SESSION_COMPONENTS;
         $components['payment_element']['features']['payment_method_save_usage'] = 'off_session';
+        $components['payment_element']['features']['payment_method_redisplay'] = 'disabled';
+        unset($components['payment_element']['features']['payment_method_allow_redisplay_filters']);
+        unset($components['payment_element']['features']['payment_method_redisplay_limit']);
 
         return $this->stripeClient->customerSessions->create([
             'customer' => $stripeCustomerId->stripeCustomerId,
