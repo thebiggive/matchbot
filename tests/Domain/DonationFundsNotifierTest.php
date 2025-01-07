@@ -23,7 +23,7 @@ class DonationFundsNotifierTest extends TestCase
     {
         //arrange
         $donorAccount = new DonorAccount(
-            PersonId::of(Uuid::uuid4()->toString()),
+            self::randomPersonId(),
             EmailAddress::of('foo@example.com'),
             DonorName::of('Fred', 'Brooks'),
             StripeCustomerId::of('cus_1234'), // this one doesn't matter for the test.
