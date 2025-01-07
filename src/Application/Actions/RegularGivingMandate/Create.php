@@ -100,7 +100,7 @@ class Create extends Action
             return $this->validationError(
                 $response,
                 $e->getMessage(),
-                null,
+                'Sorry, we were not able to take your regular donation as there are insufficient match funds available',
                 false,
             );
         }
