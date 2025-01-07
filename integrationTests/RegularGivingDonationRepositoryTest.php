@@ -12,6 +12,7 @@ use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
@@ -55,7 +56,7 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
             donorName: DonorName::of('donorFName-test', 'donorLName-test'),
             stripeCustomerId: StripeCustomerId::of('cus_' . self::randomString())
         );
-        $donor->setBillingCountryCode('GB');
+        $donor->setBillingCountry(Country::fromAlpha2('GB'));
         $donor->setBillingPostcode('W1 5YU');
 
         if ($activateMandate) {
