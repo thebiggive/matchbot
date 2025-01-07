@@ -9,6 +9,7 @@ use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\MandateCreate;
+use MatchBot\Application\Security\Security;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\WrongCampaignType;
@@ -34,6 +35,7 @@ class Create extends Action
         private SerializerInterface $serializer,
         private EntityManagerInterface $em,
         private \DateTimeImmutable $now,
+        private Security $securityService,
     ) {
         parent::__construct($logger);
     }
@@ -44,8 +46,7 @@ class Create extends Action
             throw new HttpNotFoundException($request);
         }
 
-        $donorIdString = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
-        \assert(is_string($donorIdString));
+        $donor = $this->securityService->requireAuthenticatedDonorAccountWithPassword($request);
         $body = (string) $request->getBody();
 
         try {
@@ -80,7 +81,7 @@ class Create extends Action
 
         try {
             $mandate = $this->mandateService->setupNewMandate(
-                donorID: PersonId::of($donorIdString),
+                donorID: $donor->id(),
                 amount: $mandateData->amount,
                 campaign: $campaign,
                 giftAid: $mandateData->giftAid,

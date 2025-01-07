@@ -4,22 +4,15 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions\DonorAccount;
 
-use Assert\Assertion;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
-use MatchBot\Application\Security\SecurityService;
+use MatchBot\Application\Security\Security;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
-use MatchBot\Domain\Donation;
-use MatchBot\Domain\DonationRepository;
-use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\PersonId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Ramsey\Uuid\Uuid;
-use Security;
 use Slim\Exception\HttpUnauthorizedException;
 
 class Get extends Action
@@ -28,7 +21,7 @@ class Get extends Action
     public function __construct(
         private DonorAccountRepository $donorAccountRepository,
         LoggerInterface $logger,
-        private SecurityService $security,
+        private Security $security,
     ) {
         parent::__construct($logger);
     }
