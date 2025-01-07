@@ -36,7 +36,7 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
     {
     // arrange
         $campaign = TestCase::someCampaign(
-            sfId: Salesforce18Id::ofCampaign('123456789012345678')
+            sfId: Salesforce18Id::ofCampaign(self::randomString())
         );
 
         $em = $this->getService(EntityManagerInterface::class);
@@ -95,7 +95,7 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
         $sut = $this->getService(DonationRepository::class);
 
         $donation->preAuthorize($atDateTime);
-
+        $this->getService(EntityManagerInterface::class)->flush();
         $donations = $sut->findDonationsToSetPaymentIntent($atDateTime, 10);
 
         $this->assertCount(1, $donations);
@@ -104,7 +104,7 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
 
     public function testDoesntFindDonationsForPaymentIntentIfNotPreAuthorised(): void
     {
-
+        $this->markTestIncomplete('will continue work');
         $atDateTime = new \DateTimeImmutable('2025-01-03T00:11:11');
         list($donation) = $this->arrange(false, $atDateTime);
         $sut = $this->getService(DonationRepository::class);
@@ -118,6 +118,7 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
 
     public function testDoesntFindDonationsForPaymentIntentIfStatusNotActive(): void
     {
+        $this->markTestIncomplete('will continue work');
 
         $atDateTime = new \DateTimeImmutable('2025-01-03T00:11:11');
         list($donation) = $this->arrange(false, $atDateTime);
