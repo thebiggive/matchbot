@@ -142,7 +142,7 @@ class DonationServiceTest extends TestCase
 
         $stripeCustomerId = StripeCustomerId::of('cus_123');
         $donor = new DonorAccount(
-            null,
+            PersonId::of(Uuid::uuid4()->toString()),
             EmailAddress::of('example@email.com'),
             DonorName::of('first', 'last'),
             $stripeCustomerId,

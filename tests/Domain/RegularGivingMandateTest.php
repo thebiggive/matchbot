@@ -263,7 +263,7 @@ class RegularGivingMandateTest extends TestCase
     public function someDonor(): DonorAccount
     {
         $donor = new DonorAccount(
-            null,
+            PersonId::of(Uuid::uuid4()->toString()),
             EmailAddress::of('fred@example.com'),
             DonorName::of('FirstName', 'LastName'),
             StripeCustomerId::of('cus_1234'),

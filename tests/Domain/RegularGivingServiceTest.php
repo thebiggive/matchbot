@@ -78,7 +78,7 @@ class RegularGivingServiceTest extends TestCase
         $this->campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
 
         $this->donorAccount = new DonorAccount(
-            null,
+            PersonId::of(Uuid::uuid4()->toString()),
             EmailAddress::of('email@example.com'),
             DonorName::of('First', 'Last'),
             StripeCustomerId::of('cus_x')
