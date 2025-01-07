@@ -132,6 +132,8 @@ readonly class RegularGivingService
             foreach ($donations as $donation) {
                 $this->donationService->enrollNewDonation($donation);
                 if (!$donation->isFullyMatched()) {
+                    // @todo-regular-giving:
+                    // see ticket DON-1003 - that will require us to not throw here if the donor doesn't mind their donations being unmatched.
                     throw new NotFullyMatched(
                         "Donation could not be fully matched, need to match {$donation->getAmount()}," .
                         " only matched {$donation->getFundingWithdrawalTotal()}"
