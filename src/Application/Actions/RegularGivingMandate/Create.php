@@ -85,6 +85,8 @@ class Create extends Action
                 campaign: $campaign,
                 giftAid: $mandateData->giftAid,
                 dayOfMonth: $mandateData->dayOfMonth,
+                billingCountry: $mandateData->billingCountry,
+                billingPostCode: $mandateData->billingPostcode,
             );
         } catch (WrongCampaignType $e) {
             return $this->validationError(

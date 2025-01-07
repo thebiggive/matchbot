@@ -27,4 +27,9 @@ class PersonId
     {
         return new self($personId);
     }
+
+    public function equals(self $that): bool
+    {
+        return $this->id === $that->id;
+    }
 }

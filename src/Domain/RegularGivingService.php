@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\DomainException\AccountDetailsMismatch;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
@@ -27,6 +28,8 @@ readonly class RegularGivingService
     }
 
     /**
+     * @param string|null $billingPostCode
+     * @param Country|null $billingCountry
      * @throws CampaignNotOpen
      * @throws DomainException\CharityAccountLacksNeededCapaiblities
      * @throws DomainException\CouldNotMakeStripePaymentIntent
@@ -44,6 +47,8 @@ readonly class RegularGivingService
         Campaign $campaign,
         bool $giftAid,
         DayOfMonth $dayOfMonth,
+        ?Country $billingCountry,
+        ?string $billingPostCode,
     ): RegularGivingMandate {
         if (! $campaign->isRegularGiving()) {
             throw new WrongCampaignType(
@@ -51,7 +56,9 @@ readonly class RegularGivingService
             );
         }
 
-        $charityId = Salesforce18Id::ofCharity($campaign->getCharity()->getSalesforceId());
+        $charityId = Salesforce18Id::ofCharity(
+            $campaign->getCharity()->getSalesforceId() ?? throw new \Exception('missing charity SF ID')
+        );
 
         /**
          * For now we assume this exists - @todo-regular-giving ensure that for all accounts (or all accounts that
@@ -60,6 +67,29 @@ readonly class RegularGivingService
         $donor = $this->donorAccountRepository->findByPersonId($donorID);
         if ($donor === null) {
             throw new \Exception("donor not found with ID {$donorID->id}");
+        }
+
+        $donorBillingCountry = $donor->getBillingCountry();
+        if ($billingCountry && $donorBillingCountry && !$billingCountry->equals($donorBillingCountry)) {
+            throw new AccountDetailsMismatch(
+                "Mandate billing country {$billingCountry} does not match donor account country {$donorBillingCountry}"
+            );
+        }
+
+        $donorBillingPostcode = $donor->getBillingPostcode();
+
+        if (! is_null($billingPostCode) && ! is_null($donorBillingPostcode) && $billingPostCode !== $donorBillingPostcode) {
+            throw new AccountDetailsMismatch(
+                "Mandate billing postcode {$billingPostCode} does not match donor account postocde {$donorBillingPostcode}"
+            );
+        }
+
+        if ($billingCountry) {
+            $donor->setBillingCountry($billingCountry);
+        }
+
+        if (! is_null($billingPostCode)) {
+            $donor->setBillingPostcode($billingPostCode);
         }
 
         $donor->assertHasRequiredInfoForRegularGiving();
@@ -90,7 +120,7 @@ readonly class RegularGivingService
             tipAmount: '0',
             mandate: $mandate,
             mandateSequenceNumber: DonationSequenceNumber::of(1),
-            billingPostcode: $donor->getBillingPostcode(),
+            billingPostcode: $donorBillingPostcode,
         );
 
         $secondDonation = $this->createFutureDonationInAdvanceOfActivation($mandate, 2, $donor, $campaign);

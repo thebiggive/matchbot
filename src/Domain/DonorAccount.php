@@ -97,6 +97,15 @@ class DonorAccount extends Model
 
     public function updateFromPersonMessage(Person $personMessage): void
     {
+        /**
+         * @todo-id-48: Delete next four lines and make uuid column non-nullable once all records in prod have uuids
+         * set
+         */
+        if ($this->uuid === null) {
+            $this->uuid = $personMessage->id;
+        }
+        Assertion::eq($this->uuid, $personMessage->id);
+
         $this->emailAddress = EmailAddress::of($personMessage->email_address);
         $this->donorName = DonorName::of($personMessage->first_name, $personMessage->last_name);
     }
@@ -128,14 +137,6 @@ class DonorAccount extends Model
     public function setRegularGivingPaymentMethod(StripePaymentMethodId $methodId): void
     {
         $this->regularGivingPaymentMethod = $methodId->stripePaymentMethodId;
-    }
-
-    /**
-     */
-    public function setBillingCountryCode(?string $billingCountryCode): void
-    {
-        Assertion::nullOrLength($billingCountryCode, 2);
-        $this->billingCountryCode = $billingCountryCode;
     }
 
     public function getBillingCountryCode(): ?string
@@ -188,5 +189,27 @@ class DonorAccount extends Model
             ->that($this->billingCountryCode, null, 'Missing billing country code')->notNull()
             ->setExceptionClass(AccountNotReadyToDonate::class)
             ->verifyNow();
+    }
+
+    public function toFrontEndApiModel(): array
+    {
+        return [
+            'id' => $this->uuid?->toString(),
+            'fullName' => $this->donorName->fullName(),
+            'stripeCustomerId' => $this->stripeCustomerId->stripeCustomerId,
+            'regularGivingPaymentMethod' => $this->regularGivingPaymentMethod,
+            'billingPostCode' => $this->billingPostcode,
+            'billingCountryCode' => $this->billingCountryCode,
+        ];
+    }
+
+    public function setBillingCountry(Country $billingCountry): void
+    {
+        $this->billingCountryCode = $billingCountry->alpha2->value;
+    }
+
+    public function getBillingCountry(): ?Country
+    {
+        return Country::fromAlpha2OrNull($this->billingCountryCode);
     }
 }

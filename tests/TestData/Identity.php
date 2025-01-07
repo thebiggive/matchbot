@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\TestData;
 
 use Firebase\JWT\JWT;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
@@ -83,7 +84,7 @@ class Identity
             StripeCustomerId::of(self::STRIPE_ID),
         );
         $donorAccount->setBillingPostcode('E17');
-        $donorAccount->setBillingCountryCode('GB');
+        $donorAccount->setBillingCountry(Country::GB());
 
         return $donorAccount;
     }
