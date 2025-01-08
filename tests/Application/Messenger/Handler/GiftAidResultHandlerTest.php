@@ -50,7 +50,7 @@ class GiftAidResultHandlerTest extends TestCase
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
         // & command that Symfony components' projects already test.
-        $giftAidErrorHandler = new GiftAidResultHandler(
+        $giftAidResultHandler = new GiftAidResultHandler(
             $container->get(DonationRepository::class),
             $container->get(EntityManagerInterface::class),
             $container->get(LoggerInterface::class),
@@ -58,7 +58,7 @@ class GiftAidResultHandlerTest extends TestCase
 
         $donationMessage = $this->getTestDonation(uuid:Uuid::fromString(self::DONATION_UUID))
             ->toClaimBotModel();
-        $giftAidErrorHandler($donationMessage);
+        $giftAidResultHandler($donationMessage);
 
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
         $this->assertNull($testDonationPassedToProphecy->getTbgGiftAidRequestConfirmedCompleteAt());
@@ -94,7 +94,7 @@ class GiftAidResultHandlerTest extends TestCase
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
         // & command that Symfony components' projects already test.
-        $giftAidErrorHandler = new GiftAidResultHandler(
+        $giftAidResultHandler = new GiftAidResultHandler(
             $container->get(DonationRepository::class),
             $container->get(EntityManagerInterface::class),
             $container->get(LoggerInterface::class),
@@ -105,7 +105,7 @@ class GiftAidResultHandlerTest extends TestCase
         $donationMessage->response_success = false;
         $donationMessage->response_detail = 'Donation error deets';
 
-        $giftAidErrorHandler($donationMessage);
+        $giftAidResultHandler($donationMessage);
 
         $this->assertInstanceOf(\DateTime::class, $testDonationPassedToProphecy->getTbgGiftAidRequestFailedAt());
         $this->assertEquals('failingCorrId', $testDonationPassedToProphecy->getTbgGiftAidRequestCorrelationId());
@@ -137,7 +137,7 @@ class GiftAidResultHandlerTest extends TestCase
 
         // Manually invoke the handler, so we're not testing all the core Messenger Worker
         // & command that Symfony components' projects already test.
-        $giftAidErrorHandler = new GiftAidResultHandler(
+        $giftAidResultHandler = new GiftAidResultHandler(
             $container->get(DonationRepository::class),
             $container->get(EntityManagerInterface::class),
             $container->get(LoggerInterface::class),
@@ -148,7 +148,7 @@ class GiftAidResultHandlerTest extends TestCase
         $donationMessage->response_success = true;
         $donationMessage->response_detail = 'Thx for ur submission';
 
-        $giftAidErrorHandler($donationMessage);
+        $giftAidResultHandler($donationMessage);
 
         $this->assertInstanceOf(
             \DateTime::class,

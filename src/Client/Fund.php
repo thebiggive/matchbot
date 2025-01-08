@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MatchBot\Client;
 
+use MatchBot\Application\Messenger\FundTotalUpdated;
+
 class Fund extends Common
 {
     /**
@@ -37,5 +39,14 @@ class Fund extends Common
         }
 
         return json_decode((string) $response->getBody(), true);
+    }
+
+    public function pushAmountAvailable(FundTotalUpdated $fundMessage): void
+    {
+        $uri = $this->getUri(
+            uri: "{$this->getSetting('fund', 'baseUri')}/{$fundMessage->salesforceId}",
+            withCache: false,
+        );
+        $this->getHttpClient()->put($uri, ['json' => $fundMessage->jsonSnapshot]);
     }
 }
