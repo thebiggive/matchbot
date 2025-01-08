@@ -109,10 +109,10 @@ readonly class RegularGivingService
             throw $e;
         }
 
-        $existingPaymentMethodId = $donor->getRegularGivingPaymentMethod();
+        $donorsSavedPaymentMethod = $donor->getRegularGivingPaymentMethod();
         Assertion::true(
-            ($confirmationTokenId && !$existingPaymentMethodId) ||
-            (! $confirmationTokenId && $existingPaymentMethodId),
+            ($confirmationTokenId && !$donorsSavedPaymentMethod) ||
+            (! $confirmationTokenId && $donorsSavedPaymentMethod),
             'Confirmation token must be given iff there is no payment method on file'
         );
 
@@ -120,7 +120,10 @@ readonly class RegularGivingService
             $methodId = $this->confirmWithNewPaymentMethod($firstDonation, $confirmationTokenId);
             $donor->setRegularGivingPaymentMethod($methodId);
         } else {
-            // @todo-regular giving - confirm first donation using payment method on file.
+            \assert($donorsSavedPaymentMethod !== null);
+            // @todo-regular-giving - consider if we need to switch to sync confirmation that doesn't rely on a callback
+            // hook or something so we can avoid activating the mandate if the first donation is not collected.
+            $this->donationService->confirmDonationWithSavedPaymentMethod($firstDonation, $donorsSavedPaymentMethod);
         }
 
         $mandate->activate($this->now);

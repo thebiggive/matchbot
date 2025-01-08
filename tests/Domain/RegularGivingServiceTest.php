@@ -122,6 +122,7 @@ class RegularGivingServiceTest extends TestCase
         $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+        $this->donationServiceProphecy->confirmDonationWithSavedPaymentMethod(Argument::cetera())->shouldBeCalledOnce();
 
         // act
         $mandate = $regularGivingService->setupNewMandate(

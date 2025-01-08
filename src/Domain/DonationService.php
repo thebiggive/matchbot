@@ -235,15 +235,6 @@ class DonationService
             );
         }
 
-        $paymentMethod = $donorAccount->getRegularGivingPaymentMethod();
-
-        if ($paymentMethod === null) {
-            throw new \MatchBot\Domain\NoRegularGivingPaymentMethod(
-                "Cannot confirm donation {$donation->getUuid()} for " .
-                "{$donorAccount->stripeCustomerId->stripeCustomerId}, no payment method"
-            );
-        }
-
         $campaign = $donation->getCampaign();
         if ($campaign->regularGivingCollectionIsEndedAt($this->clock->now())) {
             $collectionEnd = $campaign->getRegularGivingCollectionEnd();
@@ -259,16 +250,16 @@ class DonationService
             );
         }
 
-        $paymentIntentId = $donation->getTransactionId();
-        Assertion::notNull($paymentIntentId);
-        $paymentIntent = $this->stripe->confirmPaymentIntent(
-            $paymentIntentId,
-            ['payment_method' => $paymentMethod->stripePaymentMethodId]
-        );
-        if ($paymentIntent->status !== 'succeeded') {
-            // @todo-regular-giving: create a new db field on Donation - e.g. payment_attempt_count and update here
-            // decide on a limit and log an error (or warning) if exceeded
+        $paymentMethod = $donorAccount->getRegularGivingPaymentMethod();
+
+        if ($paymentMethod === null) {
+            throw new \MatchBot\Domain\NoRegularGivingPaymentMethod(
+                "Cannot confirm donation {$donation->getUuid()} for " .
+                "{$donorAccount->stripeCustomerId->stripeCustomerId}, no payment method"
+            );
         }
+
+        $this->confirmDonationWithSavedPaymentMethod($donation, $paymentMethod);
     }
 
     /**
@@ -345,7 +336,7 @@ class DonationService
             );
         }
 
-        if ($donation->getPsp() === 'stripe') {
+        if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {
             $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
             if ($stripeAccountId === null || $stripeAccountId === '') {
                 // Try re-pulling in case charity has very recently onboarded with for Stripe.
@@ -649,5 +640,19 @@ class DonationService
         $donations = $this->donationRepository->findAllCompleteForCustomer($stripeCustomerId);
 
         return array_map(fn(Donation $donation) => $donation->toFrontEndApiModel(), $donations);
+    }
+
+    public function confirmDonationWithSavedPaymentMethod(Donation $donation, StripePaymentMethodId $paymentMethod): void
+    {
+        $paymentIntentId = $donation->getTransactionId();
+        Assertion::notNull($paymentIntentId);
+        $paymentIntent = $this->stripe->confirmPaymentIntent(
+            $paymentIntentId,
+            ['payment_method' => $paymentMethod->stripePaymentMethodId]
+        );
+        if ($paymentIntent->status !== 'succeeded') {
+            // @todo-regular-giving: create a new db field on Donation - e.g. payment_attempt_count and update here
+            // decide on a limit and log an error (or warning) if exceeded
+        }
     }
 }
