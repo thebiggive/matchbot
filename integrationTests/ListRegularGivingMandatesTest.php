@@ -16,6 +16,7 @@ use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
+use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -30,7 +31,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
     public function setUp(): void
     {
         parent::setUp();
-        $this->donorId = PersonId::of(Uuid::uuid4()->toString());
+        $this->donorId = TestCase::randomPersonId();
         $donorAccountRepo = $this->getService(DonorAccountRepository::class);
 
         $donorAccountRepo->save(new DonorAccount(

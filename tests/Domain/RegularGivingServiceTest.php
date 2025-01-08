@@ -78,7 +78,7 @@ class RegularGivingServiceTest extends TestCase
         $this->campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
 
         $this->donorAccount = new DonorAccount(
-            null,
+            self::randomPersonId(),
             EmailAddress::of('email@example.com'),
             DonorName::of('First', 'Last'),
             StripeCustomerId::of('cus_x')
@@ -207,7 +207,7 @@ class RegularGivingServiceTest extends TestCase
 
         // By default campaign is not a regular giving campaign
         $regularGivingService->setupNewMandate(
-            PersonId::of(Uuid::uuid4()->toString()),
+            self::randomPersonId(),
             Money::fromPoundsGBP(50),
             $campaign,
             giftAid: false,
@@ -341,7 +341,7 @@ class RegularGivingServiceTest extends TestCase
 
     public function prepareDonorAccount(): PersonId
     {
-        $donorId = PersonId::of(Uuid::uuid4()->toString());
+        $donorId = self::randomPersonId();
         $donorAccount = new DonorAccount(
             $donorId,
             EmailAddress::of('email@example.com'),
