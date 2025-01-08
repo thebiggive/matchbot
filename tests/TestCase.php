@@ -12,6 +12,7 @@ use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\RegularGivingMandate;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
@@ -20,6 +21,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Ramsey\Uuid\Uuid;
 use Random\Randomizer;
 use Redis;
 use Slim\App;
@@ -283,5 +285,10 @@ class TestCase extends PHPUnitTestCase
     private static function randomHex(int $num_bytes=8): string
     {
         return bin2hex(random_bytes($num_bytes));
+    }
+
+    public static function randomPersonId(): PersonId
+    {
+        return PersonId::of(Uuid::uuid4()->toString());
     }
 }

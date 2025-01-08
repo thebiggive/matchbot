@@ -7,10 +7,16 @@ use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\RegularGivingMandate\GetAllForUser;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Domain\DayOfMonth;
+use MatchBot\Domain\DonorAccount;
+use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\StripeCustomerId;
+use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -25,7 +31,15 @@ class ListRegularGivingMandatesTest extends IntegrationTest
     public function setUp(): void
     {
         parent::setUp();
-        $this->donorId = PersonId::of(Uuid::uuid4()->toString());
+        $this->donorId = TestCase::randomPersonId();
+        $donorAccountRepo = $this->getService(DonorAccountRepository::class);
+
+        $donorAccountRepo->save(new DonorAccount(
+            $this->donorId,
+            EmailAddress::of('test@example.com'),
+            DonorName::of('first', 'last'),
+            StripeCustomerId::of('cus_' . $this->randomString())
+        ));
     }
 
     /**
