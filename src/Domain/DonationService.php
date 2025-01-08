@@ -20,7 +20,6 @@ use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\MandateNotActive;
-use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
@@ -31,7 +30,6 @@ use Ramsey\Uuid\UuidInterface;
 use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
-use Stripe\PaymentIntent;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Messenger\Envelope;
@@ -206,8 +204,11 @@ class DonationService
         // or what we're charging.
         $this->entityManager->flush();
 
+        $paymentIntentId = $donation->getTransactionId();
+        Assertion::notNull($paymentIntentId);
+
         return $this->stripe->confirmPaymentIntent(
-            $donation->getTransactionId(),
+            $paymentIntentId,
             ['confirmation_token' => $tokenId->stripeConfirmationTokenId]
         );
     }
@@ -258,8 +259,10 @@ class DonationService
             );
         }
 
+        $paymentIntentId = $donation->getTransactionId();
+        Assertion::notNull($paymentIntentId);
         $paymentIntent = $this->stripe->confirmPaymentIntent(
-            $donation->getTransactionId(),
+            $paymentIntentId,
             ['payment_method' => $paymentMethod->stripePaymentMethodId]
         );
         if ($paymentIntent->status !== 'succeeded') {
@@ -393,7 +396,10 @@ class DonationService
             // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
         ];
 
-        $this->stripe->updatePaymentIntent($donation->getTransactionId(), $updatedIntentData);
+        $paymentIntentId = $donation->getTransactionId();
+        if ($paymentIntentId !== null) {
+            $this->stripe->updatePaymentIntent($paymentIntentId, $updatedIntentData);
+        }
     }
 
     private function updateDonationFeesFromConfirmationToken(
@@ -528,9 +534,10 @@ class DonationService
             $this->donationRepository->releaseMatchFunds($donation);
         }
 
-        if ($donation->getPsp() === 'stripe') {
+        $transactionId = $donation->getTransactionId();
+        if ($donation->getPsp() === 'stripe' && $transactionId !== null) {
             try {
-                $this->stripe->cancelPaymentIntent($donation->getTransactionId());
+                $this->stripe->cancelPaymentIntent($transactionId);
             } catch (ApiErrorException $exception) {
                 /**
                  * As per the notes in {@see DonationRepository::releaseMatchFunds()}, we

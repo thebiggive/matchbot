@@ -452,6 +452,8 @@ class DonationTest extends TestCase
             tbgComms: false,
         );
 
+        $donation->setTransactionId('any-string');
+
         $this->assertTrue($donation->assertIsReadyToConfirm());
     }
 
