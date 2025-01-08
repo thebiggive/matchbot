@@ -263,7 +263,7 @@ class DonationService
             ['payment_method' => $paymentMethod->stripePaymentMethodId]
         );
         if ($paymentIntent->status !== 'succeeded') {
-            // TODO: create a new db field on Donation - e.g. payment_attempt_count and update here
+            // @todo-regular-giving: create a new db field on Donation - e.g. payment_attempt_count and update here
             // decide on a limit and log an error (or warning) if exceeded
         }
     }
