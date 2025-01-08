@@ -110,9 +110,7 @@ class SetupTestMandate extends LockingCommand
             $donorId,
             Money::fromPoundsGBP($amount),
             Salesforce18Id::ofCampaign($campaign->getSalesforceId()),
-            Salesforce18Id::ofCharity(
-                $charity->getSalesforceId() ?? throw new \Exception('Missing charity sf ID')
-            ),
+            Salesforce18Id::ofCharity($charity->getSalesforceId()),
             (bool)$input->getOption('gift-aid'),
             $dayOfMonth
         );

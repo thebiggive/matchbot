@@ -202,6 +202,6 @@ class RegularGivingNotifierTest extends TestCase
     {
         parent::setUp();
         $this->mailerProphecy = $this->prophesize(Mailer::class);
-        $this->personId = PersonId::of(Uuid::uuid4()->toString());
+        $this->personId = self::randomPersonId();
     }
 }

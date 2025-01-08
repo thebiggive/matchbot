@@ -6,6 +6,7 @@ namespace MatchBot\Domain;
 
 use DateTime;
 use Doctrine\ORM\Mapping as ORM;
+use MatchBot\Application\Assertion;
 
 #[ORM\Table]
 #[ORM\Entity(repositoryClass: CharityRepository::class)]
@@ -111,6 +112,15 @@ class Charity extends SalesforceReadProxy
     public function __toString(): string
     {
         return "Charity sfID ({$this->getSalesforceId()})";
+    }
+
+    #[\Override]
+    public function getSalesforceId(): string
+    {
+        $salesforceId = parent::getSalesforceId();
+        Assertion::string($salesforceId);
+
+        return $salesforceId;
     }
 
     /**

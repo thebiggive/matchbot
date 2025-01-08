@@ -261,10 +261,14 @@ class DonationService
 
         $paymentIntentId = $donation->getTransactionId();
         Assertion::notNull($paymentIntentId);
-        $this->stripe->confirmPaymentIntent(
+        $paymentIntent = $this->stripe->confirmPaymentIntent(
             $paymentIntentId,
             ['payment_method' => $paymentMethod->stripePaymentMethodId]
         );
+        if ($paymentIntent->status !== 'succeeded') {
+            // @todo-regular-giving: create a new db field on Donation - e.g. payment_attempt_count and update here
+            // decide on a limit and log an error (or warning) if exceeded
+        }
     }
 
     /**
@@ -352,7 +356,7 @@ class DonationService
                 if ($stripeAccountId === null || $stripeAccountId === '') {
                     $this->logger->error(sprintf(
                         'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
-                        $campaign->getCharity()->getSalesforceId() ?? 'missing charity sf ID',
+                        $campaign->getCharity()->getSalesforceId(),
                     ));
                     throw new StripeAccountIdNotSetForAccount();
                 }

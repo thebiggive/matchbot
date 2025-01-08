@@ -28,8 +28,8 @@ class DonorAccount extends Model
      * Person ID as they are known in identity service. Nullable only for now to be compatible with existing
      * data in prod.
      */
-    #[ORM\Column(type: 'uuid', unique: true, nullable: true)]
-    protected ?UuidInterface $uuid = null;
+    #[ORM\Column(type: 'uuid', unique: true, nullable: false)]
+    protected UuidInterface $uuid;
 
     #[ORM\Embedded(class: 'EmailAddress', columnPrefix: false)]
     public EmailAddress $emailAddress;
@@ -73,7 +73,7 @@ class DonorAccount extends Model
     private ?string $regularGivingPaymentMethod = null;
 
     public function __construct(
-        ?PersonId $uuid,
+        PersonId $uuid,
         EmailAddress $emailAddress,
         DonorName $donorName,
         StripeCustomerId $stripeCustomerId
@@ -82,7 +82,7 @@ class DonorAccount extends Model
         $this->emailAddress = $emailAddress;
         $this->stripeCustomerId = $stripeCustomerId;
         $this->donorName = $donorName;
-        $this->uuid = is_null($uuid) ? null : Uuid::fromString($uuid->id);
+        $this->uuid = Uuid::fromString($uuid->id);
     }
 
     public static function fromPersonMessage(Person $person): self
@@ -97,15 +97,6 @@ class DonorAccount extends Model
 
     public function updateFromPersonMessage(Person $personMessage): void
     {
-        /**
-         * @todo-id-48: Delete next four lines and make uuid column non-nullable once all records in prod have uuids
-         * set
-         */
-        if ($this->uuid === null) {
-            $this->uuid = $personMessage->id;
-        }
-        Assertion::eq($this->uuid, $personMessage->id);
-
         $this->emailAddress = EmailAddress::of($personMessage->email_address);
         $this->donorName = DonorName::of($personMessage->first_name, $personMessage->last_name);
     }
@@ -118,10 +109,6 @@ class DonorAccount extends Model
      */
     public function id(): PersonId
     {
-        if (is_null($this->uuid)) {
-            throw new \Exception("UUID not known for stripe customer ID " . $this->stripeCustomerId->stripeCustomerId);
-        }
-
         return PersonId::of($this->uuid->toString());
     }
 
@@ -194,7 +181,7 @@ class DonorAccount extends Model
     public function toFrontEndApiModel(): array
     {
         return [
-            'id' => $this->uuid?->toString(),
+            'id' => $this->uuid->toString(),
             'fullName' => $this->donorName->fullName(),
             'stripeCustomerId' => $this->stripeCustomerId->stripeCustomerId,
             'regularGivingPaymentMethod' => $this->regularGivingPaymentMethod,

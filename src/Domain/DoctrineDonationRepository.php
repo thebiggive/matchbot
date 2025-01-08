@@ -734,6 +734,31 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         return $result;
     }
 
+    /**
+     * We only set Payment Intent on the day of the payment due to stripe limitations
+     *
+     */
+    public function findDonationsToSetPaymentIntent(\DateTimeImmutable $atDateTime, int $maxBatchSize): array
+    {
+        $preAuthorized = DonationStatus::PreAuthorized->value;
+        $active = MandateStatus::Active->value;
+        // @todo-regular-giving: add constraint on late donation collections
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
+            WHERE donation.donationStatus = '$preAuthorized'
+            AND donation.transactionId is null
+            AND donation.preAuthorizationDate <= :atDateTime
+            AND mandate.status = '$active'  
+        DQL
+        );
+        $query->setParameter('atDateTime', $atDateTime);
+        $query->setMaxResults($maxBatchSize);
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
+
     public function findPreAuthorizedDonationsReadyToConfirm(\DateTimeImmutable $atDateTime, int $limit): array
     {
         $preAuthorized = DonationStatus::PreAuthorized->value;
@@ -743,11 +768,12 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'
             AND mandate.status = '$active'
-            AND donation.preAuthorizationDate <= :now
+            AND donation.transactionId is not null
+            AND donation.preAuthorizationDate <= :atDateTime
         DQL
         );
 
-        $query->setParameter('now', $atDateTime);
+        $query->setParameter('atDateTime', $atDateTime);
         $query->setMaxResults($limit);
 
         /** @var list<Donation> $result */

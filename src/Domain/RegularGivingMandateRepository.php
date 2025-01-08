@@ -94,10 +94,7 @@ class RegularGivingMandateRepository
         $charities = [];
         foreach ($x as $entity) {
             if ($entity instanceof Charity) {
-                $salesforceId = $entity->getSalesforceId();
-                \assert($salesforceId !== null);
-
-                $charities[$salesforceId] = $entity;
+                $charities[$entity->getSalesforceId()] = $entity;
             }
         }
 
