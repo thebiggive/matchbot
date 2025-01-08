@@ -21,6 +21,12 @@ readonly class MandateCreate
     /** @var Salesforce18Id<Campaign>  */
     public Salesforce18Id $campaignId;
     public ?Country $billingCountry;
+
+    /**
+     * Confirmation token must be supplied if and only if the donor doesn't already have a payment method on file
+     * with us for use with regular giving. If it is supplied we will use it to reference the payment details they
+     * gave to stripe on the mandate setup form. If not we will use their existing payment method instead.
+     */
     public ?StripeConfirmationTokenId $stripeConfirmationTokenId;
 
     /**
@@ -42,6 +48,7 @@ readonly class MandateCreate
         $this->amount = Money::fromPence($amountInPence, Currency::fromIsoCode($currency));
         $this->campaignId = Salesforce18Id::ofCampaign($campaignId);
         $this->billingCountry = Country::fromAlpha2OrNull($billingCountry);
+
         if (is_string($stripeConfirmationTokenId)) {
             $this->stripeConfirmationTokenId = StripeConfirmationTokenId::of($stripeConfirmationTokenId);
         } else {

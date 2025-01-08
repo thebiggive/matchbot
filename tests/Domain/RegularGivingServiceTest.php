@@ -30,6 +30,7 @@ use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestCase;
@@ -37,6 +38,8 @@ use PrinsFrank\Standards\Country\CountryAlpha2;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
+use Stripe\Charge;
+use Stripe\PaymentIntent;
 
 /**
 
@@ -82,12 +85,7 @@ class RegularGivingServiceTest extends TestCase
         $this->campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
         $this->stripeProphecy = $this->prophesize(Stripe::class);
 
-        $this->donorAccount = new DonorAccount(
-            self::randomPersonId(),
-            EmailAddress::of('email@example.com'),
-            DonorName::of('First', 'Last'),
-            StripeCustomerId::of('cus_x')
-        );
+        $this->donorAccount = $this->prepareDonorAccount();
 
         $this->campaignId = Salesforce18Id::ofCampaign('campaignId12345678');
         $this->personId = PersonId::of('d38667b2-69db-11ef-8885-3f5bcdfd1960');
@@ -120,13 +118,14 @@ class RegularGivingServiceTest extends TestCase
     public function testItCreatesRegularGivingMandate(): void
     {
         // arrange
-        $donorId = $this->prepareDonorAccount();
+        $donor = $this->donorAccount;
+        $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
 
         // act
         $mandate = $regularGivingService->setupNewMandate(
-            $donorId,
+            $donor,
             Money::fromPoundsGBP(42),
             TestCase::someCampaign(isRegularGiving: true),
             true,
@@ -159,10 +158,55 @@ class RegularGivingServiceTest extends TestCase
         $this->regularGivingNotifierProphecy->notifyNewMandateCreated(Argument::cetera())->shouldBeCalled();
     }
 
+    public function testItSavesPaymentMethodIDToDonorAccount(): void
+    {
+        // arrange
+        $paymentMethodId = "pm_id";
+        $chargeId = 'charge_id';
+        $confirmationTokenId = StripeConfirmationTokenId::of('ctoken_xyz');
+        $paymentIntent = new PaymentIntent('pi_id');
+        $paymentIntent->latest_charge = $chargeId;
+
+        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+
+        $this->donationServiceProphecy->confirmOnSessionDonation(
+            Argument::type(Donation::class),
+            $confirmationTokenId
+        )
+            ->shouldBeCalledOnce()
+            ->willReturn($paymentIntent);
+
+        $this->stripeProphecy->retrieveCharge(Argument::type('string'))->will(
+            function (array $args) use ($paymentMethodId) {
+                $charge = new Charge($args[0]);
+                $charge->payment_method = $paymentMethodId;
+
+                return $charge;
+            }
+        );
+
+        // act
+        $regularGivingService->setupNewMandate(
+            donor: $this->donorAccount,
+            amount: Money::fromPoundsGBP(42),
+            campaign: TestCase::someCampaign(isRegularGiving: true),
+            giftAid: false,
+            dayOfMonth: DayOfMonth::of(20),
+            billingCountry: Country::GB(),
+            billingPostCode: 'SW1',
+            confirmationTokenId: $confirmationTokenId
+        );
+
+        // assert
+        $this->assertEquals(
+            StripePaymentMethodId::of($paymentMethodId),
+            $this->donorAccount->getRegularGivingPaymentMethod()
+        );
+    }
+
     public function testItCancelsAllDonationsOneIsNotFullyMatched(): void
     {
         // arrange
-        $donorId = $this->prepareDonorAccount();
         $this->setDonorDetailsInUK();
 
         $testCase = $this;
@@ -189,7 +233,7 @@ class RegularGivingServiceTest extends TestCase
         // act
         try {
             $regularGivingService->setupNewMandate(
-                $donorId,
+                $this->donorAccount,
                 Money::fromPoundsGBP(42),
                 TestCase::someCampaign(isRegularGiving: true),
                 true,
@@ -212,7 +256,7 @@ class RegularGivingServiceTest extends TestCase
 
         // By default campaign is not a regular giving campaign
         $regularGivingService->setupNewMandate(
-            self::randomPersonId(),
+            $this->donorAccount,
             Money::fromPoundsGBP(50),
             $campaign,
             giftAid: false,
@@ -234,7 +278,7 @@ class RegularGivingServiceTest extends TestCase
         );
 
         $regularGivingService->setupNewMandate(
-            $this->personId,
+            $this->donorAccount,
             Money::fromPoundsGBP(42),
             $campaign,
             giftAid: false,
@@ -256,7 +300,7 @@ class RegularGivingServiceTest extends TestCase
         );
 
         $regularGivingService->setupNewMandate(
-            $this->personId,
+            $this->donorAccount,
             Money::fromPoundsGBP(42),
             $campaign,
             giftAid: false,
@@ -344,7 +388,7 @@ class RegularGivingServiceTest extends TestCase
         return $mandate;
     }
 
-    public function prepareDonorAccount(): PersonId
+    public function prepareDonorAccount(?StripePaymentMethodId $stripePaymentMethodId = null): DonorAccount
     {
         $donorId = self::randomPersonId();
         $donorAccount = new DonorAccount(
@@ -353,7 +397,10 @@ class RegularGivingServiceTest extends TestCase
             DonorName::of('First', 'Last'),
             StripeCustomerId::of('cus_x')
         );
-        $donorAccount->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
+
+        if ($stripePaymentMethodId) {
+            $donorAccount->setRegularGivingPaymentMethod($stripePaymentMethodId);
+        }
 
         $donorAccount->setHomeAddressLine1('Home address');
         $this->donorAccountRepositoryProphecy->findByPersonId($donorId)
@@ -361,7 +408,7 @@ class RegularGivingServiceTest extends TestCase
 
         $this->donorAccount = $donorAccount;
 
-        return $donorId;
+        return $donorAccount;
     }
 
     public function setDonorDetailsInUK(): void

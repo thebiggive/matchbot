@@ -44,7 +44,7 @@ readonly class RegularGivingService
      * @throws \Symfony\Component\Notifier\Exception\TransportExceptionInterface
      */
     public function setupNewMandate(
-        PersonId $donorID,
+        DonorAccount $donor,
         Money $amount,
         Campaign $campaign,
         bool $giftAid,
@@ -62,15 +62,6 @@ readonly class RegularGivingService
         $charityId = Salesforce18Id::ofCharity(
             $campaign->getCharity()->getSalesforceId()
         );
-
-        /**
-         * For now we assume this exists - @todo-regular-giving ensure that for all accounts (or all accounts that
-         * might need it) the account is in the DB with the UUID filled in before this point. Ticket MAT-379
-         */
-        $donor = $this->donorAccountRepository->findByPersonId($donorID);
-        if ($donor === null) {
-            throw new \Exception("donor not found with ID {$donorID->id}");
-        }
 
         $donorBillingCountry = $donor->getBillingCountry();
         if ($billingCountry && $donorBillingCountry && !$billingCountry->equals($donorBillingCountry)) {
@@ -98,7 +89,7 @@ readonly class RegularGivingService
         $donor->assertHasRequiredInfoForRegularGiving();
 
         $mandate = new RegularGivingMandate(
-            donorId: $donorID,
+            donorId: $donor->id(),
             donationAmount: $amount,
             campaignId: Salesforce18Id::ofCampaign($campaign->getSalesforceId()),
             charityId: $charityId,

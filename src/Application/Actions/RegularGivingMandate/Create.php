@@ -82,7 +82,7 @@ class Create extends Action
 
         try {
             $mandate = $this->mandateService->setupNewMandate(
-                donorID: $donor->id(),
+                donor: $donor,
                 amount: $mandateData->amount,
                 campaign: $campaign,
                 giftAid: $mandateData->giftAid,
