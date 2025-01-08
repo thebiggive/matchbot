@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
+use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\NotFullyMatched;
@@ -24,6 +25,7 @@ readonly class RegularGivingService
         private LoggerInterface $log,
         private RegularGivingMandateRepository $regularGivingMandateRepository,
         private RegularGivingNotifier $regularGivingNotifier,
+        private Stripe $stripe,
     ) {
     }
 
@@ -49,6 +51,7 @@ readonly class RegularGivingService
         DayOfMonth $dayOfMonth,
         ?Country $billingCountry,
         ?string $billingPostCode,
+        ?StripeConfirmationTokenId $confirmationTokenId = null,
     ): RegularGivingMandate {
         if (! $campaign->isRegularGiving()) {
             throw new WrongCampaignType(
@@ -155,7 +158,33 @@ readonly class RegularGivingService
             throw $e;
         }
 
-        // @todo-regular-giving - collect first donation (currently created as pending, not collected)
+        $existingPaymentMethodId = $donor->getRegularGivingPaymentMethod();
+        Assertion::true(
+            ($confirmationTokenId && !$existingPaymentMethodId) ||
+            (! $confirmationTokenId && $existingPaymentMethodId),
+            'Confirmation token must be given iff there is no payment method on file'
+        );
+
+        if ($confirmationTokenId) {
+            $intent = $this->donationService->confirmOnSessionDonation($firstDonation, $confirmationTokenId);
+            $chargeId = $intent->latest_charge;
+            if ($chargeId === null) {
+                // AFAIK there should always be charge ID attached to the intent at this point
+                throw new \Exception('No charge ID on payment intent after confirming regular giving donation');
+            }
+
+            $charge = $this->stripe->retrieveCharge((string) $chargeId);
+            $paymentMethodId = $charge->payment_method;
+            if ($paymentMethodId === null) {
+                // AFAIK there should always be payment method ID attached to the charge at this point.
+                throw new \Exception('No payment method ID on charge after confirming regular giving donation');
+            }
+
+            $methodId = StripePaymentMethodId::of($paymentMethodId);
+            $donor->setRegularGivingPaymentMethod($methodId);
+        } else {
+            // @todo-regular giving - confirm first donation using payment method on file.
+        }
 
         $mandate->activate($this->now);
 

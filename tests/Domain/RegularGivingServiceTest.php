@@ -3,6 +3,7 @@
 namespace MatchBot\Tests\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
@@ -30,12 +31,12 @@ use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
+use MatchBot\Domain\StripePaymentMethodId;
 use MatchBot\Tests\TestCase;
 use PrinsFrank\Standards\Country\CountryAlpha2;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
-use Ramsey\Uuid\Uuid;
 
 /**
 
@@ -71,11 +72,15 @@ class RegularGivingServiceTest extends TestCase
     /** @var list<Donation> */
     private array $donations;
 
+    /** @var ObjectProphecy<Stripe>  */
+    private ObjectProphecy $stripeProphecy;
+
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
         $this->donorAccountRepositoryProphecy = $this->prophesize(DonorAccountRepository::class);
         $this->campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
+        $this->stripeProphecy = $this->prophesize(Stripe::class);
 
         $this->donorAccount = new DonorAccount(
             self::randomPersonId(),
@@ -315,6 +320,7 @@ class RegularGivingServiceTest extends TestCase
             log: $this->createStub(LoggerInterface::class),
             regularGivingMandateRepository: $this->createStub(RegularGivingMandateRepository::class),
             regularGivingNotifier: $this->regularGivingNotifierProphecy->reveal(),
+            stripe: $this->stripeProphecy->reveal(),
         );
     }
 
@@ -347,6 +353,7 @@ class RegularGivingServiceTest extends TestCase
             DonorName::of('First', 'Last'),
             StripeCustomerId::of('cus_x')
         );
+        $donorAccount->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
 
         $donorAccount->setHomeAddressLine1('Home address');
         $this->donorAccountRepositoryProphecy->findByPersonId($donorId)

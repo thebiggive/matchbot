@@ -6,6 +6,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
+use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\Exception\InvalidArgumentException;
@@ -62,6 +63,11 @@ class LiveStripeClient implements Stripe
     public function retrieveConfirmationToken(StripeConfirmationTokenId $confirmationTokenId): ConfirmationToken
     {
         return $this->stripeClient->confirmationTokens->retrieve($confirmationTokenId->stripeConfirmationTokenId);
+    }
+
+    public function retrieveCharge(string $chargeId): Charge
+    {
+        return $this->stripeClient->charges->retrieve($chargeId);
     }
 
     public function createPaymentIntent(array $createPayload): PaymentIntent

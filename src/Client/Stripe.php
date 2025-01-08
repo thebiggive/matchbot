@@ -6,6 +6,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
+use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\Exception\ApiErrorException;
@@ -57,4 +58,6 @@ interface Stripe
     public function createRegularGivingCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession;
 
     public function retrieveConfirmationToken(StripeConfirmationTokenId $confirmationTokenId): ConfirmationToken;
+
+    public function retrieveCharge(string $chargeId): Charge;
 }
