@@ -32,6 +32,7 @@ class RegularGivingNotifier
                 'templateKey' => 'donor-mandate-confirmation',
                 'recipientEmailAddress' => $donorAccount->emailAddress->email,
                 'params' => [
+                    'donorName' => $donorAccount->donorName->fullName(),
                     'charityName' => $charity->getName(),
                     'campaignName' => $campaign->getCampaignName(),
                     'charityNumber' => $charity->getRegulatorNumber(),
