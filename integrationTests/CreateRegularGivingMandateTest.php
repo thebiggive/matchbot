@@ -37,7 +37,6 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
         // act
         $response = $this->createRegularGivingMandate($pencePerMonth);
-
         // assert
         $this->assertSame(201, $response->getStatusCode());
         $mandateDatabaseRows = $this->db()->executeQuery(

@@ -31,6 +31,7 @@ use Ramsey\Uuid\UuidInterface;
 use Random\Randomizer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
+use Stripe\PaymentIntent;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Messenger\Envelope;
@@ -257,10 +258,14 @@ class DonationService
             );
         }
 
-        $this->stripe->confirmPaymentIntent(
+        $paymentIntent = $this->stripe->confirmPaymentIntent(
             $donation->getTransactionId(),
             ['payment_method' => $paymentMethod->stripePaymentMethodId]
         );
+        if ($paymentIntent->status !== 'succeeded') {
+            // @todo-regular-giving: create a new db field on Donation - e.g. payment_attempt_count and update here
+            // decide on a limit and log an error (or warning) if exceeded
+        }
     }
 
     /**
@@ -348,7 +353,7 @@ class DonationService
                 if ($stripeAccountId === null || $stripeAccountId === '') {
                     $this->logger->error(sprintf(
                         'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
-                        $campaign->getCharity()->getSalesforceId() ?? 'missing charity sf ID',
+                        $campaign->getCharity()->getSalesforceId(),
                     ));
                     throw new StripeAccountIdNotSetForAccount();
                 }

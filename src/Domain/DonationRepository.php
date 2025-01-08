@@ -153,6 +153,11 @@ interface DonationRepository
     /**
      * @return list<Donation>
      */
+    public function findDonationsToSetPaymentIntent(\DateTimeImmutable $atDateTime, int $maxBatchSize): array;
+
+    /**
+     * @return list<Donation>
+     */
     public function findPreAuthorizedDonationsReadyToConfirm(\DateTimeImmutable $atDateTime, int $limit): array;
 
     public function maxSequenceNumberForMandate(int $mandateId): ?DonationSequenceNumber;

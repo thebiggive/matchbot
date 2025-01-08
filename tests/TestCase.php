@@ -11,6 +11,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
@@ -245,12 +246,13 @@ class TestCase extends PHPUnitTestCase
         string $currencyCode = 'GBP',
         PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
         bool $giftAid = false,
+        ?RegularGivingMandate $regularGivingMandate = null,
     ): Donation {
         return new Donation(
             amount: $amount,
             currencyCode: $currencyCode,
             paymentMethodType: $paymentMethodType,
-            campaign: self::someCampaign('123456789012345678'),
+            campaign: self::someCampaign(),
             charityComms: null,
             championComms: null,
             pspCustomerId: null,
@@ -259,7 +261,7 @@ class TestCase extends PHPUnitTestCase
             emailAddress: null,
             countryCode: null,
             tipAmount: '0',
-            mandate: null,
+            mandate: $regularGivingMandate,
             mandateSequenceNumber: null,
             giftAid: $giftAid,
             tipGiftAid: null,

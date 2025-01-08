@@ -264,7 +264,6 @@ class RegularGivingServiceTest extends TestCase
     public function testMakingNextDonationForMandate(): void
     {
         $sut = $this->makeSut(simulatedNow: new \DateTimeImmutable('2024-10-02T06:00:00+0100'));
-        $this->donationServiceProphecy->createPaymentIntent(Argument::type(Donation::class))->shouldBeCalled();
         $this->setDonorDetailsInUK();
         $mandate = $this->getMandate(2, '2024-09-03T06:00:00 BST', 1);
 
