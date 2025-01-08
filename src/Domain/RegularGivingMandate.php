@@ -322,11 +322,13 @@ class RegularGivingMandate extends SalesforceWriteProxy
         return $this->donationAmount;
     }
 
-    public function createPendingFirstDonation(Money $amount, Campaign $campaign, DonorAccount $donor): Donation
+    public function createPendingFirstDonation(Campaign $campaign, DonorAccount $donor): Donation
     {
+        Assertion::same($campaign->getSalesforceId(), $this->campaignId);
+
         return new Donation(
-            amount: $amount->toNumericString(),
-            currencyCode: $amount->currency->isoCode(),
+            amount: $this->donationAmount->toNumericString(),
+            currencyCode: $this->donationAmount->currency->isoCode(),
             paymentMethodType: PaymentMethodType::Card,
             campaign: $campaign,
             charityComms: false,

@@ -91,7 +91,7 @@ readonly class RegularGivingService
          *
          */
         $donations = [
-            $firstDonation = $mandate->createPendingFirstDonation($amount, $campaign, $donor),
+            $firstDonation = $mandate->createPendingFirstDonation($campaign, $donor),
             $this->createFutureDonationInAdvanceOfActivation($mandate, 2, $donor, $campaign),
             $this->createFutureDonationInAdvanceOfActivation($mandate, 3, $donor, $campaign)
         ];
