@@ -65,13 +65,13 @@ class RetrospectivelyMatch extends LockingCommand
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $recentlyClosedMode = !is_numeric($input->getArgument('days-back'));
-        $oneHourAgo = (new DateTime('now'))->sub(new \DateInterval('PT1H'));
+        $oneHourBeforeExecStarted = (new DateTime('now'))->sub(new \DateInterval('PT1H'));
 
         if ($recentlyClosedMode) {
             // Default mode is now to auto match for campaigns that *just* closed.
             $output->writeln('Automatically evaluating campaigns which closed in the past hour');
             $toCheckForMatching = $this->donationRepository
-                ->findNotFullyMatchedToCampaignsWhichClosedSince($oneHourAgo);
+                ->findNotFullyMatchedToCampaignsWhichClosedSince($oneHourBeforeExecStarted);
         } else {
             // Allow + round non-whole day count.
             $daysBack = round((float) $input->getArgument('days-back'));
@@ -131,7 +131,9 @@ class RetrospectivelyMatch extends LockingCommand
         $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
 
         if ($campaignsHaveJustClosed) {
-            $funds = $this->fundRepository->findForCampaignsClosedSince($oneHourAgo);
+            // Intentionally use the "stale" `$oneHourBeforeExecStarted` – we want to include funds related to all
+            // campaigns processed above, even if the previous work took a long time.
+            $funds = $this->fundRepository->findForCampaignsClosedSince(new DateTime('now'), $oneHourBeforeExecStarted);
             foreach ($funds as $fund) {
                 $this->bus->dispatch(new Envelope(FundTotalUpdated::fromFund($fund)));
             }

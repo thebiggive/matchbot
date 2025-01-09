@@ -167,24 +167,25 @@ class FundRepository extends SalesforceReadProxyRepository
     }
 
     /**
+     * @param DateTime $closedBeforeDate Typically now
+     * @param DateTime $closedSinceDate Typically 1 hour ago as determined at the point retro match script started
      * @return Fund[]
      */
-    public function findForCampaignsClosedSince(DateTime $closedSinceDate): array
+    public function findForCampaignsClosedSince(DateTime $closedBeforeDate, DateTime $closedSinceDate): array
     {
-        $now = new DateTime('now');
         $query = <<<EOT
             SELECT fund FROM MatchBot\Domain\Fund fund
             JOIN fund.campaignFundings campaignFunding
             JOIN campaignFunding.campaign campaign
             WHERE
-                campaign.endDate < :now AND
+                campaign.endDate < :closedBeforeDate AND
                 campaign.endDate > :closedSinceDate
             GROUP BY fund
 EOT;
 
         /** @var Fund[] $result */
         $result = $this->getEntityManager()->createQuery($query)
-            ->setParameter('now', $now)
+            ->setParameter('closedBeforeDate', $closedBeforeDate)
             ->setParameter('closedSinceDate', $closedSinceDate)
             ->disableResultCache()
             ->getResult();
