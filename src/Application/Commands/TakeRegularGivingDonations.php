@@ -21,6 +21,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+/**
+ * Discuses with noel - will implement something like
+ *  https://matchbot-staging.thebiggivetest.org.uk/v1/test-donation-collection-for-date/2024-02-20?secret=tyuyzsdfgdtjysseb
+ */
 #[AsCommand(
     name: 'matchbot:collect-regular-giving',
     description: "Takes money from donors that they have given us advance permission to take.",

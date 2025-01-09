@@ -83,6 +83,11 @@ return function (App $app) {
             ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
+
+        $versionGroup->get(
+            '/test-donation-collection-for-date/{date}',
+            \MatchBot\Application\Actions\CollectRegularGivingForTest::class
+        );
     });
     // Authenticated through Stripe's SDK signature verification
     $app->post('/hooks/stripe', Hooks\StripePaymentsUpdate::class);
