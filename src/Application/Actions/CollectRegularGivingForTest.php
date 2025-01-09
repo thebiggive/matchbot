@@ -36,18 +36,20 @@ class CollectRegularGivingForTest extends Action
             throw new HttpNotFoundException($request);
         }
 
-        $secret = $request->getQueryParams()['secret'] ?? '';
+        $secret = (string)$request->getQueryParams()['secret'];
+        $stream = $response->getBody();
+
         if (!password_verify($secret, '$2y$12$JgCEyBfFQKBrIYHs1PNobef3aMswiWPHvKX/cWHWVePEOfLHRp2Oa')) {
-            $response->getBody()->write(
+            $stream->write(
                 'Bad or missing secret - this command is only for use by authorized people within BG test/dev environments'
             );
             return $response;
         }
 
         try {
-            $date = new \DateTimeImmutable($args['date']);
+            $date = new \DateTimeImmutable((string) $args['date']);
         } catch (\DateMalformedStringException $e) {
-            $response->getBody()->write($e->getMessage());
+            $stream->write($e->getMessage());
             return $response;
         }
 
@@ -55,11 +57,29 @@ class CollectRegularGivingForTest extends Action
         $this->cliCommand->setLogger($this->logger);
 
         $commandTest = new CommandTester($this->cliCommand);
-        $commandTest->execute(['--simulated-date'=> $date->format('c')]);
+        $commandTest->execute(['--simulated-date' => $date->format('c')]);
         $commandOutput = $commandTest->getDisplay();
 
+        $actualNow = new \DateTimeImmutable();
+
         $response =  $response->withHeader('Content-Type', 'text/plain');
-        $response->getBody()->write($commandOutput);
+        $stream->write(<<<EOF
+            Big Give Matchbot
+            ============================================================================================
+            
+            Actual current date: {$actualNow->format('D, d M Y H:i:s')}
+            Running regular giving collection process with simulated timestamp {$date->format('D, d M Y H:i:s')} 
+            
+            
+            This endpoint is only available in test/dev environments, not in production.
+            
+            --------------
+            
+            EOF
+            );
+        $stream->write($commandOutput);
+
+        $stream->write("--------------\n");
 
         return $response;
     }
