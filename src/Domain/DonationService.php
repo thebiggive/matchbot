@@ -336,6 +336,7 @@ class DonationService
             );
         }
 
+        // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
         if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {
             $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
             if ($stripeAccountId === null || $stripeAccountId === '') {
