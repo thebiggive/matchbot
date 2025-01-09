@@ -8,6 +8,8 @@ use MatchBot\Application\Messenger\FundTotalUpdated;
 
 class Fund extends Common
 {
+    use HashTrait;
+
     /**
      * @param string $fundId    Salesforce ID for Champion Funding or Pledge
      * @return array Single Fund, as associative array
@@ -47,6 +49,9 @@ class Fund extends Common
             uri: "{$this->getSetting('fund', 'baseUri')}/{$fundMessage->salesforceId}",
             withCache: false,
         );
-        $this->getHttpClient()->put($uri, ['json' => $fundMessage->jsonSnapshot]);
+        $this->getHttpClient()->put($uri, [
+            'json' => $fundMessage->jsonSnapshot,
+            'headers' => $this->getVerifyHeaders(json_encode($fundMessage->jsonSnapshot)),
+        ]);
     }
 }
