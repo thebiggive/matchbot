@@ -655,7 +655,8 @@ class DonationService
 
         if ($paymentIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
             // @todo-regular-giving: create a new db field on Donation - e.g. payment_attempt_count and update here
-            // decide on a limit and log an error (or warning) if exceeded
+            // decide on a limit and log an error (or warning) if exceeded & perhaps auto-cancel the donation and/or
+            // mandate.
         }
     }
 }
