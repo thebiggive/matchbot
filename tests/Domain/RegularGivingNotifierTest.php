@@ -48,6 +48,7 @@ class RegularGivingNotifierTest extends TestCase
             "templateKey" => "donor-mandate-confirmation",
             "recipientEmailAddress" => "donor@example.com",
             "params" => [
+                "donorName" => "Jenny Generous",
                 "charityName" => "Charity Name",
                 "campaignName" => "someCampaign",
                 "charityNumber" => "Reg-no",

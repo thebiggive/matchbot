@@ -321,4 +321,27 @@ class RegularGivingMandate extends SalesforceWriteProxy
     {
         return $this->donationAmount;
     }
+
+    public function createPendingFirstDonation(Campaign $campaign, DonorAccount $donor): Donation
+    {
+        Assertion::same($campaign->getSalesforceId(), $this->campaignId);
+
+        return new Donation(
+            amount: $this->donationAmount->toNumericString(),
+            currencyCode: $this->donationAmount->currency->isoCode(),
+            paymentMethodType: PaymentMethodType::Card,
+            campaign: $campaign,
+            charityComms: false,
+            championComms: false,
+            pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            optInTbgEmail: false,
+            donorName: $donor->donorName,
+            emailAddress: $donor->emailAddress,
+            countryCode: $donor->getBillingCountryCode(),
+            tipAmount: '0',
+            mandate: $this,
+            mandateSequenceNumber: DonationSequenceNumber::of(1),
+            billingPostcode: $donor->getBillingPostcode(),
+        );
+    }
 }

@@ -17,6 +17,7 @@ use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\StripeConfirmationTokenId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -81,13 +82,14 @@ class Create extends Action
 
         try {
             $mandate = $this->mandateService->setupNewMandate(
-                donorID: $donor->id(),
+                donor: $donor,
                 amount: $mandateData->amount,
                 campaign: $campaign,
                 giftAid: $mandateData->giftAid,
                 dayOfMonth: $mandateData->dayOfMonth,
                 billingCountry: $mandateData->billingCountry,
                 billingPostCode: $mandateData->billingPostcode,
+                confirmationTokenId: $mandateData->stripeConfirmationTokenId,
             );
         } catch (WrongCampaignType $e) {
             return $this->validationError(

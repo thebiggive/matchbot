@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MatchBot\IntegrationTests;
 
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Client\Mailer;
 use MatchBot\Domain\DonorAccountRepository;
@@ -29,8 +31,15 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $stripeProphecy->createPaymentIntent(
             Argument::that(fn(array $payload) => ($payload['amount'] === $pencePerMonth))
         )
-            ->shouldBeCalledTimes(3)
+            ->shouldBeCalledOnce()
             ->will(fn() => new PaymentIntent('payment-intent-id-' . IntegrationTest::randomString()));
+        $stripeProphecy->confirmPaymentIntent(
+            Argument::type('string'),
+            Argument::cetera()
+        )
+            ->shouldBeCalledOnce()
+            ->will(fn(array $args) => new PaymentIntent($args[0]));
+
         $this->getContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
         $this->ensureDbHasDonorAccount();

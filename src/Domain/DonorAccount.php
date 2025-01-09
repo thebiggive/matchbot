@@ -65,7 +65,7 @@ class DonorAccount extends Model
     /**
      * The payment method selected for use in off session, regular giving payments, when the donor isn't around to
      * make an individual choice for each donation. Must be a payment card, and have
-     * ['setup_future_usage' => 'on_session'] selected.
+     * ['setup_future_usage' => 'off_session'] selected.
      *
      * String not embeddable because ORM does not support nullable embeddables.
      */

@@ -5,6 +5,7 @@ namespace MatchBot\Client;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use Ramsey\Uuid\Uuid;
+use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
@@ -81,5 +82,10 @@ class StubStripeClient implements Stripe
     public function createRegularGivingCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
     {
         return $this->createCustomerSession($stripeCustomerId);
+    }
+
+    public function retrieveCharge(string $chargeId): Charge
+    {
+        throw new \Exception("Retrieve Charge not implemented in stub- not currently used in load tests");
     }
 }

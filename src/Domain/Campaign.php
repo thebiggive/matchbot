@@ -338,4 +338,14 @@ class Campaign extends SalesforceReadProxy
     {
         return $this->thankYouMessage;
     }
+
+    /**
+     * @return Salesforce18Id<Charity>
+     */
+    public function getCharityId(): Salesforce18Id
+    {
+        return Salesforce18Id::ofCharity(
+            $this->getCharity()->getSalesforceId()
+        );
+    }
 }
