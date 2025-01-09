@@ -31,13 +31,13 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $stripeProphecy->createPaymentIntent(
             Argument::that(fn(array $payload) => ($payload['amount'] === $pencePerMonth))
         )
-            ->shouldBeCalledTimes(1)
+            ->shouldBeCalledOnce()
             ->will(fn() => new PaymentIntent('payment-intent-id-' . IntegrationTest::randomString()));
         $stripeProphecy->confirmPaymentIntent(
             Argument::type('string'),
             Argument::cetera()
         )
-            ->shouldBeCalledTimes(1)
+            ->shouldBeCalledOnce()
             ->will(fn(array $args) => new PaymentIntent($args[0]));
 
         $this->getContainer()->set(Stripe::class, $stripeProphecy->reveal());
