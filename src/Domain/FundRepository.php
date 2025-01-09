@@ -156,15 +156,41 @@ class FundRepository extends SalesforceReadProxyRepository
         Assertion::string($name);
 
         if ($fundData['type'] === Pledge::DISCRIMINATOR_VALUE) {
-            $fund = new Pledge(currencyCode: $currencyCode, name: $name);
+            $fund = new Pledge(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']));
         } elseif ($fundData['type'] === 'championFund') {
-            $fund = new ChampionFund(currencyCode: $currencyCode, name: $name);
+            $fund = new ChampionFund(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']));
         } else {
             throw new \UnexpectedValueException("Unknown fund type '{$fundData['type']}'");
         }
-        $fund->setSalesforceId($fundData['id']);
 
         return $fund;
+    }
+
+    /**
+     * @param DateTime $closedBeforeDate Typically now
+     * @param DateTime $closedSinceDate Typically 1 hour ago as determined at the point retro match script started
+     * @return Fund[]
+     */
+    public function findForCampaignsClosedSince(DateTime $closedBeforeDate, DateTime $closedSinceDate): array
+    {
+        $query = <<<EOT
+            SELECT fund FROM MatchBot\Domain\Fund fund
+            JOIN fund.campaignFundings campaignFunding
+            JOIN campaignFunding.campaign campaign
+            WHERE
+                campaign.endDate < :closedBeforeDate AND
+                campaign.endDate > :closedSinceDate
+            GROUP BY fund
+EOT;
+
+        /** @var Fund[] $result */
+        $result = $this->getEntityManager()->createQuery($query)
+            ->setParameter('closedBeforeDate', $closedBeforeDate)
+            ->setParameter('closedSinceDate', $closedSinceDate)
+            ->disableResultCache()
+            ->getResult();
+
+        return $result;
     }
 
     /**

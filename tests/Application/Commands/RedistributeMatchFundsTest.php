@@ -176,7 +176,7 @@ class RedistributeMatchFundsTest extends TestCase
     private function getFullyAvailablePledgeFunding(): CampaignFunding
     {
         $pledgeAmount = '101.00';
-        $pledge = new Pledge(currencyCode: 'GBP', name: '');
+        $pledge = new Pledge(currencyCode: 'GBP', name: '', salesforceId: null);
 
         return new CampaignFunding(
             fund: $pledge,
@@ -198,7 +198,7 @@ class RedistributeMatchFundsTest extends TestCase
         $donation->setSalesforceId('sf_1244');
         $donation->setTransactionId('pi_tenPound123');
 
-        $championFund = new ChampionFund(currencyCode: 'GBP', name: '');
+        $championFund = new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null);
         $campaignFunding = new CampaignFunding(
             fund: $championFund,
             amount: $donationAmount,

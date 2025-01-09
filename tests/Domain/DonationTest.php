@@ -202,7 +202,7 @@ class DonationTest extends TestCase
 
     public function testtoFrontEndApiModel(): void
     {
-        $pledge = new Pledge(currencyCode: 'GBP', name: '');
+        $pledge = new Pledge(currencyCode: 'GBP', name: '', salesforceId: null);
 
         $campaignFunding = new CampaignFunding(
             fund: $pledge,
@@ -250,7 +250,7 @@ class DonationTest extends TestCase
         $donation = $this->getTestDonation();
 
         $campaignFunding = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: ''),
+            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
             amount: '1000',
             amountAvailable: '1000',
             allocationOrder: 100,
@@ -275,7 +275,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
         $campaignFunding0 = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: ''),
+            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
             amount: '1000',
             amountAvailable: '1000',
             allocationOrder: 100,
@@ -285,7 +285,7 @@ class DonationTest extends TestCase
         $withdrawal0->setAmount('1');
 
         $campaignFunding1 = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: ''),
+            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
             amount: '1000',
             amountAvailable: '1000',
             allocationOrder: 100,
@@ -972,7 +972,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation(amount: '100.00');
 
-        $fund = new ChampionFund('GBP', 'some champion fund');
+        $fund = new ChampionFund('GBP', 'some champion fund', null);
         $campaignFunding = new CampaignFunding($fund, amount: '1000', amountAvailable: '1000', allocationOrder: 1);
         $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawl->setAmount('99.99');
@@ -985,7 +985,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation(amount: '100.00');
 
-        $fund = new ChampionFund('GBP', 'some champion fund');
+        $fund = new ChampionFund('GBP', 'some champion fund', null);
         $campaignFunding = new CampaignFunding($fund, '1000', '1000', 1);
         $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawl->setAmount('100.00');

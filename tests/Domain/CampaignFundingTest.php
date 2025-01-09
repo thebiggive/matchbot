@@ -13,7 +13,7 @@ class CampaignFundingTest extends TestCase
         $campaignOne = self::someCampaign();
         $campaignTwo = self::someCampaign();
         // all constructor params are irrelevant here:
-        $campaignFunding = new CampaignFunding(new Pledge('GBP', 'some pledge'), '1', '1', 1);
+        $campaignFunding = new CampaignFunding(new Pledge('GBP', 'some pledge', null), '1', '1', 1);
 
         $campaignFunding->addCampaign($campaignOne);
         $campaignFunding->addCampaign($campaignTwo);

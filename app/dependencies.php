@@ -16,8 +16,10 @@ use MatchBot\Application\Environment;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\CharityUpdated;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Messenger\FundTotalUpdated;
 use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
+use MatchBot\Application\Messenger\Handler\FundTotalUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\PersonHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
@@ -330,6 +332,7 @@ return function (ContainerBuilder $containerBuilder) {
                     CharityUpdated::class => [TransportInterface::class],
                     StripePayout::class => [TransportInterface::class],
                     DonationUpserted::class => [TransportInterface::class],
+                    FundTotalUpdated::class => [TransportInterface::class],
                 ],
                 $c,
             ));
@@ -342,6 +345,7 @@ return function (ContainerBuilder $containerBuilder) {
                     Messages\Person::class => [$c->get(PersonHandler::class)],
                     StripePayout::class => [$c->get(StripePayoutHandler::class)],
                     DonationUpserted::class => [$c->get(DonationUpsertedHandler::class)],
+                    FundTotalUpdated::class => [$c->get(FundTotalUpdatedHandler::class)],
                 ],
             ));
             $handleMiddleware->setLogger($logger);

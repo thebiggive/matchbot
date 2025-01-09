@@ -10,14 +10,8 @@ use MatchBot\Application\Assertion;
  */
 abstract class AbstractStateChanged
 {
-    /**
-     * @psalm-suppress PossiblyUnusedProperty Plan is to use `$jsonSnapshot` with mandates
-     */
-    public array $jsonSnapshot;
-
-    protected function __construct(public string $uuid, array $json)
+    protected function __construct(public string $uuid, public array $jsonSnapshot)
     {
         Assertion::uuid($this->uuid);
-        $this->jsonSnapshot = $json;
     }
 }
