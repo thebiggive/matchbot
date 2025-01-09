@@ -145,12 +145,10 @@ abstract class Fund extends SalesforceReadProxy
     }
 
     /**
-     * @param CampaignFunding $funding which must already refer to this Fund. CampaignFunding is the
+     * @param CampaignFunding $funding which must already refer to this Fund. The field on this class the
      * 'inverse' side of the relationship between the two in Doctrine, meaning that calling this function doesn't
      * actually affect what gets saved to the DB. Only the values of \MatchBot\Domain\CampaignFunding::$fund are
      * monitored by the ORM.
-     *
-     * @return void
      */
     public function addCampaignFunding(CampaignFunding $funding): void
     {
