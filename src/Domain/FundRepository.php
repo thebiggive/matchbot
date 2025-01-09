@@ -168,6 +168,32 @@ class FundRepository extends SalesforceReadProxyRepository
     }
 
     /**
+     * @return Fund[]
+     */
+    public function findForCampaignsClosedSince(DateTime $closedSinceDate): array
+    {
+        $now = new DateTime('now');
+        $query = <<<EOT
+            SELECT fund FROM MatchBot\Domain\Fund fund
+            JOIN fund.campaignFundings campaignFunding
+            JOIN campaignFunding.campaign campaign
+            WHERE
+                campaign.endDate < :now AND
+                campaign.endDate > :closedSinceDate
+            GROUP BY fund
+EOT;
+
+        /** @var Fund[] $result */
+        $result = $this->getEntityManager()->createQuery($query)
+            ->setParameter('now', $now)
+            ->setParameter('closedSinceDate', $closedSinceDate)
+            ->disableResultCache()
+            ->getResult();
+
+        return $result;
+    }
+
+    /**
      * Get live data for the object (which might be empty apart from the Salesforce ID) and return a full object.
      * No need to `setSalesforceLastPull()`, or EM `persist()` - just populate the fields specific to the object.
      *
