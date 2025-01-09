@@ -6,6 +6,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 
 class FundTest extends TestCase
@@ -14,19 +15,14 @@ class FundTest extends TestCase
 
     public function setUp(): void
     {
-        $this->fund = new ChampionFund('GBP', 'Testfund');
-        $this->fund->setSalesforceId('sfFundId456');
+        $this->fund = new ChampionFund('GBP', 'Testfund', Salesforce18Id::of('sfFundId4567890abc'));
 
-        $campaignFunding = new CampaignFunding(
+        $this->fund->addCampaignFunding(new CampaignFunding(
             fund: $this->fund,
             amount: '123.45',
             amountAvailable: '100.00',
             allocationOrder: 100,
-        );
-
-        // Set campaignFundings with reflection to emulate ORM mapping.
-        $campaignFundings = new \ReflectionProperty($this->fund, 'campaignFundings');
-        $campaignFundings->setValue($this->fund, new ArrayCollection([$campaignFunding]));
+        ));
     }
 
     public function testGetAmounts(): void
@@ -45,7 +41,7 @@ class FundTest extends TestCase
             'currencyCode' => 'GBP',
             'fundId' => null, // Not actually persisting it.
             'fundType' => 'championFund',
-            'salesforceFundId' => 'sfFundId456',
+            'salesforceFundId' => 'sfFundId4567890abc',
             'totalAmount' => '123.45',
             'usedAmount' => '23.45',
         ];

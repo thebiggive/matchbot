@@ -212,6 +212,11 @@
       <code><![CDATA[getResultCacheImpl]]></code>
     </DeprecatedMethod>
   </file>
+  <file src="src/Domain/Fund.php">
+    <DeprecatedProperty>
+      <code><![CDATA[$this->salesforceId]]></code>
+    </DeprecatedProperty>
+  </file>
   <file src="src/Domain/FundRepository.php">
     <MissingConstructor>
       <code><![CDATA[$campaignFundingRepository]]></code>
@@ -244,8 +249,6 @@
   <file src="src/Domain/SalesforceProxyRepository.php">
     <MissingConstructor>
       <code><![CDATA[$client]]></code>
-      <code><![CDATA[$client]]></code>
-      <code><![CDATA[$logger]]></code>
       <code><![CDATA[$logger]]></code>
     </MissingConstructor>
   </file>

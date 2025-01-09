@@ -156,13 +156,12 @@ class FundRepository extends SalesforceReadProxyRepository
         Assertion::string($name);
 
         if ($fundData['type'] === Pledge::DISCRIMINATOR_VALUE) {
-            $fund = new Pledge(currencyCode: $currencyCode, name: $name);
+            $fund = new Pledge(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']));
         } elseif ($fundData['type'] === 'championFund') {
-            $fund = new ChampionFund(currencyCode: $currencyCode, name: $name);
+            $fund = new ChampionFund(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']));
         } else {
             throw new \UnexpectedValueException("Unknown fund type '{$fundData['type']}'");
         }
-        $fund->setSalesforceId($fundData['id']);
 
         return $fund;
     }
