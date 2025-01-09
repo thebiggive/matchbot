@@ -8,11 +8,8 @@ use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;
 
 readonly class FundTotalUpdated implements MessageGroupAwareInterface
 {
-    public array $jsonSnapshot;
-
-    protected function __construct(public string $salesforceId, array $json)
+    protected function __construct(public string $salesforceId, public array $jsonSnapshot)
     {
-        $this->jsonSnapshot = $json;
     }
 
     public static function fromFund(Fund $fund): self
@@ -22,7 +19,7 @@ readonly class FundTotalUpdated implements MessageGroupAwareInterface
 
         return new self(
             salesforceId: $sfId,
-            json: $fund->toAmountUsedUpdateModel(),
+            jsonSnapshot: $fund->toAmountUsedUpdateModel(),
         );
     }
 
