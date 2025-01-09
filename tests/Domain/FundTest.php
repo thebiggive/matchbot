@@ -5,26 +5,42 @@ namespace MatchBot\Tests\Domain;
 use Doctrine\Common\Collections\ArrayCollection;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\ChampionFund;
+use MatchBot\Domain\Money;
 use MatchBot\Tests\TestCase;
 
 class FundTest extends TestCase
 {
-    public function testToAmountUsedUpdateModel(): void
+    private ChampionFund $fund;
+
+    public function setUp(): void
     {
-        $fund = new ChampionFund('GBP', 'Testfund');
-        $fund->setSalesforceId('sfFundId456');
+        $this->fund = new ChampionFund('GBP', 'Testfund');
+        $this->fund->setSalesforceId('sfFundId456');
 
         $campaignFunding = new CampaignFunding(
-            fund: $fund,
+            fund: $this->fund,
             amount: '123.45',
             amountAvailable: '100.00',
             allocationOrder: 100,
         );
 
         // Set campaignFundings with reflection to emulate ORM mapping.
-        $campaignFundings = new \ReflectionProperty($fund, 'campaignFundings');
-        $campaignFundings->setValue($fund, new ArrayCollection([$campaignFunding]));
+        $campaignFundings = new \ReflectionProperty($this->fund, 'campaignFundings');
+        $campaignFundings->setValue($this->fund, new ArrayCollection([$campaignFunding]));
+    }
 
+    public function testGetAmounts(): void
+    {
+        $expected = [
+            'totalAmount' => Money::fromNumericStringGBP('123.45'),
+            'usedAmount' => Money::fromNumericStringGBP('23.45'),
+        ];
+
+        self::assertEquals($expected, $this->fund->getAmounts());
+    }
+
+    public function testToAmountUsedUpdateModel(): void
+    {
         $expected = [
             'currencyCode' => 'GBP',
             'fundId' => null, // Not actually persisting it.
@@ -34,6 +50,6 @@ class FundTest extends TestCase
             'usedAmount' => '23.45',
         ];
 
-        self::assertEquals($expected, $fund->toAmountUsedUpdateModel());
+        self::assertEquals($expected, $this->fund->toAmountUsedUpdateModel());
     }
 }

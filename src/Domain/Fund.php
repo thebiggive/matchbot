@@ -94,7 +94,7 @@ abstract class Fund extends SalesforceReadProxy
      * Uses database copies of all data, not the Redis `Matching\Adapter`. Intended for use
      * after a campaign closes.
      *
-     * @return array{totalAmount: numeric-string, usedAmount: numeric-string, currencyCode: string}
+     * @return array{totalAmount: Money, usedAmount: Money}
      */
     public function getAmounts(): array
     {
@@ -111,9 +111,8 @@ abstract class Fund extends SalesforceReadProxy
         }
 
         return [
-            'totalAmount' => $totalAmount->toNumericString(),
-            'usedAmount' => $usedAmount->toNumericString(),
-            'currencyCode' => $this->currencyCode,
+            'totalAmount' => $totalAmount,
+            'usedAmount' => $usedAmount,
         ];
     }
 
@@ -132,11 +131,15 @@ abstract class Fund extends SalesforceReadProxy
         $sfId = $this->getSalesforceId();
         Assertion::notNull($sfId); // Only updating existing SF fund objects supported.
 
+        $amounts = $this->getAmounts();
+
         return [
+            'currencyCode' => $amounts['totalAmount']->currency->isoCode(),
             'fundId' => $this->getId(),
             'fundType' => static::DISCRIMINATOR_VALUE,
             'salesforceFundId' => $sfId,
-            ...$this->getAmounts(),
+            'totalAmount' => $amounts['totalAmount']->toNumericString(),
+            'usedAmount' => $amounts['usedAmount']->toNumericString(),
         ];
     }
 }
