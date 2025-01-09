@@ -36,13 +36,26 @@ class CollectRegularGivingForTest extends Action
             throw new HttpNotFoundException($request);
         }
 
-        $date = $args['date'];
+        $secret = $request->getQueryParams()['secret'] ?? '';
+        if (!password_verify($secret, '$2y$12$JgCEyBfFQKBrIYHs1PNobef3aMswiWPHvKX/cWHWVePEOfLHRp2Oa')) {
+            $response->getBody()->write(
+                'Bad or missing secret - this command is only for use by authorized people within BG test/dev environments'
+            );
+            return $response;
+        }
+
+        try {
+            $date = new \DateTimeImmutable($args['date']);
+        } catch (\DateMalformedStringException $e) {
+            $response->getBody()->write($e->getMessage());
+            return $response;
+        }
 
         $this->cliCommand->setLockFactory($this->lockFactory);
         $this->cliCommand->setLogger($this->logger);
 
         $commandTest = new CommandTester($this->cliCommand);
-        $commandTest->execute(['--simulated-date'=> $date]);
+        $commandTest->execute(['--simulated-date'=> $date->format('c')]);
         $commandOutput = $commandTest->getDisplay();
 
         $response =  $response->withHeader('Content-Type', 'text/plain');
