@@ -312,7 +312,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         );
     }
 
-    public function totalIncGiftAd(): Money
+    public function totalIncGiftAid(): Money
     {
         return $this->donationAmount->plus($this->getGiftAidAmount());
     }

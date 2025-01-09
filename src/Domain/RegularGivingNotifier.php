@@ -42,7 +42,7 @@ class RegularGivingNotifier
                     'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())->format('d/m/Y'),
                     'amount' => $mandate->getDonationAmount()->format(),
                     'giftAidValue' => $mandate->getGiftAidAmount()->format(),
-                    'totalIncGiftAd' => $mandate->totalIncGiftAd()->format(),
+                    'totalIncGiftAid' => $mandate->totalIncGiftAid()->format(),
                     'totalCharged' => $mandate->getDonationAmount()->format(),
                     'firstDonation' => $this->donationToConfirmationEmailFields(
                         $firstDonation,
