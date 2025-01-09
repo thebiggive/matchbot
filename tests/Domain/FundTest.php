@@ -2,7 +2,6 @@
 
 namespace MatchBot\Tests\Domain;
 
-use Doctrine\Common\Collections\ArrayCollection;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Money;
@@ -11,32 +10,41 @@ use MatchBot\Tests\TestCase;
 
 class FundTest extends TestCase
 {
-    private ChampionFund $fund;
-
-    public function setUp(): void
+    /**
+     * @dataProvider amountsToSummarise
+     */
+    public function testGetAmounts(Money $totalAmount, Money $amountAvailable, Money $expectedUsedAmount): void
     {
-        $this->fund = new ChampionFund('GBP', 'Testfund', Salesforce18Id::of('sfFundId4567890abc'));
-
-        $this->fund->addCampaignFunding(new CampaignFunding(
-            fund: $this->fund,
-            amount: '123.45',
-            amountAvailable: '100.00',
+        $fund = new ChampionFund(
+            'GBP',
+            'testGetAmounts fund',
+            Salesforce18Id::of('sfFundId4567890abc'),
+        );
+        $fund->addCampaignFunding(new CampaignFunding(
+            fund: $fund,
+            amount: $totalAmount->toNumericString(),
+            amountAvailable: $amountAvailable->toNumericString(),
             allocationOrder: 100,
         ));
-    }
 
-    public function testGetAmounts(): void
-    {
         $expected = [
-            'totalAmount' => Money::fromNumericStringGBP('123.45'),
-            'usedAmount' => Money::fromNumericStringGBP('23.45'),
+            'totalAmount' => $totalAmount,
+            'usedAmount' => $expectedUsedAmount,
         ];
 
-        self::assertEquals($expected, $this->fund->getAmounts());
+        self::assertEquals($expected, $fund->getAmounts());
     }
 
     public function testToAmountUsedUpdateModel(): void
     {
+        $fund = new ChampionFund('GBP', 'Testfund', Salesforce18Id::of('sfFundId4567890abc'));
+        $fund->addCampaignFunding(new CampaignFunding(
+            fund: $fund,
+            amount: '123.45',
+            amountAvailable: '100.00',
+            allocationOrder: 100,
+        ));
+
         $expected = [
             'currencyCode' => 'GBP',
             'fundId' => null, // Not actually persisting it.
@@ -46,6 +54,50 @@ class FundTest extends TestCase
             'usedAmount' => '23.45',
         ];
 
-        self::assertEquals($expected, $this->fund->toAmountUsedUpdateModel());
+        self::assertEquals($expected, $fund->toAmountUsedUpdateModel());
+    }
+
+    /**
+     * Test data provider.
+     *
+     * @return list{array{
+     *     amountAvailable: Money,
+     *     expectedUsedAmount: Money,
+     *     totalAmount: Money,
+     * }}
+     */
+    private function amountsToSummarise(): array
+    {
+        /**
+         * @var list{array{
+         *  amountAvailable: Money,
+         *  expectedUsedAmount: Money,
+         *  totalAmount: Money,
+         * }} $dataSets
+         */
+        $dataSets = [
+            [
+                'totalAmount' => Money::fromNumericStringGBP('123.45'),
+                'amountAvailable' => Money::fromNumericStringGBP('100.00'),
+                'expectedUsedAmount' => Money::fromNumericStringGBP('23.45'),
+            ],
+            [
+                'totalAmount' => Money::fromNumericStringGBP('123.45'),
+                'amountAvailable' => Money::fromNumericStringGBP('123.45'),
+                'expectedUsedAmount' => Money::fromNumericStringGBP('0.00'),
+            ],
+            [
+                'totalAmount' => Money::fromNumericStringGBP('0.01'),
+                'amountAvailable' => Money::fromNumericStringGBP('0'),
+                'expectedUsedAmount' => Money::fromNumericStringGBP('0.01'),
+            ],
+            [
+                'totalAmount' => Money::fromNumericStringGBP('0'),
+                'amountAvailable' => Money::fromNumericStringGBP('0'),
+                'expectedUsedAmount' => Money::fromNumericStringGBP('0.0'),
+            ],
+        ];
+
+        return $dataSets;
     }
 }
