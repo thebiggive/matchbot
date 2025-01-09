@@ -41,11 +41,10 @@ class FundRepositoryTest extends TestCase
 
         $repo->setLogger($this->getContainer()->get(LoggerInterface::class));
 
-        $fund = new ChampionFund(currencyCode: 'GBP', name: '');
-
-        // Quickest way to ensure this behaves like a newly-found Fund without having to partially mock / prophesise
+        // Setting a salesforceId is the quickest
+        // way to ensure this behaves like a newly-found Fund without having to partially mock / prophesise
         // `FundRepository` such that `doPull()` is a real call but `pull()` doesn't try a real DB engine lookup.
-        $fund->setSalesforceId(self::CAMPAIGN_SF_ID);
+        $fund = new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: Salesforce18Id::of(self::CAMPAIGN_SF_ID));
 
         $repo->updateFromSf($fund, autoSave: false); // Don't auto-save as non-DB-backed tests can't persist
 
@@ -107,7 +106,7 @@ class FundRepositoryTest extends TestCase
 
         $fund = $campaignFunding->getFund();
         $this->assertInstanceOf(ChampionFund::class, $fund);
-        $this->assertSame('sfFundId456', $fund->getSalesforceId());
+        $this->assertSame('sfFundId4567890abc', $fund->getSalesforceId());
         $this->assertSame('GBP', $fund->getCurrencyCode());
     }
 
@@ -172,7 +171,7 @@ class FundRepositoryTest extends TestCase
         $campaignFundingRepoProphecy
             ->getFundingForCampaign(
                 Argument::which('getSalesforceId', self::CAMPAIGN_SF_ID),
-                Argument::which('getSalesforceId', 'sfFundId123')
+                Argument::which('getSalesforceId', 'sfFundId1234567890')
             )
             ->willReturn($this->getExistingCampaignFunding(false))
             ->shouldBeCalledOnce();
@@ -180,7 +179,7 @@ class FundRepositoryTest extends TestCase
         // For a shared fund, we expect to call `getFunding()` to determine
         // whether there's an existing funding, linked to *any* campaign.
         $campaignFundingRepoProphecy
-            ->getFunding(Argument::which('getSalesforceId', 'sfFundId456'))
+            ->getFunding(Argument::which('getSalesforceId', 'sfFundId4567890abc'))
             ->willReturn($this->getExistingCampaignFunding(true))
             ->shouldBeCalledOnce();
 
@@ -228,12 +227,12 @@ class FundRepositoryTest extends TestCase
         $campaignFundingRepoProphecy
             ->getFundingForCampaign(
                 Argument::which('getSalesforceId', 'sfFakeId987'),
-                Argument::which('getSalesforceId', 'sfFundId123')
+                Argument::which('getSalesforceId', 'sfFundId1234567890')
             )
             ->shouldNotBeCalled();
 
         $campaignFundingRepoProphecy
-            ->getFunding(Argument::which('getSalesforceId', 'sfFundId456'))
+            ->getFunding(Argument::which('getSalesforceId', 'sfFundId4567890abc'))
             ->willReturn($this->getExistingCampaignFunding(true))
             ->shouldNotBeCalled();
 
@@ -260,10 +259,10 @@ class FundRepositoryTest extends TestCase
     {
         $existingFund = new ChampionFund(
             currencyCode: 'GBP',
-            name: $shared ? 'Test Shared Champion Fund 456' : 'Test Champion Fund 123'
+            name: $shared ? 'Test Shared Champion Fund 456' : 'Test Champion Fund 123',
+            salesforceId: Salesforce18Id::of($shared ? 'sfFundId4567890abc' : 'sfFundId1234567890')
         );
         $existingFund->setId($shared ? 456456 : 123123);
-        $existingFund->setSalesforceId($shared ? 'sfFundId456' : 'sfFundId123');
         $existingFund->setSalesforceLastPull(new \DateTime());
 
         return $existingFund;
@@ -290,7 +289,7 @@ class FundRepositoryTest extends TestCase
         $fundClientProphecy = $this->prophesize(Client\Fund::class);
         $fundClientProphecy->getForCampaign(self::CAMPAIGN_SF_ID)->willReturn([
             [
-                'id' => 'sfFundId123',
+                'id' => 'sfFundId1234567890',
                 'type' => 'championFund',
                 'name' => 'Test Champion Fund 123',
                 'currencyCode' => $currencyCode,
@@ -301,7 +300,7 @@ class FundRepositoryTest extends TestCase
                 'isShared' => false,
             ],
             [
-                'id' => 'sfFundId456',
+                'id' => 'sfFundId4567890abc',
                 'type' => 'championFund',
                 'name' => 'Test Shared Champion Fund 456',
                 'currencyCode' => $currencyCode,
@@ -347,8 +346,8 @@ class FundRepositoryTest extends TestCase
         $repo->expects($this->exactly($successfulPersistCase ? 2 : 1))
             ->method('findOneBy')
             ->willReturnCallback(fn(array $constraint) => match ($constraint) {
-                ['salesforceId' => 'sfFundId123'] => $existingFundNonShared,
-                ['salesforceId' => 'sfFundId456'] => $existingFundShared,
+                ['salesforceId' => 'sfFundId1234567890'] => $existingFundNonShared,
+                ['salesforceId' => 'sfFundId4567890abc'] => $existingFundShared,
             });
 
         $repo->setCampaignFundingRepository($campaignFundingRepo);

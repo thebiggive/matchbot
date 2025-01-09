@@ -54,7 +54,7 @@ abstract class Fund extends SalesforceReadProxy
     #[ORM\OneToMany(mappedBy: 'fund', targetEntity: CampaignFunding::class)]
     protected Collection $campaignFundings;
 
-    final public function __construct(string $currencyCode, string $name)
+    final public function __construct(string $currencyCode, string $name, ?Salesforce18Id $salesforceId)
     {
         $this->createdAt = new \DateTime();
         $this->updatedAt = new \DateTime();
@@ -62,6 +62,7 @@ abstract class Fund extends SalesforceReadProxy
 
         $this->currencyCode = $currencyCode;
         $this->name = $name;
+        $this->salesforceId = $salesforceId?->value;
     }
 
     /**
@@ -141,5 +142,20 @@ abstract class Fund extends SalesforceReadProxy
             'totalAmount' => $amounts['totalAmount']->toNumericString(),
             'usedAmount' => $amounts['usedAmount']->toNumericString(),
         ];
+    }
+
+    /**
+     * @param CampaignFunding $funding which must already refer to this Fund. CampaignFunding is the
+     * 'inverse' side of the relationship between the two in Doctrine, meaning that calling this function doesn't
+     * actually affect what gets saved to the DB. Only the values of \MatchBot\Domain\CampaignFunding::$fund are
+     * monitored by the ORM.
+     *
+     * @return void
+     */
+    public function addCampaignFunding(CampaignFunding $funding): void
+    {
+        Assertion::same($funding->getFund(), $this);
+
+        $this->campaignFundings->add($funding);
     }
 }
