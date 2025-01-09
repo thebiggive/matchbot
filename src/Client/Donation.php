@@ -14,6 +14,8 @@ use MatchBot\Domain\Salesforce18Id;
  */
 class Donation extends Common
 {
+    use HashTrait;
+
     /**
      * @throws NotFoundException on missing campaign in a sandbox
      * @throws BadRequestException
@@ -30,9 +32,7 @@ class Donation extends Common
                 $this->getSetting('donation', 'baseUri') . '/' . $message->uuid,
                 [
                     'json' => $message->jsonSnapshot,
-                    'headers' => [
-                        'X-Webhook-Verify-Hash' => $this->hash(json_encode($message->jsonSnapshot)),
-                    ],
+                    'headers' => $this->getVerifyHeaders(json_encode($message->jsonSnapshot)),
                 ]
             );
         } catch (RequestException $ex) {
@@ -101,15 +101,5 @@ class Donation extends Common
         $donationCreatedResponse = json_decode($response->getBody()->getContents(), true);
 
         return Salesforce18Id::of($donationCreatedResponse['salesforceId']);
-    }
-
-    private function hash(string $body): string
-    {
-        $secret = getenv('WEBHOOK_DONATION_SECRET');
-        if ($secret === false) {
-            throw new \Exception("Missing webhook donation secret");
-        }
-
-        return hash_hmac('sha256', trim($body), $secret);
     }
 }
