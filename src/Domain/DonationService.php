@@ -360,6 +360,8 @@ class DonationService
 
             $this->createPaymentIntent($donation);
         }
+
+        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
     }
 
     private function doUpdateDonationFees(
