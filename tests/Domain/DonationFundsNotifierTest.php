@@ -9,9 +9,11 @@ use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use Prophecy\PhpUnit\ProphecyTrait;
+use Ramsey\Uuid\Uuid;
 
 class DonationFundsNotifierTest extends TestCase
 {
@@ -21,7 +23,7 @@ class DonationFundsNotifierTest extends TestCase
     {
         //arrange
         $donorAccount = new DonorAccount(
-            null,
+            self::randomPersonId(),
             EmailAddress::of('foo@example.com'),
             DonorName::of('Fred', 'Brooks'),
             StripeCustomerId::of('cus_1234'), // this one doesn't matter for the test.

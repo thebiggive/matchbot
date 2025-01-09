@@ -2,14 +2,23 @@
 
 namespace MatchBot\Domain;
 
+use Assert\AssertionFailedException;
+use Doctrine\DBAL\Exception\ServerException;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Exception\ORMException;
 use MatchBot\Application\Assertion;
+use MatchBot\Client\NotFoundException;
+use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
+use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
+use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
+use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
 
 readonly class RegularGivingService
 {
@@ -24,6 +33,7 @@ readonly class RegularGivingService
         private LoggerInterface $log,
         private RegularGivingMandateRepository $regularGivingMandateRepository,
         private RegularGivingNotifier $regularGivingNotifier,
+        private Stripe $stripe,
     ) {
     }
 
@@ -42,107 +52,54 @@ readonly class RegularGivingService
      * @throws \Symfony\Component\Notifier\Exception\TransportExceptionInterface
      */
     public function setupNewMandate(
-        PersonId $donorID,
+        DonorAccount $donor,
         Money $amount,
         Campaign $campaign,
         bool $giftAid,
         DayOfMonth $dayOfMonth,
         ?Country $billingCountry,
         ?string $billingPostCode,
+        ?StripeConfirmationTokenId $confirmationTokenId = null,
     ): RegularGivingMandate {
-        if (! $campaign->isRegularGiving()) {
-            throw new WrongCampaignType(
-                "Campaign {$campaign->getSalesforceId()} does not accept regular giving"
-            );
-        }
-        $charityId = Salesforce18Id::ofCharity(
-            $campaign->getCharity()->getSalesforceId() ?? throw new \Exception('missing charity SF ID')
-        );
-
-        /**
-         * For now we assume this exists - @todo-regular-giving ensure that for all accounts (or all accounts that
-         * might need it) the account is in the DB with the UUID filled in before this point. Ticket MAT-379
-         */
-        $donor = $this->donorAccountRepository->findByPersonId($donorID);
-        if ($donor === null) {
-            throw new \Exception("donor not found with ID {$donorID->id}");
-        }
-
-        $donorBillingCountry = $donor->getBillingCountry();
-        if ($billingCountry && $donorBillingCountry && !$billingCountry->equals($donorBillingCountry)) {
-            throw new AccountDetailsMismatch(
-                "Mandate billing country {$billingCountry} does not match donor account country {$donorBillingCountry}"
-            );
-        }
-
-        $donorBillingPostcode = $donor->getBillingPostcode();
-
-        if (! is_null($billingPostCode) && ! is_null($donorBillingPostcode) && $billingPostCode !== $donorBillingPostcode) {
-            throw new AccountDetailsMismatch(
-                "Mandate billing postcode {$billingPostCode} does not match donor account postocde {$donorBillingPostcode}"
-            );
-        }
+        $this->ensureCampaignAllowsRegularGiving($campaign);
+        $this->ensureBillingCountryMatchesDonorBillingCountry($donor, $billingCountry);
+        $this->ensureBillingPostcodeMatchesDonorBillingPostcode($donor, $billingPostCode);
 
         if ($billingCountry) {
             $donor->setBillingCountry($billingCountry);
         }
 
-        if (! is_null($billingPostCode)) {
+        if (is_string($billingPostCode)) {
             $donor->setBillingPostcode($billingPostCode);
         }
 
         $donor->assertHasRequiredInfoForRegularGiving();
 
         $mandate = new RegularGivingMandate(
-            donorId: $donorID,
+            donorId: $donor->id(),
             donationAmount: $amount,
             campaignId: Salesforce18Id::ofCampaign($campaign->getSalesforceId()),
-            charityId: $charityId,
+            charityId: $campaign->getCharityId(),
             giftAid: $giftAid,
             dayOfMonth: $dayOfMonth,
         );
 
+        /**
+         * We create exactly three donations because that is what we offer to match. The first donation is special
+         * because we will collect it immediately. The remaining donations will be saved in the database to collect
+         * in the following months.
+         *
+         */
+        $donations = [
+            $firstDonation = $mandate->createPendingFirstDonation($campaign, $donor),
+            $this->createFutureDonationInAdvanceOfActivation($mandate, 2, $donor, $campaign),
+            $this->createFutureDonationInAdvanceOfActivation($mandate, 3, $donor, $campaign)
+        ];
+
         $this->entityManager->persist($mandate);
 
-        $firstDonation = new Donation(
-            amount: $amount->toNumericString(),
-            currencyCode: $amount->currency->isoCode(),
-            paymentMethodType: PaymentMethodType::Card,
-            campaign: $campaign,
-            charityComms: false,
-            championComms: false,
-            pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
-            optInTbgEmail: false,
-            donorName: $donor->donorName,
-            emailAddress: $donor->emailAddress,
-            countryCode: $donor->getBillingCountryCode(),
-            tipAmount: '0',
-            mandate: $mandate,
-            mandateSequenceNumber: DonationSequenceNumber::of(1),
-            billingPostcode: $donorBillingPostcode,
-        );
-
-        $secondDonation = $this->createFutureDonationInAdvanceOfActivation($mandate, 2, $donor, $campaign);
-        $thirdDonation = $this->createFutureDonationInAdvanceOfActivation($mandate, 3, $donor, $campaign);
-
-        /** @var Donation[] $donations */
-        $donations = [$firstDonation, $secondDonation, $thirdDonation];
-
         try {
-            foreach ($donations as $donation) {
-                $this->donationService->enrollNewDonation($donation);
-                if (!$donation->isFullyMatched()) {
-                    throw new NotFullyMatched(
-                        "Donation could not be fully matched, need to match {$donation->getAmount()}," .
-                        " only matched {$donation->getFundingWithdrawalTotal()}"
-                    );
-                }
-
-                Assertion::same(
-                    $donation->getFundingWithdrawalTotal(),
-                    $mandate->getMatchedAmount()->toNumericString()
-                );
-            }
+            $this->enrollAndMatchDonations($donations, $mandate);
         } catch (\Throwable $e) {
             foreach ($donations as $donation) {
                 $this->donationService->cancel($donation);
@@ -152,7 +109,22 @@ readonly class RegularGivingService
             throw $e;
         }
 
-        // @todo-regular-giving - collect first donation (currently created as pending, not collected)
+        $donorsSavedPaymentMethod = $donor->getRegularGivingPaymentMethod();
+        Assertion::true(
+            ($confirmationTokenId && !$donorsSavedPaymentMethod) ||
+            (! $confirmationTokenId && $donorsSavedPaymentMethod),
+            'Confirmation token must be given iff there is no payment method on file'
+        );
+
+        if ($confirmationTokenId) {
+            $methodId = $this->confirmWithNewPaymentMethod($firstDonation, $confirmationTokenId);
+            $donor->setRegularGivingPaymentMethod($methodId);
+        } else {
+            \assert($donorsSavedPaymentMethod !== null);
+            // @todo-regular-giving - consider if we need to switch to sync confirmation that doesn't rely on a callback
+            // hook or something so we can avoid activating the mandate if the first donation is not collected.
+            $this->donationService->confirmDonationWithSavedPaymentMethod($firstDonation, $donorsSavedPaymentMethod);
+        }
 
         $mandate->activate($this->now);
 
@@ -184,7 +156,6 @@ readonly class RegularGivingService
         // would only be null if donor was deleted after mandate created.
         Assertion::notNull($donor, "donor not found for id {$mandate->donorId->id}");
 
-        /** @todo-regular-giving Throw a more specific exception if this fails and handle instead of crashing */
         $donor->assertHasRequiredInfoForRegularGiving();
 
         $campaign = $this->campaignRepository->findOneBySalesforceId($mandate->getCampaignId());
@@ -218,7 +189,6 @@ readonly class RegularGivingService
             return null;
         }
 
-        $this->donationService->createPaymentIntent($donation);
         $mandate->setDonationsCreatedUpTo($preAuthorizationDate);
 
         return $donation;
@@ -247,5 +217,81 @@ readonly class RegularGivingService
             requireActiveMandate: false,
             expectedActivationDate: $this->now
         );
+    }
+
+    private function ensureCampaignAllowsRegularGiving(Campaign $campaign): void
+    {
+        if (!$campaign->isRegularGiving()) {
+            throw new WrongCampaignType(
+                "Campaign {$campaign->getSalesforceId()} does not accept regular giving"
+            );
+        }
+    }
+
+    /**
+     * Either one may be null, but if both are non-null then they must be equal. We do not support changing
+     * donor billing country here.
+     */
+    private function ensureBillingCountryMatchesDonorBillingCountry(DonorAccount $donor, ?Country $billingCountry): void
+    {
+        $donorBillingCountry = $donor->getBillingCountry();
+        if ($billingCountry && $donorBillingCountry && !$billingCountry->equals($donorBillingCountry)) {
+            throw new AccountDetailsMismatch(
+                "Mandate billing country {$billingCountry} does not match donor account country {$donorBillingCountry}"
+            );
+        }
+    }
+
+    private function ensureBillingPostcodeMatchesDonorBillingPostcode(DonorAccount $donor, ?string $billingPostCode): void
+    {
+        $donorBillingPostcode = $donor->getBillingPostcode();
+
+        if (!is_null($billingPostCode) && !is_null($donorBillingPostcode) && $billingPostCode !== $donorBillingPostcode) {
+            throw new AccountDetailsMismatch(
+                "Mandate billing postcode {$billingPostCode} does not match donor account postocde {$donorBillingPostcode}"
+            );
+        }
+    }
+
+    /**
+     * @param list<Donation> $donations
+     */
+    private function enrollAndMatchDonations(array $donations, RegularGivingMandate $mandate): void
+    {
+        foreach ($donations as $donation) {
+            $this->donationService->enrollNewDonation($donation);
+            if (!$donation->isFullyMatched()) {
+                // @todo-regular-giving:
+                // see ticket DON-1003 - that will require us to not throw here if the donor doesn't mind their donations being unmatched.
+                throw new NotFullyMatched(
+                    "Donation could not be fully matched, need to match {$donation->getAmount()}," .
+                    " only matched {$donation->getFundingWithdrawalTotal()}"
+                );
+            }
+
+            Assertion::same(
+                $donation->getFundingWithdrawalTotal(),
+                $mandate->getMatchedAmount()->toNumericString()
+            );
+        }
+    }
+
+    private function confirmWithNewPaymentMethod(Donation $firstDonation, StripeConfirmationTokenId $confirmationTokenId): StripePaymentMethodId
+    {
+        $intent = $this->donationService->confirmOnSessionDonation($firstDonation, $confirmationTokenId);
+        $chargeId = $intent->latest_charge;
+        if ($chargeId === null) {
+            // AFAIK there should always be charge ID attached to the intent at this point
+            throw new \Exception('No charge ID on payment intent after confirming regular giving donation');
+        }
+
+        $charge = $this->stripe->retrieveCharge((string)$chargeId);
+        $paymentMethodId = $charge->payment_method;
+        if ($paymentMethodId === null) {
+            // AFAIK there should always be payment method ID attached to the charge at this point.
+            throw new \Exception('No payment method ID on charge after confirming regular giving donation');
+        }
+
+        return StripePaymentMethodId::of($paymentMethodId);
     }
 }

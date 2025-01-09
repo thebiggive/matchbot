@@ -11,6 +11,7 @@ use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\StripeCustomerId;
+use MatchBot\Domain\StripePaymentMethodId;
 
 /**
  * Static Identity helpers for both unit & integration tests.
@@ -85,6 +86,7 @@ class Identity
         );
         $donorAccount->setBillingPostcode('E17');
         $donorAccount->setBillingCountry(Country::GB());
+        $donorAccount->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
 
         return $donorAccount;
     }

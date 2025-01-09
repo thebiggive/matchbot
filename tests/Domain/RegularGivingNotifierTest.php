@@ -48,6 +48,7 @@ class RegularGivingNotifierTest extends TestCase
             "templateKey" => "donor-mandate-confirmation",
             "recipientEmailAddress" => "donor@example.com",
             "params" => [
+                "donorName" => "Jenny Generous",
                 "charityName" => "Charity Name",
                 "campaignName" => "someCampaign",
                 "charityNumber" => "Reg-no",
@@ -57,7 +58,7 @@ class RegularGivingNotifierTest extends TestCase
                 "nextPaymentDate" => "12/12/2024",
                 "amount" => "£64.00",
                 "giftAidValue" => "£16.00",
-                "totalIncGiftAd" => "£80.00",
+                "totalIncGiftAid" => "£80.00",
                 "totalCharged" => "£64.00",
                 "firstDonation" => [
                     // mostly same keys as used on the donorDonationSuccess email currently sent via Salesforce.
@@ -202,6 +203,6 @@ class RegularGivingNotifierTest extends TestCase
     {
         parent::setUp();
         $this->mailerProphecy = $this->prophesize(Mailer::class);
-        $this->personId = PersonId::of(Uuid::uuid4()->toString());
+        $this->personId = self::randomPersonId();
     }
 }

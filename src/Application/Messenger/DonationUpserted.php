@@ -2,7 +2,6 @@
 
 namespace MatchBot\Application\Messenger;
 
-use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\Donation;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;
 
@@ -16,9 +15,6 @@ class DonationUpserted extends AbstractStateChanged implements MessageGroupAware
         parent::__construct($uuid, $jsonSnapshot);
     }
 
-    /**
-     * @throws MissingTransactionId
-     */
     public static function fromDonation(Donation $donation): self
     {
         return new self(

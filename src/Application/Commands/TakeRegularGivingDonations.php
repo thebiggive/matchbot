@@ -27,7 +27,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 class TakeRegularGivingDonations extends LockingCommand
 {
+    private const int MAXBATCHSIZE = 20;
     private ?RegularGivingService $mandateService = null;
+
 
     /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
     public function __construct(
@@ -82,6 +84,7 @@ class TakeRegularGivingDonations extends LockingCommand
         $now = $this->container->get(\DateTimeImmutable::class);
 
         $this->createNewDonationsAccordingToRegularGivingMandates($now, $io);
+        $this->setPaymentIntentWhenReachedPaymentDate($now, $io);
         $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($now, $io);
 
         return 0;
@@ -89,15 +92,29 @@ class TakeRegularGivingDonations extends LockingCommand
 
     private function createNewDonationsAccordingToRegularGivingMandates(\DateTimeImmutable $now, SymfonyStyle $io): void
     {
-        $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($now, limit: 20);
+        $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($now, self::MAXBATCHSIZE);
 
         $io->block(count($mandates) . " mandates may have donations to create at this time");
 
         foreach ($mandates as [$mandate]) {
+            // @todo-regular-giving: catch the exception when missing address on account
             $donation = $this->makeDonationForMandate($mandate);
             if ($donation) {
                 $io->writeln("created donation {$donation}");
             }
+        }
+    }
+
+    private function setPaymentIntentWhenReachedPaymentDate(
+        \DateTimeImmutable $now,
+        SymfonyStyle $io
+    ): void {
+        $donations = $this->donationRepository->findDonationsToSetPaymentIntent($now, self::MAXBATCHSIZE);
+        $io->block(count($donations) . " donations are due to have Payment Intent set at this time");
+
+        foreach ($donations as $donation) {
+            $this->donationService->createPaymentIntent($donation);
+            $io->writeln("setting payment intent on donation #{$donation->getId()}");
         }
     }
 
@@ -111,7 +128,7 @@ class TakeRegularGivingDonations extends LockingCommand
             - Ensure we don't send emails that are meant for confirmation of on-session donations
             - Probably other things.
         */
-        $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($now, limit:20);
+        $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($now, self::MAXBATCHSIZE);
 
         $io->block(count($donations) . " donations are due to be confirmed at this time");
 

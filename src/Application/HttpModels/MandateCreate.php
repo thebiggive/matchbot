@@ -8,6 +8,7 @@ use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\StripeConfirmationTokenId;
 
 /**
  * Deserializable DTO for request to create a new regular giving mandate
@@ -22,6 +23,13 @@ readonly class MandateCreate
     public ?Country $billingCountry;
 
     /**
+     * Confirmation token must be supplied if and only if the donor doesn't already have a payment method on file
+     * with us for use with regular giving. If it is supplied we will use it to reference the payment details they
+     * gave to stripe on the mandate setup form. If not we will use their existing payment method instead.
+     */
+    public ?StripeConfirmationTokenId $stripeConfirmationTokenId;
+
+    /**
      * @psalm-suppress PossiblyUnusedMethod - called by Symfony Serializer
      */
     public function __construct(
@@ -34,10 +42,17 @@ readonly class MandateCreate
         string $campaignId,
         ?string $billingCountry,
         public ?string $billingPostcode,
+        ?string $stripeConfirmationTokenId,
     ) {
         $this->dayOfMonth = DayOfMonth::of($dayOfMonth);
         $this->amount = Money::fromPence($amountInPence, Currency::fromIsoCode($currency));
         $this->campaignId = Salesforce18Id::ofCampaign($campaignId);
         $this->billingCountry = Country::fromAlpha2OrNull($billingCountry);
+
+        if (is_string($stripeConfirmationTokenId)) {
+            $this->stripeConfirmationTokenId = StripeConfirmationTokenId::of($stripeConfirmationTokenId);
+        } else {
+            $this->stripeConfirmationTokenId = null;
+        }
     }
 }
