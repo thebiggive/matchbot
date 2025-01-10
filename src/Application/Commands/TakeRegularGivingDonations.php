@@ -99,7 +99,7 @@ class TakeRegularGivingDonations extends LockingCommand
         foreach ($mandates as [$mandate]) {
             // @todo-regular-giving: catch the exception when missing address on account
 
-            // @todo-regular-giving: Make sure we don't create a donation here after the campaign has closed.
+            // @todo-regular-giving: Make sure we don't create a donation here after the campaign has closed (e.g. Regular Giving Collection End date, if any has passed, or campaign is otherwise not `ready`) .
             // If we called \MatchBot\Domain\DonationService::enrollNewDonation that would check that for us,
             // but currently it would also attempt to match the donation, which we don't want.
 
