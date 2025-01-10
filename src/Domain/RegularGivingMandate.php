@@ -27,6 +27,11 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     private const int MAX_AMOUNT_PENCE = 500_00;
 
+    /**
+     * The first donations taken for a regular giving mandate are matched, later donations are not.
+     */
+    public const int NUMBER_OF_DONATIONS_TO_MATCH = 3;
+
     #[ORM\Column(unique: true, type: 'uuid')]
     private readonly UuidInterface $uuid;
 
@@ -117,6 +122,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'matchedAmount' => $this->getMatchedAmount(),
             'campaignId' => $this->campaignId,
             'charityId' => $this->charityId,
+            'numberOfMatchedDonations' => self::NUMBER_OF_DONATIONS_TO_MATCH,
             'schedule' => [
                 'type' => 'monthly',
                 'dayOfMonth' => $this->dayOfMonth->value,

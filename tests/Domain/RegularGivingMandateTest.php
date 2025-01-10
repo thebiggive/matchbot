@@ -181,6 +181,7 @@ class RegularGivingMandateTest extends TestCase
                   },
                   "campaignId": "campaign9012345678",
                   "charityId": "charity89012345678",
+                  "numberOfMatchedDonations": 3,
                   "schedule": {
                     "type": "monthly",
                     "dayOfMonth": 12,
