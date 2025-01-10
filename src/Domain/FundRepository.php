@@ -176,7 +176,7 @@ class FundRepository extends SalesforceReadProxyRepository
         $query = <<<EOT
             SELECT fund FROM MatchBot\Domain\Fund fund
             JOIN fund.campaignFundings campaignFunding
-            JOIN campaignFunding.campaign campaign
+            JOIN campaignFunding.campaigns campaign
             WHERE
                 campaign.endDate < :closedBeforeDate AND
                 campaign.endDate > :closedSinceDate
