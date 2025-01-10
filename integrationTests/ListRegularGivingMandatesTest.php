@@ -89,6 +89,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                     'amountInPence' => 500_00,
                     'currency' => 'GBP',
                 ],
+                'numberOfMatchedDonations' => 3,
                 'schedule' => [
                     'type' => 'monthly',
                     'dayOfMonth' => 28,

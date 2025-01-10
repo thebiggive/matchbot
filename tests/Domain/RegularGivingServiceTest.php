@@ -136,6 +136,7 @@ class RegularGivingServiceTest extends TestCase
         );
 
         // assert
+        $this->assertSame(RegularGivingMandate::NUMBER_OF_DONATIONS_TO_MATCH, 3);
         $this->assertCount(3, $this->donations);
         $this->assertSame(DonationStatus::Pending, $this->donations[0]->getDonationStatus());
         $this->assertSame(DonationStatus::PreAuthorized, $this->donations[1]->getDonationStatus());
@@ -228,6 +229,7 @@ class RegularGivingServiceTest extends TestCase
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
 
+        $this->assertSame(RegularGivingMandate::NUMBER_OF_DONATIONS_TO_MATCH, 3);
         $this->donationServiceProphecy->cancel(Argument::type(Donation::class))
             ->shouldBeCalledTimes(3);
 
