@@ -63,9 +63,6 @@ $commands = array_map($psr11App->get(...), [
     UpdateCampaigns::class,
 ]);
 
-$chatter = $psr11App->get(ChatterInterface::class);
-assert($chatter instanceof ChatterInterface);
-
 $dispatcher = new EventDispatcher();
 $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleEvent $event) use ($psr11App) {
     $logger = $psr11App->get(Logger::class);
