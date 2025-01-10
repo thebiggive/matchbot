@@ -85,7 +85,6 @@ class RetrospectivelyMatch extends LockingCommand
         $distinctCampaignIds = [];
         $numWithMatchingAllocated = 0;
         $totalNewMatching = '0.00';
-        $campaignsHaveJustClosed = $recentlyClosedMode && $numChecked > 0;
 
         foreach ($toCheckForMatching as $donation) {
             $amountAllocated = $this->donationRepository->allocateMatchFunds($donation);
@@ -130,15 +129,13 @@ class RetrospectivelyMatch extends LockingCommand
         [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();
         $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
 
-        if ($campaignsHaveJustClosed) {
-            // Intentionally use the "stale" `$oneHourBeforeExecStarted` – we want to include funds related to all
-            // campaigns processed above, even if the previous work took a long time.
-            $funds = $this->fundRepository->findForCampaignsClosedSince(new DateTime('now'), $oneHourBeforeExecStarted);
-            foreach ($funds as $fund) {
-                $this->bus->dispatch(new Envelope(FundTotalUpdated::fromFund($fund)));
-            }
-            $output->writeln('Pushed fund totals to Salesforce for ' . count($funds) . ' funds');
+        // Intentionally use the "stale" `$oneHourBeforeExecStarted` – we want to include funds related to all
+        // campaigns processed above, even if the previous work took a long time.
+        $funds = $this->fundRepository->findForCampaignsClosedSince(new DateTime('now'), $oneHourBeforeExecStarted);
+        foreach ($funds as $fund) {
+            $this->bus->dispatch(new Envelope(FundTotalUpdated::fromFund($fund)));
         }
+        $output->writeln('Pushed fund totals to Salesforce for ' . count($funds) . ' funds');
 
         return 0;
     }
