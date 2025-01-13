@@ -3,6 +3,7 @@
 namespace MatchBot\IntegrationTests;
 
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Client\Mandate as MandateSFClient;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -19,6 +20,7 @@ use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
+use Prophecy\Argument;
 use Ramsey\Uuid\Uuid;
 
 class RegularGivingDonationRepositoryTest extends IntegrationTest

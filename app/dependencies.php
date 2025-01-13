@@ -189,8 +189,14 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\Donation($c->get('settings'), $c->get(LoggerInterface::class));
         },
 
+        Client\Mandate::class => function (ContainerInterface $c): Client\Mandate {
+            return new Client\Mandate($c->get('settings'), $c->get(LoggerInterface::class));
+        },
+
         Client\Fund::class => function (ContainerInterface $c): Client\Fund {
-            return new Client\Fund($c->get('settings'), $c->get(LoggerInterface::class));
+            $settings = $c->get('settings');
+            \assert(is_array($settings));
+            return new Client\Fund($settings, $c->get(LoggerInterface::class));
         },
 
         Client\Mailer::class => function (ContainerInterface $c): Client\Mailer {
