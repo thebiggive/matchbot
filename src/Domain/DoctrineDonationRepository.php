@@ -49,11 +49,6 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $this->matchingAdapter = $adapter;
     }
 
-    public function doCreate(AbstractStateChanged $changeMessage): void
-    {
-        $this->upsert($changeMessage);
-    }
-
     public function doUpdate(AbstractStateChanged $changeMessage): void
     {
         $this->upsert($changeMessage);
@@ -852,17 +847,8 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return $this->findAndLockOneBy(['uuid' => $donationId->toString()]);
     }
 
-    /**
-     * @psalm-suppress PossiblyUnusedMethod - used via DonationRepository interface
-     */
-    public function push(AbstractStateChanged $changeMessage, bool $isNew): void
+    public function push(AbstractStateChanged $changeMessage): void
     {
-        if ($isNew) {
-            $this->doCreate($changeMessage);
-
-            return;
-        }
-
         $this->doUpdate($changeMessage);
     }
 }

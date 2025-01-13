@@ -186,7 +186,7 @@ class CreateTest extends TestCase
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willReturn($donationToReturn);
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $donationRepoProphecy->push(Argument::type(DonationUpserted::class), Argument::type('bool'))
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class))
             ->shouldNotBeCalled();
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
@@ -233,7 +233,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willThrow(new UnexpectedValueException('Currency CAD is invalid for campaign'));
-        $donationRepoProphecy->push(Argument::type(DonationUpserted::class), true)->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class))->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -275,7 +275,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->shouldNotBeCalled();
-        $donationRepoProphecy->push(Argument::type(DonationUpserted::class), true)->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class))->shouldNotBeCalled();
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);

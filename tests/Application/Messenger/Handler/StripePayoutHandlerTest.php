@@ -411,7 +411,7 @@ class StripePayoutHandlerTest extends TestCase
             ->willReturn($donation)
             ->shouldBeCalledOnce();
         $donationRepoProphecy
-            ->push(Argument::type(DonationUpserted::class), false)
+            ->push(Argument::type(DonationUpserted::class))
             ->shouldNotBeCalled();
 
         return $donationRepoProphecy->reveal();

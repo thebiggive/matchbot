@@ -27,7 +27,7 @@ class DonationUpsertedHandlerTest extends TestCase
     {
         $message = self::someUpsertedMessage();
 
-        $this->donationRepositoryProphecy->push($message, false)->shouldBeCalledOnce();
+        $this->donationRepositoryProphecy->push($message)->shouldBeCalledOnce();
 
         $sut = new DonationUpsertedHandler(
             $this->donationRepositoryProphecy->reveal(),
@@ -44,7 +44,7 @@ class DonationUpsertedHandlerTest extends TestCase
     {
         $message = self::someUpsertedMessage();
 
-        $this->donationRepositoryProphecy->push($message, false)
+        $this->donationRepositoryProphecy->push($message)
             ->willThrow(new \Exception('Failed to push to SF'));
 
         $loggerWithOneError = $this->prophesize(LoggerInterface::class);
