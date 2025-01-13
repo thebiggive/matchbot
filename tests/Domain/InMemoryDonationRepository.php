@@ -207,17 +207,17 @@ class InMemoryDonationRepository implements DonationRepository
         throw new \Exception("Method not implemented in test double");
     }
 
-    #[\Override] public function push(AbstractStateChanged $changeMessage): void
-    {
-        throw new \Exception("Method not implemented in test double");
-    }
-
     #[\Override] public function find($id)
     {
         throw new \Exception("Method not implemented in test double");
     }
 
     #[\Override] public function findBy(array $criteria)
+    {
+        throw new \Exception("Method not implemented in test double");
+    }
+
+    public function upsert(AbstractStateChanged $changeMessage): void
     {
         throw new \Exception("Method not implemented in test double");
     }

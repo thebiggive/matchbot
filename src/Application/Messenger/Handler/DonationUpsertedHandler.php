@@ -3,7 +3,9 @@
 namespace MatchBot\Application\Messenger\Handler;
 
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DonationRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -28,7 +30,8 @@ readonly class DonationUpsertedHandler
 
         $this->logger->info("DUH invoked for UUID: $donationUUID");
         try {
-            $this->donationRepository->push($message);
+            $donationRepository = $this->donationRepository;
+            $donationRepository->upsert($message);
         } catch (\Throwable $exception) {
             $this->logger->error(sprintf(
                 "DUH: Exception %s on attempt to push donation %s: %s. Trace: %s",

@@ -14,6 +14,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
+use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client;
 use MatchBot\Domain\Campaign;
@@ -72,7 +73,8 @@ class DonationRepositoryTest extends TestCase
             ->willReturn(Salesforce18Id::of('sfDonation36912345'));
 
         // Just confirm it doesn't throw.
-        $this->getRepo($donationClientProphecy)->push(DonationUpserted::fromDonation($this->getTestDonation()));
+        $donationRepository = $this->getRepo($donationClientProphecy);
+        $donationRepository->upsert(DonationUpserted::fromDonation($this->getTestDonation()));
     }
 
     public function testExistingPush404InSandbox(): void
@@ -83,7 +85,8 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()
             ->willThrow(Client\NotFoundException::class);
 
-        $this->getRepo($donationClientProphecy)->push(self::someUpsertedMessage());
+        $donationRepository = $this->getRepo($donationClientProphecy);
+        $donationRepository->upsert(self::someUpsertedMessage());
     }
 
     public function testBuildFromApiRequestSuccess(): void
@@ -188,7 +191,8 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()
             ->willThrow(Client\BadRequestException::class);
 
-        $this->getRepo($donationClientProphecy)->push(self::someUpsertedMessage());
+        $donationRepository = $this->getRepo($donationClientProphecy);
+        $donationRepository->upsert(self::someUpsertedMessage());
     }
 
     public function testStripeAmountForCharityWithTipUsingAmex(): void

@@ -49,11 +49,6 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $this->matchingAdapter = $adapter;
     }
 
-    public function doUpdate(AbstractStateChanged $changeMessage): void
-    {
-        $this->upsert($changeMessage);
-    }
-
     public function buildFromApiRequest(DonationCreate $donationData): Donation
     {
         if (!in_array($donationData->psp, ['stripe'], true)) {
@@ -685,7 +680,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $query->execute();
     }
 
-    private function upsert(AbstractStateChanged $changeMessage): void
+    public function upsert(AbstractStateChanged $changeMessage): void
     {
         Assertion::isInstanceOf($changeMessage, DonationUpserted::class);
 
@@ -845,10 +840,5 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation
     {
         return $this->findAndLockOneBy(['uuid' => $donationId->toString()]);
-    }
-
-    public function push(AbstractStateChanged $changeMessage): void
-    {
-        $this->doUpdate($changeMessage);
     }
 }

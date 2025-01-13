@@ -175,7 +175,8 @@ interface DonationRepository
     public function findPendingByDonorCampaignAndMethod(string $donorStripeId, Salesforce18Id $campaignId, PaymentMethodType $paymentMethodType,): array;
 
     public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation;
-    public function push(AbstractStateChanged $changeMessage): void;
+
+    public function upsert(AbstractStateChanged $changeMessage): void;
 
     /**
      * @return ?Donation

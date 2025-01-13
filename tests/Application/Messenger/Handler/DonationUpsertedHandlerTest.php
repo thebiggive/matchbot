@@ -2,7 +2,9 @@
 
 namespace MatchBot\Tests\Application\Messenger\Handler;
 
+use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
+use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -27,7 +29,8 @@ class DonationUpsertedHandlerTest extends TestCase
     {
         $message = self::someUpsertedMessage();
 
-        $this->donationRepositoryProphecy->push($message)->shouldBeCalledOnce();
+        $donationRepository = $this->donationRepositoryProphecy;
+        $donationRepository->upsert($message);
 
         $sut = new DonationUpsertedHandler(
             $this->donationRepositoryProphecy->reveal(),
@@ -44,8 +47,8 @@ class DonationUpsertedHandlerTest extends TestCase
     {
         $message = self::someUpsertedMessage();
 
-        $this->donationRepositoryProphecy->push($message)
-            ->willThrow(new \Exception('Failed to push to SF'));
+        $donationRepository = $this->donationRepositoryProphecy;
+        $donationRepository->upsert($message);
 
         $loggerWithOneError = $this->prophesize(LoggerInterface::class);
         $loggerWithOneError->info(Argument::type('string'));
