@@ -19,6 +19,7 @@ use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
+use UnexpectedValueException;
 
 readonly class RegularGivingService
 {
@@ -50,6 +51,8 @@ readonly class RegularGivingService
      * @throws \Doctrine\ORM\Exception\ORMException
      * @throws \MatchBot\Client\NotFoundException
      * @throws \Symfony\Component\Notifier\Exception\TransportExceptionInterface
+     *
+     * @throws UnexpectedValueException if the amount is out of the allowed range
      */
     public function setupNewMandate(
         DonorAccount $donor,

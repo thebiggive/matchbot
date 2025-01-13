@@ -91,7 +91,7 @@ class Create extends Action
                 billingPostCode: $mandateData->billingPostcode,
                 confirmationTokenId: $mandateData->stripeConfirmationTokenId,
             );
-        } catch (WrongCampaignType $e) {
+        } catch (WrongCampaignType | \UnexpectedValueException $e) {
             return $this->validationError(
                 $response,
                 $e->getMessage(),
