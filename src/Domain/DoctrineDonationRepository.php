@@ -22,10 +22,10 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
- * @template-extends SalesforceWriteProxyRepository<Donation, \MatchBot\Client\Donation>
+ * @template-extends SalesforceProxyRepository<Donation, \MatchBot\Client\Donation>
  * @psalm-suppress MissingConstructor Doctrine get repo DI isn't very friendly to custom constructors.
  */
-class DoctrineDonationRepository extends SalesforceWriteProxyRepository implements DonationRepository
+class DoctrineDonationRepository extends SalesforceProxyRepository implements DonationRepository
 {
     /** Maximum of each type of pending object to process */
     private const int MAX_PER_BULK_PUSH = 5_000;
@@ -850,5 +850,19 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
     public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation
     {
         return $this->findAndLockOneBy(['uuid' => $donationId->toString()]);
+    }
+
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - used via DonationRepository interface
+     */
+    public function push(AbstractStateChanged $changeMessage, bool $isNew): void
+    {
+        if ($isNew) {
+            $this->doCreate($changeMessage);
+
+            return;
+        }
+
+        $this->doUpdate($changeMessage);
     }
 }
