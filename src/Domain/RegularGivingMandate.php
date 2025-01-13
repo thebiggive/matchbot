@@ -71,6 +71,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
     /**
      * @param Salesforce18Id<Campaign> $campaignId
      * @param Salesforce18Id<Charity> $charityId
+     *
+     * @throws UnexpectedValueException if the amount is out of the allowed range
      */
     public function __construct(
         PersonId $donorId,
