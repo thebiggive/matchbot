@@ -10,18 +10,38 @@ use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Client\Mailer;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Tests\TestData;
+use PhpParser\Node\Arg;
 use Prophecy\Argument;
 use Psr\Http\Message\ResponseInterface;
 use MatchBot\Client\Stripe;
 use Stripe\PaymentIntent;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class CreateRegularGivingMandateTest extends IntegrationTest
 {
+    private MessageBusInterface $originalMessageBus;
+
     public function setUp(): void
     {
         parent::setUp();
         $this->getContainer()->set(Mailer::class, $this->createStub(Mailer::class));
+
+        $this->originalMessageBus = $this->getService(MessageBusInterface::class);
+
+        $messageBusProphecy = $this->prophesize(MessageBusInterface::class);
+        $messageBusProphecy->dispatch(Argument::type(Envelope::class), Argument::cetera())
+            ->willReturnArgument(0)
+            ->shouldBeCalledTimes(4); // three donations + 1 mandate
+
+        $this->getContainer()->set(MessageBusInterface::class, $messageBusProphecy->reveal());
     }
+
+    public function tearDown(): void
+    {
+        $this->getContainer()->set(MessageBusInterface::class, $this->originalMessageBus);
+    }
+
     public function testItCreatesRegularGivingMandate(): void
     {
         // arrange
