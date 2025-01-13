@@ -40,6 +40,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Stripe\Charge;
 use Stripe\PaymentIntent;
+use Symfony\Component\Messenger\RoutableMessageBus;
 
 /**
 
@@ -368,6 +369,7 @@ class RegularGivingServiceTest extends TestCase
             regularGivingMandateRepository: $this->createStub(RegularGivingMandateRepository::class),
             regularGivingNotifier: $this->regularGivingNotifierProphecy->reveal(),
             stripe: $this->stripeProphecy->reveal(),
+            bus: $this->createStub(RoutableMessageBus::class),
         );
     }
 

@@ -7,6 +7,8 @@ use Doctrine\DBAL\Exception\ServerException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Messenger\MandateUpserted;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
@@ -18,6 +20,8 @@ use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
 use UnexpectedValueException;
 
@@ -35,6 +39,7 @@ readonly class RegularGivingService
         private RegularGivingMandateRepository $regularGivingMandateRepository,
         private RegularGivingNotifier $regularGivingNotifier,
         private Stripe $stripe,
+        private RoutableMessageBus $bus,
     ) {
     }
 
@@ -109,6 +114,7 @@ readonly class RegularGivingService
                 $mandate->cancel();
             }
             $this->entityManager->flush();
+            $this->getDispatch($mandate);
             throw $e;
         }
 
@@ -134,6 +140,9 @@ readonly class RegularGivingService
         $this->entityManager->flush();
 
         $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
+
+        $this->getDispatch($mandate);
+
 
         return $mandate;
     }
@@ -176,6 +185,8 @@ readonly class RegularGivingService
         } catch (RegularGivingCollectionEndPassed $e) {
             $mandate->campaignEnded();
             $this->log->info($e->getMessage());
+            $this->getDispatch($mandate);
+            $this->entityManager->flush();
             return null;
         }
         $preAuthorizationDate = $donation->getPreAuthorizationDate();
@@ -193,6 +204,11 @@ readonly class RegularGivingService
         }
 
         $mandate->setDonationsCreatedUpTo($preAuthorizationDate);
+
+        // may not be necassary, as afaik we haven't actually modified the mandate here, but worth including just in
+        // case we do modify it or adjust the fromMandate method to include some other stuff like the next sequence
+        // number or expected next payment date.
+        $this->getDispatch($mandate);
 
         return $donation;
     }
@@ -296,5 +312,10 @@ readonly class RegularGivingService
         }
 
         return StripePaymentMethodId::of($paymentMethodId);
+    }
+
+    public function getDispatch(RegularGivingMandate $mandate): void
+    {
+        $this->bus->dispatch(new Envelope(MandateUpserted::fromMandate($mandate)));
     }
 }
