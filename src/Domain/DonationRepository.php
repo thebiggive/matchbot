@@ -176,7 +176,7 @@ interface DonationRepository
 
     public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation;
 
-    public function upsert(AbstractStateChanged $changeMessage): void;
+    public function push(AbstractStateChanged $changeMessage): void;
 
     /**
      * @return ?Donation

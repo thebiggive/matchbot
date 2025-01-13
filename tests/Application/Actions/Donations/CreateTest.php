@@ -188,7 +188,7 @@ class CreateTest extends TestCase
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willReturn($donationToReturn);
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $donationRepoProphecy->upsert(Argument::type(DonationUpserted::class));
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -234,7 +234,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willThrow(new UnexpectedValueException('Currency CAD is invalid for campaign'));
-        $donationRepoProphecy->upsert(Argument::type(DonationUpserted::class));
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -276,7 +276,7 @@ class CreateTest extends TestCase
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->shouldNotBeCalled();
-        $donationRepoProphecy->upsert(Argument::type(DonationUpserted::class));
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);

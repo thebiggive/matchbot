@@ -74,7 +74,7 @@ class DonationRepositoryTest extends TestCase
 
         // Just confirm it doesn't throw.
         $donationRepository = $this->getRepo($donationClientProphecy);
-        $donationRepository->upsert(DonationUpserted::fromDonation($this->getTestDonation()));
+        $donationRepository->push(DonationUpserted::fromDonation($this->getTestDonation()));
     }
 
     public function testExistingPush404InSandbox(): void
@@ -86,7 +86,7 @@ class DonationRepositoryTest extends TestCase
             ->willThrow(Client\NotFoundException::class);
 
         $donationRepository = $this->getRepo($donationClientProphecy);
-        $donationRepository->upsert(self::someUpsertedMessage());
+        $donationRepository->push(self::someUpsertedMessage());
     }
 
     public function testBuildFromApiRequestSuccess(): void
@@ -192,7 +192,7 @@ class DonationRepositoryTest extends TestCase
             ->willThrow(Client\BadRequestException::class);
 
         $donationRepository = $this->getRepo($donationClientProphecy);
-        $donationRepository->upsert(self::someUpsertedMessage());
+        $donationRepository->push(self::someUpsertedMessage());
     }
 
     public function testStripeAmountForCharityWithTipUsingAmex(): void

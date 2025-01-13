@@ -217,7 +217,7 @@ class InMemoryDonationRepository implements DonationRepository
         throw new \Exception("Method not implemented in test double");
     }
 
-    public function upsert(AbstractStateChanged $changeMessage): void
+    public function push(AbstractStateChanged $changeMessage): void
     {
         throw new \Exception("Method not implemented in test double");
     }

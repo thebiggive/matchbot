@@ -680,7 +680,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $query->execute();
     }
 
-    public function upsert(AbstractStateChanged $changeMessage): void
+    public function push(AbstractStateChanged $changeMessage): void
     {
         Assertion::isInstanceOf($changeMessage, DonationUpserted::class);
 

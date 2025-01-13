@@ -412,7 +412,7 @@ class StripePayoutHandlerTest extends TestCase
             ->findAndLockOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy->upsert(Argument::type(DonationUpserted::class));
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
 
         return $donationRepoProphecy->reveal();
     }
