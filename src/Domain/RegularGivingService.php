@@ -39,7 +39,6 @@ readonly class RegularGivingService
         private RegularGivingMandateRepository $regularGivingMandateRepository,
         private RegularGivingNotifier $regularGivingNotifier,
         private Stripe $stripe,
-        private RoutableMessageBus $bus,
     ) {
     }
 
@@ -114,7 +113,6 @@ readonly class RegularGivingService
                 $mandate->cancel();
             }
             $this->entityManager->flush();
-            $this->getDispatch($mandate);
             throw $e;
         }
 
@@ -140,8 +138,6 @@ readonly class RegularGivingService
         $this->entityManager->flush();
 
         $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
-
-        $this->getDispatch($mandate);
 
 
         return $mandate;
@@ -185,7 +181,6 @@ readonly class RegularGivingService
         } catch (RegularGivingCollectionEndPassed $e) {
             $mandate->campaignEnded();
             $this->log->info($e->getMessage());
-            $this->getDispatch($mandate);
             $this->entityManager->flush();
             return null;
         }
@@ -204,11 +199,6 @@ readonly class RegularGivingService
         }
 
         $mandate->setDonationsCreatedUpTo($preAuthorizationDate);
-
-        // may not be necassary, as afaik we haven't actually modified the mandate here, but worth including just in
-        // case we do modify it or adjust the fromMandate method to include some other stuff like the next sequence
-        // number or expected next payment date.
-        $this->getDispatch($mandate);
 
         return $donation;
     }
@@ -312,10 +302,5 @@ readonly class RegularGivingService
         }
 
         return StripePaymentMethodId::of($paymentMethodId);
-    }
-
-    public function getDispatch(RegularGivingMandate $mandate): void
-    {
-        $this->bus->dispatch(new Envelope(MandateUpserted::fromMandate($mandate)));
     }
 }

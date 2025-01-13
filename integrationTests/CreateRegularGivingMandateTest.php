@@ -32,7 +32,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $messageBusProphecy = $this->prophesize(MessageBusInterface::class);
         $messageBusProphecy->dispatch(Argument::type(Envelope::class), Argument::cetera())
             ->willReturnArgument(0)
-            ->shouldBeCalledTimes(4); // three donations + 1 mandate
+            ->shouldBeCalledTimes(5); // three donations + 1 mandate create + 1 mandate update
 
         $this->getContainer()->set(MessageBusInterface::class, $messageBusProphecy->reveal());
     }

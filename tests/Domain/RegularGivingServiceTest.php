@@ -40,7 +40,6 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Log\LoggerInterface;
 use Stripe\Charge;
 use Stripe\PaymentIntent;
-use Symfony\Component\Messenger\RoutableMessageBus;
 
 /**
 
@@ -358,9 +357,6 @@ class RegularGivingServiceTest extends TestCase
 
     public function makeSut(\DateTimeImmutable $simulatedNow): RegularGivingService
     {
-        $routableMessageBusProphecy = $this->prophesize(RoutableMessageBus::class);
-        $routableMessageBusProphecy->dispatch(Argument::cetera())->willReturnArgument(0);
-
         return new RegularGivingService(
             now: $simulatedNow,
             donationRepository: $this->donationRepositoryProphecy->reveal(),
@@ -372,7 +368,6 @@ class RegularGivingServiceTest extends TestCase
             regularGivingMandateRepository: $this->createStub(RegularGivingMandateRepository::class),
             regularGivingNotifier: $this->regularGivingNotifierProphecy->reveal(),
             stripe: $this->stripeProphecy->reveal(),
-            bus: $routableMessageBusProphecy->reveal(),
         );
     }
 
