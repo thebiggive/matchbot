@@ -51,13 +51,21 @@ class CreateRegularGivingMandateTest extends IntegrationTest
             Argument::that(fn(array $payload) => ($payload['amount'] === $pencePerMonth))
         )
             ->shouldBeCalledOnce()
-            ->will(fn() => new PaymentIntent('payment-intent-id-' . IntegrationTest::randomString()));
+            ->will(function () {
+                $pi = new PaymentIntent('payment-intent-id-xyz' . IntegrationTest::randomString());
+                $pi->status = PaymentIntent::STATUS_REQUIRES_ACTION;
+                return $pi;
+            });
         $stripeProphecy->confirmPaymentIntent(
             Argument::type('string'),
             Argument::cetera()
         )
             ->shouldBeCalledOnce()
-            ->will(fn(array $args) => new PaymentIntent($args[0]));
+            ->will(function (array $args) {
+                $pi = new PaymentIntent($args[0]);
+                $pi->status = PaymentIntent::STATUS_SUCCEEDED;
+                return $pi;
+            });
 
         $this->getContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
