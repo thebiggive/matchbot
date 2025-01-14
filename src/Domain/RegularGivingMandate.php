@@ -357,7 +357,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     {
         return [
             'id' => $this->uuid,
-            // todo - fill in other properties, consider sharing code with toFrontEndApiModel
+            // @todo-regular-giving - fill in other properties, consider sharing code with toFrontEndApiModel
         ];
     }
 }
