@@ -55,7 +55,7 @@ class Fund extends Common
         ]);
     }
 
-    protected function baseUri(): string
+    private function baseUri(): string
     {
         return $this->baseUri() . '/funds/services/apexrest/v1.0/funds';
     }

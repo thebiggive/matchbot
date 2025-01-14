@@ -111,7 +111,7 @@ class Campaign extends Common
         return $campaigns;
     }
 
-    protected function baseUri(): string
+    private function baseUri(): string
     {
         return $this->sfApiBaseUrl . '/campaigns/services/apexrest/v1.0/campaigns';
     }

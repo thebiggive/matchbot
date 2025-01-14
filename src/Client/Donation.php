@@ -28,7 +28,7 @@ class Donation extends Common
         );
     }
 
-    protected function baseUri(): string
+    private function baseUri(): string
     {
         return $this->sfApiBaseUrl . '/donations/services/apexrest/v1.0/donations';
     }
