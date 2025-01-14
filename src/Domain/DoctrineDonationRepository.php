@@ -681,8 +681,6 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
 
     public function push(DonationUpserted $changeMessage): void
     {
-        Assertion::isInstanceOf($changeMessage, DonationUpserted::class);
-
         try {
             $salesforceDonationId = $this->getClient()->createOrUpdate($changeMessage);
         } catch (NotFoundException $ex) {
