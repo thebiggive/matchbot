@@ -336,16 +336,19 @@ return function (ContainerBuilder $containerBuilder) {
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {
             $logger = $c->get(LoggerInterface::class);
 
-            $sendMiddleware = new SendMessageMiddleware(new SendersLocator(
+            $sendersLocator = new SendersLocator(
                 [
                     Messages\Donation::class => [ClaimBotTransport::class],
                     CharityUpdated::class => [TransportInterface::class],
                     StripePayout::class => [TransportInterface::class],
                     DonationUpserted::class => [TransportInterface::class],
+                    MandateUpserted::class => [TransportInterface::class],
                     FundTotalUpdated::class => [TransportInterface::class],
                 ],
                 $c,
-            ));
+            );
+
+            $sendMiddleware = new SendMessageMiddleware($sendersLocator, allowNoSenders: false);
             $sendMiddleware->setLogger($logger);
 
             /**
