@@ -11,7 +11,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Salesforce18Id;
 
 /**
- * Client to push / upsert copies of donations to Salesforce.
+ * Client to push / upsert copies of Regular Giving mandates to Salesforce.
  */
 class Mandate extends Common
 {
