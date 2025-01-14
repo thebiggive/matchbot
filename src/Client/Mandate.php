@@ -26,7 +26,8 @@ class Mandate extends Common
         return $this->postUpdateToSalesforce(
             $this->getSetting('salesforce', 'baseUri') . '/donations/services/apexrest/v1.0/mandates/' . $message->uuid,
             $message->jsonSnapshot,
-            $message->uuid
+            $message->uuid,
+            'mandate',
         );
     }
 }

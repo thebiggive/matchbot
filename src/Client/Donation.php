@@ -23,7 +23,8 @@ class Donation extends Common
         return $this->postUpdateToSalesforce(
             $this->getSetting('donation', 'baseUri') . '/' . $message->uuid,
             $message->jsonSnapshot,
-            $message->uuid
+            $message->uuid,
+            'donation',
         );
     }
 }

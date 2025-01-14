@@ -48,10 +48,13 @@ abstract class Common
         return $uri;
     }
 
-    protected function postUpdateToSalesforce(string $uri, array $jsonSnapshot, string $uuid): Salesforce18Id
+    /**
+     * @param 'donation'|'mandate' $entityType
+     */
+    protected function postUpdateToSalesforce(string $uri, array $jsonSnapshot, string $uuid, string $entityType): Salesforce18Id
     {
         if ((bool) getenv('DISABLE_CLIENT_PUSH')) {
-            $this->logger->info("Client push off: Skipping upsert of donation {$uuid}}");
+            $this->logger->info("Client push off: Skipping upsert of $entityType {$uuid}}");
             throw new BadRequestException('Client push is off');
         }
 
@@ -98,7 +101,8 @@ abstract class Common
                  * this edge case.
                  */
                 $this->logger->error(sprintf(
-                    'Donation update skipped due to missing sandbox resource. Exception %s: %s. Body: %s',
+                    '%s update skipped due to missing sandbox resource. Exception %s: %s. Body: %s',
+                    $entityType,
                     get_class($ex),
                     $ex->getMessage(),
                     $exResponse ? $exResponse->getBody() : 'N/A',
@@ -108,19 +112,20 @@ abstract class Common
             }
 
             $this->logger->error(sprintf(
-                'Donation upsert exception for donation UUID %s %s: %s. Body: %s',
+                '%s upsert exception for UUID %s %s: %s. Body: %s',
+                $entityType,
                 $uuid,
                 get_class($ex),
                 $ex->getMessage(),
                 $exResponse ? $exResponse->getBody() : 'N/A',
             ));
 
-            throw new BadRequestException('Donation not upserted');
+            throw new BadRequestException('not upserted');
         }
 
         if (!in_array($response->getStatusCode(), [200, 201], true)) {
-            $this->logger->error('Donation upsert got non-success code ' . $response->getStatusCode());
-            throw new BadRequestException('Donation not upserted, response code ' . $response->getStatusCode());
+            $this->logger->error("$entityType upsert got non-success code " . $response->getStatusCode());
+            throw new BadRequestException("$entityType not upserted, response code " . $response->getStatusCode());
         }
 
         /**
