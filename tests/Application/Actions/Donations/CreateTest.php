@@ -9,7 +9,6 @@ use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Fund;

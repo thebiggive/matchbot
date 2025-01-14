@@ -2,7 +2,6 @@
 
 namespace MatchBot\Tests\Application\Messenger\Handler;
 
-use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DonationRepository;

@@ -6,7 +6,7 @@ use DateTime;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
-use MatchBot\Application\Messenger\AbstractStateChanged;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\NotFoundException;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -176,7 +176,7 @@ interface DonationRepository
 
     public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation;
 
-    public function push(AbstractStateChanged $changeMessage): void;
+    public function push(DonationUpserted $changeMessage): void;
 
     /**
      * @return ?Donation

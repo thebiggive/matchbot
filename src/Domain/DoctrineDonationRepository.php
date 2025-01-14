@@ -13,7 +13,6 @@ use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
-use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
@@ -614,7 +613,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     }
 
     private function setSalesforceFieldsWithRetry(
-        AbstractStateChanged $changeMessage,
+        DonationUpserted $changeMessage,
         ?Salesforce18Id $salesforceId
     ): void {
         $tries = 0;
@@ -680,7 +679,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $query->execute();
     }
 
-    public function push(AbstractStateChanged $changeMessage): void
+    public function push(DonationUpserted $changeMessage): void
     {
         Assertion::isInstanceOf($changeMessage, DonationUpserted::class);
 

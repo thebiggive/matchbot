@@ -6,7 +6,6 @@ namespace MatchBot\Tests\Application\Messenger\Handler;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;

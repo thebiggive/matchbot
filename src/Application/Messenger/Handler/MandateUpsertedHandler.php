@@ -3,13 +3,8 @@
 namespace MatchBot\Application\Messenger\Handler;
 
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Assertion;
-use MatchBot\Application\Messenger\AbstractStateChanged;
-use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\MandateUpserted;
 use MatchBot\Client\Mandate;
-use MatchBot\Domain\DoctrineDonationRepository;
-use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Clock\Clock;
