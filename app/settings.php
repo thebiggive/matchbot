@@ -19,15 +19,6 @@ return function (ContainerBuilder $containerBuilder) {
                 'global' => [
                     'timeout' => getenv('SALESFORCE_CLIENT_TIMEOUT'), // in seconds
                 ],
-                'campaign' => [
-                    'baseUri' => getenv('SALESFORCE_CAMPAIGN_API'),
-                ],
-                'donation' => [
-                    'baseUri' => getenv('SALESFORCE_DONATION_API'),
-                ],
-                'fund' => [
-                    'baseUri' => getenv('SALESFORCE_FUND_API'),
-                ],
                 'salesforce' => [
                     'baseUri' => getenv('SALESFORCE_API_BASE'),
                 ],

@@ -21,10 +21,15 @@ class Donation extends Common
     public function createOrUpdate(DonationUpserted $message): Salesforce18Id
     {
         return $this->postUpdateToSalesforce(
-            $this->getSetting('donation', 'baseUri') . '/' . $message->uuid,
+            $this->baseUri() . '/' . $message->uuid,
             $message->jsonSnapshot,
             $message->uuid,
             'donation',
         );
+    }
+
+    private function baseUri(): string
+    {
+        return $this->sfApiBaseUrl . '/donations/services/apexrest/v1.0/donations';
     }
 }

@@ -24,10 +24,15 @@ class Mandate extends Common
     public function createOrUpdate(MandateUpserted $message): Salesforce18Id
     {
         return $this->postUpdateToSalesforce(
-            $this->getSetting('salesforce', 'baseUri') . '/donations/services/apexrest/v1.0/mandates/' . $message->uuid,
+            $this->baseUri() . $message->uuid,
             $message->jsonSnapshot,
             $message->uuid,
             'mandate',
         );
+    }
+
+    private function baseUri(): string
+    {
+        return $this->sfApiBaseUrl . '/donations/services/apexrest/v1.0/mandates/';
     }
 }
