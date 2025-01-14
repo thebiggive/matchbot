@@ -38,6 +38,7 @@ use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
 use Stripe\ConfirmationToken;
 use Stripe\Exception\PermissionException;
+use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Message\ChatMessage;

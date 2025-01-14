@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Aws\CloudWatch\CloudWatchClient;
 use DI\Container;
 use DI\ContainerBuilder;
+use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,12 +22,15 @@ use MatchBot\Application\Messenger\Handler\CharityUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\DonationUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\FundTotalUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
+use MatchBot\Application\Messenger\Handler\MandateUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\PersonHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
+use MatchBot\Application\Messenger\MandateUpserted;
 use MatchBot\Application\Messenger\Middleware\AddOrLogMessageId;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
 use MatchBot\Application\Notifier\StripeChatterInterface;
+use MatchBot\Application\Persistence\RegularGivingMandateEventSubscriber;
 use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\RealTimeMatchingStorage;
 use MatchBot\Application\RedisMatchingStorage;
@@ -185,8 +189,14 @@ return function (ContainerBuilder $containerBuilder) {
             return new Client\Donation($c->get('settings'), $c->get(LoggerInterface::class));
         },
 
+        Client\Mandate::class => function (ContainerInterface $c): Client\Mandate {
+            return new Client\Mandate($c->get('settings'), $c->get(LoggerInterface::class));
+        },
+
         Client\Fund::class => function (ContainerInterface $c): Client\Fund {
-            return new Client\Fund($c->get('settings'), $c->get(LoggerInterface::class));
+            $settings = $c->get('settings');
+            \assert(is_array($settings));
+            return new Client\Fund($settings, $c->get(LoggerInterface::class));
         },
 
         Client\Mailer::class => function (ContainerInterface $c): Client\Mailer {
@@ -326,26 +336,35 @@ return function (ContainerBuilder $containerBuilder) {
         MessageBusInterface::class => static function (ContainerInterface $c): MessageBusInterface {
             $logger = $c->get(LoggerInterface::class);
 
-            $sendMiddleware = new SendMessageMiddleware(new SendersLocator(
+            $sendersLocator = new SendersLocator(
                 [
                     Messages\Donation::class => [ClaimBotTransport::class],
                     CharityUpdated::class => [TransportInterface::class],
                     StripePayout::class => [TransportInterface::class],
                     DonationUpserted::class => [TransportInterface::class],
+                    MandateUpserted::class => [TransportInterface::class],
                     FundTotalUpdated::class => [TransportInterface::class],
                 ],
                 $c,
-            ));
+            );
+
+            $sendMiddleware = new SendMessageMiddleware($sendersLocator, allowNoSenders: false);
             $sendMiddleware->setLogger($logger);
 
+            /**
+             * @psalm-suppress MixedArgument
+             * @psalm-suppress MissingClosureParamType
+             */
             $handleMiddleware = new HandleMessageMiddleware(new HandlersLocator(
+                /** We lazy-load the handlers from the container to avoid circular dependencies. */
                 [
-                    CharityUpdated::class => [$c->get(CharityUpdatedHandler::class)],
-                    Messages\Donation::class => [$c->get(GiftAidResultHandler::class)],
-                    Messages\Person::class => [$c->get(PersonHandler::class)],
-                    StripePayout::class => [$c->get(StripePayoutHandler::class)],
-                    DonationUpserted::class => [$c->get(DonationUpsertedHandler::class)],
-                    FundTotalUpdated::class => [$c->get(FundTotalUpdatedHandler::class)],
+                    CharityUpdated::class => [fn($msg) => $c->get(CharityUpdatedHandler::class)($msg)],
+                    Messages\Donation::class => [fn($msg) => $c->get(GiftAidResultHandler::class)($msg)],
+                    Messages\Person::class => [fn($msg) => $c->get(PersonHandler::class)($msg)],
+                    StripePayout::class => [fn($msg) => $c->get(StripePayoutHandler::class)($msg)],
+                    DonationUpserted::class => [fn($msg) => $c->get(DonationUpsertedHandler::class)($msg)],
+                    MandateUpserted::class => [fn($msg) => $c->get(MandateUpsertedHandler::class)($msg)],
+                    FundTotalUpdated::class => [fn($msg) => $c->get(FundTotalUpdatedHandler::class)($msg)],
                 ],
             ));
             $handleMiddleware->setLogger($logger);
@@ -449,11 +468,15 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         RetrySafeEntityManager::class => static function (ContainerInterface $c): RetrySafeEntityManager {
-            return new RetrySafeEntityManager(
+            $em = new RetrySafeEntityManager(
                 $c->get(ORM\Configuration::class),
                 $c->get('settings')['doctrine']['connection'],
                 $c->get(LoggerInterface::class),
             );
+
+            $em->getEventManager()->addEventSubscriber($c->get(RegularGivingMandateEventSubscriber::class));
+
+            return $em;
         },
 
         ORM\EntityManager::class =>  static function (): never {

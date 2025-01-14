@@ -352,4 +352,12 @@ class RegularGivingMandate extends SalesforceWriteProxy
             billingPostcode: $donor->getBillingPostcode(),
         );
     }
+
+    public function toSFApiModel(): array
+    {
+        return [
+            'id' => $this->uuid,
+            // @todo-regular-giving - fill in other properties, consider sharing code with toFrontEndApiModel
+        ];
+    }
 }

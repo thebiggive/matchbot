@@ -6,25 +6,28 @@ namespace MatchBot\Client;
 
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Messenger\MandateUpserted;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Salesforce18Id;
 
 /**
- * Client to push / upsert copies of donations to Salesforce.
+ * Client to push / upsert copies of Regular Giving mandates to Salesforce.
  */
-class Donation extends Common
+class Mandate extends Common
 {
+    use HashTrait;
+
     /**
      * @throws NotFoundException on missing campaign in a sandbox
      * @throws BadRequestException
      */
-    public function createOrUpdate(DonationUpserted $message): Salesforce18Id
+    public function createOrUpdate(MandateUpserted $message): Salesforce18Id
     {
         return $this->postUpdateToSalesforce(
-            $this->getSetting('donation', 'baseUri') . '/' . $message->uuid,
+            $this->getSetting('salesforce', 'baseUri') . '/donations/services/apexrest/v1.0/mandates/' . $message->uuid,
             $message->jsonSnapshot,
             $message->uuid,
-            'donation',
+            'mandate',
         );
     }
 }

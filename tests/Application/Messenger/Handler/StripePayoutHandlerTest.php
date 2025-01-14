@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
+use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -410,9 +411,7 @@ class StripePayoutHandlerTest extends TestCase
             ->findAndLockOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(DonationUpserted::class), false)
-            ->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
 
         return $donationRepoProphecy->reveal();
     }

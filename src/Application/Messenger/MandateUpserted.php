@@ -4,28 +4,26 @@ namespace MatchBot\Application\Messenger;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\RegularGivingMandate;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;
 
-/**
- * Message to tell workers to push a change to Salesforce.
- */
-class DonationUpserted implements MessageGroupAwareInterface
+class MandateUpserted implements MessageGroupAwareInterface
 {
     protected function __construct(public string $uuid, public array $jsonSnapshot)
     {
         Assertion::uuid($this->uuid);
     }
 
-    public static function fromDonation(Donation $donation): self
+    public static function fromMandate(RegularGivingMandate $mandate): self
     {
         return new self(
-            uuid: $donation->getUuid()->toString(),
-            jsonSnapshot: $donation->toSFApiModel(),
+            uuid: $mandate->getUuid()->toString(),
+            jsonSnapshot: $mandate->toSFApiModel(),
         );
     }
 
     public function getMessageGroupId(): ?string
     {
-        return 'donation.upserted.' . $this->uuid;
+        return 'manadate.upserted.' . $this->uuid;
     }
 }

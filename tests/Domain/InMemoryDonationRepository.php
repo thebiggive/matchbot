@@ -4,7 +4,7 @@ namespace MatchBot\Tests\Domain;
 
 use DateTime;
 use MatchBot\Application\HttpModels\DonationCreate;
-use MatchBot\Application\Messenger\AbstractStateChanged;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -207,17 +207,17 @@ class InMemoryDonationRepository implements DonationRepository
         throw new \Exception("Method not implemented in test double");
     }
 
-    #[\Override] public function push(AbstractStateChanged $changeMessage, bool $isNew): void
-    {
-        throw new \Exception("Method not implemented in test double");
-    }
-
     #[\Override] public function find($id)
     {
         throw new \Exception("Method not implemented in test double");
     }
 
     #[\Override] public function findBy(array $criteria)
+    {
+        throw new \Exception("Method not implemented in test double");
+    }
+
+    public function push(DonationUpserted $changeMessage): void
     {
         throw new \Exception("Method not implemented in test double");
     }

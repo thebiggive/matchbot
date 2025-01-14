@@ -72,7 +72,8 @@ class DonationRepositoryTest extends TestCase
             ->willReturn(Salesforce18Id::of('sfDonation36912345'));
 
         // Just confirm it doesn't throw.
-        $this->getRepo($donationClientProphecy)->push(DonationUpserted::fromDonation($this->getTestDonation()), false);
+        $donationRepository = $this->getRepo($donationClientProphecy);
+        $donationRepository->push(DonationUpserted::fromDonation($this->getTestDonation()));
     }
 
     public function testExistingPush404InSandbox(): void
@@ -83,7 +84,8 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()
             ->willThrow(Client\NotFoundException::class);
 
-        $this->getRepo($donationClientProphecy)->push(self::someUpsertedMessage(), false);
+        $donationRepository = $this->getRepo($donationClientProphecy);
+        $donationRepository->push(self::someUpsertedMessage());
     }
 
     public function testBuildFromApiRequestSuccess(): void
@@ -188,7 +190,8 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()
             ->willThrow(Client\BadRequestException::class);
 
-        $this->getRepo($donationClientProphecy)->push(self::someUpsertedMessage(), false);
+        $donationRepository = $this->getRepo($donationClientProphecy);
+        $donationRepository->push(self::someUpsertedMessage());
     }
 
     public function testStripeAmountForCharityWithTipUsingAmex(): void

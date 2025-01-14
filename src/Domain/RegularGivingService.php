@@ -7,6 +7,8 @@ use Doctrine\DBAL\Exception\ServerException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Messenger\MandateUpserted;
 use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
@@ -18,6 +20,8 @@ use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
 use UnexpectedValueException;
 
@@ -176,6 +180,7 @@ readonly class RegularGivingService
         } catch (RegularGivingCollectionEndPassed $e) {
             $mandate->campaignEnded();
             $this->log->info($e->getMessage());
+            $this->entityManager->flush();
             return null;
         }
         $preAuthorizationDate = $donation->getPreAuthorizationDate();

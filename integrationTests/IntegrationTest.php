@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Client\Mandate as MandateSFClient;
 use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
@@ -75,7 +76,17 @@ abstract class IntegrationTest extends TestCase
         $routes = require __DIR__ . '/../app/routes.php';
         $routes($app);
 
+        $prophecy = $this->prophesize(MandateSFClient::class);
+        $prophecy->createOrUpdate(Argument::any())->will(self::someSalesForce18Id(...));
+
+        $this->getContainer()->set(MandateSFClient::class, $prophecy->reveal());
+
         self::setApp($app);
+    }
+
+    public static function someSalesForce18Id(): Salesforce18Id
+    {
+        return Salesforce18Id::of(self::randomString());
     }
 
     public static function setContainer(ContainerInterface $container): void

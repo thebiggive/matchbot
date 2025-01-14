@@ -13,7 +13,6 @@ use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
-use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
@@ -22,10 +21,10 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
- * @template-extends SalesforceWriteProxyRepository<Donation, \MatchBot\Client\Donation>
+ * @template-extends SalesforceProxyRepository<Donation, \MatchBot\Client\Donation>
  * @psalm-suppress MissingConstructor Doctrine get repo DI isn't very friendly to custom constructors.
  */
-class DoctrineDonationRepository extends SalesforceWriteProxyRepository implements DonationRepository
+class DoctrineDonationRepository extends SalesforceProxyRepository implements DonationRepository
 {
     /** Maximum of each type of pending object to process */
     private const int MAX_PER_BULK_PUSH = 5_000;
@@ -47,16 +46,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
         $this->matchingAdapter = $adapter;
-    }
-
-    public function doCreate(AbstractStateChanged $changeMessage): void
-    {
-        $this->upsert($changeMessage);
-    }
-
-    public function doUpdate(AbstractStateChanged $changeMessage): void
-    {
-        $this->upsert($changeMessage);
     }
 
     public function buildFromApiRequest(DonationCreate $donationData): Donation
@@ -624,7 +613,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
     }
 
     private function setSalesforceFieldsWithRetry(
-        AbstractStateChanged $changeMessage,
+        DonationUpserted $changeMessage,
         ?Salesforce18Id $salesforceId
     ): void {
         $tries = 0;
@@ -690,10 +679,8 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         $query->execute();
     }
 
-    private function upsert(AbstractStateChanged $changeMessage): void
+    public function push(DonationUpserted $changeMessage): void
     {
-        Assertion::isInstanceOf($changeMessage, DonationUpserted::class);
-
         try {
             $salesforceDonationId = $this->getClient()->createOrUpdate($changeMessage);
         } catch (NotFoundException $ex) {

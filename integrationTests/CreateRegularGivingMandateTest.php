@@ -14,14 +14,33 @@ use Prophecy\Argument;
 use Psr\Http\Message\ResponseInterface;
 use MatchBot\Client\Stripe;
 use Stripe\PaymentIntent;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class CreateRegularGivingMandateTest extends IntegrationTest
 {
+    private MessageBusInterface $originalMessageBus;
+
     public function setUp(): void
     {
         parent::setUp();
         $this->getContainer()->set(Mailer::class, $this->createStub(Mailer::class));
+
+        $this->originalMessageBus = $this->getService(MessageBusInterface::class);
+
+        $messageBusProphecy = $this->prophesize(MessageBusInterface::class);
+        $messageBusProphecy->dispatch(Argument::type(Envelope::class), Argument::cetera())
+            ->willReturnArgument(0)
+            ->shouldBeCalledTimes(5); // three donations + 1 mandate create + 1 mandate update
+
+        $this->getContainer()->set(MessageBusInterface::class, $messageBusProphecy->reveal());
     }
+
+    public function tearDown(): void
+    {
+        $this->getContainer()->set(MessageBusInterface::class, $this->originalMessageBus);
+    }
+
     public function testItCreatesRegularGivingMandate(): void
     {
         // arrange
@@ -32,13 +51,21 @@ class CreateRegularGivingMandateTest extends IntegrationTest
             Argument::that(fn(array $payload) => ($payload['amount'] === $pencePerMonth))
         )
             ->shouldBeCalledOnce()
-            ->will(fn() => new PaymentIntent('payment-intent-id-' . IntegrationTest::randomString()));
+            ->will(function () {
+                $pi = new PaymentIntent('payment-intent-id-xyz' . IntegrationTest::randomString());
+                $pi->status = PaymentIntent::STATUS_REQUIRES_ACTION;
+                return $pi;
+            });
         $stripeProphecy->confirmPaymentIntent(
             Argument::type('string'),
             Argument::cetera()
         )
             ->shouldBeCalledOnce()
-            ->will(fn(array $args) => new PaymentIntent($args[0]));
+            ->will(function (array $args) {
+                $pi = new PaymentIntent($args[0]);
+                $pi->status = PaymentIntent::STATUS_SUCCEEDED;
+                return $pi;
+            });
 
         $this->getContainer()->set(Stripe::class, $stripeProphecy->reveal());
 

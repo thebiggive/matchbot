@@ -28,6 +28,9 @@ return function (ContainerBuilder $containerBuilder) {
                 'fund' => [
                     'baseUri' => getenv('SALESFORCE_FUND_API'),
                 ],
+                'salesforce' => [
+                    'baseUri' => getenv('SALESFORCE_API_BASE'),
+                ],
                 'mailer' => [
                     'baseUri' => getenv('MAILER_BASE_URI'),
                     'sendSecret' => getenv('MAILER_SEND_SECRET'),
