@@ -139,7 +139,6 @@ readonly class RegularGivingService
 
         $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
 
-
         return $mandate;
     }
 

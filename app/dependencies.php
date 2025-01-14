@@ -353,6 +353,7 @@ return function (ContainerBuilder $containerBuilder) {
              * @psalm-suppress MissingClosureParamType
              */
             $handleMiddleware = new HandleMessageMiddleware(new HandlersLocator(
+                /** We lazy-load the handlers from the container to avoid circular dependencies. */
                 [
                     CharityUpdated::class => [fn($msg) => $c->get(CharityUpdatedHandler::class)($msg)],
                     Messages\Donation::class => [fn($msg) => $c->get(GiftAidResultHandler::class)($msg)],
