@@ -40,8 +40,6 @@ abstract class Common
         $this->sfApiBaseUrl = $this->clientSettings['salesforce']['baseUri'];
     }
 
-    abstract protected function baseUri(): string;
-
     protected function getSetting(string $service, string $property): string
     {
         return $this->clientSettings[$service][$property];
