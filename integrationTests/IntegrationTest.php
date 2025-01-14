@@ -126,6 +126,9 @@ abstract class IntegrationTest extends TestCase
             'mailer' => [
                 'baseUri' => 'dummy-mailer-base-uri',
             ],
+            'salesforce' => [
+                'baseUri' => 'dummy-salesforce-base-uri',
+            ],
         ];
     }
 

@@ -34,7 +34,7 @@ class Fund extends Common
      */
     public function getForCampaign(string $campaignId): array
     {
-        $response = $this->getHttpClient()->get("{$this->getSetting('campaign', 'baseUri')}/$campaignId/funds");
+        $response = $this->getHttpClient()->get("{$this->baseUri()}/$campaignId/funds");
 
         if ($response->getStatusCode() !== 200) {
             throw new NotFoundException('Campaign not found');
@@ -53,5 +53,10 @@ class Fund extends Common
             'json' => $fundMessage->jsonSnapshot,
             'headers' => $this->getVerifyHeaders(json_encode($fundMessage->jsonSnapshot)),
         ]);
+    }
+
+    protected function baseUri(): string
+    {
+        return $this->baseUri() . '/funds/services/apexrest/v1.0/funds';
     }
 }

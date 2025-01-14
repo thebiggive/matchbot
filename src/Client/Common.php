@@ -13,15 +13,34 @@ abstract class Common
 {
     use HashTrait;
 
-    private array $clientSettings;
+    /**
+     * @var array{
+     *     salesforce: array{ baseUri: string},
+     *     global: array{timeout: string},
+     * }
+     */
+    private readonly array $clientSettings;
     private ?Client $httpClient = null;
+    protected readonly string $sfApiBaseUrl;
 
+    /**
+     * @param LoggerInterface $logger
+     *
+     * Suppress psalm issues in this function as Psalm seems to prefer to read the type of the param
+     * rather than the type of the property, and its awkward to type the array based param.
+     *
+     * @psalm-suppress MixedAssignment
+     * @psalm-suppress MixedArrayAccess
+     */
     public function __construct(
         array $settings,
         protected LoggerInterface $logger
     ) {
         $this->clientSettings = $settings['apiClient'];
+        $this->sfApiBaseUrl = $this->clientSettings['salesforce']['baseUri'];
     }
+
+    abstract protected function baseUri(): string;
 
     protected function getSetting(string $service, string $property): string
     {

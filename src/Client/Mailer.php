@@ -17,8 +17,7 @@ class Mailer extends Common
     public function sendEmail(array $requestBody): void
     {
         try {
-            $baseUri = $this->getSetting('mailer', 'baseUri');
-            $uri = $baseUri . '/v1/send';
+            $uri = $this->baseUri() . '/v1/send';
             $response = $this->getHttpClient()->post(
                 $uri,
                 [
@@ -69,5 +68,10 @@ class Mailer extends Common
     private function hash(string $body): string
     {
         return hash_hmac('sha256', trim($body), $this->getSetting('mailer', 'sendSecret'));
+    }
+
+    protected function baseUri(): string
+    {
+        return $this->getSetting('mailer', 'baseUri');
     }
 }

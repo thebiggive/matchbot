@@ -46,7 +46,7 @@ class Campaign extends Common
      */
     public function getById(string $id, bool $withCache): array
     {
-        $uri = $this->getUri("{$this->getSetting('campaign', 'baseUri')}/$id", $withCache);
+        $uri = $this->getUri("{$this->baseUri()}/$id", $withCache);
         try {
             $response = $this->getHttpClient()->get($uri);
         } catch (RequestException $exception) {
@@ -109,5 +109,10 @@ class Campaign extends Common
         }
 
         return $campaigns;
+    }
+
+    protected function baseUri(): string
+    {
+        return $this->sfApiBaseUrl . '/campaigns/services/apexrest/v1.0/campaigns';
     }
 }
