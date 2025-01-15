@@ -33,6 +33,6 @@ class Mandate extends Common
 
     private function baseUri(): string
     {
-        return $this->sfApiBaseUrl . '/donations/services/apexrest/v1.0/mandates/';
+        return $this->sfApiBaseUrl . '/mandates/services/apexrest/v1.0/mandates/';
     }
 }
