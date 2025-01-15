@@ -30,6 +30,6 @@ class Donation extends Common
 
     private function baseUri(): string
     {
-        return $this->sfApiBaseUrl . '/donations/services/apexrest/v1.0/donations';
+        return $this->sfApiBaseUrl . '/donations/services/apexrest/v2.0/donations';
     }
 }
