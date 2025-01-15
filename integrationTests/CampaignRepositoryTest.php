@@ -65,7 +65,7 @@ class CampaignRepositoryTest extends IntegrationTest
         $sut = $this->getService(CampaignRepository::class);
 
         $campaign = new Campaign(
-            Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
+            self::someSalesForce18CampaignId(),
             $this->getCharityAwaitingGiftAidApproval(),
             startDate: new \DateTimeImmutable('-11 months'),
             endDate: new \DateTimeImmutable('-10 months'),
