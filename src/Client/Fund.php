@@ -56,5 +56,4 @@ class Fund extends Common
             'headers' => $this->getVerifyHeaders(json_encode($fundMessage->jsonSnapshot)),
         ]);
     }
-
 }
