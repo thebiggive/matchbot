@@ -9,6 +9,7 @@ use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\Mandate as MandateSFClient;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
@@ -87,6 +88,14 @@ abstract class IntegrationTest extends TestCase
     public static function someSalesForce18Id(): Salesforce18Id
     {
         return Salesforce18Id::of(self::randomString());
+    }
+
+    /**
+     * @return Salesforce18Id<Campaign>
+     */
+    public static function someSalesForce18CampaignId(): Salesforce18Id
+    {
+        return Salesforce18Id::ofCampaign(self::randomString());
     }
 
     public static function setContainer(ContainerInterface $container): void

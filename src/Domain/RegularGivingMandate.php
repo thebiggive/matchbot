@@ -2,6 +2,7 @@
 
 namespace MatchBot\Domain;
 
+use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
@@ -134,6 +135,23 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
             'status' => $this->status->apiName(),
+        ];
+    }
+
+
+    public function toSFApiModel(): array
+    {
+        return [
+            'uuid' => $this->uuid->toString(),
+            'campaignSFId' => $this->campaignId,
+            'activeFrom' => $this->activeFrom?->format(DateTimeInterface::ATOM),
+            'dayOfMonth' => $this->dayOfMonth,
+            'donationAmount' => $this->donationAmount->toNumericString(),
+
+            // following fields not currently used in SF but may be used soon, so sending anyway for now.
+            'status' => $this->status->apiName(),
+            'contactUuid' => $this->donorId->id,
+            'giftAid' => $this->giftAid,
         ];
     }
 
@@ -351,13 +369,5 @@ class RegularGivingMandate extends SalesforceWriteProxy
             mandateSequenceNumber: DonationSequenceNumber::of(1),
             billingPostcode: $donor->getBillingPostcode(),
         );
-    }
-
-    public function toSFApiModel(): array
-    {
-        return [
-            'id' => $this->uuid,
-            // @todo-regular-giving - fill in other properties, consider sharing code with toFrontEndApiModel
-        ];
     }
 }
