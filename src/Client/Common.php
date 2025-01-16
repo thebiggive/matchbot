@@ -148,10 +148,13 @@ abstract class Common
             throw new BadRequestException("$entityType not upserted, response code " . $response->getStatusCode());
         }
 
+        $contents = $response->getBody()->getContents();
+        $this->logger->info("SF API response: $contents");
+
         /**
          * @var array{'salesforceId': string} $response
          */
-        $response = json_decode($response->getBody()->getContents(), true);
+        $response = json_decode($contents, associative: true, flags: JSON_THROW_ON_ERROR);
         return Salesforce18Id::of($response['salesforceId']);
     }
 
