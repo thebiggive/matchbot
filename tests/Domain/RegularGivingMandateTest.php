@@ -149,7 +149,7 @@ class RegularGivingMandateTest extends TestCase
         );
     }
 
-    public function testItRendersApiModel(): void
+    public function testItRendersApiModelForFrontEnd(): void
     {
         $charity = TestCase::someCharity(salesforceId: Salesforce18Id::ofCharity('charity89012345678'));
 
@@ -196,6 +196,38 @@ class RegularGivingMandateTest extends TestCase
             \json_encode($mandate->toFrontEndApiModel($charity, $now)),
         );
     }
+
+    public function testItRendersApiModelForSalesforce(): void
+    {
+        $mandate = new RegularGivingMandate(
+            donorId: PersonId::of('2c2b4832-563c-11ef-96a4-07141f9e507e'),
+            donationAmount: Money::fromPoundsGBP(500),
+            campaignId: Salesforce18Id::ofCampaign('campaign9012345678'),
+            charityId: Salesforce18Id::ofCharity('charity90123456789'),
+            giftAid: true,
+            dayOfMonth: DayOfMonth::of(12),
+        );
+        $mandate->activate((new \DateTimeImmutable('2024-08-12T06:00:00Z')));
+
+        $SFApiModel = $mandate->toSFApiModel();
+
+        $this->assertJsonStringEqualsJsonString(
+            <<<JSON
+            {
+              "uuid":"{$mandate->getUuid()->toString()}",
+              "contactUuid":"2c2b4832-563c-11ef-96a4-07141f9e507e",
+              "donationAmount":500,
+              "campaignSFId":"campaign9012345678",
+              "giftAid":true,
+              "dayOfMonth":12,
+              "status":"active",
+              "activeFrom": "2024-08-12T06:00:00+00:00"
+            }
+            JSON,
+            \json_encode($SFApiModel)
+        );
+    }
+
     /** @dataProvider invalidRegularGivingAmounts */
     public function testItCannotBeTooSmallOrTooBig(int $pence, string $expectedMessage): void
     {
