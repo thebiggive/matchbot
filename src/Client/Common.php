@@ -84,7 +84,8 @@ abstract class Common
                     'headers' => $this->getVerifyHeaders(json_encode($jsonSnapshot)),
                 ]
             );
-            $this->logIfNotProd($uri, $jsonSnapshot, $response);
+            $contents = $response->getBody()->getContents();
+            $this->logIfNotProd($uri, $jsonSnapshot, $response, $contents);
         } catch (RequestException $ex) {
             $this->logger->info("Client PUsh RequestException: {$ex->getMessage()}");
             // Sandboxes that 404 on POST may be trying to sync up donations for non-existent campaigns and
@@ -148,7 +149,6 @@ abstract class Common
             throw new BadRequestException("$entityType not upserted, response code " . $response->getStatusCode());
         }
 
-        $contents = $response->getBody()->getContents();
         $this->logger->info("SF API response: $contents");
 
         try {
@@ -166,7 +166,7 @@ abstract class Common
         }
     }
 
-    private function logIfNotProd(string $uri, array $jsonSnapshot, ResponseInterface $response): void
+    private function logIfNotProd(string $uri, array $jsonSnapshot, ResponseInterface $response, string $content): void
     {
         if (getenv('APP_ENV') === 'production') {
             return;
@@ -177,7 +177,7 @@ abstract class Common
         $this->logger->info(
             "Sent HTTP message. URI: `{$uri}`, " .
             "request body: $requestBody" .
-            "response: `{$response->getStatusCode()} {$response->getBody()->getContents()}`"
+            "response: `{$response->getStatusCode()} $content`"
         );
     }
 }
