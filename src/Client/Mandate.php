@@ -23,16 +23,16 @@ class Mandate extends Common
      */
     public function createOrUpdate(MandateUpserted $message): Salesforce18Id
     {
+        // We have both donations and mandates in the URI because in SF regular giving mandates
+        // are part of the donations API 'Site'. URI for a POST does not depend on content of mandate - mandate
+        // is identified by the URI in the request body.
+        $uri = $this->sfApiBaseUrl . '/donations/services/apexrest/v1.0/mandates/';
+
         return $this->postUpdateToSalesforce(
-            $this->baseUri() . $message->uuid,
+            $uri,
             $message->jsonSnapshot,
             $message->uuid,
             'mandate',
         );
-    }
-
-    private function baseUri(): string
-    {
-        return $this->sfApiBaseUrl . '/mandates/services/apexrest/v1.0/mandates/';
     }
 }
