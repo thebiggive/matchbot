@@ -151,11 +151,19 @@ abstract class Common
         $contents = $response->getBody()->getContents();
         $this->logger->info("SF API response: $contents");
 
-        /**
-         * @var array{'salesforceId': string} $response
-         */
-        $response = json_decode($contents, associative: true, flags: JSON_THROW_ON_ERROR);
-        return Salesforce18Id::of($response['salesforceId']);
+        try {
+            /**
+             * @var array{'salesforceId': string} $response
+             */
+            $response = json_decode($contents, associative: true, flags: JSON_THROW_ON_ERROR);
+            return Salesforce18Id::of($response['salesforceId']);
+        } catch (\JsonException $e) {
+            throw new \Exception(
+                "JSON exception trying to parse response from SF '$contents'",
+                $e->getCode(),
+                $e
+            );
+        }
     }
 
     private function logIfNotProd(string $uri, array $jsonSnapshot, ResponseInterface $response): void
