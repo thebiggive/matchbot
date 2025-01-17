@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Client;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Http\Message\ResponseInterface;
@@ -67,7 +68,10 @@ abstract class Common
     }
 
     /**
-     * @param 'donation'|'mandate' $entityType
+     * @throws BadRequestException
+     * @throws BadResponseException
+     * @throws NotFoundException
+     * @throws GuzzleException
      */
     protected function postUpdateToSalesforce(string $uri, array $jsonSnapshot, string $uuid, string $entityType): Salesforce18Id
     {
@@ -85,7 +89,6 @@ abstract class Common
                 ]
             );
             $contents = $response->getBody()->getContents();
-            $this->logIfNotProd($uri, $jsonSnapshot, $response, $contents);
         } catch (RequestException $ex) {
             $this->logger->info("Client PUsh RequestException: {$ex->getMessage()}");
             // Sandboxes that 404 on POST may be trying to sync up donations for non-existent campaigns and
@@ -149,35 +152,17 @@ abstract class Common
             throw new BadRequestException("$entityType not upserted, response code " . $response->getStatusCode());
         }
 
-        $this->logger->info("SF API response: $contents");
-
         try {
             /**
              * @var array{'salesforceId': string} $response
              */
             $response = json_decode($contents, associative: true, flags: JSON_THROW_ON_ERROR);
-            return Salesforce18Id::of($response['salesforceId']);
+            $salesforceId = $response['salesforceId'] ?? throw new BadRequestException("Missing salesforceId for $entityType $uuid");
+            return Salesforce18Id::of($salesforceId);
         } catch (\JsonException $e) {
-            throw new \Exception(
-                "JSON exception trying to parse response from SF '$contents'",
-                $e->getCode(),
-                $e
+            throw new BadResponseException(
+                "JsonException trying to parse response from to push of $entityType $uuid SF '$contents': {$e->getMessage()}"
             );
         }
-    }
-
-    private function logIfNotProd(string $uri, array $jsonSnapshot, ResponseInterface $response, string $content): void
-    {
-        if (getenv('APP_ENV') === 'production') {
-            return;
-        }
-
-        $requestBody = json_encode($jsonSnapshot);
-
-        $this->logger->info(
-            "Sent HTTP message. URI: `{$uri}`, " .
-            "request body: $requestBody" .
-            "response: `{$response->getStatusCode()} $content`"
-        );
     }
 }

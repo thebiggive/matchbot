@@ -4,7 +4,10 @@ namespace MatchBot\Application\Messenger\Handler;
 
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\MandateUpserted;
+use MatchBot\Client\BadRequestException;
+use MatchBot\Client\BadResponseException;
 use MatchBot\Client\Mandate;
+use MatchBot\Client\NotFoundException;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Clock\Clock;
@@ -29,9 +32,29 @@ readonly class MandateUpsertedHandler
 
     public function __invoke(MandateUpserted $message): void
     {
-        $this->logger->info("MUH invoked for UUID: $message->uuid");
-        $sfId = $this->client->createOrUpdate($message);
-        $this->setSalesforceFields($message->uuid, $sfId);
+        $uuid = $message->uuid;
+        $this->logger->info("MUH invoked for UUID: $uuid");
+
+        try {
+            $sfId = $this->client->createOrUpdate($message);
+            $this->setSalesforceFields($uuid, $sfId);
+        } catch (BadRequestException | BadResponseException | NotFoundException $exception) {
+            // no trace needed for these exception types.
+            $this->logger->error(sprintf(
+                "MUH: %s on attempt to push donation %s: %s",
+                get_class($exception),
+                $uuid,
+                $exception->getMessage(),
+            ));
+        } catch (\Throwable $exception) {
+            $this->logger->error(sprintf(
+                "MUH: Exception %s on attempt to push donation %s: %s. Trace: %s",
+                get_class($exception),
+                $uuid,
+                $exception->getMessage(),
+                $exception->getTraceAsString(),
+            ));
+        }
     }
 
     /**

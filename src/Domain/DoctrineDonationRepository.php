@@ -9,6 +9,7 @@ use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Query;
+use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -683,7 +684,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     {
         try {
             $salesforceDonationId = $this->getClient()->createOrUpdate($changeMessage);
-        } catch (NotFoundException $ex) {
+        } catch (NotFoundException) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
             $this->logInfo(
                 "Marking 404 campaign Salesforce donation {$changeMessage->uuid} as complete; " .
@@ -695,6 +696,12 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         } catch (BadRequestException $exception) {
             $this->logError(
                 "Pushing Salesforce donation {$changeMessage->uuid} got 400: {$exception->getMessage()}"
+            );
+
+            return;
+        } catch (BadResponseException $exception) {
+            $this->logError(
+                "Pushing Salesforce donation {$changeMessage->uuid} got bad response: {$exception->getMessage()}"
             );
 
             return;
