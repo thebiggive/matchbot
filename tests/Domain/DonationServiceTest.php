@@ -7,7 +7,7 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Notifier\StripeChatterInterface;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Country;
@@ -171,16 +171,20 @@ class DonationServiceTest extends TestCase
         bool $withAlwaysCrashingEntityManager = false,
         LoggerInterface $logger = null,
     ): DonationService {
-        $emProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $emProphecy = $this->prophesize(EntityManagerInterface::class);
+        $emProphecy->isOpen()->willReturn(true);
         if ($withAlwaysCrashingEntityManager) {
             /**
              * @psalm-suppress InternalMethod
              * @psalm-suppress InternalClass Hard to simulate `final` exception otherwise
              */
-            $emProphecy->persistWithoutRetries(Argument::type(Donation::class))->willThrow(
+            $emProphecy->persist(Argument::type(Donation::class))->willThrow(
                 new UniqueConstraintViolationException(new Exception('EXCEPTION_MESSAGE'), null)
             );
             $emProphecy->isOpen()->willReturn(true);
+        } else {
+            $emProphecy->persist(Argument::type(Donation::class))->willReturn(null);
+            $emProphecy->flush()->willReturn(null);
         }
 
         $logger = $logger ?? new NullLogger();

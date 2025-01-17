@@ -6,7 +6,6 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
@@ -179,7 +178,7 @@ class UpdateTest extends TestCase
         $app = $this->getAppInstance();
         $container = $this->diContainer();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
 
         $this->setDoublesInContainer($container, $entityManagerProphecy);
@@ -588,7 +587,7 @@ class UpdateTest extends TestCase
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
         $this->donationRepository->store($donation);
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
 
         $this->setDoublesInContainer($container, $entityManagerProphecy);
@@ -1558,7 +1557,7 @@ class UpdateTest extends TestCase
      *     app: App,
      * request: ServerRequestInterface,
      * route: Route,
-     * entityManagerProphecy: ObjectProphecy<RetrySafeEntityManager>,
+     * entityManagerProphecy: ObjectProphecy<EntityManagerInterface>,
      * stripeProphecy: ObjectProphecy<Stripe>
      * }
      *
@@ -1634,7 +1633,7 @@ class UpdateTest extends TestCase
 
     /**
      * @param Container $container
-     * @param ObjectProphecy<RetrySafeEntityManager> $entityManagerProphecy
+     * @param ObjectProphecy<EntityManagerInterface> $entityManagerProphecy
      * @param ?ObjectProphecy<Stripe> $stripeProphecy
      */
     private function setDoublesInContainer(
@@ -1645,7 +1644,7 @@ class UpdateTest extends TestCase
         $stripeProphecy = $stripeProphecy ?? $this->prophesize(Stripe::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
         $container->set(CampaignRepository::class, $this->prophesize(CampaignRepository::class)->reveal());
         $container->set(DonorAccountRepository::class, $this->prophesize(DonorAccountRepository::class)->reveal());
@@ -1653,11 +1652,11 @@ class UpdateTest extends TestCase
     }
 
     /**
-     * @return ObjectProphecy<RetrySafeEntityManager>
+     * @return ObjectProphecy<EntityManagerInterface>
      */
     public function prophesizeEM(bool $persist = false, bool $flush = false, bool $commit = false): ObjectProphecy
     {
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
 
         if ($persist) {

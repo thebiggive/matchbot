@@ -3,12 +3,12 @@
 namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -77,7 +77,7 @@ class DonationService
         private DonationRepository $donationRepository,
         private CampaignRepository $campaignRepository,
         private LoggerInterface $logger,
-        private RetrySafeEntityManager $entityManager,
+        private EntityManagerInterface $entityManager,
         private Stripe $stripe,
         private MatchingAdapter $matchingAdapter,
         private StripeChatterInterface|ChatterInterface $chatter,
@@ -149,7 +149,7 @@ class DonationService
     /**
      * It seems like just the *first* persist of a given donation needs to be retry-safe, since there is a small
      * but non-zero minority of Create attempts at the start of a big campaign which get a closed Entity Manager
-     * and then don't know about the connected #campaign on persist and crash when RetrySafeEntityManager tries again.
+     * and then don't know about the connected #campaign on persist and crash when EntityManagerInterface tries again.
      *
      * The same applies to allocating match funds, which in rare cases can fail with a lock timeout exception. It could
      * also fail simply because another thread keeps changing the values of funds in redis.
@@ -307,14 +307,14 @@ class DonationService
         // A closed EM can happen if the above tried to insert a campaign or fund, hit a duplicate error because
         // another thread did it already, then successfully got the new copy. There's been no subsequent
         // database persistence that needed an open manager, so none replaced the broken one. In that
-        // edge case, we need to handle that before `persistWithoutRetries()` has a chance of working.
+        // edge case, we need to handle that before `persist()` has a chance of working.
         if (!$this->entityManager->isOpen()) {
-            $this->entityManager->resetManager();
+            throw new \Exception("Entity Manager closed");
         }
 
         // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
         $this->runWithPossibleRetry(function () use ($donation) {
-            $this->entityManager->persistWithoutRetries($donation);
+            $this->entityManager->persist($donation);
             $this->entityManager->flush();
         }, 'Donation Create persist before stripe work');
 
@@ -496,7 +496,7 @@ class DonationService
 
         $this->runWithPossibleRetry(
             function () use ($donation) {
-                $this->entityManager->persistWithoutRetries($donation);
+                $this->entityManager->persist($donation);
                 $this->entityManager->flush();
             },
             'Donation Create persist after stripe work'
