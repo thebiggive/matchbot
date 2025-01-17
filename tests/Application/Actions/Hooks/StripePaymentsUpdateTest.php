@@ -9,7 +9,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -38,7 +37,7 @@ class StripePaymentsUpdateTest extends StripeTest
         parent::setUp();
         $container = $this->getContainer();
         \assert($container instanceof Container);
-        $container->set(RetrySafeEntityManager::class, $this->createStub(RetrySafeEntityManager::class));
+        $container->set(EntityManagerInterface::class, $this->createStub(EntityManagerInterface::class));
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
 
         $this->donationRepository = new InMemoryDonationRepository();

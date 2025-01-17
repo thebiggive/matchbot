@@ -8,6 +8,7 @@ use DI\ContainerBuilder;
 use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Los\RateLimit\RateLimitMiddleware;
 use Los\RateLimit\RateLimitOptions;
@@ -31,7 +32,6 @@ use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RegularGivingMandateEventSubscriber;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Application\RealTimeMatchingStorage;
 use MatchBot\Application\RedisMatchingStorage;
 use MatchBot\Application\SlackChannelChatterFactory;
@@ -230,7 +230,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         EntityManagerInterface::class => function (ContainerInterface $c): EntityManagerInterface {
-            return $c->get(RetrySafeEntityManager::class);
+            return $c->get(ORM\EntityManager::class);
         },
 
         IdentityToken::class => function (ContainerInterface $c): IdentityToken {
@@ -467,22 +467,16 @@ return function (ContainerBuilder $containerBuilder) {
             return $redis;
         },
 
-        RetrySafeEntityManager::class => static function (ContainerInterface $c): RetrySafeEntityManager {
-            $em = new RetrySafeEntityManager(
+        ORM\EntityManager::class =>  static function (ContainerInterface $c): EntityManager {
+            $em = new ORM\EntityManager(
+                \Doctrine\DBAL\DriverManager::getConnection($c->get('settings')['doctrine']['connection']),
                 $c->get(ORM\Configuration::class),
-                $c->get('settings')['doctrine']['connection'],
-                $c->get(LoggerInterface::class),
             );
+
 
             $em->getEventManager()->addEventSubscriber($c->get(RegularGivingMandateEventSubscriber::class));
 
             return $em;
-        },
-
-        ORM\EntityManager::class =>  static function (): never {
-            // injecting the wrong sort of EM leads to having two different entity managers running at once and
-            // confusing bugs.
-            throw new \Exception("Do not inject EntityManager - you probably want EntityManagerInterface");
         },
 
         RoutableMessageBus::class => static function (ContainerInterface $c): RoutableMessageBus {
@@ -581,7 +575,7 @@ return function (ContainerBuilder $containerBuilder) {
                     donationRepository: $c->get(DonationRepository::class),
                     campaignRepository: $c->get(CampaignRepository::class),
                     logger: $c->get(LoggerInterface::class),
-                    entityManager: $c->get(RetrySafeEntityManager::class),
+                    entityManager: $c->get(EntityManagerInterface::class),
                     stripe: $c->get(\MatchBot\Client\Stripe::class),
                     matchingAdapter: $c->get(Matching\Adapter::class),
                     chatter: $chatter,
