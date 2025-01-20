@@ -46,6 +46,7 @@ class RegularGivingMandateRepository
             LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
             WHERE r.status = '{$active}'
             AND r.donorId.id = :donorId
+            ORDER BY r.activeFrom desc
         DQL
         );
 
