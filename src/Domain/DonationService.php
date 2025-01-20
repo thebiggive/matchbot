@@ -277,26 +277,15 @@ class DonationService
      * @throws StripeAccountIdNotSetForAccount
      * @throws TransportExceptionInterface
      * @throws \MatchBot\Client\NotFoundException
+     * @throws WrongCampaignType
      */
     public function enrollNewDonation(Donation $donation): void
     {
         $campaign = $donation->getCampaign();
 
-        if (!$campaign->isOpen(new \DateTimeImmutable())) {
-            throw new CampaignNotOpen("Campaign {$campaign->getSalesforceId()} is not open");
-        }
+        $at = new \DateTimeImmutable();
 
-        if ($donation->getMandate() === null && $campaign->isRegularGiving()) {
-            throw new WrongCampaignType(
-                "Campaign {$campaign->getSalesforceId()} does not accept one-off giving (regular-giving only)"
-            );
-        }
-
-        if ($donation->getMandate() !== null && $campaign->isOneOffGiving()) {
-            throw new WrongCampaignType(
-                "Campaign {$campaign->getSalesforceId()} does not accept regular giving (one-off only)"
-            );
-        }
+        $campaign->checkIsReadyToAcceptDonation($donation, $at);
 
         // A closed EM can happen if the above tried to insert a campaign or fund, hit a duplicate error because
         // another thread did it already, then successfully got the new copy. There's been no subsequent

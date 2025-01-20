@@ -247,12 +247,13 @@ class TestCase extends PHPUnitTestCase
         PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
         bool $giftAid = false,
         ?RegularGivingMandate $regularGivingMandate = null,
+        ?Campaign $campaign = null,
     ): Donation {
         return new Donation(
             amount: $amount,
             currencyCode: $currencyCode,
             paymentMethodType: $paymentMethodType,
-            campaign: self::someCampaign(),
+            campaign: $campaign ?? self::someCampaign(),
             charityComms: null,
             championComms: null,
             pspCustomerId: null,

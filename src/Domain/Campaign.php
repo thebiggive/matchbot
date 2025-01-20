@@ -11,6 +11,8 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\DomainException\CampaignNotOpen;
+use MatchBot\Domain\DomainException\WrongCampaignType;
 
 #[ORM\Table]
 #[ORM\Index(name: 'end_date_and_is_matched', columns: ['endDate', 'isMatched'])]
@@ -347,5 +349,28 @@ class Campaign extends SalesforceReadProxy
         return Salesforce18Id::ofCharity(
             $this->getCharity()->getSalesforceId()
         );
+    }
+
+    /**
+     * @throws CampaignNotOpen
+     * @throws WrongCampaignType
+     */
+    public function checkIsReadyToAcceptDonation(Donation $donation, \DateTimeImmutable $at): void
+    {
+        if (!$this->isOpen($at)) {
+            throw new CampaignNotOpen("Campaign {$this->getSalesforceId()} is not open");
+        }
+
+        if ($donation->getMandate() === null && $this->isRegularGiving()) {
+            throw new WrongCampaignType(
+                "Campaign {$this->getSalesforceId()} does not accept one-off giving (regular-giving only)"
+            );
+        }
+
+        if ($donation->getMandate() !== null && $this->isOneOffGiving()) {
+            throw new WrongCampaignType(
+                "Campaign {$this->getSalesforceId()} does not accept regular giving (one-off only)"
+            );
+        }
     }
 }
