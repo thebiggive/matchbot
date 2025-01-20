@@ -133,11 +133,6 @@ class TakeRegularGivingDonations extends LockingCommand
         \DateTimeImmutable $now,
         SymfonyStyle $io
     ): void {
-        /* @todo-regular-giving
-            Still to do to improve this before launch:
-            - Ensure we don't send emails that are meant for confirmation of on-session donations
-            - Probably other things.
-        */
         $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($now, self::MAXBATCHSIZE);
 
         $io->block(count($donations) . " donations are due to be confirmed at this time");
