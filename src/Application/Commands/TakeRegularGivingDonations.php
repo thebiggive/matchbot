@@ -135,7 +135,6 @@ class TakeRegularGivingDonations extends LockingCommand
     ): void {
         /* @todo-regular-giving
             Still to do to improve this before launch:
-            - Record unsuccessful payment attempts to limit number or time extent of retries
             - Ensure we don't send emails that are meant for confirmation of on-session donations
             - Probably other things.
         */
