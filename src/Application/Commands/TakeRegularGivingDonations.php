@@ -11,6 +11,7 @@ use MatchBot\Application\Environment;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
+use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -124,8 +125,13 @@ class TakeRegularGivingDonations extends LockingCommand
         $io->block(count($donations) . " donations are due to have Payment Intent set at this time");
 
         foreach ($donations as $donation) {
-            $this->donationService->createPaymentIntent($donation);
-            $io->writeln("setting payment intent on donation #{$donation->getId()}");
+            try {
+                $this->donationService->createPaymentIntentForPreAuthedDonation($donation);
+                $io->writeln("setting payment intent on donation #{$donation->getId()}");
+            } catch (RegularGivingDonationToOldToCollect $e) {
+                $this->logger->error($e->getMessage());
+                $io->error($e->getMessage());
+            }
         }
     }
 

@@ -22,6 +22,7 @@ use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
+use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
@@ -347,7 +348,7 @@ class DonationService
                 $donation->setCampaign($campaign);
             }
 
-            $this->createPaymentIntent($donation);
+            $this->createPaymentIntentForPreAuthedDonation($donation);
         }
 
         $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
@@ -422,12 +423,22 @@ class DonationService
     /**
      * Creates a payment intent at Stripe and records the PI ID against the donation.
      */
-    public function createPaymentIntent(Donation $donation): void
+    public function createPaymentIntentForPreAuthedDonation(Donation $donation): void
     {
         Assertion::same($donation->getPsp(), 'stripe');
 
         if (!$donation->getCampaign()->isOpen(new \DateTimeImmutable())) {
             throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
+        }
+
+        $preAuthDate = $donation->getPreAuthorizationDate();
+        Assertion::notNull($preAuthDate);
+        Assertion::lessOrEqualThan($preAuthDate, $this->clock->now());
+        if ($preAuthDate > $this->clock->now()->add(new \DateInterval('P1M'))) {
+            throw new RegularGivingDonationToOldToCollect(
+                "Donation #{$donation->getid()}} should have been collected at " . "
+                {$preAuthDate->format('Y-m-d')}, will not collect more than 1 month late",
+            );
         }
 
         try {
@@ -644,7 +655,7 @@ class DonationService
         );
 
         if ($paymentIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
-            // @todo-regular-giving: create a new db field on Donation - e.g. payment_attempt_count and update here
+            // @todo-regular-giving-mat-407: create a new db field on Donation - e.g. payment_attempt_count and update here
             // decide on a limit and log an error (or warning) if exceeded & perhaps auto-cancel the donation and/or
             // mandate.
         }
