@@ -218,6 +218,8 @@ class DonationService
         $paymentIntentId = $donation->getTransactionId();
         Assertion::notNull($paymentIntentId);
 
+        $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
+
         return $this->stripe->confirmPaymentIntent(
             $paymentIntentId,
             [
@@ -248,6 +250,8 @@ class DonationService
                 "Not confirming donation as mandate is '{$currentMandateStatus->name}', not Active"
             );
         }
+
+        $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
 
         $campaign = $donation->getCampaign();
         if ($campaign->regularGivingCollectionIsEndedAt($this->clock->now())) {

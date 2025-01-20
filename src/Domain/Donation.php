@@ -1696,19 +1696,24 @@ class Donation extends SalesforceWriteProxy
      */
     public function checkPreAuthDateAllowsCollectionAt(\DateTimeImmutable $now): void
     {
-        $preAuthDate = $this->getPreAuthorizationDate();
-
-        if ($this->donationStatus !== DonationStatus::PreAuthorized) {
-            return;
-        }
-
-        Assertion::notNull($preAuthDate);
-        Assertion::lessOrEqualThan($preAuthDate, $now);
-        if ($preAuthDate > $now->add(new \DateInterval('P1M'))) {
+        if (!($this->thisIsInDateRangeToConfirm($now))) {
             throw new RegularGivingDonationToOldToCollect(
                 "Donation #{$this->getid()}} should have been collected at " . "
-                {$preAuthDate->format('Y-m-d')}, will not collect more than 1 month late",
+                {$this->getPreAuthorizationDate()?->format('Y-m-d')}, will not at this time",
             );
         }
+    }
+
+    public function thisIsInDateRangeToConfirm(DateTimeImmutable $now): bool
+    {
+        $preAuthorizationDate = $this->getPreAuthorizationDate();
+
+        if ($preAuthorizationDate === null) {
+            return true;
+        }
+
+        return
+            $preAuthorizationDate <= $now &&
+            $preAuthorizationDate->add(new \DateInterval('P1M')) >= $now;
     }
 }

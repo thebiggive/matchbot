@@ -996,6 +996,42 @@ class DonationTest extends TestCase
         $this->assertTrue($isFullyMatched);
     }
 
+
+    /**
+     * @return array<string, array{0: \DateTimeImmutable, 1: \DateTimeImmutable, 2: bool}>
+     */
+    public function confirmationDateRangeProvider(): array
+    {
+        return [
+            'current time before preauth time' => [
+                new \DateTimeImmutable('2020-01-01'), new \DateTimeImmutable('2019-12-31T23:59'), false
+            ],
+            'current time same as preauth time' => [
+                new \DateTimeImmutable('2020-01-01'), new \DateTimeImmutable('2020-01-01'), true
+            ],
+            'current time a month after preauth time' => [
+                new \DateTimeImmutable('2020-01-01'), new \DateTimeImmutable('2020-02-01'), true
+            ],
+            'current time more than a month after preauth time' => [
+                new \DateTimeImmutable('2020-01-01'), new \DateTimeImmutable('2020-02-01T00:01'), false
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider confirmationDateRangeProvider
+     */
+    public function testAllowConfirmingOnlyDuringAppropriateDateRange(
+        \DateTimeImmutable $preAuthDate,
+        \DateTimeImmutable $at,
+        bool $expected
+    ): void {
+        $donation = $this->getTestDonation(collected: false);
+        $donation->preAuthorize($preAuthDate);
+
+        $this->assertSame($expected, $donation->thisIsInDateRangeToConfirm($at));
+    }
+
     /**
      * @return list<array{0: numeric-string, 1: bool, 2: numeric-string}>
      */
