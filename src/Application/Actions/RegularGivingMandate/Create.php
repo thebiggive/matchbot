@@ -11,6 +11,7 @@ use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\MandateCreate;
 use MatchBot\Application\Security\Security;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\RegularGivingService;
@@ -103,6 +104,15 @@ class Create extends Action
                 $response,
                 $e->getMessage(),
                 'Sorry, we were not able to take your regular donation as there are insufficient match funds available',
+                false,
+            );
+        } catch (DonationNotCollected $e) {
+            return $this->validationError(
+                $response,
+                $e->getMessage(),
+                'Sorry, we were not able to collect the payment for your first donation. ' .
+                'No regular giving agreement has been created.' .
+                'Consider using another payment method or contacting your card issuer.',
                 false,
             );
         }

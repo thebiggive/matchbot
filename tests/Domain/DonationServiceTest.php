@@ -267,7 +267,8 @@ class DonationServiceTest extends TestCase
         ])->shouldBeCalledOnce();
 
         $this->stripeProphecy->confirmPaymentIntent($paymentIntentId, [
-            'confirmation_token' => $confirmationTokenId->stripeConfirmationTokenId
+            'confirmation_token' => $confirmationTokenId->stripeConfirmationTokenId,
+            'capture_method' => 'automatic',
         ])->shouldBeCalledOnce();
 
         // act

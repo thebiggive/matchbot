@@ -29,6 +29,8 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Ramsey\Uuid\UuidInterface;
 use Random\Randomizer;
+use Stripe\Card;
+use Stripe\Charge;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
@@ -63,6 +65,13 @@ class DonationService
         // phpcs:ignore
         'The parameter application_fee_amount cannot be updated on a PaymentIntent after a capture has already been made.',
     ];
+
+
+    // for now we are opting out of async - when we go to async capture we will need to listen to the
+    // webhooks to update donations and also regular giving mandates. See
+    // https://docs.stripe.com/payments/payment-intents/asynchronous-capture#listen-webhooks
+    // and MAT-395
+    private const array ASYNC_CAPTURE_OPT_OUT = ['capture_method' => 'automatic'];
 
     public function __construct(
         private DonationRepository $donationRepository,
@@ -211,7 +220,10 @@ class DonationService
 
         return $this->stripe->confirmPaymentIntent(
             $paymentIntentId,
-            ['confirmation_token' => $tokenId->stripeConfirmationTokenId]
+            [
+                'confirmation_token' => $tokenId->stripeConfirmationTokenId,
+                ...self::ASYNC_CAPTURE_OPT_OUT
+            ]
         );
     }
 
@@ -645,13 +657,130 @@ class DonationService
         Assertion::notNull($paymentIntentId);
         $paymentIntent = $this->stripe->confirmPaymentIntent(
             $paymentIntentId,
-            ['payment_method' => $paymentMethod->stripePaymentMethodId]
+            [
+                'payment_method' => $paymentMethod->stripePaymentMethodId,
+                ...self::ASYNC_CAPTURE_OPT_OUT
+            ]
         );
+
+        $this->logger->info("PaymentIntent: {$paymentIntent->toJson()}");
 
         if ($paymentIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
             // @todo-regular-giving-mat-407: create a new db field on Donation - e.g. payment_attempt_count and update here
             // decide on a limit and log an error (or warning) if exceeded & perhaps auto-cancel the donation and/or
             // mandate.
         }
+    }
+
+    /**
+     * For use when we have confirmed a donation and need to update it synchronously before further processing -
+     * i.e. to know whether to go on to start a regular giving agreement if it was sucessful.
+     */
+    public function queryStripeToUpdateDonationStatus(Donation $donation): void
+    {
+        $paymentIntentID = $donation->getTransactionId();
+        if ($paymentIntentID === null) {
+            return;
+        }
+
+        $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentID);
+
+        if ($paymentIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
+            $this->logger->warning("returning at " . __LINE__);
+            return;
+        }
+
+        $charge = $paymentIntent->latest_charge;
+        if ($charge === null) {
+            $this->logger->warning("returning at " . __LINE__);
+            return;
+        }
+
+        $charge = $this->stripe->retrieveCharge((string) $charge);
+
+        if ($charge->status !== Charge::STATUS_SUCCEEDED) {
+            $this->logger->warning("returning at " . __LINE__);
+            return;
+        }
+
+        $this->updateDonationStatusFromSucessfulCharge($charge, $donation);
+    }
+
+    public function updateDonationStatusFromSucessfulCharge(Charge $charge, Donation $donation): void
+    {
+        $this->logger->info('updating donation from charge: ' . $charge->toJson());
+
+        /**
+         * @var array|Card|null $card
+         */
+        $card = $charge->payment_method_details?->toArray()['card'] ?? null;
+        if (is_array($card)) {
+            /** @var Card $card */
+            $card = (object)$card;
+        }
+
+        $cardBrand = CardBrand::fromNameOrNull($card?->brand);
+        $cardCountry = Country::fromAlpha2OrNull($card?->country);
+        $balanceTransaction = (string)$charge->balance_transaction;
+
+        // To give *simulated* webhooks, for Donation API-only load tests, an easy way to complete
+        // without crashing, we support skipping the original fee derivation by omitting
+        // `balance_transaction`. Real stripe charge.succeeded webhooks should always have
+        // an associated Balance Transaction.
+        if (!empty($balanceTransaction)) {
+            $originalFeeFractional = $this->getOriginalFeeFractional(
+                $balanceTransaction,
+                $donation->getCurrencyCode(),
+            );
+        } else {
+            $originalFeeFractional = $donation->getOriginalPspFee();
+        }
+
+        $donation->collectFromStripeCharge(
+            chargeId: $charge->id,
+            totalPaidFractional: $charge->amount,
+            transferId: (string)$charge->transfer,
+            cardBrand: $cardBrand,
+            cardCountry: $cardCountry,
+            originalFeeFractional: (string)$originalFeeFractional,
+            chargeCreationTimestamp: $charge->created,
+        );
+    }
+
+
+    private function getOriginalFeeFractional(string $balanceTransactionId, string $expectedCurrencyCode): int
+    {
+        $txn = $this->stripe->retrieveBalanceTransaction($balanceTransactionId);
+
+        if (count($txn->fee_details) !== 1) {
+            $this->logger->warning(sprintf(
+                'StripeChargeUpdate::getFee: Unexpected composite fee with %d parts: %s',
+                count($txn->fee_details),
+                json_encode($txn->fee_details),
+            ));
+        }
+
+        /**
+         * See https://docs.stripe.com/api/balance_transactions/object#balance_transaction_object-fee_details
+         * @var object{currency: string, type: string} $feeDetail
+         */
+        $feeDetail = $txn->fee_details[0];
+
+        if ($feeDetail->currency !== strtolower($expectedCurrencyCode)) {
+            // `fee` should presumably still be in parent account's currency, so don't bail out.
+            $this->logger->warning(sprintf(
+                'StripeChargeUpdate::getFee: Unexpected fee currency %s',
+                $feeDetail->currency,
+            ));
+        }
+
+        if ($feeDetail->type !== 'stripe_fee') {
+            $this->logger->warning(sprintf(
+                'StripeChargeUpdate::getFee: Unexpected type %s',
+                $feeDetail->type,
+            ));
+        }
+
+        return $txn->fee;
     }
 }

@@ -13,7 +13,10 @@ use MatchBot\Tests\TestData;
 use Prophecy\Argument;
 use Psr\Http\Message\ResponseInterface;
 use MatchBot\Client\Stripe;
+use Stripe\BalanceTransaction;
+use Stripe\Charge;
 use Stripe\PaymentIntent;
+use Stripe\StripeObject;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -46,16 +49,30 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         // arrange
         $pencePerMonth = random_int(1, 500) * 100;
 
+        $pi = new PaymentIntent('payment-intent-id-xyz' . IntegrationTest::randomString());
+        $pi->status = PaymentIntent::STATUS_SUCCEEDED;
+        $chargeId = 'charge_id_' . self::randomString();
+        $pi->latest_charge = $chargeId;
+
+        $transfer_id = 'transfer_id_' . self::randomString();
+
+        $charge = Charge::constructFrom([
+            'id' => $chargeId,
+            'status' => Charge::STATUS_SUCCEEDED,
+            'balance_transaction' => 'balance_transaction_id',
+            'payment_method_details' => StripeObject::constructFrom([]),
+            'amount' => 1,
+            'transfer' => $transfer_id,
+            'created' => 0,
+        ]);
+
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(
             Argument::that(fn(array $payload) => ($payload['amount'] === $pencePerMonth))
         )
             ->shouldBeCalledOnce()
-            ->will(function () {
-                $pi = new PaymentIntent('payment-intent-id-xyz' . IntegrationTest::randomString());
-                $pi->status = PaymentIntent::STATUS_REQUIRES_ACTION;
-                return $pi;
-            });
+            ->willReturn($pi);
+        $stripeProphecy->retrievePaymentIntent($pi->id)->willReturn($pi);
         $stripeProphecy->confirmPaymentIntent(
             Argument::type('string'),
             Argument::cetera()
@@ -66,6 +83,14 @@ class CreateRegularGivingMandateTest extends IntegrationTest
                 $pi->status = PaymentIntent::STATUS_SUCCEEDED;
                 return $pi;
             });
+        $stripeProphecy->retrieveCharge($chargeId)->willReturn($charge);
+        $stripeProphecy->retrieveBalanceTransaction('balance_transaction_id')->willReturn(
+            BalanceTransaction::constructFrom([
+                'id' => 'balance_transaction_id',
+                'fee_details' => [['currency' => 'gbp', 'type' => 'stripe_fee']],
+                'fee' => 1,
+            ])
+        );
 
         $this->getContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
@@ -90,7 +115,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
         $this->assertCount(3, $donationDatabaseRows);
 
-        $this->assertSame('Pending', $donationDatabaseRows[0]['donationStatus']); // see @todo in SUT - should be collected not pending
+        $this->assertSame('Collected', $donationDatabaseRows[0]['donationStatus']);
         $this->assertSame('PreAuthorized', $donationDatabaseRows[1]['donationStatus']);
         $this->assertSame('PreAuthorized', $donationDatabaseRows[2]['donationStatus']);
 

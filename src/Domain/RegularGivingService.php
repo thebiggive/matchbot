@@ -13,6 +13,7 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
+use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\NotFullyMatched;
@@ -131,6 +132,17 @@ readonly class RegularGivingService
             // @todo-regular-giving - consider if we need to switch to sync confirmation that doesn't rely on a callback
             // hook or something so we can avoid activating the mandate if the first donation is not collected.
             $this->donationService->confirmDonationWithSavedPaymentMethod($firstDonation, $donorsSavedPaymentMethod);
+        }
+
+        $this->donationService->queryStripeToUpdateDonationStatus($firstDonation);
+
+        if (! $firstDonation->getDonationStatus()->isSuccessful()) {
+            $mandate->cancel();
+
+            $this->entityManager->flush();
+            throw new DonationNotCollected(
+                'First Donation in Regular Giving mandate could not be collected, not activating mandate'
+            );
         }
 
         $mandate->activate($this->now);
@@ -304,6 +316,7 @@ readonly class RegularGivingService
 
         $charge = $this->stripe->retrieveCharge((string)$chargeId);
         $paymentMethodId = $charge->payment_method;
+
         if ($paymentMethodId === null) {
             // AFAIK there should always be payment method ID attached to the charge at this point.
             throw new \Exception('No payment method ID on charge after confirming regular giving donation');

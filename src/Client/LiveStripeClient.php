@@ -6,6 +6,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
+use Stripe\BalanceTransaction;
 use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
@@ -95,5 +96,10 @@ class LiveStripeClient implements Stripe
             'customer' => $stripeCustomerId->stripeCustomerId,
             'components' => $components,
         ]);
+    }
+
+    public function retrieveBalanceTransaction(string $id): BalanceTransaction
+    {
+        return $this->stripeClient->balanceTransactions->retrieve($id);
     }
 }
