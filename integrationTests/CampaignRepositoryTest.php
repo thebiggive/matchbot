@@ -52,7 +52,7 @@ class CampaignRepositoryTest extends IntegrationTest
         $campaignsMatchingFixture = (new ArrayCollection($campaignsFromDB))->matching($idCriterion);
 
         $this->assertGreaterThanOrEqual(1, count($campaignsFromDB));
-        $this->assertCount(1, $campaignsMatchingFixture); // here
+        $this->assertCount(1, $campaignsMatchingFixture);
         $this->assertSame($campaign, $campaignsMatchingFixture->first());
         $firstCampaign = $campaignsMatchingFixture->first();
         Assertion::isInstanceOf($firstCampaign, Campaign::class);
