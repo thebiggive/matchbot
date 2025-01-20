@@ -93,7 +93,7 @@ class RegularGivingServiceTest extends TestCase
         $this->donorAccountRepositoryProphecy->findByPersonId($this->personId)
             ->willReturn($this->donorAccount);
         $this->campaignRepositoryProphecy->findOneBySalesforceId($this->campaignId)
-            ->willReturn(TestCase::someCampaign());
+            ->willReturn(TestCase::someCampaign(isRegularGiving: true));
         $this->regularGivingNotifierProphecy = $this->prophesize(RegularGivingNotifier::class);
         $this->donationServiceProphecy = $this->prophesize(DonationService::class);
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);

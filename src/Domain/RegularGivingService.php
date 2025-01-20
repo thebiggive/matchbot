@@ -144,6 +144,12 @@ readonly class RegularGivingService
 
     /**
      * @param RegularGivingMandate $mandate A Regular Giving Mandate. Must have status 'active'.
+     *
+     * @throws AssertionFailedException
+     * @throws CampaignNotOpen
+     * @throws WrongCampaignType
+     *
+     * @return ?Donation A new donation, or null if the regular giving collection end date has passed.
      */
     public function makeNextDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
@@ -183,6 +189,9 @@ readonly class RegularGivingService
             $this->entityManager->flush();
             return null;
         }
+
+        $campaign->checkIsReadyToAcceptDonation($donation, $this->now);
+
         $preAuthorizationDate = $donation->getPreAuthorizationDate();
         \assert($preAuthorizationDate instanceof \DateTimeImmutable);
 

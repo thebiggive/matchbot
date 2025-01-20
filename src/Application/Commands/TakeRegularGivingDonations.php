@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use Assert\AssertionFailedException;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
+use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
+use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -39,6 +43,7 @@ class TakeRegularGivingDonations extends LockingCommand
         private DonationService $donationService,
         private EntityManagerInterface $em,
         private Environment $environment,
+        private LoggerInterface $logger,
     ) {
         parent::__construct();
 
@@ -97,15 +102,16 @@ class TakeRegularGivingDonations extends LockingCommand
         $io->block(count($mandates) . " mandates may have donations to create at this time");
 
         foreach ($mandates as [$mandate]) {
-            // @todo-regular-giving: catch the exception when missing address on account
-
-            // @todo-regular-giving: Make sure we don't create a donation here after the campaign has closed (e.g. Regular Giving Collection End date, if any has passed, or campaign is otherwise not `ready`) .
-            // If we called \MatchBot\Domain\DonationService::enrollNewDonation that would check that for us,
-            // but currently it would also attempt to match the donation, which we don't want.
-
-            $donation = $this->makeDonationForMandate($mandate);
-            if ($donation) {
-                $io->writeln("created donation {$donation}");
+            try {
+                $donation = $this->makeDonationForMandate($mandate);
+                if ($donation) {
+                    $io->writeln("created donation {$donation}");
+                } else {
+                    $io->writeln("no donation created for {$mandate} as collection end date passed");
+                }
+            } catch (AssertionFailedException | CampaignNotOpen | WrongCampaignType $e) {
+                $io->error($e->getMessage());
+                $this->logger->error($e->getMessage());
             }
         }
     }
@@ -170,6 +176,9 @@ class TakeRegularGivingDonations extends LockingCommand
         $this->em->flush();
     }
 
+    /**
+     * @throws CampaignNotOpen|WrongCampaignType|AssertionFailedException
+     */
     private function makeDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
         \assert($this->mandateService !== null);
