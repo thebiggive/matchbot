@@ -348,7 +348,7 @@ class DonationService
                 $donation->setCampaign($campaign);
             }
 
-            $this->createPaymentIntentForPreAuthedDonation($donation);
+            $this->createPaymentIntent($donation);
         }
 
         $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
@@ -423,7 +423,7 @@ class DonationService
     /**
      * Creates a payment intent at Stripe and records the PI ID against the donation.
      */
-    public function createPaymentIntentForPreAuthedDonation(Donation $donation): void
+    public function createPaymentIntent(Donation $donation): void
     {
         Assertion::same($donation->getPsp(), 'stripe');
 
@@ -431,15 +431,9 @@ class DonationService
             throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
         }
 
-        $preAuthDate = $donation->getPreAuthorizationDate();
-        Assertion::notNull($preAuthDate);
-        Assertion::lessOrEqualThan($preAuthDate, $this->clock->now());
-        if ($preAuthDate > $this->clock->now()->add(new \DateInterval('P1M'))) {
-            throw new RegularGivingDonationToOldToCollect(
-                "Donation #{$donation->getid()}} should have been collected at " . "
-                {$preAuthDate->format('Y-m-d')}, will not collect more than 1 month late",
-            );
-        }
+        $now = $this->clock->now();
+
+        $donation->checkPreAuthDateAllowsCollectionAt($now);
 
         try {
             $intent = $this->stripe->createPaymentIntent($donation->createStripePaymentIntentPayload());

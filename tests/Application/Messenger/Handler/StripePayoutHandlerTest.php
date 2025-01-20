@@ -37,9 +37,8 @@ class StripePayoutHandlerTest extends TestCase
 
     public function testUnrecognisedChargeId(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $balanceTxnResponse = $this->getStripeHookMock('ApiResponse/bt_invalid');
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_with_invalid');
@@ -117,9 +116,8 @@ class StripePayoutHandlerTest extends TestCase
 
     public function testInvalidExistingDonationStatus(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $balanceTxnsResponse = $this->getStripeHookMock('ApiResponse/bt_list_success');
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
@@ -174,9 +172,8 @@ class StripePayoutHandlerTest extends TestCase
 
     public function testSuccessfulUpdateFromFirstPayout(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation();
         $balanceTxnsResponse = $this->getStripeHookMock('ApiResponse/bt_list_success');
@@ -223,9 +220,8 @@ class StripePayoutHandlerTest extends TestCase
      */
     public function testSuccessfulUpdateForRetriedPayout(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation();
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
@@ -287,9 +283,8 @@ class StripePayoutHandlerTest extends TestCase
      */
     public function testNoOpWhenPayoutFailed(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation();
 

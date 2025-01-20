@@ -27,9 +27,8 @@ class RetrySafeEntityManagerTest extends TestCase
 
     public function setUp(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $this->retrySafeEntityManager = new RetrySafeEntityManager(
             $this->getConfiguration($container),
@@ -64,9 +63,8 @@ class RetrySafeEntityManagerTest extends TestCase
         $emProperty = $retrySafeEntityManagerReflected->getProperty('entityManager');
         $emProperty->setValue($this->retrySafeEntityManager, $underlyingEmProphecy->reveal());
 
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
         $container->set(EntityManager::class, $underlyingEmProphecy->reveal());
 
         $this->retrySafeEntityManager->persist(TestCase::someDonation('1'));
@@ -74,9 +72,8 @@ class RetrySafeEntityManagerTest extends TestCase
 
     public function testPersistWithRetry(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         // First underlying EM should throw closed error.
         $underlyingEmProphecy1 = $this->prophesize(EntityManager::class);
@@ -114,9 +111,8 @@ class RetrySafeEntityManagerTest extends TestCase
         $emProperty = $retrySafeEntityManagerReflected->getProperty('entityManager');
         $emProperty->setValue($this->retrySafeEntityManager, $underlyingEmProphecy->reveal());
 
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
         $container->set(EntityManager::class, $underlyingEmProphecy->reveal());
 
         $this->retrySafeEntityManager->flush();
@@ -124,9 +120,8 @@ class RetrySafeEntityManagerTest extends TestCase
 
     public function testFlushWithRetry(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         // First underlying EM should throw closed error.
         $underlyingEmProphecy1 = $this->prophesize(EntityManager::class);

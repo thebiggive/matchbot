@@ -28,9 +28,8 @@ class GiftAidResultHandlerTest extends TestCase
      */
     public function testNoOpProcessing(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
@@ -72,9 +71,8 @@ class GiftAidResultHandlerTest extends TestCase
 
     public function testErrorProcessing(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
@@ -115,9 +113,8 @@ class GiftAidResultHandlerTest extends TestCase
 
     public function testSuccessProcessing(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();

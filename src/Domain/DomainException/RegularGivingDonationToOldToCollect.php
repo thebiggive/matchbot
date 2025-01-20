@@ -2,6 +2,6 @@
 
 namespace MatchBot\Domain\DomainException;
 
-class RegularGivingDonationToOldToCollect extends DomainException {
-
+class RegularGivingDonationToOldToCollect extends DomainException
+{
 }

@@ -354,9 +354,8 @@ class DonationRepositoryTest extends TestCase
 
     public function testAbandonOldCancelled(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $query = $this->prophesize(AbstractQuery::class);
         // Our test donation doesn't actually meet the conditions but as we're
