@@ -102,11 +102,8 @@ class DonorAccount extends Model
     }
 
     /**
-     * Returns the UUID of this person as held in Identity service. Use with care as throws is Matchbot doesn't (yet)
-     * have that UUID on record
-     *
-     * @todo-regular-giving - consider filling in all values in prod and making $this->uuid non-nullable.
-     */
+     * UUID of this person as held in Identity service.
+     **/
     public function id(): PersonId
     {
         return PersonId::of($this->uuid->toString());
