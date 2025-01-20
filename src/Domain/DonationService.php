@@ -690,20 +690,17 @@ class DonationService
         $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentID);
 
         if ($paymentIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
-            $this->logger->warning("returning at " . __LINE__);
             return;
         }
 
         $charge = $paymentIntent->latest_charge;
         if ($charge === null) {
-            $this->logger->warning("returning at " . __LINE__);
             return;
         }
 
         $charge = $this->stripe->retrieveCharge((string) $charge);
 
         if ($charge->status !== Charge::STATUS_SUCCEEDED) {
-            $this->logger->warning("returning at " . __LINE__);
             return;
         }
 
