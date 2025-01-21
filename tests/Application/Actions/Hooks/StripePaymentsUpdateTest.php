@@ -21,6 +21,7 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Container\ContainerInterface;
 use Ramsey\Uuid\Uuid;
+use Stripe\BalanceTransaction;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\StripeClient;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
@@ -146,7 +147,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->retrieve('txn_00000000000000')
             ->shouldBeCalledOnce()
-            ->willReturn(json_decode($balanceTxnResponse));
+            ->willReturn(BalanceTransaction::constructFrom((array) json_decode($balanceTxnResponse, associative: true)));
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
         // code, and may get mutation tests working again.
@@ -199,7 +200,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->retrieve('txn_00000000000000')
             ->shouldBeCalledOnce()
-            ->willReturn(json_decode($balanceTxnResponse));
+            ->willReturn(BalanceTransaction::constructFrom((array) json_decode($balanceTxnResponse, associative: true)));
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
 

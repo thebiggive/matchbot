@@ -56,7 +56,6 @@ class StripePaymentsUpdate extends Stripe
         private DonationService $donationService,
         private DonorAccountRepository $donorAccountRepository,
         protected EntityManagerInterface $entityManager,
-        protected StripeClient $stripeClient,
         private DonationFundsNotifier $donationFundsNotifier,
         ContainerInterface $container,
         LoggerInterface $logger,
@@ -140,41 +139,8 @@ class StripePaymentsUpdate extends Stripe
         // For now we support the happy success path –
         // as this is the only event type we're handling right now besides refunds.
         if ($charge->status === 'succeeded') {
-            /**
-             * @var array|Card|null $card
-             */
-            $card = $charge->payment_method_details?->toArray()['card'] ?? null;
-            if (is_array($card)) {
-                /** @var Card $card */
-                $card = (object)$card;
-            }
-
-            $cardBrand = CardBrand::fromNameOrNull($card?->brand);
-            $cardCountry = Country::fromAlpha2OrNull($card?->country);
-            $balanceTransaction = (string) $charge->balance_transaction;
-
-            // To give *simulated* webhooks, for Donation API-only load tests, an easy way to complete
-            // without crashing, we support skipping the original fee derivation by omitting
-            // `balance_transaction`. Real stripe charge.succeeded webhooks should always have
-            // an associated Balance Transaction.
-            if (!empty($balanceTransaction)) {
-                $originalFeeFractional = $this->getOriginalFeeFractional(
-                    $balanceTransaction,
-                    $donation->getCurrencyCode(),
-                );
-            } else {
-                $originalFeeFractional = $donation->getOriginalPspFee();
-            }
-
-            $donation->collectFromStripeCharge(
-                chargeId: $charge->id,
-                totalPaidFractional: $charge->amount,
-                transferId: (string)$charge->transfer,
-                cardBrand: $cardBrand,
-                cardCountry: $cardCountry,
-                originalFeeFractional: (string)$originalFeeFractional,
-                chargeCreationTimestamp: $charge->created,
-            );
+            $donationService = $this->donationService;
+            $donationService->updateDonationStatusFromSucessfulCharge($charge, $donation);
 
             $this->logger->info(sprintf(
                 'Set donation %s Collected based on hook for charge ID %s',
@@ -451,42 +417,6 @@ class StripePaymentsUpdate extends Stripe
         $chatMessage->options($options);
 
         $this->chatter->send($chatMessage);
-    }
-
-    private function getOriginalFeeFractional(string $balanceTransactionId, string $expectedCurrencyCode): int
-    {
-        $txn = $this->stripeClient->balanceTransactions->retrieve($balanceTransactionId);
-
-        if (count($txn->fee_details) !== 1) {
-            $this->logger->warning(sprintf(
-                'StripeChargeUpdate::getFee: Unexpected composite fee with %d parts: %s',
-                count($txn->fee_details),
-                json_encode($txn->fee_details),
-            ));
-        }
-
-        /**
-         * See https://docs.stripe.com/api/balance_transactions/object#balance_transaction_object-fee_details
-         * @var object{currency: string, type: string} $feeDetail
-         */
-        $feeDetail = $txn->fee_details[0];
-
-        if ($feeDetail->currency !== strtolower($expectedCurrencyCode)) {
-            // `fee` should presumably still be in parent account's currency, so don't bail out.
-            $this->logger->warning(sprintf(
-                'StripeChargeUpdate::getFee: Unexpected fee currency %s',
-                $feeDetail->currency,
-            ));
-        }
-
-        if ($feeDetail->type !== 'stripe_fee') {
-            $this->logger->warning(sprintf(
-                'StripeChargeUpdate::getFee: Unexpected type %s',
-                $feeDetail->type,
-            ));
-        }
-
-        return $txn->fee;
     }
 
     /**

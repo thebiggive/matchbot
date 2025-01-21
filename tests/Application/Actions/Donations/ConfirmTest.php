@@ -351,12 +351,19 @@ class ConfirmTest extends TestCase
         if (is_string($confirmationTokenId)) {
             $confirmation = $this->stripeProphecy->confirmPaymentIntent(
                 $paymentIntentId,
-                ["confirmation_token" => $confirmationTokenId]
+                [
+                    "confirmation_token" => $confirmationTokenId,
+                    'capture_method' => 'automatic'
+
+                ]
             )->willReturn($updatedPaymentIntent);
         } else {
             $confirmation = $this->stripeProphecy->confirmPaymentIntent(
                 $paymentIntentId,
-                ["payment_method" => $paymentMethodId]
+                [
+                    "payment_method" => $paymentMethodId,
+                    'capture_method' => 'automatic'
+                ]
             )->willReturn($updatedPaymentIntent);
         }
 

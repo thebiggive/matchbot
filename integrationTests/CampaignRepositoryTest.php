@@ -24,7 +24,7 @@ class CampaignRepositoryTest extends IntegrationTest
             $this->randomCampaignId(),
             $this->getCharityAwaitingGiftAidApproval(),
             startDate: new \DateTimeImmutable('-10 months'),
-            endDate: new \DateTimeImmutable('-9 months'),
+            endDate: new \DateTimeImmutable(-29 * 9 . 'days'), // less than the 9 month limit
             isMatched: true,
             ready: true,
             status: 'status',

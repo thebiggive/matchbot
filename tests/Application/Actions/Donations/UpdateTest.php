@@ -139,8 +139,7 @@ class UpdateTest extends TestCase
     public function testInvalidStatusChange(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
         $donation->setDonationStatus(DonationStatus::Pending);
@@ -178,8 +177,7 @@ class UpdateTest extends TestCase
     public function testMissingStatus(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
         $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
@@ -213,8 +211,7 @@ class UpdateTest extends TestCase
     public function testCancelRequestAfterDonationFinalised(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donationResponse = $this->getTestDonation(uuid: self::DONATION_UUID);
 
@@ -267,8 +264,7 @@ class UpdateTest extends TestCase
     public function testCancelSuccessWithNoStatusChangesIgnored(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation('999.99', uuid: self::DONATION_UUID);
         $donation->cancel();
@@ -315,8 +311,7 @@ class UpdateTest extends TestCase
     public function testCancelSuccessWithChange(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation('999.99');
         $donation->cancel();
@@ -372,8 +367,7 @@ class UpdateTest extends TestCase
     public function testCancelSuccessButStripeSaysAlreadySucceeded(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
         $donation->cancel();
@@ -422,8 +416,7 @@ class UpdateTest extends TestCase
     public function testCancelSuccessButStripeSaysAlreadyCancelled(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
         $donation->cancel();
@@ -470,8 +463,7 @@ class UpdateTest extends TestCase
     public function testCancelSuccessWithChangeFromPendingAnonymousDonation(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getAnonymousPendingTestDonation();
         $donation->cancel();
@@ -514,8 +506,7 @@ class UpdateTest extends TestCase
     public function testAddDataAttemptWithDifferentAmount(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donationInRequest = $this->getTestDonation('99.99');
 
@@ -551,8 +542,7 @@ class UpdateTest extends TestCase
     public function testAddDataAttemptWithRequiredBooleanFieldMissing(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
         $this->donationRepository->store($donation);
@@ -593,8 +583,7 @@ class UpdateTest extends TestCase
     public function testAddDataAttemptWithInvalidPropertyType(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
         $this->donationRepository->store($donation);
@@ -633,8 +622,7 @@ class UpdateTest extends TestCase
     public function testAddDataAttemptWithGiftAidMissingDonatingInGBP(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
         $this->donationRepository->store($donation);
@@ -672,8 +660,7 @@ class UpdateTest extends TestCase
     public function testAddDataAttemptWithTipAboveMaximumAllowed(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         // We'll patch the simulated PUT JSON manually because `setTipAmount()` disallows
         // values over the max donation amount.
@@ -715,8 +702,7 @@ class UpdateTest extends TestCase
     public function testAddDataHitsUnexpectedStripeException(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
@@ -789,8 +775,7 @@ class UpdateTest extends TestCase
     public function testAddDataHitsAlreadyCapturedStripeExceptionWithNoFeeChange(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
@@ -867,8 +852,7 @@ class UpdateTest extends TestCase
     public function testAddDataHitsAlreadyCapturedStripeExceptionWithFeeChange(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
 
@@ -955,8 +939,7 @@ class UpdateTest extends TestCase
     public function testAddDataHitsStripeLockExceptionOnce(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
 
@@ -1033,8 +1016,7 @@ class UpdateTest extends TestCase
     public function testAddDataHitsStripeLockExceptionTwice(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
 
@@ -1116,8 +1098,7 @@ class UpdateTest extends TestCase
     public function testAddDataHitsStripeLockExceptionThenAlreadyCapturedWithNoFeeChange(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
@@ -1194,8 +1175,7 @@ class UpdateTest extends TestCase
     public function testAddDataSuccessWithAllValues(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
@@ -1409,8 +1389,7 @@ class UpdateTest extends TestCase
     {
         // arrange
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation();
 
@@ -1465,8 +1444,7 @@ class UpdateTest extends TestCase
     {
         // arrange
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
@@ -1520,8 +1498,7 @@ class UpdateTest extends TestCase
     {
         // arrange
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(
             pspMethodType: PaymentMethodType::CustomerBalance,
@@ -1597,8 +1574,7 @@ class UpdateTest extends TestCase
         bool $collectedDonation = true,
     ): array {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $nextActionRequired === null
             ? $this->getTestDonation(

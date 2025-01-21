@@ -22,8 +22,7 @@ class StripePayoutUpdateTest extends StripeTest
     public function testUnsupportedAction(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
         $container->set(SlackChannelChatterFactory::class, $this->createStub(SlackChannelChatterFactory::class));
 
         // Should 204 no-op if hook mistakenly configured to send this event.
@@ -45,8 +44,7 @@ class StripePayoutUpdateTest extends StripeTest
     public function testMissingSignature(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
         $container->set(SlackChannelChatterFactory::class, $this->createStub(SlackChannelChatterFactory::class));
 
         $body = $this->getStripeHookMock('ch_succeeded');
@@ -77,8 +75,7 @@ class StripePayoutUpdateTest extends StripeTest
     public function testPayoutPaidQueueDispatchError(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
         $container->set(SlackChannelChatterFactory::class, $this->createStub(SlackChannelChatterFactory::class));
 
         $transport = $this->prophesize(InMemoryTransport::class);
@@ -105,8 +102,7 @@ class StripePayoutUpdateTest extends StripeTest
     public function testPayoutPaidProcessingQueued(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
         $transport = new InMemoryTransport();
         $container->set(TransportInterface::class, $transport);
         $container->set(SlackChannelChatterFactory::class, $this->createStub(SlackChannelChatterFactory::class));
@@ -131,8 +127,7 @@ class StripePayoutUpdateTest extends StripeTest
     public function testPayoutFailed(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
         $transport = new InMemoryTransport();
         $container->set(TransportInterface::class, $transport);
         $chatterProphecy = $this->prophesize(StripeChatterInterface::class);

@@ -185,6 +185,10 @@ class DonationServiceTest extends TestCase
 
         $logger = $logger ?? new NullLogger();
 
+        $clockProphecy = $this->prophesize(ClockInterface::class);
+        $clockProphecy->now()->willReturn(new \DateTimeImmutable('1970-01-01')); // datetime doesnt matter
+        $clockProphecy->sleep(Argument::any())->will(fn() => null); // ignore calls to sleep
+
         return new DonationService(
             donationRepository: $this->donationRepoProphecy->reveal(),
             campaignRepository: $this->prophesize(CampaignRepository::class)->reveal(),
@@ -193,7 +197,7 @@ class DonationServiceTest extends TestCase
             stripe: $this->stripeProphecy->reveal(),
             matchingAdapter: $this->prophesize(Adapter::class)->reveal(),
             chatter: $this->chatterProphecy->reveal(),
-            clock: $this->prophesize(ClockInterface::class)->reveal(),
+            clock: $clockProphecy->reveal(),
             rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
             bus: $this->createStub(RoutableMessageBus::class),
@@ -263,7 +267,8 @@ class DonationServiceTest extends TestCase
         ])->shouldBeCalledOnce();
 
         $this->stripeProphecy->confirmPaymentIntent($paymentIntentId, [
-            'confirmation_token' => $confirmationTokenId->stripeConfirmationTokenId
+            'confirmation_token' => $confirmationTokenId->stripeConfirmationTokenId,
+            'capture_method' => 'automatic',
         ])->shouldBeCalledOnce();
 
         // act

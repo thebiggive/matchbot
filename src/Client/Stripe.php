@@ -6,6 +6,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Domain\StripePaymentMethodId;
+use Stripe\BalanceTransaction;
 use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
@@ -60,4 +61,6 @@ interface Stripe
     public function retrieveConfirmationToken(StripeConfirmationTokenId $confirmationTokenId): ConfirmationToken;
 
     public function retrieveCharge(string $chargeId): Charge;
+
+    public function retrieveBalanceTransaction(string $id): BalanceTransaction;
 }

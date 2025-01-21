@@ -7,6 +7,7 @@ use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
@@ -93,7 +94,7 @@ class RegularGivingServiceTest extends TestCase
         $this->donorAccountRepositoryProphecy->findByPersonId($this->personId)
             ->willReturn($this->donorAccount);
         $this->campaignRepositoryProphecy->findOneBySalesforceId($this->campaignId)
-            ->willReturn(TestCase::someCampaign());
+            ->willReturn(TestCase::someCampaign(isRegularGiving: true));
         $this->regularGivingNotifierProphecy = $this->prophesize(RegularGivingNotifier::class);
         $this->donationServiceProphecy = $this->prophesize(DonationService::class);
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
@@ -112,6 +113,21 @@ class RegularGivingServiceTest extends TestCase
 
                     $testCase->donations[] = $args[0];
                 }
+            );
+
+        $this->donationServiceProphecy->queryStripeToUpdateDonationStatus(Argument::type(Donation::class))
+            ->will(/**
+             * @param array<Donation> $args
+             */
+                fn(array $args) => $args[0]->collectFromStripeCharge(
+                    chargeId: 'chargeId',
+                    totalPaidFractional: 1,
+                    transferId: 'transferid',
+                    cardBrand: null,
+                    cardCountry: null,
+                    originalFeeFractional: '1',
+                    chargeCreationTimestamp: 0,
+                )
             );
     }
 
@@ -138,7 +154,7 @@ class RegularGivingServiceTest extends TestCase
         // assert
         $this->assertSame(RegularGivingMandate::NUMBER_OF_DONATIONS_TO_MATCH, 3);
         $this->assertCount(3, $this->donations);
-        $this->assertSame(DonationStatus::Pending, $this->donations[0]->getDonationStatus());
+        $this->assertSame(DonationStatus::Collected, $this->donations[0]->getDonationStatus());
         $this->assertSame(DonationStatus::PreAuthorized, $this->donations[1]->getDonationStatus());
         $this->assertSame(DonationStatus::PreAuthorized, $this->donations[2]->getDonationStatus());
 

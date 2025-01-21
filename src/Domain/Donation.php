@@ -18,6 +18,7 @@ use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
+use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -1687,5 +1688,32 @@ class Donation extends SalesforceWriteProxy
                 "Donation status is '{$this->donationStatus->value}', must be " .
                 "'Pending' or 'PreAuthorized' to confirm payment"
             );
+    }
+
+    /**
+     * @throws RegularGivingDonationToOldToCollect if PreAuthDate is more than one month in the past.
+     * @throws \Assert\AssertionFailedException if PreAuthDate is null or in the future.
+     */
+    public function checkPreAuthDateAllowsCollectionAt(\DateTimeImmutable $now): void
+    {
+        if (!($this->thisIsInDateRangeToConfirm($now))) {
+            throw new RegularGivingDonationToOldToCollect(
+                "Donation #{$this->getid()}} should have been collected at " . "
+                {$this->getPreAuthorizationDate()?->format('Y-m-d')}, will not at this time",
+            );
+        }
+    }
+
+    public function thisIsInDateRangeToConfirm(DateTimeImmutable $now): bool
+    {
+        $preAuthorizationDate = $this->getPreAuthorizationDate();
+
+        if ($preAuthorizationDate === null) {
+            return true;
+        }
+
+        return
+            $preAuthorizationDate <= $now &&
+            $preAuthorizationDate->add(new \DateInterval('P1M')) >= $now;
     }
 }

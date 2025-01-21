@@ -13,6 +13,7 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
+use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\NotFullyMatched;
@@ -133,6 +134,17 @@ readonly class RegularGivingService
             $this->donationService->confirmDonationWithSavedPaymentMethod($firstDonation, $donorsSavedPaymentMethod);
         }
 
+        $this->donationService->queryStripeToUpdateDonationStatus($firstDonation);
+
+        if (! $firstDonation->getDonationStatus()->isSuccessful()) {
+            $mandate->cancel();
+
+            $this->entityManager->flush();
+            throw new DonationNotCollected(
+                'First Donation in Regular Giving mandate could not be collected, not activating mandate'
+            );
+        }
+
         $mandate->activate($this->now);
 
         $this->entityManager->flush();
@@ -144,6 +156,12 @@ readonly class RegularGivingService
 
     /**
      * @param RegularGivingMandate $mandate A Regular Giving Mandate. Must have status 'active'.
+     *
+     * @throws AssertionFailedException
+     * @throws CampaignNotOpen
+     * @throws WrongCampaignType
+     *
+     * @return ?Donation A new donation, or null if the regular giving collection end date has passed.
      */
     public function makeNextDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
@@ -183,6 +201,9 @@ readonly class RegularGivingService
             $this->entityManager->flush();
             return null;
         }
+
+        $campaign->checkIsReadyToAcceptDonation($donation, $this->now);
+
         $preAuthorizationDate = $donation->getPreAuthorizationDate();
         \assert($preAuthorizationDate instanceof \DateTimeImmutable);
 
@@ -295,6 +316,7 @@ readonly class RegularGivingService
 
         $charge = $this->stripe->retrieveCharge((string)$chargeId);
         $paymentMethodId = $charge->payment_method;
+
         if ($paymentMethodId === null) {
             // AFAIK there should always be payment method ID attached to the charge at this point.
             throw new \Exception('No payment method ID on charge after confirming regular giving donation');

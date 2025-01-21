@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests;
 
+use DI\Container;
 use DI\ContainerBuilder;
 use Exception;
 use MatchBot\Application\Messenger\DonationUpserted;
@@ -14,6 +15,7 @@ use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Tests\Application\Actions\Donations\CreateTest;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Prophecy\Argument;
 use Prophecy\PhpUnit\ProphecyTrait;
@@ -247,12 +249,13 @@ class TestCase extends PHPUnitTestCase
         PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
         bool $giftAid = false,
         ?RegularGivingMandate $regularGivingMandate = null,
+        ?Campaign $campaign = null,
     ): Donation {
         return new Donation(
             amount: $amount,
             currencyCode: $currencyCode,
             paymentMethodType: $paymentMethodType,
-            campaign: self::someCampaign(),
+            campaign: $campaign ?? self::someCampaign(),
             charityComms: null,
             championComms: null,
             pspCustomerId: null,
@@ -290,5 +293,14 @@ class TestCase extends PHPUnitTestCase
     public static function randomPersonId(): PersonId
     {
         return PersonId::of(Uuid::uuid4()->toString());
+    }
+
+    public function diContainer(): Container
+    {
+        $container = $this->getAppInstance()->getContainer();
+
+        \assert($container instanceof Container);
+
+        return $container;
     }
 }

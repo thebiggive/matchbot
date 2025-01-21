@@ -5,6 +5,7 @@ namespace MatchBot\Client;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use Ramsey\Uuid\Uuid;
+use Stripe\BalanceTransaction;
 use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
@@ -87,5 +88,10 @@ class StubStripeClient implements Stripe
     public function retrieveCharge(string $chargeId): Charge
     {
         throw new \Exception("Retrieve Charge not implemented in stub- not currently used in load tests");
+    }
+
+    public function retrieveBalanceTransaction(string $id): BalanceTransaction
+    {
+        throw new \Exception("Retrieve Balance Transaction not implemented in stub- not currently used in load tests");
     }
 }

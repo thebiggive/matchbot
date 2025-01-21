@@ -17,8 +17,7 @@ class GetPaymentMethodsTest extends TestCase
     public function testSuccess(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $stripeCustomersProphecy = $this->prophesize(CustomerService::class);
         $stripeCustomersProphecy->allPaymentMethods('cus_aaaaaaaaaaaa11', ['type' => 'card'])

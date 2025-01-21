@@ -736,7 +736,6 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     {
         $preAuthorized = DonationStatus::PreAuthorized->value;
         $active = MandateStatus::Active->value;
-        // @todo-regular-giving: add constraint on late donation collections
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'

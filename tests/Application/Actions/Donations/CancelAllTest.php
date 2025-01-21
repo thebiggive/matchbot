@@ -37,8 +37,7 @@ class CancelAllTest extends TestCase
     public function testCancelTwoSuccess(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         /** @var list<Donation> $twoDonations */
         $twoDonations = [
@@ -149,8 +148,7 @@ class CancelAllTest extends TestCase
     {
         // arrange
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
         $request = $this->createRequest('DELETE', self::ROUTE)
             ->withQueryParams(['campaignId' => self::SF_CAMPAIGN_ID]) // missing paymentMethodType
             ->withHeader('x-tbg-auth', TestData\Identity::getTestIdentityTokenComplete());
