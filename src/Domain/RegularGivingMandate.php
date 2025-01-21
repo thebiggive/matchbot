@@ -147,9 +147,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'activeFrom' => $this->activeFrom?->format(DateTimeInterface::ATOM),
             'dayOfMonth' => $this->dayOfMonth->value,
             'donationAmount' => (float) $this->donationAmount->toNumericString(), // SF type is Decimal, so cast
-
-            // following fields not currently used in SF but may be used soon, so sending anyway for now.
-            'status' => $this->status->apiName(),
+            'status' => ucfirst($this->status->apiName()), // Field in SF has upper case first letter and is awkard to change.
             'contactUuid' => $this->donorId->id,
             'giftAid' => $this->giftAid,
         ];
