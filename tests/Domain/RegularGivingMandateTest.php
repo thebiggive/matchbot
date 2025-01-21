@@ -220,7 +220,7 @@ class RegularGivingMandateTest extends TestCase
               "campaignSFId":"campaign9012345678",
               "giftAid":true,
               "dayOfMonth":12,
-              "status":"active",
+              "status":"Active",
               "activeFrom": "2024-08-12T06:00:00+00:00"
             }
             JSON,
