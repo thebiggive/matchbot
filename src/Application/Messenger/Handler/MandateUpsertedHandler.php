@@ -58,7 +58,8 @@ readonly class MandateUpsertedHandler
     }
 
     /**
-     * @todo-regular-giving DRY up duplication with \MatchBot\Domain\DoctrineDonationRepository::setSalesforceFields
+     * Consider DRYing up duplication with DoctrineDonationRepository::setSalesforceFields before
+     * making a third copy
      */
     private function setSalesforceFields(string $uuid, ?Salesforce18Id $salesforceId): void
     {

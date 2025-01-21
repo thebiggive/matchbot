@@ -659,6 +659,10 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
      * Sets a Salesforce ID (and general status things) without its own lock and importantly without the ORM, using
      * a raw DQL `UPDATE` that should make it safe irrespective of ORM work that could also be happening on the record.
      *
+     *  Consider DRYing up duplication with MandateUpsertedHandler::setSalesforceFields before
+     *  making a third copy
+     * /
+     *
      * @throws DBALException\LockWaitTimeoutException if some other transaction is holding a lock
      */
     private function setSalesforceFields(string $uuid, ?Salesforce18Id $salesforceId): void
