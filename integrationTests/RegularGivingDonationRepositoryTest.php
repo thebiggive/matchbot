@@ -53,7 +53,7 @@ class RegularGivingDonationRepositoryTest extends IntegrationTest
             dayOfMonth: DayOfMonth::of(2)
         );
         $donor = new DonorAccount(
-            uuid: $mandate->donorId,
+            uuid: $mandate->donorId(),
             emailAddress: EmailAddress::of('emailAddress@test.com'),
             donorName: DonorName::of('donorFName-test', 'donorLName-test'),
             stripeCustomerId: StripeCustomerId::of('cus_' . self::randomString())

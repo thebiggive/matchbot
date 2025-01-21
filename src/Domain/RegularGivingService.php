@@ -176,10 +176,10 @@ readonly class RegularGivingService
             throw new \Exception("No donations found for mandate $mandateId, cannot generate next donation");
         }
 
-        $donor = $this->donorAccountRepository->findByPersonId($mandate->donorId);
+        $donor = $this->donorAccountRepository->findByPersonId($mandate->donorId());
 
         // would only be null if donor was deleted after mandate created.
-        Assertion::notNull($donor, "donor not found for id {$mandate->donorId->id}");
+        Assertion::notNull($donor, "donor not found for id {$mandate->donorId()->id}");
 
         $donor->assertHasRequiredInfoForRegularGiving();
 
