@@ -232,6 +232,7 @@ class RegularGivingMandateTest extends TestCase
                 "firstName": "Fred",
                 "lastName": "Do",
                 "emailAddress":  "freddo@example.com",
+                "billingPostalAddress": "SW1A 1AA",
                 "countryCode": "GB",
                 "pspCustomerId":  "cus_123456",
                 "donorIdentityUUID": "1acbcf6c-d81e-11ef-9c4c-37970561ab37"

@@ -203,6 +203,7 @@ class DonorAccount extends Model
             'firstName' => $this->donorName->first,
             'lastName' => $this->donorName->last,
             'emailAddress' => $this->emailAddress->email,
+            'billingPostalAddress' => $this->billingPostcode,
             'countryCode' => $this->billingCountryCode,
             'pspCustomerId' => $this->stripeCustomerId->stripeCustomerId,
             'donorIdentityUUID' => $this->uuid->toString(),
