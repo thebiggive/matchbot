@@ -206,7 +206,7 @@ class DonorAccount extends Model
             'billingPostalAddress' => $this->billingPostcode,
             'countryCode' => $this->billingCountryCode,
             'pspCustomerId' => $this->stripeCustomerId->stripeCustomerId,
-            'donorIdentityUUID' => $this->uuid->toString(),
+            'identityUUID' => $this->uuid->toString(),
         ];
     }
 }
