@@ -22,6 +22,8 @@ use UnexpectedValueException;
 
 class RegularGivingMandateTest extends TestCase
 {
+    private const string PERSONID = '1acbcf6c-d81e-11ef-9c4c-37970561ab37';
+
     /** @dataProvider nextPaymentDates */
     public function testExpectedNextPaymentDate(
         string $currentDateTime,
@@ -154,7 +156,7 @@ class RegularGivingMandateTest extends TestCase
         $charity = TestCase::someCharity(salesforceId: Salesforce18Id::ofCharity('charity89012345678'));
 
         $mandate = new RegularGivingMandate(
-            donorId: PersonId::of('2c2b4832-563c-11ef-96a4-07141f9e507e'),
+            donorId: PersonId::of(self::PERSONID),
             donationAmount: Money::fromPoundsGBP(500),
             dayOfMonth: DayOfMonth::of(12),
             campaignId: Salesforce18Id::ofCampaign('campaign9012345678'),
@@ -166,11 +168,12 @@ class RegularGivingMandateTest extends TestCase
 
         $now = new \DateTimeImmutable('2024-08-12', new \DateTimeZone('Europe/London'));
 
+        $donorUUID = self::PERSONID;
         $this->assertJsonStringEqualsJsonString(
             <<<JSON
                 {
                   "id": "$uuid",
-                  "donorId": "2c2b4832-563c-11ef-96a4-07141f9e507e",
+                  "donorId": "$donorUUID",
                   "donationAmount": {
                     "amountInPence": 50000,
                     "currency": "GBP"
@@ -199,8 +202,10 @@ class RegularGivingMandateTest extends TestCase
 
     public function testItRendersApiModelForSalesforce(): void
     {
+        $donor = self::someDonor();
+
         $mandate = new RegularGivingMandate(
-            donorId: PersonId::of('2c2b4832-563c-11ef-96a4-07141f9e507e'),
+            donorId: PersonId::of(self::PERSONID),
             donationAmount: Money::fromPoundsGBP(500),
             campaignId: Salesforce18Id::ofCampaign('campaign9012345678'),
             charityId: Salesforce18Id::ofCharity('charity90123456789'),
@@ -209,19 +214,28 @@ class RegularGivingMandateTest extends TestCase
         );
         $mandate->activate((new \DateTimeImmutable('2024-08-12T06:00:00Z')));
 
-        $SFApiModel = $mandate->toSFApiModel();
+        $SFApiModel = $mandate->toSFApiModel($donor);
+
 
         $this->assertJsonStringEqualsJsonString(
             <<<JSON
             {
               "uuid":"{$mandate->getUuid()->toString()}",
-              "contactUuid":"2c2b4832-563c-11ef-96a4-07141f9e507e",
+              "contactUuid":"1acbcf6c-d81e-11ef-9c4c-37970561ab37",
               "donationAmount":500,
               "campaignSFId":"campaign9012345678",
               "giftAid":true,
               "dayOfMonth":12,
               "status":"Active",
-              "activeFrom": "2024-08-12T06:00:00+00:00"
+              "activeFrom": "2024-08-12T06:00:00+00:00",
+              "donor": {
+                "firstName": "Fred",
+                "lastName": "Do",
+                "emailAddress":  "freddo@example.com",
+                "countryCode": "GB",
+                "pspCustomerId":  "cus_123456",
+                "donorIdentityUUID": "1acbcf6c-d81e-11ef-9c4c-37970561ab37"
+              }
             }
             JSON,
             \json_encode($SFApiModel)
@@ -235,7 +249,7 @@ class RegularGivingMandateTest extends TestCase
         $this->expectExceptionMessage($expectedMessage);
 
         new RegularGivingMandate(
-            donorId: PersonId::of('2c2b4832-563c-11ef-96a4-07141f9e507e'),
+            donorId: PersonId::of('1acbcf6c-d81e-11ef-9c4c-37970561ab37'),
             donationAmount: Money::fromPence($pence, Currency::GBP),
             dayOfMonth: DayOfMonth::of(12),
             campaignId: Salesforce18Id::ofCampaign('campaign9012345678'),
@@ -291,13 +305,13 @@ class RegularGivingMandateTest extends TestCase
         ];
     }
 
-    public function someDonor(): DonorAccount
+    public static function someDonor(): DonorAccount
     {
         $donor = new DonorAccount(
-            self::randomPersonId(),
-            EmailAddress::of('fred@example.com'),
-            DonorName::of('FirstName', 'LastName'),
-            StripeCustomerId::of('cus_1234'),
+            PersonId::of(self::PERSONID),
+            EmailAddress::of('freddo@example.com'),
+            DonorName::of('Fred', 'Do'),
+            StripeCustomerId::of('cus_123456'),
         );
         $donor->setHomePostcode('SW1A 1AA');
         $donor->setBillingPostcode('SW1A 1AA');

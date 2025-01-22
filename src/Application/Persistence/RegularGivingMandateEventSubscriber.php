@@ -9,17 +9,26 @@ use Doctrine\ORM\Event\PostUpdateEventArgs;
 use Doctrine\ORM\Events;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\MandateUpserted;
+use MatchBot\Domain\DonorAccount;
+use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\RegularGivingMandate;
+use Psr\Container\ContainerInterface;
 use Stripe\Mandate;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 
 class RegularGivingMandateEventSubscriber implements EventSubscriber
 {
+    private ?RoutableMessageBus $bus = null;
+    private ?DonorAccountRepository $donorRepository = null;
+
     /**
      * @psalm-suppress PossiblyUnusedMethod
+     *
+     * Accepts whole container to lazy-load properties on first use, and allow for a circular dependency - this depends
+     * on a repository which depends on the EntityManager which depends on this.
      */
-    public function __construct(private RoutableMessageBus $bus)
+    public function __construct(private ContainerInterface $container)
     {
     }
 
@@ -49,6 +58,9 @@ class RegularGivingMandateEventSubscriber implements EventSubscriber
 
     public function handlePostPersistOrUpdate(PostPersistEventArgs|PostUpdateEventArgs $args): void
     {
+        $this->donorRepository ??= $this->container->get(DonorAccountRepository::class);
+        $this->bus ??= $this->container->get(RoutableMessageBus::class);
+
         $object = $args->getObject();
 
         if (!$object instanceof RegularGivingMandate) {
@@ -56,6 +68,10 @@ class RegularGivingMandateEventSubscriber implements EventSubscriber
         }
         $mandate = $object;
 
-        $this->bus->dispatch(new Envelope(MandateUpserted::fromMandate($mandate)));
+        $donor = $this->donorRepository->findByPersonId($mandate->donorId());
+
+        Assertion::notNull($donor, 'Donor not found on attempt to handle persisted mandate');
+
+        $this->bus->dispatch(new Envelope(MandateUpserted::fromMandate($mandate, $donor)));
     }
 }

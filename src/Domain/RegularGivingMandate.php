@@ -37,7 +37,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     private readonly UuidInterface $uuid;
 
     #[ORM\Embedded(columnPrefix: 'person')]
-    public PersonId $donorId;
+    private PersonId $donorId;
 
     #[ORM\Embedded(columnPrefix: '')]
     private readonly Money $donationAmount;
@@ -139,8 +139,10 @@ class RegularGivingMandate extends SalesforceWriteProxy
     }
 
 
-    public function toSFApiModel(): array
+    public function toSFApiModel(DonorAccount $donor): array
     {
+        Assertion::eq($donor->id(), $this->donorId);
+
         return [
             'uuid' => $this->uuid->toString(),
             'campaignSFId' => $this->campaignId,
@@ -150,6 +152,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'status' => ucfirst($this->status->apiName()), // Field in SF has upper case first letter and is awkard to change.
             'contactUuid' => $this->donorId->id,
             'giftAid' => $this->giftAid,
+            'donor' => $donor->toSfApiModel(),
         ];
     }
 
@@ -367,5 +370,10 @@ class RegularGivingMandate extends SalesforceWriteProxy
             mandateSequenceNumber: DonationSequenceNumber::of(1),
             billingPostcode: $donor->getBillingPostcode(),
         );
+    }
+
+    public function donorId(): PersonId
+    {
+        return $this->donorId;
     }
 }

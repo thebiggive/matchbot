@@ -196,4 +196,16 @@ class DonorAccount extends Model
     {
         return Country::fromAlpha2OrNull($this->billingCountryCode);
     }
+
+    public function toSfApiModel(): array
+    {
+        return [
+            'firstName' => $this->donorName->first,
+            'lastName' => $this->donorName->last,
+            'emailAddress' => $this->emailAddress->email,
+            'countryCode' => $this->billingCountryCode,
+            'pspCustomerId' => $this->stripeCustomerId->stripeCustomerId,
+            'donorIdentityUUID' => $this->uuid->toString(),
+        ];
+    }
 }

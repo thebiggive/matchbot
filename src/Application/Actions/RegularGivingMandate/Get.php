@@ -53,7 +53,7 @@ class Get extends Action
         if ($mandate === null) {
             throw new DomainRecordNotFoundException('Mandate not found');
         }
-        if (! $authenticatedUser->id()->equals($mandate->donorId)) {
+        if (! $authenticatedUser->id()->equals($mandate->donorId())) {
             throw new HttpUnauthorizedException($request);
         }
 
