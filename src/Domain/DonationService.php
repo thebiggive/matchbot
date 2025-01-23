@@ -89,9 +89,7 @@ class DonationService
     }
 
     /**
-     * Creates a new pending donation. In some edge cases (initial campaign data inserts hitting
-     * unique constraint violations), may reset the EntityManager; this could cause previously
-     * tracked entities in the Unit of Work to be lost.
+     * Creates a new pending donation.
      *
      * @param DonationCreate $donationData Details of the desired donation, as sent from the browser
      * @param string $pspCustomerId The Stripe customer ID of the donor
@@ -147,19 +145,14 @@ class DonationService
     }
 
     /**
-     * It seems like just the *first* persist of a given donation needs to be retry-safe, since there is a small
-     * but non-zero minority of Create attempts at the start of a big campaign which get a closed Entity Manager
-     * and then don't know about the connected #campaign on persist and crash when EntityManagerInterface tries again.
      *
-     * The same applies to allocating match funds, which in rare cases can fail with a lock timeout exception. It could
-     * also fail simply because another thread keeps changing the values of funds in redis.
+     * We currently think that this retry logic is not useful as we are using it -
+     * if the provided closure fails the first time then it will on all the retrys as well, since the Entity Manager
+     * will have been closed from the first failure.
      *
-     * If the EM "goes away" for any reason but only does so once, `flush()` should still replace the underlying
-     * EM with a new one and then the next persist should succeed.
+     * However, if we're wrong and it is useful we will find out by an error log with "$actionName SUCCEEDED"
      *
-     * If the persist itself fails, we do not replace the underlying entity manager. This means if it's still usable
-     * then we still have any required related new entities in the Unit of Work.
-     * @param \Closure $retryable The action to be executed and then retried if necassary
+     * @param \Closure $retryable The action to be executed and then retried if necessary
      * @param string $actionName The name of the action, used in logs.
      * @throws ORMException|DBALServerException if they're occurring when max retry count reached.
      */
@@ -169,6 +162,12 @@ class DonationService
         while ($retryCount < self::MAX_RETRY_COUNT) {
             try {
                 $retryable();
+                if ($retryCount > 0) {
+                    $this->logger->error(
+                        "$actionName SUCCEEDED after $retryCount retry - retry process is not useless. " .
+                        "See MAT-388. See info logs for original exception"
+                    );
+                }
                 return;
             } catch (ORMException | DBALServerException $exception) {
                 $retryCount++;
@@ -305,12 +304,14 @@ class DonationService
         $campaign->checkIsReadyToAcceptDonation($donation, $at);
 
         // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
+        // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
         $this->runWithPossibleRetry(function () use ($donation) {
             $this->entityManager->persist($donation);
             $this->entityManager->flush();
         }, 'Donation Create persist before stripe work');
 
         if ($campaign->isMatched()) {
+            // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
             $this->runWithPossibleRetry(
                 function () use ($donation) {
                     try {
@@ -486,6 +487,7 @@ class DonationService
 
         $donation->setTransactionId($intent->id);
 
+        // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
         $this->runWithPossibleRetry(
             function () use ($donation) {
                 $this->entityManager->persist($donation);
