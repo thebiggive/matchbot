@@ -172,7 +172,6 @@ class DonationServiceTest extends TestCase
         LoggerInterface $logger = null,
     ): DonationService {
         $emProphecy = $this->prophesize(EntityManagerInterface::class);
-        $emProphecy->isOpen()->willReturn(true);
         if ($withAlwaysCrashingEntityManager) {
             /**
              * @psalm-suppress InternalMethod
@@ -181,7 +180,6 @@ class DonationServiceTest extends TestCase
             $emProphecy->persist(Argument::type(Donation::class))->willThrow(
                 new UniqueConstraintViolationException(new Exception('EXCEPTION_MESSAGE'), null)
             );
-            $emProphecy->isOpen()->willReturn(true);
         } else {
             $emProphecy->persist(Argument::type(Donation::class))->willReturn(null);
             $emProphecy->flush()->willReturn(null);
