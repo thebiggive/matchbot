@@ -9,7 +9,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Donations\Confirm;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -75,7 +74,7 @@ class ConfirmTest extends TestCase
                 donationRepository: $this->getDonationRepository(),
                 campaignRepository: $this->createStub(CampaignRepository::class),
                 logger: new NullLogger(),
-                entityManager: $this->createStub(RetrySafeEntityManager::class),
+                entityManager: $this->createStub(EntityManagerInterface::class),
                 stripe: $this->stripeProphecy->reveal(),
                 matchingAdapter: $this->createStub(Adapter::class),
                 chatter: $this->createStub(ChatterInterface::class),
