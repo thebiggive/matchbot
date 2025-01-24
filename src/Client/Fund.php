@@ -17,7 +17,7 @@ class Fund extends Common
      */
     public function getById(string $fundId, bool $withCache): array
     {
-        $uri = $this->getUri("{$this->getSetting('fund', 'baseUri')}/$fundId", $withCache);
+        $uri = $this->getUri($this->fundBaseUri() . $fundId, $withCache);
         $response = $this->getHttpClient()->get($uri);
 
         if ($response->getStatusCode() !== 200) {
@@ -34,7 +34,7 @@ class Fund extends Common
      */
     public function getForCampaign(string $campaignId): array
     {
-        $uri = $this->sfApiBaseUrl . "/campaigns/services/apexrest/v1.0/campaigns/$campaignId/funds";
+        $uri = $this->campaignsBaseURI() . "$campaignId/funds";
 
         $response = $this->getHttpClient()->get($uri);
 
@@ -48,12 +48,22 @@ class Fund extends Common
     public function pushAmountAvailable(FundTotalUpdated $fundMessage): void
     {
         $uri = $this->getUri(
-            uri: "{$this->getSetting('fund', 'baseUri')}/{$fundMessage->salesforceId}",
+            uri: $this->fundBaseUri() . $fundMessage->salesforceId,
             withCache: false,
         );
         $this->getHttpClient()->put($uri, [
             'json' => $fundMessage->jsonSnapshot,
             'headers' => $this->getVerifyHeaders(json_encode($fundMessage->jsonSnapshot)),
         ]);
+    }
+
+    public function fundBaseUri(): string
+    {
+        return "{$this->sfApiBaseUrl}/funds/services/apexrest/v1.0/funds/";
+    }
+
+    public function campaignsBaseURI(): string
+    {
+        return "{$this->sfApiBaseUrl}/campaigns/services/apexrest/v1.0/campaigns/";
     }
 }
