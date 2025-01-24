@@ -67,11 +67,11 @@ class Mailer extends Common
 
     private function hash(string $body): string
     {
-        return hash_hmac('sha256', trim($body), $this->getSetting('mailer', 'sendSecret'));
+        return hash_hmac('sha256', trim($body), $this->getMailerSetting('sendSecret'));
     }
 
     private function baseUri(): string
     {
-        return $this->getSetting('mailer', 'baseUri');
+        return $this->getMailerSetting('baseUri');
     }
 }

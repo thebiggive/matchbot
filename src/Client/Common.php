@@ -19,6 +19,7 @@ abstract class Common
      * @var array{
      *     salesforce: array{ baseUri: string},
      *     global: array{timeout: string},
+     *     mailer: array{baseUri: string, sendSecret: string}
      * }
      */
     private readonly array $clientSettings;
@@ -42,9 +43,13 @@ abstract class Common
         $this->sfApiBaseUrl = $this->clientSettings['salesforce']['baseUri'];
     }
 
-    protected function getSetting(string $service, string $property): string
+    /**
+     * @param 'baseUri'|'sendSecret' $property
+     * @return string
+     */
+    protected function getMailerSetting(string $property): string
     {
-        return $this->clientSettings[$service][$property];
+        return $this->clientSettings['mailer'][$property];
     }
 
     protected function getHttpClient(): Client

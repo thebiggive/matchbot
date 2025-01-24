@@ -85,7 +85,7 @@ class Campaign extends Common
         $foundEmptyPage = false;
         while ($offset < $limit) {
             $uri = $this->getUri(
-                "{$this->getSetting('campaign', 'baseUri')}?parentSlug=$encodedSlug&limit=$pageSize&offset=$offset",
+                "{$this->baseUri()}?parentSlug=$encodedSlug&limit=$pageSize&offset=$offset",
                 true
             );
             $response = $this->getHttpClient()->get($uri);
