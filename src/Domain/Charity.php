@@ -270,6 +270,10 @@ class Charity extends SalesforceReadProxy
     // Remove special characters except spaces
     private function removeSpecialChars(string $descriptor): string
     {
-        return preg_replace('/[^A-Za-z0-9 ]/', '', $descriptor);
+        $return = preg_replace('/[^A-Za-z0-9 ]/', '', $descriptor);
+
+        \assert($return !== null);
+
+        return $return;
     }
 }

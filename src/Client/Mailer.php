@@ -23,7 +23,7 @@ class Mailer extends Common
                 [
                     'json' => $requestBody,
                     'headers' => [
-                        'x-send-verify-hash' => $this->hash(json_encode($requestBody)),
+                        'x-send-verify-hash' => $this->hash(json_encode($requestBody, \JSON_THROW_ON_ERROR)),
                     ],
                 ]
             );
@@ -35,7 +35,7 @@ class Mailer extends Common
                     '%s email callout didn\'t return 200. It returned code: %s. Request body: %s. Response body: %s.',
                     $requestBody['templateKey'],
                     $response->getStatusCode(),
-                    json_encode($requestBody),
+                    json_encode($requestBody, \JSON_THROW_ON_ERROR),
                     $response->getBody()->getContents(),
                 ));
                 return;

@@ -100,6 +100,12 @@ class Status extends Action
         $proxyDirectory = $emConfig->getProxyDir();
         Assertion::string($proxyNamespace);
         Assertion::string($proxyDirectory);
+
+        /**
+         * @psalm-suppress DeprecatedClass
+         * ProxyGenerator was deprecated here https://github.com/doctrine/common/pull/1002 because Doctrine ORM 4
+         * will use Native PHP 8.4 proxies instead of any Doctrine specific proxy generator.
+         */
         $proxyGenerator = new ProxyGenerator($proxyDirectory, $proxyNamespace);
         foreach ($criticalModelClasses as $modelClass) {
             $expectedFile = $proxyGenerator->getProxyFileName($modelClass);

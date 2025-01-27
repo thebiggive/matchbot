@@ -116,7 +116,7 @@ class CancelAllTest extends TestCase
         $json = (string) $response->getBody();
         $this->assertJson($json);
         /** @var array{donations: list<array{donationAmount: float, status: string}>} $payload */
-        $payload = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        $payload = json_decode($json, true, 512, \JSON_THROW_ON_ERROR);
         $this->assertArrayHasKey('donations', $payload);
         $this->assertCount(2, $payload['donations']);
 

@@ -335,7 +335,7 @@ class StripePayoutHandlerTest extends TestCase
         /** @var \stdClass $payoutMock */
         $payoutMock = json_decode($this->getStripeHookMock(
             $withPayoutSuccess ? 'ApiResponse/po' : 'ApiResponse/po_failed',
-        ), false, 512, JSON_THROW_ON_ERROR);
+        ), false, 512, \JSON_THROW_ON_ERROR);
 
         if ($withRetriedPayout) {
             $stripePayoutProphecy->retrieve(

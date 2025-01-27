@@ -159,9 +159,9 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         $donation->setTransactionId('pi_' . $this->randomString());
         $donation->setSalesforceId(substr('006' . $this->randomString(), 0, 18));
         $donation->collectFromStripeCharge(
-            chargeId: 'chg' . (string)$randomizer->getBytesFromString('0123456789abcdef', 10),
+            chargeId: 'chg' . $randomizer->getBytesFromString('0123456789abcdef', 10),
             totalPaidFractional: (int)((float)$amount * 100),
-            transferId: 'tsf' . (string)$randomizer->getBytesFromString('0123456789abcdef', 10),
+            transferId: 'tsf' . $randomizer->getBytesFromString('0123456789abcdef', 10),
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '0',

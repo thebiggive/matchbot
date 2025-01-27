@@ -127,7 +127,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $webhookContent = json_decode(
             $this->getStripeHookMock('ch_succeeded'),
             associative: true,
-            flags: JSON_THROW_ON_ERROR
+            flags: \JSON_THROW_ON_ERROR
         );
 
         /**
@@ -135,7 +135,7 @@ class StripePaymentsUpdateTest extends StripeTest
          * @psalm-suppress MixedArrayAccess
          */
         $webhookContent['data']['object']['amount'] = $donation->getAmountFractionalIncTip();
-        $body = json_encode($webhookContent);
+        $body = json_encode($webhookContent, \JSON_THROW_ON_ERROR);
         $webhookSecret = $this->getValidWebhookSecret($container);
         $time = (string) time();
         $this->donationRepository->store($donation);
@@ -179,7 +179,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $webhookContent = json_decode(
             $this->getStripeHookMock('ch_succeeded_sek'),
             associative: true,
-            flags: JSON_THROW_ON_ERROR
+            flags: \JSON_THROW_ON_ERROR
         );
 
         /**
@@ -188,7 +188,7 @@ class StripePaymentsUpdateTest extends StripeTest
          */
         $webhookContent['data']['object']['amount'] = $donation->getAmountFractionalIncTip();
 
-        $body = json_encode($webhookContent);
+        $body = json_encode($webhookContent, \JSON_THROW_ON_ERROR);
 
         $webhookSecret = $this->getValidWebhookSecret($container);
         $time = (string) time();

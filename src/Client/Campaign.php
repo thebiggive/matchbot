@@ -62,7 +62,7 @@ class Campaign extends Common
         /**
          * @var SFCampaignApiResponse $campaignResponse
          */
-        $campaignResponse = json_decode((string)$response->getBody(), true, flags: JSON_THROW_ON_ERROR);
+        $campaignResponse = json_decode((string)$response->getBody(), true, flags: \JSON_THROW_ON_ERROR);
 
         return $campaignResponse;
     }

@@ -446,7 +446,7 @@ class ConfirmTest extends TestCase
                 path: 'doesnt-matter-for-test',
                 bodyString: \json_encode([
                     'stripeConfirmationTokenId' => self::CONFIRMATION_TOKEN_ID
-                ])
+                ], \JSON_THROW_ON_ERROR)
             ),
             new Response(),
             ['donationId' => $this->donationId->toString()]

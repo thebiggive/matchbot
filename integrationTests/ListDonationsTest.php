@@ -40,7 +40,7 @@ class ListDonationsTest extends IntegrationTest
         $allDonationsBody = (string) $this->requestFromController($stripeID)->getBody();
 
         // assert
-        $allDonations = \json_decode($allDonationsBody, associative: true, flags: JSON_THROW_ON_ERROR)['donations'];
+        $allDonations = \json_decode($allDonationsBody, associative: true, flags: \JSON_THROW_ON_ERROR)['donations'];
         \assert(is_array($allDonations));
 
         $this->assertCount(1, $allDonations);

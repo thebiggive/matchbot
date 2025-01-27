@@ -351,11 +351,7 @@ abstract class IntegrationTest extends TestCase
 
     public static function randomString(): string
     {
-        $randomString = (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
-
-        \assert(is_string($randomString)); // not sure why Psalm said it was mixed.
-
-        return $randomString;
+        return (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
     }
 
     protected function getApp(): App

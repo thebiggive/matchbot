@@ -112,7 +112,6 @@ class CampaignRepositoryTest extends IntegrationTest
     public function randomCampaignId(): Salesforce18Id
     {
         $id = (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
-        \assert(is_string($id));
         return Salesforce18Id::ofCampaign($id);
     }
 }

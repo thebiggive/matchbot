@@ -1290,7 +1290,10 @@ class Donation extends SalesforceWriteProxy
         // MAT-192 will cover passing and storing this separately. For now, a pattern match should
         // give reasonable 'house number' values.
         if ($this->donorHomeAddressLine1 !== null) {
-            $donationMessage->house_no = preg_replace('/^([0-9a-z-]+).*$/i', '$1', trim($this->donorHomeAddressLine1));
+            $houseNumber = preg_replace('/^([0-9a-z-]+).*$/i', '$1', trim($this->donorHomeAddressLine1));
+            \assert($houseNumber !== null);
+
+            $donationMessage->house_no = $houseNumber;
 
             // In any case where this doesn't produce a result, just send the full first 40 characters
             // of the home address. This is also HMRC's requested value in this property for overseas

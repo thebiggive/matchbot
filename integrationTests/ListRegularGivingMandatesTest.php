@@ -68,7 +68,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
 
         $allMandatesBody = (string) $this->requestFromController($this->donorId)->getBody();
 
-        $mandates = \json_decode($allMandatesBody, associative: true, flags: JSON_THROW_ON_ERROR)['mandates'];
+        $mandates = \json_decode($allMandatesBody, associative: true, flags: \JSON_THROW_ON_ERROR)['mandates'];
         \assert(is_array($mandates));
 
         $this->assertCount(1, $mandates);

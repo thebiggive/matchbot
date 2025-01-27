@@ -80,7 +80,10 @@ class InMemoryDonationRepository implements DonationRepository
             return null;
         }
 
-        throw new \Exception("Method not implemented in test double with criteria: " . json_encode($criteria));
+        throw new \Exception(
+            "Method not implemented in test double with criteria: " .
+            json_encode($criteria, \JSON_THROW_ON_ERROR)
+        );
     }
 
     #[\Override]
