@@ -48,7 +48,7 @@ class Confirm extends Action
                 $request->getBody()->getContents(),
                 true,
                 512,
-                JSON_THROW_ON_ERROR
+                \JSON_THROW_ON_ERROR
             );
         } catch (\JsonException) {
             throw new HttpBadRequestException($request, 'Cannot parse request body as JSON');

@@ -90,7 +90,7 @@ abstract class Common
                 $uri,
                 [
                     'json' => $jsonSnapshot,
-                    'headers' => $this->getVerifyHeaders(json_encode($jsonSnapshot)),
+                    'headers' => $this->getVerifyHeaders(json_encode($jsonSnapshot, \JSON_THROW_ON_ERROR)),
                 ]
             );
             $contents = $response->getBody()->getContents();
@@ -161,7 +161,7 @@ abstract class Common
             /**
              * @var array{'salesforceId': string} $response
              */
-            $response = json_decode($contents, associative: true, flags: JSON_THROW_ON_ERROR);
+            $response = json_decode($contents, associative: true, flags: \JSON_THROW_ON_ERROR);
             $salesforceId = $response['salesforceId'] ?? throw new BadRequestException("Missing salesforceId for $entityType $uuid");
             return Salesforce18Id::of($salesforceId);
         } catch (\JsonException $e) {

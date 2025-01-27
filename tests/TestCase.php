@@ -161,6 +161,7 @@ class TestCase extends PHPUnitTestCase
     ): Request {
         $uri = new Uri('', '', 80, $path);
         $handle = fopen('php://temp', 'w+');
+        \assert($handle !== false);
 
         if ($bodyString === '') {
             $stream = (new StreamFactory())->createStreamFromResource($handle);
@@ -221,7 +222,6 @@ class TestCase extends PHPUnitTestCase
         string $thankYouMessage = null,
     ): Campaign {
         $randomString = (new Randomizer())->getBytesFromString('abcdef', 7);
-        \assert(is_string($randomString));
         $sfId ??= Salesforce18Id::ofCampaign('1CampaignId' . $randomString);
 
         return new Campaign(

@@ -53,7 +53,7 @@ class Fund extends Common
         );
         $this->getHttpClient()->put($uri, [
             'json' => $fundMessage->jsonSnapshot,
-            'headers' => $this->getVerifyHeaders(json_encode($fundMessage->jsonSnapshot)),
+            'headers' => $this->getVerifyHeaders(json_encode($fundMessage->jsonSnapshot, \JSON_THROW_ON_ERROR)),
         ]);
     }
 

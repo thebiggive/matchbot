@@ -751,7 +751,7 @@ class DonationService
             $this->logger->warning(sprintf(
                 'StripeChargeUpdate::getFee: Unexpected composite fee with %d parts: %s',
                 count($txn->fee_details),
-                json_encode($txn->fee_details),
+                json_encode($txn->fee_details, \JSON_THROW_ON_ERROR),
             ));
         }
 

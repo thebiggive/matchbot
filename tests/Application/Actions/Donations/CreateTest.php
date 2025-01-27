@@ -620,7 +620,7 @@ class CreateTest extends TestCase
 
         $this->diContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = json_encode($donation->toFrontEndApiModel(), JSON_THROW_ON_ERROR);
+        $data = json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR);
         // Don't match default test customer ID from body, in this path.
         $request = $this->createRequest('POST', '/v1/people/99999999-1234-1234-1234-1234567890zz/donations', $data);
         $app->handle($this->addDummyPersonAuth($request)); // Throws HttpUnauthorizedException.
@@ -648,7 +648,7 @@ class CreateTest extends TestCase
 
         $this->diContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = json_encode($donation->toFrontEndApiModel(), JSON_THROW_ON_ERROR);
+        $data = json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
 
         $response = $app->handle($this->addDummyPersonAuth($request));
@@ -971,7 +971,7 @@ class CreateTest extends TestCase
     {
         $donationArray = $donation->toFrontEndApiModel();
 
-        return json_encode($donationArray);
+        return json_encode($donationArray, \JSON_THROW_ON_ERROR);
     }
 
     /**

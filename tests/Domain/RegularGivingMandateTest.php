@@ -196,7 +196,7 @@ class RegularGivingMandateTest extends TestCase
                   "status": "pending"
                 }
             JSON,
-            \json_encode($mandate->toFrontEndApiModel($charity, $now)),
+            \json_encode($mandate->toFrontEndApiModel($charity, $now), \JSON_THROW_ON_ERROR),
         );
     }
 
@@ -239,7 +239,7 @@ class RegularGivingMandateTest extends TestCase
               }
             }
             JSON,
-            \json_encode($SFApiModel)
+            \json_encode($SFApiModel, \JSON_THROW_ON_ERROR)
         );
     }
 
