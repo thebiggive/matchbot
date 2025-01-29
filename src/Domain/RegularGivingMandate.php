@@ -65,7 +65,6 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column()]
     private readonly bool $tbgComms;
 
-
     /**
      * @var bool When the mandate was created, did the donor give or refuse permission for the charity they're donating to
      * to send marketing emails. Similar to @see Donation::$charityComms
