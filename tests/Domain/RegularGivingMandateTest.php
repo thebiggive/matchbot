@@ -228,6 +228,8 @@ class RegularGivingMandateTest extends TestCase
               "dayOfMonth":12,
               "status":"Active",
               "activeFrom": "2024-08-12T06:00:00+00:00",
+              "optInCharityEmail": false,
+              "optInTbgEmail": false,
               "donor": {
                 "firstName": "Fred",
                 "lastName": "Do",
