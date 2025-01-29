@@ -51,10 +51,14 @@ class Fund extends Common
             uri: $this->fundBaseUri() . $fundMessage->salesforceId,
             withCache: false,
         );
+        $jsonSnapshot = $fundMessage->jsonSnapshot;
         $this->getHttpClient()->put($uri, [
-            'json' => $fundMessage->jsonSnapshot,
-            'headers' => $this->getVerifyHeaders(json_encode($fundMessage->jsonSnapshot, \JSON_THROW_ON_ERROR)),
+            'json' => $jsonSnapshot,
+            'headers' => $this->getVerifyHeaders(json_encode($jsonSnapshot, \JSON_THROW_ON_ERROR)),
         ]);
+
+        $encodedJson = \json_encode($jsonSnapshot, \JSON_THROW_ON_ERROR);
+        $this->logger->info("Pushed amount available for fund: {$fundMessage->salesforceId}: Snapshot: $encodedJson");
     }
 
     public function fundBaseUri(): string

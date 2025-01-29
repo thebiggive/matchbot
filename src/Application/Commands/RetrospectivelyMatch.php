@@ -11,6 +11,7 @@ use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\FundTotalUpdated;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
@@ -135,7 +136,9 @@ class RetrospectivelyMatch extends LockingCommand
         foreach ($funds as $fund) {
             $this->bus->dispatch(new Envelope(FundTotalUpdated::fromFund($fund)));
         }
-        $output->writeln('Pushed fund totals to Salesforce for ' . count($funds) . ' funds');
+
+        $fundSFIds = implode(', ', array_map(static fn(Fund $f) => $f->getSalesforceId(), $funds));
+        $output->writeln('Pushed fund totals to Salesforce for ' . count($funds) . ' funds: ' . $fundSFIds);
 
         return 0;
     }

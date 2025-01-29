@@ -59,7 +59,7 @@ class RetrospectivelyMatchTest extends TestCase
             'Automatically evaluating campaigns which closed in the past hour',
             'Retrospectively matched 1 of 1 donations. £123.45 total new matching, across 1 campaigns.',
             'Checked 3 donations and redistributed matching for 2',
-            'Pushed fund totals to Salesforce for 0 funds',
+            'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -77,7 +77,7 @@ class RetrospectivelyMatchTest extends TestCase
             "Looking at past 8 days' donations",
             'Retrospectively matched 0 of 0 donations. £0.00 total new matching, across 0 campaigns.',
             'Checked 3 donations and redistributed matching for 2',
-            'Pushed fund totals to Salesforce for 0 funds',
+            'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -95,7 +95,7 @@ class RetrospectivelyMatchTest extends TestCase
             "Looking at past 8 days' donations",
             'Retrospectively matched 0 of 0 donations. £0.00 total new matching, across 0 campaigns.',
             'Checked 3 donations and redistributed matching for 2',
-            'Pushed fund totals to Salesforce for 0 funds',
+            'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
