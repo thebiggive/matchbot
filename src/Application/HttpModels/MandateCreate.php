@@ -43,6 +43,12 @@ readonly class MandateCreate
         ?string $billingCountry,
         public ?string $billingPostcode,
         ?string $stripeConfirmationTokenId,
+
+        // The following are temporarily optional as they are new and FE doesn't yet send them. We use false as a safe
+        // default. @todo-regular-giving make them required params once FE has a version deployed to prod that always
+        // sends these when creating a regular giving mandate.
+        public bool $tbgComms = false,
+        public bool $charityComms = false,
     ) {
         $this->dayOfMonth = DayOfMonth::of($dayOfMonth);
         $this->amount = Money::fromPence($amountInPence, Currency::fromIsoCode($currency));
