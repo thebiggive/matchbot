@@ -44,6 +44,8 @@ readonly class RegularGivingService
     }
 
     /**
+     * @param bool $charityComms
+     * @param bool $tbgComms
      * @param string|null $billingPostCode
      * @param Country|null $billingCountry
      * @throws CampaignNotOpen
@@ -67,6 +69,8 @@ readonly class RegularGivingService
         DayOfMonth $dayOfMonth,
         ?Country $billingCountry,
         ?string $billingPostCode,
+        bool $tbgComms,
+        bool $charityComms,
         ?StripeConfirmationTokenId $confirmationTokenId = null,
     ): RegularGivingMandate {
         $this->ensureCampaignAllowsRegularGiving($campaign);
@@ -90,6 +94,8 @@ readonly class RegularGivingService
             charityId: $campaign->getCharityId(),
             giftAid: $giftAid,
             dayOfMonth: $dayOfMonth,
+            tbgComms: $tbgComms,
+            charityComms: $charityComms,
         );
 
         /**

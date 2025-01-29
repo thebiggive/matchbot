@@ -149,6 +149,9 @@ class RegularGivingServiceTest extends TestCase
             DayOfMonth::of(20),
             Country::fromEnum(CountryAlpha2::Kiribati),
             billingPostCode: 'KI0107',
+            tbgComms: false,
+            charityComms: false,
+            confirmationTokenId: null,
         );
 
         // assert
@@ -212,6 +215,8 @@ class RegularGivingServiceTest extends TestCase
             dayOfMonth: DayOfMonth::of(20),
             billingCountry: Country::GB(),
             billingPostCode: 'SW1',
+            tbgComms: false,
+            charityComms: false,
             confirmationTokenId: $confirmationTokenId
         );
 
@@ -255,10 +260,12 @@ class RegularGivingServiceTest extends TestCase
                 $this->donorAccount,
                 Money::fromPoundsGBP(42),
                 TestCase::someCampaign(isRegularGiving: true),
-                true,
-                DayOfMonth::of(20),
-                null,
-                null,
+                giftAid: true,
+                dayOfMonth: DayOfMonth::of(20),
+                billingCountry: null,
+                billingPostCode: null,
+                tbgComms: false,
+                charityComms: false,
             );
             $this->fail('Should throw NotFullyMatched');
         } catch (NotFullyMatched $e) {
@@ -281,7 +288,10 @@ class RegularGivingServiceTest extends TestCase
             giftAid: false,
             dayOfMonth: DayOfMonth::of(12),
             billingCountry: null,
-            billingPostCode: null
+            billingPostCode: null,
+            tbgComms: false,
+            charityComms: false,
+            confirmationTokenId: null
         );
     }
 
@@ -303,7 +313,10 @@ class RegularGivingServiceTest extends TestCase
             giftAid: false,
             dayOfMonth: DayOfMonth::of(12),
             billingCountry: Country::fromEnum(CountryAlpha2::Kiribati),
-            billingPostCode: null
+            billingPostCode: null,
+            tbgComms: false,
+            charityComms: false,
+            confirmationTokenId: null
         );
     }
 
@@ -325,7 +338,10 @@ class RegularGivingServiceTest extends TestCase
             giftAid: false,
             dayOfMonth: DayOfMonth::of(12),
             billingCountry: null,
-            billingPostCode: 'KI0107'
+            billingPostCode: 'KI0107',
+            tbgComms: false,
+            charityComms: false,
+            confirmationTokenId: null
         );
     }
 

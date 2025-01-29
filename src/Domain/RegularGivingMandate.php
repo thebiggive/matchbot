@@ -57,6 +57,21 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column()]
     private readonly bool $giftAid;
 
+
+    /**
+     * @var bool When the mandate was created, did the donor give or refuse permission for Big Give to send marketing
+     * emails. Similar to @see Donation::$tbgComms
+     */
+    #[ORM\Column()]
+    private readonly bool $tbgComms;
+
+    /**
+     * @var bool When the mandate was created, did the donor give or refuse permission for the charity they're donating to
+     * to send marketing emails. Similar to @see Donation::$charityComms
+     */
+    #[ORM\Column()]
+    private readonly bool $charityComms;
+
     #[ORM\Embedded(columnPrefix: false)]
     private DayOfMonth $dayOfMonth;
 
@@ -82,6 +97,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
         Salesforce18Id $charityId,
         bool $giftAid,
         DayOfMonth $dayOfMonth,
+        bool $tbgComms = false,
+        bool $charityComms = false,
     ) {
         $this->createdNow();
         $minAmount = Money::fromPence(self::MIN_AMOUNT_PENCE, Currency::GBP);
@@ -100,6 +117,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->giftAid = $giftAid;
         $this->donorId = $donorId;
         $this->dayOfMonth = $dayOfMonth;
+        $this->tbgComms = $tbgComms;
+        $this->charityComms = $charityComms;
     }
 
     /**
@@ -153,6 +172,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'contactUuid' => $this->donorId->id,
             'giftAid' => $this->giftAid,
             'donor' => $donor->toSfApiModel(),
+            'optInCharityEmail' => $this->charityComms,
+            'optInTbgEmail' => $this->tbgComms,
         ];
     }
 

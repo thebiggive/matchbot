@@ -98,6 +98,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
         // act
         $response = $this->createRegularGivingMandate($pencePerMonth);
+
         // assert
         $this->assertSame(201, $response->getStatusCode());
         $mandateDatabaseRows = $this->db()->executeQuery(
@@ -107,6 +108,8 @@ class CreateRegularGivingMandateTest extends IntegrationTest
             ->fetchAllAssociative();
         $this->assertNotEmpty($mandateDatabaseRows);
         $this->assertSame($pencePerMonth, $mandateDatabaseRows[0]['donationAmount_amountInPence']);
+        $this->assertSame(1, $mandateDatabaseRows[0]['tbgComms']);
+        $this->assertSame(1, $mandateDatabaseRows[0]['charityComms']);
 
         $donationDatabaseRows = $this->db()->executeQuery(
             "SELECT * from Donation where Donation.mandate_id = ? ORDER BY mandateSequenceNumber asc",
@@ -151,7 +154,9 @@ class CreateRegularGivingMandateTest extends IntegrationTest
                     "amountInPence": $pencePerMonth,
                     "dayOfMonth": 1,
                     "giftAid": false,
-                    "campaignId": "$campaignId"
+                    "campaignId": "$campaignId",
+                    "tbgComms": true,
+                    "charityComms": true
                 }
             EOF,
                 serverParams: ['REMOTE_ADDR' => '127.0.0.1']

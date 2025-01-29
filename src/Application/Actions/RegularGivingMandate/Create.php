@@ -90,6 +90,8 @@ class Create extends Action
                 dayOfMonth: $mandateData->dayOfMonth,
                 billingCountry: $mandateData->billingCountry,
                 billingPostCode: $mandateData->billingPostcode,
+                tbgComms: $mandateData->tbgComms,
+                charityComms: $mandateData->charityComms,
                 confirmationTokenId: $mandateData->stripeConfirmationTokenId,
             );
         } catch (WrongCampaignType | \UnexpectedValueException $e) {
