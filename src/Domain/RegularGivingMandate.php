@@ -172,8 +172,6 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'contactUuid' => $this->donorId->id,
             'giftAid' => $this->giftAid,
             'donor' => $donor->toSfApiModel(),
-            'optInCharityEmail' => $this->charityComms,
-            'optInTbgEmail' => $this->tbgComms,
         ];
     }
 
