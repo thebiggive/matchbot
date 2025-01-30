@@ -97,7 +97,7 @@ abstract class Action
      */
     protected function respond(Response $response, ActionPayload $payload): Response
     {
-        $json = json_encode($payload, JSON_PRETTY_PRINT);
+        $json = json_encode($payload, \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR);
         $response->getBody()->write($json);
 
         return $response

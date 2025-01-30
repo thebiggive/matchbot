@@ -3,12 +3,12 @@
 namespace MatchBot\Domain;
 
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -20,17 +20,20 @@ use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\MandateNotActive;
-use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
+use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Ramsey\Uuid\UuidInterface;
 use Random\Randomizer;
+use Stripe\Card;
+use Stripe\Charge;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
+use Stripe\PaymentIntent;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Messenger\Envelope;
@@ -63,11 +66,18 @@ class DonationService
         'The parameter application_fee_amount cannot be updated on a PaymentIntent after a capture has already been made.',
     ];
 
+
+    // for now we are opting out of async - when we go to async capture we will need to listen to the
+    // webhooks to update donations and also regular giving mandates. See
+    // https://docs.stripe.com/payments/payment-intents/asynchronous-capture#listen-webhooks
+    // and MAT-395
+    private const array ASYNC_CAPTURE_OPT_OUT = ['capture_method' => 'automatic'];
+
     public function __construct(
         private DonationRepository $donationRepository,
         private CampaignRepository $campaignRepository,
         private LoggerInterface $logger,
-        private RetrySafeEntityManager $entityManager,
+        private EntityManagerInterface $entityManager,
         private Stripe $stripe,
         private MatchingAdapter $matchingAdapter,
         private StripeChatterInterface|ChatterInterface $chatter,
@@ -79,9 +89,7 @@ class DonationService
     }
 
     /**
-     * Creates a new pending donation. In some edge cases (initial campaign data inserts hitting
-     * unique constraint violations), may reset the EntityManager; this could cause previously
-     * tracked entities in the Unit of Work to be lost.
+     * Creates a new pending donation.
      *
      * @param DonationCreate $donationData Details of the desired donation, as sent from the browser
      * @param string $pspCustomerId The Stripe customer ID of the donor
@@ -137,19 +145,14 @@ class DonationService
     }
 
     /**
-     * It seems like just the *first* persist of a given donation needs to be retry-safe, since there is a small
-     * but non-zero minority of Create attempts at the start of a big campaign which get a closed Entity Manager
-     * and then don't know about the connected #campaign on persist and crash when RetrySafeEntityManager tries again.
      *
-     * The same applies to allocating match funds, which in rare cases can fail with a lock timeout exception. It could
-     * also fail simply because another thread keeps changing the values of funds in redis.
+     * We currently think that this retry logic is not useful as we are using it -
+     * if the provided closure fails the first time then it will on all the retrys as well, since the Entity Manager
+     * will have been closed from the first failure.
      *
-     * If the EM "goes away" for any reason but only does so once, `flush()` should still replace the underlying
-     * EM with a new one and then the next persist should succeed.
+     * However, if we're wrong and it is useful we will find out by an error log with "$actionName SUCCEEDED"
      *
-     * If the persist itself fails, we do not replace the underlying entity manager. This means if it's still usable
-     * then we still have any required related new entities in the Unit of Work.
-     * @param \Closure $retryable The action to be executed and then retried if necassary
+     * @param \Closure $retryable The action to be executed and then retried if necessary
      * @param string $actionName The name of the action, used in logs.
      * @throws ORMException|DBALServerException if they're occurring when max retry count reached.
      */
@@ -159,6 +162,12 @@ class DonationService
         while ($retryCount < self::MAX_RETRY_COUNT) {
             try {
                 $retryable();
+                if ($retryCount > 0) {
+                    $this->logger->error(
+                        "$actionName SUCCEEDED after $retryCount retry - retry process is not useless. " .
+                        "See MAT-388. See info logs for original exception"
+                    );
+                }
                 return;
             } catch (ORMException | DBALServerException $exception) {
                 $retryCount++;
@@ -205,9 +214,17 @@ class DonationService
         // or what we're charging.
         $this->entityManager->flush();
 
+        $paymentIntentId = $donation->getTransactionId();
+        Assertion::notNull($paymentIntentId);
+
+        $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
+
         return $this->stripe->confirmPaymentIntent(
-            $donation->getTransactionId(),
-            ['confirmation_token' => $tokenId->stripeConfirmationTokenId]
+            $paymentIntentId,
+            [
+                'confirmation_token' => $tokenId->stripeConfirmationTokenId,
+                ...self::ASYNC_CAPTURE_OPT_OUT
+            ]
         );
     }
 
@@ -233,14 +250,7 @@ class DonationService
             );
         }
 
-        $paymentMethod = $donorAccount->getRegularGivingPaymentMethod();
-
-        if ($paymentMethod === null) {
-            throw new \MatchBot\Domain\NoRegularGivingPaymentMethod(
-                "Cannot confirm donation {$donation->getUuid()} for " .
-                "{$donorAccount->stripeCustomerId->stripeCustomerId}, no payment method"
-            );
-        }
+        $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
 
         $campaign = $donation->getCampaign();
         if ($campaign->regularGivingCollectionIsEndedAt($this->clock->now())) {
@@ -257,10 +267,16 @@ class DonationService
             );
         }
 
-        $this->stripe->confirmPaymentIntent(
-            $donation->getTransactionId(),
-            ['payment_method' => $paymentMethod->stripePaymentMethodId]
-        );
+        $paymentMethod = $donorAccount->getRegularGivingPaymentMethod();
+
+        if ($paymentMethod === null) {
+            throw new \MatchBot\Domain\NoRegularGivingPaymentMethod(
+                "Cannot confirm donation {$donation->getUuid()} for " .
+                "{$donorAccount->stripeCustomerId->stripeCustomerId}, no payment method"
+            );
+        }
+
+        $this->confirmDonationWithSavedPaymentMethod($donation, $paymentMethod);
     }
 
     /**
@@ -277,42 +293,25 @@ class DonationService
      * @throws StripeAccountIdNotSetForAccount
      * @throws TransportExceptionInterface
      * @throws \MatchBot\Client\NotFoundException
+     * @throws WrongCampaignType
      */
     public function enrollNewDonation(Donation $donation): void
     {
         $campaign = $donation->getCampaign();
 
-        if (!$campaign->isOpen(new \DateTimeImmutable())) {
-            throw new CampaignNotOpen("Campaign {$campaign->getSalesforceId()} is not open");
-        }
+        $at = new \DateTimeImmutable();
 
-        if ($donation->getMandate() === null && $campaign->isRegularGiving()) {
-            throw new WrongCampaignType(
-                "Campaign {$campaign->getSalesforceId()} does not accept one-off giving (regular-giving only)"
-            );
-        }
-
-        if ($donation->getMandate() !== null && $campaign->isOneOffGiving()) {
-            throw new WrongCampaignType(
-                "Campaign {$campaign->getSalesforceId()} does not accept regular giving (one-off only)"
-            );
-        }
-
-        // A closed EM can happen if the above tried to insert a campaign or fund, hit a duplicate error because
-        // another thread did it already, then successfully got the new copy. There's been no subsequent
-        // database persistence that needed an open manager, so none replaced the broken one. In that
-        // edge case, we need to handle that before `persistWithoutRetries()` has a chance of working.
-        if (!$this->entityManager->isOpen()) {
-            $this->entityManager->resetManager();
-        }
+        $campaign->checkIsReadyToAcceptDonation($donation, $at);
 
         // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
+        // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
         $this->runWithPossibleRetry(function () use ($donation) {
-            $this->entityManager->persistWithoutRetries($donation);
+            $this->entityManager->persist($donation);
             $this->entityManager->flush();
         }, 'Donation Create persist before stripe work');
 
         if ($campaign->isMatched()) {
+            // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
             $this->runWithPossibleRetry(
                 function () use ($donation) {
                     try {
@@ -337,7 +336,8 @@ class DonationService
             );
         }
 
-        if ($donation->getPsp() === 'stripe') {
+        // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
+        if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {
             $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
             if ($stripeAccountId === null || $stripeAccountId === '') {
                 // Try re-pulling in case charity has very recently onboarded with for Stripe.
@@ -348,7 +348,7 @@ class DonationService
                 if ($stripeAccountId === null || $stripeAccountId === '') {
                     $this->logger->error(sprintf(
                         'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
-                        $campaign->getCharity()->getSalesforceId() ?? 'missing charity sf ID',
+                        $campaign->getCharity()->getSalesforceId(),
                     ));
                     throw new StripeAccountIdNotSetForAccount();
                 }
@@ -359,6 +359,8 @@ class DonationService
 
             $this->createPaymentIntent($donation);
         }
+
+        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
     }
 
     private function doUpdateDonationFees(
@@ -388,7 +390,10 @@ class DonationService
             // Note that `on_behalf_of` is set up on create and is *not allowed* on update.
         ];
 
-        $this->stripe->updatePaymentIntent($donation->getTransactionId(), $updatedIntentData);
+        $paymentIntentId = $donation->getTransactionId();
+        if ($paymentIntentId !== null) {
+            $this->stripe->updatePaymentIntent($paymentIntentId, $updatedIntentData);
+        }
     }
 
     private function updateDonationFeesFromConfirmationToken(
@@ -435,6 +440,10 @@ class DonationService
             throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
         }
 
+        $now = $this->clock->now();
+
+        $donation->checkPreAuthDateAllowsCollectionAt($now);
+
         try {
             $intent = $this->stripe->createPaymentIntent($donation->createStripePaymentIntentPayload());
         } catch (ApiErrorException $exception) {
@@ -478,9 +487,10 @@ class DonationService
 
         $donation->setTransactionId($intent->id);
 
+        // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
         $this->runWithPossibleRetry(
             function () use ($donation) {
-                $this->entityManager->persistWithoutRetries($donation);
+                $this->entityManager->persist($donation);
                 $this->entityManager->flush();
             },
             'Donation Create persist after stripe work'
@@ -523,9 +533,10 @@ class DonationService
             $this->donationRepository->releaseMatchFunds($donation);
         }
 
-        if ($donation->getPsp() === 'stripe') {
+        $transactionId = $donation->getTransactionId();
+        if ($donation->getPsp() === 'stripe' && $transactionId !== null) {
             try {
-                $this->stripe->cancelPaymentIntent($donation->getTransactionId());
+                $this->stripe->cancelPaymentIntent($transactionId);
             } catch (ApiErrorException $exception) {
                 /**
                  * As per the notes in {@see DonationRepository::releaseMatchFunds()}, we
@@ -611,8 +622,7 @@ class DonationService
     public function releaseMatchFundsInTransaction(UuidInterface $donationId): void
     {
         $this->entityManager->wrapInTransaction(function () use ($donationId) {
-            $donationRepository = $this->donationRepository;
-            $donation = $donationRepository->findAndLockOneByUUID($donationId);
+            $donation = $this->donationRepository->findAndLockOneByUUID($donationId);
             Assertion::notNull($donation);
 
             $this->donationRepository->releaseMatchFunds($donation);
@@ -637,5 +647,135 @@ class DonationService
         $donations = $this->donationRepository->findAllCompleteForCustomer($stripeCustomerId);
 
         return array_map(fn(Donation $donation) => $donation->toFrontEndApiModel(), $donations);
+    }
+
+    public function confirmDonationWithSavedPaymentMethod(Donation $donation, StripePaymentMethodId $paymentMethod): void
+    {
+        $paymentIntentId = $donation->getTransactionId();
+        Assertion::notNull($paymentIntentId);
+        $paymentIntent = $this->stripe->confirmPaymentIntent(
+            $paymentIntentId,
+            [
+                'payment_method' => $paymentMethod->stripePaymentMethodId,
+                ...self::ASYNC_CAPTURE_OPT_OUT
+            ]
+        );
+
+        $this->logger->info("PaymentIntent: {$paymentIntent->toJson()}");
+
+        if ($paymentIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
+            // @todo-regular-giving-mat-407: create a new db field on Donation - e.g. payment_attempt_count and update here
+            // decide on a limit and log an error (or warning) if exceeded & perhaps auto-cancel the donation and/or
+            // mandate.
+        }
+    }
+
+    /**
+     * For use when we have confirmed a donation and need to update it synchronously before further processing -
+     * i.e. to know whether to go on to start a regular giving agreement if it was sucessful.
+     */
+    public function queryStripeToUpdateDonationStatus(Donation $donation): void
+    {
+        $paymentIntentID = $donation->getTransactionId();
+        if ($paymentIntentID === null) {
+            return;
+        }
+
+        $paymentIntent = $this->stripe->retrievePaymentIntent($paymentIntentID);
+
+        if ($paymentIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
+            return;
+        }
+
+        $charge = $paymentIntent->latest_charge;
+        if ($charge === null) {
+            return;
+        }
+
+        $charge = $this->stripe->retrieveCharge((string) $charge);
+
+        if ($charge->status !== Charge::STATUS_SUCCEEDED) {
+            return;
+        }
+
+        $this->updateDonationStatusFromSucessfulCharge($charge, $donation);
+    }
+
+    public function updateDonationStatusFromSucessfulCharge(Charge $charge, Donation $donation): void
+    {
+        $this->logger->info('updating donation from charge: ' . $charge->toJson());
+
+        /**
+         * @var array|Card|null $card
+         */
+        $card = $charge->payment_method_details?->toArray()['card'] ?? null;
+        if (is_array($card)) {
+            /** @var Card $card */
+            $card = (object)$card;
+        }
+
+        $cardBrand = CardBrand::fromNameOrNull($card?->brand);
+        $cardCountry = Country::fromAlpha2OrNull($card?->country);
+        $balanceTransaction = (string)$charge->balance_transaction;
+
+        // To give *simulated* webhooks, for Donation API-only load tests, an easy way to complete
+        // without crashing, we support skipping the original fee derivation by omitting
+        // `balance_transaction`. Real stripe charge.succeeded webhooks should always have
+        // an associated Balance Transaction.
+        if (!empty($balanceTransaction)) {
+            $originalFeeFractional = $this->getOriginalFeeFractional(
+                $balanceTransaction,
+                $donation->getCurrencyCode(),
+            );
+        } else {
+            $originalFeeFractional = $donation->getOriginalPspFee();
+        }
+
+        $donation->collectFromStripeCharge(
+            chargeId: $charge->id,
+            totalPaidFractional: $charge->amount,
+            transferId: (string)$charge->transfer,
+            cardBrand: $cardBrand,
+            cardCountry: $cardCountry,
+            originalFeeFractional: (string)$originalFeeFractional,
+            chargeCreationTimestamp: $charge->created,
+        );
+    }
+
+
+    private function getOriginalFeeFractional(string $balanceTransactionId, string $expectedCurrencyCode): int
+    {
+        $txn = $this->stripe->retrieveBalanceTransaction($balanceTransactionId);
+
+        if (count($txn->fee_details) !== 1) {
+            $this->logger->warning(sprintf(
+                'StripeChargeUpdate::getFee: Unexpected composite fee with %d parts: %s',
+                count($txn->fee_details),
+                json_encode($txn->fee_details, \JSON_THROW_ON_ERROR),
+            ));
+        }
+
+        /**
+         * See https://docs.stripe.com/api/balance_transactions/object#balance_transaction_object-fee_details
+         * @var object{currency: string, type: string} $feeDetail
+         */
+        $feeDetail = $txn->fee_details[0];
+
+        if ($feeDetail->currency !== strtolower($expectedCurrencyCode)) {
+            // `fee` should presumably still be in parent account's currency, so don't bail out.
+            $this->logger->warning(sprintf(
+                'StripeChargeUpdate::getFee: Unexpected fee currency %s',
+                $feeDetail->currency,
+            ));
+        }
+
+        if ($feeDetail->type !== 'stripe_fee') {
+            $this->logger->warning(sprintf(
+                'StripeChargeUpdate::getFee: Unexpected type %s',
+                $feeDetail->type,
+            ));
+        }
+
+        return $txn->fee;
     }
 }

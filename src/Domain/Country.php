@@ -31,6 +31,11 @@ readonly class Country
         return new self($alpha2);
     }
 
+    public static function fromEnum(CountryAlpha2 $alpha2): self
+    {
+        return new self($alpha2);
+    }
+
     public static function fromAlpha2OrNull(?string $countryCode): ?self
     {
         if ($countryCode === null) {
@@ -38,6 +43,12 @@ readonly class Country
         }
 
         return self::fromAlpha2($countryCode);
+    }
+
+    /** United Kingdom */
+    public static function GB(): self
+    {
+        return self::fromAlpha2('GB');
     }
 
     /**
@@ -52,5 +63,10 @@ readonly class Country
     public function __toString(): string
     {
         return "{$this->alpha2->name} (code {$this->alpha2->value})";
+    }
+
+    public function equals(self $that): bool
+    {
+        return $this->alpha2 === $that->alpha2;
     }
 }

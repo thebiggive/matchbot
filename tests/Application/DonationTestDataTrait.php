@@ -28,7 +28,11 @@ trait DonationTestDataTrait
             $path,
         );
 
-        return file_get_contents($fullPath);
+        $contents = file_get_contents($fullPath);
+
+        \assert(is_string($contents));
+
+        return $contents;
     }
 
     /**

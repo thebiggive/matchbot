@@ -17,7 +17,7 @@ class StripeCancelsDonationTest extends IntegrationTest
         $donation = json_decode(
             (string)$this->createDonation(100)->getBody(),
             true,
-            flags: JSON_THROW_ON_ERROR
+            flags: \JSON_THROW_ON_ERROR
         )['donation'];
 
         $this->sendCancellationWebhookFromStripe($donation['transactionId']);
@@ -41,7 +41,8 @@ class StripeCancelsDonationTest extends IntegrationTest
          */
         $webhookSecret = $this->getContainer()->get('settings')['stripe']['accountWebhookSecret'];
 
-        $requestBody = json_encode([
+        $requestBody = json_encode(
+            [
             'type' => 'payment_intent.canceled',
             'livemode' => false,
             'data' => [
@@ -52,7 +53,9 @@ class StripeCancelsDonationTest extends IntegrationTest
                     'livemode' => false
                 ]
             ]
-        ]);
+            ],
+            \JSON_THROW_ON_ERROR
+        );
 
 
         $this->getApp()->handle(new ServerRequest(

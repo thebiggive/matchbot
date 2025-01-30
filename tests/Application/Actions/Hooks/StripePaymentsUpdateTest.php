@@ -9,9 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\DomainException\MissingTransactionId;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
@@ -22,6 +20,7 @@ use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Container\ContainerInterface;
 use Ramsey\Uuid\Uuid;
+use Stripe\BalanceTransaction;
 use Stripe\Service\BalanceTransactionService;
 use Stripe\StripeClient;
 use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
@@ -39,7 +38,7 @@ class StripePaymentsUpdateTest extends StripeTest
         parent::setUp();
         $container = $this->getContainer();
         \assert($container instanceof Container);
-        $container->set(RetrySafeEntityManager::class, $this->createStub(RetrySafeEntityManager::class));
+        $container->set(EntityManagerInterface::class, $this->createStub(EntityManagerInterface::class));
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
 
         $this->donationRepository = new InMemoryDonationRepository();
@@ -128,7 +127,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $webhookContent = json_decode(
             $this->getStripeHookMock('ch_succeeded'),
             associative: true,
-            flags: JSON_THROW_ON_ERROR
+            flags: \JSON_THROW_ON_ERROR
         );
 
         /**
@@ -136,7 +135,7 @@ class StripePaymentsUpdateTest extends StripeTest
          * @psalm-suppress MixedArrayAccess
          */
         $webhookContent['data']['object']['amount'] = $donation->getAmountFractionalIncTip();
-        $body = json_encode($webhookContent);
+        $body = json_encode($webhookContent, \JSON_THROW_ON_ERROR);
         $webhookSecret = $this->getValidWebhookSecret($container);
         $time = (string) time();
         $this->donationRepository->store($donation);
@@ -147,7 +146,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->retrieve('txn_00000000000000')
             ->shouldBeCalledOnce()
-            ->willReturn(json_decode($balanceTxnResponse));
+            ->willReturn(BalanceTransaction::constructFrom((array) json_decode($balanceTxnResponse, associative: true)));
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         // supressing deprecation notices for now on setting properties dynamically. Risk is low doing this in test
         // code, and may get mutation tests working again.
@@ -180,7 +179,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $webhookContent = json_decode(
             $this->getStripeHookMock('ch_succeeded_sek'),
             associative: true,
-            flags: JSON_THROW_ON_ERROR
+            flags: \JSON_THROW_ON_ERROR
         );
 
         /**
@@ -189,7 +188,7 @@ class StripePaymentsUpdateTest extends StripeTest
          */
         $webhookContent['data']['object']['amount'] = $donation->getAmountFractionalIncTip();
 
-        $body = json_encode($webhookContent);
+        $body = json_encode($webhookContent, \JSON_THROW_ON_ERROR);
 
         $webhookSecret = $this->getValidWebhookSecret($container);
         $time = (string) time();
@@ -200,7 +199,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $stripeBalanceTransactionProphecy = $this->prophesize(BalanceTransactionService::class);
         $stripeBalanceTransactionProphecy->retrieve('txn_00000000000000')
             ->shouldBeCalledOnce()
-            ->willReturn(json_decode($balanceTxnResponse));
+            ->willReturn(BalanceTransaction::constructFrom((array) json_decode($balanceTxnResponse, associative: true)));
         $stripeClientProphecy = $this->prophesize(StripeClient::class);
         @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
 

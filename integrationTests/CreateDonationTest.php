@@ -27,7 +27,7 @@ class CreateDonationTest extends IntegrationTest
         // assert
 
         /** @var array{donation: array<string, string>} $decoded */
-        $decoded = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        $decoded = json_decode((string)$response->getBody(), true, 512, \JSON_THROW_ON_ERROR);
 
         $this->assertSame(201, $response->getStatusCode());
         $this->assertSame('Some Charity', $decoded['donation']['charityName']);

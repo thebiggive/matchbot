@@ -6,13 +6,12 @@ namespace MatchBot\Application\Actions\RegularGivingMandate;
 
 use Assert\Assertion;
 use MatchBot\Application\Environment;
+use MatchBot\Application\Security\Security;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
-use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
-use MatchBot\Domain\PersonId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -27,7 +26,8 @@ class Get extends Action
         private readonly Environment $environment,
         private CampaignRepository $campaignRepository,
         private \DateTimeImmutable $now,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        private Security $securityService,
     ) {
         parent::__construct($logger);
     }
@@ -45,15 +45,15 @@ class Get extends Action
             throw new DomainRecordNotFoundException('Missing mandate ID ' . $mandateId);
         }
 
-        $donorId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
-        \assert($donorId instanceof PersonId);
+        $authenticatedUser = $this->securityService->requireAuthenticatedDonorAccountWithPassword($request);
+
         $uuid = Uuid::fromString((string) $args['mandateId']);
         $mandate = $this->regularGivingMandateRepository->findOneByUuid($uuid);
 
         if ($mandate === null) {
             throw new DomainRecordNotFoundException('Mandate not found');
         }
-        if ($donorId->id !== $mandate->donorId->id) {
+        if (! $authenticatedUser->id()->equals($mandate->donorId())) {
             throw new HttpUnauthorizedException($request);
         }
 

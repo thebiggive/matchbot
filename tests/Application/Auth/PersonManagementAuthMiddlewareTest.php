@@ -58,7 +58,7 @@ class PersonManagementAuthMiddlewareTest extends TestCase
         $donationObject = $this->getTestDonation();
         $donation = $donationObject->toFrontEndApiModel();
         $donation['personId'] = 'cus_aaaaaaaaaaaa11';
-        $body = json_encode($donation);
+        $body = json_encode($donation, \JSON_THROW_ON_ERROR);
 
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $body);
 

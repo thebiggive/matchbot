@@ -10,7 +10,7 @@ use MatchBot\Application\Commands\RetrospectivelyMatch;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
-use MatchBot\Domain\DonationService;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -59,6 +59,7 @@ class RetrospectivelyMatchTest extends TestCase
             'Automatically evaluating campaigns which closed in the past hour',
             'Retrospectively matched 1 of 1 donations. £123.45 total new matching, across 1 campaigns.',
             'Checked 3 donations and redistributed matching for 2',
+            'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -76,6 +77,7 @@ class RetrospectivelyMatchTest extends TestCase
             "Looking at past 8 days' donations",
             'Retrospectively matched 0 of 0 donations. £0.00 total new matching, across 0 campaigns.',
             'Checked 3 donations and redistributed matching for 2',
+            'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -93,6 +95,7 @@ class RetrospectivelyMatchTest extends TestCase
             "Looking at past 8 days' donations",
             'Retrospectively matched 0 of 0 donations. £0.00 total new matching, across 0 campaigns.',
             'Checked 3 donations and redistributed matching for 2',
+            'Pushed fund totals to Salesforce for 0 funds: ',
             'matchbot:retrospectively-match complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -125,6 +128,7 @@ class RetrospectivelyMatchTest extends TestCase
     {
         $command = new RetrospectivelyMatch(
             donationRepository: $this->getDonationRepo($matchingIsAllocated),
+            fundRepository: $this->createStub(FundRepository::class),
             chatter: $this->chatter,
             bus: $this->messageBusProphecy->reveal(),
             entityManager: $this->createStub(EntityManagerInterface::class),

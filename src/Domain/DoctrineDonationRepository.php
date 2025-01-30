@@ -9,24 +9,23 @@ use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Query;
+use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
-use MatchBot\Application\Messenger\AbstractStateChanged;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
-use MatchBot\Domain\DomainException\MissingTransactionId;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
- * @template-extends SalesforceWriteProxyRepository<Donation, \MatchBot\Client\Donation>
+ * @template-extends SalesforceProxyRepository<Donation, \MatchBot\Client\Donation>
  * @psalm-suppress MissingConstructor Doctrine get repo DI isn't very friendly to custom constructors.
  */
-class DoctrineDonationRepository extends SalesforceWriteProxyRepository implements DonationRepository
+class DoctrineDonationRepository extends SalesforceProxyRepository implements DonationRepository
 {
     /** Maximum of each type of pending object to process */
     private const int MAX_PER_BULK_PUSH = 5_000;
@@ -48,16 +47,6 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
     public function setMatchingAdapter(Matching\Adapter $adapter): void
     {
         $this->matchingAdapter = $adapter;
-    }
-
-    public function doCreate(AbstractStateChanged $changeMessage): void
-    {
-        $this->upsert($changeMessage);
-    }
-
-    public function doUpdate(AbstractStateChanged $changeMessage): void
-    {
-        $this->upsert($changeMessage);
     }
 
     public function buildFromApiRequest(DonationCreate $donationData): Donation
@@ -604,13 +593,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
                 continue;
             }
 
-            try {
-                $newDonation = DonationUpserted::fromDonation($proxy);
-            } catch (MissingTransactionId) {
-                $this->logger->warning("Missing transaction id for donation {$proxy->getId()}, cannot push to SF");
-                continue;
-            }
-            $bus->dispatch(new Envelope($newDonation));
+            $bus->dispatch(new Envelope(DonationUpserted::fromDonation($proxy)));
         }
 
         $proxiesToUpdate = $this->findBy(
@@ -631,7 +614,7 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
     }
 
     private function setSalesforceFieldsWithRetry(
-        AbstractStateChanged $changeMessage,
+        DonationUpserted $changeMessage,
         ?Salesforce18Id $salesforceId
     ): void {
         $tries = 0;
@@ -676,6 +659,10 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
      * Sets a Salesforce ID (and general status things) without its own lock and importantly without the ORM, using
      * a raw DQL `UPDATE` that should make it safe irrespective of ORM work that could also be happening on the record.
      *
+     *  Consider DRYing up duplication with MandateUpsertedHandler::setSalesforceFields before
+     *  making a third copy
+     * /
+     *
      * @throws DBALException\LockWaitTimeoutException if some other transaction is holding a lock
      */
     private function setSalesforceFields(string $uuid, ?Salesforce18Id $salesforceId): void
@@ -697,13 +684,11 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         $query->execute();
     }
 
-    private function upsert(AbstractStateChanged $changeMessage): void
+    public function push(DonationUpserted $changeMessage): void
     {
-        Assertion::isInstanceOf($changeMessage, DonationUpserted::class);
-
         try {
             $salesforceDonationId = $this->getClient()->createOrUpdate($changeMessage);
-        } catch (NotFoundException $ex) {
+        } catch (NotFoundException) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
             $this->logInfo(
                 "Marking 404 campaign Salesforce donation {$changeMessage->uuid} as complete; " .
@@ -715,6 +700,12 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         } catch (BadRequestException $exception) {
             $this->logError(
                 "Pushing Salesforce donation {$changeMessage->uuid} got 400: {$exception->getMessage()}"
+            );
+
+            return;
+        } catch (BadResponseException $exception) {
+            $this->logError(
+                "Pushing Salesforce donation {$changeMessage->uuid} got bad response: {$exception->getMessage()}"
             );
 
             return;
@@ -741,6 +732,30 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
         return $result;
     }
 
+    /**
+     * We only set Payment Intent on the day of the payment due to stripe limitations
+     *
+     */
+    public function findDonationsToSetPaymentIntent(\DateTimeImmutable $atDateTime, int $maxBatchSize): array
+    {
+        $preAuthorized = DonationStatus::PreAuthorized->value;
+        $active = MandateStatus::Active->value;
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
+            WHERE donation.donationStatus = '$preAuthorized'
+            AND donation.transactionId is null
+            AND donation.preAuthorizationDate <= :atDateTime
+            AND mandate.status = '$active'  
+        DQL
+        );
+        $query->setParameter('atDateTime', $atDateTime);
+        $query->setMaxResults($maxBatchSize);
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
+
     public function findPreAuthorizedDonationsReadyToConfirm(\DateTimeImmutable $atDateTime, int $limit): array
     {
         $preAuthorized = DonationStatus::PreAuthorized->value;
@@ -750,11 +765,12 @@ class DoctrineDonationRepository extends SalesforceWriteProxyRepository implemen
             SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'
             AND mandate.status = '$active'
-            AND donation.preAuthorizationDate <= :now
+            AND donation.transactionId is not null
+            AND donation.preAuthorizationDate <= :atDateTime
         DQL
         );
 
-        $query->setParameter('now', $atDateTime);
+        $query->setParameter('atDateTime', $atDateTime);
         $query->setMaxResults($limit);
 
         /** @var list<Donation> $result */

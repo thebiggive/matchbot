@@ -6,7 +6,6 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Campaign as CampaignClient;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
@@ -125,7 +124,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             method: 'PUT',
             path: '/v1/donations/87654321-1234-1234-1234-ba0987654321',
-            bodyString: json_encode($this->getTestDonation(uuid: self::DONATION_UUID)->toFrontEndApiModel()),
+            bodyString: json_encode($this->getTestDonation(uuid: self::DONATION_UUID)->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('87654321-1234-1234-1234-ba0987654321'));
         $route = $this->getRouteWithDonationId('put', '87654321-1234-1234-1234-ba0987654321');
@@ -139,8 +138,7 @@ class UpdateTest extends TestCase
     public function testInvalidStatusChange(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
         $donation->setDonationStatus(DonationStatus::Pending);
@@ -157,7 +155,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($failedDonation->toFrontEndApiModel()),
+            json_encode($failedDonation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -178,10 +176,9 @@ class UpdateTest extends TestCase
     public function testMissingStatus(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
 
         $this->setDoublesInContainer($container, $entityManagerProphecy);
@@ -192,7 +189,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donationData),
+            json_encode($donationData, \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -213,8 +210,7 @@ class UpdateTest extends TestCase
     public function testCancelRequestAfterDonationFinalised(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donationResponse = $this->getTestDonation(uuid: self::DONATION_UUID);
 
@@ -246,7 +242,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donation->toFrontEndApiModel()),
+            json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -267,8 +263,7 @@ class UpdateTest extends TestCase
     public function testCancelSuccessWithNoStatusChangesIgnored(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation('999.99', uuid: self::DONATION_UUID);
         $donation->cancel();
@@ -288,7 +283,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donation->toFrontEndApiModel()),
+            json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -315,8 +310,7 @@ class UpdateTest extends TestCase
     public function testCancelSuccessWithChange(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation('999.99');
         $donation->cancel();
@@ -341,7 +335,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donation->toFrontEndApiModel()),
+            json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -372,8 +366,7 @@ class UpdateTest extends TestCase
     public function testCancelSuccessButStripeSaysAlreadySucceeded(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
         $donation->cancel();
@@ -403,7 +396,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donation->toFrontEndApiModel()),
+            json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -422,8 +415,7 @@ class UpdateTest extends TestCase
     public function testCancelSuccessButStripeSaysAlreadyCancelled(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
         $donation->cancel();
@@ -452,7 +444,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donation->toFrontEndApiModel()),
+            json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -470,8 +462,7 @@ class UpdateTest extends TestCase
     public function testCancelSuccessWithChangeFromPendingAnonymousDonation(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getAnonymousPendingTestDonation();
         $donation->cancel();
@@ -490,7 +481,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/12345678-1234-1234-1234-1234567890ac',
-            json_encode($donation->toFrontEndApiModel()),
+            json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create('12345678-1234-1234-1234-1234567890ac'));
         $route = $this->getRouteWithDonationId('put', '12345678-1234-1234-1234-1234567890ac');
@@ -514,8 +505,7 @@ class UpdateTest extends TestCase
     public function testAddDataAttemptWithDifferentAmount(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donationInRequest = $this->getTestDonation('99.99');
 
@@ -530,7 +520,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donationInRequest->toFrontEndApiModel()),
+            json_encode($donationInRequest->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -551,8 +541,7 @@ class UpdateTest extends TestCase
     public function testAddDataAttemptWithRequiredBooleanFieldMissing(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
         $this->donationRepository->store($donation);
@@ -569,7 +558,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donationData),
+            json_encode($donationData, \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -593,13 +582,12 @@ class UpdateTest extends TestCase
     public function testAddDataAttemptWithInvalidPropertyType(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
         $this->donationRepository->store($donation);
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldNotBeCalled();
 
         $this->setDoublesInContainer($container, $entityManagerProphecy);
@@ -607,7 +595,7 @@ class UpdateTest extends TestCase
         $bodyArray = $donation->toFrontEndApiModel();
         $bodyArray['homeAddress'] = ['123', 'Main St']; // Invalid array type.
 
-        $body = json_encode($bodyArray);
+        $body = json_encode($bodyArray, \JSON_THROW_ON_ERROR);
 
         $request = $this->createRequest(
             'PUT',
@@ -633,8 +621,7 @@ class UpdateTest extends TestCase
     public function testAddDataAttemptWithGiftAidMissingDonatingInGBP(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(uuid: self::DONATION_UUID);
         $this->donationRepository->store($donation);
@@ -651,7 +638,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donationData),
+            json_encode($donationData, \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -672,8 +659,7 @@ class UpdateTest extends TestCase
     public function testAddDataAttemptWithTipAboveMaximumAllowed(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         // We'll patch the simulated PUT JSON manually because `setTipAmount()` disallows
         // values over the max donation amount.
@@ -689,7 +675,7 @@ class UpdateTest extends TestCase
 
         $putArray = $donation->toFrontEndApiModel();
         $putArray['tipAmount'] = '25000.01';
-        $putJSON = json_encode($putArray);
+        $putJSON = json_encode($putArray, \JSON_THROW_ON_ERROR);
 
         $request = $this->createRequest(
             'PUT',
@@ -715,8 +701,7 @@ class UpdateTest extends TestCase
     public function testAddDataHitsUnexpectedStripeException(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
@@ -766,7 +751,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donation->toFrontEndApiModel()),
+            json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -789,8 +774,7 @@ class UpdateTest extends TestCase
     public function testAddDataHitsAlreadyCapturedStripeExceptionWithNoFeeChange(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
@@ -849,7 +833,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donation->toFrontEndApiModel()),
+            json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -867,8 +851,7 @@ class UpdateTest extends TestCase
     public function testAddDataHitsAlreadyCapturedStripeExceptionWithFeeChange(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
 
@@ -929,7 +912,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donation->toFrontEndApiModel()),
+            json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -955,8 +938,7 @@ class UpdateTest extends TestCase
     public function testAddDataHitsStripeLockExceptionOnce(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
 
@@ -1011,7 +993,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donation->toFrontEndApiModel()),
+            json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -1033,8 +1015,7 @@ class UpdateTest extends TestCase
     public function testAddDataHitsStripeLockExceptionTwice(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
 
@@ -1090,7 +1071,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donation->toFrontEndApiModel()),
+            json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -1116,8 +1097,7 @@ class UpdateTest extends TestCase
     public function testAddDataHitsStripeLockExceptionThenAlreadyCapturedWithNoFeeChange(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
@@ -1173,7 +1153,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donation->toFrontEndApiModel()),
+            json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -1194,8 +1174,7 @@ class UpdateTest extends TestCase
     public function testAddDataSuccessWithAllValues(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(currencyCode: 'USD', collected: false, uuid: self::DONATION_UUID);
         $donation->update(
@@ -1241,7 +1220,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($donation->toFrontEndApiModel()),
+            json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -1409,8 +1388,7 @@ class UpdateTest extends TestCase
     {
         // arrange
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation();
 
@@ -1438,7 +1416,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($requestPayload),
+            json_encode($requestPayload, \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -1465,8 +1443,7 @@ class UpdateTest extends TestCase
     {
         // arrange
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(pspMethodType: PaymentMethodType::CustomerBalance, tipAmount: '0');
 
@@ -1493,7 +1470,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($requestPayload),
+            json_encode($requestPayload, \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -1520,8 +1497,7 @@ class UpdateTest extends TestCase
     {
         // arrange
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation(
             pspMethodType: PaymentMethodType::CustomerBalance,
@@ -1560,7 +1536,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($requestPayload),
+            json_encode($requestPayload, \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -1581,7 +1557,7 @@ class UpdateTest extends TestCase
      *     app: App,
      * request: ServerRequestInterface,
      * route: Route,
-     * entityManagerProphecy: ObjectProphecy<RetrySafeEntityManager>,
+     * entityManagerProphecy: ObjectProphecy<EntityManagerInterface>,
      * stripeProphecy: ObjectProphecy<Stripe>
      * }
      *
@@ -1597,8 +1573,7 @@ class UpdateTest extends TestCase
         bool $collectedDonation = true,
     ): array {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         $donation = $nextActionRequired === null
             ? $this->getTestDonation(
@@ -1642,7 +1617,7 @@ class UpdateTest extends TestCase
         $request = $this->createRequest(
             'PUT',
             '/v1/donations/' . self::DONATION_UUID,
-            json_encode($requestPayload),
+            json_encode($requestPayload, \JSON_THROW_ON_ERROR),
         )
             ->withHeader('x-tbg-auth', DonationToken::create(self::DONATION_UUID));
         $route = $this->getRouteWithDonationId('put', self::DONATION_UUID);
@@ -1658,7 +1633,7 @@ class UpdateTest extends TestCase
 
     /**
      * @param Container $container
-     * @param ObjectProphecy<RetrySafeEntityManager> $entityManagerProphecy
+     * @param ObjectProphecy<EntityManagerInterface> $entityManagerProphecy
      * @param ?ObjectProphecy<Stripe> $stripeProphecy
      */
     private function setDoublesInContainer(
@@ -1669,7 +1644,7 @@ class UpdateTest extends TestCase
         $stripeProphecy = $stripeProphecy ?? $this->prophesize(Stripe::class);
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(Stripe::class, $stripeProphecy->reveal());
         $container->set(CampaignRepository::class, $this->prophesize(CampaignRepository::class)->reveal());
         $container->set(DonorAccountRepository::class, $this->prophesize(DonorAccountRepository::class)->reveal());
@@ -1677,11 +1652,11 @@ class UpdateTest extends TestCase
     }
 
     /**
-     * @return ObjectProphecy<RetrySafeEntityManager>
+     * @return ObjectProphecy<EntityManagerInterface>
      */
     public function prophesizeEM(bool $persist = false, bool $flush = false, bool $commit = false): ObjectProphecy
     {
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->beginTransaction()->shouldBeCalledOnce();
 
         if ($persist) {

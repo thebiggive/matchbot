@@ -202,7 +202,7 @@ class DonationTest extends TestCase
 
     public function testtoFrontEndApiModel(): void
     {
-        $pledge = new Pledge(currencyCode: 'GBP', name: '');
+        $pledge = new Pledge(currencyCode: 'GBP', name: '', salesforceId: null);
 
         $campaignFunding = new CampaignFunding(
             fund: $pledge,
@@ -250,7 +250,7 @@ class DonationTest extends TestCase
         $donation = $this->getTestDonation();
 
         $campaignFunding = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: ''),
+            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
             amount: '1000',
             amountAvailable: '1000',
             allocationOrder: 100,
@@ -275,7 +275,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
         $campaignFunding0 = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: ''),
+            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
             amount: '1000',
             amountAvailable: '1000',
             allocationOrder: 100,
@@ -285,7 +285,7 @@ class DonationTest extends TestCase
         $withdrawal0->setAmount('1');
 
         $campaignFunding1 = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: ''),
+            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
             amount: '1000',
             amountAvailable: '1000',
             allocationOrder: 100,
@@ -451,6 +451,8 @@ class DonationTest extends TestCase
             donorEmailAddress: EmailAddress::of('user@example.com'),
             tbgComms: false,
         );
+
+        $donation->setTransactionId('any-string');
 
         $this->assertTrue($donation->assertIsReadyToConfirm());
     }
@@ -970,7 +972,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation(amount: '100.00');
 
-        $fund = new ChampionFund('GBP', 'some champion fund');
+        $fund = new ChampionFund('GBP', 'some champion fund', null);
         $campaignFunding = new CampaignFunding($fund, amount: '1000', amountAvailable: '1000', allocationOrder: 1);
         $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawl->setAmount('99.99');
@@ -983,7 +985,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation(amount: '100.00');
 
-        $fund = new ChampionFund('GBP', 'some champion fund');
+        $fund = new ChampionFund('GBP', 'some champion fund', null);
         $campaignFunding = new CampaignFunding($fund, '1000', '1000', 1);
         $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawl->setAmount('100.00');
@@ -992,6 +994,42 @@ class DonationTest extends TestCase
         $isFullyMatched = $donation->isFullyMatched();
 
         $this->assertTrue($isFullyMatched);
+    }
+
+
+    /**
+     * @return array<string, array{0: \DateTimeImmutable, 1: \DateTimeImmutable, 2: bool}>
+     */
+    public function confirmationDateRangeProvider(): array
+    {
+        return [
+            'current time before preauth time' => [
+                new \DateTimeImmutable('2020-01-01'), new \DateTimeImmutable('2019-12-31T23:59'), false
+            ],
+            'current time same as preauth time' => [
+                new \DateTimeImmutable('2020-01-01'), new \DateTimeImmutable('2020-01-01'), true
+            ],
+            'current time a month after preauth time' => [
+                new \DateTimeImmutable('2020-01-01'), new \DateTimeImmutable('2020-02-01'), true
+            ],
+            'current time more than a month after preauth time' => [
+                new \DateTimeImmutable('2020-01-01'), new \DateTimeImmutable('2020-02-01T00:01'), false
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider confirmationDateRangeProvider
+     */
+    public function testAllowConfirmingOnlyDuringAppropriateDateRange(
+        \DateTimeImmutable $preAuthDate,
+        \DateTimeImmutable $at,
+        bool $expected
+    ): void {
+        $donation = $this->getTestDonation(collected: false);
+        $donation->preAuthorize($preAuthDate);
+
+        $this->assertSame($expected, $donation->thisIsInDateRangeToConfirm($at));
     }
 
     /**

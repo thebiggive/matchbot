@@ -7,6 +7,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Environment;
+use MatchBot\Application\Security\Security;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
@@ -24,6 +25,7 @@ class GetAllForUser extends Action
         private Environment $environment,
         LoggerInterface $logger,
         private RegularGivingService $regularGivingService,
+        private Security $securityService,
     ) {
         parent::__construct($logger);
     }
@@ -33,10 +35,9 @@ class GetAllForUser extends Action
             throw new HttpNotFoundException($request);
         }
 
-        $donorId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
-        \assert($donorId instanceof PersonId);
+        $donor = $this->securityService->requireAuthenticatedDonorAccountWithPassword($request);
 
-        $mandates = $this->regularGivingService->allActiveForDonorAsApiModel($donorId);
+        $mandates = $this->regularGivingService->allActiveForDonorAsApiModel($donor->id());
 
         return new JsonResponse([
             'mandates' => $mandates

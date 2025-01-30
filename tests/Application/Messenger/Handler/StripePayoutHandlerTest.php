@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\StripePayout;
+use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -36,9 +37,8 @@ class StripePayoutHandlerTest extends TestCase
 
     public function testUnrecognisedChargeId(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $balanceTxnResponse = $this->getStripeHookMock('ApiResponse/bt_invalid');
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_with_invalid');
@@ -116,9 +116,8 @@ class StripePayoutHandlerTest extends TestCase
 
     public function testInvalidExistingDonationStatus(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $balanceTxnsResponse = $this->getStripeHookMock('ApiResponse/bt_list_success');
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
@@ -173,9 +172,8 @@ class StripePayoutHandlerTest extends TestCase
 
     public function testSuccessfulUpdateFromFirstPayout(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation();
         $balanceTxnsResponse = $this->getStripeHookMock('ApiResponse/bt_list_success');
@@ -222,9 +220,8 @@ class StripePayoutHandlerTest extends TestCase
      */
     public function testSuccessfulUpdateForRetriedPayout(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation();
         $chargeResponse = $this->getStripeHookMock('ApiResponse/ch_list_success');
@@ -286,9 +283,8 @@ class StripePayoutHandlerTest extends TestCase
      */
     public function testNoOpWhenPayoutFailed(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $donation = $this->getTestDonation();
 
@@ -339,7 +335,7 @@ class StripePayoutHandlerTest extends TestCase
         /** @var \stdClass $payoutMock */
         $payoutMock = json_decode($this->getStripeHookMock(
             $withPayoutSuccess ? 'ApiResponse/po' : 'ApiResponse/po_failed',
-        ), false, 512, JSON_THROW_ON_ERROR);
+        ), false, 512, \JSON_THROW_ON_ERROR);
 
         if ($withRetriedPayout) {
             $stripePayoutProphecy->retrieve(
@@ -410,9 +406,7 @@ class StripePayoutHandlerTest extends TestCase
             ->findAndLockOneBy(['chargeId' => 'ch_externalId_123'])
             ->willReturn($donation)
             ->shouldBeCalledOnce();
-        $donationRepoProphecy
-            ->push(Argument::type(DonationUpserted::class), false)
-            ->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
 
         return $donationRepoProphecy->reveal();
     }

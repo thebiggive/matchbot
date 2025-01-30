@@ -24,7 +24,7 @@ class CampaignRepositoryTest extends IntegrationTest
             $this->randomCampaignId(),
             $this->getCharityAwaitingGiftAidApproval(),
             startDate: new \DateTimeImmutable('-10 months'),
-            endDate: new \DateTimeImmutable('-9 months'),
+            endDate: new \DateTimeImmutable(-29 * 9 . 'days'), // less than the 9 month limit
             isMatched: true,
             ready: true,
             status: 'status',
@@ -65,7 +65,7 @@ class CampaignRepositoryTest extends IntegrationTest
         $sut = $this->getService(CampaignRepository::class);
 
         $campaign = new Campaign(
-            Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
+            self::someSalesForce18CampaignId(),
             $this->getCharityAwaitingGiftAidApproval(),
             startDate: new \DateTimeImmutable('-11 months'),
             endDate: new \DateTimeImmutable('-10 months'),
@@ -112,7 +112,6 @@ class CampaignRepositoryTest extends IntegrationTest
     public function randomCampaignId(): Salesforce18Id
     {
         $id = (new Randomizer())->getBytesFromString('abcdef01234567890', 18);
-        \assert(is_string($id));
         return Salesforce18Id::ofCampaign($id);
     }
 }

@@ -46,6 +46,7 @@ class RegularGivingMandateRepository
             LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
             WHERE r.status = '{$active}'
             AND r.donorId.id = :donorId
+            ORDER BY r.activeFrom desc
         DQL
         );
 
@@ -94,10 +95,7 @@ class RegularGivingMandateRepository
         $charities = [];
         foreach ($x as $entity) {
             if ($entity instanceof Charity) {
-                $salesforceId = $entity->getSalesforceId();
-                \assert($salesforceId !== null);
-
-                $charities[$salesforceId] = $entity;
+                $charities[$entity->getSalesforceId()] = $entity;
             }
         }
 

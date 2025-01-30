@@ -48,7 +48,7 @@ use Stripe\StripeClient;
             ],
         ];
 
-        $request = $this->createRequest('PUT', '/', \json_encode($updatedBillingDetails))
+        $request = $this->createRequest('PUT', '/', \json_encode($updatedBillingDetails, \JSON_THROW_ON_ERROR))
             ->withAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME, 'stripe_customer_id_12');
 
         // assert

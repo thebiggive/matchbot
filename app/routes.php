@@ -57,6 +57,8 @@ return function (App $app) {
         $versionGroup->group('/people/{personId:[a-z0-9-]{36}}', function (RouteCollectorProxy $pwdDonorGroup) {
             /** @psalm-suppress DeprecatedClass Until we delete Donate use & the endpoint */
             $pwdDonorGroup->post('/donor-account', DonorAccount\Create::class);
+            $pwdDonorGroup->get('/donor-account', DonorAccount\Get::class);
+            $pwdDonorGroup->post('/create-customer-session', RegularGivingMandate\CreateCustomerSession::class);
             $pwdDonorGroup->post('/regular-giving', RegularGivingMandate\Create::class);
             $pwdDonorGroup->get('/donations', Donations\GetAllForUser::class);
             $pwdDonorGroup->delete('/donations', Donations\CancelAll::class);
@@ -81,8 +83,12 @@ return function (App $app) {
             ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
-    });
 
+        $versionGroup->get(
+            '/test-donation-collection-for-date/{date}',
+            \MatchBot\Application\Actions\CollectRegularGivingForTest::class
+        );
+    });
     // Authenticated through Stripe's SDK signature verification
     $app->post('/hooks/stripe', Hooks\StripePaymentsUpdate::class);
     $app->post('/hooks/stripe-connect', Hooks\StripePayoutUpdate::class);

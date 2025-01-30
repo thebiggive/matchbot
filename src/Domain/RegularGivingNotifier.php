@@ -32,6 +32,7 @@ class RegularGivingNotifier
                 'templateKey' => 'donor-mandate-confirmation',
                 'recipientEmailAddress' => $donorAccount->emailAddress->email,
                 'params' => [
+                    'donorName' => $donorAccount->donorName->fullName(),
                     'charityName' => $charity->getName(),
                     'campaignName' => $campaign->getCampaignName(),
                     'charityNumber' => $charity->getRegulatorNumber(),
@@ -41,7 +42,7 @@ class RegularGivingNotifier
                     'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())->format('d/m/Y'),
                     'amount' => $mandate->getDonationAmount()->format(),
                     'giftAidValue' => $mandate->getGiftAidAmount()->format(),
-                    'totalIncGiftAd' => $mandate->totalIncGiftAd()->format(),
+                    'totalIncGiftAid' => $mandate->totalIncGiftAid()->format(),
                     'totalCharged' => $mandate->getDonationAmount()->format(),
                     'firstDonation' => $this->donationToConfirmationEmailFields(
                         $firstDonation,
@@ -65,14 +66,12 @@ class RegularGivingNotifier
     ): array {
         $firstDonationCollectedAt = $firstDonation->getCollectedAt();
 
-        // @todo-regular-giving add assertion:
-        // Assertion::notNull($firstDonationCollectedAt);
-        // @see \MatchBot\Domain\RegularGivingService::setupNewMandate
+        Assertion::notNull($firstDonationCollectedAt, 'First donation collected at should not be null');
 
         return [
             'currencyCode' => $firstDonation->getCurrencyCode(),
             'donationAmount' => $firstDonation->getAmount(),
-            'donationDatetime' => $firstDonationCollectedAt?->format('c'),
+            'donationDatetime' => $firstDonationCollectedAt->format('c'),
             'charityName' => $charity->getName(),
             'transactionId' => $firstDonation->getTransactionId(),
             'matchedAmount' => $firstDonation->getFundingWithdrawalTotal(),

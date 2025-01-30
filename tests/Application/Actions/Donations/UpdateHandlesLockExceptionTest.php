@@ -10,7 +10,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Application\Actions\Donations\Update;
 use MatchBot\Application\Matching\Adapter;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
@@ -46,7 +45,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
     /** @var ObjectProphecy<DonationRepository>  */
     private ObjectProphecy $donationRepositoryProphecy;
 
-    /** @var ObjectProphecy<RetrySafeEntityManager>  */
+    /** @var ObjectProphecy<EntityManagerInterface>  */
     private ObjectProphecy $entityManagerProphecy;
 
     /** @var ObjectProphecy<RoutableMessageBus> */
@@ -55,7 +54,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
-        $this->entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
     }
 

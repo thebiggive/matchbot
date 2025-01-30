@@ -7,6 +7,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationSequenceNumber;
@@ -109,9 +110,7 @@ class SetupTestMandate extends LockingCommand
             $donorId,
             Money::fromPoundsGBP($amount),
             Salesforce18Id::ofCampaign($campaign->getSalesforceId()),
-            Salesforce18Id::ofCharity(
-                $charity->getSalesforceId() ?? throw new \Exception('Missing charity sf ID')
-            ),
+            Salesforce18Id::ofCharity($charity->getSalesforceId()),
             (bool)$input->getOption('gift-aid'),
             $dayOfMonth
         );
@@ -129,7 +128,7 @@ class SetupTestMandate extends LockingCommand
                 DonorName::of('First Name', 'Last Name'),
                 StripeCustomerId::of($donorStripeId)
             );
-            $donor->setBillingCountryCode('GB');
+            $donor->setBillingCountry(Country::GB());
             $donor->setBillingPostcode('SW1 1AA');
             $donor->setHomePostcode('SW1 1AA');
             $donor->setHomeAddressLine1('Home line 1');

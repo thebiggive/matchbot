@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use Assert\AssertionFailedException;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
+use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
+use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
+use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -27,7 +32,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 class TakeRegularGivingDonations extends LockingCommand
 {
+    private const int MAXBATCHSIZE = 20;
     private ?RegularGivingService $mandateService = null;
+
 
     /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
     public function __construct(
@@ -37,6 +44,7 @@ class TakeRegularGivingDonations extends LockingCommand
         private DonationService $donationService,
         private EntityManagerInterface $em,
         private Environment $environment,
+        private LoggerInterface $logger,
     ) {
         parent::__construct();
 
@@ -82,6 +90,7 @@ class TakeRegularGivingDonations extends LockingCommand
         $now = $this->container->get(\DateTimeImmutable::class);
 
         $this->createNewDonationsAccordingToRegularGivingMandates($now, $io);
+        $this->setPaymentIntentWhenReachedPaymentDate($now, $io);
         $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($now, $io);
 
         return 0;
@@ -89,14 +98,39 @@ class TakeRegularGivingDonations extends LockingCommand
 
     private function createNewDonationsAccordingToRegularGivingMandates(\DateTimeImmutable $now, SymfonyStyle $io): void
     {
-        $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($now, limit: 20);
+        $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($now, self::MAXBATCHSIZE);
 
         $io->block(count($mandates) . " mandates may have donations to create at this time");
 
         foreach ($mandates as [$mandate]) {
-            $donation = $this->makeDonationForMandate($mandate);
-            if ($donation) {
-                $io->writeln("created donation {$donation}");
+            try {
+                $donation = $this->makeDonationForMandate($mandate);
+                if ($donation) {
+                    $io->writeln("created donation {$donation}");
+                } else {
+                    $io->writeln("no donation created for {$mandate} as collection end date passed");
+                }
+            } catch (AssertionFailedException | CampaignNotOpen | WrongCampaignType $e) {
+                $io->error($e->getMessage());
+                $this->logger->error($e->getMessage());
+            }
+        }
+    }
+
+    private function setPaymentIntentWhenReachedPaymentDate(
+        \DateTimeImmutable $now,
+        SymfonyStyle $io
+    ): void {
+        $donations = $this->donationRepository->findDonationsToSetPaymentIntent($now, self::MAXBATCHSIZE);
+        $io->block(count($donations) . " donations are due to have Payment Intent set at this time");
+
+        foreach ($donations as $donation) {
+            try {
+                $this->donationService->createPaymentIntent($donation);
+                $io->writeln("setting payment intent on donation #{$donation->getId()}");
+            } catch (RegularGivingDonationToOldToCollect $e) {
+                $this->logger->error($e->getMessage());
+                $io->error($e->getMessage());
             }
         }
     }
@@ -105,13 +139,7 @@ class TakeRegularGivingDonations extends LockingCommand
         \DateTimeImmutable $now,
         SymfonyStyle $io
     ): void {
-        /* @todo-regular-giving
-            Still to do to improve this before launch:
-            - Record unsuccessful payment attempts to limit number or time extent of retries
-            - Ensure we don't send emails that are meant for confirmation of on-session donations
-            - Probably other things.
-        */
-        $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($now, limit:20);
+        $donations = $this->donationRepository->findPreAuthorizedDonationsReadyToConfirm($now, self::MAXBATCHSIZE);
 
         $io->block(count($donations) . " donations are due to be confirmed at this time");
 
@@ -148,6 +176,9 @@ class TakeRegularGivingDonations extends LockingCommand
         $this->em->flush();
     }
 
+    /**
+     * @throws CampaignNotOpen|WrongCampaignType|AssertionFailedException
+     */
     private function makeDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
         \assert($this->mandateService !== null);

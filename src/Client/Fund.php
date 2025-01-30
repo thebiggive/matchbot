@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace MatchBot\Client;
 
+use MatchBot\Application\Messenger\FundTotalUpdated;
+
 class Fund extends Common
 {
+    use HashTrait;
+
     /**
      * @param string $fundId    Salesforce ID for Champion Funding or Pledge
      * @return array Single Fund, as associative array
@@ -13,7 +17,7 @@ class Fund extends Common
      */
     public function getById(string $fundId, bool $withCache): array
     {
-        $uri = $this->getUri("{$this->getSetting('fund', 'baseUri')}/$fundId", $withCache);
+        $uri = $this->getUri($this->fundBaseUri() . $fundId, $withCache);
         $response = $this->getHttpClient()->get($uri);
 
         if ($response->getStatusCode() !== 200) {
@@ -30,12 +34,40 @@ class Fund extends Common
      */
     public function getForCampaign(string $campaignId): array
     {
-        $response = $this->getHttpClient()->get("{$this->getSetting('campaign', 'baseUri')}/$campaignId/funds");
+        $uri = $this->campaignsBaseURI() . "$campaignId/funds";
+
+        $response = $this->getHttpClient()->get($uri);
 
         if ($response->getStatusCode() !== 200) {
             throw new NotFoundException('Campaign not found');
         }
 
         return json_decode((string) $response->getBody(), true);
+    }
+
+    public function pushAmountAvailable(FundTotalUpdated $fundMessage): void
+    {
+        $uri = $this->getUri(
+            uri: $this->fundBaseUri() . $fundMessage->salesforceId,
+            withCache: false,
+        );
+        $jsonSnapshot = $fundMessage->jsonSnapshot;
+        $this->getHttpClient()->put($uri, [
+            'json' => $jsonSnapshot,
+            'headers' => $this->getVerifyHeaders(json_encode($jsonSnapshot, \JSON_THROW_ON_ERROR)),
+        ]);
+
+        $encodedJson = \json_encode($jsonSnapshot, \JSON_THROW_ON_ERROR);
+        $this->logger->info("Pushed amount available for fund: {$fundMessage->salesforceId}: Snapshot: $encodedJson");
+    }
+
+    public function fundBaseUri(): string
+    {
+        return "{$this->sfApiBaseUrl}/funds/services/apexrest/v1.0/funds/";
+    }
+
+    public function campaignsBaseURI(): string
+    {
+        return "{$this->sfApiBaseUrl}/campaigns/services/apexrest/v1.0/campaigns/";
     }
 }

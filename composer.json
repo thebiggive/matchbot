@@ -68,15 +68,15 @@
     },
     "require-dev": {
         "doctrine/event-manager": "^2.0",
-        "infection/infection": "^0.27.11",
+        "infection/infection": "^0.29.10",
         "phpspec/prophecy": "^1.19",
         "phpspec/prophecy-phpunit": "^v2.1.0",
         "phpunit/phpunit": "^9.6",
-        "psalm/plugin-phpunit": "^0.19.0",
+        "psalm/plugin-phpunit": "^0.19.2",
         "roave/security-advisories": "dev-latest",
         "squizlabs/php_codesniffer": "^3.10",
-        "vimeo/psalm": "^5.22.2.1",
-        "weirdan/doctrine-psalm-plugin": "^2.9"
+        "vimeo/psalm": "^6.0.0",
+        "weirdan/doctrine-psalm-plugin": "^2.10"
     },
     "config": {
         "allow-plugins": {
@@ -102,18 +102,29 @@
     },
     "scripts": {
         "doctrine:cache:clear": [
-            "doctrine orm:clear-cache:metadata",
-            "doctrine orm:clear-cache:query",
-            "doctrine orm:clear-cache:result"
+            "vendor/bin/doctrine orm:clear-cache:metadata",
+            "vendor/bin/doctrine orm:clear-cache:query",
+            "vendor/bin/doctrine orm:clear-cache:result",
+
+            "@putenv MYSQL_SCHEMA=matchbot_test",
+
+            "vendor/bin/doctrine orm:clear-cache:metadata",
+            "vendor/bin/doctrine orm:clear-cache:query",
+            "vendor/bin/doctrine orm:clear-cache:result"
         ],
         "doctrine:delete-and-recreate": [
             "@doctrine:cache:clear",
             "doctrine orm:schema-tool:drop --full-database --force",
+            "MYSQL_SCHEMA=matchbot_test vendor/bin/doctrine orm:schema-tool:drop --full-database --force",
             "@doctrine:migrate"
         ],
         "doctrine:ensure-prod": "doctrine orm:ensure-production-settings",
         "doctrine:generate-proxies": "doctrine orm:generate-proxies",
-        "doctrine:migrate": "doctrine-migrations migrate --no-interaction --allow-no-migration",
+        "doctrine:migrate": [
+            "vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration",
+            "@putenv MYSQL_SCHEMA=matchbot_test",
+            "vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration"
+        ],
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
         "doctrine:migrate:generate": "doctrine-migrations generate",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],

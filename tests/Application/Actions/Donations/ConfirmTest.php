@@ -9,7 +9,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Donations\Confirm;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -75,7 +74,7 @@ class ConfirmTest extends TestCase
                 donationRepository: $this->getDonationRepository(),
                 campaignRepository: $this->createStub(CampaignRepository::class),
                 logger: new NullLogger(),
-                entityManager: $this->createStub(RetrySafeEntityManager::class),
+                entityManager: $this->createStub(EntityManagerInterface::class),
                 stripe: $this->stripeProphecy->reveal(),
                 matchingAdapter: $this->createStub(Adapter::class),
                 chatter: $this->createStub(ChatterInterface::class),
@@ -351,12 +350,19 @@ class ConfirmTest extends TestCase
         if (is_string($confirmationTokenId)) {
             $confirmation = $this->stripeProphecy->confirmPaymentIntent(
                 $paymentIntentId,
-                ["confirmation_token" => $confirmationTokenId]
+                [
+                    "confirmation_token" => $confirmationTokenId,
+                    'capture_method' => 'automatic'
+
+                ]
             )->willReturn($updatedPaymentIntent);
         } else {
             $confirmation = $this->stripeProphecy->confirmPaymentIntent(
                 $paymentIntentId,
-                ["payment_method" => $paymentMethodId]
+                [
+                    "payment_method" => $paymentMethodId,
+                    'capture_method' => 'automatic'
+                ]
             )->willReturn($updatedPaymentIntent);
         }
 
@@ -440,7 +446,7 @@ class ConfirmTest extends TestCase
                 path: 'doesnt-matter-for-test',
                 bodyString: \json_encode([
                     'stripeConfirmationTokenId' => self::CONFIRMATION_TOKEN_ID
-                ])
+                ], \JSON_THROW_ON_ERROR)
             ),
             new Response(),
             ['donationId' => $this->donationId->toString()]

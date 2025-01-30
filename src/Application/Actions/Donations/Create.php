@@ -39,7 +39,6 @@ class Create extends Action
         private DonationService $donationService,
         private SerializerInterface $serializer,
         LoggerInterface $logger,
-        private RoutableMessageBus $bus,
         private Stripe $stripe,
     ) {
         parent::__construct($logger);
@@ -183,8 +182,6 @@ class Create extends Action
                 ),
             );
         }
-
-        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
 
         $stripeCustomerId = $donation->getPspCustomerId();
         \assert($stripeCustomerId !== null);

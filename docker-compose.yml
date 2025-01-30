@@ -44,6 +44,8 @@ services:
     environment:
       MYSQL_DATABASE: matchbot
       MYSQL_ROOT_PASSWORD: tbgLocal123
+    volumes:
+      - ./docker/provision/mysql/init:/docker-entrypoint-initdb.d
     networks:
       - matchbot
 
