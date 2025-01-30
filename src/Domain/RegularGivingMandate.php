@@ -221,15 +221,18 @@ class RegularGivingMandate extends SalesforceWriteProxy
         bool $requireActiveMandate = true,
         \DateTimeImmutable $expectedActivationDate = null,
     ): Donation {
+        // comms prefs below (charityComms, championComms, optInTbgEmail) are all set to null, as it's only the 1st
+        // donation in the mandate that carries the donor's chosen marketing comms preferences to Salesforce.
+
         $donation = new Donation(
             amount: $this->donationAmount->toNumericString(),
             currencyCode: $this->donationAmount->currency->isoCode(),
             paymentMethodType: PaymentMethodType::Card,
             campaign: $campaign,
-            charityComms: false,
-            championComms: false,
+            charityComms: null,
+            championComms: null,
             pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
-            optInTbgEmail: false,
+            optInTbgEmail: null,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,
             countryCode: $donor->getBillingCountryCode(),
@@ -374,15 +377,17 @@ class RegularGivingMandate extends SalesforceWriteProxy
     {
         Assertion::same($campaign->getSalesforceId(), $this->campaignId);
 
+        // As this is the first donation in the mandate we give it a copy of the donor's Big Give and Charity comms
+        // preferences so that SF can pick them up.
         return new Donation(
             amount: $this->donationAmount->toNumericString(),
             currencyCode: $this->donationAmount->currency->isoCode(),
             paymentMethodType: PaymentMethodType::Card,
             campaign: $campaign,
-            charityComms: false,
-            championComms: false,
+            charityComms: $this->charityComms,
+            championComms: null,
             pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
-            optInTbgEmail: false,
+            optInTbgEmail: $this->tbgComms,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,
             countryCode: $donor->getBillingCountryCode(),
