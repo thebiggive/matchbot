@@ -20,7 +20,9 @@ class MandateCreateTest extends TestCase
                 "currency":  "GBP",
                 "dayOfMonth": "1",
                 "campaignId": "1CampaignId1234567",
-                "giftAid": false
+                "giftAid": false,
+                "tbgComms": false,
+                "charityComms": false
             }
             JSON,
             MandateCreate::class,
