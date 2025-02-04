@@ -50,8 +50,8 @@ class FundTest extends TestCase
             'fundId' => null, // Not actually persisting it.
             'fundType' => 'championFund',
             'salesforceFundId' => 'sfFundId4567890abc',
-            'totalAmount' => '123.45',
-            'usedAmount' => '23.45',
+            'totalAmount' => 123.45,
+            'usedAmount' => 23.45,
         ];
 
         self::assertEquals($expected, $fund->toAmountUsedUpdateModel());
