@@ -209,4 +209,9 @@ class DonorAccount extends Model
             'identityUUID' => $this->uuid->toString(),
         ];
     }
+
+    public function hasHomeAddress(): bool
+    {
+        return is_string($this->homeAddressLine1) && trim($this->homeAddressLine1) !== '';
+    }
 }
