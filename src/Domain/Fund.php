@@ -122,8 +122,8 @@ abstract class Fund extends SalesforceReadProxy
      *     fundId: ?int,
      *     fundType: 'championFund'|'pledge'|'unknownFund',
      *     salesforceFundId: string,
-     *     totalAmount: numeric-string,
-     *     usedAmount: numeric-string,
+     *     totalAmount: float, // used as Decimal in SF
+     *     usedAmount: float, // used as Decimal in SF
      *     currencyCode: string
      * }
      */
@@ -139,8 +139,8 @@ abstract class Fund extends SalesforceReadProxy
             'fundId' => $this->getId(),
             'fundType' => static::DISCRIMINATOR_VALUE,
             'salesforceFundId' => $sfId,
-            'totalAmount' => $amounts['totalAmount']->toNumericString(),
-            'usedAmount' => $amounts['usedAmount']->toNumericString(),
+            'totalAmount' => (float) $amounts['totalAmount']->toNumericString(),
+            'usedAmount' => (float) $amounts['usedAmount']->toNumericString(),
         ];
     }
 
