@@ -222,6 +222,11 @@ class RegularGivingMandate extends SalesforceWriteProxy
         // comms prefs below (charityComms, championComms, optInTbgEmail) are all set to null, as it's only the 1st
         // donation in the mandate that carries the donor's chosen marketing comms preferences to Salesforce.
 
+        // It may be possible that gift aid was selected when this mandate was created but since then the donor
+        // told us to forget their home address. In that case we wouldn't be able to claim gift aid for any
+        // new donations.
+        $giftAidClaimable = $this->giftAid && $donor->hasHomeAddress();
+
         $donation = new Donation(
             amount: $this->donationAmount->toNumericString(),
             currencyCode: $this->donationAmount->currency->isoCode(),
@@ -237,10 +242,10 @@ class RegularGivingMandate extends SalesforceWriteProxy
             tipAmount: '0',
             mandate: $this,
             mandateSequenceNumber: $sequenceNumber,
-            giftAid: false,
+            giftAid: $giftAidClaimable,
             tipGiftAid: null,
-            homeAddress: null,
-            homePostcode: null,
+            homeAddress: $donor->getHomeAddressLine1(),
+            homePostcode: $donor->getHomePostcode(),
             billingPostcode: null,
         );
 
@@ -392,7 +397,10 @@ class RegularGivingMandate extends SalesforceWriteProxy
             tipAmount: '0',
             mandate: $this,
             mandateSequenceNumber: DonationSequenceNumber::of(1),
+            giftAid: $this->giftAid,
             billingPostcode: $donor->getBillingPostcode(),
+            homeAddress: $donor->getHomeAddressLine1(),
+            homePostcode: $donor->getHomePostcode(),
         );
     }
 
