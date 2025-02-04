@@ -48,6 +48,8 @@ readonly class MandateCreate
         // sends these when creating a regular giving mandate.
         public bool $tbgComms = false,
         public bool $charityComms = false,
+        public ?string $homeAddress,
+        public ?string $homePostcode,
     ) {
         $this->dayOfMonth = DayOfMonth::of($dayOfMonth);
         $this->amount = Money::fromPence($amountInPence, Currency::fromIsoCode($currency));

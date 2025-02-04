@@ -16,6 +16,7 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
+use MatchBot\Domain\DomainException\HomeAddressRequired;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
@@ -44,6 +45,8 @@ readonly class RegularGivingService
     }
 
     /**
+     * @param string|null $homePostcode
+     * @param string|null $homeAddress
      * @param bool $charityComms
      * @param bool $tbgComms
      * @param string|null $billingPostCode
@@ -72,10 +75,22 @@ readonly class RegularGivingService
         bool $tbgComms,
         bool $charityComms,
         ?StripeConfirmationTokenId $confirmationTokenId = null,
+        /**
+         * Used for gift aid claim, must be set if gift aid is true. Will be saved on to the donor account.
+         */
+        ?string $homeAddress,
+        /**
+         * Used for gift aid claim but optional as not given if donor is outside UK. Will be saved to donor account.
+         */
+        ?string $homePostcode,
     ): RegularGivingMandate {
+        // should save the address to the donor account if an address was given.
+
+
         $this->ensureCampaignAllowsRegularGiving($campaign);
         $this->ensureBillingCountryMatchesDonorBillingCountry($donor, $billingCountry);
         $this->ensureBillingPostcodeMatchesDonorBillingPostcode($donor, $billingPostCode);
+
 
         if ($billingCountry) {
             $donor->setBillingCountry($billingCountry);
@@ -98,6 +113,19 @@ readonly class RegularGivingService
             charityComms: $charityComms,
         );
 
+        $donorPreviousHomeAddress = $donor->getHomeAddressLine1();
+        $donorPreviousHomePostcode = $donor->getHomePostcode();
+
+        $homeAddressSupplied = is_string($homeAddress) && trim($homeAddress) !== '';
+        if ($homeAddressSupplied) {
+            $donor->setHomeAddressLine1(trim($homeAddress));
+            $donor->setHomePostcode(is_null($homePostcode) ? null : trim($homePostcode));
+        }
+
+        if ($giftAid && ! $homeAddressSupplied) {
+            throw new HomeAddressRequired('Home Address is required when gift aid is selected');
+        }
+
         /**
          * We create exactly three donations because that is what we offer to match. The first donation is special
          * because we will collect it immediately. The remaining donations will be saved in the database to collect
@@ -115,11 +143,15 @@ readonly class RegularGivingService
         try {
             $this->enrollAndMatchDonations($donations, $mandate);
         } catch (\Throwable $e) {
+            $donor->setHomeAddressLine1($donorPreviousHomeAddress);
+            $donor->setHomePostcode($donorPreviousHomePostcode);
+
             foreach ($donations as $donation) {
                 $this->donationService->cancel($donation);
                 $mandate->cancel();
             }
             $this->entityManager->flush();
+
             throw $e;
         }
 
@@ -144,6 +176,9 @@ readonly class RegularGivingService
 
         if (! $firstDonation->getDonationStatus()->isSuccessful()) {
             $mandate->cancel();
+
+            $donor->setHomeAddressLine1($donorPreviousHomeAddress);
+            $donor->setHomePostcode($donorPreviousHomePostcode);
 
             $this->entityManager->flush();
             throw new DonationNotCollected(

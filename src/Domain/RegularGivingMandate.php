@@ -392,6 +392,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             tipAmount: '0',
             mandate: $this,
             mandateSequenceNumber: DonationSequenceNumber::of(1),
+            giftAid: $this->giftAid,
             billingPostcode: $donor->getBillingPostcode(),
         );
     }
