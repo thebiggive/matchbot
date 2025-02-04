@@ -54,7 +54,7 @@ class FundTest extends TestCase
             'usedAmount' => 23.45,
         ];
 
-        self::assertEquals($expected, $fund->toAmountUsedUpdateModel());
+        self::assertSame($expected, $fund->toAmountUsedUpdateModel());
     }
 
     /**
