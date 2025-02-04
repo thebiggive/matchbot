@@ -89,8 +89,8 @@ class FundRepository extends SalesforceReadProxyRepository
 
             if ($campaignFunding) {
                 // Existing funding -> check for balance increase and apply any in a high-volume-safe way.
-                // Note that a balance DECREASE on the API side is unsupported and would be ignored, as this
-                // risks invalidating in-progress donation matches.
+                // Note that a balance DECREASE on the API side is unsupported and would be error logged below,
+                // as this risks invalidating in-progress donation matches.
                 $increaseInAmount = bcsub($amountForCampaign, $campaignFunding->getAmount(), 2);
 
                 if (bccomp($increaseInAmount, '0.00', 2) === 1) {
@@ -107,7 +107,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 if (bccomp($increaseInAmount, '0.00', 2) === -1) {
                     $this->logger->error(
                         "Funding ID {$campaignFunding->getId()} balance could not be negative-increased by " .
-                        "£{$increaseInAmount}"
+                        "£{$increaseInAmount}. Salesforce Fund ID {$fundData['id']}."
                     );
                 }
             } else {
