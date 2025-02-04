@@ -74,7 +74,7 @@ readonly class RegularGivingService
         ?string $billingPostCode,
         bool $tbgComms,
         bool $charityComms,
-        ?StripeConfirmationTokenId $confirmationTokenId = null,
+        ?StripeConfirmationTokenId $confirmationTokenId,
         /**
          * Used for gift aid claim, must be set if gift aid is true. Will be saved on to the donor account.
          */
