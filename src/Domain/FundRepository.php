@@ -103,6 +103,13 @@ class FundRepository extends SalesforceReadProxyRepository
 
                     $campaignFunding->setAmount($amountForCampaign);
                 }
+
+                if (bccomp($increaseInAmount, '0.00', 2) === -1) {
+                    $this->logger->error(
+                        "Funding ID {$campaignFunding->getId()} balance could not be negative-increased by " .
+                        "£{$increaseInAmount}"
+                    );
+                }
             } else {
                 // Not a previously existing campaign -> create one and set balances without checking for existing ones.
                 $campaignFunding = new CampaignFunding(
