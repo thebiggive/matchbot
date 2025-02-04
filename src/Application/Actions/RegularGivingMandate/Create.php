@@ -79,8 +79,6 @@ class Create extends Action
 
         $charity = $campaign->getCharity();
 
-        // create donor account if not existing. For now we assume the donor account already exists in the Matchbot DB.
-
         try {
             $mandate = $this->mandateService->setupNewMandate(
                 donor: $donor,
