@@ -142,6 +142,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'donorId' => $this->donorId->id,
             'donationAmount' => $this->donationAmount,
             'matchedAmount' => $this->getMatchedAmount(),
+            'giftAidAmount' => $this->getGiftAidAmount(),
+            'totalCharityReceivesPerInitial' => $this->totalCharityReceivesPerInitial(),
             'campaignId' => $this->campaignId,
             'charityId' => $this->charityId,
             'numberOfMatchedDonations' => self::NUMBER_OF_DONATIONS_TO_MATCH,
@@ -369,6 +371,18 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public function totalIncGiftAid(): Money
     {
         return $this->donationAmount->plus($this->getGiftAidAmount());
+    }
+
+
+    /**
+     * @return Money The total amount that we expect the charity to receive per each of the donors initial, matched
+     * donations, from us and HMRC in total. I.e. core amount + matched amount + gift aid amount.
+     *
+     * @todo-regular-giving revisit this as part of DON-1003 when matched amount may vary per donation.
+     */
+    private function totalCharityReceivesPerInitial(): Money
+    {
+        return Money::sum($this->donationAmount, $this->getGiftAidAmount(), $this->getMatchedAmount());
     }
 
     public function getMatchedAmount(): Money
