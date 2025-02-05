@@ -496,6 +496,7 @@ return function (ContainerBuilder $containerBuilder) {
             $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
             $busContainer->set(CharityUpdated::class, $bus);
             $busContainer->set(DonationUpserted::class, $bus);
+            $busContainer->set(FundTotalUpdated::class, $bus);
 
             return new RoutableMessageBus($busContainer, $bus);
         },
