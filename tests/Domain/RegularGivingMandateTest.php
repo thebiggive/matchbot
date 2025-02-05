@@ -186,6 +186,10 @@ class RegularGivingMandateTest extends TestCase
                     "amountInPence": 12500,
                     "currency": "GBP"
                   },
+                  "totalIncGiftAid": {
+                    "amountInPence": 62500,
+                    "currency": "GBP"
+                  },
                   "totalCharityReceivesPerInitial": {
                     "amountInPence": 112500,
                     "currency": "GBP"

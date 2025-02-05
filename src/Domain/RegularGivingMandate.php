@@ -143,6 +143,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'donationAmount' => $this->donationAmount,
             'matchedAmount' => $this->getMatchedAmount(),
             'giftAidAmount' => $this->getGiftAidAmount(),
+            'totalIncGiftAid' => $this->totalIncGiftAid(),
             'totalCharityReceivesPerInitial' => $this->totalCharityReceivesPerInitial(),
             'campaignId' => $this->campaignId,
             'charityId' => $this->charityId,

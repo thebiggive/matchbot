@@ -89,6 +89,10 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                     'amountInPence' => 125_00,
                     'currency' => 'GBP',
                 ],
+                'totalIncGiftAid' => [
+                    'amountInPence' => 625_00,
+                    'currency' => 'GBP',
+                ],
                 'matchedAmount' => [
                     'amountInPence' => 500_00,
                     'currency' => 'GBP',
