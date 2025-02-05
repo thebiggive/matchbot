@@ -10,6 +10,7 @@ use MatchBot\Client;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
+use Psr\Log\NullLogger;
 
 class FundTotalUpdatedHandlerTest extends TestCase
 {
@@ -20,7 +21,7 @@ class FundTotalUpdatedHandlerTest extends TestCase
 
         $fundClientProphecy = $this->prophesize(Client\Fund::class);
         $fundClientProphecy->pushAmountAvailable($updateMessage)->shouldBeCalledOnce();
-        $handler = new FundTotalUpdatedHandler($fundClientProphecy->reveal());
+        $handler = new FundTotalUpdatedHandler($fundClientProphecy->reveal(), new NullLogger());
 
         $handler($updateMessage);
     }
