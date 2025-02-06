@@ -118,7 +118,8 @@ class CampaignTest extends TestCase
 
         $this->expectException(WrongCampaignType::class);
         $campaign->checkIsReadyToAcceptDonation(self::someDonation(
-            regularGivingMandate: $this->createStub(RegularGivingMandate::class), campaign: $campaign
+            regularGivingMandate: $this->createStub(RegularGivingMandate::class),
+            campaign: $campaign
         ), $date);
     }
 }
