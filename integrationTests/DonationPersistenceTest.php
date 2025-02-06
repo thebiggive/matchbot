@@ -104,6 +104,7 @@ class DonationPersistenceTest extends IntegrationTest
             'preAuthorizationDate' => null,
             'mandate_id' => null,
             'mandateSequenceNumber' => null,
+            'tipRefundAmount' => null,
 
             'updatedAt' => '1970-01-01',
             'createdAt' => '1970-01-01'
