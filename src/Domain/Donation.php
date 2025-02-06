@@ -611,20 +611,26 @@ class Donation extends SalesforceWriteProxy
 
     public function setDonationStatus(DonationStatus $donationStatus): void
     {
-        if ($donationStatus === DonationStatus::Refunded) {
-            throw new \Exception('Donation::recordRefundAt must be used to set refunded status');
-        }
+        // todo at some point - remove this method and replace with more specific command method(s). The only non-test
+        // caller now is passing DonationStatus::Paid.
 
-        if ($donationStatus === DonationStatus::Cancelled) {
-            throw new \Exception('Donation::cancelled must be used to cancel');
-        }
+        /** @psalm-suppress DeprecatedConstant */
+        $this->donationStatus = match ($donationStatus) {
+            DonationStatus::Refunded =>
+                throw new \Exception('Donation::recordRefundAt must be used to set refunded status'),
+            DonationStatus::Cancelled =>
+                throw new \Exception('Donation::cancelled must be used to cancel'),
+            DonationStatus::Collected =>
+                throw new \Exception('Donation::collectFromStripe must be used to collect'),
+            DonationStatus::Chargedback =>
+                throw new \Exception('DonationStatus::Chargedback is deprecated'),
 
-
-        if ($donationStatus === DonationStatus::Collected) {
-            throw new \Exception('Donation::collectFromStripe must be used to collect');
-        }
-
-        $this->donationStatus = $donationStatus;
+            DonationStatus::Failed,
+            DonationStatus::Paid,
+            DonationStatus::Pending,
+            DonationStatus::PreAuthorized
+            => $donationStatus,
+        };
     }
 
     public function getCollectedAt(): ?DateTimeImmutable
