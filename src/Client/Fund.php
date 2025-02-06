@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Client;
 
+use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Messenger\FundTotalUpdated;
 
 class Fund extends Common
@@ -52,12 +53,25 @@ class Fund extends Common
             withCache: false,
         );
         $jsonSnapshot = $fundMessage->jsonSnapshot;
-        $this->getHttpClient()->put($uri, [
-            'json' => $jsonSnapshot,
-            'headers' => $this->getVerifyHeaders(json_encode($jsonSnapshot, \JSON_THROW_ON_ERROR)),
-        ]);
-
         $encodedJson = \json_encode($jsonSnapshot, \JSON_THROW_ON_ERROR);
+
+        try {
+            $this->getHttpClient()->put($uri, [
+                'json' => $jsonSnapshot,
+                'headers' => $this->getVerifyHeaders(json_encode($jsonSnapshot, \JSON_THROW_ON_ERROR)),
+            ]);
+        } catch (RequestException $exception) {
+            $this->logger->error(sprintf(
+                'Failed to push amount available for fund %s. Got %s: %s. Data snapshot: %s',
+                $fundMessage->salesforceId,
+                $exception->getCode(),
+                $exception->getMessage(),
+                $encodedJson,
+            ));
+
+            return;
+        }
+
         $this->logger->info("Pushed amount available for fund: {$fundMessage->salesforceId}: Snapshot: $encodedJson");
     }
 

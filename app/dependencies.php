@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Aws\CloudWatch\CloudWatchClient;
 use DI\Container;
 use DI\ContainerBuilder;
-use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager as DBALDriverManager;
 use Doctrine\ORM;
