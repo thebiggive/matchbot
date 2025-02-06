@@ -4,7 +4,6 @@ namespace MatchBot\Application\Messenger\Handler;
 
 use MatchBot\Application\Messenger\FundTotalUpdated;
 use MatchBot\Client;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
@@ -17,14 +16,12 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 readonly class FundTotalUpdatedHandler
 {
-    public function __construct(private Client\Fund $fundClient, private LoggerInterface $logger)
+    public function __construct(private Client\Fund $fundClient)
     {
     }
 
     public function __invoke(FundTotalUpdated $message): void
     {
-        $this->logger->info("FTUH invoked for Salesforce ID: {$message->salesforceId}");
-        $this->logger->info("FTUH: Snapshot: " . json_encode($message->jsonSnapshot, \JSON_THROW_ON_ERROR));
         $this->fundClient->pushAmountAvailable($message);
     }
 }

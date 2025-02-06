@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Aws\CloudWatch\CloudWatchClient;
 use DI\Container;
 use DI\ContainerBuilder;
-use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager as DBALDriverManager;
 use Doctrine\ORM;
@@ -496,7 +495,6 @@ return function (ContainerBuilder $containerBuilder) {
             $busContainer->set(\Stripe\Event::PAYOUT_PAID, $bus);
             $busContainer->set(CharityUpdated::class, $bus);
             $busContainer->set(DonationUpserted::class, $bus);
-            $busContainer->set(FundTotalUpdated::class, $bus);
 
             return new RoutableMessageBus($busContainer, $bus);
         },
