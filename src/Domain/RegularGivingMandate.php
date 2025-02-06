@@ -2,6 +2,7 @@
 
 namespace MatchBot\Domain;
 
+use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
@@ -27,11 +28,16 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     private const int MAX_AMOUNT_PENCE = 500_00;
 
+    /**
+     * The first donations taken for a regular giving mandate are matched, later donations are not.
+     */
+    public const int NUMBER_OF_DONATIONS_TO_MATCH = 3;
+
     #[ORM\Column(unique: true, type: 'uuid')]
     private readonly UuidInterface $uuid;
 
     #[ORM\Embedded(columnPrefix: 'person')]
-    public PersonId $donorId;
+    private PersonId $donorId;
 
     #[ORM\Embedded(columnPrefix: '')]
     private readonly Money $donationAmount;
@@ -51,6 +57,21 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column()]
     private readonly bool $giftAid;
 
+
+    /**
+     * @var bool When the mandate was created, did the donor give or refuse permission for Big Give to send marketing
+     * emails. Similar to @see Donation::$tbgComms
+     */
+    #[ORM\Column()]
+    private readonly bool $tbgComms;
+
+    /**
+     * @var bool When the mandate was created, did the donor give or refuse permission for the charity they're donating to
+     * to send marketing emails. Similar to @see Donation::$charityComms
+     */
+    #[ORM\Column()]
+    private readonly bool $charityComms;
+
     #[ORM\Embedded(columnPrefix: false)]
     private DayOfMonth $dayOfMonth;
 
@@ -66,6 +87,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
     /**
      * @param Salesforce18Id<Campaign> $campaignId
      * @param Salesforce18Id<Charity> $charityId
+     *
+     * @throws UnexpectedValueException if the amount is out of the allowed range
      */
     public function __construct(
         PersonId $donorId,
@@ -74,6 +97,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
         Salesforce18Id $charityId,
         bool $giftAid,
         DayOfMonth $dayOfMonth,
+        bool $tbgComms = false,
+        bool $charityComms = false,
     ) {
         $this->createdNow();
         $minAmount = Money::fromPence(self::MIN_AMOUNT_PENCE, Currency::GBP);
@@ -92,6 +117,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->giftAid = $giftAid;
         $this->donorId = $donorId;
         $this->dayOfMonth = $dayOfMonth;
+        $this->tbgComms = $tbgComms;
+        $this->charityComms = $charityComms;
     }
 
     /**
@@ -115,8 +142,12 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'donorId' => $this->donorId->id,
             'donationAmount' => $this->donationAmount,
             'matchedAmount' => $this->getMatchedAmount(),
+            'giftAidAmount' => $this->getGiftAidAmount(),
+            'totalIncGiftAid' => $this->totalIncGiftAid(),
+            'totalCharityReceivesPerInitial' => $this->totalCharityReceivesPerInitial(),
             'campaignId' => $this->campaignId,
             'charityId' => $this->charityId,
+            'numberOfMatchedDonations' => self::NUMBER_OF_DONATIONS_TO_MATCH,
             'schedule' => [
                 'type' => 'monthly',
                 'dayOfMonth' => $this->dayOfMonth->value,
@@ -126,6 +157,24 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
             'status' => $this->status->apiName(),
+        ];
+    }
+
+
+    public function toSFApiModel(DonorAccount $donor): array
+    {
+        Assertion::eq($donor->id(), $this->donorId);
+
+        return [
+            'uuid' => $this->uuid->toString(),
+            'campaignSFId' => $this->campaignId,
+            'activeFrom' => $this->activeFrom?->format(DateTimeInterface::ATOM),
+            'dayOfMonth' => $this->dayOfMonth->value,
+            'donationAmount' => (float) $this->donationAmount->toNumericString(), // SF type is Decimal, so cast
+            'status' => ucfirst($this->status->apiName()), // Field in SF has upper case first letter and is awkard to change.
+            'contactUuid' => $this->donorId->id,
+            'giftAid' => $this->giftAid,
+            'donor' => $donor->toSfApiModel(),
         ];
     }
 
@@ -173,25 +222,33 @@ class RegularGivingMandate extends SalesforceWriteProxy
         bool $requireActiveMandate = true,
         \DateTimeImmutable $expectedActivationDate = null,
     ): Donation {
+        // comms prefs below (charityComms, championComms, optInTbgEmail) are all set to null, as it's only the 1st
+        // donation in the mandate that carries the donor's chosen marketing comms preferences to Salesforce.
+
+        // It may be possible that gift aid was selected when this mandate was created but since then the donor
+        // told us to forget their home address. In that case we wouldn't be able to claim gift aid for any
+        // new donations.
+        $giftAidClaimable = $this->giftAid && $donor->hasHomeAddress();
+
         $donation = new Donation(
             amount: $this->donationAmount->toNumericString(),
             currencyCode: $this->donationAmount->currency->isoCode(),
             paymentMethodType: PaymentMethodType::Card,
             campaign: $campaign,
-            charityComms: false,
-            championComms: false,
+            charityComms: null,
+            championComms: null,
             pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
-            optInTbgEmail: false,
+            optInTbgEmail: null,
             donorName: $donor->donorName,
             emailAddress: $donor->emailAddress,
             countryCode: $donor->getBillingCountryCode(),
             tipAmount: '0',
             mandate: $this,
             mandateSequenceNumber: $sequenceNumber,
-            giftAid: false,
+            giftAid: $giftAidClaimable,
             tipGiftAid: null,
-            homeAddress: null,
-            homePostcode: null,
+            homeAddress: $donor->getHomeAddressLine1(),
+            homePostcode: $donor->getHomePostcode(),
             billingPostcode: null,
         );
 
@@ -312,13 +369,58 @@ class RegularGivingMandate extends SalesforceWriteProxy
         );
     }
 
-    public function totalIncGiftAd(): Money
+    public function totalIncGiftAid(): Money
     {
         return $this->donationAmount->plus($this->getGiftAidAmount());
+    }
+
+
+    /**
+     * @return Money The total amount that we expect the charity to receive per each of the donors initial, matched
+     * donations, from us and HMRC in total. I.e. core amount + matched amount + gift aid amount.
+     *
+     * @todo-regular-giving revisit this as part of DON-1003 when matched amount may vary per donation.
+     */
+    private function totalCharityReceivesPerInitial(): Money
+    {
+        return Money::sum($this->donationAmount, $this->getGiftAidAmount(), $this->getMatchedAmount());
     }
 
     public function getMatchedAmount(): Money
     {
         return $this->donationAmount;
+    }
+
+    public function createPendingFirstDonation(Campaign $campaign, DonorAccount $donor): Donation
+    {
+        Assertion::same($campaign->getSalesforceId(), $this->campaignId);
+
+        // As this is the first donation in the mandate we give it a copy of the donor's Big Give and Charity comms
+        // preferences so that SF can pick them up.
+        return new Donation(
+            amount: $this->donationAmount->toNumericString(),
+            currencyCode: $this->donationAmount->currency->isoCode(),
+            paymentMethodType: PaymentMethodType::Card,
+            campaign: $campaign,
+            charityComms: $this->charityComms,
+            championComms: null,
+            pspCustomerId: $donor->stripeCustomerId->stripeCustomerId,
+            optInTbgEmail: $this->tbgComms,
+            donorName: $donor->donorName,
+            emailAddress: $donor->emailAddress,
+            countryCode: $donor->getBillingCountryCode(),
+            tipAmount: '0',
+            mandate: $this,
+            mandateSequenceNumber: DonationSequenceNumber::of(1),
+            giftAid: $this->giftAid,
+            billingPostcode: $donor->getBillingPostcode(),
+            homeAddress: $donor->getHomeAddressLine1(),
+            homePostcode: $donor->getHomePostcode(),
+        );
+    }
+
+    public function donorId(): PersonId
+    {
+        return $this->donorId;
     }
 }

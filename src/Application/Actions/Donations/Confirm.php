@@ -48,7 +48,7 @@ class Confirm extends Action
                 $request->getBody()->getContents(),
                 true,
                 512,
-                JSON_THROW_ON_ERROR
+                \JSON_THROW_ON_ERROR
             );
         } catch (\JsonException) {
             throw new HttpBadRequestException($request, 'Cannot parse request body as JSON');
@@ -90,6 +90,9 @@ EOF
             throw new HttpBadRequestException($request, $message);
         }
 
+        $paymentIntentId = $donation->getTransactionId();
+        Assertion::notNull($paymentIntentId);
+
         try {
             $updatedIntent = $this->donationService->confirmOnSessionDonation(
                 $donation,
@@ -102,7 +105,7 @@ EOF
                 context: 'confirmPaymentIntent',
                 exception: $exception,
                 donation: $donation,
-                paymentIntentId: $donation->getTransactionId(),
+                paymentIntentId: $paymentIntentId,
             );
         } catch (InvalidRequestException $exception) {
             if (!DonationService::errorMessageFromStripeIsExpected($exception)) {
@@ -114,7 +117,7 @@ EOF
                 'Stripe %s on Confirm for donation %s (%s): %s',
                 $exceptionClass,
                 $donation->getUuid(),
-                $donation->getTransactionId(),
+                $paymentIntentId,
                 $exception->getMessage(),
             ));
 
@@ -131,7 +134,7 @@ EOF
                 'Stripe %s on Confirm for donation %s (%s): %s',
                 get_class($exception),
                 $donation->getUuid(),
-                $donation->getTransactionId(),
+                $paymentIntentId,
                 $exception->getMessage(),
             ));
 

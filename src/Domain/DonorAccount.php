@@ -28,8 +28,8 @@ class DonorAccount extends Model
      * Person ID as they are known in identity service. Nullable only for now to be compatible with existing
      * data in prod.
      */
-    #[ORM\Column(type: 'uuid', unique: true, nullable: true)]
-    protected ?UuidInterface $uuid = null;
+    #[ORM\Column(type: 'uuid', unique: true, nullable: false)]
+    protected UuidInterface $uuid;
 
     #[ORM\Embedded(class: 'EmailAddress', columnPrefix: false)]
     public EmailAddress $emailAddress;
@@ -65,7 +65,7 @@ class DonorAccount extends Model
     /**
      * The payment method selected for use in off session, regular giving payments, when the donor isn't around to
      * make an individual choice for each donation. Must be a payment card, and have
-     * ['setup_future_usage' => 'on_session'] selected.
+     * ['setup_future_usage' => 'off_session'] selected.
      *
      * String not embeddable because ORM does not support nullable embeddables.
      */
@@ -73,7 +73,7 @@ class DonorAccount extends Model
     private ?string $regularGivingPaymentMethod = null;
 
     public function __construct(
-        ?PersonId $uuid,
+        PersonId $uuid,
         EmailAddress $emailAddress,
         DonorName $donorName,
         StripeCustomerId $stripeCustomerId
@@ -82,7 +82,7 @@ class DonorAccount extends Model
         $this->emailAddress = $emailAddress;
         $this->stripeCustomerId = $stripeCustomerId;
         $this->donorName = $donorName;
-        $this->uuid = is_null($uuid) ? null : Uuid::fromString($uuid->id);
+        $this->uuid = Uuid::fromString($uuid->id);
     }
 
     public static function fromPersonMessage(Person $person): self
@@ -97,31 +97,15 @@ class DonorAccount extends Model
 
     public function updateFromPersonMessage(Person $personMessage): void
     {
-        /**
-         * @todo-id-48: Delete next four lines and make uuid column non-nullable once all records in prod have uuids
-         * set
-         */
-        if ($this->uuid === null) {
-            $this->uuid = $personMessage->id;
-        }
-        Assertion::eq($this->uuid, $personMessage->id);
-
         $this->emailAddress = EmailAddress::of($personMessage->email_address);
         $this->donorName = DonorName::of($personMessage->first_name, $personMessage->last_name);
     }
 
     /**
-     * Returns the UUID of this person as held in Identity service. Use with care as throws is Matchbot doesn't (yet)
-     * have that UUID on record
-     *
-     * @todo-regular-giving - consider filling in all values in prod and making $this->uuid non-nullable.
-     */
+     * UUID of this person as held in Identity service.
+     **/
     public function id(): PersonId
     {
-        if (is_null($this->uuid)) {
-            throw new \Exception("UUID not known for stripe customer ID " . $this->stripeCustomerId->stripeCustomerId);
-        }
-
         return PersonId::of($this->uuid->toString());
     }
 
@@ -137,14 +121,6 @@ class DonorAccount extends Model
     public function setRegularGivingPaymentMethod(StripePaymentMethodId $methodId): void
     {
         $this->regularGivingPaymentMethod = $methodId->stripePaymentMethodId;
-    }
-
-    /**
-     */
-    public function setBillingCountryCode(?string $billingCountryCode): void
-    {
-        Assertion::nullOrLength($billingCountryCode, 2);
-        $this->billingCountryCode = $billingCountryCode;
     }
 
     public function getBillingCountryCode(): ?string
@@ -197,5 +173,45 @@ class DonorAccount extends Model
             ->that($this->billingCountryCode, null, 'Missing billing country code')->notNull()
             ->setExceptionClass(AccountNotReadyToDonate::class)
             ->verifyNow();
+    }
+
+    public function toFrontEndApiModel(): array
+    {
+        return [
+            'id' => $this->uuid->toString(),
+            'fullName' => $this->donorName->fullName(),
+            'stripeCustomerId' => $this->stripeCustomerId->stripeCustomerId,
+            'regularGivingPaymentMethod' => $this->regularGivingPaymentMethod,
+            'billingPostCode' => $this->billingPostcode,
+            'billingCountryCode' => $this->billingCountryCode,
+        ];
+    }
+
+    public function setBillingCountry(Country $billingCountry): void
+    {
+        $this->billingCountryCode = $billingCountry->alpha2->value;
+    }
+
+    public function getBillingCountry(): ?Country
+    {
+        return Country::fromAlpha2OrNull($this->billingCountryCode);
+    }
+
+    public function toSfApiModel(): array
+    {
+        return [
+            'firstName' => $this->donorName->first,
+            'lastName' => $this->donorName->last,
+            'emailAddress' => $this->emailAddress->email,
+            'billingPostalAddress' => $this->billingPostcode,
+            'countryCode' => $this->billingCountryCode,
+            'pspCustomerId' => $this->stripeCustomerId->stripeCustomerId,
+            'identityUUID' => $this->uuid->toString(),
+        ];
+    }
+
+    public function hasHomeAddress(): bool
+    {
+        return is_string($this->homeAddressLine1) && trim($this->homeAddressLine1) !== '';
     }
 }

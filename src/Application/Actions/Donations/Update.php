@@ -11,6 +11,7 @@ use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels;
 use MatchBot\Client\Stripe;
@@ -387,8 +388,10 @@ class Update extends Action
             }
 
             if ($donationData->autoConfirmFromCashBalance) {
+                $transactionId = $donation->getTransactionId();
+                Assertion::notNull($transactionId);
                 try {
-                    $confirmedIntent = $this->stripe->confirmPaymentIntent($donation->getTransactionId());
+                    $confirmedIntent = $this->stripe->confirmPaymentIntent($transactionId);
 
                     /* @var string|null $nextActionType */
                     $nextActionType = null;
@@ -450,7 +453,7 @@ class Update extends Action
                             'Stripe %s on Update for donation %s (%s): %s',
                             $exceptionClass,
                             $donation->getUuid(),
-                            $donation->getTransactionId(),
+                            $transactionId,
                             $exception->getMessage(),
                         ));
 
@@ -483,7 +486,12 @@ class Update extends Action
      */
     private function updatePaymentIntent(Donation $donation): void
     {
-        $this->stripe->updatePaymentIntent($donation->getTransactionId(), [
+        $paymentIntentId = $donation->getTransactionId();
+        if ($paymentIntentId === null) {
+            return;
+        }
+
+        $this->stripe->updatePaymentIntent($paymentIntentId, [
             'amount' => $donation->getAmountFractionalIncTip(),
             'currency' => strtolower($donation->getCurrencyCode()),
             'metadata' => [
@@ -524,7 +532,10 @@ class Update extends Action
             $exception instanceof InvalidRequestException &&
             str_starts_with($exception->getMessage(), $alreadyCapturedMsg)
         ) {
-            $latestPI = $this->stripe->retrievePaymentIntent($donation->getTransactionId());
+            $paymentIntentId = $donation->getTransactionId();
+            Assertion::notNull($paymentIntentId);
+
+            $latestPI = $this->stripe->retrievePaymentIntent($paymentIntentId);
             if ($latestPI->application_fee_amount === $donation->getAmountToDeductFractional()) {
                 $noFeeChangeMessage = 'Stripe Payment Intent update ignored after capture; no fee ' .
                     'change on %s, %s [%s]: %s';

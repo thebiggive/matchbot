@@ -72,7 +72,8 @@ class DonationRepositoryTest extends TestCase
             ->willReturn(Salesforce18Id::of('sfDonation36912345'));
 
         // Just confirm it doesn't throw.
-        $this->getRepo($donationClientProphecy)->push(DonationUpserted::fromDonation($this->getTestDonation()), false);
+        $donationRepository = $this->getRepo($donationClientProphecy);
+        $donationRepository->push(DonationUpserted::fromDonation($this->getTestDonation()));
     }
 
     public function testExistingPush404InSandbox(): void
@@ -83,7 +84,8 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()
             ->willThrow(Client\NotFoundException::class);
 
-        $this->getRepo($donationClientProphecy)->push(self::someUpsertedMessage(), false);
+        $donationRepository = $this->getRepo($donationClientProphecy);
+        $donationRepository->push(self::someUpsertedMessage());
     }
 
     public function testBuildFromApiRequestSuccess(): void
@@ -188,7 +190,8 @@ class DonationRepositoryTest extends TestCase
             ->shouldBeCalledOnce()
             ->willThrow(Client\BadRequestException::class);
 
-        $this->getRepo($donationClientProphecy)->push(self::someUpsertedMessage(), false);
+        $donationRepository = $this->getRepo($donationClientProphecy);
+        $donationRepository->push(self::someUpsertedMessage());
     }
 
     public function testStripeAmountForCharityWithTipUsingAmex(): void
@@ -351,9 +354,8 @@ class DonationRepositoryTest extends TestCase
 
     public function testAbandonOldCancelled(): void
     {
-        $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $this->getAppInstance();
+        $container = $this->diContainer();
 
         $query = $this->prophesize(AbstractQuery::class);
         // Our test donation doesn't actually meet the conditions but as we're

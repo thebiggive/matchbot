@@ -46,7 +46,7 @@ class Campaign extends Common
      */
     public function getById(string $id, bool $withCache): array
     {
-        $uri = $this->getUri("{$this->getSetting('campaign', 'baseUri')}/$id", $withCache);
+        $uri = $this->getUri("{$this->baseUri()}/$id", $withCache);
         try {
             $response = $this->getHttpClient()->get($uri);
         } catch (RequestException $exception) {
@@ -62,7 +62,7 @@ class Campaign extends Common
         /**
          * @var SFCampaignApiResponse $campaignResponse
          */
-        $campaignResponse = json_decode((string)$response->getBody(), true, flags: JSON_THROW_ON_ERROR);
+        $campaignResponse = json_decode((string)$response->getBody(), true, flags: \JSON_THROW_ON_ERROR);
 
         return $campaignResponse;
     }
@@ -85,7 +85,7 @@ class Campaign extends Common
         $foundEmptyPage = false;
         while ($offset < $limit) {
             $uri = $this->getUri(
-                "{$this->getSetting('campaign', 'baseUri')}?parentSlug=$encodedSlug&limit=$pageSize&offset=$offset",
+                "{$this->baseUri()}?parentSlug=$encodedSlug&limit=$pageSize&offset=$offset",
                 true
             );
             $response = $this->getHttpClient()->get($uri);
@@ -109,5 +109,10 @@ class Campaign extends Common
         }
 
         return $campaigns;
+    }
+
+    private function baseUri(): string
+    {
+        return $this->sfApiBaseUrl . '/campaigns/services/apexrest/v1.0/campaigns';
     }
 }

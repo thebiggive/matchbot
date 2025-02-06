@@ -13,9 +13,13 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 /**
  * @psalm-import-type SFCampaignApiResponse from Client\Campaign
  * @template-extends SalesforceReadProxyRepository<Campaign, Client\Campaign>
+ *
+ * @psalm-suppress MissingConstructor - setters must be called after repo is constructed by Doctrine
  */
 class CampaignRepository extends SalesforceReadProxyRepository
 {
+    private FundRepository $fundRepository;
+
     /**
      * Gets those campaigns which are live now or recently closed (in the last week),
      * based on their last known end time, and those closed semi-recently where we are
@@ -213,6 +217,32 @@ class CampaignRepository extends SalesforceReadProxyRepository
             regulatorNumber: $campaignData['charity']['regulatorNumber'],
             time: new \DateTime('now'),
         );
+    }
+
+    /**
+     * Checks if the given campaign is already in the DB - if so does nothing, if not pulls it from Salesforce.
+     *
+     * For performance only does a count, doesn't load the campaign from the DB if it already exists.
+     *
+     * @param Salesforce18Id<Campaign> $campaignId
+     */
+    public function pullFromSFIfNotPresent(Salesforce18Id $campaignId): void
+    {
+        $query = $this->getEntityManager()->createQuery(
+            'SELECT count(c.id) from MatchBot\Domain\Campaign c where c.salesforceId = :id'
+        );
+        $query->setParameter('id', $campaignId->value);
+        $count = $query->getSingleScalarResult();
+
+        if ($count === 0) {
+            $campaign = $this->pullNewFromSf($campaignId);
+            $this->fundRepository->pullForCampaign($campaign);
+        }
+    }
+
+    public function setFundRepository(FundRepository $fundRepository): void
+    {
+        $this->fundRepository = $fundRepository;
     }
 
     /**

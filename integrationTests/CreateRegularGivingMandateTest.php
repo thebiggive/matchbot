@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MatchBot\IntegrationTests;
 
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Client\Mailer;
 use MatchBot\Domain\DonorAccountRepository;
@@ -11,26 +13,85 @@ use MatchBot\Tests\TestData;
 use Prophecy\Argument;
 use Psr\Http\Message\ResponseInterface;
 use MatchBot\Client\Stripe;
+use Stripe\BalanceTransaction;
+use Stripe\Charge;
 use Stripe\PaymentIntent;
+use Stripe\StripeObject;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class CreateRegularGivingMandateTest extends IntegrationTest
 {
+    private MessageBusInterface $originalMessageBus;
+
     public function setUp(): void
     {
         parent::setUp();
         $this->getContainer()->set(Mailer::class, $this->createStub(Mailer::class));
+
+        $this->originalMessageBus = $this->getService(MessageBusInterface::class);
+
+        $messageBusProphecy = $this->prophesize(MessageBusInterface::class);
+        $messageBusProphecy->dispatch(Argument::type(Envelope::class), Argument::cetera())
+            ->willReturnArgument(0)
+            ->shouldBeCalledTimes(5); // three donations + 1 mandate create + 1 mandate update
+
+        $this->getContainer()->set(MessageBusInterface::class, $messageBusProphecy->reveal());
     }
+
+    public function tearDown(): void
+    {
+        $this->getContainer()->set(MessageBusInterface::class, $this->originalMessageBus);
+    }
+
     public function testItCreatesRegularGivingMandate(): void
     {
         // arrange
         $pencePerMonth = random_int(1, 500) * 100;
 
+        $pi = new PaymentIntent('payment-intent-id-xyz' . IntegrationTest::randomString());
+        $pi->status = PaymentIntent::STATUS_SUCCEEDED;
+        $chargeId = 'charge_id_' . self::randomString();
+        $pi->latest_charge = $chargeId;
+
+        $transfer_id = 'transfer_id_' . self::randomString();
+
+        $charge = Charge::constructFrom([
+            'id' => $chargeId,
+            'status' => Charge::STATUS_SUCCEEDED,
+            'balance_transaction' => 'balance_transaction_id',
+            'payment_method_details' => StripeObject::constructFrom([]),
+            'amount' => 1,
+            'transfer' => $transfer_id,
+            'created' => 0,
+        ]);
+
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(
             Argument::that(fn(array $payload) => ($payload['amount'] === $pencePerMonth))
         )
-            ->shouldBeCalledTimes(3)
-            ->will(fn() => new PaymentIntent('payment-intent-id-' . IntegrationTest::randomString()));
+            ->shouldBeCalledOnce()
+            ->willReturn($pi);
+        $stripeProphecy->retrievePaymentIntent($pi->id)->willReturn($pi);
+        $stripeProphecy->confirmPaymentIntent(
+            Argument::type('string'),
+            Argument::cetera()
+        )
+            ->shouldBeCalledOnce()
+            ->will(function (array $args) {
+                $pi = new PaymentIntent($args[0]);
+                $pi->status = PaymentIntent::STATUS_SUCCEEDED;
+                return $pi;
+            });
+        $stripeProphecy->retrieveCharge($chargeId)->willReturn($charge);
+        $stripeProphecy->retrieveBalanceTransaction('balance_transaction_id')->willReturn(
+            BalanceTransaction::constructFrom([
+                'id' => 'balance_transaction_id',
+                'fee_details' => [['currency' => 'gbp', 'type' => 'stripe_fee']],
+                'fee' => 1,
+            ])
+        );
+
         $this->getContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
         $this->ensureDbHasDonorAccount();
@@ -47,6 +108,8 @@ class CreateRegularGivingMandateTest extends IntegrationTest
             ->fetchAllAssociative();
         $this->assertNotEmpty($mandateDatabaseRows);
         $this->assertSame($pencePerMonth, $mandateDatabaseRows[0]['donationAmount_amountInPence']);
+        $this->assertSame(1, $mandateDatabaseRows[0]['tbgComms']);
+        $this->assertSame(1, $mandateDatabaseRows[0]['charityComms']);
 
         $donationDatabaseRows = $this->db()->executeQuery(
             "SELECT * from Donation where Donation.mandate_id = ? ORDER BY mandateSequenceNumber asc",
@@ -55,7 +118,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
         $this->assertCount(3, $donationDatabaseRows);
 
-        $this->assertSame('Pending', $donationDatabaseRows[0]['donationStatus']); // see @todo in SUT - should be collected not pending
+        $this->assertSame('Collected', $donationDatabaseRows[0]['donationStatus']);
         $this->assertSame('PreAuthorized', $donationDatabaseRows[1]['donationStatus']);
         $this->assertSame('PreAuthorized', $donationDatabaseRows[2]['donationStatus']);
 
@@ -91,7 +154,9 @@ class CreateRegularGivingMandateTest extends IntegrationTest
                     "amountInPence": $pencePerMonth,
                     "dayOfMonth": 1,
                     "giftAid": false,
-                    "campaignId": "$campaignId"
+                    "campaignId": "$campaignId",
+                    "tbgComms": true,
+                    "charityComms": true
                 }
             EOF,
                 serverParams: ['REMOTE_ADDR' => '127.0.0.1']

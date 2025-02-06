@@ -10,12 +10,13 @@ use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Messenger\DonationUpserted;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Fund;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
@@ -27,6 +28,7 @@ use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
+use Override;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Http\Message\ServerRequestInterface;
@@ -35,6 +37,7 @@ use Slim\App;
 use Slim\Exception\HttpUnauthorizedException;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
+use Symfony\Component\Clock\Clock;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Messenger\Envelope;
@@ -54,6 +57,10 @@ class CreateTest extends TestCase
 
     /** @var ObjectProphecy<RoutableMessageBus> */
     private ObjectProphecy $messageBusProphecy;
+    /**
+     * @var mixed|object|ClockInterface
+     */
+    private ClockInterface $previousClock;
 
     public function setUp(): void
     {
@@ -99,16 +106,19 @@ class CreateTest extends TestCase
             'currency' => 'gbp',
         ]);
 
-        $app = $this->getAppInstance();
-
-        /** @var Container $container */
-        $container = $app->getContainer();
-
         $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
-        $container->set(CampaignRepository::class, $campaignRepositoryProphecy->reveal());
-        $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
+        $this->diContainer()->set(CampaignRepository::class, $campaignRepositoryProphecy->reveal());
+        $this->diContainer()->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
 
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
+
+        $this->previousClock = $this->diContainer()->get(ClockInterface::class);
+        $this->diContainer()->set(ClockInterface::class, $this->createStub(ClockInterface::class));
+    }
+
+    #[Override] public function tearDown(): void
+    {
+        $this->diContainer()->set(ClockInterface::class, $this->previousClock);
     }
 
     /**
@@ -118,11 +128,9 @@ class CreateTest extends TestCase
     public function testDeserialiseError(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
 
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
         $data = '{"not-good-json';
 
@@ -146,14 +154,12 @@ class CreateTest extends TestCase
         $donation = $this->getTestDonation(false, false);
 
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willReturn($donation);
 
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -179,33 +185,30 @@ class CreateTest extends TestCase
         $donationToReturn->setDonationStatus(DonationStatus::Pending);
 
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willReturn($donationToReturn);
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
-        $donationRepoProphecy->push(Argument::type(DonationUpserted::class), Argument::type('bool'))
-            ->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
         $campaignRepoProphecy->updateFromSf(Argument::type(Campaign::class))
             ->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->isOpen()->willReturn(true);
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledOnce();
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
         $entityManagerProphecy->flush()->shouldBeCalledOnce();
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::any())->shouldNotBeCalled();
 
-        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(Stripe::class, $stripeProphecy->reveal());
+        $this->diContainer()->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
+        $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $this->diContainer()->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $this->diContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -227,20 +230,18 @@ class CreateTest extends TestCase
         $donation = $this->getTestDonation(true, false, true, 'CAD');
 
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->willThrow(new UnexpectedValueException('Currency CAD is invalid for campaign'));
-        $donationRepoProphecy->push(Argument::type(DonationUpserted::class), true)->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+        $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $this->diContainer()->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -269,21 +270,19 @@ class CreateTest extends TestCase
         $donation = $this->getTestDonation(true, false, true);
 
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
             ->shouldNotBeCalled();
-        $donationRepoProphecy->push(Argument::type(DonationUpserted::class), true)->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldNotBeCalled();
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+        $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $this->diContainer()->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $data = $this->encode($donation);
         $request = $this->createRequest(
@@ -312,9 +311,6 @@ class CreateTest extends TestCase
             donation: $donationToReturn,
             skipEmExpectations: true,
         );
-        $container = $app->getContainer();
-        \assert($container instanceof Container);
-
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         $campaignRepoProphecy->updateFromSf(Argument::type(Campaign::class))
             ->will(/**
@@ -325,9 +321,9 @@ class CreateTest extends TestCase
             );
 
         // Need to override stock EM to get campaign repo behaviour
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->isOpen()->willReturn(true);
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
         $expectedPaymentIntentArgs = [
@@ -378,9 +374,9 @@ class CreateTest extends TestCase
         $this->prophesizeCustomerSession($stripeProphecy);
 
 
-        $container->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(Stripe::class, $stripeProphecy->reveal());
+        $this->diContainer()->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
+        $this->diContainer()->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $this->diContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -433,9 +429,6 @@ class CreateTest extends TestCase
             donationMatched: true,
             donation: $donationToReturn,
         );
-        $container = $app->getContainer();
-        \assert($container instanceof Container);
-
         $expectedPaymentIntentArgs = [
             'automatic_payment_methods' => [
                 'enabled' => true,
@@ -474,7 +467,7 @@ class CreateTest extends TestCase
         $this->prophesizeCustomerSession($stripeProphecy);
 
 
-        $container->set(Stripe::class, $stripeProphecy->reveal());
+        $this->diContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -528,9 +521,6 @@ class CreateTest extends TestCase
             donationMatched: true,
             donation: $donationToReturn,
         );
-        $container = $app->getContainer();
-        \assert($container instanceof Container);
-
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
@@ -568,7 +558,7 @@ class CreateTest extends TestCase
             ->shouldBeCalledOnce();
         $this->prophesizeCustomerSession($stripeProphecy);
 
-        $container->set(Stripe::class, $stripeProphecy->reveal());
+        $this->diContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
         $request = $this->createRequest(
             'POST',
@@ -624,16 +614,13 @@ class CreateTest extends TestCase
             donationMatched: false,
             donation: $donationToReturn,
         );
-        $container = $app->getContainer();
-        \assert($container instanceof Container);
-
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
 
-        $container->set(Stripe::class, $stripeProphecy->reveal());
+        $this->diContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = json_encode($donation->toFrontEndApiModel(), JSON_THROW_ON_ERROR);
+        $data = json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR);
         // Don't match default test customer ID from body, in this path.
         $request = $this->createRequest('POST', '/v1/people/99999999-1234-1234-1234-1234567890zz/donations', $data);
         $app->handle($this->addDummyPersonAuth($request)); // Throws HttpUnauthorizedException.
@@ -655,16 +642,13 @@ class CreateTest extends TestCase
             donationMatched: false,
             donation: $donationToReturn,
         );
-        $container = $app->getContainer();
-        \assert($container instanceof Container);
-
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
 
-        $container->set(Stripe::class, $stripeProphecy->reveal());
+        $this->diContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
-        $data = json_encode($donation->toFrontEndApiModel(), JSON_THROW_ON_ERROR);
+        $data = json_encode($donation->toFrontEndApiModel(), \JSON_THROW_ON_ERROR);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
 
         $response = $app->handle($this->addDummyPersonAuth($request));
@@ -691,8 +675,6 @@ class CreateTest extends TestCase
         $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
 
         // Use a custom Prophecy Promise to vary the simulated behaviour.
@@ -703,10 +685,10 @@ class CreateTest extends TestCase
 
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->isOpen()->willReturn(true);
         // These are called once after initial ID setup and once after Stripe fields added.
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))->shouldBeCalledTimes(2);
+        $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
         $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
 
         $expectedPaymentIntentArgs = [
@@ -746,9 +728,9 @@ class CreateTest extends TestCase
             ->shouldBeCalledOnce();
         $this->prophesizeCustomerSession($stripeProphecy);
 
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(Stripe::class, $stripeProphecy->reveal());
+        $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $this->diContainer()->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $this->diContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -792,9 +774,6 @@ class CreateTest extends TestCase
             donationMatched: false,
             donation: $donation,
         );
-        $container = $app->getContainer();
-        \assert($container instanceof Container);
-
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
             ->willReturn(self::$somePaymentIntentResult)
@@ -802,7 +781,7 @@ class CreateTest extends TestCase
         $this->prophesizeCustomerSession($stripeProphecy);
 
 
-        $container->set(Stripe::class, $stripeProphecy->reveal());
+        $this->diContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -846,16 +825,13 @@ class CreateTest extends TestCase
             donationMatched: false,
             donation: $donation,
         );
-        $container = $app->getContainer();
-        \assert($container instanceof Container);
-
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
             ->willReturn(self::$somePaymentIntentResult)
             ->shouldBeCalledOnce();
         $this->prophesizeCustomerSession($stripeProphecy);
 
-        $container->set(Stripe::class, $stripeProphecy->reveal());
+        $this->diContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -897,18 +873,15 @@ class CreateTest extends TestCase
             donationMatched: false,
             donation: $donation,
         );
-        $container = $app->getContainer();
-        \assert($container instanceof Container);
-
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->isOpen()->willReturn(true);
-        $entityManagerProphecy->persistWithoutRetries(Argument::type(Donation::class))
+        $entityManagerProphecy->persist(Argument::type(Donation::class))
             ->willThrow($this->prophesize(DBALServerException::class)->reveal())
             ->shouldBeCalledTimes(3); // DonationService::MAX_RETRY_COUNT
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
-        $container->set(ClockInterface::class, new MockClock());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+        $this->diContainer()->set(ClockInterface::class, new MockClock());
+        $this->diContainer()->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -943,8 +916,6 @@ class CreateTest extends TestCase
         bool $skipEmExpectations = false,
     ): App {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class))
@@ -969,7 +940,7 @@ class CreateTest extends TestCase
             $donationRepoProphecy->allocateMatchFunds($donation)->shouldNotBeCalled();
         }
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->isOpen()->willReturn(true);
 
         if ($donationPersisted) {
@@ -977,21 +948,21 @@ class CreateTest extends TestCase
                 if ($donationPushed) {
                     // Persist + flush happens twice. See code by comment "Must persist
                     // before Stripe work to have ID available."
-                    $entityManagerProphecy->persistWithoutRetries($donation)->shouldBeCalledTimes(2);
+                    $entityManagerProphecy->persist($donation)->shouldBeCalledTimes(2);
                     $entityManagerProphecy->flush()->shouldBeCalledTimes(2);
                 } else {
-                    $entityManagerProphecy->persistWithoutRetries($donation)->shouldBeCalledOnce();
+                    $entityManagerProphecy->persist($donation)->shouldBeCalledOnce();
                     $entityManagerProphecy->flush()->shouldBeCalledOnce();
                 }
             }
         } else {
-            $entityManagerProphecy->persistWithoutRetries($donation)->shouldNotBeCalled();
+            $entityManagerProphecy->persist($donation)->shouldNotBeCalled();
             $entityManagerProphecy->flush()->shouldNotBeCalled();
         }
 
-        $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
-        $container->set(RoutableMessageBus::class, $this->messageBusProphecy->reveal());
+        $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
+        $this->diContainer()->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $this->diContainer()->set(RoutableMessageBus::class, $this->messageBusProphecy->reveal());
 
         return $app;
     }
@@ -1000,7 +971,7 @@ class CreateTest extends TestCase
     {
         $donationArray = $donation->toFrontEndApiModel();
 
-        return json_encode($donationArray);
+        return json_encode($donationArray, \JSON_THROW_ON_ERROR);
     }
 
     /**
@@ -1071,7 +1042,7 @@ class CreateTest extends TestCase
     private static function someCampaignFunding(): CampaignFunding
     {
         return new CampaignFunding(
-            fund: new Pledge('GBP', 'some pledge'),
+            fund: new Pledge('GBP', 'some pledge', null),
             amount: '8.00',
             amountAvailable: '8.00',
             allocationOrder: 100,

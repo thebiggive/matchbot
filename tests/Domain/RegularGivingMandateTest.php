@@ -3,6 +3,7 @@
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
@@ -21,6 +22,8 @@ use UnexpectedValueException;
 
 class RegularGivingMandateTest extends TestCase
 {
+    private const string PERSONID = '1acbcf6c-d81e-11ef-9c4c-37970561ab37';
+
     /** @dataProvider nextPaymentDates */
     public function testExpectedNextPaymentDate(
         string $currentDateTime,
@@ -148,18 +151,16 @@ class RegularGivingMandateTest extends TestCase
         );
     }
 
-    public function testItRendersApiModel(): void
+    public function testItRendersApiModelForFrontEnd(): void
     {
         $charity = TestCase::someCharity(salesforceId: Salesforce18Id::ofCharity('charity89012345678'));
 
         $mandate = new RegularGivingMandate(
-            donorId: PersonId::of('2c2b4832-563c-11ef-96a4-07141f9e507e'),
+            donorId: PersonId::of(self::PERSONID),
             donationAmount: Money::fromPoundsGBP(500),
             dayOfMonth: DayOfMonth::of(12),
             campaignId: Salesforce18Id::ofCampaign('campaign9012345678'),
-            charityId: Salesforce18Id::ofCharity(
-                $charity->getSalesforceId() ?? throw new \Exception("sf id can't be null")
-            ),
+            charityId: Salesforce18Id::ofCharity($charity->getSalesforceId()),
             giftAid: true,
         );
 
@@ -167,11 +168,12 @@ class RegularGivingMandateTest extends TestCase
 
         $now = new \DateTimeImmutable('2024-08-12', new \DateTimeZone('Europe/London'));
 
+        $donorUUID = self::PERSONID;
         $this->assertJsonStringEqualsJsonString(
             <<<JSON
                 {
                   "id": "$uuid",
-                  "donorId": "2c2b4832-563c-11ef-96a4-07141f9e507e",
+                  "donorId": "$donorUUID",
                   "donationAmount": {
                     "amountInPence": 50000,
                     "currency": "GBP"
@@ -180,8 +182,21 @@ class RegularGivingMandateTest extends TestCase
                     "amountInPence": 50000,
                     "currency": "GBP"
                   },
+                  "giftAidAmount": {
+                    "amountInPence": 12500,
+                    "currency": "GBP"
+                  },
+                  "totalIncGiftAid": {
+                    "amountInPence": 62500,
+                    "currency": "GBP"
+                  },
+                  "totalCharityReceivesPerInitial": {
+                    "amountInPence": 112500,
+                    "currency": "GBP"
+                  },
                   "campaignId": "campaign9012345678",
                   "charityId": "charity89012345678",
+                  "numberOfMatchedDonations": 3,
                   "schedule": {
                     "type": "monthly",
                     "dayOfMonth": 12,
@@ -193,9 +208,53 @@ class RegularGivingMandateTest extends TestCase
                   "status": "pending"
                 }
             JSON,
-            \json_encode($mandate->toFrontEndApiModel($charity, $now)),
+            \json_encode($mandate->toFrontEndApiModel($charity, $now), \JSON_THROW_ON_ERROR),
         );
     }
+
+    public function testItRendersApiModelForSalesforce(): void
+    {
+        $donor = self::someDonor();
+
+        $mandate = new RegularGivingMandate(
+            donorId: PersonId::of(self::PERSONID),
+            donationAmount: Money::fromPoundsGBP(500),
+            campaignId: Salesforce18Id::ofCampaign('campaign9012345678'),
+            charityId: Salesforce18Id::ofCharity('charity90123456789'),
+            giftAid: true,
+            dayOfMonth: DayOfMonth::of(12),
+        );
+        $mandate->activate((new \DateTimeImmutable('2024-08-12T06:00:00Z')));
+
+        $SFApiModel = $mandate->toSFApiModel($donor);
+
+
+        $this->assertJsonStringEqualsJsonString(
+            <<<JSON
+            {
+              "uuid":"{$mandate->getUuid()->toString()}",
+              "contactUuid":"1acbcf6c-d81e-11ef-9c4c-37970561ab37",
+              "donationAmount":500,
+              "campaignSFId":"campaign9012345678",
+              "giftAid":true,
+              "dayOfMonth":12,
+              "status":"Active",
+              "activeFrom": "2024-08-12T06:00:00+00:00",
+              "donor": {
+                "firstName": "Fred",
+                "lastName": "Do",
+                "emailAddress":  "freddo@example.com",
+                "billingPostalAddress": "SW1A 1AA",
+                "countryCode": "GB",
+                "pspCustomerId":  "cus_123456",
+                "identityUUID": "1acbcf6c-d81e-11ef-9c4c-37970561ab37"
+              }
+            }
+            JSON,
+            \json_encode($SFApiModel, \JSON_THROW_ON_ERROR)
+        );
+    }
+
     /** @dataProvider invalidRegularGivingAmounts */
     public function testItCannotBeTooSmallOrTooBig(int $pence, string $expectedMessage): void
     {
@@ -203,7 +262,7 @@ class RegularGivingMandateTest extends TestCase
         $this->expectExceptionMessage($expectedMessage);
 
         new RegularGivingMandate(
-            donorId: PersonId::of('2c2b4832-563c-11ef-96a4-07141f9e507e'),
+            donorId: PersonId::of('1acbcf6c-d81e-11ef-9c4c-37970561ab37'),
             donationAmount: Money::fromPence($pence, Currency::GBP),
             dayOfMonth: DayOfMonth::of(12),
             campaignId: Salesforce18Id::ofCampaign('campaign9012345678'),
@@ -259,18 +318,18 @@ class RegularGivingMandateTest extends TestCase
         ];
     }
 
-    public function someDonor(): DonorAccount
+    public static function someDonor(): DonorAccount
     {
         $donor = new DonorAccount(
-            null,
-            EmailAddress::of('fred@example.com'),
-            DonorName::of('FirstName', 'LastName'),
-            StripeCustomerId::of('cus_1234'),
+            PersonId::of(self::PERSONID),
+            EmailAddress::of('freddo@example.com'),
+            DonorName::of('Fred', 'Do'),
+            StripeCustomerId::of('cus_123456'),
         );
         $donor->setHomePostcode('SW1A 1AA');
         $donor->setBillingPostcode('SW1A 1AA');
         $donor->setHomeAddressLine1('Address line 1');
-        $donor->setBillingCountryCode('GB');
+        $donor->setBillingCountry(Country::GB());
 
         return $donor;
     }

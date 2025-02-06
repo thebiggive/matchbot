@@ -63,7 +63,7 @@ class PullIndividualCampaignFromSF extends LockingCommand
                 return 1;
             }
 
-            $output->writeln("Campaign {$this->campaignFullName($campaign)} not found, pulled from SF}");
+            $output->writeln("Campaign {$this->campaignFullName($campaign)} not found, pulled from SF");
         }
 
         $this->fundRepository->pullForCampaign($campaign);

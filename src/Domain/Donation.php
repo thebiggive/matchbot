@@ -18,7 +18,7 @@ use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
-use MatchBot\Domain\DomainException\MissingTransactionId;
+use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use Messages;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -510,9 +510,6 @@ class Donation extends SalesforceWriteProxy
         }
     }
 
-    /**
-     * @throws MissingTransactionId
-     */
     public function toSFApiModel(): array
     {
         $data = [...$this->toFrontEndApiModel(), 'originalPspFee' => (float) $this->getOriginalPspFee()];
@@ -530,9 +527,6 @@ class Donation extends SalesforceWriteProxy
         return $data;
     }
 
-    /**
-     * @throws MissingTransactionId
-     */
     public function toFrontEndApiModel(): array
     {
         $totalPaidByDonor = $this->getTotalPaidByDonor();
@@ -831,20 +825,16 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * We may call this safely *only* after a donation has a PSP's transaction ID.
-     * Stripe assigns the ID before we return a usable donation object to the Donate client,
-     * so this should be true in most of the app for usable donations.
-     *
-     * @throws MissingTransactionId if the transaction ID is not set
+     * @return string|null For a stripe based donation this is the payment intent ID. Usually set immediately for
+     * each new donation, but for delayed regular giving donations will not be set until we're ready to collect
+     * the payment.
      */
-    public function getTransactionId(): string
+    public function getTransactionId(): ?string
     {
-        if ($this->transactionId === null) {
-            throw new MissingTransactionId('Transaction ID not set for donation ' . ($this->id ?? 'null'));
-        }
-
         return $this->transactionId;
     }
+
+
 
     public function getChargeId(): ?string
     {
@@ -1300,7 +1290,10 @@ class Donation extends SalesforceWriteProxy
         // MAT-192 will cover passing and storing this separately. For now, a pattern match should
         // give reasonable 'house number' values.
         if ($this->donorHomeAddressLine1 !== null) {
-            $donationMessage->house_no = preg_replace('/^([0-9a-z-]+).*$/i', '$1', trim($this->donorHomeAddressLine1));
+            $houseNumber = preg_replace('/^([0-9a-z-]+).*$/i', '$1', trim($this->donorHomeAddressLine1));
+            \assert($houseNumber !== null);
+
+            $donationMessage->house_no = $houseNumber;
 
             // In any case where this doesn't produce a result, just send the full first 40 characters
             // of the home address. This is also HMRC's requested value in this property for overseas
@@ -1514,20 +1507,8 @@ class Donation extends SalesforceWriteProxy
      */
     public function assertIsReadyToConfirm(): true
     {
-        Assert::lazy()
-            ->that($this->donorFirstName, 'donorFirstName')->notNull('Missing Donor First Name')
-            ->that($this->donorLastName, 'donorLastName')->notNull('Missing Donor Last Name')
-            ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
-            ->that($this->donorCountryCode)->notNull('Missing Billing Country')
-            ->that($this->donorBillingPostcode)->notNull('Missing Billing Postcode')
-            ->that($this->tbgComms)->notNull('Missing tbgComms preference')
-            ->that($this->charityComms)->notNull('Missing charityComms preference')
-            ->that($this->donationStatus, 'donationStatus')
-            ->that($this->donationStatus)->inArray(
-                [DonationStatus::Pending, DonationStatus::PreAuthorized],
-                "Donation status is '{$this->donationStatus->value}', must be " .
-                "'Pending' or 'PreAuthorized' to confirm payment"
-            )
+        $this->assertionsForConfirmOrPreAuth()
+            ->that($this->transactionId)->notNull('Missing Transaction ID')
             ->verifyNow();
 
         return true;
@@ -1538,7 +1519,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function preAuthorize(DateTimeImmutable $paymentDate): void
     {
-        $this->assertIsReadyToConfirm();
+        $this->assertionsForConfirmOrPreAuth()->verifyNow();
         $this->preAuthorizationDate = $paymentDate;
         $this->donationStatus = DonationStatus::PreAuthorized;
     }
@@ -1687,5 +1668,55 @@ class Donation extends SalesforceWriteProxy
                 $this->getFundingWithdrawalTotal()
             ])
         )->toNumericString();
+    }
+
+    /**
+     * These assertions are required both for a donation to be confirmed and for it to be pre-authorized. They do
+     * NOT include an assertion that the donation has a transaction ID, as that is only required for confirmation, not
+     * for pre-auth.
+     */
+    private function assertionsForConfirmOrPreAuth(): \Assert\LazyAssertion
+    {
+        return Assert::lazy()
+            ->that($this->donorFirstName, 'donorFirstName')->notNull('Missing Donor First Name')
+            ->that($this->donorLastName, 'donorLastName')->notNull('Missing Donor Last Name')
+            ->that($this->donorEmailAddress)->notNull('Missing Donor Email Address')
+            ->that($this->donorCountryCode)->notNull('Missing Billing Country')
+            ->that($this->donorBillingPostcode)->notNull('Missing Billing Postcode')
+            ->that($this->tbgComms)->notNull('Missing tbgComms preference')
+            ->that($this->charityComms)->notNull('Missing charityComms preference')
+            ->that($this->donationStatus, 'donationStatus')
+            ->that($this->donationStatus)->inArray(
+                [DonationStatus::Pending, DonationStatus::PreAuthorized],
+                "Donation status is '{$this->donationStatus->value}', must be " .
+                "'Pending' or 'PreAuthorized' to confirm payment"
+            );
+    }
+
+    /**
+     * @throws RegularGivingDonationToOldToCollect if PreAuthDate is more than one month in the past.
+     * @throws \Assert\AssertionFailedException if PreAuthDate is null or in the future.
+     */
+    public function checkPreAuthDateAllowsCollectionAt(\DateTimeImmutable $now): void
+    {
+        if (!($this->thisIsInDateRangeToConfirm($now))) {
+            throw new RegularGivingDonationToOldToCollect(
+                "Donation #{$this->getid()}} should have been collected at " . "
+                {$this->getPreAuthorizationDate()?->format('Y-m-d')}, will not at this time",
+            );
+        }
+    }
+
+    public function thisIsInDateRangeToConfirm(DateTimeImmutable $now): bool
+    {
+        $preAuthorizationDate = $this->getPreAuthorizationDate();
+
+        if ($preAuthorizationDate === null) {
+            return true;
+        }
+
+        return
+            $preAuthorizationDate <= $now &&
+            $preAuthorizationDate->add(new \DateInterval('P1M')) >= $now;
     }
 }

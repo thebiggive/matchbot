@@ -5,7 +5,6 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Embeddable;
 use MatchBot\Application\Assertion;
-use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @psalm-immutable
@@ -133,6 +132,14 @@ readonly class Money implements \JsonSerializable, \Stringable
         /** @psalm-suppress ImpureMethodCall */
         Assertion::same($this->currency, $that->currency);
 
-        return new self($this->amountInPence +  $that->amountInPence, $this->currency);
+        return new self($this->amountInPence + $that->amountInPence, $this->currency);
+    }
+
+    public function minus(self $that): self
+    {
+        /** @psalm-suppress ImpureMethodCall */
+        Assertion::same($this->currency, $that->currency);
+
+        return new self($this->amountInPence - $that->amountInPence, $this->currency);
     }
 }

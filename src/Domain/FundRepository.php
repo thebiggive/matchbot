@@ -89,8 +89,8 @@ class FundRepository extends SalesforceReadProxyRepository
 
             if ($campaignFunding) {
                 // Existing funding -> check for balance increase and apply any in a high-volume-safe way.
-                // Note that a balance DECREASE on the API side is unsupported and would be ignored, as this
-                // risks invalidating in-progress donation matches.
+                // Note that a balance DECREASE on the API side is unsupported and would be error logged below,
+                // as this risks invalidating in-progress donation matches.
                 $increaseInAmount = bcsub($amountForCampaign, $campaignFunding->getAmount(), 2);
 
                 if (bccomp($increaseInAmount, '0.00', 2) === 1) {
@@ -102,6 +102,13 @@ class FundRepository extends SalesforceReadProxyRepository
                     );
 
                     $campaignFunding->setAmount($amountForCampaign);
+                }
+
+                if (bccomp($increaseInAmount, '0.00', 2) === -1) {
+                    $this->logger->error(
+                        "Funding ID {$campaignFunding->getId()} balance could not be negative-increased by " .
+                        "£{$increaseInAmount}. Salesforce Fund ID {$fundData['id']}."
+                    );
                 }
             } else {
                 // Not a previously existing campaign -> create one and set balances without checking for existing ones.
@@ -156,15 +163,41 @@ class FundRepository extends SalesforceReadProxyRepository
         Assertion::string($name);
 
         if ($fundData['type'] === Pledge::DISCRIMINATOR_VALUE) {
-            $fund = new Pledge(currencyCode: $currencyCode, name: $name);
+            $fund = new Pledge(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']));
         } elseif ($fundData['type'] === 'championFund') {
-            $fund = new ChampionFund(currencyCode: $currencyCode, name: $name);
+            $fund = new ChampionFund(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']));
         } else {
             throw new \UnexpectedValueException("Unknown fund type '{$fundData['type']}'");
         }
-        $fund->setSalesforceId($fundData['id']);
 
         return $fund;
+    }
+
+    /**
+     * @param DateTime $closedBeforeDate Typically now
+     * @param DateTime $closedSinceDate Typically 1 hour ago as determined at the point retro match script started
+     * @return Fund[]
+     */
+    public function findForCampaignsClosedSince(DateTime $closedBeforeDate, DateTime $closedSinceDate): array
+    {
+        $query = <<<EOT
+            SELECT fund FROM MatchBot\Domain\Fund fund
+            JOIN fund.campaignFundings campaignFunding
+            JOIN campaignFunding.campaigns campaign
+            WHERE
+                campaign.endDate < :closedBeforeDate AND
+                campaign.endDate > :closedSinceDate
+            GROUP BY fund
+EOT;
+
+        /** @var Fund[] $result */
+        $result = $this->getEntityManager()->createQuery($query)
+            ->setParameter('closedBeforeDate', $closedBeforeDate)
+            ->setParameter('closedSinceDate', $closedSinceDate)
+            ->disableResultCache()
+            ->getResult();
+
+        return $result;
     }
 
     /**

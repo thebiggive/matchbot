@@ -35,10 +35,7 @@ class CampaignFunding extends Model
     #[ORM\ManyToMany(targetEntity: Campaign::class, inversedBy: 'campaignFundings')]
     protected Collection $campaigns;
 
-    /**
-     * @var Fund
-     */
-    #[ORM\ManyToOne(targetEntity: Fund::class, cascade: ['persist'])]
+    #[ORM\ManyToOne(targetEntity: Fund::class, cascade: ['persist'], inversedBy: 'campaignFundings')]
     protected Fund $fund;
 
     /**

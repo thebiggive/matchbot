@@ -6,7 +6,6 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
@@ -37,8 +36,7 @@ class CancelAllTest extends TestCase
     public function testCancelTwoSuccess(): void
     {
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
 
         /** @var list<Donation> $twoDonations */
         $twoDonations = [
@@ -84,7 +82,7 @@ class CancelAllTest extends TestCase
         $donationRepoProphecy->releaseMatchFunds(Argument::type(Donation::class))
             ->shouldBeCalledTimes(2);
 
-        $entityManagerProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         /**
          * @psalm-suppress MixedFunctionCall
@@ -118,7 +116,7 @@ class CancelAllTest extends TestCase
         $json = (string) $response->getBody();
         $this->assertJson($json);
         /** @var array{donations: list<array{donationAmount: float, status: string}>} $payload */
-        $payload = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        $payload = json_decode($json, true, 512, \JSON_THROW_ON_ERROR);
         $this->assertArrayHasKey('donations', $payload);
         $this->assertCount(2, $payload['donations']);
 
@@ -149,8 +147,7 @@ class CancelAllTest extends TestCase
     {
         // arrange
         $app = $this->getAppInstance();
-        /** @var Container $container */
-        $container = $app->getContainer();
+        $container = $this->diContainer();
         $request = $this->createRequest('DELETE', self::ROUTE)
             ->withQueryParams(['campaignId' => self::SF_CAMPAIGN_ID]) // missing paymentMethodType
             ->withHeader('x-tbg-auth', TestData\Identity::getTestIdentityTokenComplete());
@@ -158,7 +155,7 @@ class CancelAllTest extends TestCase
         $this->setDoublesInContainer(
             $container,
             $this->prophesize(DonationRepository::class),
-            $this->prophesize(RetrySafeEntityManager::class)
+            $this->prophesize(EntityManagerInterface::class)
         );
 
         // assert
@@ -172,7 +169,7 @@ class CancelAllTest extends TestCase
     /**
      * @param Container $container
      * @param ObjectProphecy<DonationRepository> $donationRepoProphecy
-     * @param ObjectProphecy<RetrySafeEntityManager> $entityManagerProphecy
+     * @param ObjectProphecy<EntityManagerInterface> $entityManagerProphecy
      * @param ObjectProphecy<Stripe>|null $stripeProphecy
      */
     private function setDoublesInContainer(
@@ -183,7 +180,7 @@ class CancelAllTest extends TestCase
     ): void {
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
-        $container->set(RetrySafeEntityManager::class, $entityManagerProphecy->reveal());
+        $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(CampaignRepository::class, $this->prophesize(CampaignRepository::class)->reveal());
         $container->set(DonorAccountRepository::class, $this->prophesize(DonorAccountRepository::class)->reveal());
 

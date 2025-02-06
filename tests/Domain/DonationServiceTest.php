@@ -7,9 +7,10 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Notifier\StripeChatterInterface;
-use MatchBot\Application\Persistence\RetrySafeEntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\MandateNotActive;
@@ -37,6 +38,7 @@ use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
 use Stripe\ConfirmationToken;
 use Stripe\Exception\PermissionException;
+use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Message\ChatMessage;
@@ -141,13 +143,13 @@ class DonationServiceTest extends TestCase
 
         $stripeCustomerId = StripeCustomerId::of('cus_123');
         $donor = new DonorAccount(
-            null,
+            self::randomPersonId(),
             EmailAddress::of('example@email.com'),
             DonorName::of('first', 'last'),
             $stripeCustomerId,
         );
         $donor->setBillingPostcode('SW11AA');
-        $donor->setBillingCountryCode('GB');
+        $donor->setBillingCountry(Country::GB());
         $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_paymentMethodID'));
 
         $donation = $mandate->createPreAuthorizedDonation(
@@ -169,19 +171,25 @@ class DonationServiceTest extends TestCase
         bool $withAlwaysCrashingEntityManager = false,
         LoggerInterface $logger = null,
     ): DonationService {
-        $emProphecy = $this->prophesize(RetrySafeEntityManager::class);
+        $emProphecy = $this->prophesize(EntityManagerInterface::class);
         if ($withAlwaysCrashingEntityManager) {
             /**
              * @psalm-suppress InternalMethod
              * @psalm-suppress InternalClass Hard to simulate `final` exception otherwise
              */
-            $emProphecy->persistWithoutRetries(Argument::type(Donation::class))->willThrow(
+            $emProphecy->persist(Argument::type(Donation::class))->willThrow(
                 new UniqueConstraintViolationException(new Exception('EXCEPTION_MESSAGE'), null)
             );
-            $emProphecy->isOpen()->willReturn(true);
+        } else {
+            $emProphecy->persist(Argument::type(Donation::class))->willReturn(null);
+            $emProphecy->flush()->willReturn(null);
         }
 
         $logger = $logger ?? new NullLogger();
+
+        $clockProphecy = $this->prophesize(ClockInterface::class);
+        $clockProphecy->now()->willReturn(new \DateTimeImmutable('1970-01-01')); // datetime doesnt matter
+        $clockProphecy->sleep(Argument::any())->will(fn() => null); // ignore calls to sleep
 
         return new DonationService(
             donationRepository: $this->donationRepoProphecy->reveal(),
@@ -191,7 +199,7 @@ class DonationServiceTest extends TestCase
             stripe: $this->stripeProphecy->reveal(),
             matchingAdapter: $this->prophesize(Adapter::class)->reveal(),
             chatter: $this->chatterProphecy->reveal(),
-            clock: $this->prophesize(ClockInterface::class)->reveal(),
+            clock: $clockProphecy->reveal(),
             rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
             bus: $this->createStub(RoutableMessageBus::class),
@@ -261,7 +269,8 @@ class DonationServiceTest extends TestCase
         ])->shouldBeCalledOnce();
 
         $this->stripeProphecy->confirmPaymentIntent($paymentIntentId, [
-            'confirmation_token' => $confirmationTokenId->stripeConfirmationTokenId
+            'confirmation_token' => $confirmationTokenId->stripeConfirmationTokenId,
+            'capture_method' => 'automatic',
         ])->shouldBeCalledOnce();
 
         // act

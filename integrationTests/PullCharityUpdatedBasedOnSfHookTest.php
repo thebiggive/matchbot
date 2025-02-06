@@ -29,7 +29,6 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
         $campaign = TestCase::someCampaign();
         $charity = $campaign->getCharity();
         $sfId = $charity->getSalesforceId();
-        \assert(is_string($sfId));
 
         $em->persist($campaign);
         $em->persist($charity);

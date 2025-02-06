@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace MatchBot\Tests\TestData;
 
 use Firebase\JWT\JWT;
+use MatchBot\Domain\Country;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\StripeCustomerId;
+use MatchBot\Domain\StripePaymentMethodId;
 
 /**
  * Static Identity helpers for both unit & integration tests.
@@ -83,7 +85,8 @@ class Identity
             StripeCustomerId::of(self::STRIPE_ID),
         );
         $donorAccount->setBillingPostcode('E17');
-        $donorAccount->setBillingCountryCode('GB');
+        $donorAccount->setBillingCountry(Country::GB());
+        $donorAccount->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
 
         return $donorAccount;
     }

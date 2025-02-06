@@ -6,7 +6,7 @@ use DateTime;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
-use MatchBot\Application\Messenger\AbstractStateChanged;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\NotFoundException;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -153,6 +153,11 @@ interface DonationRepository
     /**
      * @return list<Donation>
      */
+    public function findDonationsToSetPaymentIntent(\DateTimeImmutable $atDateTime, int $maxBatchSize): array;
+
+    /**
+     * @return list<Donation>
+     */
     public function findPreAuthorizedDonationsReadyToConfirm(\DateTimeImmutable $atDateTime, int $limit): array;
 
     public function maxSequenceNumberForMandate(int $mandateId): ?DonationSequenceNumber;
@@ -170,7 +175,8 @@ interface DonationRepository
     public function findPendingByDonorCampaignAndMethod(string $donorStripeId, Salesforce18Id $campaignId, PaymentMethodType $paymentMethodType,): array;
 
     public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation;
-    public function push(AbstractStateChanged $changeMessage, bool $isNew): void;
+
+    public function push(DonationUpserted $changeMessage): void;
 
     /**
      * @return ?Donation

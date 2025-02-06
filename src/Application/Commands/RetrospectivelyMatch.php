@@ -9,7 +9,10 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Messenger\FundTotalUpdated;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\Fund;
+use MatchBot\Domain\FundRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -26,6 +29,10 @@ use Symfony\Component\Notifier\Message\ChatMessage;
  * Find complete donations to matched campaigns with less matching than their full value, from the past N days
  * if specified, and allocate any newly-available match funds to them.
  *
+ * Also does some follow up tasks that make sense after matching is updated:
+ * 1. Redistributes any match funds to higher allocation order funds (e.g. from champion funds to pledges) if appropriate.
+ * 2. If running without --days-back and campaigns just closed, pushes their funds' amounts used to Salesforce.
+ *
  * If not argument (number of days) is given, campaigns which closed within the last hour are checked
  * and all of their donations are eligible for matching.
  */
@@ -38,6 +45,7 @@ class RetrospectivelyMatch extends LockingCommand
 {
     public function __construct(
         private DonationRepository $donationRepository,
+        private FundRepository $fundRepository,
         private ChatterInterface $chatter,
         private RoutableMessageBus $bus,
         private EntityManagerInterface $entityManager,
@@ -57,18 +65,18 @@ class RetrospectivelyMatch extends LockingCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        if (!is_numeric($input->getArgument('days-back'))) {
+        $recentlyClosedMode = !is_numeric($input->getArgument('days-back'));
+        $oneHourBeforeExecStarted = (new DateTime('now'))->sub(new \DateInterval('PT1H'));
+
+        if ($recentlyClosedMode) {
             // Default mode is now to auto match for campaigns that *just* closed.
             $output->writeln('Automatically evaluating campaigns which closed in the past hour');
-
-            $oneHourAgo = (new DateTime('now'))->sub(new \DateInterval('PT1H'));
             $toCheckForMatching = $this->donationRepository
-                ->findNotFullyMatchedToCampaignsWhichClosedSince($oneHourAgo);
+                ->findNotFullyMatchedToCampaignsWhichClosedSince($oneHourBeforeExecStarted);
         } else {
             // Allow + round non-whole day count.
             $daysBack = round((float) $input->getArgument('days-back'));
             $output->writeln("Looking at past $daysBack days' donations");
-
             $sinceDate = (new DateTime('now'))->sub(new \DateInterval("P{$daysBack}D"));
             $toCheckForMatching = $this->donationRepository
                 ->findRecentNotFullyMatchedToMatchCampaigns($sinceDate);
@@ -121,6 +129,16 @@ class RetrospectivelyMatch extends LockingCommand
 
         [$numberChecked, $donationsAmended] = $this->matchFundsRedistributor->redistributeMatchFunds();
         $output->writeln("Checked $numberChecked donations and redistributed matching for $donationsAmended");
+
+        // Intentionally use the "stale" `$oneHourBeforeExecStarted` – we want to include funds related to all
+        // campaigns processed above, even if the previous work took a long time.
+        $funds = $this->fundRepository->findForCampaignsClosedSince(new DateTime('now'), $oneHourBeforeExecStarted);
+        foreach ($funds as $fund) {
+            $this->bus->dispatch(new Envelope(FundTotalUpdated::fromFund($fund)));
+        }
+
+        $fundSFIds = implode(', ', array_map(static fn(Fund $f) => $f->getSalesforceId(), $funds));
+        $output->writeln('Pushed fund totals to Salesforce for ' . count($funds) . ' funds: ' . $fundSFIds);
 
         return 0;
     }

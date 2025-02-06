@@ -28,7 +28,7 @@ readonly class DonationUpsertedHandler
 
         $this->logger->info("DUH invoked for UUID: $donationUUID");
         try {
-            $this->donationRepository->push($message, false);
+            $this->donationRepository->push($message);
         } catch (\Throwable $exception) {
             $this->logger->error(sprintf(
                 "DUH: Exception %s on attempt to push donation %s: %s. Trace: %s",

@@ -17,14 +17,13 @@ class Mailer extends Common
     public function sendEmail(array $requestBody): void
     {
         try {
-            $baseUri = $this->getSetting('mailer', 'baseUri');
-            $uri = $baseUri . '/v1/send';
+            $uri = $this->baseUri() . '/v1/send';
             $response = $this->getHttpClient()->post(
                 $uri,
                 [
                     'json' => $requestBody,
                     'headers' => [
-                        'x-send-verify-hash' => $this->hash(json_encode($requestBody)),
+                        'x-send-verify-hash' => $this->hash(json_encode($requestBody, \JSON_THROW_ON_ERROR)),
                     ],
                 ]
             );
@@ -36,7 +35,7 @@ class Mailer extends Common
                     '%s email callout didn\'t return 200. It returned code: %s. Request body: %s. Response body: %s.',
                     $requestBody['templateKey'],
                     $response->getStatusCode(),
-                    json_encode($requestBody),
+                    json_encode($requestBody, \JSON_THROW_ON_ERROR),
                     $response->getBody()->getContents(),
                 ));
                 return;
@@ -68,6 +67,11 @@ class Mailer extends Common
 
     private function hash(string $body): string
     {
-        return hash_hmac('sha256', trim($body), $this->getSetting('mailer', 'sendSecret'));
+        return hash_hmac('sha256', trim($body), $this->getMailerSetting('sendSecret'));
+    }
+
+    private function baseUri(): string
+    {
+        return $this->getMailerSetting('baseUri');
     }
 }

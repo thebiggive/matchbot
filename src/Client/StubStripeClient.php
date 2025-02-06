@@ -5,6 +5,8 @@ namespace MatchBot\Client;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
 use Ramsey\Uuid\Uuid;
+use Stripe\BalanceTransaction;
+use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
@@ -76,5 +78,20 @@ class StubStripeClient implements Stripe
         $confirmationToken->payment_method_preview['card'] = ['brand' => 'discover', 'country' => 'GB'];
 
         return $confirmationToken;
+    }
+
+    public function createRegularGivingCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
+    {
+        return $this->createCustomerSession($stripeCustomerId);
+    }
+
+    public function retrieveCharge(string $chargeId): Charge
+    {
+        throw new \Exception("Retrieve Charge not implemented in stub- not currently used in load tests");
+    }
+
+    public function retrieveBalanceTransaction(string $id): BalanceTransaction
+    {
+        throw new \Exception("Retrieve Balance Transaction not implemented in stub- not currently used in load tests");
     }
 }

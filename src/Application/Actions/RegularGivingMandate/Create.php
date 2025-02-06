@@ -9,13 +9,16 @@ use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\MandateCreate;
+use MatchBot\Application\Security\Security;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\StripeConfirmationTokenId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -34,6 +37,7 @@ class Create extends Action
         private SerializerInterface $serializer,
         private EntityManagerInterface $em,
         private \DateTimeImmutable $now,
+        private Security $securityService,
     ) {
         parent::__construct($logger);
     }
@@ -44,8 +48,7 @@ class Create extends Action
             throw new HttpNotFoundException($request);
         }
 
-        $donorIdString = $request->getAttribute(PersonWithPasswordAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
-        \assert(is_string($donorIdString));
+        $donor = $this->securityService->requireAuthenticatedDonorAccountWithPassword($request);
         $body = (string) $request->getBody();
 
         try {
@@ -76,17 +79,22 @@ class Create extends Action
 
         $charity = $campaign->getCharity();
 
-        // create donor account if not existing. For now we assume the donor account already exists in the Matchbot DB.
-
         try {
             $mandate = $this->mandateService->setupNewMandate(
-                donorID: PersonId::of($donorIdString),
+                donor: $donor,
                 amount: $mandateData->amount,
                 campaign: $campaign,
                 giftAid: $mandateData->giftAid,
                 dayOfMonth: $mandateData->dayOfMonth,
+                billingCountry: $mandateData->billingCountry,
+                billingPostCode: $mandateData->billingPostcode,
+                tbgComms: $mandateData->tbgComms,
+                charityComms: $mandateData->charityComms,
+                confirmationTokenId: $mandateData->stripeConfirmationTokenId,
+                homeAddress: $mandateData->homeAddress,
+                homePostcode: $mandateData->homePostcode,
             );
-        } catch (WrongCampaignType $e) {
+        } catch (WrongCampaignType | \UnexpectedValueException $e) {
             return $this->validationError(
                 $response,
                 $e->getMessage(),
@@ -97,7 +105,16 @@ class Create extends Action
             return $this->validationError(
                 $response,
                 $e->getMessage(),
-                null,
+                'Sorry, we were not able to take your regular donation as there are insufficient match funds available',
+                false,
+            );
+        } catch (DonationNotCollected $e) {
+            return $this->validationError(
+                $response,
+                $e->getMessage(),
+                'Sorry, we were not able to collect the payment for your first donation. ' .
+                'No regular giving agreement has been created.' .
+                'Consider using another payment method or contacting your card issuer.',
                 false,
             );
         }
