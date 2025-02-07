@@ -1757,7 +1757,7 @@ class Donation extends SalesforceWriteProxy
             return null;
         }
 
-        // cheating a little by asserting that currency is GBP, since it is always likely to be.
+        // @todo-multi-currency cheating a little by asserting that currency is GBP, since it is always likely to be.
         Assertion::same($this->currencyCode, 'GBP');
         return Money::fromNumericStringGBP($this->tipRefundAmount);
     }
