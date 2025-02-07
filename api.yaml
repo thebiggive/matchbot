@@ -588,6 +588,17 @@ components:
           default: 0.00
           example: 4.50
           maximum: 25000.00
+        tipRefundAmount:
+          type: number
+          required: false
+          description: Size of tip that was collected by BG and then refunded, e.g. in case donor tipped 
+                       by mistake.
+                       Initially will only exist in the SF salesforceUpsert operation. In
+                       future may be read-only in the API matchbot presents to FE. We won't
+                       allow tip refunds to be sent directly from FE, since they have to be
+                       created by BG staff.
+          example: 4.50
+          maximum: 25000.00
         tipGiftAid:
           type: boolean
           example: true
