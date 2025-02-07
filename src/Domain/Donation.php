@@ -260,6 +260,16 @@ class Donation extends SalesforceWriteProxy
     protected string $tipAmount = '0.00';
 
     /**
+     * @var numeric-string  Amount refunded to donor in case of accidental tip.
+     *
+     * Only set on donations from Feb 2025 and later.
+     *
+     * @see Donation::$currencyCode
+     */
+    #[ORM\Column(type: 'decimal', precision: 18, scale: 2, nullable: true)]
+    protected ?string $tipRefundAmount = null;
+
+    /**
      * @var bool    Whether Gift Aid was claimed on the 'tip' donation to the Big Give.
      */
     #[ORM\Column(type: 'boolean', nullable: true)]
@@ -512,7 +522,11 @@ class Donation extends SalesforceWriteProxy
 
     public function toSFApiModel(): array
     {
-        $data = [...$this->toFrontEndApiModel(), 'originalPspFee' => (float) $this->getOriginalPspFee()];
+        $data = [
+            ...$this->toFrontEndApiModel(),
+            'originalPspFee' => (float) $this->getOriginalPspFee(),
+            'tipRefundAmount' => $this->getTipRefundAmount()?->toMajorUnitFloat(),
+        ];
 
         // As of mid 2024 only the actual donate frontend gets this value, to avoid
         // confusion around values that are too temporary to be useful in a CRM anyway.
@@ -597,20 +611,26 @@ class Donation extends SalesforceWriteProxy
 
     public function setDonationStatus(DonationStatus $donationStatus): void
     {
-        if ($donationStatus === DonationStatus::Refunded) {
-            throw new \Exception('Donation::recordRefundAt must be used to set refunded status');
-        }
+        // todo at some point - remove this method and replace with more specific command method(s). The only non-test
+        // caller now is passing DonationStatus::Paid.
 
-        if ($donationStatus === DonationStatus::Cancelled) {
-            throw new \Exception('Donation::cancelled must be used to cancel');
-        }
+        /** @psalm-suppress DeprecatedConstant */
+        $this->donationStatus = match ($donationStatus) {
+            DonationStatus::Refunded =>
+                throw new \Exception('Donation::recordRefundAt must be used to set refunded status'),
+            DonationStatus::Cancelled =>
+                throw new \Exception('Donation::cancelled must be used to cancel'),
+            DonationStatus::Collected =>
+                throw new \Exception('Donation::collectFromStripe must be used to collect'),
+            DonationStatus::Chargedback =>
+                throw new \Exception('DonationStatus::Chargedback is deprecated'),
 
-
-        if ($donationStatus === DonationStatus::Collected) {
-            throw new \Exception('Donation::collectFromStripe must be used to collect');
-        }
-
-        $this->donationStatus = $donationStatus;
+            DonationStatus::Failed,
+            DonationStatus::Paid,
+            DonationStatus::Pending,
+            DonationStatus::PreAuthorized
+            => $donationStatus,
+        };
     }
 
     public function getCollectedAt(): ?DateTimeImmutable
@@ -1347,9 +1367,9 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * Sets tip amount to zero and records the refund date.
+     * Sets tip amount to zero and records the refund date. Refund amount must match tip amount.
      */
-    public function setTipRefunded(\DateTimeImmutable $datetime): void
+    public function setTipRefunded(\DateTimeImmutable $datetime, Money $amountRefunded): void
     {
         $this->refundedAt = $datetime;
         Assertion::nullOrEq(
@@ -1357,11 +1377,17 @@ class Donation extends SalesforceWriteProxy
             (string)($this->getAmountFractionalIncTip() / 100)
         );
 
+        Assertion::true(
+            $amountRefunded->equalsIgnoringCurrency($this->tipAmount),
+            'Amount Refunded should equal tip amount'
+        );
+
         if ($this->totalPaidByDonor !== null) {
             $this->totalPaidByDonor = bcsub($this->totalPaidByDonor, $this->tipAmount, 2);
         }
 
         $this->setTipAmount('0.00');
+        $this->tipRefundAmount = $amountRefunded->toNumericString();
     }
 
     public function cancel(): void
@@ -1718,5 +1744,21 @@ class Donation extends SalesforceWriteProxy
         return
             $preAuthorizationDate <= $now &&
             $preAuthorizationDate->add(new \DateInterval('P1M')) >= $now;
+    }
+
+    public function getRefundedAt(): ?DateTimeImmutable
+    {
+        return $this->refundedAt;
+    }
+
+    public function getTipRefundAmount(): ?Money
+    {
+        if ($this->tipRefundAmount === null) {
+            return null;
+        }
+
+        // @todo-multi-currency cheating a little by asserting that currency is GBP, since it is always likely to be.
+        Assertion::same($this->currencyCode, 'GBP');
+        return Money::fromNumericStringGBP($this->tipRefundAmount);
     }
 }

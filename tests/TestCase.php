@@ -242,6 +242,7 @@ class TestCase extends PHPUnitTestCase
 
     /**
      * @param numeric-string $amount
+     * @param numeric-string $tipAmount
      */
     public static function someDonation(
         string $amount = '1',
@@ -250,6 +251,7 @@ class TestCase extends PHPUnitTestCase
         bool $giftAid = false,
         ?RegularGivingMandate $regularGivingMandate = null,
         ?Campaign $campaign = null,
+        string $tipAmount = '0',
     ): Donation {
         return new Donation(
             amount: $amount,
@@ -263,7 +265,7 @@ class TestCase extends PHPUnitTestCase
             donorName: null,
             emailAddress: null,
             countryCode: null,
-            tipAmount: '0',
+            tipAmount: $tipAmount,
             mandate: $regularGivingMandate,
             mandateSequenceNumber: null,
             giftAid: $giftAid,
