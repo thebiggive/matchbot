@@ -552,12 +552,6 @@ components:
         psp:
           type: string
           enum: ['stripe']
-        clientSecret:
-          readOnly: true
-          type: string
-          description: |
-            Identifier used client-side by some PSPs
-            to complete an initialised payment
         pspMethodType:
           type: string
           enum: ["card", "customer_balance"]
@@ -578,11 +572,6 @@ components:
             "Chargedback"
           ]
           example: "Paid"
-        feeCoverAmount:
-          type: number
-          default: 0.00
-          example: 4.50
-          maximum: 25000.00
         tipAmount:
           type: number
           default: 0.00
