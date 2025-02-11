@@ -6,8 +6,8 @@ use MatchBot\Application\AssertionFailedException;
 use MatchBot\Domain\PostCode;
 use MatchBot\Tests\TestCase;
 
-class PostcodeTest extends TestCase {
-
+class PostcodeTest extends TestCase
+{
     /**
      * @dataProvider ukPostcodes
      */
@@ -25,6 +25,25 @@ class PostcodeTest extends TestCase {
     {
         $this->expectException(AssertionFailedException::class);
         Postcode::of($inputPostcode, false);
+    }
+
+    /**
+     * @dataProvider internationalValidPostcodes
+     */
+    public function testItAcceptsInternationalPostcodes(string $inputPostcode): void
+    {
+        $postcode = Postcode::of($inputPostcode, true);
+
+        $this->assertEqualsIgnoringCase($inputPostcode, $postcode->value);
+    }
+
+    /**
+     * @dataProvider invalidinternationalPostcodes
+     */
+    public function testItRejectsInternationalInvalidPostcodes(string $inputPostcode): void
+    {
+        $this->expectException(AssertionFailedException::class);
+        Postcode::of($inputPostcode, true);
     }
 
     /**
@@ -58,6 +77,32 @@ class PostcodeTest extends TestCase {
             ['WC2B5L'], // missing last character
             ['1'],
             ['📮'],
+        ];
+    }
+
+
+    /**
+     * @return list<array{0: string}>
+     */
+    public function internationalValidPostcodes(): array
+    {
+        return [
+            // these may or may not be valid, but we treat them as valid since we don't know details of every
+            // country's postcode system.
+            ['ab'],
+            ['aaaabbbb'],
+        ];
+    }
+
+    /**
+     * @return list<array{0: string}>
+     */
+    public function invalidinternationalPostcodes(): array
+    {
+        return [
+            ['a'], // too short
+            ['aaaabbbba'], // too long
+            ['//'], // Unexpected characters
         ];
     }
 }

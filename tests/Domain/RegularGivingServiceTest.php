@@ -269,7 +269,7 @@ class RegularGivingServiceTest extends TestCase
             charityComms: false,
             confirmationTokenId: null,
             homeAddress: '',
-            homePostcode: PostCode::of('', true),
+            homePostcode: null,
         );
     }
 
