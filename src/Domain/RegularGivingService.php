@@ -45,7 +45,7 @@ readonly class RegularGivingService
     }
 
     /**
-     * @param string|null $homePostcode
+     * @param PostCode|null $homePostcode
      * @param string|null $homeAddress
      * @param bool $charityComms
      * @param bool $tbgComms
@@ -82,7 +82,7 @@ readonly class RegularGivingService
         /**
          * Used for gift aid claim but optional as not given if donor is outside UK. Will be saved to donor account.
          */
-        ?string $homePostcode,
+        ?PostCode $homePostcode,
     ): RegularGivingMandate {
         // should save the address to the donor account if an address was given.
 
@@ -119,7 +119,7 @@ readonly class RegularGivingService
         $homeAddressSupplied = is_string($homeAddress) && trim($homeAddress) !== '';
         if ($homeAddressSupplied) {
             $donor->setHomeAddressLine1(trim($homeAddress));
-            $donor->setHomePostcode(is_null($homePostcode) ? null : trim($homePostcode));
+            $donor->setHomePostcode($homePostcode);
         }
 
         if ($giftAid && ! $homeAddressSupplied) {
@@ -144,7 +144,10 @@ readonly class RegularGivingService
             $this->enrollAndMatchDonations($donations, $mandate);
         } catch (\Throwable $e) {
             $donor->setHomeAddressLine1($donorPreviousHomeAddress);
-            $donor->setHomePostcode($donorPreviousHomePostcode);
+            $donor->setHomePostcode(
+                is_string($donorPreviousHomePostcode) ?
+                    PostCode::of($donorPreviousHomePostcode, true) : null
+            );
 
             foreach ($donations as $donation) {
                 $this->donationService->cancel($donation);
@@ -178,7 +181,10 @@ readonly class RegularGivingService
             $mandate->cancel();
 
             $donor->setHomeAddressLine1($donorPreviousHomeAddress);
-            $donor->setHomePostcode($donorPreviousHomePostcode);
+            $donor->setHomePostcode(
+                is_string($donorPreviousHomePostcode) ?
+                    PostCode::of($donorPreviousHomePostcode, true) : null
+            );
 
             $this->entityManager->flush();
             throw new DonationNotCollected(

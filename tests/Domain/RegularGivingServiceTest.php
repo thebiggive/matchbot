@@ -26,6 +26,7 @@ use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\MandateStatus;
+use MatchBot\Domain\PostCode;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\RegularGivingService;
@@ -188,7 +189,7 @@ class RegularGivingServiceTest extends TestCase
         // arrange
         $donor = $this->donorAccount;
         $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
-        $donor->setHomePostcode('SW1A 1AA'); // prexisting home postcode
+        $donor->setHomePostcode(PostCode::of('SW1A 1AA')); // prexisting home postcode
         $donor->setHomeAddressLine1('Home Address');
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
@@ -219,7 +220,7 @@ class RegularGivingServiceTest extends TestCase
         // arrange
         $donor = $this->donorAccount;
         $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
-        $donor->setHomePostcode('SW1A 1AA'); // prexisting home postcode
+        $donor->setHomePostcode(PostCode::of('SW1A 1AA')); // prexisting home postcode
         $donor->setHomeAddressLine1('Home Address');
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
@@ -238,7 +239,7 @@ class RegularGivingServiceTest extends TestCase
             charityComms: false,
             confirmationTokenId: null,
             homeAddress: 'New Home Address',
-            homePostcode: 'SW2B 2BB',
+            homePostcode: PostCode::of('SW2B 2BB', false),
         );
 
         $this->assertSame('SW2B 2BB', $donor->getHomePostcode());
@@ -268,7 +269,7 @@ class RegularGivingServiceTest extends TestCase
             charityComms: false,
             confirmationTokenId: null,
             homeAddress: '',
-            homePostcode: '',
+            homePostcode: null,
         );
     }
 
@@ -495,7 +496,7 @@ class RegularGivingServiceTest extends TestCase
     {
 
         $this->donorAccount->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
-        $this->donorAccount->setHomePostcode('SW1A 1AA');
+        $this->donorAccount->setHomePostcode(PostCode::of('SW1A 1AA'));
         $this->donorAccount->setHomeAddressLine1('Existing address');
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
@@ -515,7 +516,7 @@ class RegularGivingServiceTest extends TestCase
                 charityComms: false,
                 confirmationTokenId: null,
                 homeAddress: 'New address that we dont expect to save because the service throws',
-                homePostcode: 'SW2B 2BB',
+                homePostcode: PostCode::of('SW2B 2BB'),
             );
             $this->assertFalse(true);
         } catch (CampaignNotOpen $_e) {
