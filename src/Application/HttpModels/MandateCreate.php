@@ -56,7 +56,7 @@ readonly class MandateCreate
         $this->campaignId = Salesforce18Id::ofCampaign($campaignId);
         $this->billingCountry = Country::fromAlpha2OrNull($billingCountry);
 
-        if (is_string($homePostcode)) {
+        if (is_string($homePostcode) && trim($homePostcode) !== '') {
             $this->homePostcode = Postcode::of($homePostcode, $homeIsOutsideUK);
         } else {
             $this->homePostcode = null;
