@@ -7,6 +7,7 @@ use MatchBot\Domain\Country;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\PostCode;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeConfirmationTokenId;
 
@@ -28,6 +29,7 @@ readonly class MandateCreate
      * gave to stripe on the mandate setup form. If not we will use their existing payment method instead.
      */
     public ?StripeConfirmationTokenId $stripeConfirmationTokenId;
+    public ?PostCode $homePostcode;
 
     /**
      * @psalm-suppress PossiblyUnusedMethod - called by Symfony Serializer
@@ -46,12 +48,19 @@ readonly class MandateCreate
         public bool $tbgComms,
         public bool $charityComms,
         public ?string $homeAddress,
-        public ?string $homePostcode,
+        ?string $homePostcode,
+        bool $homeIsOutsideUK = true,
     ) {
         $this->dayOfMonth = DayOfMonth::of($dayOfMonth);
         $this->amount = Money::fromPence($amountInPence, Currency::fromIsoCode($currency));
         $this->campaignId = Salesforce18Id::ofCampaign($campaignId);
         $this->billingCountry = Country::fromAlpha2OrNull($billingCountry);
+
+        if (is_string($homePostcode)) {
+            $this->homePostcode = Postcode::of($homePostcode, $homeIsOutsideUK);
+        } else {
+            $this->homePostcode = null;
+        }
 
         if (is_string($stripeConfirmationTokenId)) {
             $this->stripeConfirmationTokenId = StripeConfirmationTokenId::of($stripeConfirmationTokenId);

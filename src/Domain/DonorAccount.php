@@ -51,6 +51,8 @@ class DonorAccount extends Model
 
     /**
      * From residential address, if donor is claiming Gift Aid.
+     *
+     * Not embedding postcode VO directly because Doctrine doesn't allow remapping field names.
      */
     #[ORM\Column(type: 'string', nullable: true)]
     protected ?string $homePostcode = null;
@@ -144,10 +146,9 @@ class DonorAccount extends Model
         return $this->homePostcode;
     }
 
-    public function setHomePostcode(?string $homePostcode): void
+    public function setHomePostcode(?PostCode $homePostcode): void
     {
-        Assertion::nullOrBetweenLength($homePostcode, 3, 10);
-        $this->homePostcode = $homePostcode;
+        $this->homePostcode = $homePostcode?->value;
     }
 
     public function getBillingPostcode(): ?string

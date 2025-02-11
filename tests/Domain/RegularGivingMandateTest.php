@@ -13,6 +13,7 @@ use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\PostCode;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
@@ -326,7 +327,7 @@ class RegularGivingMandateTest extends TestCase
             DonorName::of('Fred', 'Do'),
             StripeCustomerId::of('cus_123456'),
         );
-        $donor->setHomePostcode('SW1A 1AA');
+        $donor->setHomePostcode(PostCode::of('SW1A 1AA'));
         $donor->setBillingPostcode('SW1A 1AA');
         $donor->setHomeAddressLine1('Address line 1');
         $donor->setBillingCountry(Country::GB());
