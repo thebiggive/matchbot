@@ -74,6 +74,8 @@ class Update extends Action
             throw new DomainRecordNotFoundException('Missing donation ID');
         }
 
+        $donationUUID = $args['donationId'];
+
         $body = (string) $request->getBody();
 
         try {
@@ -90,7 +92,7 @@ class Update extends Action
         ) {
             $this->logger->info("Donation Update non-serialisable payload was: $body");
 
-            $message = 'Donation Update data deserialise error';
+            $message = "Donation Update data deserialise error for donation $donationUUID";
             $exceptionType = get_class($exception);
 
             return $this->validationError(
@@ -104,7 +106,7 @@ class Update extends Action
         if (!isset($donationData->status)) {
             return $this->validationError(
                 $response,
-                "Donation ID {$args['donationId']} could not be updated with missing status",
+                "Donation ID {$donationUUID} could not be updated with missing status",
                 'New status is required'
             );
         }
@@ -119,7 +121,7 @@ class Update extends Action
                 // This lock is important particularly if the donation is cancelled, because cancelling a donation
                 // without locking the row risks multiple cancellation which means we'd end up increasing the value
                 // stored in DB column CampaignFunding.amountAvailable by too much.
-                $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($args['donationId']));
+                $donation = $this->donationRepository->findAndLockOneByUUID(Uuid::fromString($donationUUID));
 
                 if (!$donation) {
                     $this->entityManager->rollback();
@@ -135,7 +137,7 @@ class Update extends Action
 
                     return $this->validationError(
                         $response,
-                        "Donation ID {$args['donationId']} could not be set to status {$donationData->status}",
+                        "Donation ID {$donationUUID} could not be set to status {$donationData->status}",
                         'Status update is only supported for cancellation'
                     );
                 }
@@ -149,12 +151,12 @@ class Update extends Action
                     // Log a warning to more easily spot occurrences in dashboards.
                     $methodSummary = $donation->getPaymentMethodType()?->value ?? '[null]';
                     $this->logger->warning(
-                        "Donation ID {$args['donationId']} auto-confirm attempted with '$methodSummary' payment method",
+                        "Donation ID {$donationUUID} auto-confirm attempted with '$methodSummary' payment method",
                     );
 
                     return $this->validationError(
                         $response,
-                        "Donation ID {$args['donationId']} could not be auto-confirmed",
+                        "Donation ID {$donationUUID} could not be auto-confirmed",
                         'Processing incomplete. Please refresh and check your donation funds balance'
                     );
                 }
@@ -189,7 +191,7 @@ class Update extends Action
             } catch (LockWaitTimeoutException $lockWaitTimeoutException) {
                 $this->logger->warning(sprintf(
                     'Caught LockWaitTimeoutException in Update for donation %s, retry count %d',
-                    $args['donationId'],
+                    $donationUUID,
                     $retryCount,
                 ));
 
@@ -220,7 +222,7 @@ class Update extends Action
 
                     return $this->validationError(
                         $response,
-                        "Donation ID {$args['donationId']} could not be updated",
+                        "Donation ID {$donationUUID} could not be updated",
                         'This donation payment intent has been cancelled. You may wish to start a fresh donation.'
                     );
                 }
@@ -230,7 +232,7 @@ class Update extends Action
         }
 
         throw new \Exception(
-            "Retry count exceeded trying to update donation {$args['donationId']} , retried $retryCount times",
+            "Retry count exceeded trying to update donation {$donationUUID} , retried $retryCount times",
         );
     }
 

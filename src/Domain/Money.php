@@ -142,4 +142,17 @@ readonly class Money implements \JsonSerializable, \Stringable
 
         return new self($this->amountInPence - $that->amountInPence, $this->currency);
     }
+
+    /**
+     * @param numeric-string $amount
+     */
+    public function equalsIgnoringCurrency(string $amount): bool
+    {
+        return bccomp($amount, bcdiv((string) $this->amountInPence, '100', 2), 2) === 0;
+    }
+
+    public function toMajorUnitFloat(): float
+    {
+        return $this->amountInPence / 100;
+    }
 }

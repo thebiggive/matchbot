@@ -19,6 +19,7 @@ use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Pledge;
 use MatchBot\Domain\Salesforce18Id;
@@ -225,6 +226,56 @@ class DonationTest extends TestCase
 
         $donationDataIncludingPrivate = $donation->toSFApiModel();
         $this->assertEquals('1.22', $donationDataIncludingPrivate['originalPspFee']);
+    }
+
+    public function testToSfAPIModel(): void
+    {
+        $donation = self::someDonation(amount: '10', tipAmount: '1');
+
+        $this->assertEquals(
+            [
+                'amountMatchedByChampionFunds' => 0.0,
+                'amountMatchedByPledges' => 0.0,
+                'billingPostalAddress' => null,
+                'charityFee' => 0.0,
+                'charityFeeVat' => 0.0,
+                'charityId' => $donation->getCampaign()->getCharity()->getSalesforceId(),
+                'charityName' => 'Charity Name',
+                'collectedTime' => null,
+                'countryCode' => null,
+                'createdTime' => $donation->getCreatedDate()->format('c'),
+                'currencyCode' => 'GBP',
+                'donationAmount' => 10.0,
+                'donationId' => $donation->getUuid(),
+                'donationMatched' => false,
+                'emailAddress' => null,
+                'firstName' => null,
+                'giftAid' => false,
+                'homeAddress' => null,
+                'homePostcode' => null,
+                'lastName' => 'N/A',
+                'mandate' => null,
+                'matchedAmount' => 0,
+                'optInChampionEmail' => null,
+                'optInCharityEmail' => null,
+                'optInTbgEmail' => null,
+                'originalPspFee' => 0.0,
+                'projectId' => $donation->getCampaign()->getSalesforceId(),
+                'psp' => 'stripe',
+                'pspCustomerId' => null,
+                'pspMethodType' => 'card',
+                'refundedTime' => null,
+                'status' => DonationStatus::Pending,
+                'tbgGiftAidRequestConfirmedCompleteAt' => null,
+                'tipAmount' => 1.0,
+                'tipGiftAid' => null,
+                'tipRefundAmount' => null,
+                'totalPaid' => null,
+                'transactionId' => null,
+                'updatedTime' => $donation->getUpdatedDate()->format('c'),
+            ],
+            $donation->toSfAPIModel()
+        );
     }
 
     public function testAmountMatchedByChampionDefaultsToZero(): void
@@ -1046,5 +1097,16 @@ class DonationTest extends TestCase
 
             ['1.00', false, '0.00'],
         ];
+    }
+
+    public function testSetsTipRefunded(): void
+    {
+        $now = new \DateTimeImmutable('2025-01-01T00:00:00Z');
+        $donation = self::someDonation(tipAmount: '23.53');
+        $refundAmount = Money::fromNumericStringGBP('23.53');
+        $donation->setTipRefunded($now, $refundAmount);
+
+        $this->assertSame($now, $donation->getRefundedAt());
+        $this->assertEquals($refundAmount, $donation->getTipRefundAmount());
     }
 }

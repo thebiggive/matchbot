@@ -610,7 +610,7 @@ class UpdateTest extends TestCase
 
         $expectedPayload = new ActionPayload(400, ['error' => [
             'type' => 'BAD_REQUEST',
-            'description' => 'Donation Update data deserialise error',
+            'description' => 'Donation Update data deserialise error for donation 3aa347b2-b405-11ef-b2db-e3ab222bcba4',
         ]]);
         $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
 
