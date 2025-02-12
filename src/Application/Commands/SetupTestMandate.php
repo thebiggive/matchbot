@@ -19,6 +19,7 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
+use MatchBot\Domain\PostCode;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
@@ -130,7 +131,7 @@ class SetupTestMandate extends LockingCommand
             );
             $donor->setBillingCountry(Country::GB());
             $donor->setBillingPostcode('SW1 1AA');
-            $donor->setHomePostcode('SW1 1AA');
+            $donor->setHomePostcode(PostCode::of('SW1 1AA'));
             $donor->setHomeAddressLine1('Home line 1');
             $this->em->persist($donor);
         }

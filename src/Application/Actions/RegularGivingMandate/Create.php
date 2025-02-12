@@ -53,7 +53,16 @@ class Create extends Action
 
         try {
             $mandateData = $this->serializer->deserialize($body, MandateCreate::class, 'json');
-        } catch (\TypeError | UnexpectedValueException | AssertionFailedException $exception) {
+        } catch (AssertionFailedException $e) {
+            // This will return a message such as below if the donor gives their home address as just "X":
+            //  "Value "X" is too short, it should have at least 2 characters, but only has 1 characters."
+            // Not perfect but more helpful than nothing. FE validation should be added so users won't need to see
+            // this message.
+            return $this->validationError(
+                response: $response,
+                logMessage: $e->getMessage(),
+            );
+        } catch (\TypeError | UnexpectedValueException $exception) {
             /** similar catch with commentary in @see \MatchBot\Application\Actions\Donations\Create */
             $this->logger->info("Mandate Create non-serialisable payload was: $body");
 
