@@ -10,6 +10,9 @@ use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 
 /**
+ * Calculates fees to charge charities per donation. For public facing explanation of fee structure see
+ * https://biggive.org/our-fees/
+ *
  * @psalm-immutable
  */
 class Calculator
@@ -92,6 +95,9 @@ class Calculator
         // a fee on Gift Aid. May vary by card type & country.
 
         $currencyCode = strtoupper($currencyCode); // Just in case (Stripe use lowercase internally).
+
+        self::assertIsGBPOrInUnitTest($currencyCode);
+
         // Currency code has been compulsory for some time.
         /** @psalm-suppress ImpureMethodCall */
         Assertion::keyExists(self::FEES_FIXED, $currencyCode);
@@ -184,5 +190,17 @@ class Calculator
     private function __construct()
     {
         throw new \Exception("Don't construct, use static methods only");
+    }
+
+    private static function assertIsGBPOrInUnitTest(string $currencyCode): void
+    {
+        if (!defined('RUNNING_UNIT_TESTS')) {
+            Assertion::same(
+                'GBP',
+                $currencyCode,
+                "$currencyCode not supported, only GBP supported for fee calculations. Other currency fees would "
+                . "need to be documented at https://biggive.org/our-fees/"
+            );
+        }
     }
 }
