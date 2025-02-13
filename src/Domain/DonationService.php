@@ -311,29 +311,7 @@ class DonationService
         }, 'Donation Create persist before stripe work');
 
         if ($campaign->isMatched()) {
-            // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
-            $this->runWithPossibleRetry(
-                function () use ($donation) {
-                    try {
-                        $this->donationRepository->allocateMatchFunds($donation);
-                    } catch (\Throwable $t) {
-                        // warning indicates that we *may* retry, as it depends on whether this is in the last retry or
-                        // not.
-                        $this->logger->warning(sprintf('Allocation got error, may retry: %s', $t->getMessage()));
-
-                        $this->matchingAdapter->releaseNewlyAllocatedFunds();
-
-                        // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
-                        // would be reduced again when the donation expires.
-                        $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
-
-                        $this->entityManager->flush();
-
-                        throw $t;
-                    }
-                },
-                'allocate match funds'
-            );
+            $this->attemptFundingAllocation($donation);
         }
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
@@ -777,5 +755,32 @@ class DonationService
         }
 
         return $txn->fee;
+    }
+
+    public function attemptFundingAllocation(Donation $donation): void
+    {
+        // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
+        $this->runWithPossibleRetry(
+            function () use ($donation) {
+                try {
+                    $this->donationRepository->allocateMatchFunds($donation);
+                } catch (\Throwable $t) {
+                    // warning indicates that we *may* retry, as it depends on whether this is in the last retry or
+                    // not.
+                    $this->logger->warning(sprintf('Allocation got error, may retry: %s', $t->getMessage()));
+
+                    $this->matchingAdapter->releaseNewlyAllocatedFunds();
+
+                    // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
+                    // would be reduced again when the donation expires.
+                    $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
+
+                    $this->entityManager->flush();
+
+                    throw $t;
+                }
+            },
+            'allocate match funds'
+        );
     }
 }
