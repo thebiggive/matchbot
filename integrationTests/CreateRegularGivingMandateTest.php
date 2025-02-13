@@ -97,17 +97,32 @@ class CreateRegularGivingMandateTest extends IntegrationTest
     public function testItCreatesRegularGivingMandate(): void
     {
         // act
-        $response = $this->createRegularGivingMandate();
+        $response = $this->createRegularGivingMandate(true);
 
         // assert
         $this->assertSame(201, $response->getStatusCode());
-        $mandateId = $this->assertDetailsMandateInDB();
+        $mandateId = $this->assertMandateDetailsInDB();
 
         $this->assertDonationDetailsInDB($mandateId);
+        $this->assertFundingWithdrawlCount($mandateId, expectedCount: 3);
+    }
+
+    public function testItCreatesUnMatchedRegularGivingMandate(): void
+    {
+        // act
+        $response = $this->createRegularGivingMandate(false);
+
+        // assert
+        $this->assertSame(201, $response->getStatusCode());
+        $mandateId = $this->assertMandateDetailsInDB();
+
+        $this->assertDonationDetailsInDB($mandateId);
+        $this->assertFundingWithdrawlCount($mandateId, expectedCount: 0);
     }
 
 
     protected function createRegularGivingMandate(
+        bool $useMatchFunds
     ): ResponseInterface {
         $campaignId = $this->randomString();
 
@@ -122,17 +137,19 @@ class CreateRegularGivingMandateTest extends IntegrationTest
                 ],
                 // The Symfony Serializer will throw an exception if the JSON document doesn't include all the required
                 // constructor params of DonationCreate
-                body: <<<EOF
-                {
-                    "currency": "GBP",
-                    "amountInPence": $this->pencePerMonth,
-                    "dayOfMonth": 1,
-                    "giftAid": false,
-                    "campaignId": "$campaignId",
-                    "tbgComms": true,
-                    "charityComms": true
-                }
-            EOF,
+                body: json_encode(
+                    [
+                    'currency' => "GBP",
+                    'amountInPence' => $this->pencePerMonth,
+                    'dayOfMonth' => 1,
+                    'giftAid' => false,
+                    'campaignId' => $campaignId,
+                    'unmatched' => ! $useMatchFunds, // negated as donations will be matched by default.
+                    'tbgComms' => true,
+                    'charityComms' => true
+                    ],
+                    \JSON_THROW_ON_ERROR
+                ),
                 serverParams: ['REMOTE_ADDR' => '127.0.0.1']
             )
         );
@@ -151,7 +168,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         }
     }
 
-    public function assertDetailsMandateInDB(): int
+    public function assertMandateDetailsInDB(): int
     {
         $mandateDatabaseRows = $this->db()->executeQuery(
             "SELECT * from RegularGivingMandate where donationAmount_amountInPence = ?",
@@ -189,5 +206,17 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $this->assertEquals((float)($this->pencePerMonth / 100), $donationDatabaseRows[0]['amount']);
         $this->assertEquals((float)($this->pencePerMonth / 100), $donationDatabaseRows[1]['amount']);
         $this->assertEquals((float)($this->pencePerMonth / 100), $donationDatabaseRows[2]['amount']);
+    }
+
+    private function assertFundingWithdrawlCount(int $mandateId, int $expectedCount): void
+    {
+        $fundingWithdrawls = $this->db()->executeQuery(
+            "SELECT FundingWithdrawal.id from FundingWithdrawal 
+             join Donation ON FundingWithdrawal.donation_id = Donation.id
+                            where Donation.mandate_id = ? ORDER BY mandateSequenceNumber asc",
+            [$mandateId]
+        )->fetchAllAssociative();
+
+        $this->assertCount($expectedCount, $fundingWithdrawls);
     }
 }

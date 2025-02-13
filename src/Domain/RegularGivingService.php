@@ -45,6 +45,7 @@ readonly class RegularGivingService
     }
 
     /**
+     * @param bool $matchDonations
      * @param PostCode|null $homePostcode
      * @param string|null $homeAddress
      * @param bool $charityComms
@@ -83,6 +84,7 @@ readonly class RegularGivingService
          * Used for gift aid claim but optional as not given if donor is outside UK. Will be saved to donor account.
          */
         ?PostCode $homePostcode,
+        bool $matchDonations,
     ): RegularGivingMandate {
         // should save the address to the donor account if an address was given.
 
@@ -111,6 +113,7 @@ readonly class RegularGivingService
             dayOfMonth: $dayOfMonth,
             tbgComms: $tbgComms,
             charityComms: $charityComms,
+            matchDonations: $matchDonations
         );
 
         $donorPreviousHomeAddress = $donor->getHomeAddressLine1();
@@ -335,10 +338,8 @@ readonly class RegularGivingService
     private function enrollAndMatchDonations(array $donations, RegularGivingMandate $mandate): void
     {
         foreach ($donations as $donation) {
-            $this->donationService->enrollNewDonation($donation);
-            if (!$donation->isFullyMatched()) {
-                // @todo-regular-giving:
-                // see ticket DON-1003 - that will require us to not throw here if the donor doesn't mind their donations being unmatched.
+            $this->donationService->enrollNewDonation($donation, $mandate->isMatched());
+            if (!$donation->isFullyMatched() && $mandate->isMatched()) {
                 throw new NotFullyMatched(
                     "Donation could not be fully matched, need to match {$donation->getAmount()}," .
                     " only matched {$donation->getFundingWithdrawalTotal()}"

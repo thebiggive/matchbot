@@ -9,6 +9,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
+use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -139,7 +140,7 @@ class DonationService
             ));
         }
 
-        $this->enrollNewDonation($donation);
+        $this->enrollNewDonation($donation, attemptMatching: true);
 
         return $donation;
     }
@@ -285,18 +286,21 @@ class DonationService
      * - Allocating match funds to the donation
      * - Creating Stripe Payment intent
      *
+     * @param bool $attemptMatching Whether to use match funds. Match funds will be withdrawn based on
+     *                              availability or donation amount, which ever is smaller.
      * @throws CampaignNotOpen
      * @throws CharityAccountLacksNeededCapaiblities
      * @throws CouldNotMakeStripePaymentIntent
      * @throws DBALServerException
      * @throws ORMException
      * @throws StripeAccountIdNotSetForAccount
-     * @throws TransportExceptionInterface
-     * @throws \MatchBot\Client\NotFoundException
      * @throws WrongCampaignType
+     * @throws NotFoundException
+     * @throws ExceptionInterface
      */
-    public function enrollNewDonation(Donation $donation): void
+    public function enrollNewDonation(Donation $donation, bool $attemptMatching): void
     {
+
         $campaign = $donation->getCampaign();
 
         $at = new \DateTimeImmutable();
@@ -310,9 +314,10 @@ class DonationService
             $this->entityManager->flush();
         }, 'Donation Create persist before stripe work');
 
-        if ($campaign->isMatched()) {
+        if ($campaign->isMatched() && $attemptMatching) {
             $this->attemptFundingAllocation($donation);
         }
+
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
         if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {

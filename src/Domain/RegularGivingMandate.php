@@ -29,9 +29,13 @@ class RegularGivingMandate extends SalesforceWriteProxy
     private const int MAX_AMOUNT_PENCE = 500_00;
 
     /**
-     * The first donations taken for a regular giving mandate are matched, later donations are not.
+     * The first donations taken for a regular giving mandate are usually matched, later donations are not. However,
+     * donors can elect to make an unmatched mandate so this does not always apply. To get the number matched for
+     * a specific donation use getNumberofMatchedDonations, which is why this is private.
+     *
+     * @see RegularGivingMandate::getNumberofMatchedDonations()
      */
-    public const int NUMBER_OF_DONATIONS_TO_MATCH = 3;
+    private const int NUMBER_OF_DONATIONS_TO_MATCH = 3;
 
     #[ORM\Column(unique: true, type: 'uuid')]
     private readonly UuidInterface $uuid;
@@ -85,6 +89,14 @@ class RegularGivingMandate extends SalesforceWriteProxy
     private MandateStatus $status = MandateStatus::Pending;
 
     /**
+     * Whether the first donations should be matched - if match funds are not available we will allow donors
+     * to create an unmatched mandate. If false then donations may still end up incidentally matched e.g. via match
+     * funds redistribution at campaign end.
+     */
+    #[ORM\Column()]
+    private bool $isMatched;
+
+    /**
      * @param Salesforce18Id<Campaign> $campaignId
      * @param Salesforce18Id<Charity> $charityId
      *
@@ -99,6 +111,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         DayOfMonth $dayOfMonth,
         bool $tbgComms = false,
         bool $charityComms = false,
+        bool $matchDonations = true,
     ) {
         $this->createdNow();
         $minAmount = Money::fromPence(self::MIN_AMOUNT_PENCE, Currency::GBP);
@@ -119,6 +132,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->dayOfMonth = $dayOfMonth;
         $this->tbgComms = $tbgComms;
         $this->charityComms = $charityComms;
+        $this->isMatched = $matchDonations;
     }
 
     /**
@@ -147,7 +161,8 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'totalCharityReceivesPerInitial' => $this->totalCharityReceivesPerInitial(),
             'campaignId' => $this->campaignId,
             'charityId' => $this->charityId,
-            'numberOfMatchedDonations' => self::NUMBER_OF_DONATIONS_TO_MATCH,
+            'isMatched' => $this->isMatched,
+            'numberOfMatchedDonations' => $this->getNumberofMatchedDonations(),
             'schedule' => [
                 'type' => 'monthly',
                 'dayOfMonth' => $this->dayOfMonth->value,
@@ -379,7 +394,6 @@ class RegularGivingMandate extends SalesforceWriteProxy
      * @return Money The total amount that we expect the charity to receive per each of the donors initial, matched
      * donations, from us and HMRC in total. I.e. core amount + matched amount + gift aid amount.
      *
-     * @todo-regular-giving revisit this as part of DON-1003 when matched amount may vary per donation.
      */
     private function totalCharityReceivesPerInitial(): Money
     {
@@ -388,7 +402,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     public function getMatchedAmount(): Money
     {
-        return $this->donationAmount;
+        return $this->isMatched ?  $this->donationAmount : Money::zero($this->donationAmount->currency);
     }
 
     public function createPendingFirstDonation(Campaign $campaign, DonorAccount $donor): Donation
@@ -422,5 +436,15 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public function donorId(): PersonId
     {
         return $this->donorId;
+    }
+
+    public function isMatched(): bool
+    {
+        return $this->isMatched;
+    }
+
+    public function getNumberofMatchedDonations(): int
+    {
+        return $this->isMatched ? self::NUMBER_OF_DONATIONS_TO_MATCH : 0;
     }
 }

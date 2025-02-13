@@ -97,6 +97,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                     'amountInPence' => 500_00,
                     'currency' => 'GBP',
                 ],
+                'isMatched' => true,
                 'totalCharityReceivesPerInitial' => [
                     'amountInPence' => 1125_00,
                     'currency' => 'GBP',

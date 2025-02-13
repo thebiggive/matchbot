@@ -50,6 +50,7 @@ readonly class MandateCreate
         public ?string $homeAddress,
         ?string $homePostcode,
         bool $homeIsOutsideUK = true,
+        public bool $unmatched = false,
     ) {
         $this->dayOfMonth = DayOfMonth::of($dayOfMonth);
         $this->amount = Money::fromPence($amountInPence, Currency::fromIsoCode($currency));
