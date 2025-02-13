@@ -137,15 +137,14 @@ class RegularGivingServiceTest extends TestCase
     public function testItCreatesRegularGivingMandate(): void
     {
         // arrange
-        $donor = $this->donorAccount;
-        $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
+        $this->givenDonorHasRegularGivingPaymentMethod();
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $this->donationServiceProphecy->confirmDonationWithSavedPaymentMethod(Argument::cetera())->shouldBeCalledOnce();
 
         // act
         $mandate = $regularGivingService->setupNewMandate(
-            $donor,
+            $this->donorAccount,
             Money::fromPoundsGBP(42),
             TestCase::someCampaign(isRegularGiving: true),
             false,
@@ -187,17 +186,15 @@ class RegularGivingServiceTest extends TestCase
     public function testItPreservesHomeAddressIfNotSuppliedOnMandate(): void
     {
         // arrange
-        $donor = $this->donorAccount;
-        $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
-        $donor->setHomePostcode(PostCode::of('SW1A 1AA')); // prexisting home postcode
-        $donor->setHomeAddressLine1('Home Address');
+        $this->givenDonorHasRegularGivingPaymentMethod();
+        $this->givenDonorHasHomeAddressAndPostcode();
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $this->donationServiceProphecy->confirmDonationWithSavedPaymentMethod(Argument::cetera())->shouldBeCalledOnce();
 
         // act
         $regularGivingService->setupNewMandate(
-            $donor,
+            $this->donorAccount,
             Money::fromPoundsGBP(42),
             TestCase::someCampaign(isRegularGiving: true),
             false,
@@ -211,24 +208,22 @@ class RegularGivingServiceTest extends TestCase
             homePostcode: null,
         );
 
-        $this->assertSame('SW1A 1AA', $donor->getHomePostcode());
-        $this->assertSame('Home Address', $donor->getHomeAddressLine1());
+        $this->assertSame('SW1A 1AA', $this->donorAccount->getHomePostcode());
+        $this->assertSame('Home Address', $this->donorAccount->getHomeAddressLine1());
     }
 
     public function testItSavesUpdatedHomeAddressToDonorAccount(): void
     {
         // arrange
-        $donor = $this->donorAccount;
-        $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
-        $donor->setHomePostcode(PostCode::of('SW1A 1AA')); // prexisting home postcode
-        $donor->setHomeAddressLine1('Home Address');
+        $this->givenDonorHasRegularGivingPaymentMethod();
+        $this->givenDonorHasHomeAddressAndPostcode();
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $this->donationServiceProphecy->confirmDonationWithSavedPaymentMethod(Argument::cetera())->shouldBeCalledOnce();
 
         // act
         $regularGivingService->setupNewMandate(
-            $donor,
+            $this->donorAccount,
             Money::fromPoundsGBP(42),
             TestCase::someCampaign(isRegularGiving: true),
             true,
@@ -242,15 +237,14 @@ class RegularGivingServiceTest extends TestCase
             homePostcode: PostCode::of('SW2B 2BB', false),
         );
 
-        $this->assertSame('SW2B 2BB', $donor->getHomePostcode());
-        $this->assertSame('New Home Address', $donor->getHomeAddressLine1());
+        $this->assertSame('SW2B 2BB', $this->donorAccount->getHomePostcode());
+        $this->assertSame('New Home Address', $this->donorAccount->getHomeAddressLine1());
     }
 
     public function testItRejectsAttemptToCreateGAMandateWithNoHomeAddress(): void
     {
         // arrange
-        $donor = $this->donorAccount;
-        $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
+        $this->givenDonorHasRegularGivingPaymentMethod();
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
 
@@ -258,7 +252,7 @@ class RegularGivingServiceTest extends TestCase
         $this->expectExceptionMessage('Home Address is required when gift aid is selected');
         // act
         $regularGivingService->setupNewMandate(
-            $donor,
+            $this->donorAccount,
             Money::fromPoundsGBP(42),
             TestCase::someCampaign(isRegularGiving: true),
             true,
@@ -590,5 +584,16 @@ class RegularGivingServiceTest extends TestCase
     {
         $this->donorAccount->setBillingCountry(Country::GB());
         $this->donorAccount->setBillingPostcode('SW11AA');
+    }
+
+    private function givenDonorHasRegularGivingPaymentMethod(): void
+    {
+        $this->donorAccount->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
+    }
+
+    private function givenDonorHasHomeAddressAndPostcode(): void
+    {
+        $this->donorAccount->setHomePostcode(PostCode::of('SW1A 1AA'));
+        $this->donorAccount->setHomeAddressLine1('Home Address');
     }
 }
