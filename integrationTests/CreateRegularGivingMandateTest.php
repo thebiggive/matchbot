@@ -23,6 +23,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 class CreateRegularGivingMandateTest extends IntegrationTest
 {
     private MessageBusInterface $originalMessageBus;
+    private int $pencePerMonth;
 
     public function setUp(): void
     {
@@ -37,17 +38,8 @@ class CreateRegularGivingMandateTest extends IntegrationTest
             ->shouldBeCalledTimes(5); // three donations + 1 mandate create + 1 mandate update
 
         $this->getContainer()->set(MessageBusInterface::class, $messageBusProphecy->reveal());
-    }
+        $this->pencePerMonth = random_int(1, 500) * 100;
 
-    public function tearDown(): void
-    {
-        $this->getContainer()->set(MessageBusInterface::class, $this->originalMessageBus);
-    }
-
-    public function testItCreatesRegularGivingMandate(): void
-    {
-        // arrange
-        $pencePerMonth = random_int(1, 500) * 100;
 
         $pi = new PaymentIntent('payment-intent-id-xyz' . IntegrationTest::randomString());
         $pi->status = PaymentIntent::STATUS_SUCCEEDED;
@@ -68,7 +60,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
 
         $stripeProphecy = $this->prophesize(Stripe::class);
         $stripeProphecy->createPaymentIntent(
-            Argument::that(fn(array $payload) => ($payload['amount'] === $pencePerMonth))
+            Argument::that(fn(array $payload) => ($payload['amount'] === $this->pencePerMonth))
         )
             ->shouldBeCalledOnce()
             ->willReturn($pi);
@@ -95,45 +87,27 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $this->getContainer()->set(Stripe::class, $stripeProphecy->reveal());
 
         $this->ensureDbHasDonorAccount();
+    }
 
+    public function tearDown(): void
+    {
+        $this->getContainer()->set(MessageBusInterface::class, $this->originalMessageBus);
+    }
+
+    public function testItCreatesRegularGivingMandate(): void
+    {
         // act
-        $response = $this->createRegularGivingMandate($pencePerMonth);
+        $response = $this->createRegularGivingMandate();
 
         // assert
         $this->assertSame(201, $response->getStatusCode());
-        $mandateDatabaseRows = $this->db()->executeQuery(
-            "SELECT * from RegularGivingMandate where donationAmount_amountInPence = ?",
-            [$pencePerMonth]
-        )
-            ->fetchAllAssociative();
-        $this->assertNotEmpty($mandateDatabaseRows);
-        $this->assertSame($pencePerMonth, $mandateDatabaseRows[0]['donationAmount_amountInPence']);
-        $this->assertSame(1, $mandateDatabaseRows[0]['tbgComms']);
-        $this->assertSame(1, $mandateDatabaseRows[0]['charityComms']);
+        $mandateId = $this->assertDetailsMandateInDB();
 
-        $donationDatabaseRows = $this->db()->executeQuery(
-            "SELECT * from Donation where Donation.mandate_id = ? ORDER BY mandateSequenceNumber asc",
-            [$mandateDatabaseRows[0]['id']]
-        )->fetchAllAssociative();
-
-        $this->assertCount(3, $donationDatabaseRows);
-
-        $this->assertSame('Collected', $donationDatabaseRows[0]['donationStatus']);
-        $this->assertSame('PreAuthorized', $donationDatabaseRows[1]['donationStatus']);
-        $this->assertSame('PreAuthorized', $donationDatabaseRows[2]['donationStatus']);
-
-        $this->assertNull($donationDatabaseRows[0]['preAuthorizationDate']);
-        $this->assertNotNull($donationDatabaseRows[1]['preAuthorizationDate']);
-        $this->assertNotNull($donationDatabaseRows[2]['preAuthorizationDate']);
-
-        $this->assertEquals((float)($pencePerMonth / 100), $donationDatabaseRows[0]['amount']);
-        $this->assertEquals((float)($pencePerMonth / 100), $donationDatabaseRows[1]['amount']);
-        $this->assertEquals((float)($pencePerMonth / 100), $donationDatabaseRows[2]['amount']);
+        $this->assertDonationDetailsInDB($mandateId);
     }
 
 
     protected function createRegularGivingMandate(
-        int $pencePerMonth
     ): ResponseInterface {
         $campaignId = $this->randomString();
 
@@ -151,7 +125,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
                 body: <<<EOF
                 {
                     "currency": "GBP",
-                    "amountInPence": $pencePerMonth,
+                    "amountInPence": $this->pencePerMonth,
                     "dayOfMonth": 1,
                     "giftAid": false,
                     "campaignId": "$campaignId",
@@ -175,5 +149,45 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         if (! $repository->findByPersonId($donorAccount->id())) {
             $repository->save($donorAccount);
         }
+    }
+
+    public function assertDetailsMandateInDB(): int
+    {
+        $mandateDatabaseRows = $this->db()->executeQuery(
+            "SELECT * from RegularGivingMandate where donationAmount_amountInPence = ?",
+            [$this->pencePerMonth]
+        )
+            ->fetchAllAssociative();
+        $this->assertNotEmpty($mandateDatabaseRows);
+        $this->assertSame($this->pencePerMonth, $mandateDatabaseRows[0]['donationAmount_amountInPence']);
+        $this->assertSame(1, $mandateDatabaseRows[0]['tbgComms']);
+        $this->assertSame(1, $mandateDatabaseRows[0]['charityComms']);
+
+        $id = $mandateDatabaseRows[0]['id'];
+        \assert(is_int($id));
+
+        return $id;
+    }
+
+    public function assertDonationDetailsInDB(mixed $mandateId): void
+    {
+        $donationDatabaseRows = $this->db()->executeQuery(
+            "SELECT * from Donation where Donation.mandate_id = ? ORDER BY mandateSequenceNumber asc",
+            [$mandateId]
+        )->fetchAllAssociative();
+
+        $this->assertCount(3, $donationDatabaseRows);
+
+        $this->assertSame('Collected', $donationDatabaseRows[0]['donationStatus']);
+        $this->assertSame('PreAuthorized', $donationDatabaseRows[1]['donationStatus']);
+        $this->assertSame('PreAuthorized', $donationDatabaseRows[2]['donationStatus']);
+
+        $this->assertNull($donationDatabaseRows[0]['preAuthorizationDate']);
+        $this->assertNotNull($donationDatabaseRows[1]['preAuthorizationDate']);
+        $this->assertNotNull($donationDatabaseRows[2]['preAuthorizationDate']);
+
+        $this->assertEquals((float)($this->pencePerMonth / 100), $donationDatabaseRows[0]['amount']);
+        $this->assertEquals((float)($this->pencePerMonth / 100), $donationDatabaseRows[1]['amount']);
+        $this->assertEquals((float)($this->pencePerMonth / 100), $donationDatabaseRows[2]['amount']);
     }
 }
