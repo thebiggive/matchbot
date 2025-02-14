@@ -179,6 +179,7 @@ class RegularGivingMandateTest extends TestCase
                     "amountInPence": 50000,
                     "currency": "GBP"
                   },
+                  "isMatched" : true,
                   "matchedAmount": {
                     "amountInPence": 50000,
                     "currency": "GBP"

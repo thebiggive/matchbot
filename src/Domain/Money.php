@@ -49,9 +49,9 @@ readonly class Money implements \JsonSerializable, \Stringable
         );
     }
 
-    private static function zero(): self
+    public static function zero(Currency $currency = Currency::GBP): self
     {
-        return new self(0, Currency::GBP);
+        return new self(0, $currency);
     }
 
     /**

@@ -796,7 +796,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function getFundingWithdrawalTotal(): string
     {
-        $withdrawalTotal = '0.0';
+        $withdrawalTotal = '0.00';
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
             $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
         }

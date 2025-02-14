@@ -105,7 +105,7 @@ class RegularGivingServiceTest extends TestCase
         $this->campaignFunding = $this->createStub(CampaignFunding::class);
 
         $testCase = $this;
-        $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class))
+        $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class), true)
             ->will(/**
              * @param Donation[] $args
              */
@@ -137,15 +137,14 @@ class RegularGivingServiceTest extends TestCase
     public function testItCreatesRegularGivingMandate(): void
     {
         // arrange
-        $donor = $this->donorAccount;
-        $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
+        $this->givenDonorHasRegularGivingPaymentMethod();
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $this->donationServiceProphecy->confirmDonationWithSavedPaymentMethod(Argument::cetera())->shouldBeCalledOnce();
 
         // act
         $mandate = $regularGivingService->setupNewMandate(
-            $donor,
+            $this->donorAccount,
             Money::fromPoundsGBP(42),
             TestCase::someCampaign(isRegularGiving: true),
             false,
@@ -157,10 +156,11 @@ class RegularGivingServiceTest extends TestCase
             confirmationTokenId: null,
             homeAddress: null,
             homePostcode: null,
+            matchDonations: true,
         );
 
         // assert
-        $this->assertSame(RegularGivingMandate::NUMBER_OF_DONATIONS_TO_MATCH, 3);
+        $this->assertSame($mandate->getNumberofMatchedDonations(), 3);
         $this->assertCount(3, $this->donations);
         $this->assertSame(DonationStatus::Collected, $this->donations[0]->getDonationStatus());
         $this->assertSame(DonationStatus::PreAuthorized, $this->donations[1]->getDonationStatus());
@@ -187,17 +187,15 @@ class RegularGivingServiceTest extends TestCase
     public function testItPreservesHomeAddressIfNotSuppliedOnMandate(): void
     {
         // arrange
-        $donor = $this->donorAccount;
-        $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
-        $donor->setHomePostcode(PostCode::of('SW1A 1AA')); // prexisting home postcode
-        $donor->setHomeAddressLine1('Home Address');
+        $this->givenDonorHasRegularGivingPaymentMethod();
+        $this->givenDonorHasHomeAddressAndPostcode();
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $this->donationServiceProphecy->confirmDonationWithSavedPaymentMethod(Argument::cetera())->shouldBeCalledOnce();
 
         // act
         $regularGivingService->setupNewMandate(
-            $donor,
+            $this->donorAccount,
             Money::fromPoundsGBP(42),
             TestCase::someCampaign(isRegularGiving: true),
             false,
@@ -209,26 +207,25 @@ class RegularGivingServiceTest extends TestCase
             confirmationTokenId: null,
             homeAddress: null,
             homePostcode: null,
+            matchDonations: true,
         );
 
-        $this->assertSame('SW1A 1AA', $donor->getHomePostcode());
-        $this->assertSame('Home Address', $donor->getHomeAddressLine1());
+        $this->assertSame('SW1A 1AA', $this->donorAccount->getHomePostcode());
+        $this->assertSame('Home Address', $this->donorAccount->getHomeAddressLine1());
     }
 
     public function testItSavesUpdatedHomeAddressToDonorAccount(): void
     {
         // arrange
-        $donor = $this->donorAccount;
-        $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
-        $donor->setHomePostcode(PostCode::of('SW1A 1AA')); // prexisting home postcode
-        $donor->setHomeAddressLine1('Home Address');
+        $this->givenDonorHasRegularGivingPaymentMethod();
+        $this->givenDonorHasHomeAddressAndPostcode();
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
         $this->donationServiceProphecy->confirmDonationWithSavedPaymentMethod(Argument::cetera())->shouldBeCalledOnce();
 
         // act
         $regularGivingService->setupNewMandate(
-            $donor,
+            $this->donorAccount,
             Money::fromPoundsGBP(42),
             TestCase::someCampaign(isRegularGiving: true),
             true,
@@ -240,17 +237,17 @@ class RegularGivingServiceTest extends TestCase
             confirmationTokenId: null,
             homeAddress: 'New Home Address',
             homePostcode: PostCode::of('SW2B 2BB', false),
+            matchDonations: true,
         );
 
-        $this->assertSame('SW2B 2BB', $donor->getHomePostcode());
-        $this->assertSame('New Home Address', $donor->getHomeAddressLine1());
+        $this->assertSame('SW2B 2BB', $this->donorAccount->getHomePostcode());
+        $this->assertSame('New Home Address', $this->donorAccount->getHomeAddressLine1());
     }
 
     public function testItRejectsAttemptToCreateGAMandateWithNoHomeAddress(): void
     {
         // arrange
-        $donor = $this->donorAccount;
-        $donor->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
+        $this->givenDonorHasRegularGivingPaymentMethod();
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
 
@@ -258,7 +255,7 @@ class RegularGivingServiceTest extends TestCase
         $this->expectExceptionMessage('Home Address is required when gift aid is selected');
         // act
         $regularGivingService->setupNewMandate(
-            $donor,
+            $this->donorAccount,
             Money::fromPoundsGBP(42),
             TestCase::someCampaign(isRegularGiving: true),
             true,
@@ -270,6 +267,7 @@ class RegularGivingServiceTest extends TestCase
             confirmationTokenId: null,
             homeAddress: '',
             homePostcode: null,
+            matchDonations: true,
         );
     }
 
@@ -313,7 +311,8 @@ class RegularGivingServiceTest extends TestCase
             charityComms: false,
             confirmationTokenId: $confirmationTokenId,
             homeAddress: null,
-            homePostcode: null
+            homePostcode: null,
+            matchDonations: true
         );
 
         // assert
@@ -331,7 +330,7 @@ class RegularGivingServiceTest extends TestCase
         $testCase = $this;
         /** @var Donation[] $donations */
         $donations = [];
-        $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class))
+        $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class), true)
             ->will(/**
              * @param Donation[] $args
              */
@@ -346,7 +345,6 @@ class RegularGivingServiceTest extends TestCase
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
 
-        $this->assertSame(RegularGivingMandate::NUMBER_OF_DONATIONS_TO_MATCH, 3);
         $this->donationServiceProphecy->cancel(Argument::type(Donation::class))
             ->shouldBeCalledTimes(3);
 
@@ -365,6 +363,7 @@ class RegularGivingServiceTest extends TestCase
                 confirmationTokenId: null,
                 homeAddress: null,
                 homePostcode: null,
+                matchDonations: true,
             );
             $this->fail('Should throw NotFullyMatched');
         } catch (NotFullyMatched $e) {
@@ -392,7 +391,8 @@ class RegularGivingServiceTest extends TestCase
             charityComms: false,
             confirmationTokenId: null,
             homeAddress: null,
-            homePostcode: null
+            homePostcode: null,
+            matchDonations: true
         );
     }
 
@@ -419,7 +419,8 @@ class RegularGivingServiceTest extends TestCase
             charityComms: false,
             confirmationTokenId: null,
             homeAddress: null,
-            homePostcode: null
+            homePostcode: null,
+            matchDonations: true
         );
     }
 
@@ -446,7 +447,8 @@ class RegularGivingServiceTest extends TestCase
             charityComms: false,
             confirmationTokenId: null,
             homeAddress: null,
-            homePostcode: null
+            homePostcode: null,
+            matchDonations: true
         );
     }
 
@@ -500,7 +502,7 @@ class RegularGivingServiceTest extends TestCase
         $this->donorAccount->setHomeAddressLine1('Existing address');
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
-        $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class))->willThrow(CampaignNotOpen::class);
+        $this->donationServiceProphecy->enrollNewDonation(Argument::type(Donation::class), true)->willThrow(CampaignNotOpen::class);
         $this->donationServiceProphecy->cancel(Argument::type(Donation::class))->shouldBeCalled();
 
         try {
@@ -517,6 +519,7 @@ class RegularGivingServiceTest extends TestCase
                 confirmationTokenId: null,
                 homeAddress: 'New address that we dont expect to save because the service throws',
                 homePostcode: PostCode::of('SW2B 2BB'),
+                matchDonations: true,
             );
             $this->assertFalse(true);
         } catch (CampaignNotOpen $_e) {
@@ -590,5 +593,16 @@ class RegularGivingServiceTest extends TestCase
     {
         $this->donorAccount->setBillingCountry(Country::GB());
         $this->donorAccount->setBillingPostcode('SW11AA');
+    }
+
+    private function givenDonorHasRegularGivingPaymentMethod(): void
+    {
+        $this->donorAccount->setRegularGivingPaymentMethod(StripePaymentMethodId::of('pm_x'));
+    }
+
+    private function givenDonorHasHomeAddressAndPostcode(): void
+    {
+        $this->donorAccount->setHomePostcode(PostCode::of('SW1A 1AA'));
+        $this->donorAccount->setHomeAddressLine1('Home Address');
     }
 }
