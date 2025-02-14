@@ -136,6 +136,30 @@ class RegularGivingMandate extends SalesforceWriteProxy
     }
 
     /**
+     * Returns the average matched amount of the given donations, rounded down to the nearest major unit.
+     *
+     * This indicates the largest donation size that it would be possible to match with the same match funds, assuming
+     * it would be spread across the same number of donations.
+     *
+     * @param non-empty-list $donations . Must be at least one.
+     * @return Money
+     */
+    public static function averageMatched(array $donations): Money
+    {
+        $totals = array_map(fn(Donation $donation) => $donation->getFundingWithdrawalTotalAsObject(), $donations);
+        $grandTotal = Money::sum(...$totals);
+
+        $averagePence = intdiv($grandTotal->amountInPence, count($donations));
+
+        $averageMoneyRoundedDownToMajorUnit = Money::fromPence(
+            intdiv($averagePence, 100) * 100,
+            Currency::GBP
+        );
+
+        return $averageMoneyRoundedDownToMajorUnit;
+    }
+
+    /**
      * Allows us to take payments according to this agreement from now on.
      *
      * Precondition: Must be in Pending status

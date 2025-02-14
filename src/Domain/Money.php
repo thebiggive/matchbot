@@ -122,6 +122,19 @@ readonly class Money implements \JsonSerializable, \Stringable
         return new self((int) $amountInPence, Currency::GBP);
     }
 
+    /**
+     * @param numeric-string $amount
+     */
+    public static function fromNumericString(string $amount, Currency $currency): self
+    {
+        $amountInPence = bcmul($amount, '100', 2);
+
+        /** @psalm-suppress ImpureMethodCall */
+        Assertion::integerish((float) $amountInPence);
+
+        return new self((int) $amountInPence, $currency);
+    }
+
     public function withPence(int $amountInPence): self
     {
         return new self($amountInPence, $this->currency);
@@ -154,5 +167,10 @@ readonly class Money implements \JsonSerializable, \Stringable
     public function toMajorUnitFloat(): float
     {
         return $this->amountInPence / 100;
+    }
+
+    public function isZero(): bool
+    {
+        return $this->amountInPence === 0;
     }
 }
