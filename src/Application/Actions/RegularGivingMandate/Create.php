@@ -5,6 +5,7 @@ namespace MatchBot\Application\Actions\RegularGivingMandate;
 use Doctrine\ORM\EntityManagerInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Environment;
@@ -14,6 +15,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\WrongCampaignType;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
@@ -115,8 +117,8 @@ class Create extends Action
             $maxMatchable = $e->maxMatchable;
             return $this->validationError(
                 $response,
-                $e->getMessage(),
-                $maxMatchable->isZero() ?
+                logMessage: $e->getMessage(),
+                publicMessage: $maxMatchable->isZero() ?
                         // Strictly speaking there may be *some* match funds available, but less than £3.00 so it's not
                         // possible to make three matched donations and these funds are effectively unusable for now.
                     <<<"EOF"
@@ -128,16 +130,18 @@ class Create extends Action
                     available. The largest monthly donation we can match is {$maxMatchable->format()}. Please
                     consider making an unmatched regular donation, or reduce your donation amount.
                     EOF,
-                false,
+                reduceSeverity: false,
+                errorType: ActionError::INSUFFICIENT_MATCH_FUNDS,
+                errorData: ['maxMatchable' => $maxMatchable],
             );
         } catch (DonationNotCollected $e) {
             return $this->validationError(
                 $response,
-                $e->getMessage(),
-                'Sorry, we were not able to collect the payment for your first donation. ' .
+                logMessage: $e->getMessage(),
+                publicMessage: 'Sorry, we were not able to collect the payment for your first donation. ' .
                 'No regular giving agreement has been created.' .
                 'Consider using another payment method or contacting your card issuer.',
-                false,
+                reduceSeverity: false,
             );
         }
 

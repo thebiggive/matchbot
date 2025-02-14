@@ -63,20 +63,24 @@ abstract class Action
      * @param string|null   $publicMessage  Falls back to $logMessage if null.
      * @param bool          $reduceSeverity Whether to log this error only at INFO level. Used to
      *                                      avoid noise from known issues.
+     * @param ActionError::* $errorType Identifier for the type of error to be used by FE.
+     * @param array $errorData JSON-serializable detailed error data for use in FE.
      * @return Response with 400 HTTP response code.
      */
     protected function validationError(
         Response $response,
         string $logMessage,
         ?string $publicMessage = null,
-        bool $reduceSeverity = false
+        bool $reduceSeverity = false,
+        string $errorType = ActionError::BAD_REQUEST,
+        array $errorData = [],
     ): Response {
         if ($reduceSeverity) {
             $this->logger->info($logMessage);
         } else {
             $this->logger->warning($logMessage);
         }
-        $error = new ActionError(ActionError::BAD_REQUEST, $publicMessage ?? $logMessage);
+        $error = new ActionError($errorType, $publicMessage ?? $logMessage, $errorData);
 
         return $this->respond($response, new ActionPayload(400, null, $error));
     }
