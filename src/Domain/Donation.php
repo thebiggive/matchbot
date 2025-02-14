@@ -804,6 +804,14 @@ class Donation extends SalesforceWriteProxy
         return $withdrawalTotal;
     }
 
+    public function getFundingWithdrawalTotalAsObject(): Money
+    {
+        return Money::fromNumericString(
+            $this->getFundingWithdrawalTotal(),
+            Currency::fromIsoCode($this->currencyCode)
+        );
+    }
+
     /**
      * @return string Total amount *finalised*, matched by `Fund`s of type "championFund"
      */

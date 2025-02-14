@@ -112,10 +112,22 @@ class Create extends Action
                 false,
             );
         } catch (NotFullyMatched $e) {
+            $maxMatchable = $e->maxMatchable;
             return $this->validationError(
                 $response,
                 $e->getMessage(),
-                'Sorry, we were not able to take your regular donation as there are insufficient match funds available',
+                $maxMatchable->isZero() ?
+                        // Strictly speaking there may be *some* match funds available, but less than £3.00 so it's not
+                        // possible to make three matched donations and these funds are effectively unusable for now.
+                    <<<"EOF"
+                    Sorry, we were not able to take your regular donation as there are no match funds
+                    available. Please consider making an unmatched regular donation.
+                    EOF :
+                    <<<"EOF"
+                    Sorry, we were not able to take your regular donation as there are not enough match funds
+                    available. The largest monthly donation we can match is {$maxMatchable->format()}. Please
+                    consider making an unmatched regular donation, or reduce your donation amount.
+                    EOF,
                 false,
             );
         } catch (DonationNotCollected $e) {

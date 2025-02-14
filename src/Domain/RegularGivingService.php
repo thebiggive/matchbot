@@ -340,9 +340,12 @@ readonly class RegularGivingService
         foreach ($donations as $donation) {
             $this->donationService->enrollNewDonation($donation, $mandate->isMatched());
             if (!$donation->isFullyMatched() && $mandate->isMatched()) {
+                $maxMatchable = RegularGivingMandate::averageMatched($donations);
+
                 throw new NotFullyMatched(
                     "Donation could not be fully matched, need to match {$donation->getAmount()}," .
-                    " only matched {$donation->getFundingWithdrawalTotal()}"
+                    " only matched {$donation->getFundingWithdrawalTotal()}",
+                    $maxMatchable
                 );
             }
 
