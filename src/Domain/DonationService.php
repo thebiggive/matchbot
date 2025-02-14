@@ -296,7 +296,6 @@ class DonationService
      * @throws StripeAccountIdNotSetForAccount
      * @throws WrongCampaignType
      * @throws NotFoundException
-     * @throws ExceptionInterface
      */
     public function enrollNewDonation(Donation $donation, bool $attemptMatching): void
     {
