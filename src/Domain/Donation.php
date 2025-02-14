@@ -1769,4 +1769,9 @@ class Donation extends SalesforceWriteProxy
         Assertion::same($this->currencyCode, 'GBP');
         return Money::fromNumericStringGBP($this->tipRefundAmount);
     }
+
+    public function currency(): Currency
+    {
+        return Currency::fromIsoCode($this->currencyCode);
+    }
 }
