@@ -110,7 +110,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
                 ->getAvailableFundings($donation->getCampaign());
 
             foreach ($likelyAvailableFunds as $funding) {
-                if ($funding->getCurrencyCode() !== $donation->getCurrencyCode()) {
+                if ($funding->getCurrencyCode() !== $donation->currency()->isoCode()) {
                     throw new \UnexpectedValueException('Currency mismatch');
                 }
             }

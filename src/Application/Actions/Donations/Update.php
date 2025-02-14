@@ -495,7 +495,7 @@ class Update extends Action
 
         $this->stripe->updatePaymentIntent($paymentIntentId, [
             'amount' => $donation->getAmountFractionalIncTip(),
-            'currency' => strtolower($donation->getCurrencyCode()),
+            'currency' => $donation->currency()->isoCode(case: 'lower'),
             'metadata' => [
                 /**
                  * Note that we don't re-set keys that can't change, like `charityId`.

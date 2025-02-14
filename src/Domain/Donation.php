@@ -556,7 +556,7 @@ class Donation extends SalesforceWriteProxy
             'countryCode' => $this->getDonorCountryCode(),
             'collectedTime' => $this->getCollectedAt()?->format(DateTimeInterface::ATOM),
             'createdTime' => $this->getCreatedDate()->format(DateTimeInterface::ATOM),
-            'currencyCode' => $this->getCurrencyCode(),
+            'currencyCode' => $this->currency()->isoCode(),
             'donationAmount' => (float) $this->getAmount(),
             'totalPaid' => is_null($totalPaidByDonor) ? null : (float)$totalPaidByDonor,
             'donationId' => $this->getUuid(),
@@ -1078,11 +1078,6 @@ class Donation extends SalesforceWriteProxy
         $this->originalPspFee = bcdiv($originalPspFeeFractional, '100', 2);
     }
 
-    public function getCurrencyCode(): string
-    {
-        return $this->currencyCode;
-    }
-
     /**
      * @return bool
      */
@@ -1433,7 +1428,7 @@ class Donation extends SalesforceWriteProxy
             $cardBrand,
             $cardCountry,
             $this->getAmount(),
-            $this->getCurrencyCode(),
+            $this->currency()->isoCode(),
             $incursGiftAidFee,
         );
 
@@ -1624,7 +1619,7 @@ class Donation extends SalesforceWriteProxy
             // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
             // See https://stripe.com/docs/api/payment_intents/object
             'amount' => $this->getAmountFractionalIncTip(),
-            'currency' => strtolower($this->getCurrencyCode()),
+            'currency' => $this->currency()->isoCode(case: 'lower'),
             'description' => $this->getDescription(),
             'capture_method' => 'automatic', // 'automatic' was default in previous API versions,
             // default is now 'automatic_async'

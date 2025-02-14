@@ -45,7 +45,7 @@ readonly class Money implements \JsonSerializable, \Stringable
         if ($amounts === []) {
             return self::zero(Currency::GBP);
         }
-        
+
         return array_reduce(
             $amounts,
             static fn (self $a, self $b): self => $a->plus($b),

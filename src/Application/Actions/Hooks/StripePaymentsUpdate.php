@@ -399,7 +399,7 @@ class StripePaymentsUpdate extends Stripe
             $donation->getUuid(),
             $eventType,
             bcdiv((string) $donation->getAmountFractionalIncTip(), '100', 2),
-            $donation->getCurrencyCode(),
+            $donation->currency()->isoCode(),
             bcdiv((string) $refundedOrDisputedAmount, '100', 2),
             strtoupper($refundedOrDisputedCurrencyCode),
         );

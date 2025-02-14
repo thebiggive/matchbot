@@ -153,7 +153,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
         // We know currency is same for all donations as otherwise `sum` would have thrown.
         $currency = $donations[0]->currency();
-        
+
         $averageMoneyRoundedDownToMajorUnit = Money::fromPence(
             intdiv($averagePence, 100) * 100,
             $currency
