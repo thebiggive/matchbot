@@ -707,7 +707,7 @@ class DonationService
         if (!empty($balanceTransaction)) {
             $originalFeeFractional = $this->getOriginalFeeFractional(
                 $balanceTransaction,
-                $donation->getCurrencyCode(),
+                $donation->currency()->isoCode(),
             );
         } else {
             $originalFeeFractional = $donation->getOriginalPspFee();

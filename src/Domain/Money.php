@@ -42,10 +42,14 @@ readonly class Money implements \JsonSerializable, \Stringable
 
     public static function sum(self ...$amounts): self
     {
+        if ($amounts === []) {
+            return self::zero(Currency::GBP);
+        }
+
         return array_reduce(
             $amounts,
             static fn (self $a, self $b): self => $a->plus($b),
-            self::zero(),
+            self::zero($amounts[0]->currency),
         );
     }
 

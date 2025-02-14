@@ -141,7 +141,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
      * This indicates the largest donation size that it would be possible to match with the same match funds, assuming
      * it would be spread across the same number of donations.
      *
-     * @param non-empty-list $donations . Must be at least one.
+     * @param non-empty-list<Donation> $donations . Must be at least one.
      * @return Money
      */
     public static function averageMatched(array $donations): Money
@@ -151,9 +151,12 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
         $averagePence = intdiv($grandTotal->amountInPence, count($donations));
 
+        // We know currency is same for all donations as otherwise `sum` would have thrown.
+        $currency = $donations[0]->currency();
+
         $averageMoneyRoundedDownToMajorUnit = Money::fromPence(
             intdiv($averagePence, 100) * 100,
-            Currency::GBP
+            $currency
         );
 
         return $averageMoneyRoundedDownToMajorUnit;
