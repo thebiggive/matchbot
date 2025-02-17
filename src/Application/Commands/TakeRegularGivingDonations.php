@@ -8,7 +8,6 @@ use Assert\AssertionFailedException;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
-use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
@@ -110,7 +109,7 @@ class TakeRegularGivingDonations extends LockingCommand
                 } else {
                     $io->writeln("no donation created for {$mandate} as collection end date passed");
                 }
-            } catch (AssertionFailedException | CampaignNotOpen | WrongCampaignType $e) {
+            } catch (AssertionFailedException | WrongCampaignType $e) {
                 $io->error($e->getMessage());
                 $this->logger->error($e->getMessage());
             }
@@ -177,7 +176,7 @@ class TakeRegularGivingDonations extends LockingCommand
     }
 
     /**
-     * @throws CampaignNotOpen|WrongCampaignType|AssertionFailedException
+     * @throws WrongCampaignType|AssertionFailedException
      */
     private function makeDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
