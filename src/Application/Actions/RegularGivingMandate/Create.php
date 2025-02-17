@@ -68,7 +68,7 @@ class Create extends Action
             /** similar catch with commentary in @see \MatchBot\Application\Actions\Donations\Create */
             $this->logger->info("Mandate Create non-serialisable payload was: $body");
 
-            $message = 'Donation Create data deserialise error';
+            $message = 'Mandate create data deserialise error';
             $exceptionType = get_class($exception);
 
             return $this->validationError(

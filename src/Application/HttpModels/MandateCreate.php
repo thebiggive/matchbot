@@ -61,7 +61,8 @@ readonly class MandateCreate
         $this->billingCountry = Country::fromAlpha2OrNull($billingCountry);
 
         if (is_array($home)) {
-            $this->homePostcode = Postcode::of($home['postcode'], $home['isOutsideUK']);
+            $postcode = trim($home['postcode'] ?? '');
+            $this->homePostcode = $postcode !== '' ? Postcode::of($postcode, $home['isOutsideUK']) : null;
             $this->homeAddress = $home['addressLine1'];
             $this->homeIsOutsideUK = $home['isOutsideUK'];
         } else {

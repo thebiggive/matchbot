@@ -152,7 +152,7 @@ class DonorAccount extends Model
 
     public function getHomePostcode(): ?string
     {
-        return $this->homeIsOutsideUK ? 'OVERSAS' : $this->homePostcode;
+        return $this->homeIsOutsideUK ? Donation::OVERSEAS : $this->homePostcode;
     }
 
     public function setHomePostcode(?PostCode $homePostcode): void
