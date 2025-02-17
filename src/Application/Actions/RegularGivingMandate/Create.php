@@ -12,6 +12,7 @@ use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\MandateCreate;
 use MatchBot\Application\Security\Security;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\WrongCampaignType;
@@ -133,6 +134,13 @@ class Create extends Action
                 reduceSeverity: false,
                 errorType: ActionError::INSUFFICIENT_MATCH_FUNDS,
                 errorData: ['maxMatchable' => $maxMatchable],
+            );
+        } catch (CampaignNotOpen $e) {
+            return $this->validationError(
+                $response,
+                logMessage: $e->getMessage(),
+                publicMessage: "Sorry, the {$campaign->getCampaignName()} campaign is not open at this time.",
+                reduceSeverity: false,
             );
         } catch (DonationNotCollected $e) {
             return $this->validationError(
