@@ -69,7 +69,7 @@ class Create extends Action
             /** similar catch with commentary in @see \MatchBot\Application\Actions\Donations\Create */
             $this->logger->info("Mandate Create non-serialisable payload was: $body");
 
-            $message = 'Donation Create data deserialise error';
+            $message = 'Mandate create data deserialise error';
             $exceptionType = get_class($exception);
 
             return $this->validationError(
@@ -105,7 +105,8 @@ class Create extends Action
                 confirmationTokenId: $mandateData->stripeConfirmationTokenId,
                 homeAddress: $mandateData->homeAddress,
                 homePostcode: $mandateData->homePostcode,
-                matchDonations: ! $mandateData->unmatched,
+                matchDonations: !$mandateData->unmatched,
+                homeIsOutsideUk: $mandateData->homeIsOutsideUK,
             );
         } catch (WrongCampaignType | \UnexpectedValueException $e) {
             return $this->validationError(

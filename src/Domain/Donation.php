@@ -48,6 +48,12 @@ class Donation extends SalesforceWriteProxy
     public const int MINUMUM_AMOUNT = 1;
     public const string GIFT_AID_PERCENTAGE = '25';
 
+    /**
+     * Placeholder used in home postcode field for a donor with a home outside the UK. See also
+     * OVERSEAS constant in donate-frontend.
+     */
+    public const string OVERSEAS = 'OVERSEAS';
+
     private array $possiblePSPs = ['stripe'];
 
     /**
@@ -1305,7 +1311,7 @@ class Donation extends SalesforceWriteProxy
         $donationMessage->first_name = $firstName;
         $donationMessage->last_name = $lastName;
 
-        $donationMessage->overseas = $this->donorHomePostcode === 'OVERSEAS';
+        $donationMessage->overseas = $this->donorHomePostcode === self::OVERSEAS;
         $donationMessage->postcode = $donationMessage->overseas ? '' : ($this->donorHomePostcode ?? '');
 
         $donationMessage->house_no = '';
@@ -1497,8 +1503,10 @@ class Donation extends SalesforceWriteProxy
                 ->that($donorHomeAddressLine1, 'donorHomeAddressLine1')
                 ->nullOr()->betweenLength(1, 255);
 
-            // postcode should either be a UK postcode or the word 'OVERSEAS' - either way length will be between 5 and
-            // 8. Could consider adding a regex validation.
+            /** postcode should either be a UK postcode or the word 'OVERSEAS' - either way length will be between 5 and
+                8. Could consider adding a regex validation.
+             * @see self::OVERSEAS
+             */
             $lazyAssertion->that($donorHomePostcode, 'donorHomePostcode')->nullOr()->betweenLength(5, 8);
 
             // allow up to 15 chars to account for post / zip codes worldwide

@@ -157,6 +157,7 @@ class RegularGivingServiceTest extends TestCase
             homeAddress: null,
             homePostcode: null,
             matchDonations: true,
+            homeIsOutsideUk: true,
         );
 
         // assert
@@ -208,6 +209,7 @@ class RegularGivingServiceTest extends TestCase
             homeAddress: null,
             homePostcode: null,
             matchDonations: true,
+            homeIsOutsideUk: true,
         );
 
         $this->assertSame('SW1A 1AA', $this->donorAccount->getHomePostcode());
@@ -238,6 +240,7 @@ class RegularGivingServiceTest extends TestCase
             homeAddress: 'New Home Address',
             homePostcode: PostCode::of('SW2B 2BB', false),
             matchDonations: true,
+            homeIsOutsideUk: false,
         );
 
         $this->assertSame('SW2B 2BB', $this->donorAccount->getHomePostcode());
@@ -268,6 +271,7 @@ class RegularGivingServiceTest extends TestCase
             homeAddress: '',
             homePostcode: null,
             matchDonations: true,
+            homeIsOutsideUk: true,
         );
     }
 
@@ -312,7 +316,8 @@ class RegularGivingServiceTest extends TestCase
             confirmationTokenId: $confirmationTokenId,
             homeAddress: null,
             homePostcode: null,
-            matchDonations: true
+            matchDonations: true,
+            homeIsOutsideUk: true
         );
 
         // assert
@@ -364,6 +369,7 @@ class RegularGivingServiceTest extends TestCase
                 homeAddress: null,
                 homePostcode: null,
                 matchDonations: true,
+                homeIsOutsideUk: true,
             );
             $this->fail('Should throw NotFullyMatched');
         } catch (NotFullyMatched $e) {
@@ -392,7 +398,8 @@ class RegularGivingServiceTest extends TestCase
             confirmationTokenId: null,
             homeAddress: null,
             homePostcode: null,
-            matchDonations: true
+            matchDonations: true,
+            homeIsOutsideUk: true
         );
     }
 
@@ -420,7 +427,8 @@ class RegularGivingServiceTest extends TestCase
             confirmationTokenId: null,
             homeAddress: null,
             homePostcode: null,
-            matchDonations: true
+            matchDonations: true,
+            homeIsOutsideUk: true
         );
     }
 
@@ -448,7 +456,8 @@ class RegularGivingServiceTest extends TestCase
             confirmationTokenId: null,
             homeAddress: null,
             homePostcode: null,
-            matchDonations: true
+            matchDonations: true,
+            homeIsOutsideUk: true
         );
     }
 
@@ -520,6 +529,7 @@ class RegularGivingServiceTest extends TestCase
                 homeAddress: 'New address that we dont expect to save because the service throws',
                 homePostcode: PostCode::of('SW2B 2BB'),
                 matchDonations: true,
+                homeIsOutsideUk: false,
             );
             $this->assertFalse(true);
         } catch (CampaignNotOpen $_e) {
