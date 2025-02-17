@@ -104,7 +104,8 @@ class Create extends Action
                 confirmationTokenId: $mandateData->stripeConfirmationTokenId,
                 homeAddress: $mandateData->homeAddress,
                 homePostcode: $mandateData->homePostcode,
-                matchDonations: ! $mandateData->unmatched,
+                matchDonations: !$mandateData->unmatched,
+                homeIsOutsideUk: $mandateData->homeIsOutsideUK,
             );
         } catch (WrongCampaignType | \UnexpectedValueException $e) {
             return $this->validationError(

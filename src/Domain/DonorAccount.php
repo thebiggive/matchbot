@@ -74,6 +74,15 @@ class DonorAccount extends Model
     #[ORM\Column(type: 'string', nullable: true, length: 255)]
     private ?string $regularGivingPaymentMethod = null;
 
+    /**
+     * When a home address has been supplied for GA purposes, is it outside the UK?
+     *
+     * In future consider adding a similar field to donations. If we use it consistently we can replace the magic
+     * string `OVERSEAS`.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?bool $homeIsOutsideUK = null;
+
     public function __construct(
         PersonId $uuid,
         EmailAddress $emailAddress,
@@ -143,7 +152,7 @@ class DonorAccount extends Model
 
     public function getHomePostcode(): ?string
     {
-        return $this->homePostcode;
+        return $this->homeIsOutsideUK ? 'OVERSAS' : $this->homePostcode;
     }
 
     public function setHomePostcode(?PostCode $homePostcode): void
@@ -214,5 +223,15 @@ class DonorAccount extends Model
     public function hasHomeAddress(): bool
     {
         return is_string($this->homeAddressLine1) && trim($this->homeAddressLine1) !== '';
+    }
+
+    public function setHomeIsOutsideUK(bool $homeIsOutsideUK): void
+    {
+        $this->homeIsOutsideUK = $homeIsOutsideUK;
+    }
+
+    public function isHomeOutsideUK(): ?bool
+    {
+        return $this->homeIsOutsideUK;
     }
 }
