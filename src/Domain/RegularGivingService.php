@@ -380,4 +380,9 @@ readonly class RegularGivingService
 
         return StripePaymentMethodId::of($paymentMethodId);
     }
+
+    public function cancelMandate(RegularGivingMandate $_mandate, string $_cancellationReason): void
+    {
+        // todo: implement
+    }
 }
