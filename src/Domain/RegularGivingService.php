@@ -158,9 +158,9 @@ readonly class RegularGivingService
                     PostCode::of($donorPreviousHomePostcode, true) : null
             );
 
+            $mandate->cancel($e->getMessage(), new \DateTimeImmutable(), MandateCancellationType::EnrollingDonationFailed);
             foreach ($donations as $donation) {
                 $this->donationService->cancel($donation);
-                $mandate->cancel($e->getMessage(), new \DateTimeImmutable(), MandateCancellationType::EnrollingDonationFailed);
             }
             $this->entityManager->flush();
 
@@ -389,12 +389,27 @@ readonly class RegularGivingService
     /**
      * Cancels a mandate when the donor has decided they want to stop making donations.
      *
-     * @throws NonCancellableStatus
+     * @param RegularGivingMandate $mandate - must have been persisted, i.e. have an ID set.
      */
     public function cancelMandate(RegularGivingMandate $mandate, string $reason): void
     {
-        // todo: Find and cancel any related pending donations.
+        $mandateId = $mandate->getId();
+        Assertion::notNull($mandateId);
+
         $mandate->cancel(reason: $reason, at: $this->now, type: MandateCancellationType::DonorRequestedCancellation);
+
+        $cancellableDonations = $this->donationRepository->findPendingAndPreAuthedForMandate($mandateId);
+
+        Assertion::maxCount(
+            $cancellableDonations,
+            3,
+            "Too many donations found to cancel for mandate {$mandateId}, should be max 3}"
+        );
+
+        foreach ($cancellableDonations as $donation) {
+            $donation->cancel();
+        }
+
         $this->entityManager->flush();
     }
 }

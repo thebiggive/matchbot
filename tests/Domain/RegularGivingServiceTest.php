@@ -548,12 +548,26 @@ class RegularGivingServiceTest extends TestCase
 
         $mandate = $this->getMandate(2, '2024-09-03T06:00:00 BST', 1);
 
+        $this->donationRepositoryProphecy->findPendingAndPreAuthedForMandate($mandate->getId())->willReturn([]);
         $sut->cancelMandate($mandate, 'Because I don\'t have any more money to give');
 
         $this->assertEquals(MandateStatus::Cancelled, $mandate->getStatus());
         $this->assertEquals('Because I don\'t have any more money to give', $mandate->cancellationReason());
         $this->assertEquals(MandateCancellationType::DonorRequestedCancellation, $mandate->cancellationType());
         $this->assertEquals($now, $mandate->cancelledAt());
+    }
+
+    public function testCancellingMandateCancelsPendingDonations(): void
+    {
+        $sut = $this->makeSut(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+        $mandate = $this->getMandate(2, '2024-09-03T06:00:00 BST', 1);
+
+        $donation = self::someDonation();
+        $this->donationRepositoryProphecy->findPendingAndPreAuthedForMandate($mandate->getId())->willReturn([$donation]);
+
+        $sut->cancelMandate(mandate: $mandate, reason: '');
+
+        $this->assertEquals(DonationStatus::Cancelled, $donation->getDonationStatus());
     }
 
     public function makeSut(\DateTimeImmutable $simulatedNow): RegularGivingService
