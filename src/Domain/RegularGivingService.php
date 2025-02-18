@@ -159,7 +159,7 @@ readonly class RegularGivingService
 
             foreach ($donations as $donation) {
                 $this->donationService->cancel($donation);
-                $mandate->cancel();
+                $mandate->cancel($e->getMessage(), new \DateTimeImmutable(), MandateCancellationType::EnrollingDonationFailed);
             }
             $this->entityManager->flush();
 
@@ -186,7 +186,11 @@ readonly class RegularGivingService
         $this->donationService->queryStripeToUpdateDonationStatus($firstDonation);
 
         if (! $firstDonation->getDonationStatus()->isSuccessful()) {
-            $mandate->cancel();
+            $mandate->cancel(
+                reason: "Donation failed, status is {$firstDonation->getDonationStatus()->name}",
+                at: new \DateTimeImmutable(),
+                type: MandateCancellationType::FirstDonationUnsuccessful
+            );
 
             $donor->setHomeAddressLine1($donorPreviousHomeAddress);
             $donor->setHomePostcode(
@@ -381,8 +385,13 @@ readonly class RegularGivingService
         return StripePaymentMethodId::of($paymentMethodId);
     }
 
-    public function cancelMandate(RegularGivingMandate $_mandate, string $_cancellationReason): void
+    /**
+     * Cancels a mandate when the donor has decided they want to stop making donations.
+     */
+    public function cancelMandate(RegularGivingMandate $mandate, string $reason): void
     {
-        // todo: implement
+        // todo: Find and cancel any related pending donations.
+        $mandate->cancel(reason: $reason, at: $this->now, type: MandateCancellationType::DonorRequestedCancellation);
+        $this->entityManager->flush();
     }
 }

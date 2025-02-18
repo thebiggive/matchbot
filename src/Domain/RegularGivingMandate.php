@@ -5,6 +5,7 @@ namespace MatchBot\Domain;
 use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -88,6 +89,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column(type: 'string', enumType: MandateStatus::class)]
     private MandateStatus $status = MandateStatus::Pending;
 
+    #[ORM\Column(type: 'string', enumType: MandateCancellationType::class, nullable: true)]
+    private ?MandateCancellationType $cancellationType = null;
+
     /**
      * Whether the first donations should be matched - if match funds are not available we will allow donors
      * to create an unmatched mandate. If false then donations may still end up incidentally matched e.g. via match
@@ -95,6 +99,12 @@ class RegularGivingMandate extends SalesforceWriteProxy
      */
     #[ORM\Column()]
     private bool $isMatched;
+
+    #[ORM\Column(nullable: true)]
+    private ?string $cancellationReason = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $cancelledAt = null;
 
     /**
      * @param Salesforce18Id<Campaign> $campaignId
@@ -372,9 +382,13 @@ class RegularGivingMandate extends SalesforceWriteProxy
         return $this->charityId;
     }
 
-    public function cancel(): void
+    public function cancel(string $reason, \DateTimeImmutable $at, MandateCancellationType $type): void
     {
         $this->status = MandateStatus::Cancelled;
+
+        $this->cancellationType = $type;
+        $this->cancellationReason = $reason;
+        $this->cancelledAt = $at;
     }
 
     public function getStatus(): MandateStatus
@@ -473,5 +487,41 @@ class RegularGivingMandate extends SalesforceWriteProxy
     public function getNumberofMatchedDonations(): int
     {
         return $this->isMatched ? self::NUMBER_OF_DONATIONS_TO_MATCH : 0;
+    }
+
+    /**
+     * Reason for this mandate being cancelled. Should only be called for a cancelled mandate.
+     * @return string
+     * @throws \Assert\AssertionFailedException
+     */
+    public function cancellationReason(): string
+    {
+        Assertion::same(MandateStatus::Cancelled, $this->status);
+        assert($this->cancellationReason !== null);
+
+        return $this->cancellationReason;
+    }
+
+    /**
+     * Type of reason for this mandate being cancelled. Should only be called for a cancelled mandate.
+     * @throws \Assert\AssertionFailedException
+     */
+    public function cancellationType(): MandateCancellationType
+    {
+        Assertion::same(MandateStatus::Cancelled, $this->status);
+        assert($this->cancellationType !== null);
+
+        return $this->cancellationType;
+    }
+
+    /**
+     *  Reason for this mandate being cancelled. Should only be called for a cancelled mandate.
+     * */
+    public function cancelledAt(): \DateTimeImmutable
+    {
+        Assertion::same(MandateStatus::Cancelled, $this->status);
+        \assert($this->cancelledAt !== null);
+
+        return $this->cancelledAt;
     }
 }

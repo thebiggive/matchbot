@@ -25,6 +25,7 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\MandateStatus;
 use MatchBot\Domain\PostCode;
 use MatchBot\Domain\RegularGivingMandateRepository;
@@ -538,6 +539,21 @@ class RegularGivingServiceTest extends TestCase
 
         $this->assertSame('SW1A 1AA', $this->donorAccount->getHomePostcode());
         $this->assertSame('Existing address', $this->donorAccount->getHomeAddressLine1());
+    }
+
+    public function testCancelsMandateOnBehalfOfDoor(): void
+    {
+        $now = new \DateTimeImmutable('2024-11-29T05:59:59 GMT');
+        $sut = $this->makeSut($now);
+
+        $mandate = $this->getMandate(2, '2024-09-03T06:00:00 BST', 1);
+
+        $sut->cancelMandate($mandate, 'Because I don\'t have any more money to give');
+
+        $this->assertEquals(MandateStatus::Cancelled, $mandate->getStatus());
+        $this->assertEquals('Because I don\'t have any more money to give', $mandate->cancellationReason());
+        $this->assertEquals(MandateCancellationType::DonorRequestedCancellation, $mandate->cancellationType());
+        $this->assertEquals($now, $mandate->cancelledAt());
     }
 
     public function makeSut(\DateTimeImmutable $simulatedNow): RegularGivingService

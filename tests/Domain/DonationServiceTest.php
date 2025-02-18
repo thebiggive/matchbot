@@ -22,6 +22,7 @@ use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
@@ -160,7 +161,12 @@ class DonationServiceTest extends TestCase
 
         $this->donorAccountRepoProphecy->findByStripeIdOrNull($stripeCustomerId)->willReturn($donor);
 
-        $mandate->cancel();
+        $mandate->cancel(
+            reason: '',
+            at: new \DateTimeImmutable(),
+            type: MandateCancellationType::DonorRequestedCancellation
+        );
+
         $this->expectException(MandateNotActive::class);
         $this->expectExceptionMessage("Not confirming donation as mandate is 'Cancelled', not Active");
 
