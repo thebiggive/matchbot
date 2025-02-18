@@ -7,6 +7,7 @@ use MatchBot\Application\Actions\Action;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels\MandateCancellation;
 use MatchBot\Application\Security\Security;
+use MatchBot\Domain\DomainException\NonCancellableStatus;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Domain\RegularGivingService;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -68,7 +69,14 @@ class Cancel extends Action
             throw new HttpUnauthorizedException($request, 'Mandate does not below to donor ID ' . $authenticatedDonor->id()->id);
         }
 
-        $this->mandateService->cancelMandate($mandate, $cancellation->cancellationReason);
+        try {
+            $this->mandateService->cancelMandate($mandate, $cancellation->cancellationReason);
+        } catch (NonCancellableStatus $e) {
+            return $this->validationError(
+                response: $response,
+                logMessage: $e->getMessage(),
+            );
+        }
 
         return new JsonResponse([], 200);
     }

@@ -17,6 +17,7 @@ use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\HomeAddressRequired;
+use MatchBot\Domain\DomainException\NonCancellableStatus;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
@@ -387,6 +388,8 @@ readonly class RegularGivingService
 
     /**
      * Cancels a mandate when the donor has decided they want to stop making donations.
+     *
+     * @throws NonCancellableStatus
      */
     public function cancelMandate(RegularGivingMandate $mandate, string $reason): void
     {
