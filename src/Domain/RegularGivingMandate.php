@@ -454,9 +454,9 @@ class RegularGivingMandate extends SalesforceWriteProxy
             mandate: $this,
             mandateSequenceNumber: DonationSequenceNumber::of(1),
             giftAid: $this->giftAid,
-            billingPostcode: $donor->getBillingPostcode(),
             homeAddress: $donor->getHomeAddressLine1(),
-            homePostcode: $donor->getHomePostcode(),
+            homePostcode: $donor->isHomeOutsideUK() ? Donation::OVERSEAS : $donor->getHomePostcode(),
+            billingPostcode: $donor->getBillingPostcode(),
         );
     }
 

@@ -30,9 +30,14 @@ readonly class MandateCreate
      */
     public ?StripeConfirmationTokenId $stripeConfirmationTokenId;
     public ?PostCode $homePostcode;
+    public ?string $homeAddress;
+    public ?bool $homeIsOutsideUK;
 
     /**
      * @psalm-suppress PossiblyUnusedMethod - called by Symfony Serializer
+     *
+     *
+     * @param null|array{addressLine1: string, postcode: string, isOutsideUK: boolean} $home
      */
     public function __construct(
         // not taking any value objects as constructor params as at least with our current config or
@@ -47,9 +52,7 @@ readonly class MandateCreate
         ?string $stripeConfirmationTokenId,
         public bool $tbgComms,
         public bool $charityComms,
-        public ?string $homeAddress,
-        ?string $homePostcode,
-        bool $homeIsOutsideUK = true,
+        ?array $home,
         public bool $unmatched = false,
     ) {
         $this->dayOfMonth = DayOfMonth::of($dayOfMonth);
@@ -57,10 +60,15 @@ readonly class MandateCreate
         $this->campaignId = Salesforce18Id::ofCampaign($campaignId);
         $this->billingCountry = Country::fromAlpha2OrNull($billingCountry);
 
-        if (is_string($homePostcode) && trim($homePostcode) !== '') {
-            $this->homePostcode = Postcode::of($homePostcode, $homeIsOutsideUK);
+        if (is_array($home)) {
+            $postcode = trim($home['postcode'] ?? '');
+            $this->homePostcode = $postcode !== '' ? Postcode::of($postcode, $home['isOutsideUK']) : null;
+            $this->homeAddress = $home['addressLine1'];
+            $this->homeIsOutsideUK = $home['isOutsideUK'];
         } else {
             $this->homePostcode = null;
+            $this->homeAddress = null;
+            $this->homeIsOutsideUK = null;
         }
 
         if (is_string($stripeConfirmationTokenId)) {

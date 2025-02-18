@@ -45,13 +45,14 @@ readonly class RegularGivingService
     }
 
     /**
+     * @param bool|null $homeIsOutsideUk
      * @param bool $matchDonations
      * @param PostCode|null $homePostcode
      * @param string|null $homeAddress
      * @param bool $charityComms
      * @param bool $tbgComms
-     * @param string|null $billingPostCode
      * @param Country|null $billingCountry
+     * @param string|null $billingPostCode
      * @throws CampaignNotOpen
      * @throws DomainException\CharityAccountLacksNeededCapaiblities
      * @throws DomainException\CouldNotMakeStripePaymentIntent
@@ -85,6 +86,7 @@ readonly class RegularGivingService
          */
         ?PostCode $homePostcode,
         bool $matchDonations,
+        ?bool $homeIsOutsideUk,
     ): RegularGivingMandate {
         // should save the address to the donor account if an address was given.
 
@@ -123,6 +125,9 @@ readonly class RegularGivingService
         if ($homeAddressSupplied) {
             $donor->setHomeAddressLine1(trim($homeAddress));
             $donor->setHomePostcode($homePostcode);
+
+            Assertion::notNull($homeIsOutsideUk);
+            $donor->setHomeIsOutsideUK($homeIsOutsideUk);
         }
 
         if ($giftAid && ! $homeAddressSupplied) {
