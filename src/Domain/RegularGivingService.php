@@ -17,6 +17,7 @@ use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\HomeAddressRequired;
+use MatchBot\Domain\DomainException\NonCancellableStatus;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
@@ -157,9 +158,9 @@ readonly class RegularGivingService
                     PostCode::of($donorPreviousHomePostcode, true) : null
             );
 
+            $mandate->cancel($e->getMessage(), new \DateTimeImmutable(), MandateCancellationType::EnrollingDonationFailed);
             foreach ($donations as $donation) {
                 $this->donationService->cancel($donation);
-                $mandate->cancel();
             }
             $this->entityManager->flush();
 
@@ -186,7 +187,11 @@ readonly class RegularGivingService
         $this->donationService->queryStripeToUpdateDonationStatus($firstDonation);
 
         if (! $firstDonation->getDonationStatus()->isSuccessful()) {
-            $mandate->cancel();
+            $mandate->cancel(
+                reason: "Donation failed, status is {$firstDonation->getDonationStatus()->name}",
+                at: new \DateTimeImmutable(),
+                type: MandateCancellationType::FirstDonationUnsuccessful
+            );
 
             $donor->setHomeAddressLine1($donorPreviousHomeAddress);
             $donor->setHomePostcode(
@@ -379,5 +384,33 @@ readonly class RegularGivingService
         }
 
         return StripePaymentMethodId::of($paymentMethodId);
+    }
+
+    /**
+     * Cancels a mandate when the donor has decided they want to stop making donations.
+     *
+     * @param RegularGivingMandate $mandate - must have been persisted, i.e. have an ID set.
+     * @throws NonCancellableStatus
+     */
+    public function cancelMandate(RegularGivingMandate $mandate, string $reason): void
+    {
+        $mandateId = $mandate->getId();
+        Assertion::notNull($mandateId);
+
+        $mandate->cancel(reason: $reason, at: $this->now, type: MandateCancellationType::DonorRequestedCancellation);
+
+        $cancellableDonations = $this->donationRepository->findPendingAndPreAuthedForMandate($mandateId);
+
+        Assertion::maxCount(
+            $cancellableDonations,
+            3,
+            "Too many donations found to cancel for mandate {$mandateId}, should be max 3}"
+        );
+
+        foreach ($cancellableDonations as $donation) {
+            $this->donationService->cancel($donation);
+        }
+
+        $this->entityManager->flush();
     }
 }

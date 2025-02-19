@@ -224,4 +224,9 @@ class InMemoryDonationRepository implements DonationRepository
     {
         throw new \Exception("Method not implemented in test double");
     }
+
+    public function findPendingAndPreAuthedForMandate(int $mandateId): array
+    {
+        throw new \Exception("Method not implemented in test double");
+    }
 }

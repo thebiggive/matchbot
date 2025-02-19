@@ -848,4 +848,23 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     {
         return $this->findAndLockOneBy(['uuid' => $donationId->toString()]);
     }
+
+    public function findPendingAndPreAuthedForMandate(int $mandateId): array
+    {
+        $pending = DonationStatus::Pending->value;
+        $preAuthorized = DonationStatus::PreAuthorized->value;
+
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT donation from Matchbot\Domain\Donation donation
+            WHERE donation.mandate.id = :mandate_id
+            WHERE donation.donationStatus IN ('$preAuthorized', '$pending')
+        DQL
+        );
+
+        $query->setParameter('mandate_id', $mandateId);
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
 }

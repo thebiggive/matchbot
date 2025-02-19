@@ -1399,6 +1399,10 @@ class Donation extends SalesforceWriteProxy
         $this->tipRefundAmount = $amountRefunded->toNumericString();
     }
 
+    /**
+     * Updates status to `Cancelled`. Note that in most cases you will need to do more than just update the status,
+     * so consider calling DonationService::cancel() rather than this directly.
+     */
     public function cancel(): void
     {
         if (

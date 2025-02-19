@@ -163,6 +163,11 @@ interface DonationRepository
     public function maxSequenceNumberForMandate(int $mandateId): ?DonationSequenceNumber;
 
     /**
+     * @return list<Donation>
+     */
+    public function findPendingAndPreAuthedForMandate(int $mandateId): array;
+
+    /**
      * Returns a limited size list of donation fund tip donations that have been left unpaid for some time and
      * we will want to auto-cancel
      * @return list<UuidInterface>
