@@ -90,7 +90,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column(type: 'string', enumType: MandateStatus::class)]
     private MandateStatus $status = MandateStatus::Pending;
 
-    #[ORM\Column(type: 'string', enumType: MandateCancellationType::class, nullable: true)]
+    #[ORM\Column(type: 'string', length: 50, enumType: MandateCancellationType::class, nullable: true)]
     private ?MandateCancellationType $cancellationType = null;
 
     /**
