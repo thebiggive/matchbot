@@ -565,9 +565,9 @@ class RegularGivingServiceTest extends TestCase
         $donation = self::someDonation();
         $this->donationRepositoryProphecy->findPendingAndPreAuthedForMandate($mandate->getId())->willReturn([$donation]);
 
-        $sut->cancelMandate(mandate: $mandate, reason: '');
+        $this->donationServiceProphecy->cancel($donation)->shouldBeCalled();
 
-        $this->assertEquals(DonationStatus::Cancelled, $donation->getDonationStatus());
+        $sut->cancelMandate(mandate: $mandate, reason: '');
     }
 
     public function makeSut(\DateTimeImmutable $simulatedNow): RegularGivingService

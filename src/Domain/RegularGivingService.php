@@ -390,6 +390,7 @@ readonly class RegularGivingService
      * Cancels a mandate when the donor has decided they want to stop making donations.
      *
      * @param RegularGivingMandate $mandate - must have been persisted, i.e. have an ID set.
+     * @throws NonCancellableStatus
      */
     public function cancelMandate(RegularGivingMandate $mandate, string $reason): void
     {
@@ -407,7 +408,7 @@ readonly class RegularGivingService
         );
 
         foreach ($cancellableDonations as $donation) {
-            $donation->cancel();
+            $this->donationService->cancel($donation);
         }
 
         $this->entityManager->flush();
