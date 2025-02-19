@@ -87,7 +87,7 @@ class CancelAsAdminTest extends TestCase
         return hash_hmac('sha256', $body, $salesforceSecretKey);
     }
 
-    private function getRouteWithMandateId(string $mandateUuidString)
+    private function getRouteWithMandateId(string $mandateUuidString): Route
     {
         $route = new Route(
             ['POST'],
