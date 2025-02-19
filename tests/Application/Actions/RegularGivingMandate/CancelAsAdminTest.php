@@ -5,14 +5,19 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\RegularGivingMandate;
 
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DayOfMonth;
+use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
+use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
+use Slim\App;
 use Slim\CallableResolver;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Response;
@@ -29,7 +34,10 @@ class CancelAsAdminTest extends TestCase
         $request = self::createRequest('POST', "/v1/regular-giving/mandate/$mandateUuidString/cancel")
             ->withHeader('x-send-verify-hash', $this->getSalesforceAuthValue(''));
 
-        $response = $this->getAppInstance()->handle($request->withAttribute('route', $route));
+        $app = $this->getAppInstance();
+        $this->mockRepositories($app, $mandate);
+
+        $response = $app->handle($request->withAttribute('route', $route));
 
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -48,7 +56,10 @@ class CancelAsAdminTest extends TestCase
         $request = self::createRequest('POST', "/v1/regular-giving/mandate/$mandateUuidString/cancel")
             ->withHeader('x-send-verify-hash', $this->getSalesforceAuthValue(''));
 
-        $response = $this->getAppInstance()->handle($request->withAttribute('route', $route));
+        $app = $this->getAppInstance();
+        $this->mockRepositories($app, $mandate);
+
+        $response = $app->handle($request->withAttribute('route', $route));
 
         $this->assertEquals(400, $response->getStatusCode());
 
@@ -68,7 +79,7 @@ class CancelAsAdminTest extends TestCase
             sfId: Salesforce18Id::ofCampaign('campaignId12345678')
         );
 
-        return new RegularGivingMandate(
+        $mandate = new RegularGivingMandate(
             donorId: PersonId::of(Uuid::uuid4()->toString()),
             donationAmount: Money::fromPoundsGBP(20),
             campaignId: Salesforce18Id::ofCampaign($campaign->getSalesforceId()),
@@ -76,6 +87,9 @@ class CancelAsAdminTest extends TestCase
             giftAid: false,
             dayOfMonth: DayOfMonth::of(2),
         );
+        $mandate->setId(1);
+
+        return $mandate;
     }
 
     private function getSalesforceAuthValue(string $body): string
@@ -100,5 +114,32 @@ class CancelAsAdminTest extends TestCase
         $route->setArgument('mandateId', $mandateUuidString);
 
         return $route;
+    }
+
+    private function getMockDonationRepository(RegularGivingMandate $mandate): DonationRepository
+    {
+        $prophecy = $this->prophesize(DonationRepository::class);
+        $prophecy->findPendingAndPreAuthedForMandate($mandate->getId())
+            ->willReturn([]);
+
+        return $prophecy->reveal();
+    }
+
+    private function getMockMandateRepository(RegularGivingMandate $mandate): RegularGivingMandateRepository
+    {
+        $prophecy = $this->prophesize(RegularGivingMandateRepository::class);
+        $prophecy->findOneByUuid($mandate->getUuid())
+            ->willReturn($mandate);
+
+        return $prophecy->reveal();
+    }
+
+    private function mockRepositories(App $app, RegularGivingMandate $mandate): void
+    {
+        $container = $app->getContainer();
+        $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
+        $container->set(DonationRepository::class, $this->getMockDonationRepository($mandate));
+        $container->set(RegularGivingMandateRepository::class, $this->getMockMandateRepository($mandate));
+        $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
     }
 }
