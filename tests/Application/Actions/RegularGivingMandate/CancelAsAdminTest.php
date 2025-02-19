@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Actions\RegularGivingMandate;
 
+use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\Money;
@@ -12,6 +13,10 @@ use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Ramsey\Uuid\Uuid;
+use Slim\CallableResolver;
+use Slim\Psr7\Factory\ResponseFactory;
+use Slim\Psr7\Response;
+use Slim\Routing\Route;
 
 class CancelAsAdminTest extends TestCase
 {
@@ -20,10 +25,11 @@ class CancelAsAdminTest extends TestCase
         $mandate = $this->getTestMandate();
         $mandateUuidString = $mandate->getUuid()->toString();
 
+        $route = $this->getRouteWithMandateId($mandateUuidString);
         $request = self::createRequest('POST', "/v1/mandates/$mandateUuidString/cancel")
             ->withHeader('x-send-verify-hash', $this->getSalesforceAuthValue(''));
 
-        $response = $this->getAppInstance()->handle($request);
+        $response = $this->getAppInstance()->handle($request->withAttribute('route', $route));
 
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -36,17 +42,25 @@ class CancelAsAdminTest extends TestCase
             at: new \DateTimeImmutable(),
             type: MandateCancellationType::DonorRequestedCancellation
         );
-
         $mandateUuidString = $mandate->getUuid()->toString();
 
+        $route = $this->getRouteWithMandateId($mandateUuidString);
         $request = self::createRequest('POST', "/v1/mandates/$mandateUuidString/cancel")
             ->withHeader('x-send-verify-hash', $this->getSalesforceAuthValue(''));
 
 
-        $response = $this->getAppInstance()->handle($request);
+        $response = $this->getAppInstance()->handle($request->withAttribute('route', $route));
 
         $this->assertEquals(400, $response->getStatusCode());
-        // todo check body contents
+
+        $payload = (string) $response->getBody();
+        $expectedPayload = new ActionPayload(400, ['error' => [
+            'type' => 'BAD_REQUEST',
+            'description' => 'Mandate has existing non-cancelable status Cancelled',
+        ]]);
+        $expectedSerialised = json_encode($expectedPayload, JSON_PRETTY_PRINT);
+
+        $this->assertEquals($expectedSerialised, $payload);
     }
 
     private function getTestMandate(): RegularGivingMandate
@@ -71,5 +85,21 @@ class CancelAsAdminTest extends TestCase
         \assert(is_string($salesforceSecretKey));
 
         return hash_hmac('sha256', $body, $salesforceSecretKey);
+    }
+
+    private function getRouteWithMandateId(string $mandateUuidString)
+    {
+        $route = new Route(
+            ['POST'],
+            '',
+            static function () {
+                return new Response(200);
+            },
+            new ResponseFactory(),
+            new CallableResolver()
+        );
+        $route->setArgument('mandateId', $mandateUuidString);
+
+        return $route;
     }
 }
