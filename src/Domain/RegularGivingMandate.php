@@ -101,7 +101,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column()]
     private bool $isMatched;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(type: 'string', length: 500, nullable: true)]
     private ?string $cancellationReason = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
