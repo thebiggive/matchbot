@@ -92,6 +92,9 @@ return function (App $app) {
             '/test-donation-collection-for-date/{date}',
             \MatchBot\Application\Actions\CollectRegularGivingForTest::class
         );
+
+        $versionGroup->post('/regular-giving/mandate/{mandateId:[a-z0-9-]{36}}/cancel', RegularGivingMandate\CancelAsAdmin::class)
+            ->add(SalesforceAuthMiddleware::class);
     });
     // Authenticated through Stripe's SDK signature verification
     $app->post('/hooks/stripe', Hooks\StripePaymentsUpdate::class);
