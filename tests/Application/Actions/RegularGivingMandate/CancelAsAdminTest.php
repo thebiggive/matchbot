@@ -26,7 +26,7 @@ class CancelAsAdminTest extends TestCase
         $mandateUuidString = $mandate->getUuid()->toString();
 
         $route = $this->getRouteWithMandateId($mandateUuidString);
-        $request = self::createRequest('POST', "/v1/mandates/$mandateUuidString/cancel")
+        $request = self::createRequest('POST', "/v1/regular-giving/mandate/$mandateUuidString/cancel")
             ->withHeader('x-send-verify-hash', $this->getSalesforceAuthValue(''));
 
         $response = $this->getAppInstance()->handle($request->withAttribute('route', $route));
@@ -45,9 +45,8 @@ class CancelAsAdminTest extends TestCase
         $mandateUuidString = $mandate->getUuid()->toString();
 
         $route = $this->getRouteWithMandateId($mandateUuidString);
-        $request = self::createRequest('POST', "/v1/mandates/$mandateUuidString/cancel")
+        $request = self::createRequest('POST', "/v1/regular-giving/mandate/$mandateUuidString/cancel")
             ->withHeader('x-send-verify-hash', $this->getSalesforceAuthValue(''));
-
 
         $response = $this->getAppInstance()->handle($request->withAttribute('route', $route));
 
