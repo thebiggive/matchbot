@@ -52,7 +52,7 @@ class CancelAsAdminTest extends TestCase
     private function getTestMandate(): RegularGivingMandate
     {
         $campaign = TestCase::someCampaign(
-            sfId: Salesforce18Id::ofCampaign(self::randomString())
+            sfId: Salesforce18Id::ofCampaign('campaignId12345678')
         );
 
         return new RegularGivingMandate(
@@ -63,11 +63,6 @@ class CancelAsAdminTest extends TestCase
             giftAid: false,
             dayOfMonth: DayOfMonth::of(2),
         );
-    }
-
-    private static function randomString(): string
-    {
-        return substr(Uuid::uuid4()->toString(), 0, 15);
     }
 
     private function getSalesforceAuthValue(string $body): string
