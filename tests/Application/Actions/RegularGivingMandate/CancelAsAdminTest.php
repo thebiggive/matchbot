@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Actions\RegularGivingMandate;
 
+use DI\Container;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DayOfMonth;
@@ -137,6 +138,8 @@ class CancelAsAdminTest extends TestCase
     private function mockRepositories(App $app, RegularGivingMandate $mandate): void
     {
         $container = $app->getContainer();
+        \assert($container instanceof Container);
+
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
         $container->set(DonationRepository::class, $this->getMockDonationRepository($mandate));
         $container->set(RegularGivingMandateRepository::class, $this->getMockMandateRepository($mandate));
