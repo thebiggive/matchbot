@@ -855,9 +855,9 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $preAuthorized = DonationStatus::PreAuthorized->value;
 
         $query = $this->getEntityManager()->createQuery(<<<DQL
-            SELECT donation from Matchbot\Domain\Donation donation
-            WHERE donation.mandate.id = :mandate_id
-            WHERE donation.donationStatus IN ('$preAuthorized', '$pending')
+            SELECT d from Matchbot\Domain\Donation d JOIN d.mandate m
+            WHERE m.id = :mandate_id
+            AND d.donationStatus IN ('$preAuthorized', '$pending')
         DQL
         );
 
