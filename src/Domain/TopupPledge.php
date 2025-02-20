@@ -6,6 +6,10 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * Top-up pledges represent commitments beyond a charity's pledge target (including when that target
+ * is £0 because the campaign is 1:1 model) and are used *after* {@see ChampionFund}s.
+ */
 #[ORM\Entity]
 class TopupPledge extends Fund
 {
