@@ -20,6 +20,10 @@ use PrinsFrank\Standards\Country\CountryAlpha2;
  */
 class WebsiteExamplesCalculatorTest extends TestCase
 {
+    /**
+     * The following worked examples should match and include everything at https://biggive.org/our-fees/ . All amounts
+     * are in GBP.
+     */
     public const array WORKED_EXAMPLES = [
         'Donation made with UK Visa Card, without gift aid' => [
             'donation_amount' => '10',
