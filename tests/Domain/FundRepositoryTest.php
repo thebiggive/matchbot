@@ -44,7 +44,7 @@ class FundRepositoryTest extends TestCase
         // Setting a salesforceId is the quickest
         // way to ensure this behaves like a newly-found Fund without having to partially mock / prophesise
         // `FundRepository` such that `doPull()` is a real call but `pull()` doesn't try a real DB engine lookup.
-        $fund = new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: Salesforce18Id::of(self::CAMPAIGN_SF_ID));
+        $fund = new Fund(currencyCode: 'GBP', name: '', salesforceId: Salesforce18Id::of(self::CAMPAIGN_SF_ID));
 
         $repo->updateFromSf($fund, autoSave: false); // Don't auto-save as non-DB-backed tests can't persist
 

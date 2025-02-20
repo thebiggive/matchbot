@@ -12,6 +12,7 @@ use MatchBot\Application\Matching;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\ChampionFund;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -23,7 +24,7 @@ class ResetMatchingTest extends TestCase
 {
     public function testSinglePush(): void
     {
-        $fund = new ChampionFund('GBP', name: 'Test Champion Fund 123', salesforceId: Salesforce18Id::of('sfFundId1234567890'));
+        $fund = new Fund('GBP', name: 'Test Champion Fund 123', salesforceId: Salesforce18Id::of('sfFundId1234567890'));
         $fund->setSalesforceLastPull(new \DateTime());
 
         $campaignFunding = new CampaignFunding(

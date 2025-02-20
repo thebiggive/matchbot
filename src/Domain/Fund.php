@@ -9,12 +9,6 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 
-const DISCRIMINATOR_MAP = [
-    'championFund' => ChampionFund::class,
-    'pledge' => Pledge::class,
-    'topupPledge' => TopupPledge::class,
-];
-
 /**
  * Represents a commitment of match funds, i.e. a Champion Fund or Pledge. Because a Fund (most
  * typically a Champion Fund) can be split up and allocated to multiple Campaigns, the Fund in
@@ -27,28 +21,26 @@ const DISCRIMINATOR_MAP = [
  */
 #[ORM\Table]
 #[ORM\Entity(repositoryClass: FundRepository::class)]
-#[ORM\InheritanceType('SINGLE_TABLE')]
-#[ORM\DiscriminatorColumn(name: 'fundType', type: 'string')]
-#[ORM\DiscriminatorMap([
-    'unknownFund' => self::class,
-    ...DISCRIMINATOR_MAP,
-])]
 #[ORM\HasLifecycleCallbacks]
-abstract class Fund extends SalesforceReadProxy
+class Fund extends SalesforceReadProxy
 {
-    use TimestampsTrait;
-
-    /** @var positive-int */
-    public const int NORMAL_ALLOCATION_ORDER = 999;
+    const string TYPE_CHAMPION_FUND = 'championFund';
 
     /**
-     * We keep this public so `FundRepository` can do a reverse search to decide what to instantiate.
-     * This way the Doctrine mapping (via attribute above), mapping to string for API push and mapping
-     * *from* string for API pull, all live in one const array.
-     *
-     * @var array<string, class-string<Fund>>  Maps from API field to Fund subclass name.
+     * Normal Pledges are used before {@see ChampionFund}s.
+     * @see TopupPledge for the distinct type of pledge that is sometimes committed above a pledge target.
      */
-    public const array DISCRIMINATOR_MAP = DISCRIMINATOR_MAP;
+    const string TYPE_PLEDGE = 'pledge';
+
+    /** Top-up pledges represent commitments beyond a charity's pledge target (including when that target
+    * is £0 because the campaign is 1:1 model) and are used *after* {@see ChampionFund}s.
+    */
+    const string TYPE_TOPUP_PLEDGE = 'topupPledge';
+
+    const array types = [self::TYPE_CHAMPION_FUND, self::TYPE_PLEDGE, self::TYPE_CHAMPION_FUND];
+
+
+    use TimestampsTrait;
 
     /**
      * @var string  ISO 4217 code for the currency used with this fund, and in which FundingWithdrawals are denominated.
@@ -68,8 +60,18 @@ abstract class Fund extends SalesforceReadProxy
     #[ORM\OneToMany(mappedBy: 'fund', targetEntity: CampaignFunding::class)]
     protected Collection $campaignFundings;
 
-    final public function __construct(string $currencyCode, string $name, ?Salesforce18Id $salesforceId)
+    /**
+     * @paslm-var self::TYPE_*
+     */
+    #[ORM\Column(type: 'string')]
+    private string $fundType;
+
+    /**
+     * @psalm-param self::TYPE_* $type
+     */
+    final public function __construct(string $currencyCode, string $name, ?Salesforce18Id $salesforceId, string $type)
     {
+        Assertion::inArray($type, self::types);
         $this->createdAt = new \DateTime();
         $this->updatedAt = new \DateTime();
         $this->campaignFundings = new ArrayCollection();
@@ -77,19 +79,7 @@ abstract class Fund extends SalesforceReadProxy
         $this->currencyCode = $currencyCode;
         $this->name = $name;
         $this->salesforceId = $salesforceId?->value;
-    }
-
-    /**
-     * @return 'championFund'|'pledge'|'topupPledge'|'unknownFund'
-     */
-    public function getDiscriminatorValue(): string
-    {
-        if ($value = array_search(static::class, self::DISCRIMINATOR_MAP, true)) {
-            return $value;
-        }
-
-        // else no match in the known subclasses map
-        return 'unknownFund';
+        $this->fundType = $type;
     }
 
     /**
@@ -182,5 +172,14 @@ abstract class Fund extends SalesforceReadProxy
         Assertion::same($funding->getFund(), $this);
 
         $this->campaignFundings->add($funding);
+    }
+
+    public function allocationOrder(): int
+    {
+        return match ($this->fundType) {
+            'championFund' => 200,
+            'pledge' => 100,
+            'topupPledge' => 300,
+        };
     }
 }

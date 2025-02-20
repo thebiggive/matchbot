@@ -14,6 +14,7 @@ use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\Pledge;
 use MatchBot\Tests\TestCase;
@@ -176,7 +177,7 @@ class RedistributeMatchFundsTest extends TestCase
     private function getFullyAvailablePledgeFunding(): CampaignFunding
     {
         $pledgeAmount = '101.00';
-        $pledge = new Pledge(currencyCode: 'GBP', name: '', salesforceId: null);
+        $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null);
 
         return new CampaignFunding(
             fund: $pledge,

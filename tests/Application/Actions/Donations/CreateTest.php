@@ -1042,7 +1042,7 @@ class CreateTest extends TestCase
     private static function someCampaignFunding(): CampaignFunding
     {
         return new CampaignFunding(
-            fund: new Pledge('GBP', 'some pledge', null),
+            fund: new \MatchBot\Domain\Fund('GBP', 'some pledge', null, 'pledge'),
             amount: '8.00',
             amountAvailable: '8.00',
             allocationOrder: 100,

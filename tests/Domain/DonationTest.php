@@ -18,6 +18,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
@@ -203,7 +204,7 @@ class DonationTest extends TestCase
 
     public function testtoFrontEndApiModel(): void
     {
-        $pledge = new Pledge(currencyCode: 'GBP', name: '', salesforceId: null);
+        $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null);
 
         $campaignFunding = new CampaignFunding(
             fund: $pledge,
@@ -326,7 +327,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
         $campaignFunding0 = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
+            fund: new Fund(currencyCode: 'GBP', name: '', salesforceId: null, type: 'championFund'),
             amount: '1000',
             amountAvailable: '1000',
             allocationOrder: 100,
@@ -336,7 +337,7 @@ class DonationTest extends TestCase
         $withdrawal0->setAmount('1');
 
         $campaignFunding1 = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
+            fund: new Fund(currencyCode: 'GBP', name: '', salesforceId: null, type: 'championFund'),
             amount: '1000',
             amountAvailable: '1000',
             allocationOrder: 100,
