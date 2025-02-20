@@ -400,6 +400,7 @@ readonly class RegularGivingService
     ): void {
         $mandateId = $mandate->getId();
         Assertion::notNull($mandateId);
+        Assertion::inArray($cancellationType, [MandateCancellationType::DonorRequestedCancellation, MandateCancellationType::BigGiveCancelled]);
 
         $mandate->cancel(reason: $reason, at: $this->now, type: $cancellationType);
 
