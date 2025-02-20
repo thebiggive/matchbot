@@ -205,11 +205,17 @@ class RegularGivingMandate extends SalesforceWriteProxy
                 'type' => 'monthly',
                 'dayOfMonth' => $this->dayOfMonth->value,
                 'activeFrom' => $this->activeFrom?->format(\DateTimeInterface::ATOM),
-                'expectedNextPaymentDate' => $this->firstPaymentDayAfter($now)->format(\DateTimeInterface::ATOM),
+                'expectedNextPaymentDate' => in_array($this->status, [MandateStatus::Pending, MandateStatus::Active], true) ?
+                    $this->firstPaymentDayAfter($now)->format(\DateTimeInterface::ATOM) :
+                    null,
             ],
             'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
             'status' => $this->status->apiName(),
+            ...($this->cancelledAt ?
+                ['cancellationDate' => $this->cancelledAt->format(\DateTimeInterface::ATOM)] :
+                []
+            )
         ];
     }
 

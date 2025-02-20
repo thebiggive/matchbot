@@ -38,13 +38,24 @@ class RegularGivingMandateRepository
      * @return list<array{0: RegularGivingMandate, 1: Charity}>
      *     List of tuples of regular giving mandates with their recipient charities
      */
-    public function allActiveForDonorWithCharities(PersonId $donor): array
+    public function allActiveAndUserCancelledForDonorWithCharities(PersonId $donor): array
     {
         $active = MandateStatus::Active->value;
+        $cancelled = MandateStatus::Cancelled->value;
+
+        $donorCancelled = MandateCancellationType::DonorRequestedCancellation->value;
+        $bgCancelled = MandateCancellationType::BigGiveCancelled->value;
+
+        // We want to include active mandates, and mandates that *were* active for any amount of time then manually
+        // cancelled. Not mandates auto cancelled on creation which may as well never have existed.
+
         $query = $this->em->createQuery(<<<"DQL"
-            SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r 
+            SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r
             LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
-            WHERE r.status = '{$active}'
+            WHERE (
+                r.status = '{$active}' OR
+                (r.status = '{$cancelled}' AND r.cancellationType IN ('$bgCancelled', '$donorCancelled'))
+                )
             AND r.donorId.id = :donorId
             ORDER BY r.activeFrom desc
         DQL
