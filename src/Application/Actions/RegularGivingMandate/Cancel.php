@@ -8,6 +8,7 @@ use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels\MandateCancellation;
 use MatchBot\Application\Security\Security;
 use MatchBot\Domain\DomainException\NonCancellableStatus;
+use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Domain\RegularGivingService;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -70,7 +71,7 @@ class Cancel extends Action
         }
 
         try {
-            $this->mandateService->cancelMandate($mandate, $cancellation->cancellationReason);
+            $this->mandateService->cancelMandate($mandate, $cancellation->cancellationReason, MandateCancellationType::DonorRequestedCancellation);
         } catch (NonCancellableStatus $e) {
             return $this->validationError(
                 response: $response,

@@ -15,8 +15,14 @@ enum MandateCancellationType: string
     case FirstDonationUnsuccessful = 'FirstDonationUnsuccessful';
 
     /**
-     * Cancelled on donor request. This is currently the only case where the cancellation date will be different to
+     * Cancelled on donor request. One of two where the cancellation date will be different to
      * creation date.
      */
     case DonorRequestedCancellation = 'DonorRequestedCancellation';
+
+    /**
+     * Cancelled by Big Give through Salesforce. One of two where the cancellation date will be different to
+     *  creation date.
+     */
+    case BigGiveCancelled = 'BigGiveCancelled';
 }
