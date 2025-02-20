@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<files psalm-version="5.26.1@d747f6500b38ac4f7dfc5edbcae6e4b637d7add0">
+<files psalm-version="6.0.0@b8e96bb617bf59382113b1b56cef751f648a7dc9">
   <file src="app/dependencies.php">
     <MixedArgument>
       <code><![CDATA[$c->get('settings')]]></code>
@@ -97,10 +97,6 @@
     </MixedPropertyFetch>
   </file>
   <file src="src/Application/Auth/IdentityToken.php">
-    <MixedInferredReturnType>
-      <code><![CDATA[?string]]></code>
-      <code><![CDATA[bool]]></code>
-    </MixedInferredReturnType>
     <MixedPropertyFetch>
       <code><![CDATA[$decodedJwtBody->sub->complete]]></code>
       <code><![CDATA[$decodedJwtBody->sub->person_id]]></code>
@@ -157,41 +153,13 @@
       <code><![CDATA[empty($donationMessage->submission_correlation_id)]]></code>
     </RiskyTruthyFalsyComparison>
   </file>
-  <file src="src/Client/Common.php">
-    <MixedArrayAccess>
-      <code><![CDATA[$this->clientSettings[$service][$property]]]></code>
-      <code><![CDATA[$this->clientSettings['global']['timeout']]]></code>
-    </MixedArrayAccess>
-    <MixedAssignment>
-      <code><![CDATA[$this->clientSettings]]></code>
-    </MixedAssignment>
-    <MixedInferredReturnType>
-      <code><![CDATA[string]]></code>
-    </MixedInferredReturnType>
-    <MixedReturnStatement>
-      <code><![CDATA[$this->clientSettings[$service][$property]]]></code>
-    </MixedReturnStatement>
-  </file>
-  <file src="src/Client/Donation.php">
-    <RiskyTruthyFalsyComparison>
-      <code><![CDATA[getenv('DISABLE_CLIENT_PUSH')]]></code>
-    </RiskyTruthyFalsyComparison>
-  </file>
   <file src="src/Client/Fund.php">
-    <MixedInferredReturnType>
-      <code><![CDATA[array]]></code>
-      <code><![CDATA[array]]></code>
-    </MixedInferredReturnType>
     <MixedReturnStatement>
       <code><![CDATA[json_decode((string) $response->getBody(), true)]]></code>
       <code><![CDATA[json_decode((string) $response->getBody(), true)]]></code>
     </MixedReturnStatement>
   </file>
   <file src="src/Domain/CampaignFundingRepository.php">
-    <MixedInferredReturnType>
-      <code><![CDATA[?CampaignFunding]]></code>
-      <code><![CDATA[?CampaignFunding]]></code>
-    </MixedInferredReturnType>
     <MixedReturnStatement>
       <code><![CDATA[$query->getOneOrNullResult()]]></code>
       <code><![CDATA[$query->getOneOrNullResult()]]></code>
@@ -362,17 +330,10 @@
       <code><![CDATA[$webhookSecret]]></code>
     </MixedAssignment>
   </file>
-  <file src="tests/Application/Persistence/RetrySafeEntityManagerTest.php">
-    <MixedArgument>
-      <code><![CDATA[$container->get('settings')['doctrine']['connection']]]></code>
-      <code><![CDATA[$container->get('settings')['doctrine']['connection']]]></code>
-      <code><![CDATA[$container->get('settings')['doctrine']['connection']]]></code>
-    </MixedArgument>
-    <MixedArrayAccess>
-      <code><![CDATA[$container->get('settings')['doctrine']]]></code>
-      <code><![CDATA[$container->get('settings')['doctrine']]]></code>
-      <code><![CDATA[$container->get('settings')['doctrine']]]></code>
-    </MixedArrayAccess>
+  <file src="tests/Application/Fees/WebsiteExamplesCalculatorTest.php">
+    <MixedReturnStatement>
+      <code><![CDATA[array]]></code>
+    </MixedReturnStatement>
   </file>
   <file src="tests/TestCase.php">
     <MixedArgument>
