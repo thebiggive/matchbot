@@ -112,11 +112,13 @@ class FundRepository extends SalesforceReadProxyRepository
                 }
             } else {
                 // Not a previously existing campaign -> create one and set balances without checking for existing ones.
+                /** @var positive-int $order */
+                $order = $fund::NORMAL_ALLOCATION_ORDER;
                 $campaignFunding = new CampaignFunding(
                     fund: $fund,
                     amount: $amountForCampaign,
                     amountAvailable: $amountForCampaign,
-                    allocationOrder: $fund instanceof Pledge ? 100 : 200,
+                    allocationOrder: $order,
                 );
             }
 
@@ -131,7 +133,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 // Somebody else created the specific funding -> proceed without modifying it.
                 $this->logError(
                     'Skipping campaign funding create as constraint failed with campaign ' .
-                    ($campaign->getId() ?? '[unknown]') . ', fund ' . $fund->getId()
+                    ($campaign->getId() ?? '[unknown]') . ', fund ' . ($fund->getId() ?? -1)
                 );
             }
         }
@@ -159,16 +161,12 @@ class FundRepository extends SalesforceReadProxyRepository
     {
         $currencyCode = $fundData['currencyCode'] ?? 'GBP';
         $name = $fundData['name'] ?? '';
+        $type = $fundData['type'];
         Assertion::string($currencyCode);
         Assertion::string($name);
-
-        if ($fundData['type'] === Pledge::DISCRIMINATOR_VALUE) {
-            $fund = new Pledge(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']));
-        } elseif ($fundData['type'] === 'championFund') {
-            $fund = new ChampionFund(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']));
-        } else {
-            throw new \UnexpectedValueException("Unknown fund type '{$fundData['type']}'");
-        }
+        Assertion::string($type);
+        $applicableFundClass = $this->getApplicableFundClass($type);
+        $fund = new $applicableFundClass(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']));
 
         return $fund;
     }
@@ -215,5 +213,20 @@ EOT;
 
         $fundData = $this->getClient()->getById($fundId, $withCache);
         $proxy->setName($fundData['name'] ?? '');
+    }
+
+    /**
+     * @return class-string<Fund>
+     * @throws \UnexpectedValueException if no match in the discriminator map
+     */
+    private function getApplicableFundClass(string $type): string
+    {
+        /** @var array<string, class-string<Fund>> $map */
+        $map = Fund::DISCRIMINATOR_MAP;
+        if (array_key_exists($type, $map)) {
+            return $map[$type];
+        }
+
+        throw new \UnexpectedValueException("Unknown fund type '{$type}'");
     }
 }

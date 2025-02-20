@@ -272,7 +272,7 @@ abstract class IntegrationTest extends TestCase
             isRegularGiving: $isRegularGiving
         );
         ['fundId' => $fundId, 'campaignFundingId' => $campaignFundingId] =
-            $this->addFunding($campaignId, $fundWithAmountInPounds, 1, Pledge::DISCRIMINATOR_VALUE);
+            $this->addFunding($campaignId, $fundWithAmountInPounds, 1, 'pledge');
 
         $compacted = compact('charityId', 'campaignId', 'fundId', 'campaignFundingId');
         Assertion::allInteger($compacted);
@@ -281,7 +281,7 @@ abstract class IntegrationTest extends TestCase
     }
 
     /**
-     * @param 'championFund'|'pledge'|'unknownFund' $fundType
+     * @param 'championFund'|'pledge'|'topupPledge'|'unknownFund' $fundType
      * @return array{fundId: int, campaignFundingId: int}
      * @psalm-suppress MoreSpecificReturnType
      * @psalm-suppress LessSpecificReturnStatement
@@ -290,7 +290,7 @@ abstract class IntegrationTest extends TestCase
         int $campaignId,
         int $amountInPounds,
         int $allocationOrder,
-        string $fundType = Fund::DISCRIMINATOR_VALUE,
+        string $fundType,
     ): array {
         $db = $this->db();
         $fundSfID = $this->randomString();
