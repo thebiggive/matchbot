@@ -283,9 +283,9 @@ readonly class RegularGivingService
         return $donation;
     }
 
-    public function allActiveForDonorAsApiModel(PersonId $donor): array
+    public function allActiveAndUserCancelledForDonorAsApiModel(PersonId $donor): array
     {
-        $mandatesWithCharities = $this->regularGivingMandateRepository->allActiveForDonorWithCharities($donor);
+        $mandatesWithCharities = $this->regularGivingMandateRepository->allActiveAndUserCancelledForDonorWithCharities($donor);
 
         $currentUKTime = $this->now->setTimezone(new \DateTimeZone("Europe/London"));
 
