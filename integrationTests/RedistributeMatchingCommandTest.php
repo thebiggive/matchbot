@@ -18,7 +18,6 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\PaymentMethodType;
-use MatchBot\Domain\Fund;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
