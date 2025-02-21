@@ -830,7 +830,7 @@ class Donation extends SalesforceWriteProxy
         $withdrawalTotal = '0.0';
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
             // Rely on Doctrine `SINGLE_TABLE` inheritance structure to derive the type from the concrete class.
-            if ($fundingWithdrawal->getCampaignFunding()->getFund() instanceof ChampionFund) {
+            if ($fundingWithdrawal->getCampaignFunding()->getFund() instanceof Fund) {
                 $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
             }
         }
@@ -850,7 +850,7 @@ class Donation extends SalesforceWriteProxy
         $withdrawalTotal = '0.0';
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
             // Rely on Doctrine `SINGLE_TABLE` inheritance structure to derive the type from the concrete class.
-            if ($fundingWithdrawal->getCampaignFunding()->getFund() instanceof Pledge) {
+            if ($fundingWithdrawal->getCampaignFunding()->getFund() instanceof Fund) {
                 $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
             }
         }

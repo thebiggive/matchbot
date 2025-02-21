@@ -16,7 +16,7 @@ use Doctrine\ORM\Mapping as ORM;
  * served' basis to the Campaigns that receive donations first.
  *
  * Allocation order is currently set to a fixed value for each subclass of {@see Fund}, such that
- * {@see Pledge}s are used before {@see ChampionFund}s.
+ * {@see Fund}s are used before {@see Fund}s.
  */
 #[ORM\Table]
 #[ORM\Index(name: 'available_fundings', columns: ['amountAvailable', 'allocationOrder', 'id'])]

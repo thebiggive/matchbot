@@ -19,7 +19,7 @@ use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\PaymentMethodType;
-use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;

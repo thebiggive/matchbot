@@ -24,10 +24,6 @@
         </ignoreFiles>
     </projectFiles>
     <issueHandlers>
-        <DeprecatedClass><errorLevel type="suppress">
-            <directory name="tests"/>
-        </errorLevel>
-        </DeprecatedClass>
         <UnusedClass>
             <errorLevel type="suppress">
                 <directory name="src/Migrations"/>

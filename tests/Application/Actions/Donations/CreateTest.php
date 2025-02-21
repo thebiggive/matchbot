@@ -21,9 +21,10 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\Fund as FundEntity;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundRepository;
-use MatchBot\Domain\Pledge;
+use MatchBot\Domain\FundType;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
@@ -1042,7 +1043,7 @@ class CreateTest extends TestCase
     private static function someCampaignFunding(): CampaignFunding
     {
         return new CampaignFunding(
-            fund: new Pledge('GBP', 'some pledge', null),
+            fund: new FundEntity('GBP', 'some pledge', null, FundType::Pledge),
             amount: '8.00',
             amountAvailable: '8.00',
             allocationOrder: 100,

@@ -13,7 +13,7 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Fund;
-use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestData;
 use PHPUnit\Framework\TestCase;

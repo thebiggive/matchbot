@@ -11,7 +11,6 @@ use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
-use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\FundType;
@@ -118,7 +117,7 @@ class FundRepositoryTest extends TestCase
         // Validate that with an existing fund on a new campaign, the Doctrine EM is asked to persist the
         // campaign funding newly, as well as the Fund with an updated amount.
         $entityManagerProphecy
-            ->persist(Argument::type(ChampionFund::class))
+            ->persist(Argument::type(Fund::class))
             ->shouldBeCalledTimes(2);
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
@@ -156,7 +155,7 @@ class FundRepositoryTest extends TestCase
         // Validate that with an existing fund on an existing campaign, the Doctrine EM is asked to persist the
         // campaign funding and Fund, with updated amounts.
         $entityManagerProphecy
-            ->persist(Argument::type(ChampionFund::class))
+            ->persist(Argument::type(Fund::class))
             ->shouldBeCalledTimes(2);
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
@@ -215,7 +214,7 @@ class FundRepositoryTest extends TestCase
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $entityManagerProphecy
-            ->persist(Argument::type(ChampionFund::class))
+            ->persist(Argument::type(Fund::class))
             ->shouldNotBeCalled();
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
@@ -258,10 +257,11 @@ class FundRepositoryTest extends TestCase
 
     private function getExistingFund(bool $shared): Fund
     {
-        $existingFund = new ChampionFund(
+        $existingFund = new Fund(
             currencyCode: 'GBP',
             name: $shared ? 'Test Shared Champion Fund 456' : 'Test Champion Fund 123',
-            salesforceId: Salesforce18Id::of($shared ? 'sfFundId4567890abc' : 'sfFundId1234567890')
+            salesforceId: Salesforce18Id::of($shared ? 'sfFundId4567890abc' : 'sfFundId1234567890'),
+            fundType: FundType::ChampionFund
         );
         $existingFund->setId($shared ? 456456 : 123123);
         $existingFund->setSalesforceLastPull(new \DateTime());
