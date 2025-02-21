@@ -154,7 +154,7 @@ class Fund extends SalesforceReadProxy
         return [
             'currencyCode' => $amounts['totalAmount']->currency->isoCode(),
             'fundId' => $this->getId(),
-            'fundType' => $this->getDiscriminatorValue(),
+            'fundType' => $this->fundType,
             'salesforceFundId' => $sfId,
             'totalAmount' => (float) $amounts['totalAmount']->toNumericString(),
             'usedAmount' => (float) $amounts['usedAmount']->toNumericString(),
