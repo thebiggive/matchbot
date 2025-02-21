@@ -15,8 +15,9 @@ use Doctrine\ORM\Mapping as ORM;
  * Linking to multiple creates funding that is not ringfenced and is assigned on a 'first come first
  * served' basis to the Campaigns that receive donations first.
  *
- * Allocation order is currently set to a fixed value for each subclass of {@see Fund}, such that
- * {@see Fund}s are used before {@see Fund}s.
+ * Allocation order is currently set to a fixed value for each type of {@see Fund}, such that
+ * Pledges are used before Champion funds, which are used before topup funds.
+ * See {@see FundType::allocationOrder()}
  */
 #[ORM\Table]
 #[ORM\Index(name: 'available_fundings', columns: ['amountAvailable', 'allocationOrder', 'id'])]
