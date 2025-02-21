@@ -205,13 +205,13 @@ class RedistributeMatchingCommandTest extends IntegrationTest
             campaignId: $campaignId,
             amountInPounds: $amount,
             allocationOrder: 100,
-            fundType: Pledge::DISCRIMINATOR_VALUE,
+            fundType: 'pledge',
         );
         ['campaignFundingId' => $championFundCampaignFundingId] = $this->addFunding(
             campaignId: $campaignId,
             amountInPounds: $amount,
             allocationOrder: 200,
-            fundType: ChampionFund::DISCRIMINATOR_VALUE,
+            fundType: 'championFund',
         );
 
         $this->prepareInRedis($pledgeCampaignFundingId, $amount);

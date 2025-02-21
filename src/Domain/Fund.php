@@ -9,6 +9,12 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 
+const DISCRIMINATOR_MAP = [
+    'championFund' => ChampionFund::class,
+    'pledge' => Pledge::class,
+    'topupPledge' => TopupPledge::class,
+];
+
 /**
  * Represents a commitment of match funds, i.e. a Champion Fund or Pledge. Because a Fund (most
  * typically a Champion Fund) can be split up and allocated to multiple Campaigns, the Fund in
@@ -24,17 +30,25 @@ use MatchBot\Application\Assertion;
 #[ORM\InheritanceType('SINGLE_TABLE')]
 #[ORM\DiscriminatorColumn(name: 'fundType', type: 'string')]
 #[ORM\DiscriminatorMap([
-    ChampionFund::DISCRIMINATOR_VALUE => ChampionFund::class,
-    Pledge::DISCRIMINATOR_VALUE => Pledge::class,
-    self::DISCRIMINATOR_VALUE => self::class,
+    'unknownFund' => self::class,
+    ...DISCRIMINATOR_MAP,
 ])]
 #[ORM\HasLifecycleCallbacks]
 abstract class Fund extends SalesforceReadProxy
 {
     use TimestampsTrait;
 
-    /** @var 'championFund'|'pledge'|'unknownFund' */
-    public const string DISCRIMINATOR_VALUE = 'unknownFund';
+    /** @var positive-int */
+    public const int NORMAL_ALLOCATION_ORDER = 999;
+
+    /**
+     * We keep this public so `FundRepository` can do a reverse search to decide what to instantiate.
+     * This way the Doctrine mapping (via attribute above), mapping to string for API push and mapping
+     * *from* string for API pull, all live in one const array.
+     *
+     * @var array<string, class-string<Fund>>  Maps from API field to Fund subclass name.
+     */
+    public const array DISCRIMINATOR_MAP = DISCRIMINATOR_MAP;
 
     /**
      * @var string  ISO 4217 code for the currency used with this fund, and in which FundingWithdrawals are denominated.
@@ -63,6 +77,19 @@ abstract class Fund extends SalesforceReadProxy
         $this->currencyCode = $currencyCode;
         $this->name = $name;
         $this->salesforceId = $salesforceId?->value;
+    }
+
+    /**
+     * @return 'championFund'|'pledge'|'topupPledge'|'unknownFund'
+     */
+    public function getDiscriminatorValue(): string
+    {
+        if ($value = array_search(static::class, self::DISCRIMINATOR_MAP, true)) {
+            return $value;
+        }
+
+        // else no match in the known subclasses map
+        return 'unknownFund';
     }
 
     /**
@@ -120,7 +147,7 @@ abstract class Fund extends SalesforceReadProxy
     /**
      * @return array{
      *     fundId: ?int,
-     *     fundType: 'championFund'|'pledge'|'unknownFund',
+     *     fundType: 'championFund'|'pledge'|'topupPledge'|'unknownFund',
      *     salesforceFundId: string,
      *     totalAmount: float, // used as Decimal in SF
      *     usedAmount: float, // used as Decimal in SF
@@ -137,7 +164,7 @@ abstract class Fund extends SalesforceReadProxy
         return [
             'currencyCode' => $amounts['totalAmount']->currency->isoCode(),
             'fundId' => $this->getId(),
-            'fundType' => static::DISCRIMINATOR_VALUE,
+            'fundType' => $this->getDiscriminatorValue(),
             'salesforceFundId' => $sfId,
             'totalAmount' => (float) $amounts['totalAmount']->toNumericString(),
             'usedAmount' => (float) $amounts['usedAmount']->toNumericString(),
