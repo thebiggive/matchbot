@@ -6,8 +6,13 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity]
+/**
+ * @deprecated - use parent class Fund directly instead.
+ */
 class ChampionFund extends Fund
 {
-    public const int NORMAL_ALLOCATION_ORDER = 200;
+    public function __construct(string $currencyCode, string $name, ?Salesforce18Id $salesforceId)
+    {
+        parent::__construct(currencyCode: $currencyCode, name: $name, salesforceId:  $salesforceId, fundType: FundType::ChampionFund);
+    }
 }

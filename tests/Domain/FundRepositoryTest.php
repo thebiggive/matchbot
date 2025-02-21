@@ -14,6 +14,7 @@ use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\FundType;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -44,7 +45,7 @@ class FundRepositoryTest extends TestCase
         // Setting a salesforceId is the quickest
         // way to ensure this behaves like a newly-found Fund without having to partially mock / prophesise
         // `FundRepository` such that `doPull()` is a real call but `pull()` doesn't try a real DB engine lookup.
-        $fund = new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: Salesforce18Id::of(self::CAMPAIGN_SF_ID));
+        $fund = new Fund(currencyCode: 'GBP', name: '', salesforceId: Salesforce18Id::of(self::CAMPAIGN_SF_ID), fundType:FundType::ChampionFund);
 
         $repo->updateFromSf($fund, autoSave: false); // Don't auto-save as non-DB-backed tests can't persist
 
@@ -59,7 +60,7 @@ class FundRepositoryTest extends TestCase
 
         // Validate that with everything new, the Doctrine EM is asked to persist the fund and campaign funding.
         $entityManagerProphecy
-            ->persist(Argument::type(ChampionFund::class))
+            ->persist(Argument::type(Fund::class))
             ->shouldBeCalledTimes(2);
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
@@ -105,7 +106,7 @@ class FundRepositoryTest extends TestCase
         $this->assertSame('1500', $campaignFunding->getAmountAvailable());
 
         $fund = $campaignFunding->getFund();
-        $this->assertInstanceOf(ChampionFund::class, $fund);
+        $this->assertEquals(FundType::ChampionFund, $fund->getFundType());
         $this->assertSame('sfFundId4567890abc', $fund->getSalesforceId());
         $this->assertSame('GBP', $fund->getCurrencyCode());
     }

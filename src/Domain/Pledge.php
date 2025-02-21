@@ -7,11 +7,13 @@ namespace MatchBot\Domain;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Normal Pledges are used before {@see ChampionFund}s.
- * @see TopupPledge for the distinct type of pledge that is sometimes committed above a pledge target.
+ * @deprecated - use parent class Fund directly instead.
  */
 #[ORM\Entity]
 class Pledge extends Fund
 {
-    public const int NORMAL_ALLOCATION_ORDER = 100;
+    public function __construct(string $currencyCode, string $name, ?Salesforce18Id $salesforceId)
+    {
+        parent::__construct(currencyCode: $currencyCode, name: $name, salesforceId:  $salesforceId, fundType: FundType::Pledge);
+    }
 }

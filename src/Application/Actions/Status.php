@@ -84,11 +84,9 @@ class Status extends Action
         $criticalModelClasses = [
             Campaign::class,
             CampaignFunding::class,
-            ChampionFund::class,
             Charity::class,
             Donation::class,
             FundingWithdrawal::class,
-            Pledge::class,
         ];
 
         // A separate ProxyGenerator with the same proxy dir and proxy namespace should produce the paths we need to

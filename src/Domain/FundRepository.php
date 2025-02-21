@@ -163,8 +163,7 @@ class FundRepository extends SalesforceReadProxyRepository
         Assertion::string($currencyCode);
         Assertion::string($name);
         Assertion::string($type);
-        $applicableFundClass = $this->getApplicableFundClass($type);
-        $fund = new $applicableFundClass(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']));
+        $fund = new Fund(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']), fundType: FundType::from($type));
 
         return $fund;
     }
@@ -211,20 +210,5 @@ EOT;
 
         $fundData = $this->getClient()->getById($fundId, $withCache);
         $proxy->setName($fundData['name'] ?? '');
-    }
-
-    /**
-     * @return class-string<Fund>
-     * @throws \UnexpectedValueException if no match in the discriminator map
-     */
-    private function getApplicableFundClass(string $type): string
-    {
-        /** @var array<string, class-string<Fund>> $map */
-        $map = Fund::DISCRIMINATOR_MAP;
-        if (array_key_exists($type, $map)) {
-            return $map[$type];
-        }
-
-        throw new \UnexpectedValueException("Unknown fund type '{$type}'");
     }
 }
