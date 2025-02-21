@@ -183,4 +183,14 @@ abstract class Fund extends SalesforceReadProxy
 
         $this->campaignFundings->add($funding);
     }
+
+    /**
+     * @return positive-int
+     */
+    public function getAllocationOrder(): int
+    {
+        $order = $this::NORMAL_ALLOCATION_ORDER;
+        \assert(is_int($order) && $order > 0);
+        return $order;
+    }
 }

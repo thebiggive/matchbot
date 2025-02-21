@@ -112,13 +112,11 @@ class FundRepository extends SalesforceReadProxyRepository
                 }
             } else {
                 // Not a previously existing campaign -> create one and set balances without checking for existing ones.
-                /** @var positive-int $order */
-                $order = $fund::NORMAL_ALLOCATION_ORDER;
                 $campaignFunding = new CampaignFunding(
                     fund: $fund,
                     amount: $amountForCampaign,
                     amountAvailable: $amountForCampaign,
-                    allocationOrder: $order,
+                    allocationOrder: $fund->getAllocationOrder(),
                 );
             }
 
