@@ -33,6 +33,7 @@ use Random\Randomizer;
 use Stripe\Card;
 use Stripe\Charge;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
 use Stripe\StripeObject;
@@ -203,6 +204,9 @@ class DonationService
     /**
      * Finalized a donation, instructing stripe to attempt to take payment immediately for a donor
      * making an immediate, online donation.
+     *
+     * @throws ApiErrorException
+     * @throws RegularGivingDonationToOldToCollect
      */
     public function confirmOnSessionDonation(
         Donation $donation,

@@ -27,6 +27,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpNotFoundException;
+use Stripe\Exception\CardException;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -152,6 +153,15 @@ class Create extends Action
                 'Consider using another payment method or contacting your card issuer.',
                 reduceSeverity: false,
             );
+        } catch (CardException $exception) {
+            return new JsonResponse([
+                'error' => [
+                    'message' => $exception->getMessage(),
+                    'publicMessage' => $exception->getMessage(),
+                    'code' => $exception->getStripeCode(),
+                    'decline_code' => $exception->getDeclineCode(),
+                ],
+            ], 402);
         }
 
         // create first three pending donations for mandate.

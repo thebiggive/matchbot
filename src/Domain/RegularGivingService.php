@@ -13,6 +13,7 @@ use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
+use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
@@ -20,9 +21,12 @@ use MatchBot\Domain\DomainException\HomeAddressRequired;
 use MatchBot\Domain\DomainException\NonCancellableStatus;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
+use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
+use Stripe\Exception\ApiErrorException as StripeApiErrorException;
+use Stripe\Exception\CardException;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
@@ -64,6 +68,7 @@ readonly class RegularGivingService
      * @throws \Doctrine\ORM\Exception\ORMException
      * @throws \MatchBot\Client\NotFoundException
      * @throws \Symfony\Component\Notifier\Exception\TransportExceptionInterface
+     * @throws StripeApiErrorException
      *
      * @throws UnexpectedValueException if the amount is out of the allowed range
      */
@@ -366,6 +371,10 @@ readonly class RegularGivingService
         }
     }
 
+    /**
+     * @throws RegularGivingDonationToOldToCollect
+     * @throws StripeApiErrorException
+     */
     private function confirmWithNewPaymentMethod(Donation $firstDonation, StripeConfirmationTokenId $confirmationTokenId): StripePaymentMethodId
     {
         $intent = $this->donationService->confirmOnSessionDonation($firstDonation, $confirmationTokenId);
