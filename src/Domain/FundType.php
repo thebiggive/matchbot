@@ -32,4 +32,12 @@ enum FundType: string
             self::TopupPledge => 300,
         };
     }
+
+    public function isAnyPledgeType(): bool
+    {
+        return match ($this) {
+            self::Pledge, self::TopupPledge => true,
+            self::ChampionFund => false,
+        };
+    }
 }

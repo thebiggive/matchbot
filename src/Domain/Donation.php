@@ -848,7 +848,9 @@ class Donation extends SalesforceWriteProxy
 
         $withdrawalTotal = '0.0';
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
-            if ($fundingWithdrawal->getCampaignFunding()->getFund()->getFundType() === FundType::Pledge) {
+            $fundIsPledge = $fundingWithdrawal->getCampaignFunding()->getFund()->getFundType()->isAnyPledgeType();
+
+            if ($fundIsPledge) {
                 $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
             }
         }
