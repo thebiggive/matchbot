@@ -539,7 +539,7 @@ class Donation extends SalesforceWriteProxy
         unset($data['matchReservedAmount']);
 
         if ($this->mandate) {
-            $data['mandate'] =  [
+            $data['mandate'] = [
               'salesforceId' => $this->mandate->getSalesforceId(),
             ];
         }
@@ -554,6 +554,7 @@ class Donation extends SalesforceWriteProxy
         $data = [
             'amountMatchedByChampionFunds' => (float) $this->getConfirmedChampionWithdrawalTotal(),
             'amountMatchedByPledges' => (float) $this->getConfirmedPledgeWithdrawalTotal(),
+            'amountPreauthorizedFromChampionFunds' => (float) $this->getPreAuthorizedChampionWithdrawalTotal(),
             'billingPostalAddress' => $this->donorBillingPostcode,
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
@@ -827,15 +828,7 @@ class Donation extends SalesforceWriteProxy
             return '0.0';
         }
 
-        $withdrawalTotal = '0.0';
-        foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
-            // Rely on Doctrine `SINGLE_TABLE` inheritance structure to derive the type from the concrete class.
-            if ($fundingWithdrawal->getCampaignFunding()->getFund() instanceof ChampionFund) {
-                $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
-            }
-        }
-
-        return $withdrawalTotal;
+        return $this->getWithdrawalTotalByFundType(ChampionFund::class);
     }
 
     /**
@@ -847,10 +840,31 @@ class Donation extends SalesforceWriteProxy
             return '0.0';
         }
 
+        return $this->getWithdrawalTotalByFundType(Pledge::class);
+    }
+
+    /**
+     * @return numeric-string
+     */
+    private function getPreAuthorizedChampionWithdrawalTotal(): string
+    {
+        if ($this->getDonationStatus() !== DonationStatus::PreAuthorized) {
+            return '0.0';
+        }
+
+        return $this->getWithdrawalTotalByFundType(ChampionFund::class);
+    }
+
+    /**
+     * @param class-string $fundType
+     * @return numeric-string
+     */
+    private function getWithdrawalTotalByFundType(string $fundType): string
+    {
         $withdrawalTotal = '0.0';
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
             // Rely on Doctrine `SINGLE_TABLE` inheritance structure to derive the type from the concrete class.
-            if ($fundingWithdrawal->getCampaignFunding()->getFund() instanceof Pledge) {
+            if ($fundingWithdrawal->getCampaignFunding()->getFund() instanceof $fundType) {
                 $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
             }
         }

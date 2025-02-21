@@ -236,6 +236,7 @@ class DonationTest extends TestCase
             [
                 'amountMatchedByChampionFunds' => 0.0,
                 'amountMatchedByPledges' => 0.0,
+                'amountPreauthorizedFromChampionFunds' => 0.0,
                 'billingPostalAddress' => null,
                 'charityFee' => 0.0,
                 'charityFeeVat' => 0.0,
