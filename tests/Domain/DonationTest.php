@@ -12,16 +12,16 @@ use MatchBot\Application\LazyAssertionException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CardBrand;
-use MatchBot\Domain\ChampionFund;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\FundType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
-use MatchBot\Domain\Pledge;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
@@ -203,7 +203,7 @@ class DonationTest extends TestCase
 
     public function testtoFrontEndApiModel(): void
     {
-        $pledge = new Pledge(currencyCode: 'GBP', name: '', salesforceId: null);
+        $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::Pledge);
 
         $campaignFunding = new CampaignFunding(
             fund: $pledge,
@@ -301,7 +301,7 @@ class DonationTest extends TestCase
         $donation = $this->getTestDonation();
 
         $campaignFunding = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
+            fund: new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::ChampionFund),
             amount: '1000',
             amountAvailable: '1000',
             allocationOrder: 100,
@@ -326,7 +326,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
         $campaignFunding0 = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
+            fund: new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::ChampionFund),
             amount: '1000',
             amountAvailable: '1000',
             allocationOrder: 100,
@@ -336,7 +336,7 @@ class DonationTest extends TestCase
         $withdrawal0->setAmount('1');
 
         $campaignFunding1 = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
+            fund: new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::ChampionFund),
             amount: '1000',
             amountAvailable: '1000',
             allocationOrder: 100,
@@ -1023,7 +1023,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation(amount: '100.00');
 
-        $fund = new ChampionFund('GBP', 'some champion fund', null);
+        $fund = new Fund('GBP', 'some champion fund', null, fundType: FundType::ChampionFund);
         $campaignFunding = new CampaignFunding($fund, amount: '1000', amountAvailable: '1000', allocationOrder: 1);
         $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawl->setAmount('99.99');
@@ -1036,7 +1036,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation(amount: '100.00');
 
-        $fund = new ChampionFund('GBP', 'some champion fund', null);
+        $fund = new Fund('GBP', 'some champion fund', null, fundType: FundType::ChampionFund);
         $campaignFunding = new CampaignFunding($fund, '1000', '1000', 1);
         $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawl->setAmount('100.00');

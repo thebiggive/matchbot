@@ -3,7 +3,8 @@
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\ChampionFund;
+use MatchBot\Domain\Fund;
+use MatchBot\Domain\FundType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
@@ -15,10 +16,11 @@ class FundTest extends TestCase
      */
     public function testGetAmounts(Money $totalAmount, Money $amountAvailable, Money $expectedUsedAmount): void
     {
-        $fund = new ChampionFund(
+        $fund = new Fund(
             'GBP',
             'testGetAmounts fund',
             Salesforce18Id::of('sfFundId4567890abc'),
+            fundType: FundType::ChampionFund
         );
         $fund->addCampaignFunding(new CampaignFunding(
             fund: $fund,
@@ -37,7 +39,7 @@ class FundTest extends TestCase
 
     public function testToAmountUsedUpdateModel(): void
     {
-        $fund = new ChampionFund('GBP', 'Testfund', Salesforce18Id::of('sfFundId4567890abc'));
+        $fund = new Fund('GBP', 'Testfund', Salesforce18Id::of('sfFundId4567890abc'), fundType: FundType::ChampionFund);
         $fund->addCampaignFunding(new CampaignFunding(
             fund: $fund,
             amount: '123.45',
