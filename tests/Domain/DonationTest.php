@@ -297,32 +297,84 @@ class DonationTest extends TestCase
         $this->assertSame(0.0, $amountMatchedByPledges);
     }
 
-    public function testItSumsAmountsMatchedByChampionFunds(): void
+    public function testItSumsAmountsMatchedByTypeForCollectedDonation(): void
     {
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(collected: true);
 
-        $championWithdrawal0 = $this->createWithdrawl(FundType::ChampionFund, '1');
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::ChampionFund, '1'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::ChampionFund, '2'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::Pledge, '4'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::TopupPledge, '10'));
 
-        $championWithdrawal1 = clone $championWithdrawal0;
-        $championWithdrawal1->setAmount('2');
-
-        $pledgWithdrawl = $this->createWithdrawl(FundType::Pledge, '3'); // does not count towards total
-
-        $donation->addFundingWithdrawal($championWithdrawal0);
-        $donation->addFundingWithdrawal($championWithdrawal1);
-        $donation->addFundingWithdrawal($pledgWithdrawl);
-
-        $amountMatchedByPledges = $donation->toFrontEndApiModel()['amountMatchedByChampionFunds'];
-
-        \assert(1 + 2 === 3);
-        $this->assertSame(3.0, $amountMatchedByPledges);
+        $this->assertEqualsCanonicalizing(
+            [
+                'amountMatchedByChampionFunds' => '3.00',
+                'amountMatchedByPledges' => '14.00',
+                'amountPreauthorizedFromChampionFunds' => '0.00',
+                'amountMatchedOther' => '0.00',
+            ],
+            $donation->getWithdrawalTotalByFundType()
+        );
     }
+
+    public function testItSumsAmountsMatchedByTypeForPendingDonation(): void
+    {
+        $donation = $this->getTestDonation(collected: false);
+
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::ChampionFund, '1'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::ChampionFund, '2'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::Pledge, '4'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::TopupPledge, '10'));
+
+        $this->assertEqualsCanonicalizing(
+            [
+                'amountMatchedByChampionFunds' => '0.00',
+                'amountMatchedByPledges' => '0.00',
+                'amountPreauthorizedFromChampionFunds' => '0.00',
+                'amountMatchedOther' => '17.00',
+            ],
+            $donation->getWithdrawalTotalByFundType()
+        );
+    }
+
+    public function testItSumsAmountsMatchedByTypeForPreAuthedDonation(): void
+    {
+        $donation = $this->getTestDonation(collected: false);
+        $donation->preAuthorize(new \DateTimeImmutable('2020-01-01'));
+
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::ChampionFund, '1'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::ChampionFund, '2'));
+
+        $this->assertEqualsCanonicalizing(
+            [
+                'amountMatchedByChampionFunds' => '0.00',
+                'amountMatchedByPledges' => '0.00',
+                'amountPreauthorizedFromChampionFunds' => '3.00',
+                'amountMatchedOther' => '0.00',
+            ],
+            $donation->getWithdrawalTotalByFundType()
+        );
+    }
+
+    public function testItThrowsSummingAmountsPreAuthedWithPledgeFund(): void
+    {
+        // Pre-authorized donations with pledge funds should not exist, getWithdrawalTotalByFundType will throw
+        // if it encounters one.
+        $donation = $this->getTestDonation(collected: false);
+        $donation->preAuthorize(new \DateTimeImmutable('2020-01-01'));
+
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::Pledge, '1'));
+
+        $this->expectExceptionMessage('unexpected pre-authed donation using pledge fund');
+        $donation->getWithdrawalTotalByFundType();
+    }
+
 
     public function testItSumsAmountsMatchedByAllFunds(): void
     {
         $donation = $this->getTestDonation();
-        $withdrawal0 = $this->createWithdrawl(FundType::ChampionFund, '1');
-        $withdrawal1 = $this->createWithdrawl(FundType::ChampionFund, '2');
+        $withdrawal0 = $this->createWithdrawal(FundType::ChampionFund, '1');
+        $withdrawal1 = $this->createWithdrawal(FundType::ChampionFund, '2');
 
         $donation->addFundingWithdrawal($withdrawal0);
         $donation->addFundingWithdrawal($withdrawal1);
@@ -1093,7 +1145,7 @@ class DonationTest extends TestCase
     /**
      * @param numeric-string $fundAmount
      */
-    public function createWithdrawl(FundType $fundType, string $fundAmount): FundingWithdrawal
+    public function createWithdrawal(FundType $fundType, string $fundAmount): FundingWithdrawal
     {
         $campaignFunding = new CampaignFunding(
             fund: new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: $fundType),

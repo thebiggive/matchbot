@@ -829,13 +829,13 @@ class Donation extends SalesforceWriteProxy
      *     amountMatchedOther: numeric-string,
      * }
      */
-    private function getWithdrawalTotalByFundType(): array
+    public function getWithdrawalTotalByFundType(): array
     {
         $withdrawalTotals = [
-            'amountMatchedByChampionFunds' => '0.0',
-            'amountMatchedByPledges' => '0.0',
-            'amountPreauthorizedFromChampionFunds' => '0.0',
-            'amountMatchedOther' => '0.0', // This key is not sent to SF, covers match fund usage that we don't need to
+            'amountMatchedByChampionFunds' => '0.00',
+            'amountMatchedByPledges' => '0.00',
+            'amountPreauthorizedFromChampionFunds' => '0.00',
+            'amountMatchedOther' => '0.00', // This key is not sent to SF, covers match fund usage that we don't need to
                                            // report, i.e. for donations that are neither sucessful nor preauthed.
         ];
 
@@ -843,19 +843,19 @@ class Donation extends SalesforceWriteProxy
             $fundTypeOfThisWithdrawal = $fundingWithdrawal->getCampaignFunding()->getFund()->getFundType();
 
             $key = match ([$fundTypeOfThisWithdrawal, $this->donationStatus->isSuccessful(), $this->donationStatus === DonationStatus::PreAuthorized  ]) {
-                [FundType::ChampionFund, true, true] => throw new \Exception("impossible status"),
+                [FundType::ChampionFund, true, true] => throw new \LogicException("impossible status"),
                 [FundType::ChampionFund, true, false] => 'amountMatchedByChampionFunds',
                 [FundType::ChampionFund, false, true] => 'amountPreauthorizedFromChampionFunds',
                 [FundType::ChampionFund, false, false] => 'amountMatchedOther',
 
-                [FundType::Pledge, true, true] => throw new \Exception("impossible status"),
+                [FundType::Pledge, true, true] => throw new \LogicException("impossible status"),
                 [FundType::Pledge, true, false] => 'amountMatchedByPledges',
-                [FundType::Pledge, false, true] => throw new \Exception("unexpected pre-authed donation using pledge fund"),
+                [FundType::Pledge, false, true] => throw new \RuntimeException("unexpected pre-authed donation using pledge fund"),
                 [FundType::Pledge, false, false] => 'amountMatchedOther',
 
-                [FundType::TopupPledge, true, true] => throw new \Exception("impossible status"),
+                [FundType::TopupPledge, true, true] => throw new \LogicException("impossible status"),
                 [FundType::TopupPledge, true, false] => 'amountMatchedByPledges',
-                [FundType::TopupPledge, false, true] => throw new \Exception("unexpected pre-authed donation using top-up pledge fund"),
+                [FundType::TopupPledge, false, true] => throw new \RuntimeException("unexpected pre-authed donation using top-up pledge fund"),
                 [FundType::TopupPledge, false, false] => 'amountMatchedOther',
             };
 
