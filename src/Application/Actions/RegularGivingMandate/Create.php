@@ -124,15 +124,8 @@ class Create extends Action
                 publicMessage: $maxMatchable->isZero() ?
                         // Strictly speaking there may be *some* match funds available, but less than £3.00 so it's not
                         // possible to make three matched donations and these funds are effectively unusable for now.
-                    <<<"EOF"
-                    Sorry, we were not able to take your regular donation as there are no match funds
-                    available. Please consider making an unmatched regular donation.
-                    EOF :
-                    <<<"EOF"
-                    Sorry, we were not able to take your regular donation as there are not enough match funds
-                    available. The largest monthly donation we can match is {$maxMatchable->format()}. Please
-                    consider making an unmatched regular donation, or reduce your donation amount.
-                    EOF,
+                    "Sorry, we could not take your regular donation as there are no match funds available." :
+                    "Sorry, we could not take your regular donation as there are not enough match funds available.",
                 reduceSeverity: false,
                 errorType: ActionError::INSUFFICIENT_MATCH_FUNDS,
                 errorData: ['maxMatchable' => $maxMatchable],
