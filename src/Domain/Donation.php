@@ -551,10 +551,12 @@ class Donation extends SalesforceWriteProxy
     {
         $totalPaidByDonor = $this->getTotalPaidByDonor();
 
+        $fundingWithdrawalsByType = $this->getWithdrawalTotalByFundType();
+
         $data = [
-            'amountMatchedByChampionFunds' => (float) $this->getConfirmedChampionWithdrawalTotal(),
-            'amountMatchedByPledges' => (float) $this->getConfirmedPledgeWithdrawalTotal(),
-            'amountPreauthorizedFromChampionFunds' => (float) $this->getPreAuthorizedChampionWithdrawalTotal(),
+            'amountMatchedByChampionFunds' => (float) $fundingWithdrawalsByType['amountMatchedByChampionFunds'],
+            'amountMatchedByPledges' => (float) $fundingWithdrawalsByType['amountMatchedByPledges'],
+            'amountPreauthorizedFromChampionFunds' => (float) $fundingWithdrawalsByType['amountPreauthorizedFromChampionFunds'],
             'billingPostalAddress' => $this->donorBillingPostcode,
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
@@ -820,56 +822,47 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * @return string Total amount *finalised*, matched by `Fund`s of type "championFund"
+     * @return array{
+     *     amountMatchedByChampionFunds: numeric-string,
+     *     amountMatchedByPledges: numeric-string,
+     *     amountPreauthorizedFromChampionFunds: numeric-string,
+     *     amountMatchedOther: numeric-string,
+     * }
      */
-    private function getConfirmedChampionWithdrawalTotal(): string
+    private function getWithdrawalTotalByFundType(): array
     {
-        if (!$this->getDonationStatus()->isSuccessful()) {
-            return '0.0';
-        }
+        $withdrawalTotals = [
+            'amountMatchedByChampionFunds' => '0.0',
+            'amountMatchedByPledges' => '0.0',
+            'amountPreauthorizedFromChampionFunds' => '0.0',
+            'amountMatchedOther' => '0.0', // This key is not sent to SF, covers match fund usage that we don't need to
+                                           // report, i.e. for donations that are neither sucessful nor preauthed.
+        ];
 
-        return $this->getWithdrawalTotalByFundType(FundType::ChampionFund);
-    }
-
-    /**
-     * @return string Total amount *finalised*, matched by `Fund`s of type "pledge"
-     */
-    private function getConfirmedPledgeWithdrawalTotal(): string
-    {
-        if (!$this->getDonationStatus()->isSuccessful()) {
-            return '0.0';
-        }
-
-        return $this->getWithdrawalTotalByFundType(FundType::Pledge, FundType::TopupPledge);
-    }
-
-    /**
-     * @return numeric-string
-     */
-    private function getPreAuthorizedChampionWithdrawalTotal(): string
-    {
-        if ($this->getDonationStatus() !== DonationStatus::PreAuthorized) {
-            return '0.0';
-        }
-
-        return $this->getWithdrawalTotalByFundType(FundType::ChampionFund);
-    }
-
-    /**
-     * @return numeric-string
-     */
-    private function getWithdrawalTotalByFundType(FundType ...$fundTypes): string
-    {
-        $withdrawalTotal = '0.0';
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
-            // Rely on Doctrine `SINGLE_TABLE` inheritance structure to derive the type from the concrete class.
             $fundTypeOfThisWithdrawal = $fundingWithdrawal->getCampaignFunding()->getFund()->getFundType();
-            if (in_array($fundTypeOfThisWithdrawal, $fundTypes, true)) {
-                $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
-            }
+
+            $key = match ([$fundTypeOfThisWithdrawal, $this->donationStatus->isSuccessful(), $this->donationStatus === DonationStatus::PreAuthorized  ]) {
+                [FundType::ChampionFund, true, true] => throw new \Exception("impossible status"),
+                [FundType::ChampionFund, true, false] => 'amountMatchedByChampionFunds',
+                [FundType::ChampionFund, false, true] => 'amountPreauthorizedFromChampionFunds',
+                [FundType::ChampionFund, false, false] => 'amountMatchedOther',
+
+                [FundType::Pledge, true, true] => throw new \Exception("impossible status"),
+                [FundType::Pledge, true, false] => 'amountMatchedByPledges',
+                [FundType::Pledge, false, true] => throw new \Exception("unexpected pre-authed donation using pledge fund"),
+                [FundType::Pledge, false, false] => 'amountMatchedOther',
+
+                [FundType::TopupPledge, true, true] => throw new \Exception("impossible status"),
+                [FundType::TopupPledge, true, false] => 'amountMatchedByPledges',
+                [FundType::TopupPledge, false, true] => throw new \Exception("unexpected pre-authed donation using top-up pledge fund"),
+                [FundType::TopupPledge, false, false] => 'amountMatchedOther',
+            };
+
+            $withdrawalTotals[$key] = bcadd($withdrawalTotals[$key], $fundingWithdrawal->getAmount(), 2);
         }
 
-        return $withdrawalTotal;
+        return $withdrawalTotals;
     }
 
     /**

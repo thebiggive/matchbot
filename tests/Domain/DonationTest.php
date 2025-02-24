@@ -1090,6 +1090,9 @@ class DonationTest extends TestCase
         $this->assertEquals($refundAmount, $donation->getTipRefundAmount());
     }
 
+    /**
+     * @param numeric-string $fundAmount
+     */
     public function createWithdrawl(FundType $fundType, string $fundAmount): FundingWithdrawal
     {
         $campaignFunding = new CampaignFunding(
