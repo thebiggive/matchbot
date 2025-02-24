@@ -9,46 +9,24 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 
-const DISCRIMINATOR_MAP = [
-    'championFund' => ChampionFund::class,
-    'pledge' => Pledge::class,
-    'topupPledge' => TopupPledge::class,
-];
-
 /**
  * Represents a commitment of match funds, i.e. a Champion Fund or Pledge. Because a Fund (most
  * typically a Champion Fund) can be split up and allocated to multiple Campaigns, the Fund in
  * MatchBot doesn't contain an allocated amount and is mostly a container for metadata to help understand
  * where any linked {@see CampaignFunding}s' money comes from.
- *
- * Concrete subclasses {@see ChampionFund} & {@see Pledge} are instantiated using Doctrine's
- * single table inheritance. The discriminator column is 'fundType' and the API field which determines
- * it originally, in {@see FundRepository::getNewFund()}, is 'type'.
  */
 #[ORM\Table]
 #[ORM\Entity(repositoryClass: FundRepository::class)]
-#[ORM\InheritanceType('SINGLE_TABLE')]
-#[ORM\DiscriminatorColumn(name: 'fundType', type: 'string')]
-#[ORM\DiscriminatorMap([
-    'unknownFund' => self::class,
-    ...DISCRIMINATOR_MAP,
-])]
 #[ORM\HasLifecycleCallbacks]
-abstract class Fund extends SalesforceReadProxy
+class Fund extends SalesforceReadProxy
 {
     use TimestampsTrait;
 
-    /** @var positive-int */
-    public const int NORMAL_ALLOCATION_ORDER = 999;
-
     /**
-     * We keep this public so `FundRepository` can do a reverse search to decide what to instantiate.
-     * This way the Doctrine mapping (via attribute above), mapping to string for API push and mapping
-     * *from* string for API pull, all live in one const array.
-     *
-     * @var array<string, class-string<Fund>>  Maps from API field to Fund subclass name.
+     * FundType controlls allocation orders of campaign fundings. See docs on enum for details.
      */
-    public const array DISCRIMINATOR_MAP = DISCRIMINATOR_MAP;
+    #[ORM\Column(type: 'string', enumType: FundType::class)]
+    private FundType $fundType;
 
     /**
      * @var string  ISO 4217 code for the currency used with this fund, and in which FundingWithdrawals are denominated.
@@ -68,7 +46,7 @@ abstract class Fund extends SalesforceReadProxy
     #[ORM\OneToMany(mappedBy: 'fund', targetEntity: CampaignFunding::class)]
     protected Collection $campaignFundings;
 
-    final public function __construct(string $currencyCode, string $name, ?Salesforce18Id $salesforceId)
+    public function __construct(string $currencyCode, string $name, ?Salesforce18Id $salesforceId, FundType $fundType)
     {
         $this->createdAt = new \DateTime();
         $this->updatedAt = new \DateTime();
@@ -77,19 +55,7 @@ abstract class Fund extends SalesforceReadProxy
         $this->currencyCode = $currencyCode;
         $this->name = $name;
         $this->salesforceId = $salesforceId?->value;
-    }
-
-    /**
-     * @return 'championFund'|'pledge'|'topupPledge'|'unknownFund'
-     */
-    public function getDiscriminatorValue(): string
-    {
-        if ($value = array_search(static::class, self::DISCRIMINATOR_MAP, true)) {
-            return $value;
-        }
-
-        // else no match in the known subclasses map
-        return 'unknownFund';
+        $this->fundType = $fundType;
     }
 
     /**
@@ -164,7 +130,7 @@ abstract class Fund extends SalesforceReadProxy
         return [
             'currencyCode' => $amounts['totalAmount']->currency->isoCode(),
             'fundId' => $this->getId(),
-            'fundType' => $this->getDiscriminatorValue(),
+            'fundType' => $this->fundType->value,
             'salesforceFundId' => $sfId,
             'totalAmount' => (float) $amounts['totalAmount']->toNumericString(),
             'usedAmount' => (float) $amounts['usedAmount']->toNumericString(),
@@ -182,5 +148,18 @@ abstract class Fund extends SalesforceReadProxy
         Assertion::same($funding->getFund(), $this);
 
         $this->campaignFundings->add($funding);
+    }
+
+    /**
+     * @return positive-int
+     */
+    public function getAllocationOrder(): int
+    {
+        return $this->fundType->allocationOrder();
+    }
+
+    public function getFundType(): FundType
+    {
+        return $this->fundType;
     }
 }

@@ -11,11 +11,11 @@ use MatchBot\Application\Matching\MatchFundsRedistributor;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
-use MatchBot\Domain\ChampionFund;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
-use MatchBot\Domain\Pledge;
+use MatchBot\Domain\FundType;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -176,7 +176,7 @@ class RedistributeMatchFundsTest extends TestCase
     private function getFullyAvailablePledgeFunding(): CampaignFunding
     {
         $pledgeAmount = '101.00';
-        $pledge = new Pledge(currencyCode: 'GBP', name: '', salesforceId: null);
+        $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::Pledge);
 
         return new CampaignFunding(
             fund: $pledge,
@@ -198,7 +198,7 @@ class RedistributeMatchFundsTest extends TestCase
         $donation->setSalesforceId('sf_1244');
         $donation->setTransactionId('pi_tenPound123');
 
-        $championFund = new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null);
+        $championFund = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::ChampionFund);
         $campaignFunding = new CampaignFunding(
             fund: $championFund,
             amount: $donationAmount,

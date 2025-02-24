@@ -3,7 +3,8 @@
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Fund;
+use MatchBot\Domain\FundType;
 use MatchBot\Tests\TestCase;
 
 class CampaignFundingTest extends TestCase
@@ -13,7 +14,7 @@ class CampaignFundingTest extends TestCase
         $campaignOne = self::someCampaign();
         $campaignTwo = self::someCampaign();
         // all constructor params are irrelevant here:
-        $campaignFunding = new CampaignFunding(new Pledge('GBP', 'some pledge', null), '1', '1', 1);
+        $campaignFunding = new CampaignFunding(new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge), '1', '1', 1);
 
         $campaignFunding->addCampaign($campaignOne);
         $campaignFunding->addCampaign($campaignTwo);

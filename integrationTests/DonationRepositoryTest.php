@@ -15,9 +15,10 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\FundType;
 use MatchBot\Domain\PaymentMethodType;
-use MatchBot\Domain\Pledge;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -210,7 +211,7 @@ class DonationRepositoryTest extends IntegrationTest
             $oldPendingDonation->setDonationStatus($donationStatus);
         }
 
-        $pledge = new Pledge(currencyCode: 'GBP', name: '', salesforceId: null);
+        $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::Pledge);
         $campaignFunding = new CampaignFunding(
             fund: $pledge,
             amount: '1.0',

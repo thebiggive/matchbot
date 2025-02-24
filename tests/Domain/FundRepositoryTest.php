@@ -11,9 +11,9 @@ use MatchBot\Client;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
-use MatchBot\Domain\ChampionFund;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundRepository;
+use MatchBot\Domain\FundType;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -44,7 +44,7 @@ class FundRepositoryTest extends TestCase
         // Setting a salesforceId is the quickest
         // way to ensure this behaves like a newly-found Fund without having to partially mock / prophesise
         // `FundRepository` such that `doPull()` is a real call but `pull()` doesn't try a real DB engine lookup.
-        $fund = new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: Salesforce18Id::of(self::CAMPAIGN_SF_ID));
+        $fund = new Fund(currencyCode: 'GBP', name: '', salesforceId: Salesforce18Id::of(self::CAMPAIGN_SF_ID), fundType:FundType::ChampionFund);
 
         $repo->updateFromSf($fund, autoSave: false); // Don't auto-save as non-DB-backed tests can't persist
 
@@ -59,7 +59,7 @@ class FundRepositoryTest extends TestCase
 
         // Validate that with everything new, the Doctrine EM is asked to persist the fund and campaign funding.
         $entityManagerProphecy
-            ->persist(Argument::type(ChampionFund::class))
+            ->persist(Argument::type(Fund::class))
             ->shouldBeCalledTimes(2);
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
@@ -105,7 +105,7 @@ class FundRepositoryTest extends TestCase
         $this->assertSame('1500', $campaignFunding->getAmountAvailable());
 
         $fund = $campaignFunding->getFund();
-        $this->assertInstanceOf(ChampionFund::class, $fund);
+        $this->assertEquals(FundType::ChampionFund, $fund->getFundType());
         $this->assertSame('sfFundId4567890abc', $fund->getSalesforceId());
         $this->assertSame('GBP', $fund->getCurrencyCode());
     }
@@ -117,7 +117,7 @@ class FundRepositoryTest extends TestCase
         // Validate that with an existing fund on a new campaign, the Doctrine EM is asked to persist the
         // campaign funding newly, as well as the Fund with an updated amount.
         $entityManagerProphecy
-            ->persist(Argument::type(ChampionFund::class))
+            ->persist(Argument::type(Fund::class))
             ->shouldBeCalledTimes(2);
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
@@ -155,7 +155,7 @@ class FundRepositoryTest extends TestCase
         // Validate that with an existing fund on an existing campaign, the Doctrine EM is asked to persist the
         // campaign funding and Fund, with updated amounts.
         $entityManagerProphecy
-            ->persist(Argument::type(ChampionFund::class))
+            ->persist(Argument::type(Fund::class))
             ->shouldBeCalledTimes(2);
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
@@ -214,7 +214,7 @@ class FundRepositoryTest extends TestCase
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $entityManagerProphecy
-            ->persist(Argument::type(ChampionFund::class))
+            ->persist(Argument::type(Fund::class))
             ->shouldNotBeCalled();
         $entityManagerProphecy
             ->persist(Argument::type(CampaignFunding::class))
@@ -257,10 +257,11 @@ class FundRepositoryTest extends TestCase
 
     private function getExistingFund(bool $shared): Fund
     {
-        $existingFund = new ChampionFund(
+        $existingFund = new Fund(
             currencyCode: 'GBP',
             name: $shared ? 'Test Shared Champion Fund 456' : 'Test Champion Fund 123',
-            salesforceId: Salesforce18Id::of($shared ? 'sfFundId4567890abc' : 'sfFundId1234567890')
+            salesforceId: Salesforce18Id::of($shared ? 'sfFundId4567890abc' : 'sfFundId1234567890'),
+            fundType: FundType::ChampionFund
         );
         $existingFund->setId($shared ? 456456 : 123123);
         $existingFund->setSalesforceLastPull(new \DateTime());

@@ -828,7 +828,7 @@ class Donation extends SalesforceWriteProxy
             return '0.0';
         }
 
-        return $this->getWithdrawalTotalByFundType(ChampionFund::class);
+        return $this->getWithdrawalTotalByFundType(FundType::ChampionFund);
     }
 
     /**
@@ -840,7 +840,7 @@ class Donation extends SalesforceWriteProxy
             return '0.0';
         }
 
-        return $this->getWithdrawalTotalByFundType(Pledge::class);
+        return $this->getWithdrawalTotalByFundType(FundType::Pledge, FundType::TopupPledge);
     }
 
     /**
@@ -852,19 +852,19 @@ class Donation extends SalesforceWriteProxy
             return '0.0';
         }
 
-        return $this->getWithdrawalTotalByFundType(ChampionFund::class);
+        return $this->getWithdrawalTotalByFundType(FundType::ChampionFund);
     }
 
     /**
-     * @param class-string $fundType
      * @return numeric-string
      */
-    private function getWithdrawalTotalByFundType(string $fundType): string
+    private function getWithdrawalTotalByFundType(FundType ...$fundTypes): string
     {
         $withdrawalTotal = '0.0';
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
             // Rely on Doctrine `SINGLE_TABLE` inheritance structure to derive the type from the concrete class.
-            if ($fundingWithdrawal->getCampaignFunding()->getFund() instanceof $fundType) {
+            $fundTypeOfThisWithdrawal = $fundingWithdrawal->getCampaignFunding()->getFund()->getFundType();
+            if (in_array($fundTypeOfThisWithdrawal, $fundTypes, true)) {
                 $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
             }
         }
