@@ -26,10 +26,15 @@ enum FundType: string
      */
     public function allocationOrder(): int
     {
-        return match ($this) {
-            self::Pledge => 100,
-            self::ChampionFund => 200,
-            self::TopupPledge => 300,
+        $order = match ($this) {
+            self::Pledge => 1,
+            self::ChampionFund => 2,
+            self::TopupPledge => 3,
         };
+
+        // Multiply by 100 here to allow room to add more cases in between in future, while
+        // allowing Infection's IncrementInteger / DecrementInteger mutators to
+        // check tests cover match above.
+        return $order * 100;
     }
 }

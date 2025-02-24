@@ -369,7 +369,6 @@ class DonationTest extends TestCase
         $donation->getWithdrawalTotalByFundType();
     }
 
-
     public function testItSumsAmountsMatchedByAllFunds(): void
     {
         $donation = $this->getTestDonation();
@@ -693,8 +692,6 @@ class DonationTest extends TestCase
         $donation->assertIsReadyToConfirm();
     }
 
-
-
     public function testMarkingRefundTwiceOnSameDonationDoesNotUpdateRefundTime(): void
     {
         $donation = $this->getTestDonation();
@@ -1013,7 +1010,6 @@ class DonationTest extends TestCase
         $this->assertNull($donation->getTotalPaidByDonor());
     }
 
-
     public function testTotalPaidByDonorForCollectedDonation(): void
     {
         $donation = $this->getTestDonation(collected: true, amount: '6.00', tipAmount: '5.00');
@@ -1078,7 +1074,6 @@ class DonationTest extends TestCase
 
         $this->assertTrue($isFullyMatched);
     }
-
 
     /**
      * @return array<string, array{0: \DateTimeImmutable, 1: \DateTimeImmutable, 2: bool}>
@@ -1153,8 +1148,9 @@ class DonationTest extends TestCase
             amountAvailable: '1000',
             allocationOrder: 100,
         );
-        $withdrawal0 = new FundingWithdrawal($campaignFunding);
-        $withdrawal0->setAmount($fundAmount);
-        return $withdrawal0;
+        $withdrawal = new FundingWithdrawal($campaignFunding);
+        $withdrawal->setAmount($fundAmount);
+
+        return $withdrawal;
     }
 }

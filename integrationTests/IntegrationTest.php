@@ -12,6 +12,7 @@ use MatchBot\Client\Mandate as MandateSFClient;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\FundType;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestData;
 use PHPUnit\Framework\TestCase;
@@ -262,7 +263,8 @@ abstract class IntegrationTest extends TestCase
     public function addFundedCampaignAndCharityToDB(
         string $campaignSfId,
         int $fundWithAmountInPounds = 100_000,
-        bool $isRegularGiving = false
+        bool $isRegularGiving = false,
+        FundType $fundType = FundType::Pledge,
     ): array {
         ['charityId' => $charityId, 'campaignId' => $campaignId] = $this->addCampaignAndCharityToDB(
             campaignSfId: $campaignSfId,
@@ -270,7 +272,7 @@ abstract class IntegrationTest extends TestCase
             isRegularGiving: $isRegularGiving
         );
         ['fundId' => $fundId, 'campaignFundingId' => $campaignFundingId] =
-            $this->addFunding($campaignId, $fundWithAmountInPounds, 1, 'pledge');
+            $this->addFunding($campaignId, $fundWithAmountInPounds, $fundType);
 
         $compacted = compact('charityId', 'campaignId', 'fundId', 'campaignFundingId');
         Assertion::allInteger($compacted);
@@ -279,7 +281,7 @@ abstract class IntegrationTest extends TestCase
     }
 
     /**
-     * @param 'championFund'|'pledge'|'topupPledge'|'unknownFund' $fundType
+     * @param FundType $fundType
      * @return array{fundId: int, campaignFundingId: int}
      * @psalm-suppress MoreSpecificReturnType
      * @psalm-suppress LessSpecificReturnStatement
@@ -287,8 +289,7 @@ abstract class IntegrationTest extends TestCase
     public function addFunding(
         int $campaignId,
         int $amountInPounds,
-        int $allocationOrder,
-        string $fundType,
+        FundType $fundType,
     ): array {
         $db = $this->db();
         $fundSfID = $this->randomString();
@@ -297,7 +298,7 @@ abstract class IntegrationTest extends TestCase
         $db->executeStatement(<<<SQL
             INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
                               currencyCode) VALUES 
-                ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '$fundType',
+                ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '{$fundType->value}',
                  'GBP')
         SQL
         );
@@ -307,7 +308,7 @@ abstract class IntegrationTest extends TestCase
         $db->executeStatement(<<<SQL
             INSERT INTO CampaignFunding (fund_id, amount, amountAvailable, allocationOrder, createdAt, updatedAt,
                                          currencyCode) VALUES 
-                    ($fundId, $amountInPounds, $amountInPounds, $allocationOrder, '$nyd', '$nyd',
+                    ($fundId, $amountInPounds, $amountInPounds, {$fundType->allocationOrder()}, '$nyd', '$nyd',
                      'GBP')
         SQL
         );
