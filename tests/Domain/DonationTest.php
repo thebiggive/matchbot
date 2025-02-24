@@ -301,21 +301,16 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation();
 
-        $campaignFunding = new CampaignFunding(
-            fund: new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::ChampionFund),
-            amount: '1000',
-            amountAvailable: '1000',
-            allocationOrder: 100,
-        );
-        $withdrawal0 = new FundingWithdrawal($campaignFunding);
-        $withdrawal0->setAmount('1');
+        $championWithdrawal0 = $this->createWithdrawl(FundType::ChampionFund, '1');
 
-        $withdrawal1 = clone $withdrawal0;
-        $withdrawal1->setAmount('2');
+        $championWithdrawal1 = clone $championWithdrawal0;
+        $championWithdrawal1->setAmount('2');
 
+        $pledgWithdrawl = $this->createWithdrawl(FundType::Pledge, '3'); // does not count towards total
 
-        $donation->addFundingWithdrawal($withdrawal0);
-        $donation->addFundingWithdrawal($withdrawal1);
+        $donation->addFundingWithdrawal($championWithdrawal0);
+        $donation->addFundingWithdrawal($championWithdrawal1);
+        $donation->addFundingWithdrawal($pledgWithdrawl);
 
         $amountMatchedByPledges = $donation->toFrontEndApiModel()['amountMatchedByChampionFunds'];
 
@@ -326,24 +321,8 @@ class DonationTest extends TestCase
     public function testItSumsAmountsMatchedByAllFunds(): void
     {
         $donation = $this->getTestDonation();
-        $campaignFunding0 = new CampaignFunding(
-            fund: new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::ChampionFund),
-            amount: '1000',
-            amountAvailable: '1000',
-            allocationOrder: 100,
-        );
-
-        $withdrawal0 = new FundingWithdrawal($campaignFunding0);
-        $withdrawal0->setAmount('1');
-
-        $campaignFunding1 = new CampaignFunding(
-            fund: new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::ChampionFund),
-            amount: '1000',
-            amountAvailable: '1000',
-            allocationOrder: 100,
-        );
-        $withdrawal1 = new FundingWithdrawal($campaignFunding1);
-        $withdrawal1->setAmount('2');
+        $withdrawal0 = $this->createWithdrawl(FundType::ChampionFund, '1');
+        $withdrawal1 = $this->createWithdrawl(FundType::ChampionFund, '2');
 
         $donation->addFundingWithdrawal($withdrawal0);
         $donation->addFundingWithdrawal($withdrawal1);
@@ -1109,5 +1088,18 @@ class DonationTest extends TestCase
 
         $this->assertSame($now, $donation->getRefundedAt());
         $this->assertEquals($refundAmount, $donation->getTipRefundAmount());
+    }
+
+    public function createWithdrawl(FundType $fundType, string $fundAmount): FundingWithdrawal
+    {
+        $campaignFunding = new CampaignFunding(
+            fund: new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: $fundType),
+            amount: '1000',
+            amountAvailable: '1000',
+            allocationOrder: 100,
+        );
+        $withdrawal0 = new FundingWithdrawal($campaignFunding);
+        $withdrawal0->setAmount($fundAmount);
+        return $withdrawal0;
     }
 }
