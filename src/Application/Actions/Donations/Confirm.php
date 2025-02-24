@@ -9,6 +9,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\LazyAssertionException;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\NotFoundException;
+use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
@@ -146,6 +147,8 @@ EOF
                     'code' => $exception->getStripeCode(),
                 ],
             ], 500);
+        } catch (PaymentIntentNotSucceeded $_e) {
+            // no-op - in this case we let the frontend handle any further action required
         }
 
         // Assuming Stripe calls worked, commit any changes that `deriveFees()` made to the EM-tracked `$donation`.

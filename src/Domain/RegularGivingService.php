@@ -20,6 +20,7 @@ use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\HomeAddressRequired;
 use MatchBot\Domain\DomainException\NonCancellableStatus;
 use MatchBot\Domain\DomainException\NotFullyMatched;
+use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
@@ -110,6 +111,8 @@ readonly class RegularGivingService
             $donor->setBillingPostcode($billingPostCode);
         }
 
+        this.stripe.handleNextAction
+
         $donor->assertHasRequiredInfoForRegularGiving();
 
         $mandate = new RegularGivingMandate(
@@ -180,7 +183,15 @@ readonly class RegularGivingService
         );
 
         if ($confirmationTokenId) {
-            $methodId = $this->confirmWithNewPaymentMethod($firstDonation, $confirmationTokenId);
+            try {
+                $methodId = $this->confirmWithNewPaymentMethod($firstDonation, $confirmationTokenId);
+            } catch (PaymentIntentNotSucceeded $e) {
+                $intent = $e->paymentIntent;
+                // this is where things get more complicated - we need to return the intent to the client so they
+                // can call `stripe.handleNextAction` if required, and then wait for a callback from Stripe to tell
+                // us if the intent eventually succeeds. Given that it might be simpler to always stop and wait
+                // for the callback at this point, or at least have the FE act like we will do that.
+            }
             $donor->setRegularGivingPaymentMethod($methodId);
         } else {
             \assert($donorsSavedPaymentMethod !== null);
@@ -374,6 +385,7 @@ readonly class RegularGivingService
     /**
      * @throws RegularGivingDonationToOldToCollect
      * @throws StripeApiErrorException
+     * @throws PaymentIntentNotSucceeded
      */
     private function confirmWithNewPaymentMethod(Donation $firstDonation, StripeConfirmationTokenId $confirmationTokenId): StripePaymentMethodId
     {

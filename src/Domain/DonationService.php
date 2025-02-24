@@ -22,6 +22,7 @@ use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
+use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
@@ -207,6 +208,7 @@ class DonationService
      *
      * @throws ApiErrorException
      * @throws RegularGivingDonationToOldToCollect
+     * @throws PaymentIntentNotSucceeded
      */
     public function confirmOnSessionDonation(
         Donation $donation,
@@ -224,18 +226,28 @@ class DonationService
 
         $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
 
-        return $this->stripe->confirmPaymentIntent(
+        $updatedIntent = $this->stripe->confirmPaymentIntent(
             $paymentIntentId,
             [
                 'confirmation_token' => $tokenId->stripeConfirmationTokenId,
                 ...self::ASYNC_CAPTURE_OPT_OUT
             ]
         );
+
+        if ($updatedIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
+            throw new PaymentIntentNotSucceeded(
+                $updatedIntent,
+                "Payment Intent not succeded, status is {$updatedIntent->status}",
+            );
+        }
+
+        return $updatedIntent;
     }
 
     /**
      * Trigger collection of funds from a pre-authorized donation associated with a regular giving mandate
-     */
+     * @throws PaymentIntentNotSucceeded
+     * */
     public function confirmPreAuthorized(Donation $donation): void
     {
         $stripeAccountId = $donation->getPspCustomerId();
@@ -635,6 +647,9 @@ class DonationService
         return array_map(fn(Donation $donation) => $donation->toFrontEndApiModel(), $donations);
     }
 
+    /**
+     * @throws PaymentIntentNotSucceeded
+     * */
     public function confirmDonationWithSavedPaymentMethod(Donation $donation, StripePaymentMethodId $paymentMethod): void
     {
         $paymentIntentId = $donation->getTransactionId();
@@ -653,6 +668,12 @@ class DonationService
             // @todo-regular-giving-mat-407: create a new db field on Donation - e.g. payment_attempt_count and update here
             // decide on a limit and log an error (or warning) if exceeded & perhaps auto-cancel the donation and/or
             // mandate.
+
+            throw new PaymentIntentNotSucceeded(
+                $paymentIntent,
+                "Payment Intent not succeded, status is {$paymentIntent->status}",
+            );
+
         }
     }
 
