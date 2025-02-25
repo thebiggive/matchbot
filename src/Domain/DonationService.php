@@ -336,25 +336,7 @@ class DonationService
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
         if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {
-            $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
-            if ($stripeAccountId === null || $stripeAccountId === '') {
-                // Try re-pulling in case charity has very recently onboarded with for Stripe.
-                $this->campaignRepository->updateFromSf($campaign);
-
-                // If still empty, error out
-                $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
-                if ($stripeAccountId === null || $stripeAccountId === '') {
-                    $this->logger->error(sprintf(
-                        'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
-                        $campaign->getCharity()->getSalesforceId(),
-                    ));
-                    throw new StripeAccountIdNotSetForAccount();
-                }
-
-                // Else we found new Stripe info and can proceed
-                $donation->setCampaign($campaign);
-            }
-
+            $this->loadCampaignsStripeId($campaign, $donation);
             $this->createPaymentIntent($donation);
         }
 
@@ -810,5 +792,33 @@ class DonationService
             },
             'allocate match funds'
         );
+    }
+
+    /**
+     * Checks that a campaign has a Stripe Account ID and if not attempts to find one in SF.
+     *
+     * @todo consider if any of this method is required - or if we do or can ensure that Stripe Account ID is always
+     * set in matchbot before the donation is attempted.
+     */
+    private function loadCampaignsStripeId(Campaign $campaign, Donation $donation): void
+    {
+        $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
+        if ($stripeAccountId === null || $stripeAccountId === '') {
+            // Try re-pulling in case charity has very recently onboarded with for Stripe.
+            $this->campaignRepository->updateFromSf($campaign);
+
+            // If still empty, error out
+            $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
+            if ($stripeAccountId === null || $stripeAccountId === '') {
+                $this->logger->error(sprintf(
+                    'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
+                    $campaign->getCharity()->getSalesforceId(),
+                ));
+                throw new StripeAccountIdNotSetForAccount();
+            }
+
+            // Else we found new Stripe info and can proceed
+            $donation->setCampaign($campaign);
+        }
     }
 }
