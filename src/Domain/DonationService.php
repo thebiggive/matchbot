@@ -673,7 +673,6 @@ class DonationService
                 $paymentIntent,
                 "Payment Intent not succeded, status is {$paymentIntent->status}",
             );
-
         }
     }
 

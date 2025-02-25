@@ -4,7 +4,8 @@ namespace MatchBot\Domain\DomainException;
 
 use Stripe\PaymentIntent;
 
-class PaymentIntentNotSucceeded extends \Exception {
+class PaymentIntentNotSucceeded extends \Exception
+{
     public function __construct(
         public readonly PaymentIntent $paymentIntent,
         string $message,

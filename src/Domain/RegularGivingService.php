@@ -111,8 +111,6 @@ readonly class RegularGivingService
             $donor->setBillingPostcode($billingPostCode);
         }
 
-        this.stripe.handleNextAction
-
         $donor->assertHasRequiredInfoForRegularGiving();
 
         $mandate = new RegularGivingMandate(
