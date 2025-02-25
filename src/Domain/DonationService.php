@@ -315,7 +315,6 @@ class DonationService
      */
     public function enrollNewDonation(Donation $donation, bool $attemptMatching): void
     {
-
         $campaign = $donation->getCampaign();
 
         $at = new \DateTimeImmutable();
@@ -797,6 +796,7 @@ class DonationService
     /**
      * Checks that a campaign has a Stripe Account ID and if not attempts to find one in SF.
      *
+     * @throws StripeAccountIdNotSetForAccount
      * @todo consider if any of this method is required - or if we do or can ensure that Stripe Account ID is always
      * set in matchbot before the donation is attempted.
      */

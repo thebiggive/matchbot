@@ -180,50 +180,26 @@ readonly class RegularGivingService
             'Confirmation token must be given iff there is no payment method on file'
         );
 
-        if ($confirmationTokenId) {
-            try {
-                $methodId = $this->confirmWithNewPaymentMethod($firstDonation, $confirmationTokenId);
-            } catch (PaymentIntentNotSucceeded $e) {
-                throw $e;
-                // this is where things get more complicated - we need to return the intent to the client so they
-                // can call `stripe.handleNextAction` if required, and then wait for a callback from Stripe to tell
-                // us if the intent eventually succeeds. Given that it might be simpler to always stop and wait
-                // for the callback at this point, or at least have the FE act like we will do that.
+        try {
+            if ($confirmationTokenId) {
+                    $methodId = $this->confirmWithNewPaymentMethod($firstDonation, $confirmationTokenId);
+                    $donor->setRegularGivingPaymentMethod($methodId);
+            } else {
+                \assert($donorsSavedPaymentMethod !== null);
+                // @todo-regular-giving - consider if we need to switch to sync confirmation that doesn't rely on a callback
+                // hook or something so we can avoid activating the mandate if the first donation is not collected.
+                $this->donationService->confirmDonationWithSavedPaymentMethod($firstDonation, $donorsSavedPaymentMethod);
             }
-            $donor->setRegularGivingPaymentMethod($methodId);
-        } else {
-            \assert($donorsSavedPaymentMethod !== null);
-            // @todo-regular-giving - consider if we need to switch to sync confirmation that doesn't rely on a callback
-            // hook or something so we can avoid activating the mandate if the first donation is not collected.
-            $this->donationService->confirmDonationWithSavedPaymentMethod($firstDonation, $donorsSavedPaymentMethod);
-        }
-
-        $this->donationService->queryStripeToUpdateDonationStatus($firstDonation);
-
-        if (! $firstDonation->getDonationStatus()->isSuccessful()) {
-            $mandate->cancel(
-                reason: "Donation failed, status is {$firstDonation->getDonationStatus()->name}",
-                at: new \DateTimeImmutable(),
-                type: MandateCancellationType::FirstDonationUnsuccessful
-            );
-
-            $donor->setHomeAddressLine1($donorPreviousHomeAddress);
-            $donor->setHomePostcode(
-                is_string($donorPreviousHomePostcode) ?
-                    PostCode::of($donorPreviousHomePostcode, true) : null
-            );
-
+        } catch (PaymentIntentNotSucceeded $e) {
             $this->entityManager->flush();
-            throw new DonationNotCollected(
-                'First Donation in Regular Giving mandate could not be collected, not activating mandate'
-            );
+            throw $e;
+            // this is where things get more complicated - we need to return the intent to the client so they
+            // can call `stripe.handleNextAction` if required, and then wait for a callback from Stripe to tell
+            // us if the intent eventually succeeds. Given that it might be simpler to always stop and wait
+            // for the callback at this point, or at least have the FE act like we will do that.
         }
 
-        $mandate->activate($this->now);
-
-        $this->entityManager->flush();
-
-        $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
+        $this->activateMandateNotifyDonor($firstDonation, $mandate, $donor, $donorPreviousHomeAddress, $donorPreviousHomePostcode, $campaign);
 
         return $mandate;
     }
@@ -436,5 +412,42 @@ readonly class RegularGivingService
         }
 
         $this->entityManager->flush();
+    }
+
+    public function activateMandateNotifyDonor(
+        Donation $firstDonation,
+        RegularGivingMandate $mandate,
+        DonorAccount $donor,
+        ?string $donorPreviousHomeAddress,
+        ?string $donorPreviousHomePostcode,
+        Campaign $campaign
+    ): void
+    {
+        $this->donationService->queryStripeToUpdateDonationStatus($firstDonation);
+
+        if (!$firstDonation->getDonationStatus()->isSuccessful()) {
+            $mandate->cancel(
+                reason: "Donation failed, status is {$firstDonation->getDonationStatus()->name}",
+                at: new \DateTimeImmutable(),
+                type: MandateCancellationType::FirstDonationUnsuccessful
+            );
+
+            $donor->setHomeAddressLine1($donorPreviousHomeAddress);
+            $donor->setHomePostcode(
+                is_string($donorPreviousHomePostcode) ?
+                    PostCode::of($donorPreviousHomePostcode, true) : null
+            );
+
+            $this->entityManager->flush();
+            throw new DonationNotCollected(
+                'First Donation in Regular Giving mandate could not be collected, not activating mandate'
+            );
+        }
+
+        $mandate->activate($this->now);
+
+        $this->entityManager->flush();
+
+        $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
     }
 }
