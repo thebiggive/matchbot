@@ -398,7 +398,6 @@ readonly class RegularGivingService
      * Cancels a mandate when the donor has decided they want to stop making donations.
      *
      * @param RegularGivingMandate $mandate - must have been persisted, i.e. have an ID set.
-     * @param MandateCancellationType $cancellationType DonorRequestedCancellation or BigGiveCancelled.
      * @throws NonCancellableStatus
      */
     public function cancelMandate(
@@ -408,7 +407,6 @@ readonly class RegularGivingService
     ): void {
         $mandateId = $mandate->getId();
         Assertion::notNull($mandateId);
-        Assertion::inArray($cancellationType, [MandateCancellationType::DonorRequestedCancellation, MandateCancellationType::BigGiveCancelled]);
 
         $mandate->cancel(reason: $reason, at: $this->now, type: $cancellationType);
 
@@ -421,7 +419,11 @@ readonly class RegularGivingService
         );
 
         foreach ($cancellableDonations as $donation) {
-            $this->donationService->cancel($donation);
+            try {
+                $this->donationService->cancel($donation); // could not cancel
+            } catch (CouldNotCancelStripePaymentIntent $exception) {
+                // no-op
+            }
         }
 
         $this->entityManager->flush();

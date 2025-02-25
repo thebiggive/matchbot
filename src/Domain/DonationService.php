@@ -482,6 +482,7 @@ class DonationService
      *
      * Call this from inside a transaction and with a locked donation to avoid double releasing funds associated with
      * the donation.
+     * @throws CouldNotCancelStripePaymentIntent
      */
     public function cancel(Donation $donation): void
     {

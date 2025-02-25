@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Aws\CloudWatch\CloudWatchClient;
+use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Clock\ClockInterface;
@@ -58,10 +59,14 @@ class SendStatistics extends LockingCommand
             $notNullMetrics[] = $completionRate;
         }
 
-        $this->cloudWatchClient->putMetricData([
-            'Namespace' => 'TbgMatchBot',
-            'MetricData' => $notNullMetrics,
-        ]);
+        try {
+            $this->cloudWatchClient->putMetricData([
+                'Namespace' => 'TbgMatchBot',
+                'MetricData' => $notNullMetrics,
+            ]);
+        } catch (\Throwable $e) {
+            $output->writeln('<error>' . $e->getMessage() . '</error>');
+        }
 
         $count = count($notNullMetrics);
         $output->writeln("Sent $count metrics to CloudWatch");
