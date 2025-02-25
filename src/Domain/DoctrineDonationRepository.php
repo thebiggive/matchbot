@@ -185,6 +185,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             ->innerJoin('d.fundingWithdrawals', 'fw')
             ->where('d.donationStatus IN (:expireWithStatuses)')
             ->andWhere('d.createdAt < :expireBefore')
+            ->andWhere('d.mandate is null')
             ->groupBy('d.id')
             ->setParameter('expireWithStatuses', [DonationStatus::Pending->value, DonationStatus::Cancelled->value])
             ->setParameter('expireBefore', $cutoff)
