@@ -399,6 +399,7 @@ readonly class RegularGivingService
      *
      * @param RegularGivingMandate $mandate - must have been persisted, i.e. have an ID set.
      * @throws NonCancellableStatus
+     * @throws CouldNotCancelStripePaymentIntent
      */
     public function cancelMandate(
         RegularGivingMandate $mandate,
@@ -419,11 +420,7 @@ readonly class RegularGivingService
         );
 
         foreach ($cancellableDonations as $donation) {
-            try {
-                $this->donationService->cancel($donation); // could not cancel
-            } catch (CouldNotCancelStripePaymentIntent $exception) {
-                // no-op
-            }
+            $this->donationService->cancel($donation);
         }
 
         $this->entityManager->flush();

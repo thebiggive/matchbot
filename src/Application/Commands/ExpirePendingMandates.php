@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Commands;
 
+use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Domain\RegularGivingService;
 use Psr\Clock\ClockInterface;
+use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,6 +27,7 @@ class ExpirePendingMandates extends LockingCommand
         private RegularGivingMandateRepository $regularGivingMandateRepository,
         private RegularGivingService $regularGivingService,
         private ClockInterface $clock,
+        private LoggerInterface $log,
     ) {
         parent::__construct();
     }
@@ -39,11 +42,15 @@ class ExpirePendingMandates extends LockingCommand
         );
 
         foreach ($mandatesToCancel as $mandate) {
-            $this->regularGivingService->cancelMandate(
-                $mandate,
-                'pending mandate expired at ' . $now->format('c') . ", donor may have walked away from 3DS",
-                MandateCancellationType::FirstDonationUnsuccessful
-            );
+            try {
+                $this->regularGivingService->cancelMandate(
+                    $mandate,
+                    'pending mandate expired at ' . $now->format('c') . ", donor may have walked away from 3DS",
+                    MandateCancellationType::FirstDonationUnsuccessful
+                );
+            } catch (CouldNotCancelStripePaymentIntent $e) {
+                $this->log->error("Failed to cancel mandate #{$mandate->getId()}, " . $e->__toString());
+            }
         };
 
         return 0;

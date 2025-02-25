@@ -541,7 +541,7 @@ class DonationService
                 );
 
                 if ($returnError) {
-                    throw new CouldNotCancelStripePaymentIntent();
+                    throw new CouldNotCancelStripePaymentIntent(previous: $exception);
                 } // Else likely double-send -> fall through to normal return the donation as-is.
             }
         }
