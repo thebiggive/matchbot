@@ -59,13 +59,13 @@ class SendStatistics extends LockingCommand
             $notNullMetrics[] = $completionRate;
         }
 
-        try {
+        if ($this->environment === Environment::Local) {
+            $output->writeln("Skipping stats send to cloudwatch from local dev env");
+        } else {
             $this->cloudWatchClient->putMetricData([
                 'Namespace' => 'TbgMatchBot',
                 'MetricData' => $notNullMetrics,
             ]);
-        } catch (\Throwable $e) {
-            $output->writeln('<error>' . $e->getMessage() . '</error>');
         }
 
         $count = count($notNullMetrics);
