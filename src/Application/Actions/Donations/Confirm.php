@@ -148,7 +148,9 @@ EOF
                 ],
             ], 500);
         } catch (PaymentIntentNotSucceeded $_e) {
-            // no-op - in this case we let the frontend handle any further action required
+            // no-op - in this case we return the unsuccessful PI to the FE just like we would a successful one.
+            // FE handles it.
+            $updatedIntent = $_e->paymentIntent;
         }
 
         // Assuming Stripe calls worked, commit any changes that `deriveFees()` made to the EM-tracked `$donation`.

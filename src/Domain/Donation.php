@@ -221,6 +221,9 @@ class Donation extends SalesforceWriteProxy
      * Null only iff this is a one-off, non regular-giving donation.
      *
      * @psalm-suppress PossiblyUnusedProperty - used in DQL
+     *
+     * // if this is 1 then when the donation is collected {@see DonationService::updateDonationStatusFromSucessfulCharge}
+     * we can do the needful of activating the mandate.
      */
     #[ORM\Column(type: 'integer', nullable: true)]
     protected ?int $mandateSequenceNumber = null;
@@ -1400,8 +1403,8 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * Updates status to `Cancelled`. Note that in most cases you will need to do more than just update the status,
-     * so consider calling DonationService::cancel() rather than this directly.
+     * Updates status to {@see DonationStatus::Cancelled}. Note that in most cases you will need to do more than just update the status,
+     * so consider calling {@see DonationService::cancel()} rather than this directly.
      */
     public function cancel(): void
     {

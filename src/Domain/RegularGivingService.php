@@ -184,7 +184,7 @@ readonly class RegularGivingService
             try {
                 $methodId = $this->confirmWithNewPaymentMethod($firstDonation, $confirmationTokenId);
             } catch (PaymentIntentNotSucceeded $e) {
-                $intent = $e->paymentIntent;
+                throw $e;
                 // this is where things get more complicated - we need to return the intent to the client so they
                 // can call `stripe.handleNextAction` if required, and then wait for a callback from Stripe to tell
                 // us if the intent eventually succeeds. Given that it might be simpler to always stop and wait
