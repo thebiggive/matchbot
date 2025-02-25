@@ -195,6 +195,7 @@ readonly class RegularGivingService
             }
         } catch (PaymentIntentNotSucceeded $e) {
             $this->entityManager->flush();
+            $e->mandate = $mandate;
             if ($e->paymentIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
                 throw $e;
             }
