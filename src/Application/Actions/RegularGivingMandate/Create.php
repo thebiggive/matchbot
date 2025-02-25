@@ -15,6 +15,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\NotFullyMatched;
+use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\RegularGivingService;
@@ -28,6 +29,7 @@ use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpNotFoundException;
 use Stripe\Exception\CardException;
+use Stripe\PaymentIntent;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -155,6 +157,18 @@ class Create extends Action
                     'decline_code' => $exception->getDeclineCode(),
                 ],
             ], 402);
+        } catch (PaymentIntentNotSucceeded $exception) {
+            $intent = $exception->paymentIntent;
+
+            // Regular Giving service only throws this if the PI requires action, e.g. 3DS authentication.
+            \assert($intent->status === PaymentIntent::STATUS_REQUIRES_ACTION);
+
+            return new JsonResponse([
+                'paymentIntent' => [
+                    'status' => $intent->status,
+                    'client_secret' =>  $intent->client_secret
+                ],
+            ]);
         }
 
         // create first three pending donations for mandate.

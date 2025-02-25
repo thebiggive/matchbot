@@ -28,6 +28,7 @@ use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ApiErrorException as StripeApiErrorException;
 use Stripe\Exception\CardException;
+use Stripe\PaymentIntent;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
@@ -70,6 +71,8 @@ readonly class RegularGivingService
      * @throws \MatchBot\Client\NotFoundException
      * @throws \Symfony\Component\Notifier\Exception\TransportExceptionInterface
      * @throws StripeApiErrorException
+     * @throws DonationNotCollected
+     * @throws PaymentIntentNotSucceeded
      *
      * @throws UnexpectedValueException if the amount is out of the allowed range
      */
@@ -192,14 +195,22 @@ readonly class RegularGivingService
             }
         } catch (PaymentIntentNotSucceeded $e) {
             $this->entityManager->flush();
-            throw $e;
-            // this is where things get more complicated - we need to return the intent to the client so they
-            // can call `stripe.handleNextAction` if required, and then wait for a callback from Stripe to tell
-            // us if the intent eventually succeeds. Given that it might be simpler to always stop and wait
-            // for the callback at this point, or at least have the FE act like we will do that.
+            if ($e->paymentIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
+                throw $e;
+            }
         }
 
-        $this->activateMandateNotifyDonor($firstDonation, $mandate, $donor, $donorPreviousHomeAddress, $donorPreviousHomePostcode, $campaign);
+        $this->donationService->queryStripeToUpdateDonationStatus($firstDonation);
+
+        if (!$firstDonation->getDonationStatus()->isSuccessful()) {
+            $this->cancelNewMandate($mandate, $firstDonation, $donor, $donorPreviousHomeAddress, $donorPreviousHomePostcode);
+
+            throw new DonationNotCollected(
+                'First Donation in Regular Giving mandate could not be collected, not activating mandate'
+            );
+        }
+
+        $this->activateMandateNotifyDonor($firstDonation, $mandate, $donor, $campaign);
 
         return $mandate;
     }
@@ -418,36 +429,34 @@ readonly class RegularGivingService
         Donation $firstDonation,
         RegularGivingMandate $mandate,
         DonorAccount $donor,
-        ?string $donorPreviousHomeAddress,
-        ?string $donorPreviousHomePostcode,
         Campaign $campaign
-    ): void
-    {
-        $this->donationService->queryStripeToUpdateDonationStatus($firstDonation);
-
-        if (!$firstDonation->getDonationStatus()->isSuccessful()) {
-            $mandate->cancel(
-                reason: "Donation failed, status is {$firstDonation->getDonationStatus()->name}",
-                at: new \DateTimeImmutable(),
-                type: MandateCancellationType::FirstDonationUnsuccessful
-            );
-
-            $donor->setHomeAddressLine1($donorPreviousHomeAddress);
-            $donor->setHomePostcode(
-                is_string($donorPreviousHomePostcode) ?
-                    PostCode::of($donorPreviousHomePostcode, true) : null
-            );
-
-            $this->entityManager->flush();
-            throw new DonationNotCollected(
-                'First Donation in Regular Giving mandate could not be collected, not activating mandate'
-            );
-        }
-
+    ): void {
         $mandate->activate($this->now);
 
         $this->entityManager->flush();
 
         $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
+    }
+
+    public function cancelNewMandate(
+        RegularGivingMandate $mandate,
+        Donation $firstDonation,
+        DonorAccount $donor,
+        ?string $donorPreviousHomeAddress,
+        ?string $donorPreviousHomePostcode
+    ): void {
+        $mandate->cancel(
+            reason: "Donation failed, status is {$firstDonation->getDonationStatus()->name}",
+            at: new \DateTimeImmutable(),
+            type: MandateCancellationType::FirstDonationUnsuccessful
+        );
+
+        $donor->setHomeAddressLine1($donorPreviousHomeAddress);
+        $donor->setHomePostcode(
+            is_string($donorPreviousHomePostcode) ?
+                PostCode::of($donorPreviousHomePostcode, true) : null
+        );
+
+        $this->entityManager->flush();
     }
 }
