@@ -6,6 +6,7 @@ use Assert\AssertionFailedException;
 use Doctrine\DBAL\Exception\ServerException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
+use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\MandateUpserted;
@@ -436,7 +437,13 @@ readonly class RegularGivingService
 
         $this->entityManager->flush();
 
-        $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
+        try {
+            $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
+        } catch (ClientException $exception) {
+            $this->log->error(
+                "Could not send notification for mandate #{$mandate->getId()}: " . $exception->__toString()
+            );
+        }
     }
 
     public function cancelNewMandate(
@@ -459,5 +466,33 @@ readonly class RegularGivingService
         );
 
         $this->entityManager->flush();
+    }
+
+    public function updateMandateFromSuccessfulCharge(Donation $donation): void
+    {
+        \assert($donation->getDonationStatus()->isSuccessful());
+
+        $mandate = $donation->getMandate();
+        if ($mandate === null) {
+            return;
+        }
+
+        $mandateSequenceNumber = $donation->getMandateSequenceNumber();
+        \assert($mandateSequenceNumber !== null);
+
+        if ($mandateSequenceNumber->number !== 1) {
+            // only want to update the mandate based on its initial donation being successfully paid.
+            return;
+        }
+
+        $donor = $this->donorAccountRepository->findByPersonId($mandate->donorId());
+        \assert($donor !== null);
+
+        $this->activateMandateNotifyDonor(
+            firstDonation: $donation,
+            mandate: $mandate,
+            donor: $donor,
+            campaign: $donation->getCampaign(),
+        );
     }
 }
