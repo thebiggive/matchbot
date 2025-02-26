@@ -53,6 +53,8 @@ readonly class RegularGivingService
     }
 
     /**
+     * Creates but does not yet activate a Mandate. Stripe first charge succeeded webhook is responsible for activation.
+     *
      * @param bool|null $homeIsOutsideUk
      * @param bool $matchDonations
      * @param PostCode|null $homePostcode
@@ -211,8 +213,6 @@ readonly class RegularGivingService
                 'First Donation in Regular Giving mandate could not be collected, not activating mandate'
             );
         }
-
-        $this->activateMandateNotifyDonor($firstDonation, $mandate, $donor, $campaign);
 
         return $mandate;
     }
@@ -426,7 +426,7 @@ readonly class RegularGivingService
         $this->entityManager->flush();
     }
 
-    public function activateMandateNotifyDonor(
+    private function activateMandateNotifyDonor(
         Donation $firstDonation,
         RegularGivingMandate $mandate,
         DonorAccount $donor,
@@ -467,6 +467,10 @@ readonly class RegularGivingService
         $this->entityManager->flush();
     }
 
+    /**
+     * Activates the previously created Mandate via {@see self::activateMandateNotifyDonor()} assuming
+     * pre-conditions hold.
+     */
     public function updateMandateFromSuccessfulCharge(Donation $donation): void
     {
         \assert($donation->getDonationStatus()->isSuccessful());

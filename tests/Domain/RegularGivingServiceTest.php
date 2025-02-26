@@ -181,9 +181,9 @@ class RegularGivingServiceTest extends TestCase
         $this->assertEquals(Country::fromEnum(CountryAlpha2::Kiribati)->alpha2->value, $this->donorAccount->getBillingCountryCode());
         $this->assertSame('KI0107', $this->donorAccount->getBillingPostcode());
 
-        $this->assertSame(MandateStatus::Active, $mandate->getStatus());
-
-        $this->regularGivingNotifierProphecy->notifyNewMandateCreated(Argument::cetera())->shouldBeCalled();
+        // Pending, and no notification, until Stripe first donation charge succeeded webhook.
+        $this->assertSame(MandateStatus::Pending, $mandate->getStatus());
+        $this->regularGivingNotifierProphecy->notifyNewMandateCreated(Argument::cetera())->shouldNotBeCalled();
     }
 
     public function testItPreservesHomeAddressIfNotSuppliedOnMandate(): void
