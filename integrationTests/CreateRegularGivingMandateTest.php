@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Psr7\ServerRequest;
 use MatchBot\Client\Mailer;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\FundType;
 use MatchBot\Tests\TestData;
 use Prophecy\Argument;
 use Psr\Http\Message\ResponseInterface;
@@ -126,7 +127,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
     ): ResponseInterface {
         $campaignId = $this->randomString();
 
-        $this->addFundedCampaignAndCharityToDB($campaignId, isRegularGiving: true);
+        $this->addFundedCampaignAndCharityToDB($campaignId, isRegularGiving: true, fundType: FundType::ChampionFund);
 
         return $this->getApp()->handle(
             new ServerRequest(

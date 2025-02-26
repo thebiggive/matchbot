@@ -62,10 +62,13 @@ class CreateTest extends TestCase
      * @var mixed|object|ClockInterface
      */
     private ClockInterface $previousClock;
+    private \DateTimeImmutable $now;
 
     public function setUp(): void
     {
         parent::setUp();
+
+        $this->now = new \DateTimeImmutable('2024-12-24'); // specific date doesn't matter.
 
         static::$somePaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
@@ -114,7 +117,7 @@ class CreateTest extends TestCase
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
 
         $this->previousClock = $this->diContainer()->get(ClockInterface::class);
-        $this->diContainer()->set(ClockInterface::class, $this->createStub(ClockInterface::class));
+        $this->diContainer()->set(ClockInterface::class, new MockClock($this->now));
     }
 
     #[Override] public function tearDown(): void
@@ -881,7 +884,7 @@ class CreateTest extends TestCase
             ->shouldBeCalledTimes(3); // DonationService::MAX_RETRY_COUNT
         $entityManagerProphecy->flush()->shouldNotBeCalled();
 
-        $this->diContainer()->set(ClockInterface::class, new MockClock());
+        $this->diContainer()->set(ClockInterface::class, new MockClock($this->now));
         $this->diContainer()->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
 
         $data = $this->encode($donation);
@@ -999,11 +1002,11 @@ class CreateTest extends TestCase
         $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('123CampaignId12345'), charity: $charity);
         $campaign->setName('123CampaignName');
         $campaign->setIsMatched($campaignMatched);
-        $campaign->setStartDate((new \DateTime())->sub(new \DateInterval('P2D')));
+        $campaign->setStartDate($this->now->sub(new \DateInterval('P2D')));
         if ($campaignOpen) {
-            $campaign->setEndDate((new \DateTime())->add(new \DateInterval('P1D')));
+            $campaign->setEndDate($this->now->add(new \DateInterval('P1D')));
         } else {
-            $campaign->setEndDate((new \DateTime())->sub(new \DateInterval('P1D')));
+            $campaign->setEndDate($this->now->sub(new \DateInterval('P1D')));
         }
 
         $donation = TestCase::someDonation(amount: '12.00', currencyCode: $currencyCode);

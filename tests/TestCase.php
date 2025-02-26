@@ -117,7 +117,14 @@ class TestCase extends PHPUnitTestCase
             }
             #[\Override] public function now(): \DateTimeImmutable
             {
-                throw new \Exception("Please provide fake clock for your test");
+                // This always throws but I'm using an if condition to hide that from PhpStorm. Otherwise
+                // PhpStorm infers the return type as `never`, finds usages of the Interface in our prod code
+                // and somehow assumes they're calling this anon class and complains about dead code.
+                if (time() !== 1) {
+                    throw new \Exception("Please provide fake clock for your test");
+                }
+
+                return new \DateTimeImmutable();
             }
             #[\Override] public function withTimeZone(\DateTimeZone|string $timezone): never
             {

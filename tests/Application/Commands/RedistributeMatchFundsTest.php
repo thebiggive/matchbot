@@ -34,6 +34,7 @@ class RedistributeMatchFundsTest extends TestCase
     /** @var ObjectProphecy<RoutableMessageBus> */
     private ObjectProphecy $messageBusProphecy;
 
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -73,9 +74,40 @@ class RedistributeMatchFundsTest extends TestCase
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    public function testOneDonationHasChampFundsUsedAndIsAssignedPledgeToFullMatchedValue(): void
+
+    /**
+     * @return list<array{0: FundType, 1: FundType, 2: bool}>
+     */
+    public function redistributionByFundTypes(): array
     {
-        $donation = $this->getTenPoundChampionMatchedDonation();
+        return [
+            // Original fund type used for donation, type of new fund available, funds should be redistributed?
+            // ordinary pledges are highest priority, never redistribute away from pledge,
+            [FundType::Pledge, FundType::Pledge, false],
+            [FundType::Pledge, FundType::ChampionFund, false],
+            [FundType::Pledge, FundType::TopupPledge, false],
+
+            // champion funds are in the middle, only redistribute to pledge
+            [FundType::ChampionFund, FundType::Pledge, true],
+            [FundType::ChampionFund, FundType::ChampionFund, false],
+            [FundType::ChampionFund, FundType::TopupPledge, false],
+
+            // TopupPledge redistributes to Pledge or to Champion Fund.
+            [FundType::TopupPledge, FundType::Pledge, true],
+            [FundType::TopupPledge, FundType::ChampionFund, true],
+            [FundType::TopupPledge, FundType::TopupPledge, false],
+        ];
+    }
+
+    /**
+     * @dataProvider redistributionByFundTypes
+     */
+    public function testOneDonationHasFundsUsedAndIsAssignedAccordingToFundTypesToFullMatchedValue(
+        FundType $originalFundTypeUsed,
+        FundType $availableFundType,
+        bool $shouldRedistribute,
+    ): void {
+        $donation = $this->getTenPoundMatchedDonation($originalFundTypeUsed);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
@@ -84,19 +116,21 @@ class RedistributeMatchFundsTest extends TestCase
         )->willReturn([$donation]);
 
         $donationRepoProphecy->releaseMatchFunds($donation)
-            ->shouldBeCalledOnce();
+            ->shouldbeCalledTimes($shouldRedistribute ? 1 : 0);
         $donationRepoProphecy->allocateMatchFunds($donation)
-            ->shouldBeCalledOnce()
+            ->shouldbeCalledTimes($shouldRedistribute ? 1 : 0)
             ->willReturn('10.00');
 
         $loggerProphecy = $this->prophesize(LoggerInterface::class);
         $loggerProphecy->error(Argument::type('string'))->shouldNotBeCalled();
 
-        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))->shouldBeCalledOnce()->willReturnArgument();
+        $this->messageBusProphecy->dispatch(Argument::type(Envelope::class))
+            ->shouldbeCalledTimes($shouldRedistribute ? 1 : 0)
+            ->willReturnArgument();
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
         $campaignFundingRepoProphecy->getAvailableFundings(Argument::type(Campaign::class))
-            ->willReturn([$this->getFullyAvailablePledgeFunding()]);
+            ->willReturn([$this->getFullyAvailableFunding($availableFundType)]);
 
         $commandTester = new CommandTester($this->getCommand(
             $campaignFundingRepoProphecy,
@@ -108,7 +142,7 @@ class RedistributeMatchFundsTest extends TestCase
 
         $expectedOutputLines = [
             'matchbot:redistribute-match-funds starting!',
-            'Checked 1 donations and redistributed matching for 1',
+            $shouldRedistribute ? 'Checked 1 donations and redistributed matching for 1' : 'Checked 1 donations and redistributed matching for 0',
             'matchbot:redistribute-match-funds complete!',
         ];
         $this->assertEquals(implode("\n", $expectedOutputLines) . "\n", $commandTester->getDisplay());
@@ -131,7 +165,7 @@ class RedistributeMatchFundsTest extends TestCase
      */
     public function testOneDonationHasChampFundsUsedAndIsAssignedPledgeButOnlyPartMatched(): void
     {
-        $donation = $this->getTenPoundChampionMatchedDonation();
+        $donation = $this->getTenPoundMatchedDonation(FundType::ChampionFund);
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
@@ -154,7 +188,7 @@ class RedistributeMatchFundsTest extends TestCase
 
         $campaignFundingRepoProphecy = $this->prophesize(CampaignFundingRepository::class);
         $campaignFundingRepoProphecy->getAvailableFundings(Argument::type(Campaign::class))
-            ->willReturn([$this->getFullyAvailablePledgeFunding()]);
+            ->willReturn([$this->getFullyAvailableFunding(FundType::Pledge)]);
 
         $commandTester = new CommandTester($this->getCommand(
             $campaignFundingRepoProphecy,
@@ -173,20 +207,20 @@ class RedistributeMatchFundsTest extends TestCase
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    private function getFullyAvailablePledgeFunding(): CampaignFunding
+    private function getFullyAvailableFunding(FundType $fundType): CampaignFunding
     {
         $pledgeAmount = '101.00';
-        $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::Pledge);
+        $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: $fundType);
 
         return new CampaignFunding(
             fund: $pledge,
             amount: $pledgeAmount,
             amountAvailable: $pledgeAmount,
-            allocationOrder: 100,
+            allocationOrder: $pledge->getAllocationOrder(),
         );
     }
 
-    private function getTenPoundChampionMatchedDonation(): Donation
+    private function getTenPoundMatchedDonation(FundType $fundType): Donation
     {
         $donationAmount = '10';
         $donation = Donation::fromApiModel(new DonationCreate(
@@ -198,12 +232,12 @@ class RedistributeMatchFundsTest extends TestCase
         $donation->setSalesforceId('sf_1244');
         $donation->setTransactionId('pi_tenPound123');
 
-        $championFund = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::ChampionFund);
+        $fund = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: $fundType);
         $campaignFunding = new CampaignFunding(
-            fund: $championFund,
+            fund: $fund,
             amount: $donationAmount,
             amountAvailable: '0',
-            allocationOrder: 200,
+            allocationOrder: $fund->getAllocationOrder(),
         );
 
         $championFundWithdrawal = new FundingWithdrawal($campaignFunding);

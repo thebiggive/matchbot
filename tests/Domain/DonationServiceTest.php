@@ -41,6 +41,7 @@ use Stripe\ConfirmationToken;
 use Stripe\Exception\PermissionException;
 use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Message\ChatMessage;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
@@ -193,9 +194,6 @@ class DonationServiceTest extends TestCase
 
         $logger = $logger ?? new NullLogger();
 
-        $clockProphecy = $this->prophesize(ClockInterface::class);
-        $clockProphecy->now()->willReturn(new \DateTimeImmutable('1970-01-01')); // datetime doesnt matter
-        $clockProphecy->sleep(Argument::any())->will(fn() => null); // ignore calls to sleep
 
         return new DonationService(
             donationRepository: $this->donationRepoProphecy->reveal(),
@@ -205,7 +203,7 @@ class DonationServiceTest extends TestCase
             stripe: $this->stripeProphecy->reveal(),
             matchingAdapter: $this->prophesize(Adapter::class)->reveal(),
             chatter: $this->chatterProphecy->reveal(),
-            clock: $clockProphecy->reveal(),
+            clock: new MockClock(new \DateTimeImmutable('2025-01-01')),
             rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
             bus: $this->createStub(RoutableMessageBus::class),

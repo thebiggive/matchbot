@@ -92,7 +92,7 @@ class DonationService
     }
 
     /**
-     * Creates a new pending donation.
+     * Creates a new pending ad-hoc donation.
      *
      * @param DonationCreate $donationData Details of the desired donation, as sent from the browser
      * @param string $pspCustomerId The Stripe customer ID of the donor
@@ -140,6 +140,10 @@ class DonationService
                 $pspCustomerId,
                 $donation->getPspCustomerId()?->stripeCustomerId ?? 'null'
             ));
+        }
+
+        if (!$donation->getCampaign()->isOpen($this->clock->now())) {
+            throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
         }
 
         $this->enrollNewDonation($donation, attemptMatching: true);
@@ -317,9 +321,7 @@ class DonationService
     {
         $campaign = $donation->getCampaign();
 
-        $at = new \DateTimeImmutable();
-
-        $campaign->checkIsReadyToAcceptDonation($donation, $at);
+        $campaign->checkIsReadyToAcceptDonation($donation, $this->clock->now());
 
         // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
         // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
@@ -414,10 +416,6 @@ class DonationService
     public function createPaymentIntent(Donation $donation): void
     {
         Assertion::same($donation->getPsp(), 'stripe');
-
-        if (!$donation->getCampaign()->isOpen(new \DateTimeImmutable())) {
-            throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
-        }
 
         $now = $this->clock->now();
 
