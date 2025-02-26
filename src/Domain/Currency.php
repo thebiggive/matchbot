@@ -14,17 +14,18 @@ enum Currency: string
     case CAD = 'CAD';
     case SEK = 'SEK';
 
-    public static function fromIsoCode(mixed $isoCode): self
+    public static function fromIsoCode(string $isoCode): self
     {
         Assertion::length($isoCode, 3);
         Assertion::alnum($isoCode);
+        $isoCode = strtoupper($isoCode);
 
         // other currencies have some tests but are not fully supported
         if (! defined('RUNNING_UNIT_TESTS') && $isoCode !== 'GBP') {
             throw new \UnexpectedValueException("Unexpected Currency ISO Code " . $isoCode);
         }
 
-        return self::tryFrom(strtoupper($isoCode)) ??
+        return self::tryFrom($isoCode) ??
             throw new \UnexpectedValueException("Unexpected Currency ISO Code " . $isoCode);
     }
 
