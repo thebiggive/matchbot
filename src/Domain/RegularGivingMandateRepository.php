@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use MatchBot\Application\Assertion;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -118,5 +119,26 @@ class RegularGivingMandateRepository
             ];
         },
             $mandates));
+    }
+
+    /**
+     * @return list<RegularGivingMandate>
+     */
+    public function findAllPendingSinceBefore(\DateTimeImmutable $latestCreationDate): array
+    {
+        $pending = MandateStatus::Pending->value;
+
+        $query = $this->em->createQuery(<<<DQL
+                SELECT r FROM MatchBot\Domain\RegularGivingMandate r 
+                WHERE r.status = '{$pending}'
+                AND r.createdAt <= :latestCreationDate
+            DQL
+        );
+        $query->setParameter('latestCreationDate', $latestCreationDate);
+        $query->setMaxResults(20);
+
+        /** @var list<RegularGivingMandate> $mandates */
+        $mandates = $query->getResult();
+        return $mandates;
     }
 }

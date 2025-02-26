@@ -1407,8 +1407,8 @@ class Donation extends SalesforceWriteProxy
     }
 
     /**
-     * Updates status to `Cancelled`. Note that in most cases you will need to do more than just update the status,
-     * so consider calling DonationService::cancel() rather than this directly.
+     * Updates status to {@see DonationStatus::Cancelled}. Note that in most cases you will need to do more than just update the status,
+     * so consider calling {@see DonationService::cancel()} rather than this directly.
      */
     public function cancel(): void
     {

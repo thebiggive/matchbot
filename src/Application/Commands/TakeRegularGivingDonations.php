@@ -9,6 +9,7 @@ use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DomainException\MandateNotActive;
+use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use MatchBot\Domain\DomainException\WrongCampaignType;
@@ -159,6 +160,9 @@ class TakeRegularGivingDonations extends LockingCommand
                     $io->info($exception->getMessage());
                     continue;
                 } catch (RegularGivingCollectionEndPassed) {
+                    continue;
+                } catch (PaymentIntentNotSucceeded $exception) {
+                    $io->error('PaymentIntentNotSucceeded, skipping donation: ' . $exception->getMessage());
                     continue;
                 }
             } catch (\Exception $exception) {

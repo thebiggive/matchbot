@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Application\Commands;
 
 use Aws\CloudWatch\CloudWatchClient;
+use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
 use Symfony\Component\Clock\ClockInterface;
@@ -58,10 +59,14 @@ class SendStatistics extends LockingCommand
             $notNullMetrics[] = $completionRate;
         }
 
-        $this->cloudWatchClient->putMetricData([
-            'Namespace' => 'TbgMatchBot',
-            'MetricData' => $notNullMetrics,
-        ]);
+        if ($this->environment === Environment::Local) {
+            $output->writeln("Skipping stats send to cloudwatch from local dev env");
+        } else {
+            $this->cloudWatchClient->putMetricData([
+                'Namespace' => 'TbgMatchBot',
+                'MetricData' => $notNullMetrics,
+            ]);
+        }
 
         $count = count($notNullMetrics);
         $output->writeln("Sent $count metrics to CloudWatch");

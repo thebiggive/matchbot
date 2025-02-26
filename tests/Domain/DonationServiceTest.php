@@ -272,10 +272,15 @@ class DonationServiceTest extends TestCase
             'application_fee_amount' => '52',
         ])->shouldBeCalledOnce();
 
+        $paymentIntent = new PaymentIntent($paymentIntentId);
+        $paymentIntent->status = PaymentIntent::STATUS_SUCCEEDED;
+
         $this->stripeProphecy->confirmPaymentIntent($paymentIntentId, [
             'confirmation_token' => $confirmationTokenId->stripeConfirmationTokenId,
             'capture_method' => 'automatic',
-        ])->shouldBeCalledOnce();
+        ])
+            ->willReturn($paymentIntent)
+            ->shouldBeCalledOnce();
 
         // act
         $this->getDonationService()->confirmOnSessionDonation($donation, $confirmationTokenId);

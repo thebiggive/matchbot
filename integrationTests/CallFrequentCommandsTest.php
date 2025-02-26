@@ -6,6 +6,7 @@ use Aws\CloudWatch\CloudWatchClient;
 use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\CancelStaleDonationFundTips;
 use MatchBot\Application\Commands\ExpireMatchFunds;
+use MatchBot\Application\Commands\ExpirePendingMandates;
 use MatchBot\Application\Commands\SendStatistics;
 use MatchBot\Application\Environment;
 use MatchBot\Domain\DonationRepository;
@@ -41,6 +42,8 @@ class CallFrequentCommandsTest extends IntegrationTest
             'matchbot:expire-match-funds starting!',
             'Released 0 donations\' matching',
             'matchbot:expire-match-funds complete!',
+            'matchbot:expire-pending-mandates starting!',
+            'matchbot:expire-pending-mandates complete!',
             'matchbot:cancel-stale-donation-fund-tips starting!',
             'matchbot:cancel-stale-donation-fund-tips complete!',
             'matchbot:tick complete!',
@@ -66,6 +69,8 @@ class CallFrequentCommandsTest extends IntegrationTest
             ),
             $this->getService(ExpireMatchFunds::class),
             $this->getService(CancelStaleDonationFundTips::class),
+            $this->getService(ExpirePendingMandates::class),
+
         ];
 
         foreach ($commands as $command) {
