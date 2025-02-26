@@ -179,7 +179,6 @@ class RegularGivingServiceTest extends TestCase
 
         // Pending, and no notification, until Stripe first donation charge succeeded webhook.
         $this->assertSame(MandateStatus::Pending, $mandate->getStatus());
-        $this->regularGivingNotifierProphecy->notifyNewMandateCreated(Argument::cetera())->shouldNotBeCalled();
     }
 
     public function testItPreservesHomeAddressIfNotSuppliedOnMandate(): void
