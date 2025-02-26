@@ -22,6 +22,7 @@ use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\StripeCustomerId;
+use MatchBot\Domain\StripePaymentMethodId;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -144,7 +145,15 @@ class StripePaymentsUpdate extends Stripe
             $donationService = $this->donationService;
             $donationService->updateDonationStatusFromSucessfulCharge($charge, $donation);
 
-            $this->regularGivingService->updateMandateFromSuccessfulCharge($donation);
+            $payment_method = $charge->payment_method;
+
+            // given that this is a successful charge it must have been paid by some method.
+            assert($payment_method !== null);
+
+            $this->regularGivingService->updatePossibleMandateFromSuccessfulCharge(
+                $donation,
+                StripePaymentMethodId::of($payment_method)
+            );
 
             $this->logger->info(sprintf(
                 'Set donation %s Collected based on hook for charge ID %s',

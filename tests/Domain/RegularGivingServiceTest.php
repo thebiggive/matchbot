@@ -80,15 +80,11 @@ class RegularGivingServiceTest extends TestCase
     /** @var list<Donation> */
     private array $donations;
 
-    /** @var ObjectProphecy<Stripe>  */
-    private ObjectProphecy $stripeProphecy;
-
     public function setUp(): void
     {
         $this->donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
         $this->donorAccountRepositoryProphecy = $this->prophesize(DonorAccountRepository::class);
         $this->campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
-        $this->stripeProphecy = $this->prophesize(Stripe::class);
 
         $this->donorAccount = $this->prepareDonorAccount();
 
@@ -279,7 +275,7 @@ class RegularGivingServiceTest extends TestCase
     public function testItSavesPaymentMethodIDToDonorAccount(): void
     {
         // arrange
-        $paymentMethodId = "pm_id";
+        $paymentMethodId = StripePaymentMethodId::of("pm_id");
         $chargeId = 'charge_id';
         $confirmationTokenId = StripeConfirmationTokenId::of('ctoken_xyz');
         $paymentIntent = new PaymentIntent('pi_id');
@@ -287,21 +283,22 @@ class RegularGivingServiceTest extends TestCase
 
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
 
+        $donation = null;
+
         $this->donationServiceProphecy->confirmOnSessionDonation(
             Argument::type(Donation::class),
             $confirmationTokenId
         )
             ->shouldBeCalledOnce()
-            ->willReturn($paymentIntent);
-
-        $this->stripeProphecy->retrieveCharge(Argument::type('string'))->will(
-            function (array $args) use ($paymentMethodId) {
-                $charge = new Charge($args[0]);
-                $charge->payment_method = $paymentMethodId;
-
-                return $charge;
-            }
-        );
+            ->will(/**
+             * @param array{0: Donation} $args
+             * @return PaymentIntent
+             */
+                function (array $args) use (&$donation, $paymentIntent) {
+                    $donation = $args[0];
+                    return $paymentIntent;
+                }
+            );
 
         // act
         $regularGivingService->setupNewMandate(
@@ -321,9 +318,13 @@ class RegularGivingServiceTest extends TestCase
             homeIsOutsideUk: true
         );
 
+        assert($donation instanceof Donation);
+
+        $regularGivingService->updatePossibleMandateFromSuccessfulCharge($donation, $paymentMethodId);
+
         // assert
         $this->assertEquals(
-            StripePaymentMethodId::of($paymentMethodId),
+            $paymentMethodId,
             $this->donorAccount->getRegularGivingPaymentMethod()
         );
     }
@@ -582,7 +583,6 @@ class RegularGivingServiceTest extends TestCase
             log: $this->createStub(LoggerInterface::class),
             regularGivingMandateRepository: $this->createStub(RegularGivingMandateRepository::class),
             regularGivingNotifier: $this->regularGivingNotifierProphecy->reveal(),
-            stripe: $this->stripeProphecy->reveal(),
         );
     }
 

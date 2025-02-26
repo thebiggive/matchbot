@@ -20,6 +20,8 @@ use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -52,14 +54,24 @@ class TakeRegularGivingDonations extends LockingCommand
             'simulated-date',
             shortcut: 'simulated-date',
             mode: InputOption::VALUE_REQUIRED,
-            description: 'Simulated datetime'
+            description: '(imperfectly) Simulated datetime - see comments in ' .  basename(__file__) . ' for details',
         );
     }
 
+    /**
+     * Note that only some usages of the system clock are currently replaced with a simulated date here, so results
+     * may be inconsistent when using a simulated date. That's because matchbot-cli.php eagerly loads from the container
+     * every service needed by every possible command at startup, so by this point DonationService and perhaps others
+     * have already been created with a real system clock or timestamp.
+     *
+     * Consider using https://symfony.com/doc/current/console/lazy_commands.html or putting the simulated date in
+     * container early in the matchbot-cli.php to fix.
+     */
     public function setSimulatedNow(string $simulateDateInput, OutputInterface $output): void
     {
         $simulatedNow = new \DateTimeImmutable($simulateDateInput);
         $this->container->set(\DateTimeImmutable::class, $simulatedNow);
+        $this->container->set(ClockInterface::class, new MockClock($simulatedNow));
         $output->writeln("Simulating running on {$simulatedNow->format('Y-m-d H:i:s')}");
     }
 
