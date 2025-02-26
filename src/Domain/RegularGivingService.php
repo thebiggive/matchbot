@@ -3,36 +3,23 @@
 namespace MatchBot\Domain;
 
 use Assert\AssertionFailedException;
-use Doctrine\DBAL\Exception\ServerException;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Exception\ORMException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Messenger\DonationUpserted;
-use MatchBot\Application\Messenger\MandateUpserted;
-use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationNotCollected;
-use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
-use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\HomeAddressRequired;
 use MatchBot\Domain\DomainException\NonCancellableStatus;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
-use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
-use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\ApiErrorException as StripeApiErrorException;
-use Stripe\Exception\CardException;
 use Stripe\PaymentIntent;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
 use UnexpectedValueException;
 
 readonly class RegularGivingService
@@ -48,7 +35,6 @@ readonly class RegularGivingService
         private LoggerInterface $log,
         private RegularGivingMandateRepository $regularGivingMandateRepository,
         private RegularGivingNotifier $regularGivingNotifier,
-        private Stripe $stripe,
     ) {
     }
 
@@ -188,8 +174,7 @@ readonly class RegularGivingService
 
         try {
             if ($confirmationTokenId) {
-                    $methodId = $this->confirmWithNewPaymentMethod($firstDonation, $confirmationTokenId);
-                    $donor->setRegularGivingPaymentMethod($methodId);
+                $this->donationService->confirmOnSessionDonation($firstDonation, $confirmationTokenId);
             } else {
                 \assert($donorsSavedPaymentMethod !== null);
                 // @todo-regular-giving - consider if we need to switch to sync confirmation that doesn't rely on a callback
@@ -370,31 +355,6 @@ readonly class RegularGivingService
     }
 
     /**
-     * @throws RegularGivingDonationToOldToCollect
-     * @throws StripeApiErrorException
-     * @throws PaymentIntentNotSucceeded
-     */
-    private function confirmWithNewPaymentMethod(Donation $firstDonation, StripeConfirmationTokenId $confirmationTokenId): StripePaymentMethodId
-    {
-        $intent = $this->donationService->confirmOnSessionDonation($firstDonation, $confirmationTokenId);
-        $chargeId = $intent->latest_charge;
-        if ($chargeId === null) {
-            // AFAIK there should always be charge ID attached to the intent at this point
-            throw new \Exception('No charge ID on payment intent after confirming regular giving donation');
-        }
-
-        $charge = $this->stripe->retrieveCharge((string)$chargeId);
-        $paymentMethodId = $charge->payment_method;
-
-        if ($paymentMethodId === null) {
-            // AFAIK there should always be payment method ID attached to the charge at this point.
-            throw new \Exception('No payment method ID on charge after confirming regular giving donation');
-        }
-
-        return StripePaymentMethodId::of($paymentMethodId);
-    }
-
-    /**
      * Cancels a mandate when the donor has decided they want to stop making donations.
      *
      * @param RegularGivingMandate $mandate - must have been persisted, i.e. have an ID set.
@@ -430,8 +390,10 @@ readonly class RegularGivingService
         Donation $firstDonation,
         RegularGivingMandate $mandate,
         DonorAccount $donor,
-        Campaign $campaign
+        Campaign $campaign,
+        StripePaymentMethodId $paymentMethodId
     ): void {
+        $donor->setRegularGivingPaymentMethod($paymentMethodId);
         $mandate->activate($this->now);
 
         $this->entityManager->flush();
@@ -468,11 +430,13 @@ readonly class RegularGivingService
     }
 
     /**
-     * Activates the previously created Mandate via {@see self::activateMandateNotifyDonor()} assuming
-     * pre-conditions hold.
+     * Activates any previously created Mandate via {@see self::activateMandateNotifyDonor()} assuming
+     * pre-conditions hold. Returns as a no-op if called for a non-regular giving donation.
      */
-    public function updateMandateFromSuccessfulCharge(Donation $donation): void
-    {
+    public function updatePossibleMandateFromSuccessfulCharge(
+        Donation $donation,
+        StripePaymentMethodId $paymentMethodId
+    ): void {
         \assert($donation->getDonationStatus()->isSuccessful());
 
         $mandate = $donation->getMandate();
@@ -496,6 +460,7 @@ readonly class RegularGivingService
             mandate: $mandate,
             donor: $donor,
             campaign: $donation->getCampaign(),
+            paymentMethodId: $paymentMethodId,
         );
     }
 }
