@@ -38,11 +38,16 @@ class RegularGivingMandateRepository
     /**
      * @return list<array{0: RegularGivingMandate, 1: Charity}>
      *     List of tuples of regular giving mandates with their recipient charities
+     *
+     * Includes any and all mandates for a donor that they should know or care about. The only exclusions currently are
+     * 'pending' mandates, which have not yet been activated, and auto-cancelled mandates that never got to be
+     * activated because e.g. there was a payment failure on the first donation.
      */
-    public function allActiveAndUserCancelledForDonorWithCharities(PersonId $donor): array
+    public function allMandatesForDisplayToDonor(PersonId $donor): array
     {
         $active = MandateStatus::Active->value;
         $cancelled = MandateStatus::Cancelled->value;
+        $campaignEnded = MandateStatus::CampaignEnded->value;
 
         $donorCancelled = MandateCancellationType::DonorRequestedCancellation->value;
         $bgCancelled = MandateCancellationType::BigGiveCancelled->value;
@@ -55,6 +60,7 @@ class RegularGivingMandateRepository
             LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
             WHERE (
                 r.status = '{$active}' OR
+                r.status = '{$campaignEnded}' OR
                 (r.status = '{$cancelled}' AND r.cancellationType IN ('$bgCancelled', '$donorCancelled'))
                 )
             AND r.donorId.id = :donorId
