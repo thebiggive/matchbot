@@ -219,6 +219,12 @@ class RegularGivingMandate extends SalesforceWriteProxy
         ];
     }
 
+    #[\Override]
+    public function __toString(): string
+    {
+        return "Regular Giving Mandate # {$this->uuid->toString()}";
+    }
+
 
     public function toSFApiModel(DonorAccount $donor): array
     {
