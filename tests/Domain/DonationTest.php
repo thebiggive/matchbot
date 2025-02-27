@@ -536,7 +536,7 @@ class DonationTest extends TestCase
 
         $donation->setTransactionId('any-string');
 
-        $this->assertTrue($donation->assertIsReadyToConfirm());
+        $this->assertTrue($donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01')));
     }
 
     public function testIsNotReadyToConfirmWithoutBillingPostcode(): void
@@ -562,7 +562,7 @@ class DonationTest extends TestCase
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing Billing Postcode");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
 
     public function testIsNotReadyToConfirmWithoutTBGComsPreference(): void
@@ -589,7 +589,7 @@ class DonationTest extends TestCase
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing tbgComms preference");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
 
     public function testIsNotReadyToConfirmWithoutCharityComsPreference(): void
@@ -617,7 +617,7 @@ class DonationTest extends TestCase
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing charityComms preference");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
 
     public function testIsNotReadyToConfirmWithoutBillingCountry(): void
@@ -635,7 +635,7 @@ class DonationTest extends TestCase
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing Billing Postcode");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
 
     public function testIsNotReadyToConfirmWithoutDonorName(): void
@@ -653,7 +653,7 @@ class DonationTest extends TestCase
         $this->expectExceptionMessage("Missing Donor First Name");
         $this->expectExceptionMessage("Missing Donor Last Name");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
 
     public function testIsNotReadyToConfirmWithoutDonorEmail(): void
@@ -670,7 +670,7 @@ class DonationTest extends TestCase
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing Donor Email Address");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
 
     public function testIsNotReadyToConfirmWhenCancelled(): void
@@ -689,7 +689,7 @@ class DonationTest extends TestCase
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Donation status is 'Cancelled', must be 'Pending'");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
 
     public function testMarkingRefundTwiceOnSameDonationDoesNotUpdateRefundTime(): void

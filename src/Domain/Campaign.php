@@ -259,7 +259,21 @@ class Campaign extends SalesforceReadProxy
      */
     public function isOpen(\DateTimeImmutable $at): bool
     {
-        return $this->ready && $this->startDate <= $at && $this->endDate > $at;
+        return $this->isOpenWithEffectiveEndDate(at: $at, effectiveEndDate: \DateTimeImmutable::createFromInterface($this->endDate));
+    }
+
+    /**
+     * Is the campaign open to accept finalisation of donations or regular giving mandates. We allow them
+     * some time to think and use the form after the donor loads it load it just before the end date.
+     */
+    public function isOpenForFinalising(\DateTimeImmutable $at): bool
+    {
+        $halfAnHour = new \DateInterval('PT30M');
+
+        $delayedEndDate = \DateTimeImmutable::createFromInterface($this->endDate)
+            ->add($halfAnHour);
+
+        return $this->isOpenWithEffectiveEndDate(at: $at, effectiveEndDate: $delayedEndDate);
     }
 
     public function getCurrencyCode(): ?string
@@ -385,5 +399,10 @@ class Campaign extends SalesforceReadProxy
                 "Campaign {$this->getSalesforceId()} does not accept regular giving (one-off only)"
             );
         }
+    }
+
+    private function isOpenWithEffectiveEndDate(\DateTimeImmutable $at, \DateTimeImmutable $effectiveEndDate): bool
+    {
+        return $this->ready && $this->startDate <= $at && $effectiveEndDate > $at;
     }
 }

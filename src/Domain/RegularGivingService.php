@@ -62,6 +62,7 @@ readonly class RegularGivingService
      * @throws StripeApiErrorException
      * @throws DonationNotCollected
      * @throws PaymentIntentNotSucceeded
+     * @throws CampaignNotOpen
      *
      * @throws UnexpectedValueException if the amount is out of the allowed range
      */
@@ -89,11 +90,10 @@ readonly class RegularGivingService
     ): RegularGivingMandate {
         // should save the address to the donor account if an address was given.
 
-
         $this->ensureCampaignAllowsRegularGiving($campaign);
         $this->ensureBillingCountryMatchesDonorBillingCountry($donor, $billingCountry);
         $this->ensureBillingPostcodeMatchesDonorBillingPostcode($donor, $billingPostCode);
-
+        $this->ensureCampaignIsOpen($campaign);
 
         if ($billingCountry) {
             $donor->setBillingCountry($billingCountry);
@@ -452,8 +452,14 @@ readonly class RegularGivingService
             return;
         }
 
+        // We explicitly DO NOT check for the campaign being closed at this point. That was already checked
+        // when the mandate was created, we don't want to make things inconsistent by blocking the payment
+        // now. If it closed more than a few minutes ago then the mandate and payment intent would have been
+        // cancelled already by the `MatchBot\Application\Commands\ExpirePendingMandates` command.
+
         $donor = $this->donorAccountRepository->findByPersonId($mandate->donorId());
         \assert($donor !== null);
+
 
         $this->activateMandateNotifyDonor(
             firstDonation: $donation,
@@ -462,5 +468,15 @@ readonly class RegularGivingService
             campaign: $donation->getCampaign(),
             paymentMethodId: $paymentMethodId,
         );
+    }
+
+    /**
+     * @throws CampaignNotOpen
+     */
+    private function ensureCampaignIsOpen(Campaign $campaign): void
+    {
+        if (! $campaign->isOpenForFinalising($this->now)) {
+            throw new CampaignNotOpen();
+        }
     }
 }

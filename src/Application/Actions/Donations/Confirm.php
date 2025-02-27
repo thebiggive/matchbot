@@ -22,6 +22,7 @@ use Slim\Exception\HttpBadRequestException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
+use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -33,6 +34,7 @@ class Confirm extends Action
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $bus,
         private DonationService $donationService,
+        private ClockInterface $clock,
     ) {
         parent::__construct($logger);
     }
@@ -83,7 +85,7 @@ EOF
         \assert($paymentMethodId !== ""); // required to call updatePaymentMethodBillingDetail
 
         try {
-            $donation->assertIsReadyToConfirm();
+            $donation->assertIsReadyToConfirm($this->clock->now());
         } catch (LazyAssertionException $exception) {
             $message = $exception->getMessage();
             $this->logger->warning($message);
