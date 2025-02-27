@@ -1548,15 +1548,17 @@ class Donation extends SalesforceWriteProxy
      * Checks the donation is ready to be confirmed if and when the donor is ready to pay - i.e. that all required
      * fields are filled in.
      *
+     * @param DateTimeImmutable $at
      * @throws LazyAssertionException if not.
      *
      * This method returning true does *NOT* indicate that the donor has chosen to definitely donate - that must be
      * established based on other info (e.g. because they sent a confirmation request).
      */
-    public function assertIsReadyToConfirm(): true
+    public function assertIsReadyToConfirm(\DateTimeImmutable $at): true
     {
         $this->assertionsForConfirmOrPreAuth()
             ->that($this->transactionId)->notNull('Missing Transaction ID')
+            ->that($this->getCampaign()->isOpenForFinalising($at))
             ->verifyNow();
 
         return true;

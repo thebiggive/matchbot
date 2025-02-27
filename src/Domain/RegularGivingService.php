@@ -90,7 +90,6 @@ readonly class RegularGivingService
     ): RegularGivingMandate {
         // should save the address to the donor account if an address was given.
 
-
         $this->ensureCampaignAllowsRegularGiving($campaign);
         $this->ensureBillingCountryMatchesDonorBillingCountry($donor, $billingCountry);
         $this->ensureBillingPostcodeMatchesDonorBillingPostcode($donor, $billingPostCode);
@@ -460,6 +459,7 @@ readonly class RegularGivingService
 
         $donor = $this->donorAccountRepository->findByPersonId($mandate->donorId());
         \assert($donor !== null);
+
 
         $this->activateMandateNotifyDonor(
             firstDonation: $donation,

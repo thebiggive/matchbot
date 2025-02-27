@@ -35,6 +35,7 @@ use Stripe\Exception\UnknownApiErrorException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
 use Stripe\StripeObject;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
@@ -66,11 +67,12 @@ class ConfirmTest extends TestCase
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
 
         $this->sut = new Confirm(
-            new NullLogger(),
-            $this->getDonationRepository(),
-            $this->entityManagerProphecy->reveal(),
-            $messageBusStub,
-            new DonationService(
+            logger: new NullLogger(),
+            donationRepository: $this->getDonationRepository(),
+            entityManager: $this->entityManagerProphecy->reveal(),
+            bus: $messageBusStub,
+            clock: new MockClock('2025-01-01'),
+            donationService: new DonationService(
                 donationRepository: $this->getDonationRepository(),
                 campaignRepository: $this->createStub(CampaignRepository::class),
                 logger: new NullLogger(),

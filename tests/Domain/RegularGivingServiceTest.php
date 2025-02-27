@@ -675,7 +675,7 @@ class RegularGivingServiceTest extends TestCase
         $this->donorAccount->setHomeAddressLine1('Home Address');
     }
 
-    public function createRegularGivingMandate(string $campaignEndDate, string $currentDate): RegularGivingMandate
+    public function createRegularGivingMandate(string $campaignEndDate, string $currentDate): void
     {
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable($currentDate));
         $this->givenDonorHasRegularGivingPaymentMethod();
@@ -683,7 +683,7 @@ class RegularGivingServiceTest extends TestCase
         $campaign = TestCase::someCampaign(isRegularGiving: true);
         $campaign->setEndDate(new \DateTimeImmutable($campaignEndDate));
 
-        return $regularGivingService->setupNewMandate(
+        $regularGivingService->setupNewMandate(
             $this->donorAccount,
             Money::fromPoundsGBP(42),
             $campaign,
