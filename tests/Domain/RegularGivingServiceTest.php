@@ -433,6 +433,36 @@ class RegularGivingServiceTest extends TestCase
         );
     }
 
+    public function testCannotMakeMandateWithClosedCampaign(): void
+    {
+        // arrange
+        $this->givenDonorHasRegularGivingPaymentMethod();
+
+        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+
+        $this->expectException(CampaignNotOpen::class);
+
+        $campaign = TestCase::someCampaign(isRegularGiving: true);
+        $campaign->setEndDate(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+
+        $regularGivingService->setupNewMandate(
+            $this->donorAccount,
+            Money::fromPoundsGBP(42),
+            $campaign,
+            false,
+            DayOfMonth::of(20),
+            Country::fromEnum(CountryAlpha2::Kiribati),
+            billingPostCode: 'KI0107',
+            tbgComms: false,
+            charityComms: false,
+            confirmationTokenId: null,
+            homeAddress: null,
+            homePostcode: null,
+            matchDonations: true,
+            homeIsOutsideUk: true,
+        );
+    }
+
     public function testCannotMakeMandateWithCountryNotMatchingAccountBillingPostcodey(): void
     {
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));

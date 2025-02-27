@@ -93,7 +93,7 @@ readonly class RegularGivingService
         $this->ensureCampaignAllowsRegularGiving($campaign);
         $this->ensureBillingCountryMatchesDonorBillingCountry($donor, $billingCountry);
         $this->ensureBillingPostcodeMatchesDonorBillingPostcode($donor, $billingPostCode);
-
+        $this->ensureCampaignIsOpen($campaign);
 
         if ($billingCountry) {
             $donor->setBillingCountry($billingCountry);
@@ -462,5 +462,12 @@ readonly class RegularGivingService
             campaign: $donation->getCampaign(),
             paymentMethodId: $paymentMethodId,
         );
+    }
+
+    private function ensureCampaignIsOpen(Campaign $campaign): void
+    {
+        if (! $campaign->isOpen($this->now)) {
+            throw new CampaignNotOpen();
+        }
     }
 }
