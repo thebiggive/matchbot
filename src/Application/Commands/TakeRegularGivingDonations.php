@@ -171,7 +171,8 @@ class TakeRegularGivingDonations extends LockingCommand
                 } catch (MandateNotActive $exception) {
                     $io->info($exception->getMessage());
                     continue;
-                } catch (RegularGivingCollectionEndPassed) {
+                } catch (RegularGivingCollectionEndPassed $exception) {
+                    $io->info($exception->getMessage());
                     continue;
                 } catch (PaymentIntentNotSucceeded $exception) {
                     $io->error('PaymentIntentNotSucceeded, skipping donation: ' . $exception->getMessage());

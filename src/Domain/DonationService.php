@@ -251,6 +251,7 @@ class DonationService
     /**
      * Trigger collection of funds from a pre-authorized donation associated with a regular giving mandate
      * @throws PaymentIntentNotSucceeded
+     * @throws RegularGivingCollectionEndPassed
      * */
     public function confirmPreAuthorized(Donation $donation): void
     {
