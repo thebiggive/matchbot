@@ -207,9 +207,11 @@ readonly class RegularGivingService
      *
      * @throws AssertionFailedException
      * @throws CampaignNotOpen
+     * @throws RegularGivingCollectionEndPassed
      * @throws WrongCampaignType
      *
-     * @return ?Donation A new donation, or null if the regular giving collection end date has passed.
+     * @return ?Donation A new donation, or null if either the regular giving collection end date has passed or we
+     * need to wait more before creating another donation.
      */
     public function makeNextDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
