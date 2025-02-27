@@ -34,11 +34,11 @@ class ExpirePendingMandates extends LockingCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $fiveMinutes = new \DateInterval('PT5M');
+        $fifteenMinutes = new \DateInterval('PT15M');
         $now = $this->clock->now();
 
         $mandatesToCancel = $this->regularGivingMandateRepository->findAllPendingSinceBefore(
-            $now->sub($fiveMinutes)
+            $now->sub($fifteenMinutes)
         );
 
         foreach ($mandatesToCancel as $mandate) {
