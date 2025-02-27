@@ -452,6 +452,11 @@ readonly class RegularGivingService
             return;
         }
 
+        // We explicitly DO NOT check for the campaign being closed at this point. That was already checked
+        // when the mandate was created, we don't want to make things inconsistent by blocking the payment
+        // now. If it closed more than a few minutes ago then the mandate and payment intent would have been
+        // cancelled already by the `MatchBot\Application\Commands\ExpirePendingMandates` command.
+
         $donor = $this->donorAccountRepository->findByPersonId($mandate->donorId());
         \assert($donor !== null);
 
