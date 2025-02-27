@@ -25,8 +25,15 @@ use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
+use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
+use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
+use Symfony\Component\Notifier\Message\ChatMessage;
 
 #[AsCommand(
     name: 'matchbot:collect-regular-giving',
@@ -35,8 +42,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class TakeRegularGivingDonations extends LockingCommand
 {
     private const int MAXBATCHSIZE = 20;
-    private ?RegularGivingService $mandateService = null;
 
+    private bool $reportableEventHappened = false;
 
     /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
     public function __construct(
@@ -47,6 +54,8 @@ class TakeRegularGivingDonations extends LockingCommand
         private EntityManagerInterface $em,
         private Environment $environment,
         private LoggerInterface $logger,
+        private RegularGivingService $mandateService,
+        private ChatterInterface $chatter,
     ) {
         parent::__construct();
 
@@ -90,20 +99,26 @@ class TakeRegularGivingDonations extends LockingCommand
             default:
                 //no-op
         }
-
-        $this->mandateService = $this->container->get(RegularGivingService::class);
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $io = new SymfonyStyle($input, $output);
+        $bufferedOutput = new BufferedOutput();
+        $io = new SymfonyStyle($input, $bufferedOutput);
         /** @psalm-suppress MixedArgument */
-        $this->applySimulatedDate($input->getOption('simulated-date'), $output);
+        $this->applySimulatedDate($input->getOption('simulated-date'), $bufferedOutput);
         $now = $this->container->get(\DateTimeImmutable::class);
 
         $this->createNewDonationsAccordingToRegularGivingMandates($now, $io);
         $this->setPaymentIntentWhenReachedPaymentDate($now, $io);
         $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($now, $io);
+
+        $outputText = $bufferedOutput->fetch();
+        $output->writeln($outputText);
+
+        if ($this->reportableEventHappened) {
+            $this->sendReport($outputText);
+        }
 
         return 0;
     }
@@ -118,9 +133,10 @@ class TakeRegularGivingDonations extends LockingCommand
             try {
                 $donation = $this->makeDonationForMandate($mandate);
                 if ($donation) {
+                    $this->reportableEventHappened = true;
                     $io->writeln("created donation {$donation}");
                 } else {
-                    $io->writeln("no donation created for {$mandate} as collection end date passed");
+                    $io->writeln("no donation created for {$mandate} at this time");
                 }
             } catch (AssertionFailedException | WrongCampaignType $e) {
                 $io->error($e->getMessage());
@@ -137,6 +153,7 @@ class TakeRegularGivingDonations extends LockingCommand
         $io->block(count($donations) . " donations are due to have Payment Intent set at this time");
 
         foreach ($donations as $donation) {
+            $this->reportableEventHappened = true;
             try {
                 $this->donationService->createPaymentIntent($donation);
                 $io->writeln("setting payment intent on donation #{$donation->getId()}");
@@ -156,6 +173,7 @@ class TakeRegularGivingDonations extends LockingCommand
         $io->block(count($donations) . " donations are due to be confirmed at this time");
 
         foreach ($donations as $donation) {
+            $this->reportableEventHappened = true;
             $preAuthDate = $donation->getPreAuthorizationDate();
             \assert($preAuthDate instanceof \DateTimeImmutable);
             $io->writeln("processing donation #{$donation->getId()}");
@@ -197,8 +215,6 @@ class TakeRegularGivingDonations extends LockingCommand
      */
     private function makeDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
-        \assert($this->mandateService !== null);
-
         $donation = $this->mandateService->makeNextDonationForMandate($mandate);
         if ($donation) {
             $this->em->persist($donation);
@@ -207,5 +223,35 @@ class TakeRegularGivingDonations extends LockingCommand
         $this->em->flush();
 
         return $donation;
+    }
+
+    private function sendReport(string $outputText): void
+    {
+        $chatMessage = new ChatMessage('Regular giving collection report');
+        $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+
+        $options = (new SlackOptions())
+            ->block((new SlackHeaderBlock(sprintf(
+                '[%s] %s',
+                $this->environment->name,
+                'Regular giving collection report',
+            ))))
+            ->block((new SlackSectionBlock())->text(<<<EOF
+                Regular giving collection report
+                
+                {$now}
+                
+                Generated when at least one mandate has something to do.
+                
+                $outputText
+                EOF
+            ));
+        $chatMessage->options($options);
+
+        try {
+            $this->chatter->send($chatMessage);
+        } catch (TransportExceptionInterface) {
+            // no-op, report is not a requirement.
+        }
     }
 }
