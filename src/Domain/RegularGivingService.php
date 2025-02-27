@@ -62,6 +62,7 @@ readonly class RegularGivingService
      * @throws StripeApiErrorException
      * @throws DonationNotCollected
      * @throws PaymentIntentNotSucceeded
+     * @throws CampaignNotOpen
      *
      * @throws UnexpectedValueException if the amount is out of the allowed range
      */
@@ -469,9 +470,12 @@ readonly class RegularGivingService
         );
     }
 
+    /**
+     * @throws CampaignNotOpen
+     */
     private function ensureCampaignIsOpen(Campaign $campaign): void
     {
-        if (! $campaign->isOpen($this->now)) {
+        if (! $campaign->isOpenForFinalising($this->now)) {
             throw new CampaignNotOpen();
         }
     }

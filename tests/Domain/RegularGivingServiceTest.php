@@ -179,6 +179,7 @@ class RegularGivingServiceTest extends TestCase
 
         // Pending, and no notification, until Stripe first donation charge succeeded webhook.
         $this->assertSame(MandateStatus::Pending, $mandate->getStatus());
+        $this->regularGivingNotifierProphecy->notifyNewMandateCreated(Argument::cetera())->shouldNotBeCalled();
     }
 
     public function testItPreservesHomeAddressIfNotSuppliedOnMandate(): void
@@ -433,33 +434,32 @@ class RegularGivingServiceTest extends TestCase
         );
     }
 
-    public function testCannotMakeMandateWithClosedCampaign(): void
+    public function testCanMakeMandateWithJustClosedCampaign(): void
     {
-        // arrange
-        $this->givenDonorHasRegularGivingPaymentMethod();
+        // at end date exactly
+        $this->donationServiceProphecy->confirmDonationWithSavedPaymentMethod(Argument::cetera())->shouldBeCalled();
+        $this->createRegularGivingMandate(
+            campaignEndDate: '2024-11-29T12:00:00 GMT',
+            currentDate: '2024-11-29T12:00:00 GMT'
+        );
+    }
 
-        $regularGivingService = $this->makeSUT(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
+    public function testCanMakeMandateWithRecentlyClosedCampaign(): void
+    {
+        // campaign ended under half an hour ago
+        $this->donationServiceProphecy->confirmDonationWithSavedPaymentMethod(Argument::cetera())->shouldBeCalled();
+        $this->createRegularGivingMandate(
+            campaignEndDate: '2024-11-29T12:00:00 GMT',
+            currentDate: '2024-11-29T12:29:59 GMT'
+        );
+    }
 
+    public function testCannotMakeMandateWithCampaignClosedHalfHourAgo(): void
+    {
         $this->expectException(CampaignNotOpen::class);
-
-        $campaign = TestCase::someCampaign(isRegularGiving: true);
-        $campaign->setEndDate(new \DateTimeImmutable('2024-11-29T05:59:59 GMT'));
-
-        $regularGivingService->setupNewMandate(
-            $this->donorAccount,
-            Money::fromPoundsGBP(42),
-            $campaign,
-            false,
-            DayOfMonth::of(20),
-            Country::fromEnum(CountryAlpha2::Kiribati),
-            billingPostCode: 'KI0107',
-            tbgComms: false,
-            charityComms: false,
-            confirmationTokenId: null,
-            homeAddress: null,
-            homePostcode: null,
-            matchDonations: true,
-            homeIsOutsideUk: true,
+        $this->createRegularGivingMandate(
+            campaignEndDate: '2024-11-29T12:00:00 GMT',
+            currentDate: '2024-11-29T12:30:00 GMT'
         );
     }
 
@@ -673,5 +673,31 @@ class RegularGivingServiceTest extends TestCase
     {
         $this->donorAccount->setHomePostcode(PostCode::of('SW1A 1AA'));
         $this->donorAccount->setHomeAddressLine1('Home Address');
+    }
+
+    public function createRegularGivingMandate(string $campaignEndDate, string $currentDate): RegularGivingMandate
+    {
+        $regularGivingService = $this->makeSUT(new \DateTimeImmutable($currentDate));
+        $this->givenDonorHasRegularGivingPaymentMethod();
+
+        $campaign = TestCase::someCampaign(isRegularGiving: true);
+        $campaign->setEndDate(new \DateTimeImmutable($campaignEndDate));
+
+        return $regularGivingService->setupNewMandate(
+            $this->donorAccount,
+            Money::fromPoundsGBP(42),
+            $campaign,
+            false,
+            DayOfMonth::of(20),
+            Country::fromEnum(CountryAlpha2::Kiribati),
+            billingPostCode: 'KI0107',
+            tbgComms: false,
+            charityComms: false,
+            confirmationTokenId: null,
+            homeAddress: null,
+            homePostcode: null,
+            matchDonations: true,
+            homeIsOutsideUk: true,
+        );
     }
 }
