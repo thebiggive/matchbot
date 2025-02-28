@@ -766,7 +766,6 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'
             AND mandate.status = '$active'
-            AND donation.transactionId is not null
             AND donation.preAuthorizationDate <= :atDateTime
         DQL
         );
