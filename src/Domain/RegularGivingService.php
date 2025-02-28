@@ -3,6 +3,7 @@
 namespace MatchBot\Domain;
 
 use Assert\AssertionFailedException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
@@ -12,6 +13,7 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\HomeAddressRequired;
+use MatchBot\Domain\DomainException\MandateAlreadyExists;
 use MatchBot\Domain\DomainException\NonCancellableStatus;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
@@ -146,6 +148,19 @@ readonly class RegularGivingService
         ];
 
         $this->entityManager->persist($mandate);
+
+        try {
+            $this->entityManager->flush();
+        } catch (UniqueConstraintViolationException $e) {
+            // Entity Manager is now closed so there's nothing we can do except throw back to UI.
+            // Should rarely happen as UI can be designed to stop people getting to this point.
+            if (str_contains($e->getMessage(), 'RegularGivingMandate.person_id_if_active')) {
+                throw new MandateAlreadyExists(
+                    'You already have an active or pending regular giving mandate for ' . $campaign->getCampaignName()
+                );
+            }
+            throw $e;
+        }
 
         try {
             $this->enrollAndMatchDonations($donations, $mandate);

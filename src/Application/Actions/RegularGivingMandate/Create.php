@@ -14,6 +14,7 @@ use MatchBot\Application\Security\Security;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\DonationNotCollected;
+use MatchBot\Domain\DomainException\MandateAlreadyExists;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\WrongCampaignType;
@@ -148,6 +149,13 @@ class Create extends Action
                 'Consider using another payment method or contacting your card issuer.',
                 reduceSeverity: false,
             );
+        } catch (MandateAlreadyExists $exception) {
+            return new JsonResponse([
+                'error' => [
+                    'message' => $exception->getMessage(),
+                    'publicMessage' => $exception->getMessage(),
+                ],
+            ], 400);
         } catch (CardException $exception) {
             return new JsonResponse([
                 'error' => [
