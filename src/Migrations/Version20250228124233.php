@@ -27,6 +27,10 @@ final class Version20250228124233 extends AbstractMigration
 
         // workaround for MySQL not supporting partial indexes. I don't think we can generate this via a Doctrine
         // annotation. Based on similar index email_if_password used in identity service.
+
+        // This is causing a crash when we run doctrine:migrations:diff - see https://github.com/doctrine/dbal/issues/5306 and
+        // possible solution at https://github.com/doctrine/dbal/pull/6811
+
         $this->addSql(sql: <<<'SQL'
             CREATE UNIQUE INDEX person_id_if_active ON RegularGivingMandate(
                 (CASE WHEN RegularGivingMandate.status in ('active', 'pending') THEN concat(personid, ':', campaignId) END)
