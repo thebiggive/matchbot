@@ -96,6 +96,7 @@ readonly class RegularGivingService
         $this->ensureBillingCountryMatchesDonorBillingCountry($donor, $billingCountry);
         $this->ensureBillingPostcodeMatchesDonorBillingPostcode($donor, $billingPostCode);
         $this->ensureCampaignIsOpen($campaign);
+        $this->cancelAnyPendingMandateForDonorAndCampaign($donor, $campaign);
 
         if ($billingCountry) {
             $donor->setBillingCountry($billingCountry);
@@ -494,6 +495,26 @@ readonly class RegularGivingService
     {
         if (! $campaign->isOpenForFinalising($this->now)) {
             throw new CampaignNotOpen();
+        }
+    }
+
+    /**
+     * A donor cannot have two active or pending mandates for the same campaign, so if they ask to create a new
+     * one when there is already one pending we cancel the pending one(s).
+     */
+    private function cancelAnyPendingMandateForDonorAndCampaign(DonorAccount $donor, Campaign $campaign): void
+    {
+        $mandatesToCancel = $this->regularGivingMandateRepository->allPendingForDonorAndCampaign(
+            $donor->id(),
+            $campaign->getSalesforceId(),
+        );
+
+        foreach ($mandatesToCancel as $mandate) {
+            $this->cancelMandate(
+                $mandate,
+                'Cancelled from to make way for new mandate',
+                MandateCancellationType::ReplacedByNewMandate,
+            );
         }
     }
 }
