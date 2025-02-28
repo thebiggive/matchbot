@@ -242,5 +242,12 @@
             "@sa:check",
             "@lint:check"
         ]
+    },
+    "extra": {
+        "patches": {
+            "doctrine/dbal": {
+                "Doctrine migrations functional index workaround": "dbal-funcational-index.patch.txt"
+            }
+        }
     }
 }
