@@ -3,6 +3,7 @@
 namespace MatchBot\Domain;
 
 use Assert\AssertionFailedException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
@@ -12,6 +13,7 @@ use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\HomeAddressRequired;
+use MatchBot\Domain\DomainException\MandateAlreadyExists;
 use MatchBot\Domain\DomainException\NonCancellableStatus;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
@@ -94,6 +96,7 @@ readonly class RegularGivingService
         $this->ensureBillingCountryMatchesDonorBillingCountry($donor, $billingCountry);
         $this->ensureBillingPostcodeMatchesDonorBillingPostcode($donor, $billingPostCode);
         $this->ensureCampaignIsOpen($campaign);
+        $this->cancelAnyPendingMandateForDonorAndCampaign($donor, $campaign);
 
         if ($billingCountry) {
             $donor->setBillingCountry($billingCountry);
@@ -146,6 +149,19 @@ readonly class RegularGivingService
         ];
 
         $this->entityManager->persist($mandate);
+
+        try {
+            $this->entityManager->flush();
+        } catch (UniqueConstraintViolationException $e) {
+            // Entity Manager is now closed so there's nothing we can do except throw back to UI.
+            // Should rarely happen as UI can be designed to stop people getting to this point.
+            if (str_contains($e->getMessage(), 'RegularGivingMandate.person_id_if_active')) {
+                throw new MandateAlreadyExists(
+                    'You already have an active or pending regular giving mandate for ' . $campaign->getCampaignName()
+                );
+            }
+            throw $e;
+        }
 
         try {
             $this->enrollAndMatchDonations($donations, $mandate);
@@ -479,6 +495,26 @@ readonly class RegularGivingService
     {
         if (! $campaign->isOpenForFinalising($this->now)) {
             throw new CampaignNotOpen();
+        }
+    }
+
+    /**
+     * A donor cannot have two active or pending mandates for the same campaign, so if they ask to create a new
+     * one when there is already one pending we cancel the pending one(s).
+     */
+    private function cancelAnyPendingMandateForDonorAndCampaign(DonorAccount $donor, Campaign $campaign): void
+    {
+        $mandatesToCancel = $this->regularGivingMandateRepository->allPendingForDonorAndCampaign(
+            $donor->id(),
+            $campaign->getSalesforceId(),
+        );
+
+        foreach ($mandatesToCancel as $mandate) {
+            $this->cancelMandate(
+                $mandate,
+                'Cancelled from to make way for new mandate',
+                MandateCancellationType::ReplacedByNewMandate,
+            );
         }
     }
 }

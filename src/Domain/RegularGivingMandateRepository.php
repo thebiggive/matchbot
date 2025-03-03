@@ -36,6 +36,20 @@ class RegularGivingMandateRepository
     }
 
     /**
+     * @return list<RegularGivingMandate>
+     */
+    public function allPendingForDonorAndCampaign(PersonId $donorId, string $campaignSalesforceId): array
+    {
+        return $this->doctrineRepository->findBy(
+            [
+                'donorId.id' => $donorId->id,
+                'campaignId' => $campaignSalesforceId,
+                'status' => 'pending',
+            ]
+        );
+    }
+
+    /**
      * @return list<array{0: RegularGivingMandate, 1: Charity}>
      *     List of tuples of regular giving mandates with their recipient charities
      *

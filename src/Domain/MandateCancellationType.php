@@ -15,6 +15,12 @@ enum MandateCancellationType: string
     case FirstDonationUnsuccessful = 'FirstDonationUnsuccessful';
 
     /**
+     * Cancelled from Pending status to make way for another regular giving mandate from the same
+     * donor for the same campaign. We do not allow duplicates across pending and active states.
+     */
+    case ReplacedByNewMandate = 'ReplacedByNewMandate';
+
+    /**
      * Cancelled on donor request. One of two where the cancellation date will be different to
      * creation date.
      */
