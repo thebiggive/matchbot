@@ -7,6 +7,7 @@ namespace MatchBot\Application\Actions;
 use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Auth\PersonManagementAuthMiddleware;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
+use MatchBot\Application\Security\Security;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -17,6 +18,7 @@ class GetPaymentMethods extends Action
     #[Pure]
     public function __construct(
         private StripeClient $stripeClient,
+        private Security $securityService,
         LoggerInterface $logger
     ) {
         parent::__construct($logger);
@@ -27,26 +29,36 @@ class GetPaymentMethods extends Action
      */
     protected function action(Request $request, Response $response, array $args): Response
     {
-        // The route at `/people/{personId}/donations` validates that the donor has permission to act
-        // as the person, and sets this attribute to the Stripe Customer ID based on JWS claims, all
-        // in `PersonWithPasswordAuthMiddleware`.
-        $customerId = $request->getAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME);
-        \assert(is_string($customerId));
+        $donor = $this->securityService->requireAuthenticatedDonorAccountWithPassword($request);
 
         $paymentMethods = $this->stripeClient->customers->allPaymentMethods(
-            $customerId,
+            $donor->stripeCustomerId->stripeCustomerId,
             ['type' => 'card'],
         );
 
         $paymentMethodArray = $paymentMethods->toArray()['data'];
         \assert(is_array($paymentMethodArray));
 
+        $regularGivingPaymentMethod = null;
+
         // exclude payment methods with 'allow_redisplay' set to limited:
         $displayableMethods = array_values(array_filter(
             $paymentMethodArray,
-            static fn(array $paymentMethod) => in_array($paymentMethod['allow_redisplay'], ['always', 'unspecified'])
+            static function (array $paymentMethod) use ($donor, &$regularGivingPaymentMethod) {
+                if ($paymentMethod['id'] === $donor->getRegularGivingPaymentMethod()?->stripePaymentMethodId) {
+                    $regularGivingPaymentMethod = $paymentMethod;
+                } else {
+                    return in_array($paymentMethod['allow_redisplay'], ['always', 'unspecified']);
+                }
+            }
         ));
 
-        return $this->respondWithData($response, ['data' => $displayableMethods]);
+        return $this->respondWithData(
+            $response,
+            [
+                'data' => $displayableMethods,
+                'regularGivingPaymentMethod' => $regularGivingPaymentMethod
+            ]
+        );
     }
 }

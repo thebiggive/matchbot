@@ -14,6 +14,7 @@ use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
+use Stripe\SetupIntent;
 
 /**
  * Abstraction for talking to stripe, either with a real HTTP connection or an imaginary version of stripe for use in
@@ -63,4 +64,11 @@ interface Stripe
     public function retrieveCharge(string $chargeId): Charge;
 
     public function retrieveBalanceTransaction(string $id): BalanceTransaction;
+
+    public function createSetupIntent(StripeCustomerId $stripeCustomerId): SetupIntent;
+
+    /**
+     * @throws InvalidRequestException
+     */
+    public function retrievePaymentMethod(StripeCustomerId $customerId, StripePaymentMethodId $methodId): PaymentMethod;
 }

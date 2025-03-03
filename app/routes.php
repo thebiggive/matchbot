@@ -60,8 +60,10 @@ return function (App $app) {
             $pwdDonorGroup->get('/donor-account', DonorAccount\Get::class);
             $pwdDonorGroup->post('/create-customer-session', RegularGivingMandate\CreateCustomerSession::class);
             $pwdDonorGroup->post('/regular-giving', RegularGivingMandate\Create::class);
+            $pwdDonorGroup->put('/regular-giving/payment-method', RegularGivingMandate\UpdatePaymentMethod::class);
             $pwdDonorGroup->get('/donations', Donations\GetAllForUser::class);
             $pwdDonorGroup->delete('/donations', Donations\CancelAll::class);
+            $pwdDonorGroup->post('/create-setup-intent', RegularGivingMandate\CreateSetupIntent::class);
             $pwdDonorGroup->group('/payment_methods', function (RouteCollectorProxy $paymentMethodsGroup) {
                 $paymentMethodUriSuffixPattern = '/{payment_method_id:[a-zA-Z0-9_]{10,50}}';
                 $paymentMethodsGroup->get('', GetPaymentMethods::class);

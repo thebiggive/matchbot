@@ -4,12 +4,15 @@ namespace MatchBot\Client;
 
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Domain\StripeCustomerId;
+use MatchBot\Domain\StripePaymentMethodId;
 use Ramsey\Uuid\Uuid;
 use Stripe\BalanceTransaction;
 use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
 use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
+use Stripe\SetupIntent;
 use Stripe\StripeObject;
 
 /**
@@ -93,5 +96,15 @@ class StubStripeClient implements Stripe
     public function retrieveBalanceTransaction(string $id): BalanceTransaction
     {
         throw new \Exception("Retrieve Balance Transaction not implemented in stub- not currently used in load tests");
+    }
+
+    public function createSetupIntent(StripeCustomerId $stripeCustomerId): SetupIntent
+    {
+        throw new \Exception("Create setup intent not implemented in stub - not currently used in load tests");
+    }
+
+    public function retrievePaymentMethod(StripeCustomerId $customerId, StripePaymentMethodId $methodId): PaymentMethod
+    {
+        throw new \Exception("Retrieve Payment Method not implemented in stub - not currently used in load tests");
     }
 }
