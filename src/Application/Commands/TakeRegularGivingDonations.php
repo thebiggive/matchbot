@@ -43,6 +43,9 @@ class TakeRegularGivingDonations extends LockingCommand
 {
     private const int MAXBATCHSIZE = 20;
 
+    /**
+     * @psalm-suppress UnusedProperty
+     */
     private bool $reportableEventHappened = false;
 
     /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
@@ -116,9 +119,11 @@ class TakeRegularGivingDonations extends LockingCommand
         $outputText = $bufferedOutput->fetch();
         $output->writeln($outputText);
 
-        if ($this->reportableEventHappened) {
-            $this->sendReport($outputText);
-        }
+        // temporarily removed if condition below (and catch later) since sending report to Slack didn't seem to work
+        // this morning when it should have been true and I want to see why.
+//        if ($this->reportableEventHappened) {
+        $this->sendReport($outputText);
+//        }
 
         return 0;
     }
@@ -248,10 +253,6 @@ class TakeRegularGivingDonations extends LockingCommand
             ));
         $chatMessage->options($options);
 
-        try {
-            $this->chatter->send($chatMessage);
-        } catch (TransportExceptionInterface) {
-            // no-op, report is not a requirement.
-        }
+        $this->chatter->send($chatMessage);
     }
 }
