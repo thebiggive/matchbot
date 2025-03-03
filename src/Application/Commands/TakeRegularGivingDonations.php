@@ -119,7 +119,7 @@ class TakeRegularGivingDonations extends LockingCommand
         // temporarily removed if condition below (and catch later) since sending report to Slack didn't seem to work
         // this morning when it should have been true and I want to see why.
         if ($this->reportableEventHappened) {
-        $this->sendReport($outputText);
+            $this->sendReport($this->truncate($outputText));
         }
 
         return 0;
@@ -229,6 +229,10 @@ class TakeRegularGivingDonations extends LockingCommand
 
     private function sendReport(string $outputText): void
     {
+        if ($this->environment === Environment::Regression) {
+            return;
+        }
+
         $chatMessage = new ChatMessage('Regular giving collection report');
         $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
 
@@ -251,5 +255,15 @@ class TakeRegularGivingDonations extends LockingCommand
         $chatMessage->options($options);
 
         $this->chatter->send($chatMessage);
+    }
+
+    /**
+     * Truncates a string to a length we can send to Slack
+     */
+    private function truncate(string $string): string
+    {
+        return (strlen($string) > 3_000) ?
+            substr($string, 0, 2_950) . "...\n\nReport truncated to fit in slack\n" :
+            $string;
     }
 }
