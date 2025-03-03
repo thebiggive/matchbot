@@ -21,7 +21,6 @@ final class Version20250228124233 extends AbstractMigration
     {
         if (getenv('APP_ENV') !== 'production') {
             // cancelling all mandates to avoid allow unique index to be created.
-            $this->addSql('DELETE from Donation WHERE mandate_id is not null');
             $this->addSql(<<<'SQL'
                 UPDATE RegularGivingMandate 
                 SET 
