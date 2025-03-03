@@ -259,7 +259,7 @@ readonly class RegularGivingService
 
         if ($preAuthorizationDate > $this->now) {
             $this->log->info(
-                "Not creating donation yet as will only be authorized to pay on " .
+                "Mandate #{$mandateId}: Not creating donation yet as will only be authorized to pay on " .
                 $preAuthorizationDate->format("Y-m-d") . ' and now is ' . $this->now->format("Y-m-d")
             );
 
