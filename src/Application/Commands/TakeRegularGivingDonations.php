@@ -43,9 +43,6 @@ class TakeRegularGivingDonations extends LockingCommand
 {
     private const int MAXBATCHSIZE = 20;
 
-    /**
-     * @psalm-suppress UnusedProperty
-     */
     private bool $reportableEventHappened = false;
 
     /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
@@ -121,9 +118,9 @@ class TakeRegularGivingDonations extends LockingCommand
 
         // temporarily removed if condition below (and catch later) since sending report to Slack didn't seem to work
         // this morning when it should have been true and I want to see why.
-//        if ($this->reportableEventHappened) {
+        if ($this->reportableEventHappened) {
         $this->sendReport($outputText);
-//        }
+        }
 
         return 0;
     }
