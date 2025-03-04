@@ -5,15 +5,20 @@ namespace MatchBot\Application\Actions\RegularGivingMandate;
 use Doctrine\ORM\EntityManagerInterface;
 use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
+use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\MandateCreate;
 use MatchBot\Application\Security\Security;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\DonationNotCollected;
+use MatchBot\Domain\DomainException\MandateAlreadyExists;
 use MatchBot\Domain\DomainException\NotFullyMatched;
+use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\WrongCampaignType;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
@@ -24,6 +29,8 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpNotFoundException;
+use Stripe\Exception\CardException;
+use Stripe\PaymentIntent;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -66,7 +73,7 @@ class Create extends Action
             /** similar catch with commentary in @see \MatchBot\Application\Actions\Donations\Create */
             $this->logger->info("Mandate Create non-serialisable payload was: $body");
 
-            $message = 'Donation Create data deserialise error';
+            $message = 'Mandate create data deserialise error';
             $exceptionType = get_class($exception);
 
             return $this->validationError(
@@ -102,6 +109,8 @@ class Create extends Action
                 confirmationTokenId: $mandateData->stripeConfirmationTokenId,
                 homeAddress: $mandateData->homeAddress,
                 homePostcode: $mandateData->homePostcode,
+                matchDonations: !$mandateData->unmatched,
+                homeIsOutsideUk: $mandateData->homeIsOutsideUK,
             );
         } catch (WrongCampaignType | \UnexpectedValueException $e) {
             return $this->validationError(
@@ -111,21 +120,64 @@ class Create extends Action
                 false,
             );
         } catch (NotFullyMatched $e) {
+            $maxMatchable = $e->maxMatchable;
             return $this->validationError(
                 $response,
-                $e->getMessage(),
-                'Sorry, we were not able to take your regular donation as there are insufficient match funds available',
-                false,
+                logMessage: $e->getMessage(),
+                publicMessage: $maxMatchable->isZero() ?
+                        // Strictly speaking there may be *some* match funds available, but less than £3.00 so it's not
+                        // possible to make three matched donations and these funds are effectively unusable for now.
+                    "Sorry, we could not take your regular donation as there are no match funds available." :
+                    "Sorry, we could not take your regular donation as there are not enough match funds available.",
+                reduceSeverity: false,
+                errorType: ActionError::INSUFFICIENT_MATCH_FUNDS,
+                errorData: ['maxMatchable' => $maxMatchable],
+            );
+        } catch (CampaignNotOpen $e) {
+            return $this->validationError(
+                $response,
+                logMessage: $e->getMessage(),
+                publicMessage: "Sorry, the {$campaign->getCampaignName()} campaign is not open at this time.",
+                reduceSeverity: false,
             );
         } catch (DonationNotCollected $e) {
             return $this->validationError(
                 $response,
-                $e->getMessage(),
-                'Sorry, we were not able to collect the payment for your first donation. ' .
+                logMessage: $e->getMessage(),
+                publicMessage: 'Sorry, we were not able to collect the payment for your first donation. ' .
                 'No regular giving agreement has been created.' .
                 'Consider using another payment method or contacting your card issuer.',
-                false,
+                reduceSeverity: false,
             );
+        } catch (MandateAlreadyExists $exception) {
+            return new JsonResponse([
+                'error' => [
+                    'message' => $exception->getMessage(),
+                    'publicMessage' => $exception->getMessage(),
+                ],
+            ], 400);
+        } catch (CardException $exception) {
+            return new JsonResponse([
+                'error' => [
+                    'message' => $exception->getMessage(),
+                    'publicMessage' => $exception->getMessage(),
+                    'code' => $exception->getStripeCode(),
+                    'decline_code' => $exception->getDeclineCode(),
+                ],
+            ], 402);
+        } catch (PaymentIntentNotSucceeded $exception) {
+            $intent = $exception->paymentIntent;
+
+            // Regular Giving service only throws this if the PI requires action, e.g. 3DS authentication.
+            \assert($intent->status === PaymentIntent::STATUS_REQUIRES_ACTION);
+
+            return new JsonResponse([
+                'mandate' => $exception->mandate?->toFrontEndApiModel($charity, $this->now),
+                'paymentIntent' => [
+                    'status' => $intent->status,
+                    'client_secret' =>  $intent->client_secret
+                ],
+            ]);
         }
 
         // create first three pending donations for mandate.
@@ -143,6 +195,6 @@ class Create extends Action
         // when the mandate is active.
 
         $this->em->flush();
-        return new JsonResponse($mandate->toFrontEndApiModel($charity, $this->now), 201);
+        return new JsonResponse(['mandate' => $mandate->toFrontEndApiModel($charity, $this->now)], 201);
     }
 }

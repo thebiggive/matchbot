@@ -129,6 +129,14 @@ class Update extends Action
                     throw new DomainRecordNotFoundException('Donation not found');
                 }
 
+                if (! $donation->getCampaign()->isOpenForFinalising($this->clock->now())) {
+                    return $this->validationError(
+                        $response,
+                        "Donation ID {$donationUUID} could not be update because campaign is closed",
+                        'Sorry, this campaign is now closed'
+                    );
+                }
+
                 if (
                     $donationData->status !== DonationStatus::Cancelled->value &&
                     $donationData->status !== $donation->getDonationStatus()->value
@@ -495,7 +503,7 @@ class Update extends Action
 
         $this->stripe->updatePaymentIntent($paymentIntentId, [
             'amount' => $donation->getAmountFractionalIncTip(),
-            'currency' => strtolower($donation->getCurrencyCode()),
+            'currency' => $donation->currency()->isoCode(case: 'lower'),
             'metadata' => [
                 /**
                  * Note that we don't re-set keys that can't change, like `charityId`.

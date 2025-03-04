@@ -12,13 +12,13 @@ use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignFundingRepository;
 use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\ChampionFund;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\FundType;
 use MatchBot\Domain\PaymentMethodType;
-use MatchBot\Domain\Pledge;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -204,14 +204,12 @@ class RedistributeMatchingCommandTest extends IntegrationTest
         ['campaignFundingId' => $pledgeCampaignFundingId] = $this->addFunding(
             campaignId: $campaignId,
             amountInPounds: $amount,
-            allocationOrder: 100,
-            fundType: Pledge::DISCRIMINATOR_VALUE,
+            fundType: FundType::Pledge,
         );
         ['campaignFundingId' => $championFundCampaignFundingId] = $this->addFunding(
             campaignId: $campaignId,
             amountInPounds: $amount,
-            allocationOrder: 200,
-            fundType: ChampionFund::DISCRIMINATOR_VALUE,
+            fundType: FundType::ChampionFund,
         );
 
         $this->prepareInRedis($pledgeCampaignFundingId, $amount);

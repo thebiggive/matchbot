@@ -11,11 +11,10 @@ use JetBrains\PhpStorm\Pure;
 use MatchBot\Application\Assertion;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\ChampionFund;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\FundingWithdrawal;
-use MatchBot\Domain\Pledge;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -84,11 +83,9 @@ class Status extends Action
         $criticalModelClasses = [
             Campaign::class,
             CampaignFunding::class,
-            ChampionFund::class,
             Charity::class,
             Donation::class,
             FundingWithdrawal::class,
-            Pledge::class,
         ];
 
         // A separate ProxyGenerator with the same proxy dir and proxy namespace should produce the paths we need to

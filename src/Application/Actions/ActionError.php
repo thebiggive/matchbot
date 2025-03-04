@@ -19,11 +19,13 @@ class ActionError implements JsonSerializable
     public const string UNAUTHENTICATED = 'UNAUTHENTICATED';
     public const string VALIDATION_ERROR = 'VALIDATION_ERROR';
     public const string VERIFICATION_ERROR = 'VERIFICATION_ERROR';
+    public const string INSUFFICIENT_MATCH_FUNDS = 'INSUFFICIENT_MATCH_FUNDS';
 
     #[Pure]
     public function __construct(
         private string $type,
-        private ?string $description
+        private ?string $description,
+        private array $data = [],
     ) {
     }
 
@@ -77,6 +79,6 @@ class ActionError implements JsonSerializable
         return [
             'type' => $this->type,
             'description' => $this->description,
-        ];
+        ] + $this->data;
     }
 }

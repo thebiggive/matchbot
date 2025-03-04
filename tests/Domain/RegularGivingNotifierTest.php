@@ -16,10 +16,11 @@ use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\FundType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
-use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\Salesforce18Id;
@@ -101,7 +102,7 @@ class RegularGivingNotifierTest extends TestCase
     {
         $withdrawal = new FundingWithdrawal(
             new CampaignFunding(
-                new Pledge('GBP', 'some pledge', null),
+                new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
                 '100',
                 '100',
                 1,

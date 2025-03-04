@@ -116,7 +116,7 @@ class FundRepository extends SalesforceReadProxyRepository
                     fund: $fund,
                     amount: $amountForCampaign,
                     amountAvailable: $amountForCampaign,
-                    allocationOrder: $fund instanceof Pledge ? 100 : 200,
+                    allocationOrder: $fund->getAllocationOrder(),
                 );
             }
 
@@ -131,7 +131,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 // Somebody else created the specific funding -> proceed without modifying it.
                 $this->logError(
                     'Skipping campaign funding create as constraint failed with campaign ' .
-                    ($campaign->getId() ?? '[unknown]') . ', fund ' . $fund->getId()
+                    ($campaign->getId() ?? '[unknown]') . ', fund ' . ($fund->getId() ?? -1)
                 );
             }
         }
@@ -159,16 +159,11 @@ class FundRepository extends SalesforceReadProxyRepository
     {
         $currencyCode = $fundData['currencyCode'] ?? 'GBP';
         $name = $fundData['name'] ?? '';
+        $type = $fundData['type'];
         Assertion::string($currencyCode);
         Assertion::string($name);
-
-        if ($fundData['type'] === Pledge::DISCRIMINATOR_VALUE) {
-            $fund = new Pledge(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']));
-        } elseif ($fundData['type'] === 'championFund') {
-            $fund = new ChampionFund(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']));
-        } else {
-            throw new \UnexpectedValueException("Unknown fund type '{$fundData['type']}'");
-        }
+        Assertion::string($type);
+        $fund = new Fund(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']), fundType: FundType::from($type));
 
         return $fund;
     }

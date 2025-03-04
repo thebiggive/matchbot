@@ -9,6 +9,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
+use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -21,6 +22,7 @@ use MatchBot\Domain\DomainException\DonationAlreadyFinalised;
 use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\DomainException\NoDonorAccountException;
+use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
@@ -32,6 +34,7 @@ use Random\Randomizer;
 use Stripe\Card;
 use Stripe\Charge;
 use Stripe\Exception\ApiErrorException;
+use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
 use Stripe\StripeObject;
@@ -89,7 +92,7 @@ class DonationService
     }
 
     /**
-     * Creates a new pending donation.
+     * Creates a new pending ad-hoc donation.
      *
      * @param DonationCreate $donationData Details of the desired donation, as sent from the browser
      * @param string $pspCustomerId The Stripe customer ID of the donor
@@ -139,7 +142,11 @@ class DonationService
             ));
         }
 
-        $this->enrollNewDonation($donation);
+        if (!$donation->getCampaign()->isOpen($this->clock->now())) {
+            throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
+        }
+
+        $this->enrollNewDonation($donation, attemptMatching: true);
 
         return $donation;
     }
@@ -202,6 +209,10 @@ class DonationService
     /**
      * Finalized a donation, instructing stripe to attempt to take payment immediately for a donor
      * making an immediate, online donation.
+     *
+     * @throws ApiErrorException
+     * @throws RegularGivingDonationToOldToCollect
+     * @throws PaymentIntentNotSucceeded
      */
     public function confirmOnSessionDonation(
         Donation $donation,
@@ -219,18 +230,29 @@ class DonationService
 
         $donation->checkPreAuthDateAllowsCollectionAt($this->clock->now());
 
-        return $this->stripe->confirmPaymentIntent(
+        $updatedIntent = $this->stripe->confirmPaymentIntent(
             $paymentIntentId,
             [
                 'confirmation_token' => $tokenId->stripeConfirmationTokenId,
                 ...self::ASYNC_CAPTURE_OPT_OUT
             ]
         );
+
+        if ($updatedIntent->status !== PaymentIntent::STATUS_SUCCEEDED) {
+            throw new PaymentIntentNotSucceeded(
+                $updatedIntent,
+                "Payment Intent not succeded, status is {$updatedIntent->status}",
+            );
+        }
+
+        return $updatedIntent;
     }
 
     /**
      * Trigger collection of funds from a pre-authorized donation associated with a regular giving mandate
-     */
+     * @throws PaymentIntentNotSucceeded
+     * @throws RegularGivingCollectionEndPassed
+     * */
     public function confirmPreAuthorized(Donation $donation): void
     {
         $stripeAccountId = $donation->getPspCustomerId();
@@ -285,23 +307,22 @@ class DonationService
      * - Allocating match funds to the donation
      * - Creating Stripe Payment intent
      *
+     * @param bool $attemptMatching Whether to use match funds. Match funds will be withdrawn based on
+     *                              availability or donation amount, which ever is smaller.
      * @throws CampaignNotOpen
      * @throws CharityAccountLacksNeededCapaiblities
      * @throws CouldNotMakeStripePaymentIntent
      * @throws DBALServerException
      * @throws ORMException
      * @throws StripeAccountIdNotSetForAccount
-     * @throws TransportExceptionInterface
-     * @throws \MatchBot\Client\NotFoundException
      * @throws WrongCampaignType
+     * @throws NotFoundException
      */
-    public function enrollNewDonation(Donation $donation): void
+    public function enrollNewDonation(Donation $donation, bool $attemptMatching): void
     {
         $campaign = $donation->getCampaign();
 
-        $at = new \DateTimeImmutable();
-
-        $campaign->checkIsReadyToAcceptDonation($donation, $at);
+        $campaign->checkIsReadyToAcceptDonation($donation, $this->clock->now());
 
         // Must persist before Stripe work to have ID available. Outer fn throws if all attempts fail.
         // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
@@ -310,53 +331,14 @@ class DonationService
             $this->entityManager->flush();
         }, 'Donation Create persist before stripe work');
 
-        if ($campaign->isMatched()) {
-            // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
-            $this->runWithPossibleRetry(
-                function () use ($donation) {
-                    try {
-                        $this->donationRepository->allocateMatchFunds($donation);
-                    } catch (\Throwable $t) {
-                        // warning indicates that we *may* retry, as it depends on whether this is in the last retry or
-                        // not.
-                        $this->logger->warning(sprintf('Allocation got error, may retry: %s', $t->getMessage()));
-
-                        $this->matchingAdapter->releaseNewlyAllocatedFunds();
-
-                        // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
-                        // would be reduced again when the donation expires.
-                        $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
-
-                        $this->entityManager->flush();
-
-                        throw $t;
-                    }
-                },
-                'allocate match funds'
-            );
+        if ($campaign->isMatched() && $attemptMatching) {
+            $this->attemptFundingAllocation($donation);
         }
+
 
         // Regular Giving enrolls donations with `DonationStatus::PreAuthorized`, which get Payment Intents later instead.
         if ($donation->getPsp() === 'stripe' && $donation->getDonationStatus() === DonationStatus::Pending) {
-            $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
-            if ($stripeAccountId === null || $stripeAccountId === '') {
-                // Try re-pulling in case charity has very recently onboarded with for Stripe.
-                $this->campaignRepository->updateFromSf($campaign);
-
-                // If still empty, error out
-                $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
-                if ($stripeAccountId === null || $stripeAccountId === '') {
-                    $this->logger->error(sprintf(
-                        'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
-                        $campaign->getCharity()->getSalesforceId(),
-                    ));
-                    throw new StripeAccountIdNotSetForAccount();
-                }
-
-                // Else we found new Stripe info and can proceed
-                $donation->setCampaign($campaign);
-            }
-
+            $this->loadCampaignsStripeId($campaign);
             $this->createPaymentIntent($donation);
         }
 
@@ -436,10 +418,6 @@ class DonationService
     {
         Assertion::same($donation->getPsp(), 'stripe');
 
-        if (!$donation->getCampaign()->isOpen(new \DateTimeImmutable())) {
-            throw new CampaignNotOpen("Campaign {$donation->getCampaign()->getSalesforceId()} is not open");
-        }
-
         $now = $this->clock->now();
 
         $donation->checkPreAuthDateAllowsCollectionAt($now);
@@ -503,6 +481,7 @@ class DonationService
      *
      * Call this from inside a transaction and with a locked donation to avoid double releasing funds associated with
      * the donation.
+     * @throws CouldNotCancelStripePaymentIntent
      */
     public function cancel(Donation $donation): void
     {
@@ -561,7 +540,7 @@ class DonationService
                 );
 
                 if ($returnError) {
-                    throw new CouldNotCancelStripePaymentIntent();
+                    throw new CouldNotCancelStripePaymentIntent(previous: $exception);
                 } // Else likely double-send -> fall through to normal return the donation as-is.
             }
         }
@@ -649,6 +628,9 @@ class DonationService
         return array_map(fn(Donation $donation) => $donation->toFrontEndApiModel(), $donations);
     }
 
+    /**
+     * @throws PaymentIntentNotSucceeded
+     * */
     public function confirmDonationWithSavedPaymentMethod(Donation $donation, StripePaymentMethodId $paymentMethod): void
     {
         $paymentIntentId = $donation->getTransactionId();
@@ -667,6 +649,11 @@ class DonationService
             // @todo-regular-giving-mat-407: create a new db field on Donation - e.g. payment_attempt_count and update here
             // decide on a limit and log an error (or warning) if exceeded & perhaps auto-cancel the donation and/or
             // mandate.
+
+            throw new PaymentIntentNotSucceeded(
+                $paymentIntent,
+                "Payment Intent not succeded, status is {$paymentIntent->status}",
+            );
         }
     }
 
@@ -725,7 +712,7 @@ class DonationService
         if (!empty($balanceTransaction)) {
             $originalFeeFractional = $this->getOriginalFeeFractional(
                 $balanceTransaction,
-                $donation->getCurrencyCode(),
+                $donation->currency()->isoCode(),
             );
         } else {
             $originalFeeFractional = $donation->getOriginalPspFee();
@@ -777,5 +764,58 @@ class DonationService
         }
 
         return $txn->fee;
+    }
+
+    public function attemptFundingAllocation(Donation $donation): void
+    {
+        // @todo-MAT-388: remove runWithPossibleRetry if we determine its not useful and unwrap body of function below
+        $this->runWithPossibleRetry(
+            function () use ($donation) {
+                try {
+                    $this->donationRepository->allocateMatchFunds($donation);
+                } catch (\Throwable $t) {
+                    // warning indicates that we *may* retry, as it depends on whether this is in the last retry or
+                    // not.
+                    $this->logger->warning(sprintf('Allocation got error, may retry: %s', $t->getMessage()));
+
+                    $this->matchingAdapter->releaseNewlyAllocatedFunds();
+
+                    // we have to also remove the FundingWithdrawls from MySQL - otherwise the redis amount
+                    // would be reduced again when the donation expires.
+                    $this->donationRepository->removeAllFundingWithdrawalsForDonation($donation);
+
+                    $this->entityManager->flush();
+
+                    throw $t;
+                }
+            },
+            'allocate match funds'
+        );
+    }
+
+    /**
+     * Checks that a campaign has a Stripe Account ID and if not attempts to find one in SF.
+     *
+     * @throws StripeAccountIdNotSetForAccount
+     * @todo consider if any of this method is required - or if we do or can ensure that Stripe Account ID is always
+     * set in matchbot before the donation is attempted.
+     */
+    private function loadCampaignsStripeId(Campaign $campaign): void
+    {
+        $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
+        if ($stripeAccountId === null || $stripeAccountId === '') {
+            // Try re-pulling in case charity has very recently onboarded with for Stripe.
+            $this->campaignRepository->updateFromSf($campaign);
+
+            // If still empty, error out
+            $stripeAccountId = $campaign->getCharity()->getStripeAccountId();
+            if ($stripeAccountId === null || $stripeAccountId === '') {
+                $this->logger->error(sprintf(
+                    'Stripe Payment Intent create error: Stripe Account ID not set for Account %s',
+                    $campaign->getCharity()->getSalesforceId(),
+                ));
+                throw new StripeAccountIdNotSetForAccount();
+            }
+        }
     }
 }

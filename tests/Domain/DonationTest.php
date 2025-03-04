@@ -12,16 +12,16 @@ use MatchBot\Application\LazyAssertionException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CardBrand;
-use MatchBot\Domain\ChampionFund;
+use MatchBot\Domain\Fund;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\FundType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
-use MatchBot\Domain\Pledge;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
@@ -203,7 +203,7 @@ class DonationTest extends TestCase
 
     public function testtoFrontEndApiModel(): void
     {
-        $pledge = new Pledge(currencyCode: 'GBP', name: '', salesforceId: null);
+        $pledge = new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: FundType::Pledge);
 
         $campaignFunding = new CampaignFunding(
             fund: $pledge,
@@ -236,6 +236,7 @@ class DonationTest extends TestCase
             [
                 'amountMatchedByChampionFunds' => 0.0,
                 'amountMatchedByPledges' => 0.0,
+                'amountPreauthorizedFromChampionFunds' => 0.0,
                 'billingPostalAddress' => null,
                 'charityFee' => 0.0,
                 'charityFeeVat' => 0.0,
@@ -296,53 +297,83 @@ class DonationTest extends TestCase
         $this->assertSame(0.0, $amountMatchedByPledges);
     }
 
-    public function testItSumsAmountsMatchedByChampionFunds(): void
+    public function testItSumsAmountsMatchedByTypeForCollectedDonation(): void
     {
-        $donation = $this->getTestDonation();
+        $donation = $this->getTestDonation(collected: true);
 
-        $campaignFunding = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
-            amount: '1000',
-            amountAvailable: '1000',
-            allocationOrder: 100,
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::ChampionFund, '1'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::ChampionFund, '2'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::Pledge, '4'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::TopupPledge, '10'));
+
+        $this->assertEqualsCanonicalizing(
+            [
+                'amountMatchedByChampionFunds' => '3.00',
+                'amountMatchedByPledges' => '14.00',
+                'amountPreauthorizedFromChampionFunds' => '0.00',
+                'amountMatchedOther' => '0.00',
+            ],
+            $donation->getWithdrawalTotalByFundType()
         );
-        $withdrawal0 = new FundingWithdrawal($campaignFunding);
-        $withdrawal0->setAmount('1');
+    }
 
-        $withdrawal1 = clone $withdrawal0;
-        $withdrawal1->setAmount('2');
+    public function testItSumsAmountsMatchedByTypeForPendingDonation(): void
+    {
+        $donation = $this->getTestDonation(collected: false);
 
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::ChampionFund, '1'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::ChampionFund, '2'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::Pledge, '4'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::TopupPledge, '10'));
 
-        $donation->addFundingWithdrawal($withdrawal0);
-        $donation->addFundingWithdrawal($withdrawal1);
+        $this->assertEqualsCanonicalizing(
+            [
+                'amountMatchedByChampionFunds' => '0.00',
+                'amountMatchedByPledges' => '0.00',
+                'amountPreauthorizedFromChampionFunds' => '0.00',
+                'amountMatchedOther' => '17.00',
+            ],
+            $donation->getWithdrawalTotalByFundType()
+        );
+    }
 
-        $amountMatchedByPledges = $donation->toFrontEndApiModel()['amountMatchedByChampionFunds'];
+    public function testItSumsAmountsMatchedByTypeForPreAuthedDonation(): void
+    {
+        $donation = $this->getTestDonation(collected: false);
+        $donation->preAuthorize(new \DateTimeImmutable('2020-01-01'));
 
-        \assert(1 + 2 === 3);
-        $this->assertSame(3.0, $amountMatchedByPledges);
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::ChampionFund, '1'));
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::ChampionFund, '2'));
+
+        $this->assertEqualsCanonicalizing(
+            [
+                'amountMatchedByChampionFunds' => '0.00',
+                'amountMatchedByPledges' => '0.00',
+                'amountPreauthorizedFromChampionFunds' => '3.00',
+                'amountMatchedOther' => '0.00',
+            ],
+            $donation->getWithdrawalTotalByFundType()
+        );
+    }
+
+    public function testItThrowsSummingAmountsPreAuthedWithPledgeFund(): void
+    {
+        // Pre-authorized donations with pledge funds should not exist, getWithdrawalTotalByFundType will throw
+        // if it encounters one.
+        $donation = $this->getTestDonation(collected: false);
+        $donation->preAuthorize(new \DateTimeImmutable('2020-01-01'));
+
+        $donation->addFundingWithdrawal($this->createWithdrawal(FundType::Pledge, '1'));
+
+        $this->expectExceptionMessage('unexpected pre-authed donation using pledge fund');
+        $donation->getWithdrawalTotalByFundType();
     }
 
     public function testItSumsAmountsMatchedByAllFunds(): void
     {
         $donation = $this->getTestDonation();
-        $campaignFunding0 = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
-            amount: '1000',
-            amountAvailable: '1000',
-            allocationOrder: 100,
-        );
-
-        $withdrawal0 = new FundingWithdrawal($campaignFunding0);
-        $withdrawal0->setAmount('1');
-
-        $campaignFunding1 = new CampaignFunding(
-            fund: new ChampionFund(currencyCode: 'GBP', name: '', salesforceId: null),
-            amount: '1000',
-            amountAvailable: '1000',
-            allocationOrder: 100,
-        );
-        $withdrawal1 = new FundingWithdrawal($campaignFunding1);
-        $withdrawal1->setAmount('2');
+        $withdrawal0 = $this->createWithdrawal(FundType::ChampionFund, '1');
+        $withdrawal1 = $this->createWithdrawal(FundType::ChampionFund, '2');
 
         $donation->addFundingWithdrawal($withdrawal0);
         $donation->addFundingWithdrawal($withdrawal1);
@@ -505,7 +536,7 @@ class DonationTest extends TestCase
 
         $donation->setTransactionId('any-string');
 
-        $this->assertTrue($donation->assertIsReadyToConfirm());
+        $this->assertTrue($donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01')));
     }
 
     public function testIsNotReadyToConfirmWithoutBillingPostcode(): void
@@ -531,7 +562,7 @@ class DonationTest extends TestCase
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing Billing Postcode");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
 
     public function testIsNotReadyToConfirmWithoutTBGComsPreference(): void
@@ -558,7 +589,7 @@ class DonationTest extends TestCase
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing tbgComms preference");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
 
     public function testIsNotReadyToConfirmWithoutCharityComsPreference(): void
@@ -586,7 +617,7 @@ class DonationTest extends TestCase
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing charityComms preference");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
 
     public function testIsNotReadyToConfirmWithoutBillingCountry(): void
@@ -604,7 +635,7 @@ class DonationTest extends TestCase
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing Billing Postcode");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
 
     public function testIsNotReadyToConfirmWithoutDonorName(): void
@@ -622,7 +653,7 @@ class DonationTest extends TestCase
         $this->expectExceptionMessage("Missing Donor First Name");
         $this->expectExceptionMessage("Missing Donor Last Name");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
 
     public function testIsNotReadyToConfirmWithoutDonorEmail(): void
@@ -639,7 +670,7 @@ class DonationTest extends TestCase
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Missing Donor Email Address");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
 
     public function testIsNotReadyToConfirmWhenCancelled(): void
@@ -658,10 +689,8 @@ class DonationTest extends TestCase
         $this->expectException(LazyAssertionException::class);
         $this->expectExceptionMessage("Donation status is 'Cancelled', must be 'Pending'");
 
-        $donation->assertIsReadyToConfirm();
+        $donation->assertIsReadyToConfirm(new \DateTimeImmutable('2025-01-01'));
     }
-
-
 
     public function testMarkingRefundTwiceOnSameDonationDoesNotUpdateRefundTime(): void
     {
@@ -981,7 +1010,6 @@ class DonationTest extends TestCase
         $this->assertNull($donation->getTotalPaidByDonor());
     }
 
-
     public function testTotalPaidByDonorForCollectedDonation(): void
     {
         $donation = $this->getTestDonation(collected: true, amount: '6.00', tipAmount: '5.00');
@@ -1023,7 +1051,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation(amount: '100.00');
 
-        $fund = new ChampionFund('GBP', 'some champion fund', null);
+        $fund = new Fund('GBP', 'some champion fund', null, fundType: FundType::ChampionFund);
         $campaignFunding = new CampaignFunding($fund, amount: '1000', amountAvailable: '1000', allocationOrder: 1);
         $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawl->setAmount('99.99');
@@ -1036,7 +1064,7 @@ class DonationTest extends TestCase
     {
         $donation = $this->getTestDonation(amount: '100.00');
 
-        $fund = new ChampionFund('GBP', 'some champion fund', null);
+        $fund = new Fund('GBP', 'some champion fund', null, fundType: FundType::ChampionFund);
         $campaignFunding = new CampaignFunding($fund, '1000', '1000', 1);
         $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawl->setAmount('100.00');
@@ -1046,7 +1074,6 @@ class DonationTest extends TestCase
 
         $this->assertTrue($isFullyMatched);
     }
-
 
     /**
      * @return array<string, array{0: \DateTimeImmutable, 1: \DateTimeImmutable, 2: bool}>
@@ -1108,5 +1135,22 @@ class DonationTest extends TestCase
 
         $this->assertSame($now, $donation->getRefundedAt());
         $this->assertEquals($refundAmount, $donation->getTipRefundAmount());
+    }
+
+    /**
+     * @param numeric-string $fundAmount
+     */
+    public function createWithdrawal(FundType $fundType, string $fundAmount): FundingWithdrawal
+    {
+        $campaignFunding = new CampaignFunding(
+            fund: new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: $fundType),
+            amount: '1000',
+            amountAvailable: '1000',
+            allocationOrder: 100,
+        );
+        $withdrawal = new FundingWithdrawal($campaignFunding);
+        $withdrawal->setAmount($fundAmount);
+
+        return $withdrawal;
     }
 }

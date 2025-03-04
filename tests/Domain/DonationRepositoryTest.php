@@ -109,7 +109,7 @@ class DonationRepositoryTest extends TestCase
         $donation = $this->getRepo(null, $campaignRepoProphecy)
             ->buildFromApiRequest($createPayload);
 
-        $this->assertEquals('USD', $donation->getCurrencyCode());
+        $this->assertEquals('USD', $donation->currency()->isoCode());
         $this->assertEquals('123', $donation->getAmount());
         $this->assertEquals(12_300, $donation->getAmountFractionalIncTip());
     }

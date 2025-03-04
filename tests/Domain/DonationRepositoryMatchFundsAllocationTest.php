@@ -13,8 +13,9 @@ use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
+use MatchBot\Domain\FundType;
 use MatchBot\Domain\PaymentMethodType;
-use MatchBot\Domain\Pledge;
+use MatchBot\Domain\Fund;
 use MatchBot\Tests\Application\Matching\ArrayMatchingStorage;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -102,7 +103,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
     public function testItAllocates1From1For1(): void
     {
         $campaignFunding = new CampaignFunding(
-            fund: new Pledge('GBP', 'some pledge', null),
+            fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '1',
             allocationOrder: 100
@@ -181,7 +182,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         string $withdrawl1AmountExpected
     ): void {
         $campaignFunding0 = new CampaignFunding(
-            fund: new Pledge('GBP', 'some pledge', null),
+            fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: $funding0Available,
             allocationOrder: 100
@@ -189,7 +190,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
         $campaignFunding0->setId(0);
 
         $campaignFunding1 = new CampaignFunding(
-            fund: new Pledge('GBP', 'some pledge', null),
+            fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: $funding1Available,
             allocationOrder: 100
@@ -236,7 +237,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
     public function testItAllocates1From2For2When1AlreadyMatched(): void
     {
         $campaignFunding = new CampaignFunding(
-            fund: new Pledge('GBP', 'some pledge', null),
+            fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '1.0',
             allocationOrder: 100
@@ -279,7 +280,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
     public function testItRejectsFundingInWrongCurrency(): void
     {
         $campaignFunding = new CampaignFunding(
-            fund: new Pledge('USD', 'some pledge', null),
+            fund: new Fund('USD', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '1',
             allocationOrder: 100

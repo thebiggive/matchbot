@@ -14,27 +14,19 @@ use MatchBot\Application\Assertion;
  * typically a Champion Fund) can be split up and allocated to multiple Campaigns, the Fund in
  * MatchBot doesn't contain an allocated amount and is mostly a container for metadata to help understand
  * where any linked {@see CampaignFunding}s' money comes from.
- *
- * Concrete subclasses {@see ChampionFund} & {@see Pledge} are instantiated using Doctrine's
- * single table inheritance. The discriminator column is 'fundType' and the API field which determines
- * it originally, in {@see FundRepository::getNewFund()}, is 'type'.
  */
 #[ORM\Table]
 #[ORM\Entity(repositoryClass: FundRepository::class)]
-#[ORM\InheritanceType('SINGLE_TABLE')]
-#[ORM\DiscriminatorColumn(name: 'fundType', type: 'string')]
-#[ORM\DiscriminatorMap([
-    ChampionFund::DISCRIMINATOR_VALUE => ChampionFund::class,
-    Pledge::DISCRIMINATOR_VALUE => Pledge::class,
-    self::DISCRIMINATOR_VALUE => self::class,
-])]
 #[ORM\HasLifecycleCallbacks]
-abstract class Fund extends SalesforceReadProxy
+class Fund extends SalesforceReadProxy
 {
     use TimestampsTrait;
 
-    /** @var 'championFund'|'pledge'|'unknownFund' */
-    public const string DISCRIMINATOR_VALUE = 'unknownFund';
+    /**
+     * FundType controlls allocation orders of campaign fundings. See docs on enum for details.
+     */
+    #[ORM\Column(type: 'string', enumType: FundType::class)]
+    private FundType $fundType;
 
     /**
      * @var string  ISO 4217 code for the currency used with this fund, and in which FundingWithdrawals are denominated.
@@ -54,7 +46,7 @@ abstract class Fund extends SalesforceReadProxy
     #[ORM\OneToMany(mappedBy: 'fund', targetEntity: CampaignFunding::class)]
     protected Collection $campaignFundings;
 
-    final public function __construct(string $currencyCode, string $name, ?Salesforce18Id $salesforceId)
+    public function __construct(string $currencyCode, string $name, ?Salesforce18Id $salesforceId, FundType $fundType)
     {
         $this->createdAt = new \DateTime();
         $this->updatedAt = new \DateTime();
@@ -63,6 +55,7 @@ abstract class Fund extends SalesforceReadProxy
         $this->currencyCode = $currencyCode;
         $this->name = $name;
         $this->salesforceId = $salesforceId?->value;
+        $this->fundType = $fundType;
     }
 
     /**
@@ -120,7 +113,7 @@ abstract class Fund extends SalesforceReadProxy
     /**
      * @return array{
      *     fundId: ?int,
-     *     fundType: 'championFund'|'pledge'|'unknownFund',
+     *     fundType: 'championFund'|'pledge'|'topupPledge'|'unknownFund',
      *     salesforceFundId: string,
      *     totalAmount: float, // used as Decimal in SF
      *     usedAmount: float, // used as Decimal in SF
@@ -137,7 +130,7 @@ abstract class Fund extends SalesforceReadProxy
         return [
             'currencyCode' => $amounts['totalAmount']->currency->isoCode(),
             'fundId' => $this->getId(),
-            'fundType' => static::DISCRIMINATOR_VALUE,
+            'fundType' => $this->fundType->value,
             'salesforceFundId' => $sfId,
             'totalAmount' => (float) $amounts['totalAmount']->toNumericString(),
             'usedAmount' => (float) $amounts['usedAmount']->toNumericString(),
@@ -155,5 +148,18 @@ abstract class Fund extends SalesforceReadProxy
         Assertion::same($funding->getFund(), $this);
 
         $this->campaignFundings->add($funding);
+    }
+
+    /**
+     * @return positive-int
+     */
+    public function getAllocationOrder(): int
+    {
+        return $this->fundType->allocationOrder();
+    }
+
+    public function getFundType(): FundType
+    {
+        return $this->fundType;
     }
 }

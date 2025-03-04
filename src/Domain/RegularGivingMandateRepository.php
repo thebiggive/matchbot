@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use MatchBot\Application\Assertion;
 use Ramsey\Uuid\UuidInterface;
 
 /**
@@ -35,16 +36,47 @@ class RegularGivingMandateRepository
     }
 
     /**
+     * @return list<RegularGivingMandate>
+     */
+    public function allPendingForDonorAndCampaign(PersonId $donorId, string $campaignSalesforceId): array
+    {
+        return $this->doctrineRepository->findBy(
+            [
+                'donorId.id' => $donorId->id,
+                'campaignId' => $campaignSalesforceId,
+                'status' => 'pending',
+            ]
+        );
+    }
+
+    /**
      * @return list<array{0: RegularGivingMandate, 1: Charity}>
      *     List of tuples of regular giving mandates with their recipient charities
+     *
+     * Includes any and all mandates for a donor that they should know or care about. The only exclusions currently are
+     * 'pending' mandates, which have not yet been activated, and auto-cancelled mandates that never got to be
+     * activated because e.g. there was a payment failure on the first donation.
      */
-    public function allActiveForDonorWithCharities(PersonId $donor): array
+    public function allMandatesForDisplayToDonor(PersonId $donor): array
     {
         $active = MandateStatus::Active->value;
+        $cancelled = MandateStatus::Cancelled->value;
+        $campaignEnded = MandateStatus::CampaignEnded->value;
+
+        $donorCancelled = MandateCancellationType::DonorRequestedCancellation->value;
+        $bgCancelled = MandateCancellationType::BigGiveCancelled->value;
+
+        // We want to include active mandates, and mandates that *were* active for any amount of time then manually
+        // cancelled. Not mandates auto cancelled on creation which may as well never have existed.
+
         $query = $this->em->createQuery(<<<"DQL"
-            SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r 
+            SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r
             LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
-            WHERE r.status = '{$active}'
+            WHERE (
+                r.status = '{$active}' OR
+                r.status = '{$campaignEnded}' OR
+                (r.status = '{$cancelled}' AND r.cancellationType IN ('$bgCancelled', '$donorCancelled'))
+                )
             AND r.donorId.id = :donorId
             ORDER BY r.activeFrom desc
         DQL
@@ -107,5 +139,26 @@ class RegularGivingMandateRepository
             ];
         },
             $mandates));
+    }
+
+    /**
+     * @return list<RegularGivingMandate>
+     */
+    public function findAllPendingSinceBefore(\DateTimeImmutable $latestCreationDate): array
+    {
+        $pending = MandateStatus::Pending->value;
+
+        $query = $this->em->createQuery(<<<DQL
+                SELECT r FROM MatchBot\Domain\RegularGivingMandate r 
+                WHERE r.status = '{$pending}'
+                AND r.createdAt <= :latestCreationDate
+            DQL
+        );
+        $query->setParameter('latestCreationDate', $latestCreationDate);
+        $query->setMaxResults(20);
+
+        /** @var list<RegularGivingMandate> $mandates */
+        $mandates = $query->getResult();
+        return $mandates;
     }
 }

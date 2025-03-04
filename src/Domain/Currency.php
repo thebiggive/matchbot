@@ -4,18 +4,29 @@ namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
 
+/**
+ * @psalm-immutable
+ */
 enum Currency: string
 {
     case GBP = 'GBP';
+    case USD = 'USD';
+    case CAD = 'CAD';
+    case SEK = 'SEK';
 
-    public static function fromIsoCode(mixed $isoCode): self
+    public static function fromIsoCode(string $isoCode): self
     {
         Assertion::length($isoCode, 3);
         Assertion::alnum($isoCode);
-        return match (strtoupper($isoCode)) {
-            'GBP' => self::GBP,
-            default => throw new \UnexpectedValueException("Unexpected Currency ISO Code" . $isoCode)
-        };
+        $isoCode = strtoupper($isoCode);
+
+        // other currencies have some tests but are not fully supported
+        if (! defined('RUNNING_UNIT_TESTS') && $isoCode !== 'GBP') {
+            throw new \UnexpectedValueException("Unexpected Currency ISO Code " . $isoCode);
+        }
+
+        return self::tryFrom($isoCode) ??
+            throw new \UnexpectedValueException("Unexpected Currency ISO Code " . $isoCode);
     }
 
     /**
@@ -25,11 +36,16 @@ enum Currency: string
     {
         return match ($this) {
             self::GBP => '£',
+            default => throw new \Exception("Unexpected currency " . $this->isoCode()),
         };
     }
 
-    public function isoCode(): string
+    /**
+     * @param 'upper'|'lower' $case
+     * @return string
+     */
+    public function isoCode(string $case = 'upper'): string
     {
-        return $this->name;
+        return $case === 'upper' ? strtoupper($this->name) : strtolower($this->name);
     }
 }

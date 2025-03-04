@@ -47,24 +47,16 @@ class ListRegularGivingMandatesTest extends IntegrationTest
      */
     public function testItListsRegularGivingMandate(): void
     {
-        $campaignSfId = $this->randomString();
-        $charitySfId = $this->randomString();
-
         $container = $this->getContainer();
 
         // Assume current date is 27th July in UTC, and 28th July in UK:
         $container->set(\DateTimeImmutable::class, new \DateTimeImmutable('2024-07-27T23:00:00+00:00'));
 
-        $charityName = "Charity Name " . $this->randomString();
+        list($campaignSfId1, $charitySfId1, $charityName1) = $this->createCampagaign();
+        list($campaignSfId2, $charitySfId2, $_charityName2) = $this->createCampagaign();
 
-        $this->addCampaignAndCharityToDB(
-            campaignSfId: $campaignSfId,
-            charitySfId: $charitySfId,
-            charityName: $charityName
-        );
-
-        $uuid = $this->addMandateToDb($this->donorId, $campaignSfId, $charitySfId, active: true);
-        $this->addMandateToDb($this->donorId, $campaignSfId, $charitySfId, active: false);
+        $uuid = $this->addMandateToDb($this->donorId, $campaignSfId1, $charitySfId1, active: true);
+        $this->addMandateToDb($this->donorId, $campaignSfId2, $charitySfId2, active: false);
 
         $allMandatesBody = (string) $this->requestFromController($this->donorId)->getBody();
 
@@ -79,8 +71,8 @@ class ListRegularGivingMandatesTest extends IntegrationTest
             [
                 'id' => $uuid->toString(),
                 'donorId' => $this->donorId->id,
-                'campaignId' => $campaignSfId,
-                'charityId' => $charitySfId,
+                'campaignId' => $campaignSfId1,
+                'charityId' => $charitySfId1,
                 'donationAmount' => [
                     'amountInPence' => 500_00,
                     'currency' => 'GBP',
@@ -97,6 +89,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                     'amountInPence' => 500_00,
                     'currency' => 'GBP',
                 ],
+                'isMatched' => true,
                 'totalCharityReceivesPerInitial' => [
                     'amountInPence' => 1125_00,
                     'currency' => 'GBP',
@@ -108,7 +101,7 @@ class ListRegularGivingMandatesTest extends IntegrationTest
                     'activeFrom' => '2024-08-06T00:00:00+00:00',
                     'expectedNextPaymentDate' => '2024-08-28T06:00:00+01:00',
                 ],
-                'charityName' => $charityName,
+                'charityName' => $charityName1,
                 'giftAid' => true,
                 'status' => 'active',
             ],
@@ -156,5 +149,23 @@ class ListRegularGivingMandatesTest extends IntegrationTest
         $em->flush();
 
         return $mandate->getUuid();
+    }
+
+    /**
+     * @return array{0: string, 1: string, 2: string}
+     */
+    public function createCampagaign(): array
+    {
+        $campaignSfId = $this->randomString();
+        $charitySfId = $this->randomString();
+
+        $charityName = "Charity Name " . $this->randomString();
+
+        $this->addCampaignAndCharityToDB(
+            campaignSfId: $campaignSfId,
+            charitySfId: $charitySfId,
+            charityName: $charityName
+        );
+        return [$campaignSfId, $charitySfId, $charityName];
     }
 }

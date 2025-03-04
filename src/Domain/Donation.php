@@ -48,6 +48,12 @@ class Donation extends SalesforceWriteProxy
     public const int MINUMUM_AMOUNT = 1;
     public const string GIFT_AID_PERCENTAGE = '25';
 
+    /**
+     * Placeholder used in home postcode field for a donor with a home outside the UK. See also
+     * OVERSEAS constant in donate-frontend.
+     */
+    public const string OVERSEAS = 'OVERSEAS';
+
     private array $possiblePSPs = ['stripe'];
 
     /**
@@ -533,7 +539,7 @@ class Donation extends SalesforceWriteProxy
         unset($data['matchReservedAmount']);
 
         if ($this->mandate) {
-            $data['mandate'] =  [
+            $data['mandate'] = [
               'salesforceId' => $this->mandate->getSalesforceId(),
             ];
         }
@@ -545,9 +551,12 @@ class Donation extends SalesforceWriteProxy
     {
         $totalPaidByDonor = $this->getTotalPaidByDonor();
 
+        $fundingWithdrawalsByType = $this->getWithdrawalTotalByFundType();
+
         $data = [
-            'amountMatchedByChampionFunds' => (float) $this->getConfirmedChampionWithdrawalTotal(),
-            'amountMatchedByPledges' => (float) $this->getConfirmedPledgeWithdrawalTotal(),
+            'amountMatchedByChampionFunds' => (float) $fundingWithdrawalsByType['amountMatchedByChampionFunds'],
+            'amountMatchedByPledges' => (float) $fundingWithdrawalsByType['amountMatchedByPledges'],
+            'amountPreauthorizedFromChampionFunds' => (float) $fundingWithdrawalsByType['amountPreauthorizedFromChampionFunds'],
             'billingPostalAddress' => $this->donorBillingPostcode,
             'charityFee' => (float) $this->getCharityFee(),
             'charityFeeVat' => (float) $this->getCharityFeeVat(),
@@ -556,7 +565,7 @@ class Donation extends SalesforceWriteProxy
             'countryCode' => $this->getDonorCountryCode(),
             'collectedTime' => $this->getCollectedAt()?->format(DateTimeInterface::ATOM),
             'createdTime' => $this->getCreatedDate()->format(DateTimeInterface::ATOM),
-            'currencyCode' => $this->getCurrencyCode(),
+            'currencyCode' => $this->currency()->isoCode(),
             'donationAmount' => (float) $this->getAmount(),
             'totalPaid' => is_null($totalPaidByDonor) ? null : (float)$totalPaidByDonor,
             'donationId' => $this->getUuid(),
@@ -796,7 +805,7 @@ class Donation extends SalesforceWriteProxy
      */
     public function getFundingWithdrawalTotal(): string
     {
-        $withdrawalTotal = '0.0';
+        $withdrawalTotal = '0.00';
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
             $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
         }
@@ -804,44 +813,56 @@ class Donation extends SalesforceWriteProxy
         return $withdrawalTotal;
     }
 
-    /**
-     * @return string Total amount *finalised*, matched by `Fund`s of type "championFund"
-     */
-    private function getConfirmedChampionWithdrawalTotal(): string
+    public function getFundingWithdrawalTotalAsObject(): Money
     {
-        if (!$this->getDonationStatus()->isSuccessful()) {
-            return '0.0';
-        }
-
-        $withdrawalTotal = '0.0';
-        foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
-            // Rely on Doctrine `SINGLE_TABLE` inheritance structure to derive the type from the concrete class.
-            if ($fundingWithdrawal->getCampaignFunding()->getFund() instanceof ChampionFund) {
-                $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
-            }
-        }
-
-        return $withdrawalTotal;
+        return Money::fromNumericString(
+            $this->getFundingWithdrawalTotal(),
+            Currency::fromIsoCode($this->currencyCode)
+        );
     }
 
     /**
-     * @return string Total amount *finalised*, matched by `Fund`s of type "pledge"
+     * @return array{
+     *     amountMatchedByChampionFunds: numeric-string,
+     *     amountMatchedByPledges: numeric-string,
+     *     amountPreauthorizedFromChampionFunds: numeric-string,
+     *     amountMatchedOther: numeric-string,
+     * }
      */
-    private function getConfirmedPledgeWithdrawalTotal(): string
+    public function getWithdrawalTotalByFundType(): array
     {
-        if (!$this->getDonationStatus()->isSuccessful()) {
-            return '0.0';
-        }
+        $withdrawalTotals = [
+            'amountMatchedByChampionFunds' => '0.00',
+            'amountMatchedByPledges' => '0.00',
+            'amountPreauthorizedFromChampionFunds' => '0.00',
+            'amountMatchedOther' => '0.00', // This key is not sent to SF, covers match fund usage that we don't need to
+                                           // report, i.e. for donations that are neither sucessful nor preauthed.
+        ];
 
-        $withdrawalTotal = '0.0';
         foreach ($this->fundingWithdrawals as $fundingWithdrawal) {
-            // Rely on Doctrine `SINGLE_TABLE` inheritance structure to derive the type from the concrete class.
-            if ($fundingWithdrawal->getCampaignFunding()->getFund() instanceof Pledge) {
-                $withdrawalTotal = bcadd($withdrawalTotal, $fundingWithdrawal->getAmount(), 2);
-            }
+            $fundTypeOfThisWithdrawal = $fundingWithdrawal->getCampaignFunding()->getFund()->getFundType();
+
+            $key = match ([$fundTypeOfThisWithdrawal, $this->donationStatus->isSuccessful(), $this->donationStatus === DonationStatus::PreAuthorized  ]) {
+                [FundType::ChampionFund, true, true] => throw new \LogicException("impossible status"),
+                [FundType::ChampionFund, true, false] => 'amountMatchedByChampionFunds',
+                [FundType::ChampionFund, false, true] => 'amountPreauthorizedFromChampionFunds',
+                [FundType::ChampionFund, false, false] => 'amountMatchedOther',
+
+                [FundType::Pledge, true, true] => throw new \LogicException("impossible status"),
+                [FundType::Pledge, true, false] => 'amountMatchedByPledges',
+                [FundType::Pledge, false, true] => throw new \RuntimeException("unexpected pre-authed donation using pledge fund"),
+                [FundType::Pledge, false, false] => 'amountMatchedOther',
+
+                [FundType::TopupPledge, true, true] => throw new \LogicException("impossible status"),
+                [FundType::TopupPledge, true, false] => 'amountMatchedByPledges',
+                [FundType::TopupPledge, false, true] => throw new \RuntimeException("unexpected pre-authed donation using top-up pledge fund"),
+                [FundType::TopupPledge, false, false] => 'amountMatchedOther',
+            };
+
+            $withdrawalTotals[$key] = bcadd($withdrawalTotals[$key], $fundingWithdrawal->getAmount(), 2);
         }
 
-        return $withdrawalTotal;
+        return $withdrawalTotals;
     }
 
     /**
@@ -1068,11 +1089,6 @@ class Donation extends SalesforceWriteProxy
     public function setOriginalPspFeeFractional(string $originalPspFeeFractional): void
     {
         $this->originalPspFee = bcdiv($originalPspFeeFractional, '100', 2);
-    }
-
-    public function getCurrencyCode(): string
-    {
-        return $this->currencyCode;
     }
 
     /**
@@ -1302,7 +1318,7 @@ class Donation extends SalesforceWriteProxy
         $donationMessage->first_name = $firstName;
         $donationMessage->last_name = $lastName;
 
-        $donationMessage->overseas = $this->donorHomePostcode === 'OVERSEAS';
+        $donationMessage->overseas = $this->donorHomePostcode === self::OVERSEAS;
         $donationMessage->postcode = $donationMessage->overseas ? '' : ($this->donorHomePostcode ?? '');
 
         $donationMessage->house_no = '';
@@ -1390,6 +1406,10 @@ class Donation extends SalesforceWriteProxy
         $this->tipRefundAmount = $amountRefunded->toNumericString();
     }
 
+    /**
+     * Updates status to {@see DonationStatus::Cancelled}. Note that in most cases you will need to do more than just update the status,
+     * so consider calling {@see DonationService::cancel()} rather than this directly.
+     */
     public function cancel(): void
     {
         if (
@@ -1425,7 +1445,7 @@ class Donation extends SalesforceWriteProxy
             $cardBrand,
             $cardCountry,
             $this->getAmount(),
-            $this->getCurrencyCode(),
+            $this->currency()->isoCode(),
             $incursGiftAidFee,
         );
 
@@ -1494,8 +1514,10 @@ class Donation extends SalesforceWriteProxy
                 ->that($donorHomeAddressLine1, 'donorHomeAddressLine1')
                 ->nullOr()->betweenLength(1, 255);
 
-            // postcode should either be a UK postcode or the word 'OVERSEAS' - either way length will be between 5 and
-            // 8. Could consider adding a regex validation.
+            /** postcode should either be a UK postcode or the word 'OVERSEAS' - either way length will be between 5 and
+                8. Could consider adding a regex validation.
+             * @see self::OVERSEAS
+             */
             $lazyAssertion->that($donorHomePostcode, 'donorHomePostcode')->nullOr()->betweenLength(5, 8);
 
             // allow up to 15 chars to account for post / zip codes worldwide
@@ -1526,15 +1548,17 @@ class Donation extends SalesforceWriteProxy
      * Checks the donation is ready to be confirmed if and when the donor is ready to pay - i.e. that all required
      * fields are filled in.
      *
+     * @param DateTimeImmutable $at
      * @throws LazyAssertionException if not.
      *
      * This method returning true does *NOT* indicate that the donor has chosen to definitely donate - that must be
      * established based on other info (e.g. because they sent a confirmation request).
      */
-    public function assertIsReadyToConfirm(): true
+    public function assertIsReadyToConfirm(\DateTimeImmutable $at): true
     {
         $this->assertionsForConfirmOrPreAuth()
             ->that($this->transactionId)->notNull('Missing Transaction ID')
+            ->that($this->getCampaign()->isOpenForFinalising($at))
             ->verifyNow();
 
         return true;
@@ -1616,7 +1640,7 @@ class Donation extends SalesforceWriteProxy
             // Stripe Payment Intent `amount` is in the smallest currency unit, e.g. pence.
             // See https://stripe.com/docs/api/payment_intents/object
             'amount' => $this->getAmountFractionalIncTip(),
-            'currency' => strtolower($this->getCurrencyCode()),
+            'currency' => $this->currency()->isoCode(case: 'lower'),
             'description' => $this->getDescription(),
             'capture_method' => 'automatic', // 'automatic' was default in previous API versions,
             // default is now 'automatic_async'
@@ -1760,5 +1784,10 @@ class Donation extends SalesforceWriteProxy
         // @todo-multi-currency cheating a little by asserting that currency is GBP, since it is always likely to be.
         Assertion::same($this->currencyCode, 'GBP');
         return Money::fromNumericStringGBP($this->tipRefundAmount);
+    }
+
+    public function currency(): Currency
+    {
+        return Currency::fromIsoCode($this->currencyCode);
     }
 }

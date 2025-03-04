@@ -241,15 +241,12 @@ The most important areas to explore in `src` are:
   database schema definition is generated. Changes here must be accompanied by Doctrine-generated migrations
   so the database stays in sync. 
   [Doctrine attributes](https://www.doctrine-project.org/projects/doctrine-orm/en/2.17/reference/attributes-reference.html)
-  are used to define important aspects of the data model. Two special things to notice:
-  1. Several models rely on the `#[ORM\HasLifecycleCallbacks]` attribute. In many cases this is because they
-     `use TimestampsTrait`. This is a nice time saver but models _must_ include the lifecycle attribute, or their
-     timestamps won't work.
-  2. [`Fund`](./src/Domain/Fund.php) and its subclasses use 
-     [Single Table Inheritance](https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/reference/inheritance-mapping.html#single-table-inheritance).
-     The point is to build a semantic distinction between fund types (`ChampionFund` vs. `Pledge`) without adding
-     avoidable complexity to the database schema, as both objects are extremely similar in their data structure
-     and behaviour.
+  are used to define important aspects of the data model.  
+
+  * Several models rely on the `#[ORM\HasLifecycleCallbacks]` attribute. In many cases this is because they
+   `use TimestampsTrait`. This is a nice time saver but models _must_ include the lifecycle attribute, or their
+   timestamps won't work.
+
 * [`Client`](./src/Client): custom API clients for communicating with our Salesforce Site.com REST APIs.
 * [`Application\Actions`](./src/Application/Actions): all classes exposing MatchBot APIs to the world. Anything invoked
   directly by a Route should be here.

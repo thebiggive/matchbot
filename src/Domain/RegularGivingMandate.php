@@ -5,6 +5,8 @@ namespace MatchBot\Domain;
 use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\DomainException\CampaignNotOpen;
+use MatchBot\Domain\DomainException\NonCancellableStatus;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -29,9 +31,13 @@ class RegularGivingMandate extends SalesforceWriteProxy
     private const int MAX_AMOUNT_PENCE = 500_00;
 
     /**
-     * The first donations taken for a regular giving mandate are matched, later donations are not.
+     * The first donations taken for a regular giving mandate are usually matched, later donations are not. However,
+     * donors can elect to make an unmatched mandate so this does not always apply. To get the number matched for
+     * a specific donation use getNumberofMatchedDonations, which is why this is private.
+     *
+     * @see RegularGivingMandate::getNumberofMatchedDonations()
      */
-    public const int NUMBER_OF_DONATIONS_TO_MATCH = 3;
+    private const int NUMBER_OF_DONATIONS_TO_MATCH = 3;
 
     #[ORM\Column(unique: true, type: 'uuid')]
     private readonly UuidInterface $uuid;
@@ -84,6 +90,23 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column(type: 'string', enumType: MandateStatus::class)]
     private MandateStatus $status = MandateStatus::Pending;
 
+    #[ORM\Column(type: 'string', length: 50, enumType: MandateCancellationType::class, nullable: true)]
+    private ?MandateCancellationType $cancellationType = null;
+
+    /**
+     * Whether the first donations should be matched - if match funds are not available we will allow donors
+     * to create an unmatched mandate. If false then donations may still end up incidentally matched e.g. via match
+     * funds redistribution at campaign end.
+     */
+    #[ORM\Column()]
+    private bool $isMatched;
+
+    #[ORM\Column(type: 'string', length: 500, nullable: true)]
+    private ?string $cancellationReason = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $cancelledAt = null;
+
     /**
      * @param Salesforce18Id<Campaign> $campaignId
      * @param Salesforce18Id<Charity> $charityId
@@ -99,6 +122,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
         DayOfMonth $dayOfMonth,
         bool $tbgComms = false,
         bool $charityComms = false,
+        bool $matchDonations = true,
     ) {
         $this->createdNow();
         $minAmount = Money::fromPence(self::MIN_AMOUNT_PENCE, Currency::GBP);
@@ -119,6 +143,34 @@ class RegularGivingMandate extends SalesforceWriteProxy
         $this->dayOfMonth = $dayOfMonth;
         $this->tbgComms = $tbgComms;
         $this->charityComms = $charityComms;
+        $this->isMatched = $matchDonations;
+    }
+
+    /**
+     * Returns the average matched amount of the given donations, rounded down to the nearest major unit.
+     *
+     * This indicates the largest donation size that it would be possible to match with the same match funds, assuming
+     * it would be spread across the same number of donations.
+     *
+     * @param non-empty-list<Donation> $donations . Must be at least one.
+     * @return Money
+     */
+    public static function averageMatched(array $donations): Money
+    {
+        $totals = array_map(fn(Donation $donation) => $donation->getFundingWithdrawalTotalAsObject(), $donations);
+        $grandTotal = Money::sum(...$totals);
+
+        $averagePence = intdiv($grandTotal->amountInPence, count($donations));
+
+        // We know currency is same for all donations as otherwise `sum` would have thrown.
+        $currency = $donations[0]->currency();
+
+        $averageMoneyRoundedDownToMajorUnit = Money::fromPence(
+            intdiv($averagePence, 100) * 100,
+            $currency
+        );
+
+        return $averageMoneyRoundedDownToMajorUnit;
     }
 
     /**
@@ -147,17 +199,30 @@ class RegularGivingMandate extends SalesforceWriteProxy
             'totalCharityReceivesPerInitial' => $this->totalCharityReceivesPerInitial(),
             'campaignId' => $this->campaignId,
             'charityId' => $this->charityId,
-            'numberOfMatchedDonations' => self::NUMBER_OF_DONATIONS_TO_MATCH,
+            'isMatched' => $this->isMatched,
+            'numberOfMatchedDonations' => $this->getNumberofMatchedDonations(),
             'schedule' => [
                 'type' => 'monthly',
                 'dayOfMonth' => $this->dayOfMonth->value,
                 'activeFrom' => $this->activeFrom?->format(\DateTimeInterface::ATOM),
-                'expectedNextPaymentDate' => $this->firstPaymentDayAfter($now)->format(\DateTimeInterface::ATOM),
+                'expectedNextPaymentDate' => in_array($this->status, [MandateStatus::Pending, MandateStatus::Active], true) ?
+                    $this->firstPaymentDayAfter($now)->format(\DateTimeInterface::ATOM) :
+                    null,
             ],
             'charityName' => $charity->getName(),
             'giftAid' => $this->giftAid,
             'status' => $this->status->apiName(),
+            ...($this->cancelledAt ?
+                ['cancellationDate' => $this->cancelledAt->format(\DateTimeInterface::ATOM)] :
+                []
+            )
         ];
+    }
+
+    #[\Override]
+    public function __toString(): string
+    {
+        return "Regular Giving Mandate # {$this->uuid->toString()}";
     }
 
 
@@ -330,9 +395,20 @@ class RegularGivingMandate extends SalesforceWriteProxy
         return $this->charityId;
     }
 
-    public function cancel(): void
+    /**
+     * @throws NonCancellableStatus
+     */
+    public function cancel(string $reason, \DateTimeImmutable $at, MandateCancellationType $type): void
     {
+        if (!in_array($this->status, [MandateStatus::Pending, MandateStatus::Active], true)) {
+            throw new NonCancellableStatus('Mandate has existing non-cancelable status ' . $this->status->name);
+        }
+
         $this->status = MandateStatus::Cancelled;
+
+        $this->cancellationType = $type;
+        $this->cancellationReason = $reason;
+        $this->cancelledAt = $at;
     }
 
     public function getStatus(): MandateStatus
@@ -379,7 +455,6 @@ class RegularGivingMandate extends SalesforceWriteProxy
      * @return Money The total amount that we expect the charity to receive per each of the donors initial, matched
      * donations, from us and HMRC in total. I.e. core amount + matched amount + gift aid amount.
      *
-     * @todo-regular-giving revisit this as part of DON-1003 when matched amount may vary per donation.
      */
     private function totalCharityReceivesPerInitial(): Money
     {
@@ -388,7 +463,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
 
     public function getMatchedAmount(): Money
     {
-        return $this->donationAmount;
+        return $this->isMatched ?  $this->donationAmount : Money::zero($this->donationAmount->currency);
     }
 
     public function createPendingFirstDonation(Campaign $campaign, DonorAccount $donor): Donation
@@ -413,14 +488,60 @@ class RegularGivingMandate extends SalesforceWriteProxy
             mandate: $this,
             mandateSequenceNumber: DonationSequenceNumber::of(1),
             giftAid: $this->giftAid,
-            billingPostcode: $donor->getBillingPostcode(),
             homeAddress: $donor->getHomeAddressLine1(),
-            homePostcode: $donor->getHomePostcode(),
+            homePostcode: $donor->isHomeOutsideUK() ? Donation::OVERSEAS : $donor->getHomePostcode(),
+            billingPostcode: $donor->getBillingPostcode(),
         );
     }
 
     public function donorId(): PersonId
     {
         return $this->donorId;
+    }
+
+    public function isMatched(): bool
+    {
+        return $this->isMatched;
+    }
+
+    public function getNumberofMatchedDonations(): int
+    {
+        return $this->isMatched ? self::NUMBER_OF_DONATIONS_TO_MATCH : 0;
+    }
+
+    /**
+     * Reason for this mandate being cancelled. Should only be called for a cancelled mandate.
+     * @return string
+     * @throws \Assert\AssertionFailedException
+     */
+    public function cancellationReason(): string
+    {
+        Assertion::same(MandateStatus::Cancelled, $this->status);
+        assert($this->cancellationReason !== null);
+
+        return $this->cancellationReason;
+    }
+
+    /**
+     * Type of reason for this mandate being cancelled. Should only be called for a cancelled mandate.
+     * @throws \Assert\AssertionFailedException
+     */
+    public function cancellationType(): MandateCancellationType
+    {
+        Assertion::same(MandateStatus::Cancelled, $this->status);
+        assert($this->cancellationType !== null);
+
+        return $this->cancellationType;
+    }
+
+    /**
+     *  Reason for this mandate being cancelled. Should only be called for a cancelled mandate.
+     * */
+    public function cancelledAt(): \DateTimeImmutable
+    {
+        Assertion::same(MandateStatus::Cancelled, $this->status);
+        \assert($this->cancelledAt !== null);
+
+        return $this->cancelledAt;
     }
 }

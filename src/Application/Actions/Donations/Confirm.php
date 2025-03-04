@@ -9,6 +9,7 @@ use MatchBot\Application\Assertion;
 use MatchBot\Application\LazyAssertionException;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\NotFoundException;
+use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
@@ -21,6 +22,7 @@ use Slim\Exception\HttpBadRequestException;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
+use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -32,6 +34,7 @@ class Confirm extends Action
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $bus,
         private DonationService $donationService,
+        private ClockInterface $clock,
     ) {
         parent::__construct($logger);
     }
@@ -82,7 +85,7 @@ EOF
         \assert($paymentMethodId !== ""); // required to call updatePaymentMethodBillingDetail
 
         try {
-            $donation->assertIsReadyToConfirm();
+            $donation->assertIsReadyToConfirm($this->clock->now());
         } catch (LazyAssertionException $exception) {
             $message = $exception->getMessage();
             $this->logger->warning($message);
@@ -146,6 +149,10 @@ EOF
                     'code' => $exception->getStripeCode(),
                 ],
             ], 500);
+        } catch (PaymentIntentNotSucceeded $_e) {
+            // no-op - in this case we return the unsuccessful PI to the FE just like we would a successful one.
+            // FE handles it.
+            $updatedIntent = $_e->paymentIntent;
         }
 
         // Assuming Stripe calls worked, commit any changes that `deriveFees()` made to the EM-tracked `$donation`.

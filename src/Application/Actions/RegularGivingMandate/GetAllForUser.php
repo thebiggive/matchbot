@@ -37,7 +37,7 @@ class GetAllForUser extends Action
 
         $donor = $this->securityService->requireAuthenticatedDonorAccountWithPassword($request);
 
-        $mandates = $this->regularGivingService->allActiveForDonorAsApiModel($donor->id());
+        $mandates = $this->regularGivingService->allMandatesForDisplayToDonor($donor->id());
 
         return new JsonResponse([
             'mandates' => $mandates

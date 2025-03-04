@@ -3,28 +3,25 @@
 namespace MatchBot\Domain;
 
 use Assert\AssertionFailedException;
-use Doctrine\DBAL\Exception\ServerException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Exception\ORMException;
+use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Messenger\DonationUpserted;
-use MatchBot\Application\Messenger\MandateUpserted;
-use MatchBot\Client\NotFoundException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
+use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationNotCollected;
-use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
-use MatchBot\Domain\DomainException\CouldNotMakeStripePaymentIntent;
 use MatchBot\Domain\DomainException\HomeAddressRequired;
+use MatchBot\Domain\DomainException\MandateAlreadyExists;
+use MatchBot\Domain\DomainException\NonCancellableStatus;
 use MatchBot\Domain\DomainException\NotFullyMatched;
+use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
-use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
+use Stripe\Exception\ApiErrorException as StripeApiErrorException;
+use Stripe\PaymentIntent;
 use UnexpectedValueException;
 
 readonly class RegularGivingService
@@ -40,17 +37,20 @@ readonly class RegularGivingService
         private LoggerInterface $log,
         private RegularGivingMandateRepository $regularGivingMandateRepository,
         private RegularGivingNotifier $regularGivingNotifier,
-        private Stripe $stripe,
     ) {
     }
 
     /**
+     * Creates but does not yet activate a Mandate. Stripe first charge succeeded webhook is responsible for activation.
+     *
+     * @param bool|null $homeIsOutsideUk
+     * @param bool $matchDonations
      * @param PostCode|null $homePostcode
      * @param string|null $homeAddress
      * @param bool $charityComms
      * @param bool $tbgComms
-     * @param string|null $billingPostCode
      * @param Country|null $billingCountry
+     * @param string|null $billingPostCode
      * @throws CampaignNotOpen
      * @throws DomainException\CharityAccountLacksNeededCapaiblities
      * @throws DomainException\CouldNotMakeStripePaymentIntent
@@ -61,6 +61,10 @@ readonly class RegularGivingService
      * @throws \Doctrine\ORM\Exception\ORMException
      * @throws \MatchBot\Client\NotFoundException
      * @throws \Symfony\Component\Notifier\Exception\TransportExceptionInterface
+     * @throws StripeApiErrorException
+     * @throws DonationNotCollected
+     * @throws PaymentIntentNotSucceeded
+     * @throws CampaignNotOpen
      *
      * @throws UnexpectedValueException if the amount is out of the allowed range
      */
@@ -83,14 +87,16 @@ readonly class RegularGivingService
          * Used for gift aid claim but optional as not given if donor is outside UK. Will be saved to donor account.
          */
         ?PostCode $homePostcode,
+        bool $matchDonations,
+        ?bool $homeIsOutsideUk,
     ): RegularGivingMandate {
         // should save the address to the donor account if an address was given.
-
 
         $this->ensureCampaignAllowsRegularGiving($campaign);
         $this->ensureBillingCountryMatchesDonorBillingCountry($donor, $billingCountry);
         $this->ensureBillingPostcodeMatchesDonorBillingPostcode($donor, $billingPostCode);
-
+        $this->ensureCampaignIsOpen($campaign);
+        $this->cancelAnyPendingMandateForDonorAndCampaign($donor, $campaign);
 
         if ($billingCountry) {
             $donor->setBillingCountry($billingCountry);
@@ -111,6 +117,7 @@ readonly class RegularGivingService
             dayOfMonth: $dayOfMonth,
             tbgComms: $tbgComms,
             charityComms: $charityComms,
+            matchDonations: $matchDonations
         );
 
         $donorPreviousHomeAddress = $donor->getHomeAddressLine1();
@@ -120,6 +127,9 @@ readonly class RegularGivingService
         if ($homeAddressSupplied) {
             $donor->setHomeAddressLine1(trim($homeAddress));
             $donor->setHomePostcode($homePostcode);
+
+            Assertion::notNull($homeIsOutsideUk);
+            $donor->setHomeIsOutsideUK($homeIsOutsideUk);
         }
 
         if ($giftAid && ! $homeAddressSupplied) {
@@ -141,6 +151,19 @@ readonly class RegularGivingService
         $this->entityManager->persist($mandate);
 
         try {
+            $this->entityManager->flush();
+        } catch (UniqueConstraintViolationException $e) {
+            // Entity Manager is now closed so there's nothing we can do except throw back to UI.
+            // Should rarely happen as UI can be designed to stop people getting to this point.
+            if (str_contains($e->getMessage(), 'RegularGivingMandate.person_id_if_active')) {
+                throw new MandateAlreadyExists(
+                    'You already have an active or pending regular giving mandate for ' . $campaign->getCampaignName()
+                );
+            }
+            throw $e;
+        }
+
+        try {
             $this->enrollAndMatchDonations($donations, $mandate);
         } catch (\Throwable $e) {
             $donor->setHomeAddressLine1($donorPreviousHomeAddress);
@@ -149,9 +172,9 @@ readonly class RegularGivingService
                     PostCode::of($donorPreviousHomePostcode, true) : null
             );
 
+            $mandate->cancel($e->getMessage(), new \DateTimeImmutable(), MandateCancellationType::EnrollingDonationFailed);
             foreach ($donations as $donation) {
                 $this->donationService->cancel($donation);
-                $mandate->cancel();
             }
             $this->entityManager->flush();
 
@@ -165,38 +188,32 @@ readonly class RegularGivingService
             'Confirmation token must be given iff there is no payment method on file'
         );
 
-        if ($confirmationTokenId) {
-            $methodId = $this->confirmWithNewPaymentMethod($firstDonation, $confirmationTokenId);
-            $donor->setRegularGivingPaymentMethod($methodId);
-        } else {
-            \assert($donorsSavedPaymentMethod !== null);
-            // @todo-regular-giving - consider if we need to switch to sync confirmation that doesn't rely on a callback
-            // hook or something so we can avoid activating the mandate if the first donation is not collected.
-            $this->donationService->confirmDonationWithSavedPaymentMethod($firstDonation, $donorsSavedPaymentMethod);
+        try {
+            if ($confirmationTokenId) {
+                $this->donationService->confirmOnSessionDonation($firstDonation, $confirmationTokenId);
+            } else {
+                \assert($donorsSavedPaymentMethod !== null);
+                // @todo-regular-giving - consider if we need to switch to sync confirmation that doesn't rely on a callback
+                // hook or something so we can avoid activating the mandate if the first donation is not collected.
+                $this->donationService->confirmDonationWithSavedPaymentMethod($firstDonation, $donorsSavedPaymentMethod);
+            }
+        } catch (PaymentIntentNotSucceeded $e) {
+            $this->entityManager->flush();
+            $e->mandate = $mandate;
+            if ($e->paymentIntent->status === PaymentIntent::STATUS_REQUIRES_ACTION) {
+                throw $e;
+            }
         }
 
         $this->donationService->queryStripeToUpdateDonationStatus($firstDonation);
 
-        if (! $firstDonation->getDonationStatus()->isSuccessful()) {
-            $mandate->cancel();
+        if (!$firstDonation->getDonationStatus()->isSuccessful()) {
+            $this->cancelNewMandate($mandate, $firstDonation, $donor, $donorPreviousHomeAddress, $donorPreviousHomePostcode);
 
-            $donor->setHomeAddressLine1($donorPreviousHomeAddress);
-            $donor->setHomePostcode(
-                is_string($donorPreviousHomePostcode) ?
-                    PostCode::of($donorPreviousHomePostcode, true) : null
-            );
-
-            $this->entityManager->flush();
             throw new DonationNotCollected(
                 'First Donation in Regular Giving mandate could not be collected, not activating mandate'
             );
         }
-
-        $mandate->activate($this->now);
-
-        $this->entityManager->flush();
-
-        $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
 
         return $mandate;
     }
@@ -206,9 +223,11 @@ readonly class RegularGivingService
      *
      * @throws AssertionFailedException
      * @throws CampaignNotOpen
+     * @throws RegularGivingCollectionEndPassed
      * @throws WrongCampaignType
      *
-     * @return ?Donation A new donation, or null if the regular giving collection end date has passed.
+     * @return ?Donation A new donation, or null if either the regular giving collection end date has passed or we
+     * need to wait more before creating another donation.
      */
     public function makeNextDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
@@ -256,7 +275,7 @@ readonly class RegularGivingService
 
         if ($preAuthorizationDate > $this->now) {
             $this->log->info(
-                "Not creating donation yet as will only be authorized to pay on " .
+                "Mandate #{$mandateId}: Not creating donation yet as will only be authorized to pay on " .
                 $preAuthorizationDate->format("Y-m-d") . ' and now is ' . $this->now->format("Y-m-d")
             );
 
@@ -270,9 +289,9 @@ readonly class RegularGivingService
         return $donation;
     }
 
-    public function allActiveForDonorAsApiModel(PersonId $donor): array
+    public function allMandatesForDisplayToDonor(PersonId $donor): array
     {
-        $mandatesWithCharities = $this->regularGivingMandateRepository->allActiveForDonorWithCharities($donor);
+        $mandatesWithCharities = $this->regularGivingMandateRepository->allMandatesForDisplayToDonor($donor);
 
         $currentUKTime = $this->now->setTimezone(new \DateTimeZone("Europe/London"));
 
@@ -335,13 +354,14 @@ readonly class RegularGivingService
     private function enrollAndMatchDonations(array $donations, RegularGivingMandate $mandate): void
     {
         foreach ($donations as $donation) {
-            $this->donationService->enrollNewDonation($donation);
-            if (!$donation->isFullyMatched()) {
-                // @todo-regular-giving:
-                // see ticket DON-1003 - that will require us to not throw here if the donor doesn't mind their donations being unmatched.
+            $this->donationService->enrollNewDonation($donation, $mandate->isMatched());
+            if (!$donation->isFullyMatched() && $mandate->isMatched()) {
+                $maxMatchable = RegularGivingMandate::averageMatched($donations);
+
                 throw new NotFullyMatched(
                     "Donation could not be fully matched, need to match {$donation->getAmount()}," .
-                    " only matched {$donation->getFundingWithdrawalTotal()}"
+                    " only matched {$donation->getFundingWithdrawalTotal()}",
+                    $maxMatchable
                 );
             }
 
@@ -352,23 +372,149 @@ readonly class RegularGivingService
         }
     }
 
-    private function confirmWithNewPaymentMethod(Donation $firstDonation, StripeConfirmationTokenId $confirmationTokenId): StripePaymentMethodId
+    /**
+     * Cancels a mandate when the donor has decided they want to stop making donations.
+     *
+     * @param RegularGivingMandate $mandate - must have been persisted, i.e. have an ID set.
+     * @throws NonCancellableStatus
+     * @throws CouldNotCancelStripePaymentIntent
+     */
+    public function cancelMandate(
+        RegularGivingMandate $mandate,
+        string $reason,
+        MandateCancellationType $cancellationType,
+    ): void {
+        $mandateId = $mandate->getId();
+        Assertion::notNull($mandateId);
+
+        $mandate->cancel(reason: $reason, at: $this->now, type: $cancellationType);
+
+        $cancellableDonations = $this->donationRepository->findPendingAndPreAuthedForMandate($mandateId);
+
+        Assertion::maxCount(
+            $cancellableDonations,
+            3,
+            "Too many donations found to cancel for mandate {$mandateId}, should be max 3}"
+        );
+
+        foreach ($cancellableDonations as $donation) {
+            $this->donationService->cancel($donation);
+        }
+
+        $this->entityManager->flush();
+    }
+
+    private function activateMandateNotifyDonor(
+        Donation $firstDonation,
+        RegularGivingMandate $mandate,
+        DonorAccount $donor,
+        Campaign $campaign,
+        StripePaymentMethodId $paymentMethodId
+    ): void {
+        $donor->setRegularGivingPaymentMethod($paymentMethodId);
+        $mandate->activate($this->now);
+
+        $this->entityManager->flush();
+
+        try {
+            $this->regularGivingNotifier->notifyNewMandateCreated($mandate, $donor, $campaign, $firstDonation);
+        } catch (ClientException $exception) {
+            $this->log->error(
+                "Could not send notification for mandate #{$mandate->getId()}: " . $exception->__toString()
+            );
+        }
+    }
+
+    public function cancelNewMandate(
+        RegularGivingMandate $mandate,
+        Donation $firstDonation,
+        DonorAccount $donor,
+        ?string $donorPreviousHomeAddress,
+        ?string $donorPreviousHomePostcode
+    ): void {
+        $mandate->cancel(
+            reason: "Donation failed, status is {$firstDonation->getDonationStatus()->name}",
+            at: new \DateTimeImmutable(),
+            type: MandateCancellationType::FirstDonationUnsuccessful
+        );
+
+        $donor->setHomeAddressLine1($donorPreviousHomeAddress);
+        $donor->setHomePostcode(
+            is_string($donorPreviousHomePostcode) ?
+                PostCode::of($donorPreviousHomePostcode, true) : null
+        );
+
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Activates any previously created Mandate via {@see self::activateMandateNotifyDonor()} assuming
+     * pre-conditions hold. Returns as a no-op if called for a non-regular giving donation.
+     */
+    public function updatePossibleMandateFromSuccessfulCharge(
+        Donation $donation,
+        StripePaymentMethodId $paymentMethodId
+    ): void {
+        \assert($donation->getDonationStatus()->isSuccessful());
+
+        $mandate = $donation->getMandate();
+        if ($mandate === null) {
+            return;
+        }
+
+        $mandateSequenceNumber = $donation->getMandateSequenceNumber();
+        \assert($mandateSequenceNumber !== null);
+
+        if ($mandateSequenceNumber->number !== 1) {
+            // only want to update the mandate based on its initial donation being successfully paid.
+            return;
+        }
+
+        // We explicitly DO NOT check for the campaign being closed at this point. That was already checked
+        // when the mandate was created, we don't want to make things inconsistent by blocking the payment
+        // now. If it closed more than a few minutes ago then the mandate and payment intent would have been
+        // cancelled already by the `MatchBot\Application\Commands\ExpirePendingMandates` command.
+
+        $donor = $this->donorAccountRepository->findByPersonId($mandate->donorId());
+        \assert($donor !== null);
+
+
+        $this->activateMandateNotifyDonor(
+            firstDonation: $donation,
+            mandate: $mandate,
+            donor: $donor,
+            campaign: $donation->getCampaign(),
+            paymentMethodId: $paymentMethodId,
+        );
+    }
+
+    /**
+     * @throws CampaignNotOpen
+     */
+    private function ensureCampaignIsOpen(Campaign $campaign): void
     {
-        $intent = $this->donationService->confirmOnSessionDonation($firstDonation, $confirmationTokenId);
-        $chargeId = $intent->latest_charge;
-        if ($chargeId === null) {
-            // AFAIK there should always be charge ID attached to the intent at this point
-            throw new \Exception('No charge ID on payment intent after confirming regular giving donation');
+        if (! $campaign->isOpenForFinalising($this->now)) {
+            throw new CampaignNotOpen();
         }
+    }
 
-        $charge = $this->stripe->retrieveCharge((string)$chargeId);
-        $paymentMethodId = $charge->payment_method;
+    /**
+     * A donor cannot have two active or pending mandates for the same campaign, so if they ask to create a new
+     * one when there is already one pending we cancel the pending one(s).
+     */
+    private function cancelAnyPendingMandateForDonorAndCampaign(DonorAccount $donor, Campaign $campaign): void
+    {
+        $mandatesToCancel = $this->regularGivingMandateRepository->allPendingForDonorAndCampaign(
+            $donor->id(),
+            $campaign->getSalesforceId(),
+        );
 
-        if ($paymentMethodId === null) {
-            // AFAIK there should always be payment method ID attached to the charge at this point.
-            throw new \Exception('No payment method ID on charge after confirming regular giving donation');
+        foreach ($mandatesToCancel as $mandate) {
+            $this->cancelMandate(
+                $mandate,
+                'Cancelled from to make way for new mandate',
+                MandateCancellationType::ReplacedByNewMandate,
+            );
         }
-
-        return StripePaymentMethodId::of($paymentMethodId);
     }
 }

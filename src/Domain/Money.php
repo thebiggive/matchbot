@@ -42,16 +42,20 @@ readonly class Money implements \JsonSerializable, \Stringable
 
     public static function sum(self ...$amounts): self
     {
+        if ($amounts === []) {
+            return self::zero(Currency::GBP);
+        }
+
         return array_reduce(
             $amounts,
             static fn (self $a, self $b): self => $a->plus($b),
-            self::zero(),
+            self::zero($amounts[0]->currency),
         );
     }
 
-    private static function zero(): self
+    public static function zero(Currency $currency = Currency::GBP): self
     {
-        return new self(0, Currency::GBP);
+        return new self(0, $currency);
     }
 
     /**
@@ -122,6 +126,19 @@ readonly class Money implements \JsonSerializable, \Stringable
         return new self((int) $amountInPence, Currency::GBP);
     }
 
+    /**
+     * @param numeric-string $amount
+     */
+    public static function fromNumericString(string $amount, Currency $currency): self
+    {
+        $amountInPence = bcmul($amount, '100', 2);
+
+        /** @psalm-suppress ImpureMethodCall */
+        Assertion::integerish((float) $amountInPence);
+
+        return new self((int) $amountInPence, $currency);
+    }
+
     public function withPence(int $amountInPence): self
     {
         return new self($amountInPence, $this->currency);
@@ -154,5 +171,10 @@ readonly class Money implements \JsonSerializable, \Stringable
     public function toMajorUnitFloat(): float
     {
         return $this->amountInPence / 100;
+    }
+
+    public function isZero(): bool
+    {
+        return $this->amountInPence === 0;
     }
 }

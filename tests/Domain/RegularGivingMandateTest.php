@@ -2,7 +2,9 @@
 
 namespace MatchBot\Tests\Domain;
 
+use MatchBot\Client\Fund;
 use MatchBot\Domain\Campaign;
+use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\Currency;
 use MatchBot\Domain\DayOfMonth;
@@ -11,6 +13,7 @@ use MatchBot\Domain\DonationSequenceNumber;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\PostCode;
@@ -179,6 +182,7 @@ class RegularGivingMandateTest extends TestCase
                     "amountInPence": 50000,
                     "currency": "GBP"
                   },
+                  "isMatched" : true,
                   "matchedAmount": {
                     "amountInPence": 50000,
                     "currency": "GBP"
@@ -272,6 +276,50 @@ class RegularGivingMandateTest extends TestCase
         );
     }
 
+    public function testItReturnsAverageMatchedForOneUnMatchedDonation(): void
+    {
+        $donation = self::someDonation();
+
+        $averageMatched = RegularGivingMandate::averageMatched([$donation]);
+
+        $this->assertEquals(Money::zero(), $averageMatched);
+    }
+
+    public function testItReturnsAverageMatchedForOneMatchedDonation(): void
+    {
+        $donation = self::someDonation();
+        $donation->addFundingWithdrawal($this->fakeWithdrawalOf('12.00'));
+
+        $averageMatched = RegularGivingMandate::averageMatched([$donation]);
+
+        $this->assertEquals(Money::fromPoundsGBP(12), $averageMatched);
+    }
+
+    public function testItReturnsAverageRoundedDownMatchedForOneMatchedDonation(): void
+    {
+        $donation = self::someDonation();
+        $donation->addFundingWithdrawal($this->fakeWithdrawalOf('12.35'));
+
+        $averageMatched = RegularGivingMandate::averageMatched([$donation]);
+
+        $this->assertEquals(Money::fromPoundsGBP(12), $averageMatched);
+    }
+
+    public function testItReturnsAverageRoundedDownToZeroMatchedForThreeMatchedDonations(): void
+    {
+        $donations = [self::someDonation(), self::someDonation(), self::someDonation()];
+
+        $donations[0]->addFundingWithdrawal($this->fakeWithdrawalOf('1.00'));
+        $donations[1]->addFundingWithdrawal($this->fakeWithdrawalOf('1.00'));
+        $donations[2]->addFundingWithdrawal($this->fakeWithdrawalOf('0.99'));
+
+        // total is £2.99, average £0.996, rounds down to £0.00
+
+        $averageMatched = RegularGivingMandate::averageMatched($donations);
+
+        $this->assertEquals(Money::fromPoundsGBP(0), $averageMatched);
+    }
+
     /** @return list<array{0: int, 1: string}> */
     public function invalidRegularGivingAmounts(): array
     {
@@ -333,5 +381,15 @@ class RegularGivingMandateTest extends TestCase
         $donor->setBillingCountry(Country::GB());
 
         return $donor;
+    }
+
+    private function fakeWithdrawalOf(string $amount): FundingWithdrawal
+    {
+        // Faking the FundingWithdrawal because it's awkward to instantiate
+        // - would need a CampaignFunding which would need Fund, each with constructor params.
+        $fundingWithdrawalProphecy = $this->prophesize(FundingWithdrawal::class);
+        $fundingWithdrawalProphecy->getAmount()->willReturn($amount);
+
+        return $fundingWithdrawalProphecy->reveal();
     }
 }

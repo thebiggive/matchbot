@@ -619,6 +619,12 @@ components:
           type: integer
         giftAid:
           type: boolean
+        unmatched:
+          type: boolean
+          default: false,
+          description: Indicates that the donor doesn't require match funding. We will ask
+                       donors to submit this field if we don't have sufficient match funds
+                       available for thrice their donation amount.
         campaignId:
           type: string
 

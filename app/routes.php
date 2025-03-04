@@ -83,11 +83,18 @@ return function (App $app) {
             ->add(PersonWithPasswordAuthMiddleware::class)
             ->add($ipMiddleware)
             ->add(RateLimitMiddleware::class);
+        $versionGroup->post('/regular-giving/my-donation-mandates/{mandateId:[a-z0-9-]{36}}/cancel', RegularGivingMandate\Cancel::class)
+            ->add(PersonWithPasswordAuthMiddleware::class)
+            ->add($ipMiddleware)
+            ->add(RateLimitMiddleware::class);
 
         $versionGroup->get(
             '/test-donation-collection-for-date/{date}',
             \MatchBot\Application\Actions\CollectRegularGivingForTest::class
         );
+
+        $versionGroup->post('/regular-giving/mandate/{mandateId:[a-z0-9-]{36}}/cancel', RegularGivingMandate\CancelAsAdmin::class)
+            ->add(SalesforceAuthMiddleware::class);
     });
     // Authenticated through Stripe's SDK signature verification
     $app->post('/hooks/stripe', Hooks\StripePaymentsUpdate::class);

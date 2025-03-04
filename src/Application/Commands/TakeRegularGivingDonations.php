@@ -8,8 +8,8 @@ use Assert\AssertionFailedException;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Environment;
-use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\MandateNotActive;
+use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use MatchBot\Domain\DomainException\WrongCampaignType;
@@ -20,11 +20,20 @@ use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
+use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
+use Symfony\Component\Notifier\ChatterInterface;
+use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
+use Symfony\Component\Notifier\Message\ChatMessage;
 
 #[AsCommand(
     name: 'matchbot:collect-regular-giving',
@@ -33,8 +42,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class TakeRegularGivingDonations extends LockingCommand
 {
     private const int MAXBATCHSIZE = 20;
-    private ?RegularGivingService $mandateService = null;
 
+    private bool $reportableEventHappened = false;
 
     /** @psalm-suppress PossiblyUnusedMethod - called by PHP-DI */
     public function __construct(
@@ -45,6 +54,8 @@ class TakeRegularGivingDonations extends LockingCommand
         private EntityManagerInterface $em,
         private Environment $environment,
         private LoggerInterface $logger,
+        private RegularGivingService $mandateService,
+        private ChatterInterface $chatter,
     ) {
         parent::__construct();
 
@@ -52,14 +63,24 @@ class TakeRegularGivingDonations extends LockingCommand
             'simulated-date',
             shortcut: 'simulated-date',
             mode: InputOption::VALUE_REQUIRED,
-            description: 'Simulated datetime'
+            description: '(imperfectly) Simulated datetime - see comments in ' .  basename(__file__) . ' for details',
         );
     }
 
+    /**
+     * Note that only some usages of the system clock are currently replaced with a simulated date here, so results
+     * may be inconsistent when using a simulated date. That's because matchbot-cli.php eagerly loads from the container
+     * every service needed by every possible command at startup, so by this point DonationService and perhaps others
+     * have already been created with a real system clock or timestamp.
+     *
+     * Consider using https://symfony.com/doc/current/console/lazy_commands.html or putting the simulated date in
+     * container early in the matchbot-cli.php to fix.
+     */
     public function setSimulatedNow(string $simulateDateInput, OutputInterface $output): void
     {
         $simulatedNow = new \DateTimeImmutable($simulateDateInput);
         $this->container->set(\DateTimeImmutable::class, $simulatedNow);
+        $this->container->set(ClockInterface::class, new MockClock($simulatedNow));
         $output->writeln("Simulating running on {$simulatedNow->format('Y-m-d H:i:s')}");
     }
 
@@ -78,20 +99,28 @@ class TakeRegularGivingDonations extends LockingCommand
             default:
                 //no-op
         }
-
-        $this->mandateService = $this->container->get(RegularGivingService::class);
     }
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $io = new SymfonyStyle($input, $output);
+        $bufferedOutput = new BufferedOutput();
+        $io = new SymfonyStyle($input, $bufferedOutput);
         /** @psalm-suppress MixedArgument */
-        $this->applySimulatedDate($input->getOption('simulated-date'), $output);
+        $this->applySimulatedDate($input->getOption('simulated-date'), $bufferedOutput);
         $now = $this->container->get(\DateTimeImmutable::class);
 
         $this->createNewDonationsAccordingToRegularGivingMandates($now, $io);
         $this->setPaymentIntentWhenReachedPaymentDate($now, $io);
         $this->confirmPreCreatedDonationsThatHaveReachedPaymentDate($now, $io);
+
+        $outputText = $bufferedOutput->fetch();
+        $output->writeln($outputText);
+
+        // temporarily removed if condition below (and catch later) since sending report to Slack didn't seem to work
+        // this morning when it should have been true and I want to see why.
+        if ($this->reportableEventHappened) {
+            $this->sendReport($this->truncate($outputText));
+        }
 
         return 0;
     }
@@ -106,11 +135,12 @@ class TakeRegularGivingDonations extends LockingCommand
             try {
                 $donation = $this->makeDonationForMandate($mandate);
                 if ($donation) {
+                    $this->reportableEventHappened = true;
                     $io->writeln("created donation {$donation}");
                 } else {
-                    $io->writeln("no donation created for {$mandate} as collection end date passed");
+                    $io->writeln("no donation created for {$mandate} at this time");
                 }
-            } catch (AssertionFailedException | CampaignNotOpen | WrongCampaignType $e) {
+            } catch (AssertionFailedException | WrongCampaignType $e) {
                 $io->error($e->getMessage());
                 $this->logger->error($e->getMessage());
             }
@@ -125,6 +155,7 @@ class TakeRegularGivingDonations extends LockingCommand
         $io->block(count($donations) . " donations are due to have Payment Intent set at this time");
 
         foreach ($donations as $donation) {
+            $this->reportableEventHappened = true;
             try {
                 $this->donationService->createPaymentIntent($donation);
                 $io->writeln("setting payment intent on donation #{$donation->getId()}");
@@ -144,6 +175,7 @@ class TakeRegularGivingDonations extends LockingCommand
         $io->block(count($donations) . " donations are due to be confirmed at this time");
 
         foreach ($donations as $donation) {
+            $this->reportableEventHappened = true;
             $preAuthDate = $donation->getPreAuthorizationDate();
             \assert($preAuthDate instanceof \DateTimeImmutable);
             $io->writeln("processing donation #{$donation->getId()}");
@@ -159,7 +191,11 @@ class TakeRegularGivingDonations extends LockingCommand
                 } catch (MandateNotActive $exception) {
                     $io->info($exception->getMessage());
                     continue;
-                } catch (RegularGivingCollectionEndPassed) {
+                } catch (RegularGivingCollectionEndPassed $exception) {
+                    $io->info($exception->getMessage());
+                    continue;
+                } catch (PaymentIntentNotSucceeded $exception) {
+                    $io->error('PaymentIntentNotSucceeded, skipping donation: ' . $exception->getMessage());
                     continue;
                 }
             } catch (\Exception $exception) {
@@ -177,12 +213,10 @@ class TakeRegularGivingDonations extends LockingCommand
     }
 
     /**
-     * @throws CampaignNotOpen|WrongCampaignType|AssertionFailedException
+     * @throws WrongCampaignType|AssertionFailedException
      */
     private function makeDonationForMandate(RegularGivingMandate $mandate): ?Donation
     {
-        \assert($this->mandateService !== null);
-
         $donation = $this->mandateService->makeNextDonationForMandate($mandate);
         if ($donation) {
             $this->em->persist($donation);
@@ -191,5 +225,45 @@ class TakeRegularGivingDonations extends LockingCommand
         $this->em->flush();
 
         return $donation;
+    }
+
+    private function sendReport(string $outputText): void
+    {
+        if ($this->environment === Environment::Regression) {
+            return;
+        }
+
+        $chatMessage = new ChatMessage('Regular giving collection report');
+        $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+
+        $options = (new SlackOptions())
+            ->block((new SlackHeaderBlock(sprintf(
+                '[%s] %s',
+                $this->environment->name,
+                'Regular giving collection report',
+            ))))
+            ->block((new SlackSectionBlock())->text(<<<EOF
+                Regular giving collection report
+                
+                {$now}
+                
+                Generated when at least one mandate has something to do.
+                
+                $outputText
+                EOF
+            ));
+        $chatMessage->options($options);
+
+        $this->chatter->send($chatMessage);
+    }
+
+    /**
+     * Truncates a string to a length we can send to Slack
+     */
+    private function truncate(string $string): string
+    {
+        return (strlen($string) > 3_000) ?
+            substr($string, 0, 2_950) . "...\n\nReport truncated to fit in slack\n" :
+            $string;
     }
 }

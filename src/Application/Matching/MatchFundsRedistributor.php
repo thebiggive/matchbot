@@ -101,7 +101,7 @@ class MatchFundsRedistributor
                     $donation->getUuid(),
                     $amountMatchedBeforeRedistribution,
                     $amountMatchedAfterRedistribution,
-                    $donation->getCurrencyCode(),
+                    $donation->currency()->isoCode(),
                 ));
             }
 

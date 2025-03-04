@@ -22,6 +22,7 @@ use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
@@ -40,6 +41,7 @@ use Stripe\ConfirmationToken;
 use Stripe\Exception\PermissionException;
 use Stripe\PaymentIntent;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\Message\ChatMessage;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
@@ -160,7 +162,12 @@ class DonationServiceTest extends TestCase
 
         $this->donorAccountRepoProphecy->findByStripeIdOrNull($stripeCustomerId)->willReturn($donor);
 
-        $mandate->cancel();
+        $mandate->cancel(
+            reason: '',
+            at: new \DateTimeImmutable(),
+            type: MandateCancellationType::DonorRequestedCancellation
+        );
+
         $this->expectException(MandateNotActive::class);
         $this->expectExceptionMessage("Not confirming donation as mandate is 'Cancelled', not Active");
 
@@ -187,9 +194,6 @@ class DonationServiceTest extends TestCase
 
         $logger = $logger ?? new NullLogger();
 
-        $clockProphecy = $this->prophesize(ClockInterface::class);
-        $clockProphecy->now()->willReturn(new \DateTimeImmutable('1970-01-01')); // datetime doesnt matter
-        $clockProphecy->sleep(Argument::any())->will(fn() => null); // ignore calls to sleep
 
         return new DonationService(
             donationRepository: $this->donationRepoProphecy->reveal(),
@@ -199,7 +203,7 @@ class DonationServiceTest extends TestCase
             stripe: $this->stripeProphecy->reveal(),
             matchingAdapter: $this->prophesize(Adapter::class)->reveal(),
             chatter: $this->chatterProphecy->reveal(),
-            clock: $clockProphecy->reveal(),
+            clock: new MockClock(new \DateTimeImmutable('2025-01-01')),
             rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
             bus: $this->createStub(RoutableMessageBus::class),
@@ -268,10 +272,15 @@ class DonationServiceTest extends TestCase
             'application_fee_amount' => '52',
         ])->shouldBeCalledOnce();
 
+        $paymentIntent = new PaymentIntent($paymentIntentId);
+        $paymentIntent->status = PaymentIntent::STATUS_SUCCEEDED;
+
         $this->stripeProphecy->confirmPaymentIntent($paymentIntentId, [
             'confirmation_token' => $confirmationTokenId->stripeConfirmationTokenId,
             'capture_method' => 'automatic',
-        ])->shouldBeCalledOnce();
+        ])
+            ->willReturn($paymentIntent)
+            ->shouldBeCalledOnce();
 
         // act
         $this->getDonationService()->confirmOnSessionDonation($donation, $confirmationTokenId);

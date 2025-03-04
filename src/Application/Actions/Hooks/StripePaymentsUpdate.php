@@ -20,7 +20,9 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\Money;
+use MatchBot\Domain\RegularGivingService;
 use MatchBot\Domain\StripeCustomerId;
+use MatchBot\Domain\StripePaymentMethodId;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -54,6 +56,7 @@ class StripePaymentsUpdate extends Stripe
     public function __construct(
         protected DonationRepository $donationRepository,
         private DonationService $donationService,
+        private RegularGivingService $regularGivingService,
         private DonorAccountRepository $donorAccountRepository,
         protected EntityManagerInterface $entityManager,
         private DonationFundsNotifier $donationFundsNotifier,
@@ -141,6 +144,16 @@ class StripePaymentsUpdate extends Stripe
         if ($charge->status === 'succeeded') {
             $donationService = $this->donationService;
             $donationService->updateDonationStatusFromSucessfulCharge($charge, $donation);
+
+            $payment_method = $charge->payment_method;
+
+            // given that this is a successful charge it must have been paid by some method.
+            assert($payment_method !== null);
+
+            $this->regularGivingService->updatePossibleMandateFromSuccessfulCharge(
+                $donation,
+                StripePaymentMethodId::of($payment_method)
+            );
 
             $this->logger->info(sprintf(
                 'Set donation %s Collected based on hook for charge ID %s',
@@ -399,7 +412,7 @@ class StripePaymentsUpdate extends Stripe
             $donation->getUuid(),
             $eventType,
             bcdiv((string) $donation->getAmountFractionalIncTip(), '100', 2),
-            $donation->getCurrencyCode(),
+            $donation->currency()->isoCode(),
             bcdiv((string) $refundedOrDisputedAmount, '100', 2),
             strtoupper($refundedOrDisputedCurrencyCode),
         );

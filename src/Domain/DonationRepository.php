@@ -4,6 +4,7 @@
 
 use DateTime;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
+use MatchBot\Application\Commands\ExpirePendingMandates;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
@@ -54,6 +55,11 @@ interface DonationRepository
     public function releaseMatchFunds(Donation $donation): void;
 
     /**
+     * Finds incomplete donations created long enough ago to be eligible to have their match-funding removed.
+     *
+     * Excludes any donations created in relation to a regular giving mandate as those have a slightly different way
+     * of being matched and unmatched - {@see ExpirePendingMandates::doExecute()}
+     *
      * @return UuidInterface[]
      */
     public function findWithExpiredMatching(\DateTimeImmutable $now): array;
@@ -161,6 +167,11 @@ interface DonationRepository
     public function findPreAuthorizedDonationsReadyToConfirm(\DateTimeImmutable $atDateTime, int $limit): array;
 
     public function maxSequenceNumberForMandate(int $mandateId): ?DonationSequenceNumber;
+
+    /**
+     * @return list<Donation>
+     */
+    public function findPendingAndPreAuthedForMandate(int $mandateId): array;
 
     /**
      * Returns a limited size list of donation fund tip donations that have been left unpaid for some time and

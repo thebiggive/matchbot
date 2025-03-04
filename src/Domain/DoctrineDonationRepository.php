@@ -110,7 +110,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
                 ->getAvailableFundings($donation->getCampaign());
 
             foreach ($likelyAvailableFunds as $funding) {
-                if ($funding->getCurrencyCode() !== $donation->getCurrencyCode()) {
+                if ($funding->getCurrencyCode() !== $donation->currency()->isoCode()) {
                     throw new \UnexpectedValueException('Currency mismatch');
                 }
             }
@@ -185,6 +185,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             ->innerJoin('d.fundingWithdrawals', 'fw')
             ->where('d.donationStatus IN (:expireWithStatuses)')
             ->andWhere('d.createdAt < :expireBefore')
+            ->andWhere('d.mandate is null')
             ->groupBy('d.id')
             ->setParameter('expireWithStatuses', [DonationStatus::Pending->value, DonationStatus::Cancelled->value])
             ->setParameter('expireBefore', $cutoff)
@@ -765,7 +766,6 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             SELECT donation from Matchbot\Domain\Donation donation JOIN donation.mandate mandate
             WHERE donation.donationStatus = '$preAuthorized'
             AND mandate.status = '$active'
-            AND donation.transactionId is not null
             AND donation.preAuthorizationDate <= :atDateTime
         DQL
         );
@@ -847,5 +847,24 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     public function findAndLockOneByUUID(UuidInterface $donationId): ?Donation
     {
         return $this->findAndLockOneBy(['uuid' => $donationId->toString()]);
+    }
+
+    public function findPendingAndPreAuthedForMandate(int $mandateId): array
+    {
+        $pending = DonationStatus::Pending->value;
+        $preAuthorized = DonationStatus::PreAuthorized->value;
+
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT d from Matchbot\Domain\Donation d JOIN d.mandate m
+            WHERE m.id = :mandate_id
+            AND d.donationStatus IN ('$preAuthorized', '$pending')
+        DQL
+        );
+
+        $query->setParameter('mandate_id', $mandateId);
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
     }
 }
