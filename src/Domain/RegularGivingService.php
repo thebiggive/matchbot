@@ -530,17 +530,16 @@ readonly class RegularGivingService
      */
     public function changeDonorRegularGivingPaymentMethod(DonorAccount $donor, StripePaymentMethodId $methodId): PaymentMethod
     {
+        $newPaymentMethod = $this->stripe->retrievePaymentMethod($donor->stripeCustomerId, $methodId);
+        $donor->setRegularGivingPaymentMethod($methodId);
+
         $previousPaymentMethodId = $donor->getRegularGivingPaymentMethod();
         if ($previousPaymentMethodId) {
             $this->stripe->detatchPaymentMethod($previousPaymentMethodId);
         }
 
-        $paymentMethod = $this->stripe->retrievePaymentMethod($donor->stripeCustomerId, $methodId);
-
-        $donor->setRegularGivingPaymentMethod($methodId);
-
         $this->entityManager->flush();
 
-        return $paymentMethod;
+        return $newPaymentMethod;
     }
 }
