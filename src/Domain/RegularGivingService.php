@@ -65,7 +65,8 @@ readonly class RegularGivingService
      * @throws DonationNotCollected
      * @throws PaymentIntentNotSucceeded
      * @throws CampaignNotOpen
-     *
+     * @throws AccountDetailsMismatch
+     * @throws CouldNotCancelStripePaymentIntent
      * @throws UnexpectedValueException if the amount is out of the allowed range
      */
     public function setupNewMandate(
@@ -343,7 +344,7 @@ readonly class RegularGivingService
 
         if (!is_null($billingPostCode) && !is_null($donorBillingPostcode) && $billingPostCode !== $donorBillingPostcode) {
             throw new AccountDetailsMismatch(
-                "Mandate billing postcode {$billingPostCode} does not match donor account postocde {$donorBillingPostcode}"
+                "Mandate billing postcode {$billingPostCode} does not match donor account postcode {$donorBillingPostcode}"
             );
         }
     }
@@ -479,13 +480,17 @@ readonly class RegularGivingService
         \assert($donor !== null);
 
 
-        $this->activateMandateNotifyDonor(
-            firstDonation: $donation,
-            mandate: $mandate,
-            donor: $donor,
-            campaign: $donation->getCampaign(),
-            paymentMethodId: $paymentMethodId,
-        );
+        try {
+            $this->activateMandateNotifyDonor(
+                firstDonation: $donation,
+                mandate: $mandate,
+                donor: $donor,
+                campaign: $donation->getCampaign(),
+                paymentMethodId: $paymentMethodId,
+            );
+        } catch (\MatchBot\Application\AssertionFailedException $e) {
+            $this->log->warning("Could not activate regular giving mandate {$mandate->getId()}: {$e->getMessage()}");
+        }
     }
 
     /**
