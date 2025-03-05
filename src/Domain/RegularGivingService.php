@@ -20,8 +20,11 @@ use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
+use Slim\Exception\HttpBadRequestException;
 use Stripe\Exception\ApiErrorException as StripeApiErrorException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
 use UnexpectedValueException;
 
 readonly class RegularGivingService
@@ -37,6 +40,7 @@ readonly class RegularGivingService
         private LoggerInterface $log,
         private RegularGivingMandateRepository $regularGivingMandateRepository,
         private RegularGivingNotifier $regularGivingNotifier,
+        private Stripe $stripe,
     ) {
     }
 
@@ -516,5 +520,27 @@ readonly class RegularGivingService
                 MandateCancellationType::ReplacedByNewMandate,
             );
         }
+    }
+
+    /**
+     * Removes any existing regular giving payment method for a donor, and replaces it with a new one.
+     *
+     * @param StripePaymentMethodId $methodId must be a payment method attached to the given donor's stripe  customer account.
+     * @throws InvalidRequestException
+     */
+    public function changeDonorRegularGivingPaymentMethod(DonorAccount $donor, StripePaymentMethodId $methodId): PaymentMethod
+    {
+        $previousPaymentMethodId = $donor->getRegularGivingPaymentMethod();
+        if ($previousPaymentMethodId) {
+            $this->stripe->detatchPaymentMethod($previousPaymentMethodId);
+        }
+
+        $paymentMethod = $this->stripe->retrievePaymentMethod($donor->stripeCustomerId, $methodId);
+
+        $donor->setRegularGivingPaymentMethod($methodId);
+
+        $this->entityManager->flush();
+
+        return $paymentMethod;
     }
 }
