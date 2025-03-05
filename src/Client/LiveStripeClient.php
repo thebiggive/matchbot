@@ -10,6 +10,7 @@ use Stripe\BalanceTransaction;
 use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
+use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidArgumentException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
@@ -118,5 +119,13 @@ class LiveStripeClient implements Stripe
             $customerId->stripeCustomerId,
             $methodId->stripePaymentMethodId
         );
+    }
+
+    /**
+     * @throws ApiErrorException
+     */
+    public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void
+    {
+        $this->stripeClient->paymentMethods->detach($paymentMethodId->stripePaymentMethodId);
     }
 }

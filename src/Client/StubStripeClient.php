@@ -107,4 +107,9 @@ class StubStripeClient implements Stripe
     {
         throw new \Exception("Retrieve Payment Method not implemented in stub - not currently used in load tests");
     }
+
+    public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void
+    {
+        throw new \Exception("Detatch Payment Method not implemented in stub - not currently used in load tests");
+    }
 }

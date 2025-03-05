@@ -71,4 +71,6 @@ interface Stripe
      * @throws InvalidRequestException
      */
     public function retrievePaymentMethod(StripeCustomerId $customerId, StripePaymentMethodId $methodId): PaymentMethod;
+
+    public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void;
 }
