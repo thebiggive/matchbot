@@ -14,6 +14,7 @@ class DonationNotifier
 
         $paymentMethodType = $donation->getPaymentMethodType();
         $emailAddress = $donation->getDonorEmailAddress();
+        $collectedAt = $donation->getCollectedAt();
 
         Assertion::notNull(
             $paymentMethodType,
@@ -24,6 +25,12 @@ class DonationNotifier
             $emailAddress,
             "email address should not be null for successful donation: {$donation}"
         );
+
+        Assertion::notNull(
+            $collectedAt,
+            "collectedAt should not be null for successful donation: {$donation}"
+        );
+
 
         $campaign = $donation->getCampaign();
         $charity = $campaign->getCharity();
@@ -42,6 +49,7 @@ class DonationNotifier
             'donationAmount' => (float)$donation->getAmount(),
             'donorFirstName' => $donation->getDonorFirstName(),
             'paymentMethodType' => $paymentMethodType->value,
+            'donationDatetime' => $collectedAt->format('c'),
             'donorLastName' => $donation->getDonorLastName(),
             'giftAidAmountClaimed' => (float) $donation->getGiftAidValue(),
             'matchedAmount' => (float) $matchedAmount,

@@ -42,6 +42,7 @@ class DonationNotifierTest extends TestCase
                     'donationAmount' => 10.0,
                     'donorFirstName' => 'Genny',
                     'donorLastName' => 'Jenerous',
+                    'donationDatetime' => '2025-03-06T18:46:39+00:00',
                     'paymentMethodType' => 'card',
                     'giftAidAmountClaimed' => 2.50,
                     'matchedAmount' => 6.0,
@@ -84,7 +85,7 @@ class DonationNotifierTest extends TestCase
             cardBrand: null,
             cardCountry: null,
             originalFeeFractional: '100',
-            chargeCreationTimestamp: 0
+            chargeCreationTimestamp: (new \DateTimeImmutable('2025-03-06T18:46:39+00:00'))->getTimestamp()
         );
 
         $this->addMatchFunds($donation, '1', FundType::Pledge);
