@@ -27,31 +27,28 @@ class RegularGivingNotifier
         $signUpDate = $mandate->getActiveFrom();
         Assertion::notNull($signUpDate);
 
-        $this->mailer->sendEmail(
+        $this->mailer->accept(SendEmailCommand::donorMandateConfirmation(
+            $donorAccount->emailAddress,
             [
-                'templateKey' => 'donor-mandate-confirmation',
-                'recipientEmailAddress' => $donorAccount->emailAddress->email,
-                'params' => [
-                    'donorName' => $donorAccount->donorName->fullName(),
-                    'charityName' => $charity->getName(),
-                    'campaignName' => $campaign->getCampaignName(),
-                    'charityNumber' => $charity->getRegulatorNumber(),
-                    'campaignThankYouMessage' => $campaign->getThankYouMessage(),
-                    'signupDate' => $signUpDate->format('d/m/Y H:i'),
-                    'schedule' => $mandate->describeSchedule(),
-                    'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())->format('d/m/Y'),
-                    'amount' => $mandate->getDonationAmount()->format(),
-                    'giftAidValue' => $mandate->getGiftAidAmount()->format(),
-                    'totalIncGiftAid' => $mandate->totalIncGiftAid()->format(),
-                    'totalCharged' => $mandate->getDonationAmount()->format(),
-                    'firstDonation' => $this->donationToConfirmationEmailFields(
-                        $firstDonation,
-                        $charity,
-                        $campaign
-                    )
-                ],
+                'donorName' => $donorAccount->donorName->fullName(),
+                'charityName' => $charity->getName(),
+                'campaignName' => $campaign->getCampaignName(),
+                'charityNumber' => $charity->getRegulatorNumber(),
+                'campaignThankYouMessage' => $campaign->getThankYouMessage(),
+                'signupDate' => $signUpDate->format('d/m/Y H:i'),
+                'schedule' => $mandate->describeSchedule(),
+                'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())->format('d/m/Y'),
+                'amount' => $mandate->getDonationAmount()->format(),
+                'giftAidValue' => $mandate->getGiftAidAmount()->format(),
+                'totalIncGiftAid' => $mandate->totalIncGiftAid()->format(),
+                'totalCharged' => $mandate->getDonationAmount()->format(),
+                'firstDonation' => $this->donationToConfirmationEmailFields(
+                    $firstDonation,
+                    $charity,
+                    $campaign
+                )
             ]
-        );
+        ));
     }
 
     /**

@@ -4,6 +4,7 @@ namespace MatchBot\Client;
 
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
+use MatchBot\Domain\SendEmailCommand;
 
 /**
  * Originally created as a copy of the similar class BigGive\Identity\Client in Identity repo & adapted to fit in
@@ -73,5 +74,16 @@ class Mailer extends Common
     private function baseUri(): string
     {
         return $this->getMailerSetting('baseUri');
+    }
+
+    public function accept(SendEmailCommand $command): void
+    {
+        $this->sendEmail(
+            [
+                'templateKey' => $command->templateKey,
+                'recipientEmailAddress' => $command->emailAddress->email,
+                'params' => $command->params,
+            ]
+        );
     }
 }

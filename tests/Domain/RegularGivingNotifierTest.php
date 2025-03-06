@@ -24,6 +24,7 @@ use MatchBot\Domain\Fund;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\Salesforce18Id;
+use MatchBot\Domain\SendEmailCommand;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -45,10 +46,9 @@ class RegularGivingNotifierTest extends TestCase
         $donor = $this->givenADonor();
         list($campaign, $mandate, $firstDonation, $clock) = $this->andGivenAnActivatedMandate($this->personId, $donor);
 
-        $this->thenThisRequestShouldBeSentToMatchbot([
-            "templateKey" => "donor-mandate-confirmation",
-            "recipientEmailAddress" => "donor@example.com",
-            "params" => [
+        $this->thenThisRequestShouldBeSentToMatchbot(SendEmailCommand::donorMandateConfirmation(
+            EmailAddress::of("donor@example.com"),
+            [
                 "donorName" => "Jenny Generous",
                 "charityName" => "Charity Name",
                 "campaignName" => "someCampaign",
@@ -74,7 +74,7 @@ class RegularGivingNotifierTest extends TestCase
                     'totalCharityValueAmount' => 144.00,
                 ]
             ]
-        ]);
+        ));
 
         $this->whenWeNotifyThemThatTheMandateWasCreated($clock, $mandate, $donor, $campaign, $firstDonation);
     }
@@ -180,11 +180,11 @@ class RegularGivingNotifierTest extends TestCase
         return [$campaign, $mandate, $firstDonation, $clock];
     }
 
-    private function thenThisRequestShouldBeSentToMatchbot(array $requestBody): void
+    private function thenThisRequestShouldBeSentToMatchbot(SendEmailCommand $sendEmailCommand): void
     {
-        $this->mailerProphecy->sendEmail(Argument::any())
+        $this->mailerProphecy->accept(Argument::any())
             ->shouldBeCalledOnce()
-            ->will(fn(array $args) => TestCase::assertEqualsCanonicalizing($args[0], $requestBody));
+            ->will(fn(array $args) => TestCase::assertEqualsCanonicalizing($args[0], $sendEmailCommand));
     }
 
     private function whenWeNotifyThemThatTheMandateWasCreated(
