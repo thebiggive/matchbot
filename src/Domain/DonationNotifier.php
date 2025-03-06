@@ -49,10 +49,18 @@ class DonationNotifier
             'totalChargedAmount' => (float) $donation->getTotalPaidByDonor(),
             'totalCharityValueAmount' => (float) $donation->totalCharityValueAmount(),
             'transactionId' => $donation->getTransactionId(),
+            'charityRegistrationAuthority' => $charity->getRegulatorName(),
 
-            // There are other params that are currently sent from SF but not officially required by mailer, e.g.
-            // charityPhoneNumber, charityLogoUri etc etc. These should be added before this function is used
-            // in production, but the data for them is not yet available in matchbot DB.
+            // There are other params that are currently sent from SF but not officially required by mailer.
+            // These should be added before this function is used in production, but the data for them is not yet
+            // available in matchbot DB. Params needed:
+            //
+            // - charityLogoUri
+            // - charityPostalAddress
+            // - charityPhoneNumber
+            // - charityEmailAddress
+            // - charityWebsite
+            // - charityNumber
         ]);
     }
 }

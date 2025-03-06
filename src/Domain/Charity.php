@@ -33,10 +33,40 @@ class Charity extends SalesforceReadProxy
     ];
 
     /**
+     * HMRC-permitted regulator codes and names
+     */
+    public const array REGULATORS = [
+        'CCEW' => 'Charity Commission for England and Wales',
+        'OSCR' => 'Office of the Scottish Charity Regulator',
+        'CCNI' => 'Charity Commission for Northern Ireland',
+    ];
+
+    /**
      * @var string
      */
     #[ORM\Column(type: 'string')]
     protected string $name;
+
+    /**
+     * MAT-400 todo - introduce the following properties, pull from SF and use in
+     * \MatchBot\Domain\DonationNotifier::emailCommandForCollectedDonation .
+
+            #[ORM\Column(type: 'string', length: 255, nullable: true)]
+            protected ?string $logoUri = null;
+
+            // For sending emails we only need postal address as a single string - but its stored as separate lines
+            // in SF. Consider whether to have it as a string here or preserve more information keeping the separate
+            // lines as separate fields. Could be useful for ad-hoc queries by us, plus in case we want to introduce
+            // e.g. regional filtering options.
+            #[ORM\Column(type: 'string', length: 1500, nullable: true)]
+            protected ?string $postalAddress = null;
+
+            #[ORM\Column(type: 'string', length: 255, nullable: true)]
+            protected ?string $phoneNumber = null;
+
+            #[ORM\Column(type: 'string', length: 255, nullable: true)]
+            protected ?string $websiteURI = null;
+     */
 
     /**
      * @var string
@@ -51,11 +81,10 @@ class Charity extends SalesforceReadProxy
     protected ?string $hmrcReferenceNumber = null;
 
     /**
-     * HMRC-permitted values: CCEW, CCNI, OSCR. Anything else should have this null and
+     * HMRC-permitted values only. Anything else should have this null and
      * just store an "OtherReg" number in `$regulatorNumber` if applicable.
      *
-     * @var ?string
-     * @see Charity::$permittedRegulators
+     * @var key-of<self::REGULATORS> |null
      */
     #[ORM\Column(type: 'string', length: 4, nullable: true)]
     protected ?string $regulator = null;
@@ -65,8 +94,6 @@ class Charity extends SalesforceReadProxy
      */
     #[ORM\Column(type: 'string', length: 10, nullable: true)]
     protected ?string $regulatorNumber = null;
-
-    private static array $permittedRegulators = ['CCEW', 'CCNI', 'OSCR'];
 
     /**
      * @var bool    Whether the charity's Gift Aid is expected to be claimed by the Big Give. This
@@ -185,7 +212,7 @@ class Charity extends SalesforceReadProxy
 
     public function setRegulator(?string $regulator): void
     {
-        if ($regulator !== null && !in_array($regulator, static::$permittedRegulators, true)) {
+        if ($regulator !== null && !array_key_exists($regulator, self::REGULATORS)) {
             throw new \UnexpectedValueException(sprintf('Regulator %s not known', $regulator));
         }
 
@@ -275,5 +302,14 @@ class Charity extends SalesforceReadProxy
         \assert($return !== null);
 
         return $return;
+    }
+
+    public function getRegulatorName(): ?string
+    {
+        if ($this->regulator == null) {
+            return null;
+        }
+
+        return self::REGULATORS[$this->regulator];
     }
 }
