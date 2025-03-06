@@ -33,25 +33,30 @@ class DonationNotifierTest extends TestCase
                 'donor-donation-success',
                 'fred@example.com',
                 [
-                    // required params taken from mailer repo:
+                    // includes required params taken from mailer repo:
                     // https://github.com/thebiggive/mailer/blob/ca2c70f10720a66ff8fb041d3af430a07f49d625/app/settings.php#L28
+                    // and other params used in template.
+
                     'campaignName' => 'someCampaign',
                     'campaignThankYouMessage' => "Thank you for your donation.",
                     'charityName' => 'Charity Name',
+                    'charityRegistrationAuthority' => 'Charity Commission for England and Wales',
                     'currencyCode' => 'GBP',
+
                     'donationAmount' => 10.0,
+                    'donationDatetime' => '2025-03-06T18:46:39+00:00',
                     'donorFirstName' => 'Genny',
                     'donorLastName' => 'Jenerous',
-                    'donationDatetime' => '2025-03-06T18:46:39+00:00',
-                    'paymentMethodType' => 'card',
                     'giftAidAmountClaimed' => 2.50,
+
                     'matchedAmount' => 6.0,
+                    'paymentMethodType' => 'card',
+                    'statementReference' => 'Big Give Charity Name',
                     'tipAmount' => 2.0,
                     'totalChargedAmount' => 12.00,
+
                     'totalCharityValueAmount' => 18.50, // amount + matched amount + gift aid
                     'transactionId' => 'some-transaction-id',
-                    'charityRegistrationAuthority' => 'Charity Commission for England and Wales',
-                    'statementReference' => 'Big Give Charity Name',
                 ]
             ],
             [$emailCommand->templateKey, $emailCommand->emailAddress->email, $emailCommand->params]

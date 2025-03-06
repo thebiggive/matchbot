@@ -45,20 +45,23 @@ class DonationNotifier
             'campaignName' => $campaign->getCampaignName(),
             'campaignThankYouMessage' => $campaign->getThankYouMessage(),
             'charityName' => $charity->getName(),
+            'charityRegistrationAuthority' => $charity->getRegulatorName(),
             'currencyCode' => $donation->currency()->isoCode(),
+
             'donationAmount' => (float)$donation->getAmount(),
-            'donorFirstName' => $donation->getDonorFirstName(),
-            'paymentMethodType' => $paymentMethodType->value,
             'donationDatetime' => $collectedAt->format('c'),
+            'donorFirstName' => $donation->getDonorFirstName(),
             'donorLastName' => $donation->getDonorLastName(),
             'giftAidAmountClaimed' => (float) $donation->getGiftAidValue(),
+
             'matchedAmount' => (float) $matchedAmount,
+            'paymentMethodType' => $paymentMethodType->value,
+            'statementReference' => $charity->getStatementDescriptor(),
             'tipAmount' => (float) $donation->getTipAmount(),
             'totalChargedAmount' => (float) $donation->getTotalPaidByDonor(),
+
             'totalCharityValueAmount' => (float) $donation->totalCharityValueAmount(),
             'transactionId' => $donation->getTransactionId(),
-            'charityRegistrationAuthority' => $charity->getRegulatorName(),
-            'statementReference' => $charity->getStatementDescriptor(),
 
             // There are other params that are currently sent from SF but not officially required by mailer.
             // These should be added before this function is used in production, but the data for them is not yet
