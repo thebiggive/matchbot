@@ -65,6 +65,8 @@ class RegularGivingNotifier
 
         Assertion::notNull($firstDonationCollectedAt, 'First donation collected at should not be null');
 
+        // todo: consider remvoing duplication below with code in
+        // DonationNotifier::emailCommandForCollectedDonation
         return [
             'currencyCode' => $firstDonation->currency()->isoCode(),
             'donationAmount' => $firstDonation->getAmount(),

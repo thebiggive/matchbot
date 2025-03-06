@@ -58,6 +58,7 @@ class DonationNotifier
             'totalCharityValueAmount' => (float) $donation->totalCharityValueAmount(),
             'transactionId' => $donation->getTransactionId(),
             'charityRegistrationAuthority' => $charity->getRegulatorName(),
+            'statementReference' => $charity->getStatementDescriptor(),
 
             // There are other params that are currently sent from SF but not officially required by mailer.
             // These should be added before this function is used in production, but the data for them is not yet
