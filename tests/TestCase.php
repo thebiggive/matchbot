@@ -11,6 +11,8 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonorName;
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
@@ -259,6 +261,8 @@ class TestCase extends PHPUnitTestCase
         ?RegularGivingMandate $regularGivingMandate = null,
         ?Campaign $campaign = null,
         string $tipAmount = '0',
+        ?EmailAddress $emailAddress = null,
+        ?DonorName $donorName = null,
     ): Donation {
         return new Donation(
             amount: $amount,
@@ -269,8 +273,8 @@ class TestCase extends PHPUnitTestCase
             championComms: null,
             pspCustomerId: null,
             optInTbgEmail: null,
-            donorName: null,
-            emailAddress: null,
+            donorName: $donorName,
+            emailAddress: $emailAddress,
             countryCode: null,
             tipAmount: $tipAmount,
             mandate: $regularGivingMandate,

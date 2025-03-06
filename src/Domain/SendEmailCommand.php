@@ -21,4 +21,13 @@ readonly class SendEmailCommand
     {
         return new self('donor-mandate-confirmation', $emailAddress, $params);
     }
+
+    public static function donorDonationSuccess(Donation $donation): self
+    {
+        $emailAddress = $donation->getDonorEmailAddress() ?? throw new \RuntimeException("Missing email address for donation $donation");
+
+        return new self('donor-donation-success', $emailAddress, [
+
+        ]);
+    }
 }
