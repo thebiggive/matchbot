@@ -35,8 +35,6 @@ class DonationNotifier
         $campaign = $donation->getCampaign();
         $charity = $campaign->getCharity();
 
-        $fundingWithdrawalsByType = $donation->getWithdrawalTotalByFundType();
-
         return SendEmailCommand::donorDonationSuccess($emailAddress, [
             // see required params in mailer:
             // https://github.com/thebiggive/mailer/blob/ca2c70f10720a66ff8fb041d3af430a07f49d625/app/settings.php#L27
