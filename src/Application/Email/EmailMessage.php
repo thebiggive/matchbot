@@ -5,7 +5,7 @@ namespace MatchBot\Application\Email;
 use MatchBot\Domain\EmailAddress;
 
 /**
- * A message to be sent email, via our Mailer service
+ * A message to be sent by email, via our Mailer service
  *
  * @psalm-type emailParams array<string,string|null|int|float|array>
  */
