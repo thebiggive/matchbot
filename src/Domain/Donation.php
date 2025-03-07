@@ -576,9 +576,7 @@ class Donation extends SalesforceWriteProxy
             'homeAddress' => $this->getDonorHomeAddressLine1(),
             'homePostcode' => $this->getDonorHomePostcode(),
             'lastName' => $this->getDonorLastName(true),
-            'matchedAmount' => $this->getDonationStatus()->isSuccessful()
-                ? (float) $this->getFundingWithdrawalTotal()
-                : 0,
+            'matchedAmount' => $this->matchedAmount()->toMajorUnitFloat(),
             'matchReservedAmount' => 0,
             'optInCharityEmail' => $this->getCharityComms(),
             'optInChampionEmail' => $this->getChampionComms(),
@@ -1789,5 +1787,12 @@ class Donation extends SalesforceWriteProxy
     public function currency(): Currency
     {
         return Currency::fromIsoCode($this->currencyCode);
+    }
+
+    public function matchedAmount(): Money
+    {
+        return $this->getDonationStatus()->isSuccessful()
+            ? $this->getFundingWithdrawalTotalAsObject()
+            : Money::zero($this->currency());
     }
 }
