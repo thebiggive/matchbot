@@ -60,6 +60,16 @@ class Campaign extends SalesforceReadProxy
     protected string $name;
 
     /**
+     * Full data about this campaign as received from Salesforce. Not for use as-is in Matchbot domain logic but
+     * may be used in ad-hoc queries, migrations, and perhaps for outputting to FE to provide compatibility with the SF
+     * API. Charity data is ommitted here to avoid duplication with {@see Charity::$salesforceData}.
+     * @psalm-suppress UnusedProperty
+     * @var array<string, mixed>
+     */
+    #[ORM\Column(type: "json", nullable: false)]
+    private array $salesforceData = [];
+
+    /**
      * The first moment when donors should be able to make a donation, or a regular giving mandate
      **/
     #[ORM\Column(type: 'datetime')]
@@ -114,7 +124,8 @@ class Campaign extends SalesforceReadProxy
      * @param \DateTimeImmutable|null $regularGivingCollectionEnd
      * @param Salesforce18Id<Campaign> $sfId
      * @param bool $isRegularGiving
-     */
+     * @param array<string,mixed> $rawData - data about the campaign as sent from Salesforce
+     * */
     public function __construct(
         Salesforce18Id $sfId,
         Charity $charity,
@@ -128,6 +139,7 @@ class Campaign extends SalesforceReadProxy
         bool $isRegularGiving,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         ?string $thankYouMessage = null,
+        array $rawData = [],
     ) {
         $this->createdNow();
         $this->campaignFundings = new ArrayCollection();
@@ -142,9 +154,10 @@ class Campaign extends SalesforceReadProxy
             name: $name,
             startDate: $startDate,
             ready: $ready,
-            thankYouMessage: $thankYouMessage,
             isRegularGiving: $isRegularGiving,
             regularGivingCollectionEnd: $regularGivingCollectionEnd,
+            thankYouMessage: $thankYouMessage,
+            sfData: $rawData,
         );
     }
 
@@ -296,6 +309,9 @@ class Campaign extends SalesforceReadProxy
         return $this->ready;
     }
 
+    /**
+     * @param array<string,mixed> $sfData
+     */
     final public function updateFromSfPull(
         string $currencyCode,
         ?string $status,
@@ -307,6 +323,7 @@ class Campaign extends SalesforceReadProxy
         bool $isRegularGiving,
         ?\DateTimeImmutable $regularGivingCollectionEnd,
         ?string $thankYouMessage,
+        array $sfData,
     ): void {
         Assertion::lessOrEqualThan(
             $startDate,
@@ -336,6 +353,9 @@ class Campaign extends SalesforceReadProxy
         $this->thankYouMessage = $thankYouMessage;
         $this->isRegularGiving = $isRegularGiving;
         $this->regularGivingCollectionEnd = $regularGivingCollectionEnd;
+
+        unset($sfData['charity']); // charity stores its own data, we don't need to keep a copy here.
+        $this->salesforceData = $sfData;
     }
 
     public function getStatus(): ?string

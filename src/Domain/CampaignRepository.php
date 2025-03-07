@@ -294,9 +294,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
             name: $campaignData['title'],
             startDate: new DateTime($campaignData['startDate']),
             ready: $campaignData['ready'],
-            thankYouMessage: $campaignData['thankYouMessage'],
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
+            thankYouMessage: $campaignData['thankYouMessage'],
+            sfData: $campaignData,
         );
         $this->getEntityManager()->flush();
     }

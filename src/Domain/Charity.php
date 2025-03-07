@@ -48,7 +48,7 @@ class Charity extends SalesforceReadProxy
     protected string $name;
 
     /**
-     * Full data about this charity exactly received from Salesforce. Not for use as-is in Matchbot domain logic but
+     * Full data about this charity as received from Salesforce. Not for use as-is in Matchbot domain logic but
      * may be used in ad-hoc queries, migrations, and perhaps for outputting to FE to provide compatibility with the SF
      * API.
      * @psalm-suppress UnusedProperty
