@@ -37,8 +37,6 @@ class DonationNotifier
 
         $fundingWithdrawalsByType = $donation->getWithdrawalTotalByFundType();
 
-        $matchedAmount = bcadd($fundingWithdrawalsByType['amountMatchedByPledges'], $fundingWithdrawalsByType['amountMatchedByChampionFunds'], 2);
-
         return SendEmailCommand::donorDonationSuccess($emailAddress, [
             // see required params in mailer:
             // https://github.com/thebiggive/mailer/blob/ca2c70f10720a66ff8fb041d3af430a07f49d625/app/settings.php#L27
@@ -54,7 +52,7 @@ class DonationNotifier
             'donorLastName' => $donation->getDonorLastName(),
             'giftAidAmountClaimed' => (float) $donation->getGiftAidValue(),
 
-            'matchedAmount' => (float) $matchedAmount,
+            'matchedAmount' => $donation->matchedAmount()->toMajorUnitFloat(),
             'paymentMethodType' => $paymentMethodType->value,
             'statementReference' => $charity->getStatementDescriptor(),
             'tipAmount' => (float) $donation->getTipAmount(),
