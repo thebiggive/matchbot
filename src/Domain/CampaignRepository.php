@@ -191,15 +191,18 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function newCharityFromCampaignData(array $campaignData): Charity
     {
+        $charityData = $campaignData['charity'];
+
         return new Charity(
-            salesforceId: $campaignData['charity']['id'],
-            charityName: $campaignData['charity']['name'],
-            stripeAccountId: $campaignData['charity']['stripeAccountId'],
-            hmrcReferenceNumber: $campaignData['charity']['hmrcReferenceNumber'],
-            giftAidOnboardingStatus: $campaignData['charity']['giftAidOnboardingStatus'],
-            regulator: $this->getRegulatorHMRCIdentifier($campaignData['charity']['regulatorRegion']),
-            regulatorNumber: $campaignData['charity']['regulatorNumber'],
+            salesforceId: $charityData['id'],
+            charityName: $charityData['name'],
+            stripeAccountId: $charityData['stripeAccountId'],
+            hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
+            giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
+            regulator: $this->getRegulatorHMRCIdentifier($charityData['regulatorRegion']),
+            regulatorNumber: $charityData['regulatorNumber'],
             time: new \DateTime('now'),
+            rawData: $charityData,
         );
     }
 
@@ -208,13 +211,16 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function updateCharityFromCampaignData(Charity $charity, array $campaignData): void
     {
+        $charityData = $campaignData['charity'];
+
         $charity->updateFromSfPull(
-            charityName: $campaignData['charity']['name'],
-            stripeAccountId: $campaignData['charity']['stripeAccountId'],
-            hmrcReferenceNumber: $campaignData['charity']['hmrcReferenceNumber'],
-            giftAidOnboardingStatus: $campaignData['charity']['giftAidOnboardingStatus'],
-            regulator: $this->getRegulatorHMRCIdentifier($campaignData['charity']['regulatorRegion']),
-            regulatorNumber: $campaignData['charity']['regulatorNumber'],
+            charityName: $charityData['name'],
+            stripeAccountId: $charityData['stripeAccountId'],
+            hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
+            giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
+            regulator: $this->getRegulatorHMRCIdentifier($charityData['regulatorRegion']),
+            regulatorNumber: $charityData['regulatorNumber'],
+            rawData: $charityData,
             time: new \DateTime('now'),
         );
     }
