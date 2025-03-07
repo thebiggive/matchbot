@@ -40,6 +40,8 @@ class DonationNotifierTest extends TestCase
                     'campaignName' => 'someCampaign',
                     'campaignThankYouMessage' => "Thank you for your donation.",
                     'charityName' => 'Charity Name',
+                    'charityNumber' => 'Reg-no',
+                    'charityIsExempt' => false,
                     'charityRegistrationAuthority' => 'Charity Commission for England and Wales',
                     'currencyCode' => 'GBP',
 

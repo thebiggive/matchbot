@@ -51,6 +51,11 @@ class DonationNotifier
             'campaignThankYouMessage' => $campaign->getThankYouMessage(),
             'charityName' => $charity->getName(),
             'charityRegistrationAuthority' => $charity->getRegulatorName(),
+            'charityNumber' => $charity->getRegulatorNumber(),
+
+            // charityIsExempt is not yet used by mailer as it has its own logic
+            // to work out if a charity is exempt. I'm hoping we can remove that soon.
+            'charityIsExempt' => $charity->isExempt(),
             'currencyCode' => $donation->currency()->isoCode(),
 
             'donationAmount' => (float)$donation->getAmount(),

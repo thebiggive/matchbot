@@ -312,4 +312,13 @@ class Charity extends SalesforceReadProxy
 
         return self::REGULATORS[$this->regulator];
     }
+
+    public function isExempt(): bool
+    {
+        // This is a slightly risky assumption to make, but mailer is already making it. By moving the logic
+        // to here it gets one step closer to directly storing what was entered.
+
+        // todo - adjust \MatchBot\Domain\CampaignRepository::doUpdateFromSf to recognise the magic value 'Exempt'
+        return $this->regulatorNumber === null;
+    }
 }
