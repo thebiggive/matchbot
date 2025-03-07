@@ -13,7 +13,7 @@ use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\Salesforce18Id;
-use MatchBot\Domain\SendEmailCommand;
+use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Tests\TestCase;
 
 class DonationNotifierTest extends TestCase
@@ -26,7 +26,7 @@ class DonationNotifierTest extends TestCase
             tipAmount: '2',
         );
 
-        $emailCommand = DonationNotifier::emailCommandForCollectedDonation($donation);
+        $emailCommand = DonationNotifier::emailMessageForCollectedDonation($donation);
 
         $this->assertEquals(
             [

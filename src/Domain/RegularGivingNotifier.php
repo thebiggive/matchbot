@@ -3,6 +3,7 @@
 namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Client\Mailer;
 use Psr\Clock\ClockInterface;
 
@@ -27,7 +28,7 @@ class RegularGivingNotifier
         $signUpDate = $mandate->getActiveFrom();
         Assertion::notNull($signUpDate);
 
-        $this->mailer->accept(SendEmailCommand::donorMandateConfirmation(
+        $this->mailer->send(EmailMessage::donorMandateConfirmation(
             $donorAccount->emailAddress,
             [
                 'donorName' => $donorAccount->donorName->fullName(),

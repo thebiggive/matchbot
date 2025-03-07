@@ -1,11 +1,15 @@
 <?php
 
-namespace MatchBot\Domain;
+namespace MatchBot\Application\Email;
+
+use MatchBot\Domain\EmailAddress;
 
 /**
+ * A message to be sent email, via our Mailer service
+ *
  * @psalm-type emailParams array<string,string|null|int|float|array>
  */
-readonly class SendEmailCommand
+readonly class EmailMessage
 {
     /**
      * @param emailParams $params

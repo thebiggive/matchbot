@@ -24,7 +24,7 @@ use MatchBot\Domain\Fund;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\RegularGivingNotifier;
 use MatchBot\Domain\Salesforce18Id;
-use MatchBot\Domain\SendEmailCommand;
+use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -46,7 +46,7 @@ class RegularGivingNotifierTest extends TestCase
         $donor = $this->givenADonor();
         list($campaign, $mandate, $firstDonation, $clock) = $this->andGivenAnActivatedMandate($this->personId, $donor);
 
-        $this->thenThisRequestShouldBeSentToMatchbot(SendEmailCommand::donorMandateConfirmation(
+        $this->thenThisRequestShouldBeSentToMatchbot(EmailMessage::donorMandateConfirmation(
             EmailAddress::of("donor@example.com"),
             [
                 "donorName" => "Jenny Generous",
@@ -180,9 +180,9 @@ class RegularGivingNotifierTest extends TestCase
         return [$campaign, $mandate, $firstDonation, $clock];
     }
 
-    private function thenThisRequestShouldBeSentToMatchbot(SendEmailCommand $sendEmailCommand): void
+    private function thenThisRequestShouldBeSentToMatchbot(EmailMessage $sendEmailCommand): void
     {
-        $this->mailerProphecy->accept(Argument::any())
+        $this->mailerProphecy->send(Argument::any())
             ->shouldBeCalledOnce()
             ->will(fn(array $args) => TestCase::assertEqualsCanonicalizing($args[0], $sendEmailCommand));
     }

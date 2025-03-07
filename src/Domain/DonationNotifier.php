@@ -3,10 +3,11 @@
 namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Email\EmailMessage;
 
 class DonationNotifier
 {
-    public static function emailCommandForCollectedDonation(Donation $donation): SendEmailCommand
+    public static function emailMessageForCollectedDonation(Donation $donation): EmailMessage
     {
         if (! $donation->getDonationStatus()->isSuccessful()) {
             throw new \RuntimeException("{$donation} is not successful - cannot send success email");
@@ -31,11 +32,10 @@ class DonationNotifier
             "collectedAt should not be null for successful donation: {$donation}"
         );
 
-
         $campaign = $donation->getCampaign();
         $charity = $campaign->getCharity();
 
-        return SendEmailCommand::donorDonationSuccess($emailAddress, [
+        return EmailMessage::donorDonationSuccess($emailAddress, [
             // see required params in mailer:
             // https://github.com/thebiggive/mailer/blob/ca2c70f10720a66ff8fb041d3af430a07f49d625/app/settings.php#L27
             'campaignName' => $campaign->getCampaignName(),
