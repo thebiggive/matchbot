@@ -1803,4 +1803,9 @@ class Donation extends SalesforceWriteProxy
             ? $this->getFundingWithdrawalTotalAsObject()
             : Money::zero($this->currency());
     }
+
+    public function isRegularGiving(): bool
+    {
+        return $this->mandate !== null;
+    }
 }

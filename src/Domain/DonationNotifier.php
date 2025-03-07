@@ -4,9 +4,18 @@ namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Email\EmailMessage;
+use MatchBot\Client\Mailer;
 
 class DonationNotifier
 {
+    /**
+     * @psalm-suppress PossiblyUnusedMethod - used by DI container
+     */
+    public function __construct(
+        private Mailer $mailer
+    ) {
+    }
+
     public static function emailMessageForCollectedDonation(Donation $donation): EmailMessage
     {
         if (! $donation->getDonationStatus()->isSuccessful()) {
@@ -70,5 +79,16 @@ class DonationNotifier
             // - charityWebsite
             // - charityNumber
         ]);
+    }
+
+    public function notifyDonorOfDonationSuccess(Donation $donation): void
+    {
+        if ($donation->isRegularGiving()) {
+            // Regular giving donors get an email confirming the setup of the mandate, but not an email for
+            // each individual donation.
+            return;
+        }
+
+        $this->mailer->send(self::emailMessageForCollectedDonation($donation));
     }
 }

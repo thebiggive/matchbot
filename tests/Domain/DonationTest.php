@@ -256,7 +256,7 @@ class DonationTest extends TestCase
                 'homePostcode' => null,
                 'lastName' => 'N/A',
                 'mandate' => null,
-                'matchedAmount' => 0,
+                'matchedAmount' => 0.0,
                 'optInChampionEmail' => null,
                 'optInCharityEmail' => null,
                 'optInTbgEmail' => null,
@@ -274,6 +274,7 @@ class DonationTest extends TestCase
                 'totalPaid' => null,
                 'transactionId' => null,
                 'updatedTime' => $donation->getUpdatedDate()->format('c'),
+                'emailHandledByMatchbot' => false,
             ],
             $donation->toSfAPIModel()
         );
