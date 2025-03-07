@@ -143,6 +143,7 @@ class StripePaymentsUpdate extends Stripe
         // as this is the only event type we're handling right now besides refunds.
         if ($charge->status === 'succeeded') {
             $donationService = $this->donationService;
+            $this->logger->info('got charge in handleChargeSucceeded: #' . $charge->id);
             $donationService->updateDonationStatusFromSucessfulCharge($charge, $donation);
 
             $payment_method = $charge->payment_method;

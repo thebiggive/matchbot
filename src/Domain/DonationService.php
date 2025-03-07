@@ -688,12 +688,13 @@ class DonationService
             return;
         }
 
+        $this->logger->info('got charge in queryStripeToUpdateDonationStatus: #' . $charge->id);
         $this->updateDonationStatusFromSucessfulCharge($charge, $donation);
     }
 
     public function updateDonationStatusFromSucessfulCharge(Charge $charge, Donation $donation): void
     {
-        $this->logger->info('updating donation from charge: ' . $charge->toJson());
+        $this->logger->info('updating donation from charge: #' . $charge->id);
 
         /**
          * @var array|Card|null $card
