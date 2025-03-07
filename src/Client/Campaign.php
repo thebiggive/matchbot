@@ -47,7 +47,6 @@ class Campaign extends Common
     public function getById(string $id, bool $withCache): array
     {
         $uri = $this->getUri("{$this->baseUri()}/$id", $withCache);
-//        throw new \Exception($uri);
         try {
             $response = $this->getHttpClient()->get($uri);
         } catch (RequestException $exception) {
