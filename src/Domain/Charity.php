@@ -58,24 +58,37 @@ class Charity extends SalesforceReadProxy
     private array $salesforceData = [];
 
     /**
+     * @psalm-suppress UnusedProperty - will be used in email soon
+     * name in SF data is same
+     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    protected ?string $logoUri = null;
+
+    /**
+     * @psalm-suppress UnusedProperty - will be used in email soon
+     * name in SF data is `website`
+     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    protected ?string $websiteURI = null;
+
+    /**
      * MAT-400 todo - introduce the following properties, pull from SF and use in
      * \MatchBot\Domain\DonationNotifier::emailCommandForCollectedDonation .
 
-            #[ORM\Column(type: 'string', length: 255, nullable: true)]
-            protected ?string $logoUri = null;
+     PostalAddress and phoneNumber are not currently included in the data in the SF API.
+     Will need to add, and first decide whether we're OK to publish these (since we send
+     them in emails anyway) or if we need a private SF-Matchbot api that's different to the
+     SF-frontend API
 
-            // For sending emails we only need postal address as a single string - but its stored as separate lines
-            // in SF. Consider whether to have it as a string here or preserve more information keeping the separate
-            // lines as separate fields. Could be useful for ad-hoc queries by us, plus in case we want to introduce
-            // e.g. regional filtering options.
-            #[ORM\Column(type: 'string', length: 1500, nullable: true)]
-            protected ?string $postalAddress = null;
+        // For sending emails we only need postal address as a single string - but its stored as separate lines
+        // in SF. Consider whether to have it as a string here or preserve more information keeping the separate
+        // lines as separate fields. Could be useful for ad-hoc queries by us, plus in case we want to introduce
+        // e.g. regional filtering options.
+        #[ORM\Column(type: 'string', length: 1500, nullable: true)]
+        protected ?string $postalAddress = null;
 
-            #[ORM\Column(type: 'string', length: 255, nullable: true)]
-            protected ?string $phoneNumber = null;
-
-            #[ORM\Column(type: 'string', length: 255, nullable: true)]
-            protected ?string $websiteURI = null;
+        #[ORM\Column(type: 'string', length: 255, nullable: true)]
+        protected ?string $phoneNumber = null;
      */
 
     /**
