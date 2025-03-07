@@ -13,6 +13,8 @@ use MatchBot\Application\Email\EmailMessage;
 class Mailer extends Common
 {
     /**
+     * @deprecated for public use - use {@see self::send()} instead.
+     *
      * @psalm-param array{templateKey: string, recipientEmailAddress: string, params: array, ...} $requestBody
      */
     public function sendEmail(array $requestBody): void
@@ -25,6 +27,7 @@ class Mailer extends Common
                     'json' => $requestBody,
                     'headers' => [
                         'x-send-verify-hash' => $this->hash(json_encode($requestBody, \JSON_THROW_ON_ERROR)),
+                        'User-Agent' => 'matchbot',
                     ],
                 ]
             );
@@ -78,6 +81,7 @@ class Mailer extends Common
 
     public function send(EmailMessage $command): void
     {
+        /** @psalm-suppress DeprecatedMethod */
         $this->sendEmail(
             [
                 'templateKey' => $command->templateKey,

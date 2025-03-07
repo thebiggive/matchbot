@@ -6,6 +6,7 @@ use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -88,6 +89,8 @@ class DonationService
         private RateLimiterFactory $rateLimiterFactory,
         private DonorAccountRepository $donorAccountRepository,
         private RoutableMessageBus $bus,
+        private Environment $environment,
+        private DonationNotifier $donationNotifier,
     ) {
     }
 
@@ -727,6 +730,15 @@ class DonationService
             originalFeeFractional: (string)$originalFeeFractional,
             chargeCreationTimestamp: $charge->created,
         );
+
+
+        if ($this->environment->isFeatureEnabledDirectSuccessEmail()) {
+            $this->logger->info("Notifying success for $donation");
+            // Ideally we might do this in a queue consumer, but calling mailer should be quick, and until
+            // MAT-403 is done we don't want these to wait behind items queued to go to SF.
+            $this->donationNotifier->notifyDonorOfDonationSuccess($donation);
+            $this->logger->info("Done notifying success for $donation");
+        }
     }
 
 

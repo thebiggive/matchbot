@@ -23,6 +23,7 @@ class DonationFundsNotifier
         Money $transferAmount,
         Money $_newBalance,
     ): void {
+        /** @psalm-suppress DeprecatedMethod - method was deprecated after this was written. */
         $this->mailer->sendEmail([
             'templateKey' => 'donor-funds-thanks',
             'recipientEmailAddress' => $donorAccount->emailAddress->email,

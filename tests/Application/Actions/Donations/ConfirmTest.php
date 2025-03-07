@@ -7,11 +7,13 @@ namespace MatchBot\Tests\Application\Actions\Donations;
 use Assert\AssertionFailedException;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\Donations\Confirm;
+use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccountRepository;
@@ -87,6 +89,8 @@ class ConfirmTest extends TestCase
                 ),
                 donorAccountRepository: $this->createStub(DonorAccountRepository::class),
                 bus: $this->createStub(RoutableMessageBus::class),
+                environment: Environment::Test,
+                donationNotifier: $this->createStub(DonationNotifier::class),
             )
         );
     }

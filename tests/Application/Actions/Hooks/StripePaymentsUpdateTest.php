@@ -7,8 +7,10 @@ namespace MatchBot\Tests\Application\Actions\Hooks;
 use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
+use MatchBot\Client\Mailer;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
@@ -35,6 +37,9 @@ class StripePaymentsUpdateTest extends StripeTest
     private const string DONATION_UUID = '5cacc86a-b405-11ef-a4a5-9fcdb7039df1';
     private InMemoryDonationRepository $donationRepository;
 
+    /** @var ObjectProphecy<Mailer> */
+    private $mailerClientProphecy;
+
     public function setUp(): void
     {
         parent::setUp();
@@ -46,6 +51,9 @@ class StripePaymentsUpdateTest extends StripeTest
 
         $this->donationRepository = new InMemoryDonationRepository();
         $container->set(DonationRepository::class, $this->donationRepository);
+
+        $this->mailerClientProphecy = $this->prophesize(Mailer::class);
+        $container->set(Mailer::class, $this->mailerClientProphecy->reveal());
     }
 
     public function testUnsupportedAction(): void
@@ -155,8 +163,11 @@ class StripePaymentsUpdateTest extends StripeTest
         // code, and may get mutation tests working again.
         @$stripeClientProphecy->balanceTransactions = $stripeBalanceTransactionProphecy->reveal();
 
+        $this->mailerClientProphecy->send(Argument::type(EmailMessage::class))->shouldBeCalledOnce();
+
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
+        $container->set(Mailer::class, $this->mailerClientProphecy->reveal());
 
         $request = self::createRequest('POST', '/hooks/stripe', $body)
             ->withHeader('Stripe-Signature', self::generateSignature($time, $body, $webhookSecret));

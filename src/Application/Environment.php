@@ -31,4 +31,21 @@ enum Environment
     {
         return strtolower($this->name);
     }
+
+    public function isProduction(): bool
+    {
+        return match ($this) {
+            // listing all cases in case we ever have multiple defined production envs.
+            self::Production => true,
+            self::Regression => false,
+            self::Staging => false,
+            self::Local => false,
+            self::Test => false
+        };
+    }
+
+    public function isFeatureEnabledDirectSuccessEmail(): bool
+    {
+        return ! $this->isProduction();
+    }
 }
