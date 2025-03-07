@@ -63,7 +63,9 @@ jobs:
       - run: vendor/bin/doctrine-migrations migrate --no-interaction --allow-no-migration --verbose
 
       # Ensures schema is in sync and implicitly that future migration diffs should work.
-      - run: composer run doctrine:validate
+      # Deliberately doesn't use `doctrine:validate` because it clears caches (which CI doesn't need)
+      # including the local test DB (which CI doesn't have).
+      - run: vendor/bin/doctrine orm:validate-schema
 
       - run: composer run integration-test
 
