@@ -69,7 +69,7 @@ class Charity extends SalesforceReadProxy
      * name in SF data is `website`
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    protected ?string $websiteURI = null;
+    protected ?string $websiteUri = null;
 
     /**
      * MAT-400 todo - introduce the following properties, pull from SF and use in
