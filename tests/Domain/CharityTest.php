@@ -21,6 +21,7 @@ class CharityTest extends TestCase
             giftAidOnboardingStatus: Charity::GIFT_AID_APPROVED_STATUS,
             regulator: null,
             regulatorNumber: null,
+            rawData: [],
             time: new \DateTime()
         );
 
@@ -37,6 +38,7 @@ class CharityTest extends TestCase
             giftAidOnboardingStatus: Charity::GIFT_AID_APPROVED_STATUS,
             regulator: null,
             regulatorNumber: null,
+            rawData: [],
             time: new \DateTime()
         );
 
@@ -54,6 +56,7 @@ class CharityTest extends TestCase
             giftAidOnboardingStatus: 'Onboarded',
             regulator: null,
             regulatorNumber: null,
+            rawData: [],
             time: new \DateTime()
         );
 
@@ -117,6 +120,7 @@ class CharityTest extends TestCase
             giftAidOnboardingStatus: $giftaidOnboardingStatus,
             regulator: null,
             regulatorNumber: null,
+            rawData: [],
             time: new \DateTime(),
         );
 

@@ -65,7 +65,7 @@ jobs:
       # Ensures schema is in sync and implicitly that future migration diffs should work.
       # Deliberately doesn't use `doctrine:validate` because it clears caches (which CI doesn't need)
       # including the local test DB (which CI doesn't have).
-      - run: vendor/bin/doctrine orm:validate-schema
+      - run: vendor/bin/doctrine orm:validate-schema --verbose
 
       - run: composer run integration-test
 

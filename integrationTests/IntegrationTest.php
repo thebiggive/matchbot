@@ -230,9 +230,10 @@ abstract class IntegrationTest extends TestCase
 
         $db->executeStatement(<<<EOF
             INSERT INTO Charity (id, name, salesforceId, salesforceLastPull, createdAt, updatedAt, stripeAccountId,
-                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber) 
+                     hmrcReferenceNumber, tbgClaimingGiftAid, tbgApprovedToClaimGiftAid, regulator, regulatorNumber, 
+                                 salesforceData)
             VALUES ($charityId, '$charityName', '$charitySfId', '$nyd', '$nyd', '$nyd', '$charityStripeId',
-                    null, 0, 0, null, null)
+                    null, 0, 0, null, null, '{}')
             EOF
         );
 
@@ -242,9 +243,9 @@ abstract class IntegrationTest extends TestCase
 
         $db->executeStatement(<<<EOF
             INSERT INTO Campaign (charity_id, name, startDate, endDate, isMatched, salesforceId, salesforceLastPull,
-                                  createdAt, updatedAt, currencyCode, isRegularGiving) 
+                                  createdAt, updatedAt, currencyCode, isRegularGiving, salesforceData)
             VALUES ('$charityId', 'some charity', '$nyd', '$closeDate', '$matched', '$campaignSfId', '$nyd',
-                    '$nyd', '$nyd', 'GBP',  '$isRegularGivingInt')
+                    '$nyd', '$nyd', 'GBP',  '$isRegularGivingInt', '{}')
             EOF
         );
 

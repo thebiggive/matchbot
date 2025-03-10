@@ -48,24 +48,47 @@ class Charity extends SalesforceReadProxy
     protected string $name;
 
     /**
+     * Full data about this charity as received from Salesforce. Not for use as-is in Matchbot domain logic but
+     * may be used in ad-hoc queries, migrations, and perhaps for outputting to FE to provide compatibility with the SF
+     * API.
+     * @psalm-suppress UnusedProperty
+     * @var array<string, mixed>
+     */
+    #[ORM\Column(type: "json", nullable: false)]
+    private array $salesforceData = [];
+
+    /**
+     * @psalm-suppress UnusedProperty - will be used in email soon
+     * name in SF data is same
+     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    protected ?string $logoUri = null;
+
+    /**
+     * @psalm-suppress UnusedProperty - will be used in email soon
+     * name in SF data is `website`
+     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    protected ?string $websiteUri = null;
+
+    /**
      * MAT-400 todo - introduce the following properties, pull from SF and use in
      * \MatchBot\Domain\DonationNotifier::emailCommandForCollectedDonation .
 
-            #[ORM\Column(type: 'string', length: 255, nullable: true)]
-            protected ?string $logoUri = null;
+     PostalAddress and phoneNumber are not currently included in the data in the SF API.
+     Will need to add, and first decide whether we're OK to publish these (since we send
+     them in emails anyway) or if we need a private SF-Matchbot api that's different to the
+     SF-frontend API
 
-            // For sending emails we only need postal address as a single string - but its stored as separate lines
-            // in SF. Consider whether to have it as a string here or preserve more information keeping the separate
-            // lines as separate fields. Could be useful for ad-hoc queries by us, plus in case we want to introduce
-            // e.g. regional filtering options.
-            #[ORM\Column(type: 'string', length: 1500, nullable: true)]
-            protected ?string $postalAddress = null;
+        // For sending emails we only need postal address as a single string - but its stored as separate lines
+        // in SF. Consider whether to have it as a string here or preserve more information keeping the separate
+        // lines as separate fields. Could be useful for ad-hoc queries by us, plus in case we want to introduce
+        // e.g. regional filtering options.
+        #[ORM\Column(type: 'string', length: 1500, nullable: true)]
+        protected ?string $postalAddress = null;
 
-            #[ORM\Column(type: 'string', length: 255, nullable: true)]
-            protected ?string $phoneNumber = null;
-
-            #[ORM\Column(type: 'string', length: 255, nullable: true)]
-            protected ?string $websiteURI = null;
+        #[ORM\Column(type: 'string', length: 255, nullable: true)]
+        protected ?string $phoneNumber = null;
      */
 
     /**
@@ -110,6 +133,9 @@ class Charity extends SalesforceReadProxy
     #[ORM\Column(type: 'boolean')]
     private bool $tbgApprovedToClaimGiftAid = false;
 
+    /**
+     * @param array<string,mixed> $rawData - data about the charity as sent from Salesforce
+     */
     public function __construct(
         string $salesforceId,
         string $charityName,
@@ -119,6 +145,7 @@ class Charity extends SalesforceReadProxy
         ?string $regulator,
         ?string $regulatorNumber,
         DateTime $time,
+        array $rawData = [],
     ) {
         $this->updatedAt = $time;
         $this->createdAt = $time;
@@ -132,6 +159,7 @@ class Charity extends SalesforceReadProxy
             giftAidOnboardingStatus: $giftAidOnboardingStatus,
             regulator: $regulator,
             regulatorNumber: $regulatorNumber,
+            rawData: $rawData,
             time: new \DateTime('now'),
         );
     }
@@ -240,7 +268,10 @@ class Charity extends SalesforceReadProxy
     }
 
     /**
-     * @throws \UnexpectedValueException if $giftAidOnboardingStatus is not listed in self::POSSIBLE_GIFT_AID_STATUSES
+     *
+     * @param array<string,mixed> $rawData Data about the charity as received directly from SF.
+     *
+     *@throws \UnexpectedValueException if $giftAidOnboardingStatus is not listed in self::POSSIBLE_GIFT_AID_STATUSES
      */
     public function updateFromSfPull(
         string $charityName,
@@ -249,6 +280,7 @@ class Charity extends SalesforceReadProxy
         ?string $giftAidOnboardingStatus,
         ?string $regulator,
         ?string $regulatorNumber,
+        array $rawData,
         DateTime $time,
     ): void {
         $statusUnexpected = !is_null($giftAidOnboardingStatus)
@@ -278,6 +310,8 @@ class Charity extends SalesforceReadProxy
 
         $this->setRegulator($regulator);
         $this->setRegulatorNumber($regulatorNumber);
+
+        $this->salesforceData = $rawData;
 
         $this->setSalesforceLastPull($time);
     }
@@ -311,5 +345,14 @@ class Charity extends SalesforceReadProxy
         }
 
         return self::REGULATORS[$this->regulator];
+    }
+
+    public function isExempt(): bool
+    {
+        // This is a slightly risky assumption to make, but mailer is already making it. By moving the logic
+        // to here it gets one step closer to directly storing what was entered.
+
+        // todo - adjust \MatchBot\Domain\CampaignRepository::doUpdateFromSf to recognise the magic value 'Exempt'
+        return $this->regulatorNumber === null;
     }
 }
