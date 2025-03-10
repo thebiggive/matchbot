@@ -216,6 +216,8 @@ class TestCase extends PHPUnitTestCase
             regulator: 'CCEW',
             regulatorNumber: 'Reg-no',
             time: new \DateTime('2023-10-06T18:51:27'),
+            logoUri: 'https://some-logo-host/charityname/logo.png',
+            websiteUri: 'https://charityname.com',
         );
     }
 

@@ -59,6 +59,8 @@ class DonationNotifierTest extends TestCase
 
                     'totalCharityValueAmount' => 18.50, // amount + matched amount + gift aid
                     'transactionId' => 'some-transaction-id',
+                    'charityLogoUri' => 'https://some-logo-host/charityname/logo.png',
+                    'charityWebsite' => 'https://charityname.com',
                 ]
             ],
             [$emailCommand->templateKey, $emailCommand->emailAddress->email, $emailCommand->params]
