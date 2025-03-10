@@ -196,6 +196,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
         return new Charity(
             salesforceId: $charityData['id'],
             charityName: $charityData['name'],
+            websiteUri: $charityData['website'],
+            logoUri: $charityData['logoUri'],
             stripeAccountId: $charityData['stripeAccountId'],
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
@@ -215,6 +217,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
 
         $charity->updateFromSfPull(
             charityName: $charityData['name'],
+            websiteUri: $charityData['website'],
+            logoUri: $charityData['logoUri'],
             stripeAccountId: $charityData['stripeAccountId'],
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
@@ -258,6 +262,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
     protected function doUpdateFromSf(SalesforceReadProxy $proxy, bool $withCache): void
     {
         $campaign = $proxy;
+
+        /** @psalm-suppress RedundantConditionGivenDocblockType - redundant for Psalm but useful for PHPStorm */
+        \assert($campaign instanceof Campaign);
 
         $client = $this->getClient();
         $campaignData = $client->getById($campaign->getSalesforceId(), $withCache);

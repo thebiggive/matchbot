@@ -6,7 +6,9 @@ namespace MatchBot\Domain;
 
 use DateTime;
 use Doctrine\ORM\Mapping as ORM;
+use Laminas\Diactoros\Uri;
 use MatchBot\Application\Assertion;
+use Psr\Http\Message\UriInterface;
 
 #[ORM\Table]
 #[ORM\Entity(repositoryClass: CharityRepository::class)]
@@ -58,15 +60,13 @@ class Charity extends SalesforceReadProxy
     private array $salesforceData = [];
 
     /**
-     * @psalm-suppress UnusedProperty - will be used in email soon
-     * name in SF data is same
+     * URI of the charity's logo, hosted as part of the Big Give website.
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     protected ?string $logoUri = null;
 
     /**
-     * @psalm-suppress UnusedProperty - will be used in email soon
-     * name in SF data is `website`
+     * URI of the charity's own website, for linking to.
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     protected ?string $websiteUri = null;
@@ -146,6 +146,8 @@ class Charity extends SalesforceReadProxy
         ?string $regulatorNumber,
         DateTime $time,
         array $rawData = [],
+        ?string $websiteUri = null,
+        ?string $logoUri = null,
     ) {
         $this->updatedAt = $time;
         $this->createdAt = $time;
@@ -154,6 +156,8 @@ class Charity extends SalesforceReadProxy
         // every charity originates as pulled from SF.
         $this->updateFromSfPull(
             charityName: $charityName,
+            websiteUri: $websiteUri,
+            logoUri: $logoUri,
             stripeAccountId: $stripeAccountId,
             hmrcReferenceNumber: $hmrcReferenceNumber,
             giftAidOnboardingStatus: $giftAidOnboardingStatus,
@@ -275,6 +279,8 @@ class Charity extends SalesforceReadProxy
      */
     public function updateFromSfPull(
         string $charityName,
+        ?string $websiteUri,
+        ?string $logoUri,
         ?string $stripeAccountId,
         ?string $hmrcReferenceNumber,
         ?string $giftAidOnboardingStatus,
@@ -310,6 +316,9 @@ class Charity extends SalesforceReadProxy
 
         $this->setRegulator($regulator);
         $this->setRegulatorNumber($regulatorNumber);
+
+        $this->setWebsiteUri($websiteUri);
+        $this->setLogoUri($logoUri);
 
         $this->salesforceData = $rawData;
 
@@ -354,5 +363,35 @@ class Charity extends SalesforceReadProxy
 
         // todo - adjust \MatchBot\Domain\CampaignRepository::doUpdateFromSf to recognise the magic value 'Exempt'
         return $this->regulatorNumber === null;
+    }
+
+    private function setWebsiteUri(?string $websiteUri): void
+    {
+        if (trim($websiteUri ?? '') === '') {
+            $websiteUri = null;
+        }
+
+        Assertion::nullOrUrl($websiteUri);
+        $this->websiteUri = $websiteUri;
+    }
+
+    private function setLogoUri(?string $logoUri): void
+    {
+        if (trim($logoUri ?? '') === '') {
+            $logoUri = null;
+        }
+
+        Assertion::nullOrUrl($logoUri);
+        $this->logoUri = $logoUri;
+    }
+
+    public function getLogoUri(): ?UriInterface
+    {
+        return is_null($this->logoUri) ? null : new Uri($this->logoUri);
+    }
+
+    public function getWebsiteUri(): ?UriInterface
+    {
+        return is_null($this->websiteUri) ? null : new Uri($this->websiteUri);
     }
 }
