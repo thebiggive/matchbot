@@ -192,12 +192,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function newCharityFromCampaignData(array $campaignData): Charity
     {
         $charityData = $campaignData['charity'];
+        $address = $this->arrayToPostalAddress($charityData['postalAddress']);
 
         return new Charity(
             salesforceId: $charityData['id'],
             charityName: $charityData['name'],
-            websiteUri: $charityData['website'],
-            logoUri: $charityData['logoUri'],
             stripeAccountId: $charityData['stripeAccountId'],
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
@@ -205,6 +204,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
             regulatorNumber: $charityData['regulatorNumber'],
             time: new \DateTime('now'),
             rawData: $charityData,
+            websiteUri: $charityData['website'],
+            logoUri: $charityData['logoUri'],
+            phoneNumber: $charityData['phoneNumber'],
+            address: $address,
         );
     }
 
@@ -214,6 +217,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function updateCharityFromCampaignData(Charity $charity, array $campaignData): void
     {
         $charityData = $campaignData['charity'];
+        $address = $this->arrayToPostalAddress($charityData['postalAddress']);
 
         $charity->updateFromSfPull(
             charityName: $charityData['name'],
@@ -226,6 +230,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             regulatorNumber: $charityData['regulatorNumber'],
             rawData: $charityData,
             time: new \DateTime('now'),
+            phoneNumber: $charityData['phoneNumber'],
+            address: $address,
         );
     }
 
@@ -317,5 +323,41 @@ class CampaignRepository extends SalesforceReadProxyRepository
             'Scotland' => 'OSCR',
             default => null,
         };
+    }
+
+    /**
+     * @param ?array{
+     *           city: ?string,
+     *           line1: ?string,
+     *           line2: ?string,
+     *           country: ?string,
+     *           postalCode: ?string} $postalAddress
+     */
+    private function arrayToPostalAddress(?array $postalAddress): ?PostalAddress
+    {
+        if (is_null($postalAddress)) {
+            return null;
+        }
+
+        $postalAddress = array_map(
+            static function (?string $string) {
+                return is_null($string) || trim($string) === '' ? null : $string;
+            },
+            $postalAddress
+        );
+
+        if (is_null($postalAddress['line1'])) {
+            Assertion::allNull($postalAddress);
+
+            return null;
+        }
+
+        return PostalAddress::of(
+            line1: $postalAddress['line1'],
+            line2: $postalAddress['line2'],
+            city: $postalAddress['city'],
+            postalCode: $postalAddress['country'],
+            country: $postalAddress['postalCode'],
+        );
     }
 }

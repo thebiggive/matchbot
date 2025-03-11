@@ -24,7 +24,9 @@ class CharityTest extends TestCase
             regulator: null,
             regulatorNumber: null,
             rawData: [],
-            time: new \DateTime()
+            time: new \DateTime(),
+            phoneNumber: null,
+            address: null
         );
 
         $this->assertTrue($charity->getTbgApprovedToClaimGiftAid());
@@ -43,7 +45,9 @@ class CharityTest extends TestCase
             regulator: null,
             regulatorNumber: null,
             rawData: [],
-            time: new \DateTime()
+            time: new \DateTime(),
+            phoneNumber: null,
+            address: null
         );
 
         $this->assertFalse($charity->getTbgApprovedToClaimGiftAid());
@@ -63,7 +67,9 @@ class CharityTest extends TestCase
             regulator: null,
             regulatorNumber: null,
             rawData: [],
-            time: new \DateTime()
+            time: new \DateTime(),
+            phoneNumber: null,
+            address: null
         );
 
         $this->assertFalse($charity->getTbgApprovedToClaimGiftAid());
@@ -130,6 +136,8 @@ class CharityTest extends TestCase
             regulatorNumber: null,
             rawData: [],
             time: new \DateTime(),
+            phoneNumber: null,
+            address: null,
         );
 
         $this->assertSame($expected, $charity->isTbgClaimingGiftAid());

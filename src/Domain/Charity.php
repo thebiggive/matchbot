@@ -71,25 +71,11 @@ class Charity extends SalesforceReadProxy
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     protected ?string $websiteUri = null;
 
-    /**
-     * MAT-400 todo - introduce the following properties, pull from SF and use in
-     * \MatchBot\Domain\DonationNotifier::emailCommandForCollectedDonation .
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    protected ?string $phoneNumber = null;
 
-     PostalAddress and phoneNumber are not currently included in the data in the SF API.
-     Will need to add, and first decide whether we're OK to publish these (since we send
-     them in emails anyway) or if we need a private SF-Matchbot api that's different to the
-     SF-frontend API
-
-        // For sending emails we only need postal address as a single string - but its stored as separate lines
-        // in SF. Consider whether to have it as a string here or preserve more information keeping the separate
-        // lines as separate fields. Could be useful for ad-hoc queries by us, plus in case we want to introduce
-        // e.g. regional filtering options.
-        #[ORM\Column(type: 'string', length: 1500, nullable: true)]
-        protected ?string $postalAddress = null;
-
-        #[ORM\Column(type: 'string', length: 255, nullable: true)]
-        protected ?string $phoneNumber = null;
-     */
+    #[ORM\Embedded(columnPrefix: 'address_')]
+    protected ?PostalAddress $postalAddress = null;
 
     /**
      * @var string
@@ -148,6 +134,8 @@ class Charity extends SalesforceReadProxy
         array $rawData = [],
         ?string $websiteUri = null,
         ?string $logoUri = null,
+        ?string $phoneNumber = null,
+        ?PostalAddress $address = null,
     ) {
         $this->updatedAt = $time;
         $this->createdAt = $time;
@@ -165,6 +153,8 @@ class Charity extends SalesforceReadProxy
             regulatorNumber: $regulatorNumber,
             rawData: $rawData,
             time: new \DateTime('now'),
+            phoneNumber: $phoneNumber,
+            address: $address,
         );
     }
 
@@ -273,6 +263,8 @@ class Charity extends SalesforceReadProxy
 
     /**
      *
+     * @param PostalAddress|null $address
+     * @param string|null $phoneNumber
      * @param array<string,mixed> $rawData Data about the charity as received directly from SF.
      *
      *@throws \UnexpectedValueException if $giftAidOnboardingStatus is not listed in self::POSSIBLE_GIFT_AID_STATUSES
@@ -288,6 +280,8 @@ class Charity extends SalesforceReadProxy
         ?string $regulatorNumber,
         array $rawData,
         DateTime $time,
+        ?string $phoneNumber,
+        ?PostalAddress $address,
     ): void {
         $statusUnexpected = !is_null($giftAidOnboardingStatus)
             && !in_array($giftAidOnboardingStatus, self::POSSIBLE_GIFT_AID_STATUSES, true);
@@ -319,10 +313,13 @@ class Charity extends SalesforceReadProxy
 
         $this->setWebsiteUri($websiteUri);
         $this->setLogoUri($logoUri);
+        $this->setPhoneNumber($phoneNumber);
 
         $this->salesforceData = $rawData;
 
         $this->setSalesforceLastPull($time);
+
+        $this->postalAddress = $address;
     }
 
     public function getStatementDescriptor(): string
@@ -367,9 +364,7 @@ class Charity extends SalesforceReadProxy
 
     private function setWebsiteUri(?string $websiteUri): void
     {
-        if (trim($websiteUri ?? '') === '') {
-            $websiteUri = null;
-        }
+        $websiteUri = $this->replaceBlankWithNull($websiteUri);
 
         Assertion::nullOrUrl($websiteUri);
         $this->websiteUri = $websiteUri;
@@ -377,12 +372,18 @@ class Charity extends SalesforceReadProxy
 
     private function setLogoUri(?string $logoUri): void
     {
-        if (trim($logoUri ?? '') === '') {
-            $logoUri = null;
-        }
+        $logoUri = $this->replaceBlankWithNull($logoUri);
 
         Assertion::nullOrUrl($logoUri);
         $this->logoUri = $logoUri;
+    }
+
+    private function setPhoneNumber(?string $phoneNumber): void
+    {
+        $phoneNumber = $this->replaceBlankWithNull($phoneNumber);
+        Assertion::nullOrBetweenLength($phoneNumber, 1, 255);
+
+        $this->phoneNumber = $phoneNumber;
     }
 
     public function getLogoUri(): ?UriInterface
@@ -393,5 +394,23 @@ class Charity extends SalesforceReadProxy
     public function getWebsiteUri(): ?UriInterface
     {
         return is_null($this->websiteUri) ? null : new Uri($this->websiteUri);
+    }
+
+    public function getPhoneNumber(): ?string
+    {
+        return $this->phoneNumber;
+    }
+
+    private function replaceBlankWithNull(?string $string): ?string
+    {
+        if (trim($string ?? '') === '') {
+            $string = null;
+        }
+        return $string;
+    }
+
+    public function getPostalAddress(): ?PostalAddress
+    {
+        return $this->postalAddress;
     }
 }
