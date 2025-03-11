@@ -347,13 +347,15 @@ return function (ContainerBuilder $containerBuilder) {
                     Messages\Donation::class => [ClaimBotTransport::class],
 
                     // Outbound, priority, for MatchBot worker; SQS queue in Production.
+                    // `CharityUpdated` does call out to Salesforce, to read data, but it's rarer and
+                    // occasionally more time-sensitive than the group below which push data.
                     CharityUpdated::class => [TransportInterface::class],
                     StripePayout::class => [TransportInterface::class],
-                    MandateUpserted::class => [TransportInterface::class],
-                    FundTotalUpdated::class => [TransportInterface::class],
 
                     // Outbound, Salesforce (lower priority), for MatchBot worker; SQS queue in Production.
                     DonationUpserted::class => [SalesforcePushTransport::class],
+                    FundTotalUpdated::class => [SalesforcePushTransport::class],
+                    MandateUpserted::class => [SalesforcePushTransport::class],
                 ],
                 $c,
             );
