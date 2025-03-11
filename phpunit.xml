@@ -43,6 +43,7 @@
     <env name="JWT_ID_SECRET" value="unitTestJWTSecret" force="true"/>
     <env name="MAX_CREATES_PER_IP_PER_5M" value="1" force="true" />
     <env name="MESSENGER_TRANSPORT_DSN" value="in-memory://" force="true"/>
+    <env name="SALESFORCE_PUSH_MESSENGER_TRANSPORT_DSN" value="in-memory://" force="true"/>
     <env name="MYSQL_HOST" value="dummy-mysql-hostname" force="true"/>
     <env name="REDIS_HOST" value="dummy-redis-hostname" force="true"/>
     <env name="SALESFORCE_SECRET_KEY" value="topsecret" force="true"/>
