@@ -25,12 +25,16 @@ class CampaignRepository extends SalesforceReadProxyRepository
      *
      * More specifically gets those campaigns which are live now or recently closed (in the last week),
      * based on their last known end time, and those closed semi-recently where we are
-     * awaiting HMRC agent approval for Gift Aid claims. This allows for campaigns to receive updates
-     * shortly after closure if a decision is made to reopen them soon after the end date,
+     * awaiting HMRC agent approval for Gift Aid claims, and regular giving campaigns.
+     * This allows for campaigns to receive updates shortly after closure if a decision is made to reopen them soon after the end date,
      * while keeping the number of API calls for regular update runs under control long-term.
      * Technically future campaigns are also included if they are already known to MatchBot,
      * though this would typically only happen after manual API call antics or if a start
      * date was pushed back belatedly after a campaign already started.
+     *
+     * Regular giving campaigns are all included as they may have ongoing donations after the end date - changes
+     * in particular to the regularGivingCollectionEnd date in any direction need to be pulled quickly into matchbot
+     * to control whether we do or don't continue to collect those donations.
      *
      * @return Campaign[]
      */
@@ -44,6 +48,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 charity.tbgApprovedToClaimGiftAid = 0 AND
                 c.endDate >= :extendedLookbackDate
             )
+            OR c.isRegularGiving = 1
             ORDER BY c.createdAt ASC
             DQL
         );
