@@ -185,6 +185,9 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             ->innerJoin('d.fundingWithdrawals', 'fw')
             ->where('d.donationStatus IN (:expireWithStatuses)')
             ->andWhere('d.createdAt < :expireBefore')
+            // First of a regular giving series is Pending during 3DS. If we ever make the timeout for
+            // that longer than the timeout for matching, we still want to ensure matching can't be
+            // lost while 3DS is in progress.
             ->andWhere('d.mandate is null')
             ->groupBy('d.id')
             ->setParameter('expireWithStatuses', [DonationStatus::Pending->value, DonationStatus::Cancelled->value])

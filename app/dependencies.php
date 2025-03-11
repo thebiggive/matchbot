@@ -30,6 +30,7 @@ use MatchBot\Application\Messenger\MandateUpserted;
 use MatchBot\Application\Messenger\Middleware\AddOrLogMessageId;
 use MatchBot\Application\Messenger\StripePayout;
 use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
+use MatchBot\Application\Messenger\Transport\SalesforcePushTransport;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RegularGivingMandateEventSubscriber;
 use MatchBot\Application\RealTimeMatchingStorage;
@@ -126,16 +127,19 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         ConsumeMessagesCommand::class => static function (ContainerInterface $c): ConsumeMessagesCommand {
-            $messengerReceiverKey = 'receiver';
+            $priorityKey = 'priority';
+            $salesforceKey = 'salesforce';
             $messengerReceiverLocator = new Container();
-            $messengerReceiverLocator->set($messengerReceiverKey, $c->get(TransportInterface::class));
+            $messengerReceiverLocator->set($priorityKey, $c->get(TransportInterface::class));
+            $messengerReceiverLocator->set($salesforceKey, $c->get(SalesforcePushTransport::class));
 
             return new ConsumeMessagesCommand(
                 $c->get(RoutableMessageBus::class),
                 $messengerReceiverLocator,
                 new EventDispatcher(),
                 $c->get(LoggerInterface::class),
-                [$messengerReceiverKey],
+                // Based on the CLI arg docs, I believe this is a list in priority order.
+                [$priorityKey, $salesforceKey],
             );
         },
 
@@ -339,12 +343,17 @@ return function (ContainerBuilder $containerBuilder) {
 
             $sendersLocator = new SendersLocator(
                 [
+                    // Outbound for ClaimBot; Redis queue in Production.
                     Messages\Donation::class => [ClaimBotTransport::class],
+
+                    // Outbound, priority, for MatchBot worker; SQS queue in Production.
                     CharityUpdated::class => [TransportInterface::class],
                     StripePayout::class => [TransportInterface::class],
-                    DonationUpserted::class => [TransportInterface::class],
                     MandateUpserted::class => [TransportInterface::class],
                     FundTotalUpdated::class => [TransportInterface::class],
+
+                    // Outbound, Salesforce (lower priority), for MatchBot worker; SQS queue in Production.
+                    DonationUpserted::class => [SalesforcePushTransport::class],
                 ],
                 $c,
             );
@@ -498,6 +507,22 @@ return function (ContainerBuilder $containerBuilder) {
             $busContainer->set(DonationUpserted::class, $bus);
 
             return new RoutableMessageBus($busContainer, $bus);
+        },
+
+        SalesforcePushTransport::class => static function (): TransportInterface {
+            $transportFactory = new TransportFactory([
+                new AmazonSqsTransportFactory(),
+                new RedisTransportFactory(),
+            ]);
+            $dsn = getenv('SALESFORCE_PUSH_MESSENGER_TRANSPORT_DSN');
+            if ($dsn === false) {
+                throw new \Exception('SALESFORCE_PUSH_MESSENGER_TRANSPORT_DSN must be defined in environment');
+            }
+            return $transportFactory->createTransport(
+                $dsn,
+                [],
+                new PhpSerializer(),
+            );
         },
 
         SerializerInterface::class => static function (): SerializerInterface {

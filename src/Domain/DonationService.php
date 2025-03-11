@@ -688,10 +688,10 @@ class DonationService
             return;
         }
 
-        $this->updateDonationStatusFromSucessfulCharge($charge, $donation);
+        $this->updateDonationStatusFromSuccessfulCharge($charge, $donation);
     }
 
-    public function updateDonationStatusFromSucessfulCharge(Charge $charge, Donation $donation): void
+    public function updateDonationStatusFromSuccessfulCharge(Charge $charge, Donation $donation): void
     {
         $this->logger->info('updating donation from charge: ' . $charge->toJson());
 

@@ -33,7 +33,11 @@ In advance of the first app run:
 In dev environments, we use [Stripe CLI](https://stripe.com/docs/stripe-cli?locale=en-GB) in its own docker container
 to pull events from Stripe and forward them to the local HTTP server.
 
-Visit https://dashboard.stripe.com/test/webhooks and select "Add local listener". Use the "CLI webhook secret" that
+Visit https://dashboard.stripe.com/test/webhooks and select "Add local listener".
+
+Instead of running the suggested commands natively, use:
+* `docker compose run --rm stripe-cli login`
+Use the "CLI webhook secret" that
 Stripe will give you to replace the value of `STRIPE_WEBHOOK_SIGNING_SECRET` in `.env`. Make sure you also have a good
 value for `STRIPE_SECRET_KEY` set in `.env`. You will also find this in the Stripe dashboard, and in a dev environment 
 it should start with `rk_test_` or `sk_test_`.
