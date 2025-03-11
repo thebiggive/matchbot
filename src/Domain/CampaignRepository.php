@@ -21,7 +21,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
     private FundRepository $fundRepository;
 
     /**
-     * Gets those campaigns which are live now or recently closed (in the last week),
+     * Gets campaigns that it is particular important matchbot has up-to-date information about.
+     *
+     * More specifically gets those campaigns which are live now or recently closed (in the last week),
      * based on their last known end time, and those closed semi-recently where we are
      * awaiting HMRC agent approval for Gift Aid claims. This allows for campaigns to receive updates
      * shortly after closure if a decision is made to reopen them soon after the end date,
@@ -32,7 +34,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
      *
      * @return Campaign[]
      */
-    public function findRecentLiveAndPendingGiftAidApproval(): array
+    public function findCampaignsThatNeedToBeUpToDate(): array
     {
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT c FROM MatchBot\Domain\Campaign c
