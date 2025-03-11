@@ -514,7 +514,7 @@ return function (ContainerBuilder $containerBuilder) {
         SalesforcePushTransport::class => static function (): TransportInterface {
             $transportFactory = new TransportFactory([
                 new AmazonSqsTransportFactory(),
-                new InMemoryTransportFactory(), // For unit tests (without Docker Compose setup).
+                new InMemoryTransportFactory(), // For unit tests.
                 new RedisTransportFactory(),
             ]);
             $dsn = getenv('SALESFORCE_PUSH_MESSENGER_TRANSPORT_DSN');
