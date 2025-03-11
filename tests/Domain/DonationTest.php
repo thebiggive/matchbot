@@ -274,7 +274,7 @@ class DonationTest extends TestCase
                 'totalPaid' => null,
                 'transactionId' => null,
                 'updatedTime' => $donation->getUpdatedDate()->format('c'),
-                'emailHandledByMatchbot' => false,
+                'confirmationByMatchbot' => false,
             ],
             $donation->toSfAPIModel()
         );

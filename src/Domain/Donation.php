@@ -535,11 +535,11 @@ class Donation extends SalesforceWriteProxy
 
             // Temporary field: In the near future donation success emails will be sent by matchbot instead
             // salesforce, and we'll flip this to true to avoid sending duplicate emails.
-            'emailHandledByMatchbot' => false,
+            'confirmationByMatchbot' => false,
 
             // When we know exactly what time we want to make the change (specific time doesn't matter) we might change
             // above to something like
-            // 'emailHandledByMatchbot' => $this->confirmedAt() > new \DateTimeImmutable('2025-03-11T12:00:00'),
+            // 'confirmationByMatchbot' => $this->confirmedAt() > new \DateTimeImmutable('2025-03-11T12:00:00'),
         ];
 
         // As of mid 2024 only the actual donate frontend gets this value, to avoid
