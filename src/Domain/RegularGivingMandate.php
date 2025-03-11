@@ -5,6 +5,7 @@ namespace MatchBot\Domain;
 use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\AssertionFailedException;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\NonCancellableStatus;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
@@ -177,6 +178,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
      * Allows us to take payments according to this agreement from now on.
      *
      * Precondition: Must be in Pending status
+     * @throws AssertionFailedException
      */
     public function activate(\DateTimeImmutable $activationDate): void
     {

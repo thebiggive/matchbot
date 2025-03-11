@@ -471,7 +471,7 @@ class RegularGivingServiceTest extends TestCase
 
         $this->expectException(AccountDetailsMismatch::class);
         $this->expectExceptionMessage(
-            'Mandate billing postcode KI0107 does not match donor account postocde SW11AA'
+            'Mandate billing postcode KI0107 does not match donor account postcode SW11AA'
         );
 
         $regularGivingService->setupNewMandate(
@@ -612,6 +612,7 @@ class RegularGivingServiceTest extends TestCase
             log: $this->createStub(LoggerInterface::class),
             regularGivingMandateRepository: $this->createStub(RegularGivingMandateRepository::class),
             regularGivingNotifier: $this->regularGivingNotifierProphecy->reveal(),
+            stripe: $this->createStub(Stripe::class),
         );
     }
 

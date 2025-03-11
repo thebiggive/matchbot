@@ -191,15 +191,20 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function newCharityFromCampaignData(array $campaignData): Charity
     {
+        $charityData = $campaignData['charity'];
+
         return new Charity(
-            salesforceId: $campaignData['charity']['id'],
-            charityName: $campaignData['charity']['name'],
-            stripeAccountId: $campaignData['charity']['stripeAccountId'],
-            hmrcReferenceNumber: $campaignData['charity']['hmrcReferenceNumber'],
-            giftAidOnboardingStatus: $campaignData['charity']['giftAidOnboardingStatus'],
-            regulator: $this->getRegulatorHMRCIdentifier($campaignData['charity']['regulatorRegion']),
-            regulatorNumber: $campaignData['charity']['regulatorNumber'],
+            salesforceId: $charityData['id'],
+            charityName: $charityData['name'],
+            websiteUri: $charityData['website'],
+            logoUri: $charityData['logoUri'],
+            stripeAccountId: $charityData['stripeAccountId'],
+            hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
+            giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
+            regulator: $this->getRegulatorHMRCIdentifier($charityData['regulatorRegion']),
+            regulatorNumber: $charityData['regulatorNumber'],
             time: new \DateTime('now'),
+            rawData: $charityData,
         );
     }
 
@@ -208,13 +213,18 @@ class CampaignRepository extends SalesforceReadProxyRepository
      */
     public function updateCharityFromCampaignData(Charity $charity, array $campaignData): void
     {
+        $charityData = $campaignData['charity'];
+
         $charity->updateFromSfPull(
-            charityName: $campaignData['charity']['name'],
-            stripeAccountId: $campaignData['charity']['stripeAccountId'],
-            hmrcReferenceNumber: $campaignData['charity']['hmrcReferenceNumber'],
-            giftAidOnboardingStatus: $campaignData['charity']['giftAidOnboardingStatus'],
-            regulator: $this->getRegulatorHMRCIdentifier($campaignData['charity']['regulatorRegion']),
-            regulatorNumber: $campaignData['charity']['regulatorNumber'],
+            charityName: $charityData['name'],
+            websiteUri: $charityData['website'],
+            logoUri: $charityData['logoUri'],
+            stripeAccountId: $charityData['stripeAccountId'],
+            hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
+            giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
+            regulator: $this->getRegulatorHMRCIdentifier($charityData['regulatorRegion']),
+            regulatorNumber: $charityData['regulatorNumber'],
+            rawData: $charityData,
             time: new \DateTime('now'),
         );
     }
@@ -253,6 +263,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
     {
         $campaign = $proxy;
 
+        /** @psalm-suppress RedundantConditionGivenDocblockType - redundant for Psalm but useful for PHPStorm */
+        \assert($campaign instanceof Campaign);
+
         $client = $this->getClient();
         $campaignData = $client->getById($campaign->getSalesforceId(), $withCache);
 
@@ -288,9 +301,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
             name: $campaignData['title'],
             startDate: new DateTime($campaignData['startDate']),
             ready: $campaignData['ready'],
-            thankYouMessage: $campaignData['thankYouMessage'],
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
+            thankYouMessage: $campaignData['thankYouMessage'],
+            sfData: $campaignData,
         );
         $this->getEntityManager()->flush();
     }

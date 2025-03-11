@@ -100,6 +100,8 @@ class PullCharityUpdatedBasedOnSfHookTest extends IntegrationTest
             'charity' => [
                 'id' => $sfId,
                 'name' => $newCharityName,
+                'website' => 'https://example.com',
+                'logoUri' => 'https://biggive.example.com/logo.png',
                 'stripeAccountId' => $stripeAccountId,
                 'giftAidOnboardingStatus' => 'Onboarded',
                 'hmrcReferenceNumber' => null,

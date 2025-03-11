@@ -38,6 +38,7 @@ use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationFundsNotifier;
+use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccountRepository;
@@ -582,6 +583,8 @@ return function (ContainerBuilder $containerBuilder) {
                     rateLimiterFactory: $rateLimiterFactory,
                     donorAccountRepository: $c->get(DonorAccountRepository::class),
                     bus: $c->get(RoutableMessageBus::class),
+                    environment: $c->get(Environment::class),
+                    donationNotifier: $c->get(DonationNotifier::class),
                 );
             }
     ]);

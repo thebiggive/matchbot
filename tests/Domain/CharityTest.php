@@ -16,11 +16,14 @@ class CharityTest extends TestCase
 
         $charity->updateFromSfPull(
             charityName: 'name doesnt matter',
+            websiteUri: null,
+            logoUri: null,
             stripeAccountId: null,
             hmrcReferenceNumber: 'not-empty',
             giftAidOnboardingStatus: Charity::GIFT_AID_APPROVED_STATUS,
             regulator: null,
             regulatorNumber: null,
+            rawData: [],
             time: new \DateTime()
         );
 
@@ -32,11 +35,14 @@ class CharityTest extends TestCase
 
         $charity->updateFromSfPull(
             charityName: 'name doesnt matter', // empty
+            websiteUri: null,
+            logoUri: null,
             stripeAccountId: null,
             hmrcReferenceNumber: '',
             giftAidOnboardingStatus: Charity::GIFT_AID_APPROVED_STATUS,
             regulator: null,
             regulatorNumber: null,
+            rawData: [],
             time: new \DateTime()
         );
 
@@ -49,11 +55,14 @@ class CharityTest extends TestCase
 
         $charity->updateFromSfPull(
             charityName: 'name doesnt matter',
+            websiteUri: null,
+            logoUri: null,
             stripeAccountId: null,
             hmrcReferenceNumber: 'not-empty',
             giftAidOnboardingStatus: 'Onboarded',
             regulator: null,
             regulatorNumber: null,
+            rawData: [],
             time: new \DateTime()
         );
 
@@ -112,11 +121,14 @@ class CharityTest extends TestCase
         $charity = TestCase::someCharity();
         $charity->updateFromSfPull(
             charityName: "Charity Name",
+            websiteUri: null,
+            logoUri: null,
             stripeAccountId: "accountid",
             hmrcReferenceNumber: $hmrcReference,
             giftAidOnboardingStatus: $giftaidOnboardingStatus,
             regulator: null,
             regulatorNumber: null,
+            rawData: [],
             time: new \DateTime(),
         );
 

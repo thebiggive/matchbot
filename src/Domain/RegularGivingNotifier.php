@@ -3,6 +3,7 @@
 namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Client\Mailer;
 use Psr\Clock\ClockInterface;
 
@@ -27,31 +28,28 @@ class RegularGivingNotifier
         $signUpDate = $mandate->getActiveFrom();
         Assertion::notNull($signUpDate);
 
-        $this->mailer->sendEmail(
+        $this->mailer->send(EmailMessage::donorMandateConfirmation(
+            $donorAccount->emailAddress,
             [
-                'templateKey' => 'donor-mandate-confirmation',
-                'recipientEmailAddress' => $donorAccount->emailAddress->email,
-                'params' => [
-                    'donorName' => $donorAccount->donorName->fullName(),
-                    'charityName' => $charity->getName(),
-                    'campaignName' => $campaign->getCampaignName(),
-                    'charityNumber' => $charity->getRegulatorNumber(),
-                    'campaignThankYouMessage' => $campaign->getThankYouMessage(),
-                    'signupDate' => $signUpDate->format('d/m/Y H:i'),
-                    'schedule' => $mandate->describeSchedule(),
-                    'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())->format('d/m/Y'),
-                    'amount' => $mandate->getDonationAmount()->format(),
-                    'giftAidValue' => $mandate->getGiftAidAmount()->format(),
-                    'totalIncGiftAid' => $mandate->totalIncGiftAid()->format(),
-                    'totalCharged' => $mandate->getDonationAmount()->format(),
-                    'firstDonation' => $this->donationToConfirmationEmailFields(
-                        $firstDonation,
-                        $charity,
-                        $campaign
-                    )
-                ],
+                'donorName' => $donorAccount->donorName->fullName(),
+                'charityName' => $charity->getName(),
+                'campaignName' => $campaign->getCampaignName(),
+                'charityNumber' => $charity->getRegulatorNumber(),
+                'campaignThankYouMessage' => $campaign->getThankYouMessage(),
+                'signupDate' => $signUpDate->format('d/m/Y H:i'),
+                'schedule' => $mandate->describeSchedule(),
+                'nextPaymentDate' => $mandate->firstPaymentDayAfter($this->clock->now())->format('d/m/Y'),
+                'amount' => $mandate->getDonationAmount()->format(),
+                'giftAidValue' => $mandate->getGiftAidAmount()->format(),
+                'totalIncGiftAid' => $mandate->totalIncGiftAid()->format(),
+                'totalCharged' => $mandate->getDonationAmount()->format(),
+                'firstDonation' => $this->donationToConfirmationEmailFields(
+                    $firstDonation,
+                    $charity,
+                    $campaign
+                )
             ]
-        );
+        ));
     }
 
     /**
@@ -68,6 +66,8 @@ class RegularGivingNotifier
 
         Assertion::notNull($firstDonationCollectedAt, 'First donation collected at should not be null');
 
+        // todo: consider remvoing duplication below with code in
+        // DonationNotifier::emailCommandForCollectedDonation
         return [
             'currencyCode' => $firstDonation->currency()->isoCode(),
             'donationAmount' => $firstDonation->getAmount(),

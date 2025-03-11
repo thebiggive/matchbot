@@ -6,7 +6,9 @@ namespace MatchBot\Domain;
 
 use DateTime;
 use Doctrine\ORM\Mapping as ORM;
+use Laminas\Diactoros\Uri;
 use MatchBot\Application\Assertion;
+use Psr\Http\Message\UriInterface;
 
 #[ORM\Table]
 #[ORM\Entity(repositoryClass: CharityRepository::class)]
@@ -33,10 +35,61 @@ class Charity extends SalesforceReadProxy
     ];
 
     /**
+     * HMRC-permitted regulator codes and names
+     */
+    public const array REGULATORS = [
+        'CCEW' => 'Charity Commission for England and Wales',
+        'OSCR' => 'Office of the Scottish Charity Regulator',
+        'CCNI' => 'Charity Commission for Northern Ireland',
+    ];
+
+    /**
      * @var string
      */
     #[ORM\Column(type: 'string')]
     protected string $name;
+
+    /**
+     * Full data about this charity as received from Salesforce. Not for use as-is in Matchbot domain logic but
+     * may be used in ad-hoc queries, migrations, and perhaps for outputting to FE to provide compatibility with the SF
+     * API.
+     * @psalm-suppress UnusedProperty
+     * @var array<string, mixed>
+     */
+    #[ORM\Column(type: "json", nullable: false)]
+    private array $salesforceData = [];
+
+    /**
+     * URI of the charity's logo, hosted as part of the Big Give website.
+     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    protected ?string $logoUri = null;
+
+    /**
+     * URI of the charity's own website, for linking to.
+     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    protected ?string $websiteUri = null;
+
+    /**
+     * MAT-400 todo - introduce the following properties, pull from SF and use in
+     * \MatchBot\Domain\DonationNotifier::emailCommandForCollectedDonation .
+
+     PostalAddress and phoneNumber are not currently included in the data in the SF API.
+     Will need to add, and first decide whether we're OK to publish these (since we send
+     them in emails anyway) or if we need a private SF-Matchbot api that's different to the
+     SF-frontend API
+
+        // For sending emails we only need postal address as a single string - but its stored as separate lines
+        // in SF. Consider whether to have it as a string here or preserve more information keeping the separate
+        // lines as separate fields. Could be useful for ad-hoc queries by us, plus in case we want to introduce
+        // e.g. regional filtering options.
+        #[ORM\Column(type: 'string', length: 1500, nullable: true)]
+        protected ?string $postalAddress = null;
+
+        #[ORM\Column(type: 'string', length: 255, nullable: true)]
+        protected ?string $phoneNumber = null;
+     */
 
     /**
      * @var string
@@ -51,11 +104,10 @@ class Charity extends SalesforceReadProxy
     protected ?string $hmrcReferenceNumber = null;
 
     /**
-     * HMRC-permitted values: CCEW, CCNI, OSCR. Anything else should have this null and
+     * HMRC-permitted values only. Anything else should have this null and
      * just store an "OtherReg" number in `$regulatorNumber` if applicable.
      *
-     * @var ?string
-     * @see Charity::$permittedRegulators
+     * @var key-of<self::REGULATORS> |null
      */
     #[ORM\Column(type: 'string', length: 4, nullable: true)]
     protected ?string $regulator = null;
@@ -65,8 +117,6 @@ class Charity extends SalesforceReadProxy
      */
     #[ORM\Column(type: 'string', length: 10, nullable: true)]
     protected ?string $regulatorNumber = null;
-
-    private static array $permittedRegulators = ['CCEW', 'CCNI', 'OSCR'];
 
     /**
      * @var bool    Whether the charity's Gift Aid is expected to be claimed by the Big Give. This
@@ -83,6 +133,9 @@ class Charity extends SalesforceReadProxy
     #[ORM\Column(type: 'boolean')]
     private bool $tbgApprovedToClaimGiftAid = false;
 
+    /**
+     * @param array<string,mixed> $rawData - data about the charity as sent from Salesforce
+     */
     public function __construct(
         string $salesforceId,
         string $charityName,
@@ -92,6 +145,9 @@ class Charity extends SalesforceReadProxy
         ?string $regulator,
         ?string $regulatorNumber,
         DateTime $time,
+        array $rawData = [],
+        ?string $websiteUri = null,
+        ?string $logoUri = null,
     ) {
         $this->updatedAt = $time;
         $this->createdAt = $time;
@@ -100,11 +156,14 @@ class Charity extends SalesforceReadProxy
         // every charity originates as pulled from SF.
         $this->updateFromSfPull(
             charityName: $charityName,
+            websiteUri: $websiteUri,
+            logoUri: $logoUri,
             stripeAccountId: $stripeAccountId,
             hmrcReferenceNumber: $hmrcReferenceNumber,
             giftAidOnboardingStatus: $giftAidOnboardingStatus,
             regulator: $regulator,
             regulatorNumber: $regulatorNumber,
+            rawData: $rawData,
             time: new \DateTime('now'),
         );
     }
@@ -185,7 +244,7 @@ class Charity extends SalesforceReadProxy
 
     public function setRegulator(?string $regulator): void
     {
-        if ($regulator !== null && !in_array($regulator, static::$permittedRegulators, true)) {
+        if ($regulator !== null && !array_key_exists($regulator, self::REGULATORS)) {
             throw new \UnexpectedValueException(sprintf('Regulator %s not known', $regulator));
         }
 
@@ -213,15 +272,21 @@ class Charity extends SalesforceReadProxy
     }
 
     /**
-     * @throws \UnexpectedValueException if $giftAidOnboardingStatus is not listed in self::POSSIBLE_GIFT_AID_STATUSES
+     *
+     * @param array<string,mixed> $rawData Data about the charity as received directly from SF.
+     *
+     *@throws \UnexpectedValueException if $giftAidOnboardingStatus is not listed in self::POSSIBLE_GIFT_AID_STATUSES
      */
     public function updateFromSfPull(
         string $charityName,
+        ?string $websiteUri,
+        ?string $logoUri,
         ?string $stripeAccountId,
         ?string $hmrcReferenceNumber,
         ?string $giftAidOnboardingStatus,
         ?string $regulator,
         ?string $regulatorNumber,
+        array $rawData,
         DateTime $time,
     ): void {
         $statusUnexpected = !is_null($giftAidOnboardingStatus)
@@ -252,6 +317,11 @@ class Charity extends SalesforceReadProxy
         $this->setRegulator($regulator);
         $this->setRegulatorNumber($regulatorNumber);
 
+        $this->setWebsiteUri($websiteUri);
+        $this->setLogoUri($logoUri);
+
+        $this->salesforceData = $rawData;
+
         $this->setSalesforceLastPull($time);
     }
 
@@ -275,5 +345,53 @@ class Charity extends SalesforceReadProxy
         \assert($return !== null);
 
         return $return;
+    }
+
+    public function getRegulatorName(): ?string
+    {
+        if ($this->regulator == null) {
+            return null;
+        }
+
+        return self::REGULATORS[$this->regulator];
+    }
+
+    public function isExempt(): bool
+    {
+        // This is a slightly risky assumption to make, but mailer is already making it. By moving the logic
+        // to here it gets one step closer to directly storing what was entered.
+
+        // todo - adjust \MatchBot\Domain\CampaignRepository::doUpdateFromSf to recognise the magic value 'Exempt'
+        return $this->regulatorNumber === null;
+    }
+
+    private function setWebsiteUri(?string $websiteUri): void
+    {
+        if (trim($websiteUri ?? '') === '') {
+            $websiteUri = null;
+        }
+
+        Assertion::nullOrUrl($websiteUri);
+        $this->websiteUri = $websiteUri;
+    }
+
+    private function setLogoUri(?string $logoUri): void
+    {
+        if (trim($logoUri ?? '') === '') {
+            $logoUri = null;
+        }
+
+        Assertion::nullOrUrl($logoUri);
+        $this->logoUri = $logoUri;
+    }
+
+    public function getLogoUri(): ?UriInterface
+    {
+        return is_null($this->logoUri) ? null : new Uri($this->logoUri);
+    }
+
+    public function getWebsiteUri(): ?UriInterface
+    {
+        return is_null($this->websiteUri) ? null : new Uri($this->websiteUri);
     }
 }

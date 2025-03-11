@@ -9,7 +9,7 @@ use MatchBot\Domain\PersonId;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Exception\HttpForbiddenException;
 
-readonly class Security
+class Security
 {
     /**
      * @psalm-suppress PossiblyUnusedMethod - called by Container

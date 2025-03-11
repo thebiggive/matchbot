@@ -10,9 +10,11 @@ use Stripe\BalanceTransaction;
 use Stripe\Charge;
 use Stripe\ConfirmationToken;
 use Stripe\CustomerSession;
+use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidArgumentException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
+use Stripe\SetupIntent;
 use Stripe\StripeClient;
 
 /**
@@ -76,6 +78,14 @@ class LiveStripeClient implements Stripe
         return $this->stripeClient->paymentIntents->create($createPayload);
     }
 
+    public function createSetupIntent(StripeCustomerId $stripeCustomerId): SetupIntent
+    {
+        return $this->stripeClient->setupIntents->create([
+            'customer' => $stripeCustomerId->stripeCustomerId,
+                'automatic_payment_methods' => ['enabled' => true],
+            ]);
+    }
+
     public function createCustomerSession(StripeCustomerId $stripeCustomerId): CustomerSession
     {
         return $this->stripeClient->customerSessions->create([
@@ -101,5 +111,21 @@ class LiveStripeClient implements Stripe
     public function retrieveBalanceTransaction(string $id): BalanceTransaction
     {
         return $this->stripeClient->balanceTransactions->retrieve($id);
+    }
+
+    public function retrievePaymentMethod(StripeCustomerId $customerId, StripePaymentMethodId $methodId): PaymentMethod
+    {
+        return $this->stripeClient->customers->retrievePaymentMethod(
+            $customerId->stripeCustomerId,
+            $methodId->stripePaymentMethodId
+        );
+    }
+
+    /**
+     * @throws ApiErrorException
+     */
+    public function detatchPaymentMethod(StripePaymentMethodId $paymentMethodId): void
+    {
+        $this->stripeClient->paymentMethods->detach($paymentMethodId->stripePaymentMethodId);
     }
 }

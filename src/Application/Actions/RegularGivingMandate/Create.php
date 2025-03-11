@@ -7,23 +7,19 @@ use Laminas\Diactoros\Response\JsonResponse;
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\AssertionFailedException;
-use MatchBot\Application\Auth\PersonWithPasswordAuthMiddleware;
 use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\MandateCreate;
 use MatchBot\Application\Security\Security;
 use MatchBot\Domain\CampaignRepository;
+use MatchBot\Domain\DomainException\AccountDetailsMismatch;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
+use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationNotCollected;
 use MatchBot\Domain\DomainException\MandateAlreadyExists;
 use MatchBot\Domain\DomainException\NotFullyMatched;
 use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\WrongCampaignType;
-use MatchBot\Domain\Money;
 use MatchBot\Domain\RegularGivingService;
-use MatchBot\Domain\PersonId;
-use MatchBot\Domain\RegularGivingMandate;
-use MatchBot\Domain\Salesforce18Id;
-use MatchBot\Domain\StripeConfirmationTokenId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -149,7 +145,9 @@ class Create extends Action
                 'Consider using another payment method or contacting your card issuer.',
                 reduceSeverity: false,
             );
-        } catch (MandateAlreadyExists $exception) {
+        } catch (MandateAlreadyExists | CouldNotCancelStripePaymentIntent $exception) {
+            // CouldNotCancelStripePaymentIntent will be thrown if the other mandate is not yet activated but has
+            // a collected first donation
             return new JsonResponse([
                 'error' => [
                     'message' => $exception->getMessage(),
@@ -178,6 +176,13 @@ class Create extends Action
                     'client_secret' =>  $intent->client_secret
                 ],
             ]);
+        } catch (AccountDetailsMismatch $e) {
+            $this->logger->warning("AccountDetailsMismatch: {$e->getMessage()}");
+            return $this->validationError(
+                $response,
+                logMessage: $e->getMessage(),
+                publicMessage: "Your account information may have changed after you loaded this page. Please refresh and try again.",
+            );
         }
 
         // create first three pending donations for mandate.

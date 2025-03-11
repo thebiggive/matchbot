@@ -4,6 +4,7 @@ namespace MatchBot\Tests\Domain;
 
 use Doctrine\DBAL\Driver\PDO\Exception;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -15,6 +16,7 @@ use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationSequenceNumber;
 use MatchBot\Domain\DonationService;
@@ -207,6 +209,8 @@ class DonationServiceTest extends TestCase
             rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
             bus: $this->createStub(RoutableMessageBus::class),
+            environment: Environment::Test,
+            donationNotifier: $this->createStub(DonationNotifier::class),
         );
     }
 

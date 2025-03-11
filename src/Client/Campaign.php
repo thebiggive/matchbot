@@ -15,6 +15,13 @@ use MatchBot\Application\Assertion;
  *     charity: array{
  *      id: string,
  *      name: string,
+ *      logoUri: ?string,
+ *      twitter: ?string,
+ *      website: ?string,
+ *      facebook: ?string,
+ *      linkedin: ?string,
+ *      instagram: ?string,
+ *      optInStatement: ?string,
  *      stripeAccountId: string,
  *      hmrcReferenceNumber: string,
  *      giftAidOnboardingStatus: string,

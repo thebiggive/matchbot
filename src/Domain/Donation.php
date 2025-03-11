@@ -532,6 +532,14 @@ class Donation extends SalesforceWriteProxy
             ...$this->toFrontEndApiModel(),
             'originalPspFee' => (float) $this->getOriginalPspFee(),
             'tipRefundAmount' => $this->getTipRefundAmount()?->toMajorUnitFloat(),
+
+            // Temporary field: In the near future donation success emails will be sent by matchbot instead
+            // salesforce, and we'll flip this to true to avoid sending duplicate emails.
+            'emailHandledByMatchbot' => false,
+
+            // When we know exactly what time we want to make the change (specific time doesn't matter) we might change
+            // above to something like
+            // 'emailHandledByMatchbot' => $this->confirmedAt() > new \DateTimeImmutable('2025-03-11T12:00:00'),
         ];
 
         // As of mid 2024 only the actual donate frontend gets this value, to avoid
@@ -576,9 +584,7 @@ class Donation extends SalesforceWriteProxy
             'homeAddress' => $this->getDonorHomeAddressLine1(),
             'homePostcode' => $this->getDonorHomePostcode(),
             'lastName' => $this->getDonorLastName(true),
-            'matchedAmount' => $this->getDonationStatus()->isSuccessful()
-                ? (float) $this->getFundingWithdrawalTotal()
-                : 0,
+            'matchedAmount' => $this->matchedAmount()->toMajorUnitFloat(),
             'matchReservedAmount' => 0,
             'optInCharityEmail' => $this->getCharityComms(),
             'optInChampionEmail' => $this->getChampionComms(),
@@ -1789,5 +1795,17 @@ class Donation extends SalesforceWriteProxy
     public function currency(): Currency
     {
         return Currency::fromIsoCode($this->currencyCode);
+    }
+
+    public function matchedAmount(): Money
+    {
+        return $this->getDonationStatus()->isSuccessful()
+            ? $this->getFundingWithdrawalTotalAsObject()
+            : Money::zero($this->currency());
+    }
+
+    public function isRegularGiving(): bool
+    {
+        return $this->mandate !== null;
     }
 }

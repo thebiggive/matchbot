@@ -20,8 +20,11 @@ use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
+use Slim\Exception\HttpBadRequestException;
 use Stripe\Exception\ApiErrorException as StripeApiErrorException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
 use UnexpectedValueException;
 
 readonly class RegularGivingService
@@ -37,6 +40,7 @@ readonly class RegularGivingService
         private LoggerInterface $log,
         private RegularGivingMandateRepository $regularGivingMandateRepository,
         private RegularGivingNotifier $regularGivingNotifier,
+        private Stripe $stripe,
     ) {
     }
 
@@ -65,7 +69,8 @@ readonly class RegularGivingService
      * @throws DonationNotCollected
      * @throws PaymentIntentNotSucceeded
      * @throws CampaignNotOpen
-     *
+     * @throws AccountDetailsMismatch
+     * @throws CouldNotCancelStripePaymentIntent
      * @throws UnexpectedValueException if the amount is out of the allowed range
      */
     public function setupNewMandate(
@@ -343,7 +348,7 @@ readonly class RegularGivingService
 
         if (!is_null($billingPostCode) && !is_null($donorBillingPostcode) && $billingPostCode !== $donorBillingPostcode) {
             throw new AccountDetailsMismatch(
-                "Mandate billing postcode {$billingPostCode} does not match donor account postocde {$donorBillingPostcode}"
+                "Mandate billing postcode {$billingPostCode} does not match donor account postcode {$donorBillingPostcode}"
             );
         }
     }
@@ -479,13 +484,17 @@ readonly class RegularGivingService
         \assert($donor !== null);
 
 
-        $this->activateMandateNotifyDonor(
-            firstDonation: $donation,
-            mandate: $mandate,
-            donor: $donor,
-            campaign: $donation->getCampaign(),
-            paymentMethodId: $paymentMethodId,
-        );
+        try {
+            $this->activateMandateNotifyDonor(
+                firstDonation: $donation,
+                mandate: $mandate,
+                donor: $donor,
+                campaign: $donation->getCampaign(),
+                paymentMethodId: $paymentMethodId,
+            );
+        } catch (\MatchBot\Application\AssertionFailedException $e) {
+            $this->log->warning("Could not activate regular giving mandate {$mandate->getId()}: {$e->getMessage()}");
+        }
     }
 
     /**
@@ -516,5 +525,26 @@ readonly class RegularGivingService
                 MandateCancellationType::ReplacedByNewMandate,
             );
         }
+    }
+
+    /**
+     * Removes any existing regular giving payment method for a donor, and replaces it with a new one.
+     *
+     * @param StripePaymentMethodId $methodId must be a payment method attached to the given donor's stripe  customer account.
+     * @throws InvalidRequestException
+     */
+    public function changeDonorRegularGivingPaymentMethod(DonorAccount $donor, StripePaymentMethodId $methodId): PaymentMethod
+    {
+        $newPaymentMethod = $this->stripe->retrievePaymentMethod($donor->stripeCustomerId, $methodId);
+        $donor->setRegularGivingPaymentMethod($methodId);
+
+        $previousPaymentMethodId = $donor->getRegularGivingPaymentMethod();
+        if ($previousPaymentMethodId) {
+            $this->stripe->detatchPaymentMethod($previousPaymentMethodId);
+        }
+
+        $this->entityManager->flush();
+
+        return $newPaymentMethod;
     }
 }
