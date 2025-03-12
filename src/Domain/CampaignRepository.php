@@ -201,7 +201,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $charityData = $campaignData['charity'];
         $address = $this->arrayToPostalAddress($charityData['postalAddress'] ?? null);
         $emailString = $charityData['emailAddress'] ?? null;
-        $emailAddress = is_string($emailString) ? EmailAddress::of($emailString) : null;
+        $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
 
         return new Charity(
             salesforceId: $charityData['id'],
@@ -230,7 +230,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         $address = $this->arrayToPostalAddress($charityData['postalAddress'] ?? null);
 
         $emailString = $charityData['emailAddress'] ?? null;
-        $emailAddress = is_string($emailString) ? EmailAddress::of($emailString) : null;
+        $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
 
         $charity->updateFromSfPull(
             charityName: $charityData['name'],
