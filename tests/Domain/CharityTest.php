@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\PostalAddress;
 use MatchBot\Tests\TestCase;
 use PHPUnit\Util\Test;
 
@@ -26,7 +27,7 @@ class CharityTest extends TestCase
             rawData: [],
             time: new \DateTime(),
             phoneNumber: null,
-            address: null
+            address: PostalAddress::null(),
         );
 
         $this->assertTrue($charity->getTbgApprovedToClaimGiftAid());
@@ -47,7 +48,7 @@ class CharityTest extends TestCase
             rawData: [],
             time: new \DateTime(),
             phoneNumber: null,
-            address: null
+            address: PostalAddress::null()
         );
 
         $this->assertFalse($charity->getTbgApprovedToClaimGiftAid());
@@ -69,7 +70,7 @@ class CharityTest extends TestCase
             rawData: [],
             time: new \DateTime(),
             phoneNumber: null,
-            address: null
+            address: PostalAddress::null()
         );
 
         $this->assertFalse($charity->getTbgApprovedToClaimGiftAid());
@@ -137,7 +138,7 @@ class CharityTest extends TestCase
             rawData: [],
             time: new \DateTime(),
             phoneNumber: null,
-            address: null,
+            address: PostalAddress::null(),
         );
 
         $this->assertSame($expected, $charity->isTbgClaimingGiftAid());

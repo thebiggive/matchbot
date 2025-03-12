@@ -340,10 +340,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
      *           country: ?string,
      *           postalCode: ?string} $postalAddress
      */
-    private function arrayToPostalAddress(?array $postalAddress): ?PostalAddress
+    private function arrayToPostalAddress(?array $postalAddress): PostalAddress
     {
         if (is_null($postalAddress)) {
-            return null;
+            return PostalAddress::null();
         }
 
         $postalAddress = array_map(
@@ -356,7 +356,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         if (is_null($postalAddress['line1'])) {
             Assertion::allNull($postalAddress);
 
-            return null;
+            return PostalAddress::null();
         }
 
         return PostalAddress::of(

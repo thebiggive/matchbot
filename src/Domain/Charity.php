@@ -75,7 +75,7 @@ class Charity extends SalesforceReadProxy
     protected ?string $phoneNumber = null;
 
     #[ORM\Embedded(columnPrefix: 'address_')]
-    protected ?PostalAddress $postalAddress = null;
+    protected PostalAddress $postalAddress;
 
     /**
      * @var string
@@ -154,7 +154,7 @@ class Charity extends SalesforceReadProxy
             rawData: $rawData,
             time: new \DateTime('now'),
             phoneNumber: $phoneNumber,
-            address: $address,
+            address: $address ?? PostalAddress::null(),
         );
     }
 
@@ -263,8 +263,6 @@ class Charity extends SalesforceReadProxy
 
     /**
      *
-     * @param PostalAddress|null $address
-     * @param string|null $phoneNumber
      * @param array<string,mixed> $rawData Data about the charity as received directly from SF.
      *
      *@throws \UnexpectedValueException if $giftAidOnboardingStatus is not listed in self::POSSIBLE_GIFT_AID_STATUSES
@@ -281,7 +279,7 @@ class Charity extends SalesforceReadProxy
         array $rawData,
         DateTime $time,
         ?string $phoneNumber,
-        ?PostalAddress $address,
+        PostalAddress $address,
     ): void {
         $statusUnexpected = !is_null($giftAidOnboardingStatus)
             && !in_array($giftAidOnboardingStatus, self::POSSIBLE_GIFT_AID_STATUSES, true);
@@ -409,7 +407,7 @@ class Charity extends SalesforceReadProxy
         return $string;
     }
 
-    public function getPostalAddress(): ?PostalAddress
+    public function getPostalAddress(): PostalAddress
     {
         return $this->postalAddress;
     }
