@@ -28,6 +28,7 @@ class CharityTest extends TestCase
             time: new \DateTime(),
             phoneNumber: null,
             address: PostalAddress::null(),
+            emailAddress: null,
         );
 
         $this->assertTrue($charity->getTbgApprovedToClaimGiftAid());
@@ -48,7 +49,8 @@ class CharityTest extends TestCase
             rawData: [],
             time: new \DateTime(),
             phoneNumber: null,
-            address: PostalAddress::null()
+            address: PostalAddress::null(),
+            emailAddress: null
         );
 
         $this->assertFalse($charity->getTbgApprovedToClaimGiftAid());
@@ -70,7 +72,8 @@ class CharityTest extends TestCase
             rawData: [],
             time: new \DateTime(),
             phoneNumber: null,
-            address: PostalAddress::null()
+            address: PostalAddress::null(),
+            emailAddress: null
         );
 
         $this->assertFalse($charity->getTbgApprovedToClaimGiftAid());
@@ -113,7 +116,13 @@ class CharityTest extends TestCase
             giftAidOnboardingStatus: "NOT_A_POSSIBLE_STATUS",
             regulator: null,
             regulatorNumber: null,
-            time: new \DateTime()
+            time: new \DateTime(),
+            rawData: [],
+            websiteUri: null,
+            logoUri: null,
+            phoneNumber: null,
+            address: null,
+            emailAddress: null
         );
     }
 
@@ -139,6 +148,7 @@ class CharityTest extends TestCase
             time: new \DateTime(),
             phoneNumber: null,
             address: PostalAddress::null(),
+            emailAddress: null,
         );
 
         $this->assertSame($expected, $charity->isTbgClaimingGiftAid());

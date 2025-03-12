@@ -74,6 +74,12 @@ class Charity extends SalesforceReadProxy
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     protected ?string $phoneNumber = null;
 
+    /**
+     * Not using EmailAddress as embedded because of nullability requirement.
+     */
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $emailAddress;
+
     #[ORM\Embedded(columnPrefix: 'address_')]
     protected PostalAddress $postalAddress;
 
@@ -120,6 +126,7 @@ class Charity extends SalesforceReadProxy
     private bool $tbgApprovedToClaimGiftAid = false;
 
     /**
+     * @param EmailAddress|null $emailAddress
      * @param array<string,mixed> $rawData - data about the charity as sent from Salesforce
      */
     public function __construct(
@@ -131,11 +138,12 @@ class Charity extends SalesforceReadProxy
         ?string $regulator,
         ?string $regulatorNumber,
         DateTime $time,
-        array $rawData = [],
+        ?EmailAddress $emailAddress,
         ?string $websiteUri = null,
         ?string $logoUri = null,
         ?string $phoneNumber = null,
         ?PostalAddress $address = null,
+        array $rawData = [],
     ) {
         $this->updatedAt = $time;
         $this->createdAt = $time;
@@ -155,6 +163,7 @@ class Charity extends SalesforceReadProxy
             time: new \DateTime('now'),
             phoneNumber: $phoneNumber,
             address: $address ?? PostalAddress::null(),
+            emailAddress: $emailAddress,
         );
     }
 
@@ -175,7 +184,7 @@ class Charity extends SalesforceReadProxy
     /**
      * @param string $name
      */
-    public function setName(string $name): void
+    final public function setName(string $name): void
     {
         $this->name = $name;
     }
@@ -263,11 +272,12 @@ class Charity extends SalesforceReadProxy
 
     /**
      *
+     * @param EmailAddress|null $emailAddress
      * @param array<string,mixed> $rawData Data about the charity as received directly from SF.
      *
      *@throws \UnexpectedValueException if $giftAidOnboardingStatus is not listed in self::POSSIBLE_GIFT_AID_STATUSES
      */
-    public function updateFromSfPull(
+    final public function updateFromSfPull(
         string $charityName,
         ?string $websiteUri,
         ?string $logoUri,
@@ -280,6 +290,7 @@ class Charity extends SalesforceReadProxy
         DateTime $time,
         ?string $phoneNumber,
         PostalAddress $address,
+        ?EmailAddress $emailAddress,
     ): void {
         $statusUnexpected = !is_null($giftAidOnboardingStatus)
             && !in_array($giftAidOnboardingStatus, self::POSSIBLE_GIFT_AID_STATUSES, true);
@@ -318,6 +329,8 @@ class Charity extends SalesforceReadProxy
         $this->setSalesforceLastPull($time);
 
         $this->postalAddress = $address;
+
+        $this->emailAddress = $emailAddress?->email;
     }
 
     public function getStatementDescriptor(): string
@@ -410,5 +423,14 @@ class Charity extends SalesforceReadProxy
     public function getPostalAddress(): PostalAddress
     {
         return $this->postalAddress;
+    }
+
+    public function getEmailAddress(): ?EmailAddress
+    {
+        if ($this->emailAddress === null) {
+            return null;
+        }
+
+        return EmailAddress::of($this->emailAddress);
     }
 }
