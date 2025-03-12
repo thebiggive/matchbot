@@ -192,7 +192,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function newCharityFromCampaignData(array $campaignData): Charity
     {
         $charityData = $campaignData['charity'];
-        $address = $this->arrayToPostalAddress($charityData['postalAddress']);
+        $address = $this->arrayToPostalAddress($charityData['postalAddress'] ?? null);
 
         return new Charity(
             salesforceId: $charityData['id'],
@@ -206,7 +206,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             rawData: $charityData,
             websiteUri: $charityData['website'],
             logoUri: $charityData['logoUri'],
-            phoneNumber: $charityData['phoneNumber'],
+            phoneNumber: $charityData['phoneNumber'] ?? null,
             address: $address,
         );
     }
@@ -217,7 +217,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function updateCharityFromCampaignData(Charity $charity, array $campaignData): void
     {
         $charityData = $campaignData['charity'];
-        $address = $this->arrayToPostalAddress($charityData['postalAddress']);
+        $address = $this->arrayToPostalAddress($charityData['postalAddress'] ?? null);
 
         $charity->updateFromSfPull(
             charityName: $charityData['name'],
@@ -230,7 +230,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             regulatorNumber: $charityData['regulatorNumber'],
             rawData: $charityData,
             time: new \DateTime('now'),
-            phoneNumber: $charityData['phoneNumber'],
+            phoneNumber: $charityData['phoneNumber'] ?? null,
             address: $address,
         );
     }
