@@ -76,6 +76,7 @@ class DonationNotifier
             'charityWebsite' => $charity->getWebsiteUri()?->__toString(),
 
             'charityPhoneNumber' => $charity->getPhoneNumber(),
+            'charityEmailAddress' => $charity->getEmailAddress()?->email,
             'charityPostalAddress' => $charity->getPostalAddress()->format(),
 
             // There are other params that are currently sent from SF but not officially required by mailer.
