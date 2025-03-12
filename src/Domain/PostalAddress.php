@@ -26,16 +26,12 @@ readonly class PostalAddress
     private function __construct(
         #[Column(nullable: true)]
         public string $line1,
-
         #[Column(nullable: true)]
         public ?string $line2,
-
         #[Column(nullable: true)]
         public ?string $city,
-
         #[Column(nullable: true)]
         public ?string $postalCode,
-
         #[Column(nullable: true)]
         public ?string $country,
     ) {
