@@ -54,6 +54,12 @@ class Donation extends SalesforceWriteProxy
      */
     public const string OVERSEAS = 'OVERSEAS';
 
+    /*
+     * @todo-mat-400: Replace date below with something shortly after the code will be deployed to prod
+     * to enable this feature.
+     */
+    public const string MAT_400_ENABLE_TIMESTAMP = '3000-01-01T00:00:00+00:00';
+
     private array $possiblePSPs = ['stripe'];
 
     /**
@@ -533,13 +539,9 @@ class Donation extends SalesforceWriteProxy
             'originalPspFee' => (float) $this->getOriginalPspFee(),
             'tipRefundAmount' => $this->getTipRefundAmount()?->toMajorUnitFloat(),
 
-            // Temporary field: In the near future donation success emails will be sent by matchbot instead
-            // salesforce, and we'll flip this to true to avoid sending duplicate emails.
-            'confirmationByMatchbot' => false,
-
-            // When we know exactly what time we want to make the change (specific time doesn't matter) we might change
-            // above to something like
-            // 'confirmationByMatchbot' => $this->confirmedAt() > new \DateTimeImmutable('2025-03-11T12:00:00'),
+            // replace with hard-coded true when date is passed.
+            'confirmationByMatchbot' => $this->donationStatus->isSuccessful() &&
+                $this->getCollectedAt() > new \DateTimeImmutable(self::MAT_400_ENABLE_TIMESTAMP),
         ];
 
         // As of mid 2024 only the actual donate frontend gets this value, to avoid

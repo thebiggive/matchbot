@@ -10,11 +10,6 @@ enum Environment
     case Local;
     case Test;
 
-    public function isFeatureEnabledRegularGiving(): bool
-    {
-        return $this !== self::Production;
-    }
-
     public static function fromAppEnv(string $name): self
     {
         return match ($name) {
@@ -44,7 +39,7 @@ enum Environment
         };
     }
 
-    public function isFeatureEnabledDirectSuccessEmail(): bool
+    public function isFeatureEnabledRegularGiving(): bool
     {
         return ! $this->isProduction();
     }
