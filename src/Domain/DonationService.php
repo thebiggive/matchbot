@@ -732,7 +732,10 @@ class DonationService
         );
 
 
-        if ($this->environment->isFeatureEnabledDirectSuccessEmail()) {
+        if (
+            ! $this->environment->isProduction() ||
+            $donation->getCollectedAt() > new \DateTimeImmutable(Donation::MAT_400_ENABLE_TIMESTAMP)
+        ) {
             $this->logger->info("Notifying success for $donation");
             // Ideally we might do this in a queue consumer, but calling mailer should be quick, and until
             // MAT-403 is done we don't want these to wait behind items queued to go to SF.
