@@ -14,6 +14,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PostalAddress;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
@@ -205,7 +206,9 @@ class TestCase extends PHPUnitTestCase
     public static function someCharity(
         ?string $stripeAccountId = null,
         ?Salesforce18Id $salesforceId = null,
-        string $name = 'Charity Name'
+        string $name = 'Charity Name',
+        ?string $phoneNumber = null,
+        ?PostalAddress $address = null,
     ): Charity {
         return new Charity(
             salesforceId: $salesforceId?->value ?? ('123CharityId' .  self::randomHex(3)),
@@ -216,8 +219,10 @@ class TestCase extends PHPUnitTestCase
             regulator: 'CCEW',
             regulatorNumber: 'Reg-no',
             time: new \DateTime('2023-10-06T18:51:27'),
-            logoUri: 'https://some-logo-host/charityname/logo.png',
             websiteUri: 'https://charityname.com',
+            logoUri: 'https://some-logo-host/charityname/logo.png',
+            phoneNumber: $phoneNumber,
+            address: $address,
         );
     }
 
