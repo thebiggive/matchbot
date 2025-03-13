@@ -370,8 +370,8 @@ class CampaignRepository extends SalesforceReadProxyRepository
             line1: $postalAddress['line1'],
             line2: $postalAddress['line2'],
             city: $postalAddress['city'],
-            postalCode: $postalAddress['country'],
-            country: $postalAddress['postalCode'],
+            postalCode: $postalAddress['postalCode'],
+            country: $postalAddress['country'],
         );
     }
 }

@@ -28,7 +28,13 @@ readonly class PostalAddress
         ?string $postalCode,
         ?string $country,
     ): self {
-        return new self($line1, $line2, $city, $postalCode, $country);
+        return new self(
+            line1: $line1,
+            line2: $line2,
+            city: $city,
+            postalCode: $postalCode,
+            country: $country
+        );
     }
 
     private function __construct(
