@@ -87,8 +87,23 @@ class DonationNotifier
         ]);
     }
 
-    public function notifyDonorOfDonationSuccess(Donation $donation): void
+    /**
+     * Sends (Or resends) a donation thanks message to the donor of a donation. By default, uses the email
+     * address and all other details as recorded on the donation, but if $to is passed the email is sent
+     * to that address instead.
+     *
+     * @param Donation $donation
+     * @param EmailAddress|null $to
+     * @return void
+     */
+    public function notifyDonorOfDonationSuccess(Donation $donation, ?EmailAddress $to = null): void
     {
-        $this->mailer->send(self::emailMessageForCollectedDonation($donation));
+        $emailMessage = self::emailMessageForCollectedDonation($donation);
+
+        if ($to !== null) {
+            $emailMessage = $emailMessage->withToAddress($to);
+        }
+
+        $this->mailer->send($emailMessage);
     }
 }

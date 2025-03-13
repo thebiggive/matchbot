@@ -14,6 +14,7 @@ use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
@@ -49,10 +50,17 @@ class ResendDonorThanksNotificationTest extends TestCase
 
         $donationRepositoryProphecy->findOneByUUID($donation->getUuid())->willReturn($donation);
 
-        $notifierProphecy->notifyDonorOfDonationSuccess($donation)->shouldBeCalled();
+        $notifierProphecy->notifyDonorOfDonationSuccess(
+            $donation,
+            EmailAddress::of('new-email@example.com')
+        )->shouldBeCalled();
 
         $response = $sut->__invoke(
-            new ServerRequest('POST', '/'),
+            new ServerRequest(
+                'METHOD-not-relevant-for-test-would-be-POST',
+                '/uri-not-relevant-for-test',
+                body: '{"sendToEmailAddress": "new-email@example.com"}'
+            ),
             new Response(),
             ['donationId' => $donation->getUUID()->toString()]
         );
