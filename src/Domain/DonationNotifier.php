@@ -89,12 +89,6 @@ class DonationNotifier
 
     public function notifyDonorOfDonationSuccess(Donation $donation): void
     {
-        if ($donation->isRegularGiving()) {
-            // Regular giving donors get an email confirming the setup of the mandate, but not an email for
-            // each individual donation.
-            return;
-        }
-
         $this->mailer->send(self::emailMessageForCollectedDonation($donation));
     }
 }

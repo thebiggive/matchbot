@@ -615,7 +615,7 @@ class DonationService
 
     public function donationAsApiModel(UuidInterface $donationUUID): array
     {
-        $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
+        $donation = $this->donationRepository->findOneByUUID($donationUUID);
 
         if (!$donation) {
             throw new DomainRecordNotFoundException('Donation not found');
@@ -736,11 +736,12 @@ class DonationService
             ! $this->environment->isProduction() ||
             $donation->getCollectedAt() > new \DateTimeImmutable(Donation::MAT_400_ENABLE_TIMESTAMP)
         ) {
-            $this->logger->info("Notifying success for $donation");
-            // Ideally we might do this in a queue consumer, but calling mailer should be quick, and until
-            // MAT-403 is done we don't want these to wait behind items queued to go to SF.
-            $this->donationNotifier->notifyDonorOfDonationSuccess($donation);
-            $this->logger->info("Done notifying success for $donation");
+            if (! $donation->isRegularGiving()) {
+                // Regular giving donors get an email confirming the setup of the mandate, but not an email for
+                // each individual donation.
+
+                $this->donationNotifier->notifyDonorOfDonationSuccess($donation);
+            }
         }
     }
 

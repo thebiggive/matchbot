@@ -27,6 +27,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use Random\Randomizer;
 use Redis;
 use Slim\App;
@@ -263,6 +264,7 @@ class TestCase extends PHPUnitTestCase
      * @param numeric-string $tipAmount
      */
     public static function someDonation(
+        UuidInterface $uuid = null,
         string $amount = '1',
         string $currencyCode = 'GBP',
         PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
@@ -272,8 +274,9 @@ class TestCase extends PHPUnitTestCase
         string $tipAmount = '0',
         ?EmailAddress $emailAddress = null,
         ?DonorName $donorName = null,
+        bool $collected = false,
     ): Donation {
-        return new Donation(
+        $donation = new Donation(
             amount: $amount,
             currencyCode: $currencyCode,
             paymentMethodType: $paymentMethodType,
@@ -293,6 +296,27 @@ class TestCase extends PHPUnitTestCase
             homeAddress: null,
             homePostcode: null,
             billingPostcode: null,
+        );
+
+        $donation->setUuid($uuid ?? Uuid::uuid4());
+
+        if ($collected) {
+            self::collectDonation($donation);
+        }
+
+        return $donation;
+    }
+
+    protected static function collectDonation(Donation $donationResponse): void
+    {
+        $donationResponse->collectFromStripeCharge(
+            chargeId: 'testchargeid',
+            totalPaidFractional: 100, // irrelevant
+            transferId: 'test_transfer_id',
+            cardBrand: null,
+            cardCountry: null,
+            originalFeeFractional: '0',
+            chargeCreationTimestamp: (int)(new \DateTimeImmutable())->format('U'),
         );
     }
 

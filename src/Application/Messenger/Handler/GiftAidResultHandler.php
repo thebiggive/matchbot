@@ -8,6 +8,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\SalesforceWriteProxy;
 use Messages;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
@@ -28,7 +29,7 @@ class GiftAidResultHandler
         ));
 
         /** @var Donation $donation */
-        $donation = $this->donationRepository->findOneBy(['uuid' => $donationMessage->id]);
+        $donation = $this->donationRepository->findOneByUUID(Uuid::fromString($donationMessage->id));
 
         if ($donationMessage->response_success === false) {
             $donation->setTbgGiftAidRequestFailedAt(new \DateTime());
