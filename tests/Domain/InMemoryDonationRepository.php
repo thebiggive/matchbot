@@ -229,4 +229,9 @@ class InMemoryDonationRepository implements DonationRepository
     {
         throw new \Exception("Method not implemented in test double");
     }
+
+    public function findOneByUUID(UuidInterface $donationUUID): ?Donation
+    {
+        return $this->findOneBy(['uuid' => $donationUUID]);
+    }
 }

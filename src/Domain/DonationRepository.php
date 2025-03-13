@@ -204,4 +204,6 @@ interface DonationRepository
      * @return ?Donation
      */
     public function findOneBy(array $criteria);
+
+    public function findOneByUUID(UuidInterface $donationUUID): ?Donation;
 }

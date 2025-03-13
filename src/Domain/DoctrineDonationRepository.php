@@ -870,4 +870,9 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $result = $query->getResult();
         return $result;
     }
+
+    public function findOneByUUID(UuidInterface $donationUUID): ?Donation
+    {
+        return $this->findOneBy(['uuid' => $donationUUID]);
+    }
 }
