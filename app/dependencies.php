@@ -29,7 +29,7 @@ use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\MandateUpserted;
 use MatchBot\Application\Messenger\Middleware\AddOrLogMessageId;
 use MatchBot\Application\Messenger\StripePayout;
-use MatchBot\Application\Messenger\Transport\ClaimBotTransport;
+use MatchBot\Application\Messenger\Transports;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RegularGivingMandateEventSubscriber;
 use MatchBot\Application\RealTimeMatchingStorage;
@@ -65,8 +65,6 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\DoctrineDbalStore;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Middleware\AddFifoStampMiddleware;
-use Symfony\Component\Messenger\Bridge\AmazonSqs\Transport\AmazonSqsTransportFactory;
-use Symfony\Component\Messenger\Bridge\Redis\Transport\RedisTransportFactory;
 use Symfony\Component\Messenger\Command\ConsumeMessagesCommand;
 use Symfony\Component\Messenger\Handler\HandlersLocator;
 use Symfony\Component\Messenger\MessageBus;
@@ -74,10 +72,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
 use Symfony\Component\Messenger\Middleware\SendMessageMiddleware;
 use Symfony\Component\Messenger\RoutableMessageBus;
-use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransportFactory;
 use Symfony\Component\Messenger\Transport\Sender\SendersLocator;
-use Symfony\Component\Messenger\Transport\Serialization\PhpSerializer;
-use Symfony\Component\Messenger\Transport\TransportFactory;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Notifier\Bridge\Slack\SlackTransport;
 use Symfony\Component\Notifier\Chatter;
@@ -126,16 +121,19 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         ConsumeMessagesCommand::class => static function (ContainerInterface $c): ConsumeMessagesCommand {
-            $messengerReceiverKey = 'receiver';
+            $priorityKey = Transports::TRANSPORT_HIGH_PRIORITY;
+            $salesforceKey = Transports::TRANSPORT_LOW_PRIORITY;
             $messengerReceiverLocator = new Container();
-            $messengerReceiverLocator->set($messengerReceiverKey, $c->get(TransportInterface::class));
+            $messengerReceiverLocator->set($priorityKey, $c->get(Transports::TRANSPORT_HIGH_PRIORITY));
+            $messengerReceiverLocator->set($salesforceKey, $c->get(Transports::TRANSPORT_LOW_PRIORITY));
 
             return new ConsumeMessagesCommand(
                 $c->get(RoutableMessageBus::class),
                 $messengerReceiverLocator,
                 new EventDispatcher(),
                 $c->get(LoggerInterface::class),
-                [$messengerReceiverKey],
+                // Based on the CLI arg docs, I believe this is a list in priority order.
+                [$priorityKey, $salesforceKey],
             );
         },
 
@@ -166,20 +164,8 @@ return function (ContainerBuilder $containerBuilder) {
             return new SlackChannelChatterFactory($token);
         },
 
-        ClaimBotTransport::class => static function (): TransportInterface {
-            $transportFactory = new TransportFactory([
-                new AmazonSqsTransportFactory(),
-                new RedisTransportFactory(),
-            ]);
-            $claimbotDSN = getenv('CLAIMBOT_MESSENGER_TRANSPORT_DSN');
-            if ($claimbotDSN === false) {
-                throw new \Exception('CLAIMBOT_MESSENGER_TRANSPORT_DSN must be defined in environment');
-            }
-            return $transportFactory->createTransport(
-                $claimbotDSN,
-                [],
-                new PhpSerializer(),
-            );
+        Transports::TRANSPORT_CLAIMBOT => static function (): TransportInterface {
+            return Transports::buildTransport(Transports::TRANSPORT_CLAIMBOT);
         },
 
         Client\Campaign::class => function (ContainerInterface $c): Client\Campaign {
@@ -339,12 +325,19 @@ return function (ContainerBuilder $containerBuilder) {
 
             $sendersLocator = new SendersLocator(
                 [
-                    Messages\Donation::class => [ClaimBotTransport::class],
-                    CharityUpdated::class => [TransportInterface::class],
-                    StripePayout::class => [TransportInterface::class],
-                    DonationUpserted::class => [TransportInterface::class],
-                    MandateUpserted::class => [TransportInterface::class],
-                    FundTotalUpdated::class => [TransportInterface::class],
+                    // Outbound for ClaimBot; Redis queue in Production.
+                    Messages\Donation::class => [Transports::TRANSPORT_CLAIMBOT],
+
+                    // Outbound, priority, for MatchBot worker; SQS queue in Production.
+                    // `CharityUpdated` does call out to Salesforce, to read data, but it's rarer and
+                    // occasionally more time-sensitive than the group below which push data.
+                    CharityUpdated::class => [Transports::TRANSPORT_HIGH_PRIORITY],
+                    StripePayout::class => [Transports::TRANSPORT_HIGH_PRIORITY],
+
+                    // Outbound, Salesforce (lower priority), for MatchBot worker; SQS queue in Production.
+                    DonationUpserted::class => [Transports::TRANSPORT_LOW_PRIORITY],
+                    FundTotalUpdated::class => [Transports::TRANSPORT_LOW_PRIORITY],
+                    MandateUpserted::class => [Transports::TRANSPORT_LOW_PRIORITY],
                 ],
                 $c,
             );
@@ -500,6 +493,10 @@ return function (ContainerBuilder $containerBuilder) {
             return new RoutableMessageBus($busContainer, $bus);
         },
 
+        Transports::TRANSPORT_LOW_PRIORITY => static function (): TransportInterface {
+            return Transports::buildTransport(Transports::TRANSPORT_LOW_PRIORITY);
+        },
+
         SerializerInterface::class => static function (): SerializerInterface {
             $encoders = [new JsonEncoder()];
             $normalizers = [
@@ -522,22 +519,10 @@ return function (ContainerBuilder $containerBuilder) {
             ]);
         },
 
-        TransportInterface::class => static function (): TransportInterface {
-            $transportFactory = new TransportFactory([
-                new AmazonSqsTransportFactory(),
-                new InMemoryTransportFactory(), // For unit tests.
-                new RedisTransportFactory(),
-            ]);
-            $dsn = getenv('MESSENGER_TRANSPORT_DSN');
-            if ($dsn === false) {
-                throw new \Exception('MESSENGER_TRANSPORT_DSN not defined in enviornmnet');
-            }
-            return $transportFactory->createTransport(
-                $dsn,
-                [],
-                new PhpSerializer(),
-            );
+        Transports::TRANSPORT_HIGH_PRIORITY => static function (): TransportInterface {
+            return Transports::buildTransport(Transports::TRANSPORT_HIGH_PRIORITY);
         },
+
         Connection::class => static function (ContainerInterface $c): Connection {
             return $c->get(EntityManagerInterface::class)->getConnection();
         },

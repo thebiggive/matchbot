@@ -615,7 +615,7 @@ class DonationService
 
     public function donationAsApiModel(UuidInterface $donationUUID): array
     {
-        $donation = $this->donationRepository->findOneBy(['uuid' => $donationUUID]);
+        $donation = $this->donationRepository->findOneByUUID($donationUUID);
 
         if (!$donation) {
             throw new DomainRecordNotFoundException('Donation not found');
@@ -688,10 +688,10 @@ class DonationService
             return;
         }
 
-        $this->updateDonationStatusFromSucessfulCharge($charge, $donation);
+        $this->updateDonationStatusFromSuccessfulCharge($charge, $donation);
     }
 
-    public function updateDonationStatusFromSucessfulCharge(Charge $charge, Donation $donation): void
+    public function updateDonationStatusFromSuccessfulCharge(Charge $charge, Donation $donation): void
     {
         $this->logger->info('updating donation from charge: ' . $charge->toJson());
 
@@ -732,12 +732,16 @@ class DonationService
         );
 
 
-        if ($this->environment->isFeatureEnabledDirectSuccessEmail()) {
-            $this->logger->info("Notifying success for $donation");
-            // Ideally we might do this in a queue consumer, but calling mailer should be quick, and until
-            // MAT-403 is done we don't want these to wait behind items queued to go to SF.
-            $this->donationNotifier->notifyDonorOfDonationSuccess($donation);
-            $this->logger->info("Done notifying success for $donation");
+        if (
+            ! $this->environment->isProduction() ||
+            $donation->getCollectedAt() > new \DateTimeImmutable(Donation::MAT_400_ENABLE_TIMESTAMP)
+        ) {
+            if (! $donation->isRegularGiving()) {
+                // Regular giving donors get an email confirming the setup of the mandate, but not an email for
+                // each individual donation.
+
+                $this->donationNotifier->notifyDonorOfDonationSuccess($donation);
+            }
         }
     }
 

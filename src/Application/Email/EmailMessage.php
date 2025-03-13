@@ -36,4 +36,13 @@ readonly class EmailMessage
     {
         return new self('donor-donation-success', $emailAddress, $params);
     }
+
+    public function withToAddress(EmailAddress $to): self
+    {
+        return new self(
+            templateKey: $this->templateKey,
+            emailAddress: $to,
+            params: $this->params
+        );
+    }
 }

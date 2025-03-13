@@ -40,7 +40,7 @@ class GiftAidResultHandlerTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => self::DONATION_UUID])
+            ->findOneByUUID(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($testDonationPassedToProphecy)
             ->shouldBeCalledOnce();
 
@@ -83,7 +83,7 @@ class GiftAidResultHandlerTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => self::DONATION_UUID])
+            ->findOneByUUID(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($testDonationPassedToProphecy)
             ->shouldBeCalledOnce();
 
@@ -125,7 +125,7 @@ class GiftAidResultHandlerTest extends TestCase
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->findOneBy(['uuid' => self::DONATION_UUID])
+            ->findOneByUUID(Uuid::fromString(self::DONATION_UUID))
             ->willReturn($testDonationPassedToProphecy)
             ->shouldBeCalledOnce();
 

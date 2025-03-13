@@ -16,7 +16,7 @@ class DonationPersistenceTest extends IntegrationTest
         // arrange
         $em = $this->getService(EntityManagerInterface::class);
         $connection = $em->getConnection();
-        $donation = TestCase::someDonation('1');
+        $donation = TestCase::someDonation();
         $em->persist($donation->getCampaign());
         $donation->recordRefundAt(new \DateTimeImmutable('2023-06-22 10:00:00'));
 

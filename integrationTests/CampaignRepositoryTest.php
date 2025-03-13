@@ -42,7 +42,7 @@ class CampaignRepositoryTest extends IntegrationTest
         $newCampaignId = $campaign->getId();
 
         // act
-        $campaignsFromDB = $sut->findRecentLiveAndPendingGiftAidApproval();
+        $campaignsFromDB = $sut->findCampaignsThatNeedToBeUpToDate();
 
         // assert
 
@@ -85,7 +85,7 @@ class CampaignRepositoryTest extends IntegrationTest
         $newCampaignId = $campaign->getId();
 
         // act
-        $campaignsFromDB = $sut->findRecentLiveAndPendingGiftAidApproval();
+        $campaignsFromDB = $sut->findCampaignsThatNeedToBeUpToDate();
 
         // assert
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Domain;
 
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\PostalAddress;
 use MatchBot\Tests\TestCase;
 use PHPUnit\Util\Test;
 
@@ -24,7 +25,10 @@ class CharityTest extends TestCase
             regulator: null,
             regulatorNumber: null,
             rawData: [],
-            time: new \DateTime()
+            time: new \DateTime(),
+            phoneNumber: null,
+            address: PostalAddress::null(),
+            emailAddress: null,
         );
 
         $this->assertTrue($charity->getTbgApprovedToClaimGiftAid());
@@ -43,7 +47,10 @@ class CharityTest extends TestCase
             regulator: null,
             regulatorNumber: null,
             rawData: [],
-            time: new \DateTime()
+            time: new \DateTime(),
+            phoneNumber: null,
+            address: PostalAddress::null(),
+            emailAddress: null
         );
 
         $this->assertFalse($charity->getTbgApprovedToClaimGiftAid());
@@ -63,7 +70,10 @@ class CharityTest extends TestCase
             regulator: null,
             regulatorNumber: null,
             rawData: [],
-            time: new \DateTime()
+            time: new \DateTime(),
+            phoneNumber: null,
+            address: PostalAddress::null(),
+            emailAddress: null
         );
 
         $this->assertFalse($charity->getTbgApprovedToClaimGiftAid());
@@ -106,7 +116,13 @@ class CharityTest extends TestCase
             giftAidOnboardingStatus: "NOT_A_POSSIBLE_STATUS",
             regulator: null,
             regulatorNumber: null,
-            time: new \DateTime()
+            time: new \DateTime(),
+            rawData: [],
+            websiteUri: null,
+            logoUri: null,
+            phoneNumber: null,
+            address: null,
+            emailAddress: null
         );
     }
 
@@ -130,6 +146,9 @@ class CharityTest extends TestCase
             regulatorNumber: null,
             rawData: [],
             time: new \DateTime(),
+            phoneNumber: null,
+            address: PostalAddress::null(),
+            emailAddress: null,
         );
 
         $this->assertSame($expected, $charity->isTbgClaimingGiftAid());

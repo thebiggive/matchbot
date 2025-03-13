@@ -243,7 +243,7 @@ class DonationServiceTest extends TestCase
         $confirmationTokenId = StripeConfirmationTokenId::of('ctoken_xyz');
         $paymentIntentId = 'payment_intent_id';
 
-        $donation = TestCase::someDonation('15.00');
+        $donation = TestCase::someDonation(amount: '15.00');
         $donation->setTransactionId($paymentIntentId);
 
         $this->stripeProphecy->retrieveConfirmationToken($confirmationTokenId)

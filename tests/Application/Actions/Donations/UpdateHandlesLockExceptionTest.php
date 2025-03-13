@@ -114,7 +114,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
         $campaign = TestCase::someCampaign(charity: $charity);
         $campaign->setIsMatched(true);
 
-        $donation = TestCase::someDonation('1');
+        $donation = TestCase::someDonation(amount: '1');
         $donation->createdNow();
         $donation->setDonationStatus(DonationStatus::Pending);
         $donation->setCampaign($campaign);

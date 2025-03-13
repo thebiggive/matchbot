@@ -156,7 +156,7 @@ trait DonationTestDataTrait
             regularGivingCollectionEnd: null,
         );
 
-        $donation = TestCase::someDonation('124.56');
+        $donation = TestCase::someDonation(amount: '124.56');
         $donation->createdNow(); // Call same create/update time initialisers as lifecycle hooks
         $donation->setCharityFee('2.57');
         $donation->setCampaign($campaign);

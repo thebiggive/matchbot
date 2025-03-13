@@ -14,14 +14,14 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 use MatchBot\Domain\FundRepository;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'matchbot:update-campaigns')]
 class UpdateCampaigns extends LockingCommand
 {
-    protected static $defaultName = 'matchbot:update-campaigns';
-
     public function __construct(
         private CampaignRepository $campaignRepository,
         /** @var EntityManager|EntityManagerInterface $entityManager */
@@ -29,7 +29,7 @@ class UpdateCampaigns extends LockingCommand
         private FundRepository $fundRepository,
         private LoggerInterface $logger
     ) {
-        parent::__construct(static::$defaultName);
+        parent::__construct();
     }
 
     protected function configure(): void
@@ -49,7 +49,7 @@ EOT
         if ($input->getOption('all')) {
             $campaigns = $this->campaignRepository->findAll();
         } else {
-            $campaigns = $this->campaignRepository->findRecentLiveAndPendingGiftAidApproval();
+            $campaigns = $this->campaignRepository->findCampaignsThatNeedToBeUpToDate();
         }
 
         foreach ($campaigns as $campaign) {

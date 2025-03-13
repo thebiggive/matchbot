@@ -26,7 +26,7 @@ class UpdateCampaignsTest extends TestCase
     {
         $campaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('someCampaignIdxxxx'));
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoProphecy->findRecentLiveAndPendingGiftAidApproval()
+        $campaignRepoProphecy->findCampaignsThatNeedToBeUpToDate()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
         $campaignRepoProphecy->updateFromSf($campaign)->shouldBeCalledOnce();
@@ -63,7 +63,7 @@ class UpdateCampaignsTest extends TestCase
             sfId: Salesforce18Id::ofCampaign('missingOnSfIDxxxxx'),
         );
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoProphecy->findRecentLiveAndPendingGiftAidApproval()
+        $campaignRepoProphecy->findCampaignsThatNeedToBeUpToDate()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
         $campaignRepoProphecy->updateFromSf($campaign)->willThrow(NotFoundException::class)->shouldBeCalledOnce();
@@ -105,7 +105,7 @@ class UpdateCampaignsTest extends TestCase
         )
         ;
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoProphecy->findRecentLiveAndPendingGiftAidApproval()
+        $campaignRepoProphecy->findCampaignsThatNeedToBeUpToDate()
             ->willReturn([$campaign])
             ->shouldBeCalledOnce();
         $campaignRepoProphecy->updateFromSf($campaign)
@@ -156,11 +156,11 @@ class UpdateCampaignsTest extends TestCase
 
         $mockBuilder = $this->getMockBuilder(CampaignRepository::class);
         $mockBuilder->setConstructorArgs([$entityManagerProphecy->reveal(), new ClassMetadata(Campaign::class)]);
-        $mockBuilder->onlyMethods(['findRecentLiveAndPendingGiftAidApproval', 'updateFromSf']);
+        $mockBuilder->onlyMethods(['findCampaignsThatNeedToBeUpToDate', 'updateFromSf']);
 
         $campaignRepo = $mockBuilder->getMock();
         $campaignRepo->expects($this->once())
-            ->method('findRecentLiveAndPendingGiftAidApproval')
+            ->method('findCampaignsThatNeedToBeUpToDate')
             ->willReturn([$campaign]);
         $campaignRepo->expects($this->exactly(2))
             ->method('updateFromSf')

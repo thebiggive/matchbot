@@ -14,6 +14,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PostalAddress;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
@@ -26,6 +27,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use Random\Randomizer;
 use Redis;
 use Slim\App;
@@ -205,10 +207,13 @@ class TestCase extends PHPUnitTestCase
     public static function someCharity(
         ?string $stripeAccountId = null,
         ?Salesforce18Id $salesforceId = null,
-        string $name = 'Charity Name'
+        string $name = 'Charity Name',
+        ?string $phoneNumber = null,
+        ?PostalAddress $address = null,
+        ?EmailAddress $emailAddress = null,
     ): Charity {
         return new Charity(
-            salesforceId: $salesforceId?->value ?? ('123CharityId' .  self::randomHex(3)),
+            salesforceId: $salesforceId?->value ?? ('123CharityId' . self::randomHex(3)),
             charityName: $name,
             stripeAccountId: $stripeAccountId ?? "stripe-account-id-" . self::randomHex(),
             hmrcReferenceNumber: 'H' . self::randomHex(3),
@@ -216,8 +221,11 @@ class TestCase extends PHPUnitTestCase
             regulator: 'CCEW',
             regulatorNumber: 'Reg-no',
             time: new \DateTime('2023-10-06T18:51:27'),
-            logoUri: 'https://some-logo-host/charityname/logo.png',
             websiteUri: 'https://charityname.com',
+            logoUri: 'https://some-logo-host/charityname/logo.png',
+            phoneNumber: $phoneNumber,
+            address: $address,
+            emailAddress: $emailAddress,
         );
     }
 
@@ -256,6 +264,7 @@ class TestCase extends PHPUnitTestCase
      * @param numeric-string $tipAmount
      */
     public static function someDonation(
+        UuidInterface $uuid = null,
         string $amount = '1',
         string $currencyCode = 'GBP',
         PaymentMethodType $paymentMethodType = PaymentMethodType::Card,
@@ -265,8 +274,9 @@ class TestCase extends PHPUnitTestCase
         string $tipAmount = '0',
         ?EmailAddress $emailAddress = null,
         ?DonorName $donorName = null,
+        bool $collected = false,
     ): Donation {
-        return new Donation(
+        $donation = new Donation(
             amount: $amount,
             currencyCode: $currencyCode,
             paymentMethodType: $paymentMethodType,
@@ -286,6 +296,27 @@ class TestCase extends PHPUnitTestCase
             homeAddress: null,
             homePostcode: null,
             billingPostcode: null,
+        );
+
+        $donation->setUuid($uuid ?? Uuid::uuid4());
+
+        if ($collected) {
+            self::collectDonation($donation);
+        }
+
+        return $donation;
+    }
+
+    protected static function collectDonation(Donation $donationResponse): void
+    {
+        $donationResponse->collectFromStripeCharge(
+            chargeId: 'testchargeid',
+            totalPaidFractional: 100, // irrelevant
+            transferId: 'test_transfer_id',
+            cardBrand: null,
+            cardCountry: null,
+            originalFeeFractional: '0',
+            chargeCreationTimestamp: (int)(new \DateTimeImmutable())->format('U'),
         );
     }
 

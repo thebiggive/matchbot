@@ -45,6 +45,11 @@ return function (App $app) {
         })
             ->add(DonationPublicAuthMiddleware::class);
 
+        $versionGroup->post(
+            '/donations/{donationId:[a-z0-9-]{36}}/send-donor-thanks-email',
+            Donations\ResendDonorThanksNotification::class
+        )->add(SalesforceAuthMiddleware::class);
+
         /**
          * Cancel *all* pending donations for the current Donor with the specified query param criteria,
          * currently taking one campaign ID and most useful for Donation Funds tips.
