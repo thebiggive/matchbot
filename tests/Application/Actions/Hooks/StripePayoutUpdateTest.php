@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MatchBot\Tests\Application\Actions\Hooks;
 
-use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Messenger\Transports;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Domain\DonationRepository;
@@ -81,7 +81,7 @@ class StripePayoutUpdateTest extends StripeTest
         $transport = $this->prophesize(InMemoryTransport::class);
         $transport->send(Argument::type(Envelope::class))
             ->willThrow(TransportException::class);
-        $container->set(TransportInterface::class, $transport->reveal());
+        $container->set(Transports::TRANSPORT_HIGH_PRIORITY, $transport->reveal());
 
         $body = $this->getStripeHookMock('po_paid');
 
@@ -104,7 +104,7 @@ class StripePayoutUpdateTest extends StripeTest
         $app = $this->getAppInstance();
         $container = $this->diContainer();
         $transport = new InMemoryTransport();
-        $container->set(TransportInterface::class, $transport);
+        $container->set(Transports::TRANSPORT_HIGH_PRIORITY, $transport);
         $container->set(SlackChannelChatterFactory::class, $this->createStub(SlackChannelChatterFactory::class));
 
         $body = $this->getStripeHookMock('po_paid');
@@ -129,7 +129,7 @@ class StripePayoutUpdateTest extends StripeTest
         $app = $this->getAppInstance();
         $container = $this->diContainer();
         $transport = new InMemoryTransport();
-        $container->set(TransportInterface::class, $transport);
+        $container->set(Transports::TRANSPORT_HIGH_PRIORITY, $transport);
         $chatterProphecy = $this->prophesize(StripeChatterInterface::class);
         $container->set(StripeChatterInterface::class, $chatterProphecy->reveal());
 
