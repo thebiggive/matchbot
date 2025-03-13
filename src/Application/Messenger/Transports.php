@@ -11,9 +11,9 @@ use Symfony\Component\Messenger\Transport\TransportInterface;
 
 class Transports
 {
-    public const string TRANSPORT_CLAIMBOT = 'claimbot';
-    public const string TRANSPORT_LOW_PRIORITY = 'low_priority';
-    public const string TRANSPORT_HIGH_PRIORITY = 'high_priority';
+    public const string TRANSPORT_CLAIMBOT = 'transport_claimbot';
+    public const string TRANSPORT_LOW_PRIORITY = 'transport_low_priority';
+    public const string TRANSPORT_HIGH_PRIORITY = 'transport_high_priority';
 
     private const array DEFINITIONS = [
         self::TRANSPORT_CLAIMBOT => [
