@@ -33,8 +33,8 @@ return function (App $app) {
         $ipMiddleware = getenv('APP_ENV') === 'local'
             ? new ClientIp()
             : (new ClientIp())->proxy([], ['X-Forwarded-For']);
-        
-        $versionGroup->get('/campaigns/services/apexrest/v1.0/campaigns/{salesforceId:[a-zA-Z0-9]{18}}', Campaigns\Get::class);
+
+        $versionGroup->get('/campaigns/services/apexrest/v1.0/campaigns/{id:[a-zA-Z0-9]+}', Campaigns\Get::class);
 
         $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
             ->add(PersonManagementAuthMiddleware::class)
