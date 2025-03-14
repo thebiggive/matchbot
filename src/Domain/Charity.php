@@ -433,4 +433,14 @@ class Charity extends SalesforceReadProxy
 
         return EmailAddress::of($this->emailAddress);
     }
+
+    /**
+     * OK for use in a spike or perhaps temporarily, not good for long term use as will lead to occult coupling.
+     * 
+     * @return array<string, mixed>
+     */
+    public function getRawData(): array
+    {
+        return $this->salesforceData ?? [];
+    }
 }
