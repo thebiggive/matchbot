@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Los\RateLimit\RateLimitMiddleware;
+use MatchBot\Application\Actions\Campaigns;
 use MatchBot\Application\Actions\Charities\UpdateCharityFromSalesforce;
 use MatchBot\Application\Actions\DeletePaymentMethod;
 use MatchBot\Application\Actions\UpdatePaymentMethod;
@@ -32,6 +33,8 @@ return function (App $app) {
         $ipMiddleware = getenv('APP_ENV') === 'local'
             ? new ClientIp()
             : (new ClientIp())->proxy([], ['X-Forwarded-For']);
+        
+        $versionGroup->get('/campaigns/services/apexrest/v1.0/campaigns/{salesforceId:[a-zA-Z0-9]{18}}', Campaigns\Get::class);
 
         $versionGroup->post('/people/{personId:[a-z0-9-]{36}}/donations', Donations\Create::class)
             ->add(PersonManagementAuthMiddleware::class)
