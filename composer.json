@@ -69,6 +69,7 @@
     },
     "require-dev": {
         "doctrine/event-manager": "^2.0",
+        "fakerphp/faker": "^1.24",
         "infection/infection": "^0.29.10",
         "phpspec/prophecy": "^1.19",
         "phpspec/prophecy-phpunit": "^v2.1.0",

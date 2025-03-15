@@ -7,6 +7,7 @@ use MatchBot\Application\Commands\CallFrequentTasks;
 use MatchBot\Application\Commands\CancelStaleDonationFundTips;
 use MatchBot\Application\Commands\ClaimGiftAid;
 use MatchBot\Application\Commands\Command;
+use MatchBot\Application\Commands\CreateDummyCampaignsForTest;
 use MatchBot\Application\Commands\DeleteStalePaymentDetails;
 use MatchBot\Application\Commands\ExpireMatchFunds;
 use MatchBot\Application\Commands\ExpirePendingMandates;
@@ -62,6 +63,7 @@ $commands = array_map($psr11App->get(...), [
     SetupTestMandate::class,
     TakeRegularGivingDonations::class,
     UpdateCampaigns::class,
+    CreateDummyCampaignsForTest::class,
 ]);
 
 $dispatcher = new EventDispatcher();
