@@ -532,7 +532,11 @@ class Donation extends SalesforceWriteProxy
         }
     }
 
-    public function toSFApiModel(): array
+    /**
+     * @return array|null A representation of the donation suitable for sending to Salesforce, or null if this donation
+     * cannot be represented in SF in its current state.
+     */
+    public function toSFApiModel(): null|array
     {
         $data = [
             ...$this->toFrontEndApiModel(),
@@ -549,8 +553,14 @@ class Donation extends SalesforceWriteProxy
         unset($data['matchReservedAmount']);
 
         if ($this->mandate) {
+            $mandateSalesforceId = $this->mandate->getSalesforceId();
+
+            if ($mandateSalesforceId === null) {
+                return null; // we can't send the Donation to SF yet, as it can't be linked to its mandate.
+            }
+
             $data['mandate'] = [
-              'salesforceId' => $this->mandate->getSalesforceId(),
+              'salesforceId' => $mandateSalesforceId,
             ];
         }
 

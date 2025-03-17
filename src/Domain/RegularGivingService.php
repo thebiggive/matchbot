@@ -7,6 +7,7 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
@@ -25,6 +26,7 @@ use Stripe\Exception\ApiErrorException as StripeApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
+use Symfony\Component\Messenger\Envelope;
 use UnexpectedValueException;
 
 readonly class RegularGivingService
@@ -389,17 +391,14 @@ readonly class RegularGivingService
         string $reason,
         MandateCancellationType $cancellationType,
     ): void {
-        $mandateId = $mandate->getId();
-        Assertion::notNull($mandateId);
-
         $mandate->cancel(reason: $reason, at: $this->now, type: $cancellationType);
 
-        $cancellableDonations = $this->donationRepository->findPendingAndPreAuthedForMandate($mandateId);
+        $cancellableDonations = $this->donationRepository->findPendingAndPreAuthedForMandate($mandate->getUuid());
 
         Assertion::maxCount(
             $cancellableDonations,
             3,
-            "Too many donations found to cancel for mandate {$mandateId}, should be max 3}"
+            "Too many donations found to cancel for mandate {$mandate->getUuid()}, should be max 3}"
         );
 
         foreach ($cancellableDonations as $donation) {

@@ -120,7 +120,7 @@ class CancelAsAdminTest extends TestCase
     private function getMockDonationRepository(RegularGivingMandate $mandate): DonationRepository
     {
         $prophecy = $this->prophesize(DonationRepository::class);
-        $prophecy->findPendingAndPreAuthedForMandate($mandate->getId())
+        $prophecy->findPendingAndPreAuthedForMandate($mandate->getUuid())
             ->willReturn([]);
 
         return $prophecy->reveal();

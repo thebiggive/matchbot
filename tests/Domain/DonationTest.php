@@ -225,6 +225,7 @@ class DonationTest extends TestCase
         $this->assertArrayNotHasKey('originalPspFee', $donationData);
 
         $donationDataIncludingPrivate = $donation->toSFApiModel();
+        \assert($donationDataIncludingPrivate !== null);
         $this->assertEquals('1.22', $donationDataIncludingPrivate['originalPspFee']);
     }
 
