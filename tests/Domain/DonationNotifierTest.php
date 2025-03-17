@@ -12,6 +12,7 @@ use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
+use MatchBot\Domain\PostalAddress;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Tests\TestCase;
@@ -61,6 +62,10 @@ class DonationNotifierTest extends TestCase
                     'transactionId' => 'some-transaction-id',
                     'charityLogoUri' => 'https://some-logo-host/charityname/logo.png',
                     'charityWebsite' => 'https://charityname.com',
+
+                    'charityPhoneNumber' => '0191 498 0000',
+                    'charityEmailAddress' => 'charity@charitiesareus.com',
+                    'charityPostalAddress' => 'anyone, pretty how town, (with up so floating many bells down), SSAU, sun moon stars rain'
                 ]
             ],
             [$emailCommand->templateKey, $emailCommand->emailAddress->email, $emailCommand->params]
@@ -73,7 +78,20 @@ class DonationNotifierTest extends TestCase
      */
     private function makeCollectedDonation(string $amount, EmailAddress $emailAddress, string $tipAmount): \MatchBot\Domain\Donation
     {
+        $charity = self::someCharity(
+            phoneNumber: '0191 498 0000',
+            emailAddress: EmailAddress::of('charity@charitiesareus.com'),
+            address: PostalAddress::of(
+                'anyone',
+                'pretty how town',
+                '(with up so floating many bells down)',
+                'SSAU',
+                'sun moon stars rain'
+            ),
+        );
+
         $campaign = self::someCampaign(
+            charity: $charity,
             thankYouMessage: "Thank you for your donation.",
         );
 

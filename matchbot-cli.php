@@ -34,7 +34,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\Command\ConsumeMessagesCommand;
-use Symfony\Component\Notifier\ChatterInterface;
 
 $psr11App = require __DIR__ . '/bootstrap.php';
 

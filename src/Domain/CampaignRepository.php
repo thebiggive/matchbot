@@ -21,18 +21,24 @@ class CampaignRepository extends SalesforceReadProxyRepository
     private FundRepository $fundRepository;
 
     /**
-     * Gets those campaigns which are live now or recently closed (in the last week),
+     * Gets campaigns that it is particular important matchbot has up-to-date information about.
+     *
+     * More specifically gets those campaigns which are live now or recently closed (in the last week),
      * based on their last known end time, and those closed semi-recently where we are
-     * awaiting HMRC agent approval for Gift Aid claims. This allows for campaigns to receive updates
-     * shortly after closure if a decision is made to reopen them soon after the end date,
+     * awaiting HMRC agent approval for Gift Aid claims, and regular giving campaigns.
+     * This allows for campaigns to receive updates shortly after closure if a decision is made to reopen them soon after the end date,
      * while keeping the number of API calls for regular update runs under control long-term.
      * Technically future campaigns are also included if they are already known to MatchBot,
      * though this would typically only happen after manual API call antics or if a start
      * date was pushed back belatedly after a campaign already started.
      *
+     * Regular giving campaigns are all included as they may have ongoing donations after the end date - changes
+     * in particular to the regularGivingCollectionEnd date in any direction need to be pulled quickly into matchbot
+     * to control whether we do or don't continue to collect those donations.
+     *
      * @return Campaign[]
      */
-    public function findRecentLiveAndPendingGiftAidApproval(): array
+    public function findCampaignsThatNeedToBeUpToDate(): array
     {
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT c FROM MatchBot\Domain\Campaign c
@@ -42,6 +48,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 charity.tbgApprovedToClaimGiftAid = 0 AND
                 c.endDate >= :extendedLookbackDate
             )
+            OR c.isRegularGiving = 1
             ORDER BY c.createdAt ASC
             DQL
         );
@@ -192,12 +199,13 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function newCharityFromCampaignData(array $campaignData): Charity
     {
         $charityData = $campaignData['charity'];
+        $address = $this->arrayToPostalAddress($charityData['postalAddress'] ?? null);
+        $emailString = $charityData['emailAddress'] ?? null;
+        $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
 
         return new Charity(
             salesforceId: $charityData['id'],
             charityName: $charityData['name'],
-            websiteUri: $charityData['website'],
-            logoUri: $charityData['logoUri'],
             stripeAccountId: $charityData['stripeAccountId'],
             hmrcReferenceNumber: $charityData['hmrcReferenceNumber'],
             giftAidOnboardingStatus: $charityData['giftAidOnboardingStatus'],
@@ -205,6 +213,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
             regulatorNumber: $charityData['regulatorNumber'],
             time: new \DateTime('now'),
             rawData: $charityData,
+            websiteUri: $charityData['website'],
+            logoUri: $charityData['logoUri'],
+            phoneNumber: $charityData['phoneNumber'] ?? null,
+            address: $address,
+            emailAddress: $emailAddress,
         );
     }
 
@@ -214,6 +227,10 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function updateCharityFromCampaignData(Charity $charity, array $campaignData): void
     {
         $charityData = $campaignData['charity'];
+        $address = $this->arrayToPostalAddress($charityData['postalAddress'] ?? null);
+
+        $emailString = $charityData['emailAddress'] ?? null;
+        $emailAddress = is_string($emailString) && trim($emailString) !== '' ? EmailAddress::of($emailString) : null;
 
         $charity->updateFromSfPull(
             charityName: $charityData['name'],
@@ -226,6 +243,9 @@ class CampaignRepository extends SalesforceReadProxyRepository
             regulatorNumber: $charityData['regulatorNumber'],
             rawData: $charityData,
             time: new \DateTime('now'),
+            phoneNumber: $charityData['phoneNumber'] ?? null,
+            address: $address,
+            emailAddress: $emailAddress,
         );
     }
 
@@ -317,5 +337,41 @@ class CampaignRepository extends SalesforceReadProxyRepository
             'Scotland' => 'OSCR',
             default => null,
         };
+    }
+
+    /**
+     * @param ?array{
+     *           city: ?string,
+     *           line1: ?string,
+     *           line2: ?string,
+     *           country: ?string,
+     *           postalCode: ?string} $postalAddress
+     */
+    private function arrayToPostalAddress(?array $postalAddress): PostalAddress
+    {
+        if (is_null($postalAddress)) {
+            return PostalAddress::null();
+        }
+
+        $postalAddress = array_map(
+            static function (?string $string) {
+                return is_null($string) || trim($string) === '' ? null : $string;
+            },
+            $postalAddress
+        );
+
+        if (is_null($postalAddress['line1'])) {
+            Assertion::allNull($postalAddress);
+
+            return PostalAddress::null();
+        }
+
+        return PostalAddress::of(
+            line1: $postalAddress['line1'],
+            line2: $postalAddress['line2'],
+            city: $postalAddress['city'],
+            postalCode: $postalAddress['postalCode'],
+            country: $postalAddress['country'],
+        );
     }
 }

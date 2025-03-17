@@ -75,25 +75,35 @@ class DonationNotifier
             'charityLogoUri' => $charity->getLogoUri()?->__toString(),
             'charityWebsite' => $charity->getWebsiteUri()?->__toString(),
 
+            'charityPhoneNumber' => $charity->getPhoneNumber(),
+            'charityEmailAddress' => $charity->getEmailAddress()?->email,
+            'charityPostalAddress' => $charity->getPostalAddress()->format(),
+
             // There are other params that are currently sent from SF but not officially required by mailer.
             // These should be added before this function is used in production, but the data for them is not yet
             // available in matchbot DB. Params needed:
             //
-            // - charityPostalAddress
-            // - charityPhoneNumber
             // - charityEmailAddress
-            // - charityNumber
         ]);
     }
 
-    public function notifyDonorOfDonationSuccess(Donation $donation): void
+    /**
+     * Sends (Or resends) a donation thanks message to the donor of a donation. By default, uses the email
+     * address and all other details as recorded on the donation, but if $to is passed the email is sent
+     * to that address instead.
+     *
+     * @param Donation $donation
+     * @param EmailAddress|null $to
+     * @return void
+     */
+    public function notifyDonorOfDonationSuccess(Donation $donation, ?EmailAddress $to = null): void
     {
-        if ($donation->isRegularGiving()) {
-            // Regular giving donors get an email confirming the setup of the mandate, but not an email for
-            // each individual donation.
-            return;
+        $emailMessage = self::emailMessageForCollectedDonation($donation);
+
+        if ($to !== null) {
+            $emailMessage = $emailMessage->withToAddress($to);
         }
 
-        $this->mailer->send(self::emailMessageForCollectedDonation($donation));
+        $this->mailer->send($emailMessage);
     }
 }
