@@ -113,6 +113,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
             currencyCode: $campaignData['currencyCode'],
             isRegularGiving: $campaignData['isRegularGiving'] ?? false,
             regularGivingCollectionEnd: $regularGivingCollectionObject,
+            rawData: $campaignData
         );
         $campaign->setSalesforceLastPull(new \DateTime());
 
