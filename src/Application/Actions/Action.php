@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace MatchBot\Application\Actions;
 
+use Assert\Assertion;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpNotFoundException;
 
@@ -43,6 +46,18 @@ abstract class Action
      * @throws HttpBadRequestException
      */
     abstract protected function action(Request $request, Response $response, array $args): Response;
+
+    public function argToUuid(array $args, string $argName): UuidInterface
+    {
+        Assertion::keyExists($args, $argName);
+        $donationUUID = $args['' . $argName . ''];
+        Assertion::string($donationUUID);
+        if ($donationUUID === '') {
+            throw new DomainRecordNotFoundException('Missing donation ID');
+        }
+
+        return Uuid::fromString($donationUUID);
+    }
 
     /**
      * @param  string $name

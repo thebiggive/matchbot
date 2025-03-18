@@ -29,12 +29,7 @@ class ResendDonorThanksNotification extends Action
 
     protected function action(Request $request, Response $response, array $args): Response
     {
-        Assertion::keyExists($args, "donationId");
-        $donationUUID = $args['donationId'];
-        Assertion::string($donationUUID);
-        if ($donationUUID === '') {
-            throw new DomainRecordNotFoundException('Missing donation ID');
-        }
+        $UUID = $this->argToUuid($args, 'donationId');
 
         try {
             $requestBody = json_decode(
@@ -54,7 +49,7 @@ class ResendDonorThanksNotification extends Action
             EmailAddress::of($sendToEmailParam) :
             null;
 
-        $donation = $this->donationRepository->findOneByUUID(Uuid::fromString($donationUUID));
+        $donation = $this->donationRepository->findOneByUUID($UUID);
         if (!$donation) {
             throw new DomainRecordNotFoundException('Donation not found');
         }
