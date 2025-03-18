@@ -29,7 +29,7 @@ class ResendDonorThanksNotification extends Action
 
     protected function action(Request $request, Response $response, array $args): Response
     {
-        $UUID = $this->argToUuid($args, 'donationId');
+        $donationUUID = $this->argToUuid($args, 'donationId');
 
         try {
             $requestBody = json_decode(
@@ -49,7 +49,7 @@ class ResendDonorThanksNotification extends Action
             EmailAddress::of($sendToEmailParam) :
             null;
 
-        $donation = $this->donationRepository->findOneByUUID($UUID);
+        $donation = $this->donationRepository->findOneByUUID($donationUUID);
         if (!$donation) {
             throw new DomainRecordNotFoundException('Donation not found');
         }

@@ -13,6 +13,10 @@ use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpNotFoundException;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackHeaderBlock;
+use Symfony\Component\Notifier\Bridge\Slack\Block\SlackSectionBlock;
+use Symfony\Component\Notifier\Bridge\Slack\SlackOptions;
+use Symfony\Component\Notifier\Message\ChatMessage;
 
 abstract class Action
 {
@@ -47,13 +51,28 @@ abstract class Action
      */
     abstract protected function action(Request $request, Response $response, array $args): Response;
 
-    public function argToUuid(array $args, string $argName): UuidInterface
+    public function prepareSlackMessage(string $heading, string $body): ChatMessage
+    {
+        return new ChatMessage(
+            subject: $heading,
+            options: (new SlackOptions())
+                ->block((new SlackHeaderBlock(sprintf(
+                    '[%s] %s',
+                    (string)getenv('APP_ENV'),
+                    $heading,
+                ))))
+                ->block((new SlackSectionBlock())->text($body))
+                ->iconEmoji(':o')
+        );
+    }
+
+    protected function argToUuid(array $args, string $argName): UuidInterface
     {
         Assertion::keyExists($args, $argName);
         $donationUUID = $args['' . $argName . ''];
         Assertion::string($donationUUID);
         if ($donationUUID === '') {
-            throw new DomainRecordNotFoundException('Missing donation ID');
+            throw new DomainRecordNotFoundException("Missing $argName");
         }
 
         return Uuid::fromString($donationUUID);

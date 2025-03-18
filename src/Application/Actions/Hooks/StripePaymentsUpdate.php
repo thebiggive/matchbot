@@ -418,18 +418,10 @@ class StripePaymentsUpdate extends Stripe
         );
         $this->logger->warning($detailsMessage);
 
-        $chatMessage = new ChatMessage('Over-refund detected');
-        $options = (new SlackOptions())
-            ->block((new SlackHeaderBlock(sprintf(
-                '[%s] %s',
-                (string) getenv('APP_ENV'),
-                'Over-refund detected',
-            ))))
-            ->block((new SlackSectionBlock())->text($detailsMessage))
-            ->iconEmoji(':o');
-        $chatMessage->options($options);
-
-        $this->chatter->send($chatMessage);
+        $this->chatter->send($this->prepareSlackMessage(
+            heading: 'Over-refund detected',
+            body: $detailsMessage
+        ));
     }
 
     /**
