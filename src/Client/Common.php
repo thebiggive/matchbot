@@ -85,6 +85,8 @@ abstract class Common
             throw new BadRequestException('Client push is off');
         }
 
+        $messageDate = (string)($jsonSnapshot['snapshot_taken_at'] ?? 'unknown date');
+
         try {
             $response = $this->getHttpClient()->post(
                 $uri,
@@ -141,11 +143,12 @@ abstract class Common
             }
 
             $this->logger->error(sprintf(
-                '%s upsert exception for UUID %s %s: %s. Body: %s',
+                '%s upsert exception for UUID %s %s: %s. Message from %s, Body: %s',
                 $entityType,
                 $uuid,
                 get_class($ex),
                 $ex->getMessage(),
+                $messageDate,
                 $exResponse ? $exResponse->getBody() : 'N/A',
             ));
 

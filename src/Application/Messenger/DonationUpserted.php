@@ -11,16 +11,23 @@ use Symfony\Component\Messenger\Bridge\AmazonSqs\MessageGroupAwareInterface;
  */
 class DonationUpserted implements MessageGroupAwareInterface
 {
-    protected function __construct(public string $uuid, public array $jsonSnapshot)
+    protected function __construct(
+        public string $uuid,
+        public array $jsonSnapshot
+    )
     {
         Assertion::uuid($this->uuid);
     }
 
     public static function fromDonation(Donation $donation): self
     {
+        $jsonSnapshot = [
+            ...$donation->toSFApiModel(),
+            'snapshot_taken_at' => (new \DateTimeImmutable())->format('c')
+        ];
         return new self(
             uuid: $donation->getUuid()->toString(),
-            jsonSnapshot: $donation->toSFApiModel(),
+            jsonSnapshot: $jsonSnapshot,
         );
     }
 
