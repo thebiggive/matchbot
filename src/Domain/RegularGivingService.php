@@ -9,6 +9,7 @@ use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
+use MatchBot\Domain\DomainException\BadCommandException;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\DonationNotCollected;
@@ -20,7 +21,6 @@ use MatchBot\Domain\DomainException\PaymentIntentNotSucceeded;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use Psr\Log\LoggerInterface;
-use Slim\Exception\HttpBadRequestException;
 use Stripe\Exception\ApiErrorException as StripeApiErrorException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
@@ -546,5 +546,41 @@ readonly class RegularGivingService
         $this->entityManager->flush();
 
         return $newPaymentMethod;
+    }
+
+    /**
+     * @throws BadCommandException
+     */
+    public function removeDonorRegularGivingPaymentMethod(DonorAccount $donor): void
+    {
+        $this->checkDonorHasNoActiveMandates($donor);
+
+        $this->stripe->detatchPaymentMethod($donor->getRegularGivingPaymentMethod());
+        $donor->removeRegularGivingPaymentMethod();
+
+        $this->entityManager->flush();
+    }
+
+    /**
+     * @throws BadCommandException
+     */
+    private function checkDonorHasNoActiveMandates(DonorAccount $donor): void
+    {
+        $activeMandates = $this->regularGivingMandateRepository->allActiveMandatesForDonor($donor->id());
+
+        if ($activeMandates !== []) {
+            $count = count($activeMandates);
+            if ($count === 1) {
+                $charity = $activeMandates[0][1];
+
+                $message = "You have an active regular giving mandate for {$charity->getName()}. 
+                If you wish to remove your payment method please first cancel this mandate.";
+            } else {
+                $message = "You have $count active regular giving mandates. 
+                If you wish to remove your payment method please first cancel these mandates";
+            }
+
+            throw new BadCommandException($message);
+        }
     }
 }

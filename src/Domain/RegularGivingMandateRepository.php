@@ -53,6 +53,29 @@ class RegularGivingMandateRepository
      * @return list<array{0: RegularGivingMandate, 1: Charity}>
      *     List of tuples of regular giving mandates with their recipient charities
      *
+     */
+    public function allActiveMandatesForDonor(PersonId $donor): array
+    {
+        $active = MandateStatus::Active->value;
+
+        $query = $this->em->createQuery(<<<"DQL"
+            SELECT r, c FROM MatchBot\Domain\RegularGivingMandate r
+            LEFT JOIN MatchBot\Domain\Charity c WITH r.charityId = c.salesforceId
+            WHERE r.status = '{$active}'
+            AND r.donorId.id = :donorId
+            ORDER BY r.activeFrom desc
+        DQL
+        );
+
+        $query->setParameter('donorId', $donor->id);
+
+        return $this->getMandatesWithCharities($query);
+    }
+
+    /**
+     * @return list<array{0: RegularGivingMandate, 1: Charity}>
+     *     List of tuples of regular giving mandates with their recipient charities
+     *
      * Includes any and all mandates for a donor that they should know or care about. The only exclusions currently are
      * 'pending' mandates, which have not yet been activated, and auto-cancelled mandates that never got to be
      * activated because e.g. there was a payment failure on the first donation.
