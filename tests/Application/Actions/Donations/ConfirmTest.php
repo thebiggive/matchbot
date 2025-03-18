@@ -89,7 +89,6 @@ class ConfirmTest extends TestCase
                 ),
                 donorAccountRepository: $this->createStub(DonorAccountRepository::class),
                 bus: $this->createStub(RoutableMessageBus::class),
-                environment: Environment::Test,
                 donationNotifier: $this->createStub(DonationNotifier::class),
             )
         );

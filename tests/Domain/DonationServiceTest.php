@@ -209,7 +209,6 @@ class DonationServiceTest extends TestCase
             rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
             bus: $this->createStub(RoutableMessageBus::class),
-            environment: Environment::Test,
             donationNotifier: $this->createStub(DonationNotifier::class),
         );
     }

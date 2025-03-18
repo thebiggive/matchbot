@@ -568,7 +568,6 @@ return function (ContainerBuilder $containerBuilder) {
                     rateLimiterFactory: $rateLimiterFactory,
                     donorAccountRepository: $c->get(DonorAccountRepository::class),
                     bus: $c->get(RoutableMessageBus::class),
-                    environment: $c->get(Environment::class),
                     donationNotifier: $c->get(DonationNotifier::class),
                 );
             }
