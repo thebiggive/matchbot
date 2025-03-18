@@ -66,6 +66,7 @@ return function (App $app) {
             $pwdDonorGroup->post('/create-customer-session', RegularGivingMandate\CreateCustomerSession::class);
             $pwdDonorGroup->post('/regular-giving', RegularGivingMandate\Create::class);
             $pwdDonorGroup->put('/regular-giving/payment-method', RegularGivingMandate\UpdatePaymentMethod::class);
+            $pwdDonorGroup->delete('/regular-giving/payment-method', RegularGivingMandate\RemovePaymentMethod::class);
             $pwdDonorGroup->get('/donations', Donations\GetAllForUser::class);
             $pwdDonorGroup->delete('/donations', Donations\CancelAll::class);
             $pwdDonorGroup->post('/create-setup-intent', RegularGivingMandate\CreateSetupIntent::class);
