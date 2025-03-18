@@ -16,8 +16,7 @@ class DonationUpserted implements MessageGroupAwareInterface
     protected function __construct(
         public string $uuid,
         public array $jsonSnapshot
-    )
-    {
+    ) {
         Assertion::uuid($this->uuid);
     }
 
