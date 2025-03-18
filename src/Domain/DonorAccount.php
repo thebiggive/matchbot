@@ -234,9 +234,4 @@ class DonorAccount extends Model
     {
         return $this->homeIsOutsideUK;
     }
-
-    public function removeRegularGivingPaymentMethod(): void
-    {
-        $this->regularGivingPaymentMethod = null;
-    }
 }
