@@ -134,14 +134,7 @@ class DonationServiceTest extends TestCase
 
     public function testRefusesToConfirmPreAuthedDonationForNonActiveMandate(): void
     {
-        $mandate = new RegularGivingMandate(
-            PersonId::of(Uuid::MAX),
-            Money::fromPoundsGBP(1),
-            Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
-            Salesforce18Id::ofCharity('xxxxxxxxxxxxxxxxxx'),
-            false,
-            DayOfMonth::of(1),
-        );
+        $mandate = self::someMandate();
 
         $mandate->activate(new \DateTimeImmutable('2024-09-01'));
 
