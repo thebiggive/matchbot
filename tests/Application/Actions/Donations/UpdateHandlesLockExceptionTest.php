@@ -224,7 +224,6 @@ class UpdateHandlesLockExceptionTest extends TestCase
                 ),
                 donorAccountRepository: $this->createStub(DonorAccountRepository::class),
                 bus: $this->messageBusProphecy->reveal(),
-                environment: Environment::Test,
                 donationNotifier: $this->createStub(DonationNotifier::class),
             ),
         );

@@ -6,7 +6,6 @@ use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use MatchBot\Application\Assertion;
-use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -89,7 +88,6 @@ class DonationService
         private RateLimiterFactory $rateLimiterFactory,
         private DonorAccountRepository $donorAccountRepository,
         private RoutableMessageBus $bus,
-        private Environment $environment,
         private DonationNotifier $donationNotifier,
     ) {
     }
@@ -732,16 +730,16 @@ class DonationService
         );
 
 
-        if (
-            ! $this->environment->isProduction() ||
-            $donation->getCollectedAt() > new \DateTimeImmutable(Donation::MAT_400_ENABLE_TIMESTAMP)
-        ) {
-            if (! $donation->isRegularGiving()) {
-                // Regular giving donors get an email confirming the setup of the mandate, but not an email for
-                // each individual donation.
+        $dateTimeImmutable = $donation->getCollectedAt();
 
-                $this->donationNotifier->notifyDonorOfDonationSuccess($donation);
-            }
+        if (
+            ! $donation->isRegularGiving() &&
+            ($dateTimeImmutable > new \DateTimeImmutable(Donation::MAT_400_ENABLE_TIMESTAMP))
+        ) {
+            // Regular giving donors get an email confirming the setup of the mandate, but not an email for
+            // each individual donation.
+
+            $this->donationNotifier->notifyDonorOfDonationSuccess($donation);
         }
     }
 

@@ -10,9 +10,11 @@ use Exception;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\Charity;
+use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PostalAddress;
 use MatchBot\Domain\RegularGivingMandate;
@@ -49,6 +51,18 @@ class TestCase extends PHPUnitTestCase
      *                       initialised up to once per test.
      */
     private array $appInstance = [0 => null, 1 => null];
+
+    public static function someMandate(): RegularGivingMandate
+    {
+        return new RegularGivingMandate(
+            PersonId::of(Uuid::MAX),
+            Money::fromPoundsGBP(1),
+            Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
+            Salesforce18Id::ofCharity('xxxxxxxxxxxxxxxxxx'),
+            false,
+            DayOfMonth::of(1),
+        );
+    }
 
     public function getContainer(): ContainerInterface
     {

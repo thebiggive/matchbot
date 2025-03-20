@@ -7,6 +7,7 @@ namespace MatchBot\Client;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
@@ -85,6 +86,8 @@ abstract class Common
             throw new BadRequestException('Client push is off');
         }
 
+        $messageDate = (string)($jsonSnapshot[DonationUpserted::SNAPSHOT_TAKEN_AT] ?? 'unknown date');
+
         try {
             $response = $this->getHttpClient()->post(
                 $uri,
@@ -141,11 +144,12 @@ abstract class Common
             }
 
             $this->logger->error(sprintf(
-                '%s upsert exception for UUID %s %s: %s. Body: %s',
+                '%s upsert exception for UUID %s %s: %s. Message from %s, Body: %s',
                 $entityType,
                 $uuid,
                 get_class($ex),
                 $ex->getMessage(),
+                $messageDate,
                 $exResponse ? $exResponse->getBody() : 'N/A',
             ));
 

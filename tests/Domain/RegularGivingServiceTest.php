@@ -11,6 +11,7 @@ use MatchBot\Domain\CardBrand;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DomainException\AccountDetailsMismatch;
+use MatchBot\Domain\DomainException\BadCommandException;
 use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\HomeAddressRequired;
 use MatchBot\Domain\DomainException\NotFullyMatched;
@@ -75,10 +76,17 @@ class RegularGivingServiceTest extends TestCase
     /** @var ObjectProphecy<DonationService> */
     private ObjectProphecy $donationServiceProphecy;
 
+    /** @var ObjectProphecy<Stripe> */
+    private ObjectProphecy $stripeProphecy;
+
+    /** @var ObjectProphecy<RegularGivingMandateRepository> */
+    private ObjectProphecy $regularGivingMandateRepositoryProphecy;
+
     private CampaignFunding $campaignFunding;
 
     /** @var list<Donation> */
     private array $donations;
+
 
     public function setUp(): void
     {
@@ -129,6 +137,10 @@ class RegularGivingServiceTest extends TestCase
                     chargeCreationTimestamp: 0,
                 )
             );
+        $this->stripeProphecy = $this->prophesize(Stripe::class);
+
+        $this->regularGivingMandateRepositoryProphecy = $this->prophesize(RegularGivingMandateRepository::class);
+        $this->regularGivingMandateRepositoryProphecy->allPendingForDonorAndCampaign(Argument::cetera())->willReturn([]);
     }
 
     public function testItCreatesRegularGivingMandate(): void
@@ -600,23 +612,59 @@ class RegularGivingServiceTest extends TestCase
         $sut->cancelMandate(mandate: $mandate, reason: '', cancellationType: MandateCancellationType::DonorRequestedCancellation);
     }
 
-    public function makeSut(\DateTimeImmutable $simulatedNow): RegularGivingService
+    public function testItRemovesADonorsRegularGivingPaymentMethod(): void
+    {
+        $paymentMethodId = StripePaymentMethodId::of('pm_abcd');
+        $this->donorAccount->setRegularGivingPaymentMethod($paymentMethodId);
+
+        $this->regularGivingMandateRepositoryProphecy->allActiveMandatesForDonor($this->donorAccount->id())
+            ->willReturn([]);
+
+        $this->stripeProphecy->detatchPaymentMethod($paymentMethodId)->shouldBeCalled();
+
+        $this->makeSut()->removeDonorRegularGivingPaymentMethod($this->donorAccount);
+
+        $this->assertNull($this->donorAccount->getRegularGivingPaymentMethod());
+    }
+
+    public function testItWontRemoveADonorsRegularGivingPaymentMethodGivenActiveMandate(): void
+    {
+        $paymentMethodId = StripePaymentMethodId::of('pm_abcd');
+        $this->donorAccount->setRegularGivingPaymentMethod($paymentMethodId);
+
+        $this->regularGivingMandateRepositoryProphecy->allActiveMandatesForDonor($this->donorAccount->id())
+            ->willReturn([[
+                self::someMandate(),
+                self::someCharity(name: 'The_charity_you_are_actively_donating_to'),
+        ]]);
+
+        $this->stripeProphecy->detatchPaymentMethod($paymentMethodId)->shouldNotBeCalled();
+
+        $this->expectException(BadCommandException::class);
+        $this->expectExceptionMessage(
+            'You have an active regular giving mandate for The_charity_you_are_actively_donating_to.'
+        );
+        $this->makeSut()->removeDonorRegularGivingPaymentMethod($this->donorAccount);
+    }
+
+
+    private function makeSut(?\DateTimeImmutable $simulatedNow = null): RegularGivingService
     {
         return new RegularGivingService(
-            now: $simulatedNow,
+            now: $simulatedNow ?? new \DateTimeImmutable('2025-01-01T00:00:00'),
             donationRepository: $this->donationRepositoryProphecy->reveal(),
             donorAccountRepository: $this->donorAccountRepositoryProphecy->reveal(),
             campaignRepository: $this->campaignRepositoryProphecy->reveal(),
             entityManager: $this->entityManagerProphecy->reveal(),
             donationService: $this->donationServiceProphecy->reveal(),
             log: $this->createStub(LoggerInterface::class),
-            regularGivingMandateRepository: $this->createStub(RegularGivingMandateRepository::class),
+            regularGivingMandateRepository: $this->regularGivingMandateRepositoryProphecy->reveal(),
             regularGivingNotifier: $this->regularGivingNotifierProphecy->reveal(),
-            stripe: $this->createStub(Stripe::class),
+            stripe: $this->stripeProphecy->reveal(),
         );
     }
 
-    public function getMandate(int $dayOfMonth, string $activationDate, int $maxSequenceNumber): RegularGivingMandate
+    private function getMandate(int $dayOfMonth, string $activationDate, int $maxSequenceNumber): RegularGivingMandate
     {
         $mandateId = 53;
         $mandate = new RegularGivingMandate(
@@ -636,7 +684,7 @@ class RegularGivingServiceTest extends TestCase
         return $mandate;
     }
 
-    public function prepareDonorAccount(?StripePaymentMethodId $stripePaymentMethodId = null): DonorAccount
+    private function prepareDonorAccount(?StripePaymentMethodId $stripePaymentMethodId = null): DonorAccount
     {
         $donorId = self::randomPersonId();
         $donorAccount = new DonorAccount(
@@ -659,7 +707,7 @@ class RegularGivingServiceTest extends TestCase
         return $donorAccount;
     }
 
-    public function setDonorDetailsInUK(): void
+    private function setDonorDetailsInUK(): void
     {
         $this->donorAccount->setBillingCountry(Country::GB());
         $this->donorAccount->setBillingPostcode('SW11AA');
@@ -676,7 +724,7 @@ class RegularGivingServiceTest extends TestCase
         $this->donorAccount->setHomeAddressLine1('Home Address');
     }
 
-    public function createRegularGivingMandate(string $campaignEndDate, string $currentDate): void
+    private function createRegularGivingMandate(string $campaignEndDate, string $currentDate): void
     {
         $regularGivingService = $this->makeSUT(new \DateTimeImmutable($currentDate));
         $this->givenDonorHasRegularGivingPaymentMethod();
