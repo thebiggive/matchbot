@@ -1843,7 +1843,7 @@ class Donation extends SalesforceWriteProxy
         if (!$this->giftAid && !$this->tipGiftAid) {
             throw new CannotRemoveGiftAid(
                 "Cannot remove gift aid from donation {$salesforceId}, gift aid " .
-                "was never claimed"
+                "was not requested by donor"
             );
         }
 
