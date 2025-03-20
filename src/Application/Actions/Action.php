@@ -69,7 +69,7 @@ abstract class Action
     protected function argToUuid(array $args, string $argName): UuidInterface
     {
         Assertion::keyExists($args, $argName);
-        $donationUUID = $args['' . $argName . ''];
+        $donationUUID = $args[$argName];
         Assertion::string($donationUUID);
         if ($donationUUID === '') {
             throw new DomainRecordNotFoundException("Missing $argName");
