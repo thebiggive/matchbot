@@ -1170,7 +1170,7 @@ class DonationTest extends TestCase
         $donation->removeGiftAid(new \DateTimeImmutable());
     }
 
-    public function testCannotRemoveGiftAid(): void
+    public function testCanRemoveGiftAid(): void
     {
         $donation = self::someDonation(giftAid: true);
         $donation->setSalesforceId('donationId12345678');
