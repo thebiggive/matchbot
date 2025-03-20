@@ -54,11 +54,7 @@ class Donation extends SalesforceWriteProxy
      */
     public const string OVERSEAS = 'OVERSEAS';
 
-    /*
-     * @todo-mat-400: Replace date below with something shortly after the code will be deployed to prod
-     * to enable this feature.
-     */
-    public const string MAT_400_ENABLE_TIMESTAMP = '3000-01-01T00:00:00+00:00';
+    public const string MAT_400_ENABLE_TIMESTAMP = '2025-03-18T14:30:00+00:00';
 
     private array $possiblePSPs = ['stripe'];
 

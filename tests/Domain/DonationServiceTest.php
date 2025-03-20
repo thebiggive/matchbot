@@ -134,14 +134,7 @@ class DonationServiceTest extends TestCase
 
     public function testRefusesToConfirmPreAuthedDonationForNonActiveMandate(): void
     {
-        $mandate = new RegularGivingMandate(
-            PersonId::of(Uuid::MAX),
-            Money::fromPoundsGBP(1),
-            Salesforce18Id::ofCampaign('xxxxxxxxxxxxxxxxxx'),
-            Salesforce18Id::ofCharity('xxxxxxxxxxxxxxxxxx'),
-            false,
-            DayOfMonth::of(1),
-        );
+        $mandate = self::someMandate();
 
         $mandate->activate(new \DateTimeImmutable('2024-09-01'));
 
@@ -209,7 +202,6 @@ class DonationServiceTest extends TestCase
             rateLimiterFactory: new RateLimiterFactory(['id' => 'stub', 'policy' => 'no_limit'], new InMemoryStorage()),
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
             bus: $this->createStub(RoutableMessageBus::class),
-            environment: Environment::Test,
             donationNotifier: $this->createStub(DonationNotifier::class),
         );
     }
