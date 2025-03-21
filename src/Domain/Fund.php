@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
+use MatchBot\Domain\DomainException\DisallowedFundTypeChange;
 
 /**
  * Represents a commitment of match funds, i.e. a Champion Fund or Pledge. Because a Fund (most
@@ -62,11 +63,16 @@ class Fund extends SalesforceReadProxy
      * Change the type of an already-persisted Fund. Only allowed for pledges and only to go
      * from non-topup to topup mode.
      */
-    public function changeType(FundType $newType): void
+    public function changeTypeIfNecessary(FundType $newType): void
     {
+        if ($this->fundType === $newType) {
+            // No change needed
+            return;
+        }
+
         if (!$this->fundType->isPledge() || $newType !== FundType::TopupPledge) {
             // Refuse to make any change except to TopupPledge
-            throw new \InvalidArgumentException('Only supported type change is Pledge (or already TopupPledge) funds to TopupPledge');
+            throw new DisallowedFundTypeChange('Only supported type change is Pledge (or already TopupPledge) funds to TopupPledge');
         }
         $this->fundType = $newType;
     }

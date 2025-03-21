@@ -9,6 +9,7 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching;
 use MatchBot\Client;
+use MatchBot\Domain\DomainException\DisallowedFundTypeChange;
 use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
 
 /**
@@ -157,8 +158,14 @@ class FundRepository extends SalesforceReadProxyRepository
         // Salesforce Pledge__c record edits.
         /** @var string $type */
         $type = $fundData['type'];
-        if ($fund->hasBeenPersisted() && $type !== 'pledge' && $fund->getFundType() === FundType::Pledge) {
-            $fund->changeType(FundType::from($type));
+        try {
+            $fund->changeTypeIfNecessary(FundType::from($type));
+        } catch (DisallowedFundTypeChange $exception) {
+            $this->logError(sprintf(
+                'Refusing to update fund type to %s for SF ID %s',
+                $type,
+                $fundData['id'],
+            ));
         }
 
         $fund->setCurrencyCode($fundData['currencyCode'] ?? 'GBP');
