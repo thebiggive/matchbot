@@ -40,6 +40,9 @@ enum FundType: string
 
     public function isPledge(): bool
     {
-        return $this === self::Pledge || $this === self::TopupPledge;
+        return match ($this) {
+            self::Pledge, self::TopupPledge => true,
+            self::ChampionFund => false,
+        };
     }
 }
