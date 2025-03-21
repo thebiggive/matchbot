@@ -2,16 +2,22 @@
 
 namespace MatchBot\Application\Messenger\Handler;
 
+use Assert\Assertion;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Messenger\MandateUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\BadResponseException;
-use MatchBot\Client\Mandate;
+use MatchBot\Client\Mandate as MandateClient;
 use MatchBot\Client\NotFoundException;
+use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Log\LoggerInterface;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\Clock\Clock;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\RoutableMessageBus;
 
 /**
  * Sends mandates to Salesforce.
@@ -24,7 +30,9 @@ readonly class MandateUpsertedHandler
      */
     public function __construct(
         private LoggerInterface $logger,
-        private Mandate $client,
+        private MandateClient $client,
+        private RoutableMessageBus $bus,
+        private DonationRepository $donationRepository,
         private EntityManagerInterface $entityManager,
         private Clock $clock,
     ) {
@@ -38,6 +46,17 @@ readonly class MandateUpsertedHandler
         try {
             $sfId = $this->client->createOrUpdate($message);
             $this->setSalesforceFields($uuid, $sfId);
+
+            $donations = $this->donationRepository->findAllForMandate(Uuid::fromString($message->uuid));
+
+            // This may be the first time that we are able to update the donations in SF, it wasn't possible before
+            // if the mandate did not have an SF ID.
+
+            foreach ($donations as $donationInMandate) {
+                Assertion::notNull($donationInMandate->getMandate()?->getSalesforceId(), 'Expected mandate to have SF ID after push');
+                $donationUpserted = DonationUpserted::fromDonation($donationInMandate);
+                $this->bus->dispatch(new Envelope($donationUpserted));
+            }
         } catch (BadRequestException | BadResponseException | NotFoundException $exception) {
             // no trace needed for these exception types.
             $this->logger->error(sprintf(

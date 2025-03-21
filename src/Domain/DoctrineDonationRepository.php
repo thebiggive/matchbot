@@ -692,6 +692,11 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     {
         try {
             $salesforceDonationId = $this->getClient()->createOrUpdate($changeMessage);
+            if ($salesforceDonationId === null) {
+                $this->logInfo(
+                    "Could not push donation {$changeMessage->uuid} to Salesforce, not ready for push",
+                );
+            }
         } catch (NotFoundException) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push donation to a removed campaign.
             $this->logInfo(
@@ -852,15 +857,30 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         return $this->findAndLockOneBy(['uuid' => $donationId->toString()]);
     }
 
-    public function findPendingAndPreAuthedForMandate(int $mandateId): array
+    public function findPendingAndPreAuthedForMandate(UuidInterface $mandateId): array
     {
         $pending = DonationStatus::Pending->value;
         $preAuthorized = DonationStatus::PreAuthorized->value;
 
         $query = $this->getEntityManager()->createQuery(<<<DQL
             SELECT d from Matchbot\Domain\Donation d JOIN d.mandate m
-            WHERE m.id = :mandate_id
+            WHERE m.uuid = :mandate_id
             AND d.donationStatus IN ('$preAuthorized', '$pending')
+        DQL
+        );
+
+        $query->setParameter('mandate_id', $mandateId);
+
+        /** @var list<Donation> $result */
+        $result = $query->getResult();
+        return $result;
+    }
+
+    public function findAllForMandate(UuidInterface $mandateId): array
+    {
+        $query = $this->getEntityManager()->createQuery(<<<DQL
+            SELECT d from Matchbot\Domain\Donation d JOIN d.mandate m
+            WHERE m.uuid = :mandate_id
         DQL
         );
 
