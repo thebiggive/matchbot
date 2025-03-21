@@ -59,6 +59,19 @@ class Fund extends SalesforceReadProxy
     }
 
     /**
+     * Change the type of an already-persisted Fund. Only allowed for pledges and only to go
+     * from non-topup to topup mode.
+     */
+    public function changeType(FundType $newType): void
+    {
+        if (!$this->fundType->isPledge() || $newType !== FundType::TopupPledge) {
+            // Refuse to make any change except to TopupPledge
+            throw new \InvalidArgumentException('Only supported type change is Pledge (or already TopupPledge) funds to TopupPledge');
+        }
+        $this->fundType = $newType;
+    }
+
+    /**
      * @param string $name
      */
     public function setName(string $name): void

@@ -37,4 +37,9 @@ enum FundType: string
         // check tests cover match above.
         return $order * 100;
     }
+
+    public function isPledge(): bool
+    {
+        return $this === self::Pledge || $this === self::TopupPledge;
+    }
 }

@@ -148,6 +148,19 @@ class FundRepository extends SalesforceReadProxyRepository
 
             throw new DomainCurrencyMustNotChangeException();
         }
+
+        // For now, we let some charities collect non-Topup pledges with the Salesforce form, only
+        // after champion funds are used. So the mid-campaign matching behaviour is "usually" unaffected
+        // by the Topup status (with possible exceptions if e.g. there are refunds that release champion funds).
+        // At the end of a campaign however we want to treat them as Topups during redistribution. So until we have
+        // a form that gets it right from the start, we allow a type change from Pledge to TopupPledge based on
+        // Salesforce Pledge__c record edits.
+        /** @var string $type */
+        $type = $fundData['type'];
+        if ($fund->hasBeenPersisted() && $type !== 'pledge' && $fund->getFundType() === FundType::Pledge) {
+            $fund->changeType(FundType::from($type));
+        }
+
         $fund->setCurrencyCode($fundData['currencyCode'] ?? 'GBP');
         $fund->setName($fundData['name'] ?? '');
         $fund->setSalesforceLastPull(new DateTime('now'));
