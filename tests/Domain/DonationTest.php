@@ -12,6 +12,7 @@ use MatchBot\Application\LazyAssertionException;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CardBrand;
+use MatchBot\Domain\DomainException\CannotRemoveGiftAid;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\Donation;
@@ -1154,5 +1155,28 @@ class DonationTest extends TestCase
         $withdrawal->setAmount($fundAmount);
 
         return $withdrawal;
+    }
+
+    public function testCannotRemoveGiftAidAfterRequestQueued(): void
+    {
+        $donation = self::someDonation(giftAid: true);
+        $donation->setSalesforceId('donationId12345678');
+
+        $donation->setTbgGiftAidRequestQueuedAt(new \DateTimeImmutable('2025-01-01T00:00:00Z'));
+
+        $this->expectException(CannotRemoveGiftAid::class);
+        $this->expectExceptionMessage(
+            "Cannot remove gift aid from donation donationId12345678, request already queued to send to HMRC at 2025-01-01 00:00"
+        );
+        $donation->removeGiftAid(new \DateTimeImmutable());
+    }
+
+    public function testCanRemoveGiftAid(): void
+    {
+        $donation = self::someDonation(giftAid: true);
+        $donation->setSalesforceId('donationId12345678');
+        $donation->removeGiftAid(new \DateTimeImmutable());
+
+        $this->assertFalse($donation->hasGiftAid());
     }
 }

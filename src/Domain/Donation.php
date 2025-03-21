@@ -18,6 +18,7 @@ use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\Fees\Calculator;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\LazyAssertionException;
+use MatchBot\Domain\DomainException\CannotRemoveGiftAid;
 use MatchBot\Domain\DomainException\RegularGivingDonationToOldToCollect;
 use Messages;
 use Ramsey\Uuid\Uuid;
@@ -186,6 +187,12 @@ class Donation extends SalesforceWriteProxy
     protected bool $giftAid = false;
 
     /**
+     * Date at which we amended the donation to cancel claiming gift aid.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?DateTimeImmutable $giftAidRemovedAt = null;
+
+    /**
      * @var bool    Whether the donor opted to receive email from the Big Give
      */
     #[ORM\Column(type: 'boolean', nullable: true)]
@@ -295,10 +302,10 @@ class Donation extends SalesforceWriteProxy
 
     /**
      * @psalm-suppress PossiblyUnusedProperty - used in DB queries
-     * @var ?DateTime   When a queued message that should lead to a Gift Aid claim was sent.
+     * @var ?DateTimeImmutable When a queued message that should lead to a Gift Aid claim was sent.
      */
     #[ORM\Column(type: 'datetime', nullable: true)]
-    protected ?DateTime $tbgGiftAidRequestQueuedAt = null;
+    protected ?DateTimeImmutable $tbgGiftAidRequestQueuedAt = null;
 
     /**
      * @var ?DateTime   When a claim submission attempt was detected to have an error returned.
@@ -1121,10 +1128,7 @@ class Donation extends SalesforceWriteProxy
         $this->tbgShouldProcessGiftAid = $tbgShouldProcessGiftAid;
     }
 
-    /**
-     * @param DateTime|null $tbgGiftAidRequestQueuedAt
-     */
-    public function setTbgGiftAidRequestQueuedAt(?DateTime $tbgGiftAidRequestQueuedAt): void
+    public function setTbgGiftAidRequestQueuedAt(?DateTimeImmutable $tbgGiftAidRequestQueuedAt): void
     {
         $this->tbgGiftAidRequestQueuedAt = $tbgGiftAidRequestQueuedAt;
     }
@@ -1815,5 +1819,50 @@ class Donation extends SalesforceWriteProxy
     public function isRegularGiving(): bool
     {
         return $this->mandate !== null;
+    }
+
+    /**
+     * @throws CannotRemoveGiftAid
+     */
+    public function removeGiftAid(\DateTimeImmutable $at): void
+    {
+        // This function will be called via the Salesforce UI, so its safe to assume the donation has an SF ID by now.
+        $salesforceId = $this->getSalesforceId();
+
+        if ($this->tbgGiftAidRequestQueuedAt !== null) {
+            $formattedQueuedDate = $this->tbgGiftAidRequestQueuedAt->format('Y-m-d H:i');
+
+            throw new CannotRemoveGiftAid(
+                "Cannot remove gift aid from donation {$salesforceId}, request already " .
+                "queued to send to HMRC at {$formattedQueuedDate}"
+            );
+        }
+
+        if ($this->giftAidRemovedAt !== null) {
+            $formattedQueuedDate = $this->giftAidRemovedAt->format('Y-m-d H:i');
+
+            // This function will be called via the Salesforce UI, so its safe to assume the donation has an SF ID by now.
+            $salesforceId = $this->getSalesforceId();
+
+            throw new CannotRemoveGiftAid(
+                "Cannot remove gift aid from donation {$salesforceId}, gift aid " .
+                "already removed at {$formattedQueuedDate}"
+            );
+        }
+
+        if (!$this->giftAid && !$this->tipGiftAid) {
+            throw new CannotRemoveGiftAid(
+                "Cannot remove gift aid from donation {$salesforceId}, gift aid " .
+                "was not requested by donor"
+            );
+        }
+
+        $this->giftAidRemovedAt = $at;
+
+        // todo - record the time that we're removing GA, and mabye also the the name/id of the person asking for it
+        // to be removed, and the reason for removal?
+
+        $this->giftAid = false;
+        $this->tipGiftAid = false;
     }
 }
