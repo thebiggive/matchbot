@@ -590,7 +590,7 @@ class RegularGivingServiceTest extends TestCase
 
         $mandate = $this->getMandate(2, '2024-09-03T06:00:00 BST', 1);
 
-        $this->donationRepositoryProphecy->findPendingAndPreAuthedForMandate($mandate->getId())->willReturn([]);
+        $this->donationRepositoryProphecy->findPendingAndPreAuthedForMandate($mandate->getUuid())->willReturn([]);
         $sut->cancelMandate($mandate, 'Because I don\'t have any more money to give', MandateCancellationType::DonorRequestedCancellation);
 
         $this->assertEquals(MandateStatus::Cancelled, $mandate->getStatus());
@@ -605,7 +605,7 @@ class RegularGivingServiceTest extends TestCase
         $mandate = $this->getMandate(2, '2024-09-03T06:00:00 BST', 1);
 
         $donation = self::someDonation();
-        $this->donationRepositoryProphecy->findPendingAndPreAuthedForMandate($mandate->getId())->willReturn([$donation]);
+        $this->donationRepositoryProphecy->findPendingAndPreAuthedForMandate($mandate->getUuid())->willReturn([$donation]);
 
         $this->donationServiceProphecy->cancel($donation)->shouldBeCalled();
 
