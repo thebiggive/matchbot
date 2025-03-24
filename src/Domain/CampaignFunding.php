@@ -160,6 +160,16 @@ class CampaignFunding extends Model
     }
 
     /**
+     * Used when the allocation order of the related fund changes.
+     * @todo MAT-410: Consider whether this is necessary longer term or if it would be possible and better to
+     *                normalise data
+     */
+    public function setAllocationOrder(int $allocationOrder): void
+    {
+        $this->allocationOrder = $allocationOrder;
+    }
+
+    /**
      * @return Fund
      */
     public function getFund(): Fund

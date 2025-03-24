@@ -59,6 +59,22 @@ class FundTest extends TestCase
         self::assertSame($expected, $fund->toAmountUsedUpdateModel());
     }
 
+    public function testChangingTypeUpdatesAllocationOrderOfAllCampaignFundings(): void
+    {
+        $fund = new Fund('GBP', 'Testfund', Salesforce18Id::of('sfFundId4567890abc'), fundType: FundType::Pledge);
+        $campaignFunding = new CampaignFunding(
+            fund: $fund,
+            amount: '123.45',
+            amountAvailable: '100.00',
+            allocationOrder: FundType::Pledge->allocationOrder(),
+        );
+        $fund->addCampaignFunding($campaignFunding);
+
+        $fund->changeTypeIfNecessary(FundType::TopupPledge);
+
+        self::assertSame(FundType::TopupPledge->allocationOrder(), $campaignFunding->getAllocationOrder());
+    }
+
     /**
      * Test data provider.
      *

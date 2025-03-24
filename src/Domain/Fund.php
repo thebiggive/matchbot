@@ -75,6 +75,8 @@ class Fund extends SalesforceReadProxy
             throw new DisallowedFundTypeChange('Only supported type change is Pledge (or already TopupPledge) funds to TopupPledge');
         }
         $this->fundType = $newType;
+
+        $this->updateAllCampaignFundingAllocationOrders();
     }
 
     /**
@@ -180,5 +182,12 @@ class Fund extends SalesforceReadProxy
     public function getFundType(): FundType
     {
         return $this->fundType;
+    }
+
+    private function updateAllCampaignFundingAllocationOrders(): void
+    {
+        foreach ($this->campaignFundings as $campaignFunding) {
+            $campaignFunding->setAllocationOrder($this->getAllocationOrder());
+        }
     }
 }
