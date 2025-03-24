@@ -67,6 +67,10 @@ class FundRepository extends SalesforceReadProxyRepository
 
                 $fund = $this->findOneBySFIDWithEagerLoad(Salesforce18Id::of($fundData['id']));
                 \assert($fund !== null); // since someone else made it it must now be in the db.
+
+                /** @psalm-suppress MixedArgumentTypeCoercion - introduced more specific type on setAnyFundData after
+                 * this was written
+                 */
                 $fund = $this->setAnyFundData($fund, $fundData);
                 $this->getEntityManager()->persist($fund);
             }
@@ -152,6 +156,9 @@ class FundRepository extends SalesforceReadProxyRepository
         return $fund;
     }
 
+    /**
+     * @param array{id: int, type: string, currencyCode: string, name: string} $fundData
+     */
     protected function setAnyFundData(Fund $fund, array $fundData): Fund
     {
         if ($fund->hasBeenPersisted() && $fund->getCurrencyCode() !== $fundData['currencyCode']) {
@@ -170,7 +177,6 @@ class FundRepository extends SalesforceReadProxyRepository
         // At the end of a campaign however we want to treat them as Topups during redistribution. So until we have
         // a form that gets it right from the start, we allow a type change from Pledge to TopupPledge based on
         // Salesforce Pledge__c record edits.
-        /** @var string $type */
         $type = $fundData['type'];
         try {
             $fund->changeTypeIfNecessary(FundType::from($type));

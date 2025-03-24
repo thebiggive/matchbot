@@ -183,6 +183,8 @@ class FundRepositoryTest extends TestCase
             ->willReturn($this->getExistingCampaignFunding(true))
             ->shouldBeCalledOnce();
 
+        $campaignFundingRepoProphecy->findBy(Argument::any())->shouldBeCalled();
+
         $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
 
         // Validate that the matching adapter DOES have its `addAmount()` called inside a safe transaction
@@ -235,6 +237,8 @@ class FundRepositoryTest extends TestCase
             ->getFunding(Argument::which('getSalesforceId', 'sfFundId4567890abc'))
             ->willReturn($this->getExistingCampaignFunding(true))
             ->shouldNotBeCalled();
+
+        $campaignFundingRepoProphecy->findBy(Argument::any())->shouldBeCalled();
 
         $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);
         $matchingAdapterProphecy->addAmount(Argument::cetera())

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use Assert\Assertion;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -82,11 +83,12 @@ class CampaignFunding extends Model
         string $amountAvailable,
         int $allocationOrder
     ) {
+
         $this->fund = $fund;
         $this->currencyCode = $fund->getCurrencyCode();
         $this->amount = $amount;
         $this->amountAvailable = $amountAvailable;
-        $this->allocationOrder = $allocationOrder;
+        $this->setAllocationOrder($allocationOrder);
 
         $this->campaigns = new ArrayCollection();
         $this->createdNow();
@@ -161,11 +163,14 @@ class CampaignFunding extends Model
 
     /**
      * Used when the allocation order of the related fund changes.
+     * @param positive-int $allocationOrder
+     *
      * @todo MAT-410: Consider whether this is necessary longer term or if it would be possible and better to
      *                normalise data
      */
     public function setAllocationOrder(int $allocationOrder): void
     {
+        Assertion::greaterOrEqualThan($allocationOrder, 0);
         $this->allocationOrder = $allocationOrder;
     }
 
