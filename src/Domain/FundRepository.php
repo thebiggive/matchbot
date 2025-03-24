@@ -46,7 +46,7 @@ class FundRepository extends SalesforceReadProxyRepository
         $fundsData = $client->getForCampaign($campaignSFId);
         foreach ($fundsData as $fundData) {
             // For each fund linked to the campaign, look it up or create it if unknown
-            $fund = $this->findOneBy(['salesforceId' => $fundData['id']]);
+            $fund = $this->findOneBySFIDWithEagerLoad(Salesforce18Id::of($fundData['id']));
             if (!$fund) {
                 $fund = $this->getNewFund($fundData);
             }
@@ -65,7 +65,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 // Somebody else made the fund with this SF ID during the previous operations.
                 $this->logError('Skipping fund create as unique constraint failed on SF ID ' . $fundData['id']);
 
-                $fund = $this->findOneBy(['salesforceId' => $fundData['id']]);
+                $fund = $this->findOneBySFIDWithEagerLoad(Salesforce18Id::of($fundData['id']));
                 \assert($fund !== null); // since someone else made it it must now be in the db.
                 $fund = $this->setAnyFundData($fund, $fundData);
                 $this->getEntityManager()->persist($fund);
@@ -136,6 +136,20 @@ class FundRepository extends SalesforceReadProxyRepository
                 );
             }
         }
+    }
+
+    private function findOneBySFIDWithEagerLoad(Salesforce18Id $fundId): ?Fund
+    {
+        $fund = $this->findOneBy(['salesforceId' => $fundId->value]);
+
+        if ($fund) {
+            // probably a better way to do this, by telling Doctrine to do a join or eager loading, but I'm fetching all
+            // CampaignFundings now to do a single query loading them into the UnitOfWork, instead of needing N queries
+            // to load N CampaignFundings later inside a loop.
+            $_ = $this->campaignFundingRepository->findBy(['fund' => $fund]);
+        }
+
+        return $fund;
     }
 
     protected function setAnyFundData(Fund $fund, array $fundData): Fund
