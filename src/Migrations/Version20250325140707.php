@@ -20,11 +20,12 @@ final class Version20250325140707 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // Patch new Fund field with previous linked CampaignFundings' allocation orders.
-        $this->addSql(<<<SQL
-            UPDATE Fund f
-            JOIN CampaignFunding cf ON cf.fund_id = f.id
-            SET f.allocationOrder = cf.allocationOrder
-            WHERE f.allocationOrder IS NULL AND cf.allocationOrder IS NOT NULL
+        $this->addSql(<<<'SQL'
+            UPDATE Fund SET allocationOrder = CASE
+                WHEN fundType = 'pledge' THEN 100
+                WHEN fundType = 'championFund' THEN 200
+                WHEN fundType = 'topupPledge' THEN 300
+            END
         SQL);
 
         $this->addSql('ALTER TABLE CampaignFunding DROP allocationOrder');
