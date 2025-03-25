@@ -361,7 +361,15 @@ readonly class RegularGivingService
     private function enrollAndMatchDonations(array $donations, RegularGivingMandate $mandate): void
     {
         foreach ($donations as $donation) {
-            $this->donationService->enrollNewDonation($donation, $mandate->isMatched());
+            // dispatchUpdateMessage: false because donations will be sent after mandate has SF ID by
+            // MandateUpsertedHandler. Also not dispatching because sending the 1st pending donation seems to be causing
+            // alarms in Regtest where SF thinks matchbot is asking it to convert a donation from Collected to Pending,
+            // which is not allowed.
+            $this->donationService->enrollNewDonation(
+                donation: $donation,
+                attemptMatching: $mandate->isMatched(),
+                dispatchUpdateMessage: false,
+            );
             if (!$donation->isFullyMatched() && $mandate->isMatched()) {
                 $maxMatchable = RegularGivingMandate::averageMatched($donations);
 
