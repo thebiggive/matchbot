@@ -20,7 +20,7 @@ use Doctrine\ORM\Mapping as ORM;
  * See {@see FundType::allocationOrder()}
  */
 #[ORM\Table]
-#[ORM\Index(name: 'available_fundings', columns: ['amountAvailable', 'allocationOrder', 'id'])]
+#[ORM\Index(name: 'available_fundings', columns: ['amountAvailable', 'id'])]
 #[ORM\Entity(repositoryClass: CampaignFundingRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 class CampaignFunding extends Model
@@ -66,28 +66,18 @@ class CampaignFunding extends Model
     protected string $amountAvailable;
 
     /**
-     * @var int     Order of preference as a rank, i.e. lower numbers have their funds used first. Must be >= 0.
-     */
-    #[ORM\Column(type: 'integer')]
-    protected int $allocationOrder;
-
-    /**
      * @param numeric-string $amountAvailable
      * @param numeric-string $amount
-     * @param positive-int $allocationOrder
      */
     public function __construct(
         Fund $fund,
         string $amount,
         string $amountAvailable,
-        int $allocationOrder
     ) {
         $this->fund = $fund;
         $this->currencyCode = $fund->getCurrencyCode();
         $this->amount = $amount;
         $this->amountAvailable = $amountAvailable;
-        $this->allocationOrder = $allocationOrder;
-
         $this->campaigns = new ArrayCollection();
         $this->createdNow();
     }
@@ -156,7 +146,7 @@ class CampaignFunding extends Model
 
     public function getAllocationOrder(): int
     {
-        return $this->allocationOrder;
+        return $this->getFund()->getAllocationOrder();
     }
 
     /**

@@ -32,7 +32,6 @@ class AdapterTest extends TestCase
             fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '10000',
             amountAvailable: '12.53',
-            allocationOrder: 100,
         );
         $funding->setId(1);
 
@@ -47,7 +46,6 @@ class AdapterTest extends TestCase
             fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '50',
-            allocationOrder: 100,
         );
         $funding->setId(1);
         $this->sut->addAmount($funding, '12.53');
@@ -66,7 +64,6 @@ class AdapterTest extends TestCase
             fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '50',
-            allocationOrder: 100,
         );
         $funding->setId(1);
         $amountToSubtract = "10.10";
@@ -84,7 +81,6 @@ class AdapterTest extends TestCase
             fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '50',
-            allocationOrder: 100,
         );
         $funding->setId(1);
         $amountToSubtract = "30";
@@ -118,7 +114,6 @@ class AdapterTest extends TestCase
             fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '50',
-            allocationOrder: 100,
         );
         $funding->setId(53);
         $funding->setAmountAvailable('50');
@@ -155,7 +150,6 @@ class AdapterTest extends TestCase
             fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '1',
-            allocationOrder: 100,
         );
         $funding->setId(1);
         $this->sut->addAmount($funding, '5');
@@ -174,7 +168,6 @@ class AdapterTest extends TestCase
             fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '50',
-            allocationOrder: 100,
         );
         $funding->setId(1);
         $amountToSubtract = "10.10";

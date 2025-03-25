@@ -26,7 +26,6 @@ class FundTest extends TestCase
             fund: $fund,
             amount: $totalAmount->toNumericString(),
             amountAvailable: $amountAvailable->toNumericString(),
-            allocationOrder: 100,
         ));
 
         $expected = [
@@ -44,7 +43,6 @@ class FundTest extends TestCase
             fund: $fund,
             amount: '123.45',
             amountAvailable: '100.00',
-            allocationOrder: 100,
         ));
 
         $expected = [

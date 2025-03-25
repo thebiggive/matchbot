@@ -37,7 +37,6 @@ class MatchFundsRedistributor
      *
      * @throws TerminalLockException
      * @throws \DateInvalidOperationException
-     * @throws \Doctrine\ORM\TransactionRequiredException
      */
     public function redistributeMatchFunds(): array
     {

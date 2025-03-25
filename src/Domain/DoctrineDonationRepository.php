@@ -211,34 +211,34 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         \DateTimeImmutable $campaignsClosedBefore,
         \DateTimeImmutable $donationsCollectedAfter,
     ): array {
-        $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('d')
-            ->from(Donation::class, 'd')
-            // Only select donations with 1+ FWs (i.e. some matching).
-            ->innerJoin('d.fundingWithdrawals', 'fw')
-            ->innerJoin('fw.campaignFunding', 'donationCf')
-            ->innerJoin('d.campaign', 'c')
-            // Join CampaignFundings allocated to campaign `c` with some amount available and a lower allocationOrder
-            // than the funding of `fw`.
-            ->innerJoin(
-                'c.campaignFundings',
-                'availableCf',
-                'WITH',
-                'availableCf.amountAvailable > 0 AND availableCf.allocationOrder < donationCf.allocationOrder'
-            )
-            ->where('c.endDate < :campaignsClosedBefore')
-            ->andWhere('d.donationStatus IN (:collectedStatuses)')
-            ->andWhere('d.collectedAt > :donationsCollectedAfter')
-            ->groupBy('d.id')
-            ->orderBy('d.id')
-            ->setParameter('campaignsClosedBefore', $campaignsClosedBefore)
-            ->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES)
-            ->setParameter('donationsCollectedAfter', $donationsCollectedAfter)
+        $query = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT d FROM MatchBot\Domain\Donation d
+            -- Only select donations with 1+ FWs (i.e. some matching).
+            INNER JOIN d.fundingWithdrawals fw
+            INNER JOIN fw.campaignFunding donationCf
+            INNER JOIN donationCf.fund donationFund
+            INNER JOIN d.campaign c
+            -- Join CampaignFundings allocated to campaign `c` with some amount available.
+            INNER JOIN c.campaignFundings availableCf WITH availableCf.amountAvailable > 0
+            INNER JOIN availableCf.fund availableFund
+            WHERE c.endDate < :campaignsClosedBefore
+            AND d.donationStatus IN (:collectedStatuses)
+            AND d.collectedAt > :donationsCollectedAfter
+            -- Only consider CampaignFundings with lower allocationOrder than `fw`'s.
+            AND availableFund.allocationOrder < donationFund.allocationOrder
+            GROUP BY d.id
+            ORDER BY d.id ASC
+        DQL
+        );
+
+        $query->setParameter('campaignsClosedBefore', $campaignsClosedBefore);
+        $query->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES);
+        $query->setParameter('donationsCollectedAfter', $donationsCollectedAfter);
         ;
 
         // Result caching rationale as per `findWithExpiredMatching()`.
         /** @var Donation[] $donations */
-        $donations = $qb->getQuery()
+        $donations = $query
             ->disableResultCache()
             ->getResult();
 

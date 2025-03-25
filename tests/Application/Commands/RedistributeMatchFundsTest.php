@@ -216,7 +216,6 @@ class RedistributeMatchFundsTest extends TestCase
             fund: $pledge,
             amount: $pledgeAmount,
             amountAvailable: $pledgeAmount,
-            allocationOrder: $pledge->getAllocationOrder(),
         );
     }
 
@@ -237,7 +236,6 @@ class RedistributeMatchFundsTest extends TestCase
             fund: $fund,
             amount: $donationAmount,
             amountAvailable: '0',
-            allocationOrder: $fund->getAllocationOrder(),
         );
 
         $championFundWithdrawal = new FundingWithdrawal($campaignFunding);

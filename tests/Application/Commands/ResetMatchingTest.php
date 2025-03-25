@@ -31,7 +31,6 @@ class ResetMatchingTest extends TestCase
             fund: $fund,
             amount: '400',
             amountAvailable: '400',
-            allocationOrder: 200,
         );
 
         $matchingAdapterProphecy = $this->prophesize(Matching\Adapter::class);

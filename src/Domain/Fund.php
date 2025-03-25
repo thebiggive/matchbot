@@ -19,6 +19,7 @@ use MatchBot\Domain\DomainException\DisallowedFundTypeChange;
 #[ORM\Table]
 #[ORM\Entity(repositoryClass: FundRepository::class)]
 #[ORM\HasLifecycleCallbacks]
+#[ORM\Index(columns: ['allocationOrder'], name: 'allocationOrder')]
 class Fund extends SalesforceReadProxy
 {
     use TimestampsTrait;
@@ -47,6 +48,12 @@ class Fund extends SalesforceReadProxy
     #[ORM\OneToMany(mappedBy: 'fund', targetEntity: CampaignFunding::class)]
     protected Collection $campaignFundings;
 
+    /**
+     * @psalm-suppress UnusedProperty used in DQL etc.
+     */
+    #[ORM\Column()]
+    private int $allocationOrder;
+
     public function __construct(string $currencyCode, string $name, ?Salesforce18Id $salesforceId, FundType $fundType)
     {
         $this->createdAt = new \DateTime();
@@ -57,6 +64,7 @@ class Fund extends SalesforceReadProxy
         $this->name = $name;
         $this->salesforceId = $salesforceId?->value;
         $this->fundType = $fundType;
+        $this->setAllocationOrder($fundType->allocationOrder());
     }
 
     /**
@@ -75,6 +83,7 @@ class Fund extends SalesforceReadProxy
             throw new DisallowedFundTypeChange('Only supported type change is Pledge (or already TopupPledge) funds to TopupPledge');
         }
         $this->fundType = $newType;
+        $this->setAllocationOrder($newType->allocationOrder());
     }
 
     /**
@@ -180,5 +189,10 @@ class Fund extends SalesforceReadProxy
     public function getFundType(): FundType
     {
         return $this->fundType;
+    }
+
+    private function setAllocationOrder(int $allocationOrder): void
+    {
+        $this->allocationOrder = $allocationOrder;
     }
 }
