@@ -319,7 +319,7 @@ class DonationService
      * @throws WrongCampaignType
      * @throws NotFoundException
      */
-    public function enrollNewDonation(Donation $donation, bool $attemptMatching): void
+    public function enrollNewDonation(Donation $donation, bool $attemptMatching, bool $dispatchUpdateMessage = true): void
     {
         $campaign = $donation->getCampaign();
 
@@ -343,7 +343,9 @@ class DonationService
             $this->createPaymentIntent($donation);
         }
 
-        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
+        if ($dispatchUpdateMessage) {
+            $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
+        }
     }
 
     private function doUpdateDonationFees(

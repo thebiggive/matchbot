@@ -36,7 +36,7 @@ class CreateRegularGivingMandateTest extends IntegrationTest
         $messageBusProphecy = $this->prophesize(MessageBusInterface::class);
         $messageBusProphecy->dispatch(Argument::type(Envelope::class), Argument::cetera())
             ->willReturnArgument(0)
-            ->shouldBeCalledTimes(4); // three donations + 1 mandate create
+            ->shouldBeCalledOnce(); // only the mandate update is initally dispatched - donations have to wait until mandate has an SF ID.
 
         $this->getContainer()->set(MessageBusInterface::class, $messageBusProphecy->reveal());
         $this->pencePerMonth = random_int(1, 500) * 100;
