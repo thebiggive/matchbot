@@ -12,6 +12,7 @@ use Doctrine\ORM\Query;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
@@ -707,8 +708,14 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
 
             return;
         } catch (BadRequestException $exception) {
+            if (Environment::current() !== Environment::Production) {
+                $snapshot = json_encode($changeMessage->jsonSnapshot);
+            } else {
+                $snapshot = 'no-snapshot-in-prod';
+            }
+
             $this->logError(
-                "Pushing Salesforce donation {$changeMessage->uuid} got 400: {$exception->getMessage()}"
+                "Pushing Salesforce donation {$changeMessage->uuid} got 400: {$exception->getMessage()}, donation snapshot was: $snapshot"
             );
 
             return;

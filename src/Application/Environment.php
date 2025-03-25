@@ -10,6 +10,11 @@ enum Environment
     case Local;
     case Test;
 
+    public static function current(): self
+    {
+        return self::fromAppEnv(getenv('APP_ENV'));
+    }
+
     public static function fromAppEnv(string $name): self
     {
         return match ($name) {
