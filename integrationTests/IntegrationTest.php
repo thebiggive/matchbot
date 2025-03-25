@@ -298,9 +298,9 @@ abstract class IntegrationTest extends TestCase
 
         $db->executeStatement(<<<SQL
             INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
-                              currencyCode) VALUES 
+                              currencyCode, allocationOrder) VALUES 
                 ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '{$fundType->value}',
-                 'GBP')
+                 'GBP', 1)
         SQL
         );
 
