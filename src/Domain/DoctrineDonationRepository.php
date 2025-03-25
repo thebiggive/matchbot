@@ -209,8 +209,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     public function findWithMatchingWhichCouldBeReplacedWithHigherPriorityAllocation(
         \DateTimeImmutable $campaignsClosedBefore,
         \DateTimeImmutable $donationsCollectedAfter,
-    ): array
-    {
+    ): array {
         $query = $this->getEntityManager()->createQuery(<<<'DQL'
             SELECT d FROM MatchBot\Domain\Donation d
             -- Only select donations with 1+ FWs (i.e. some matching).
@@ -233,7 +232,8 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
 
         $query->setParameter('campaignsClosedBefore', $campaignsClosedBefore);
         $query->setParameter('collectedStatuses', DonationStatus::SUCCESS_STATUSES);
-        $query->setParameter('donationsCollectedAfter', $donationsCollectedAfter);;
+        $query->setParameter('donationsCollectedAfter', $donationsCollectedAfter);
+        ;
 
         // Result caching rationale as per `findWithExpiredMatching()`.
         /** @var Donation[] $donations */
