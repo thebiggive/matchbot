@@ -12,7 +12,12 @@ enum Environment
 
     public static function current(): self
     {
-        return self::fromAppEnv(getenv('APP_ENV'));
+        $env = getenv('APP_ENV');
+        if ($env === false) {
+            throw new \RuntimeException('APP_ENV environment variable required');
+        }
+
+        return self::fromAppEnv($env);
     }
 
     public static function fromAppEnv(string $name): self
