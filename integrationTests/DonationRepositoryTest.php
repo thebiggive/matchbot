@@ -216,7 +216,6 @@ class DonationRepositoryTest extends IntegrationTest
             fund: $pledge,
             amount: '1.0',
             amountAvailable: '1.0',
-            allocationOrder: 100,
         );
         $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
         $oldPendingDonation->addFundingWithdrawal($fundingWithdrawal);

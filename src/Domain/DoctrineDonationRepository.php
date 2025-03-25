@@ -216,18 +216,21 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             // Only select donations with 1+ FWs (i.e. some matching).
             ->innerJoin('d.fundingWithdrawals', 'fw')
             ->innerJoin('fw.campaignFunding', 'donationCf')
+            ->innerJoin('donationCf.fund', 'donationFund')
             ->innerJoin('d.campaign', 'c')
-            // Join CampaignFundings allocated to campaign `c` with some amount available and a lower allocationOrder
-            // than the funding of `fw`.
+            // Join CampaignFundings allocated to campaign `c` with some amount available.
             ->innerJoin(
                 'c.campaignFundings',
                 'availableCf',
                 'WITH',
-                'availableCf.amountAvailable > 0 AND availableCf.allocationOrder < donationCf.allocationOrder'
+                'availableCf.amountAvailable > 0'
             )
+            ->innerJoin('availableCf.fund', 'availableFund')
             ->where('c.endDate < :campaignsClosedBefore')
             ->andWhere('d.donationStatus IN (:collectedStatuses)')
             ->andWhere('d.collectedAt > :donationsCollectedAfter')
+            //  Only consider CampaignFundings with lower allocationOrder than `fw`'s.
+            ->andWhere('availableFund.allocationOrder < donationFund.allocationOrder')
             ->groupBy('d.id')
             ->orderBy('d.id')
             ->setParameter('campaignsClosedBefore', $campaignsClosedBefore)

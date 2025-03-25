@@ -117,7 +117,6 @@ class FundRepository extends SalesforceReadProxyRepository
                     fund: $fund,
                     amount: $amountForCampaign,
                     amountAvailable: $amountForCampaign,
-                    allocationOrder: $fund->getAllocationOrder(),
                 );
             }
 

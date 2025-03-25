@@ -49,7 +49,7 @@ class Fund extends SalesforceReadProxy
     protected Collection $campaignFundings;
 
     /**
-     * @psalm-suppress UnusedProperty To be used once data populated in Production
+     * @psalm-suppress UnusedProperty used in DQL etc.
      */
     #[ORM\Column()]
     private int $allocationOrder;
@@ -83,7 +83,7 @@ class Fund extends SalesforceReadProxy
             throw new DisallowedFundTypeChange('Only supported type change is Pledge (or already TopupPledge) funds to TopupPledge');
         }
         $this->fundType = $newType;
-        $this->allocationOrder = $newType->allocationOrder();
+        $this->setAllocationOrder($newType->allocationOrder());
     }
 
     /**

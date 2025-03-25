@@ -300,16 +300,16 @@ abstract class IntegrationTest extends TestCase
             INSERT INTO Fund (name, salesforceId, salesforceLastPull, createdAt, updatedAt, fundType,
                               currencyCode, allocationOrder) VALUES 
                 ('Some test fund', '$fundSfID', '$nyd', '$nyd', '$nyd', '{$fundType->value}',
-                 'GBP', 1)
+                 'GBP', {$fundType->allocationOrder()})
         SQL
         );
 
         $fundId = (int)$db->lastInsertId();
 
         $db->executeStatement(<<<SQL
-            INSERT INTO CampaignFunding (fund_id, amount, amountAvailable, allocationOrder, createdAt, updatedAt,
+            INSERT INTO CampaignFunding (fund_id, amount, amountAvailable, createdAt, updatedAt,
                                          currencyCode) VALUES 
-                    ($fundId, $amountInPounds, $amountInPounds, {$fundType->allocationOrder()}, '$nyd', '$nyd',
+                    ($fundId, $amountInPounds, $amountInPounds, '$nyd', '$nyd',
                      'GBP')
         SQL
         );

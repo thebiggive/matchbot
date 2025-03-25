@@ -6,7 +6,6 @@ use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
-use MatchBot\Domain\DomainException\CampaignNotOpen;
 use MatchBot\Domain\DomainException\NonCancellableStatus;
 use MatchBot\Domain\DomainException\RegularGivingCollectionEndPassed;
 use Ramsey\Uuid\Uuid;

@@ -66,30 +66,18 @@ class CampaignFunding extends Model
     protected string $amountAvailable;
 
     /**
-     * @var int     Order of preference as a rank, i.e. lower numbers have their funds used first. Must be >= 0.
-     * @deprecated We'll delete this once every {@see Fund::$allocationOrder} is set in Production.
-     */
-    #[ORM\Column(type: 'integer')]
-    protected int $allocationOrder;
-
-    /**
      * @param numeric-string $amountAvailable
      * @param numeric-string $amount
-     * @param positive-int $allocationOrder
      */
     public function __construct(
         Fund $fund,
         string $amount,
         string $amountAvailable,
-        int $allocationOrder
     ) {
         $this->fund = $fund;
         $this->currencyCode = $fund->getCurrencyCode();
         $this->amount = $amount;
         $this->amountAvailable = $amountAvailable;
-        /** @psalm-suppress DeprecatedProperty We'll set both until the switch to Fund's property is done in Prod */
-        $this->allocationOrder = $allocationOrder;
-
         $this->campaigns = new ArrayCollection();
         $this->createdNow();
     }
@@ -158,12 +146,7 @@ class CampaignFunding extends Model
 
     public function getAllocationOrder(): int
     {
-        if ($this->getFund()->getAllocationOrder() > 0) {
-            return $this->getFund()->getAllocationOrder();
-        }
-
-        /** @psalm-suppress DeprecatedProperty We'll set both until the switch to Fund's property is done in Prod */
-        return $this->allocationOrder;
+        return $this->getFund()->getAllocationOrder();
     }
 
     /**

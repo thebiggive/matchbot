@@ -26,19 +26,21 @@ class CampaignFundingRepository extends EntityRepository
      *
      * @param Campaign $campaign
      * @return CampaignFunding[]    Sorted in the order funds should be allocated
-     * @throws \Doctrine\ORM\TransactionRequiredException if called this outside a surrounding transaction
      */
     public function getAvailableFundings(Campaign $campaign): array
     {
         $query = $this->getEntityManager()->createQuery('
-            SELECT cf FROM MatchBot\Domain\CampaignFunding cf
+            SELECT cf FROM MatchBot\Domain\CampaignFunding cf JOIN cf.fund fund
             WHERE :campaign MEMBER OF cf.campaigns
             AND cf.amountAvailable > 0
-            ORDER BY cf.allocationOrder, cf.id
+            ORDER BY fund.allocationOrder, cf.id
         ');
         $query->setParameter('campaign', $campaign->getId());
 
-        return $query->getResult();
+        /** @var CampaignFunding[] $result */
+        $result = $query->getResult();
+
+        return $result;
     }
 
     public function getFunding(Fund $fund): ?CampaignFunding

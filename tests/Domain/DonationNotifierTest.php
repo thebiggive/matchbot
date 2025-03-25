@@ -134,7 +134,6 @@ class DonationNotifierTest extends TestCase
                 new Fund('GBP', 'some-fund', null, $fundType),
                 amount: '100',
                 amountAvailable: '1',
-                allocationOrder: 1
             )
         );
 
