@@ -55,7 +55,7 @@ class ClaimGiftAid extends LockingCommand
                 ];
                 $this->bus->dispatch(new Envelope($donation->toClaimBotModel(), $stamps));
 
-                $donation->setTbgGiftAidRequestQueuedAt(new \DateTime());
+                $donation->setTbgGiftAidRequestQueuedAt(new \DateTimeImmutable());
                 $this->entityManager->persist($donation);
             }
 

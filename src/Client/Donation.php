@@ -21,11 +21,16 @@ class Donation extends Common
      * @throws NotFoundException on missing campaign in a sandbox
      * @throws GuzzleException
      */
-    public function createOrUpdate(DonationUpserted $message): Salesforce18Id
+    public function createOrUpdate(DonationUpserted $message): ?Salesforce18Id
     {
+        $jsonSnapshot = $message->jsonSnapshot;
+        if ($jsonSnapshot === null) {
+            return null;
+        }
+
         return $this->postUpdateToSalesforce(
             $this->baseUri() . '/' . $message->uuid,
-            $message->jsonSnapshot,
+            $jsonSnapshot,
             $message->uuid,
             'donation',
         );

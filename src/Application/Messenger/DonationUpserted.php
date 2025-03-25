@@ -15,17 +15,19 @@ class DonationUpserted implements MessageGroupAwareInterface
 
     protected function __construct(
         public string $uuid,
-        public array $jsonSnapshot
+        public array|null $jsonSnapshot
     ) {
         Assertion::uuid($this->uuid);
     }
 
     public static function fromDonation(Donation $donation): self
     {
-        $jsonSnapshot = [
-            ...$donation->toSFApiModel(),
-            self::SNAPSHOT_TAKEN_AT => (new \DateTimeImmutable())->format('c')
-        ];
+        $jsonSnapshot = $donation->toSFApiModel();
+
+        if ($jsonSnapshot !== null) {
+            $jsonSnapshot[self::SNAPSHOT_TAKEN_AT] = (new \DateTimeImmutable())->format('c');
+        }
+
         return new self(
             uuid: $donation->getUuid()->toString(),
             jsonSnapshot: $jsonSnapshot,

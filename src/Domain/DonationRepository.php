@@ -171,7 +171,12 @@ interface DonationRepository
     /**
      * @return list<Donation>
      */
-    public function findPendingAndPreAuthedForMandate(int $mandateId): array;
+    public function findPendingAndPreAuthedForMandate(UuidInterface $mandateId): array;
+
+    /**
+     * @return list<Donation>
+     */
+    public function findAllForMandate(UuidInterface $mandateId): array;
 
     /**
      * Returns a limited size list of donation fund tip donations that have been left unpaid for some time and
