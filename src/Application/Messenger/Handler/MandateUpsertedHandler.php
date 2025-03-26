@@ -41,16 +41,9 @@ readonly class MandateUpsertedHandler
 
     public function __invoke(MandateUpserted $message): void
     {
-        /** This handler is part of a long-running process. If we don't clear the EM then we won't get an up to date
-         * picture of the donations attached to this mandate, which could be in memory here and we wouldn't know that
-         * it's updated in the database
-         * by another thread.
-         *
-         * Ideally we should probably do this in general before invoking any message handler, but it's not obvious to me
-         * how to do that, so just adding this line here for the moment to stop the immediate alarm and check if that is
-         * in fact the issue.
-         */
-        $this->entityManager->clear();
+        // Assertion not really needed but added for reassurance - the Identity Map should be empty as we clear it in a
+        // listener for the \Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent.
+        Assertion::eq([], $this->entityManager->getUnitOfWork()->getIdentityMap());
 
         $uuid = $message->uuid;
         $this->logger->info("MUH invoked for UUID: $uuid");
