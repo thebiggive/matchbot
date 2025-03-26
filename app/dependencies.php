@@ -132,7 +132,7 @@ return function (ContainerBuilder $containerBuilder) {
 
             $eventDispatcher->addListener(WorkerMessageReceivedEvent::class, function () use ($c) {
                 // clear the entity manager before handling each message to make sure we get up-to-date copies
-                // of any entities - otherwise they could be up to an hour out of date as the consumer is a long-
+                // of any entities - otherwise they could be up to a day out of date as the consumer is a long-
                 // running process. In Symfony framework for comparison this would be handled by
                 // a `DoctrineClearEntityManagerWorkerSubscriber`
                 $c->get(EntityManagerInterface::class)->clear();
