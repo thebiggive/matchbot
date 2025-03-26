@@ -105,7 +105,7 @@ class MatchFundsRedistributor
             }
 
             $this->entityManager->flush();
-            $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
+            $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donation));
             $donationsAmended++;
         }
 

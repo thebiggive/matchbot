@@ -598,7 +598,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
                 continue;
             }
 
-            $bus->dispatch(new Envelope(DonationUpserted::fromDonation($proxy)));
+            $bus->dispatch(DonationUpserted::fromDonationEnveloped($proxy));
         }
 
         $proxiesToUpdate = $this->findBy(
@@ -612,7 +612,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
                 continue;
             }
 
-            $bus->dispatch(new Envelope(DonationUpserted::fromDonation($proxy)));
+            $bus->dispatch(DonationUpserted::fromDonationEnveloped($proxy));
         }
 
         return count($proxiesToCreate) + count($proxiesToUpdate);
