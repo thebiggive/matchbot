@@ -18,6 +18,7 @@ use Symfony\Component\Clock\Clock;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Messenger\Stamp\DelayStamp;
 
 /**
  * Sends mandates to Salesforce.
@@ -54,8 +55,7 @@ readonly class MandateUpsertedHandler
 
             foreach ($donations as $donationInMandate) {
                 Assertion::notNull($donationInMandate->getMandate()?->getSalesforceId(), 'Expected mandate to have SF ID after push');
-                $donationUpserted = DonationUpserted::fromDonation($donationInMandate);
-                $this->bus->dispatch(new Envelope($donationUpserted));
+                $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donationInMandate));
             }
         } catch (BadRequestException | BadResponseException | NotFoundException $exception) {
             // no trace needed for these exception types.

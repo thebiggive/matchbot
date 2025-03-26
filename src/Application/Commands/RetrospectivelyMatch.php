@@ -92,7 +92,7 @@ class RetrospectivelyMatch extends LockingCommand
 
             if (bccomp($amountAllocated, '0.00', 2) === 1) {
                 $this->entityManager->flush();
-                $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
+                $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donation));
                 $numWithMatchingAllocated++;
                 $totalNewMatching = bcadd($totalNewMatching, $amountAllocated, 2);
 

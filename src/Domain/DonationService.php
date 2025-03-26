@@ -344,7 +344,7 @@ class DonationService
         }
 
         if ($dispatchUpdateMessage) {
-            $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
+            $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donation));
         }
     }
 
@@ -569,9 +569,7 @@ class DonationService
             return;
         }
 
-        $donationUpserted = DonationUpserted::fromDonation($donation);
-        $envelope = new Envelope($donationUpserted);
-        $this->bus->dispatch($envelope);
+        $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donation));
     }
 
     /**

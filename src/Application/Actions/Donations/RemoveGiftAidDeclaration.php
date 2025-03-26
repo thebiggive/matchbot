@@ -43,7 +43,7 @@ class RemoveGiftAidDeclaration extends Action
         try {
             $donation->removeGiftAid($this->clock->now());
             $this->entityManager->flush();
-            $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
+            $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donation));
         } catch (CannotRemoveGiftAid $exception) {
             // we can send the message back to SF but no-one will see it there, so also send to Stripe slack channel.
 
