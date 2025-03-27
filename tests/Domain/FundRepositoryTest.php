@@ -275,7 +275,6 @@ class FundRepositoryTest extends TestCase
             fund: $this->getExistingFund($shared),
             amount: '400',
             amountAvailable: '1000',
-            allocationOrder: 200,
         );
     }
 

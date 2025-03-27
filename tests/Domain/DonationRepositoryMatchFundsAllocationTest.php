@@ -106,7 +106,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '1',
-            allocationOrder: 100
         );
         $campaignFunding->setId(1);
 
@@ -185,7 +184,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: $funding0Available,
-            allocationOrder: 100
         );
         $campaignFunding0->setId(0);
 
@@ -193,7 +191,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: $funding1Available,
-            allocationOrder: 100
         );
         $campaignFunding1->setId(1);
 
@@ -240,7 +237,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             fund: new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '1.0',
-            allocationOrder: 100
         );
         $campaignFunding->setId(1);
 
@@ -283,7 +279,6 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
             fund: new Fund('USD', 'some pledge', null, fundType: FundType::Pledge),
             amount: '1000',
             amountAvailable: '1',
-            allocationOrder: 100
         );
 
         $this->campaignFundingsRepositoryProphecy->getAvailableFundings($this->campaign)->willReturn([

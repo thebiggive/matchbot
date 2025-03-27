@@ -105,7 +105,6 @@ class RegularGivingNotifierTest extends TestCase
                 new Fund('GBP', 'some pledge', null, fundType: FundType::Pledge),
                 '100',
                 '100',
-                1,
             )
         );
         $withdrawal->setAmount($amount);

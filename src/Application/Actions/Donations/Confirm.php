@@ -159,7 +159,7 @@ EOF
         $this->entityManager->flush();
         $this->entityManager->commit();
 
-        $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
+        $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donation));
 
         return new JsonResponse([
             'paymentIntent' => [

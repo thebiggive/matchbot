@@ -66,6 +66,7 @@ use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\DoctrineDbalStore;
 use Symfony\Component\Messenger\Bridge\AmazonSqs\Middleware\AddFifoStampMiddleware;
 use Symfony\Component\Messenger\Command\ConsumeMessagesCommand;
+use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
 use Symfony\Component\Messenger\Handler\HandlersLocator;
 use Symfony\Component\Messenger\MessageBus;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -127,13 +128,23 @@ return function (ContainerBuilder $containerBuilder) {
             $messengerReceiverLocator->set($priorityKey, $c->get(Transports::TRANSPORT_HIGH_PRIORITY));
             $messengerReceiverLocator->set($salesforceKey, $c->get(Transports::TRANSPORT_LOW_PRIORITY));
 
+            $eventDispatcher = new EventDispatcher();
+
+            $eventDispatcher->addListener(WorkerMessageReceivedEvent::class, function () use ($c) {
+                // clear the entity manager before handling each message to make sure we get up-to-date copies
+                // of any entities - otherwise they could be up to a day out of date as the consumer is a long-
+                // running process. In Symfony framework for comparison this would be handled by
+                // a `DoctrineClearEntityManagerWorkerSubscriber`
+                $c->get(EntityManagerInterface::class)->clear();
+            });
+
             return new ConsumeMessagesCommand(
-                $c->get(RoutableMessageBus::class),
-                $messengerReceiverLocator,
-                new EventDispatcher(),
-                $c->get(LoggerInterface::class),
+                routableBus: $c->get(RoutableMessageBus::class),
+                receiverLocator: $messengerReceiverLocator,
+                eventDispatcher: $eventDispatcher,
+                logger: $c->get(LoggerInterface::class),
                 // Based on the CLI arg docs, I believe this is a list in priority order.
-                [$priorityKey, $salesforceKey],
+                receiverNames: [$priorityKey, $salesforceKey],
             );
         },
 
@@ -363,12 +374,14 @@ return function (ContainerBuilder $containerBuilder) {
             ));
             $handleMiddleware->setLogger($logger);
 
-            return new MessageBus([
+            $messageBus = new MessageBus([
                 new AddFifoStampMiddleware(),
                 new AddOrLogMessageId($logger),
                 $sendMiddleware,
                 $handleMiddleware,
             ]);
+
+            return $messageBus;
         },
 
         'commit-id' => static fn(ContainerInterface $_c): string => require __DIR__ . "/../.build-commit-id.php",

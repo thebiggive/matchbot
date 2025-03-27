@@ -10,6 +10,16 @@ enum Environment
     case Local;
     case Test;
 
+    public static function current(): self
+    {
+        $env = getenv('APP_ENV');
+        if ($env === false) {
+            throw new \RuntimeException('APP_ENV environment variable required');
+        }
+
+        return self::fromAppEnv($env);
+    }
+
     public static function fromAppEnv(string $name): self
     {
         return match ($name) {

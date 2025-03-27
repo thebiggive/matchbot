@@ -1049,7 +1049,6 @@ class CreateTest extends TestCase
             fund: new FundEntity('GBP', 'some pledge', null, FundType::Pledge),
             amount: '8.00',
             amountAvailable: '8.00',
-            allocationOrder: 100,
         );
     }
 

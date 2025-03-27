@@ -37,7 +37,6 @@ class MatchFundsRedistributor
      *
      * @throws TerminalLockException
      * @throws \DateInvalidOperationException
-     * @throws \Doctrine\ORM\TransactionRequiredException
      */
     public function redistributeMatchFunds(): array
     {
@@ -106,7 +105,7 @@ class MatchFundsRedistributor
             }
 
             $this->entityManager->flush();
-            $this->bus->dispatch(new Envelope(DonationUpserted::fromDonation($donation)));
+            $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donation));
             $donationsAmended++;
         }
 

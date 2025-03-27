@@ -210,7 +210,6 @@ class DonationTest extends TestCase
             fund: $pledge,
             amount: '1000',
             amountAvailable: '1.23',
-            allocationOrder: 100,
         );
 
         $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
@@ -1055,7 +1054,7 @@ class DonationTest extends TestCase
         $donation = $this->getTestDonation(amount: '100.00');
 
         $fund = new Fund('GBP', 'some champion fund', null, fundType: FundType::ChampionFund);
-        $campaignFunding = new CampaignFunding($fund, amount: '1000', amountAvailable: '1000', allocationOrder: 1);
+        $campaignFunding = new CampaignFunding($fund, amount: '1000', amountAvailable: '1000');
         $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawl->setAmount('99.99');
         $donation->addFundingWithdrawal($fundingWithdrawl);
@@ -1068,7 +1067,7 @@ class DonationTest extends TestCase
         $donation = $this->getTestDonation(amount: '100.00');
 
         $fund = new Fund('GBP', 'some champion fund', null, fundType: FundType::ChampionFund);
-        $campaignFunding = new CampaignFunding($fund, '1000', '1000', 1);
+        $campaignFunding = new CampaignFunding($fund, '1000', '1000');
         $fundingWithdrawl = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawl->setAmount('100.00');
         $donation->addFundingWithdrawal($fundingWithdrawl);
@@ -1149,7 +1148,6 @@ class DonationTest extends TestCase
             fund: new Fund(currencyCode: 'GBP', name: '', salesforceId: null, fundType: $fundType),
             amount: '1000',
             amountAvailable: '1000',
-            allocationOrder: 100,
         );
         $withdrawal = new FundingWithdrawal($campaignFunding);
         $withdrawal->setAmount($fundAmount);
