@@ -29,7 +29,7 @@ final class Version20250327103803 extends AbstractMigration
 
         $this->addSql(<<<EOT
             UPDATE Donation
-            SET salesforcePushStatus = 'pending-update', giftAid = 0, tipGiftAid = 0
+            SET salesforcePushStatus = 'pending-update', giftAid = 0, tipGiftAid = 0, `giftAidRemovedAt` = now()
             WHERE uuid = '{$idPair['uuid']}' AND transactionId = '{$idPair['transactionId']}'
             LIMIT 1
         EOT);
