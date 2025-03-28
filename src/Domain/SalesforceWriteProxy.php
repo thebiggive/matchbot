@@ -27,7 +27,7 @@ abstract class SalesforceWriteProxy extends SalesforceProxy
     /**
      * @psalm-suppress PossiblyUnusedProperty   Used for manual dev database checks.
      */
-    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?DateTime $salesforceLastPush = null;
 
     /**

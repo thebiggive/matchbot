@@ -27,13 +27,13 @@ class Fund extends SalesforceReadProxy
     /**
      * FundType controlls allocation orders of campaign fundings. See docs on enum for details.
      */
-    #[ORM\Column(type: 'string', enumType: FundType::class)]
+    #[ORM\Column]
     private FundType $fundType;
 
     /**
      * @var string  ISO 4217 code for the currency used with this fund, and in which FundingWithdrawals are denominated.
      */
-    #[ORM\Column(type: 'string', length: 3)]
+    #[ORM\Column(length: 3)]
     protected string $currencyCode;
 
     /**

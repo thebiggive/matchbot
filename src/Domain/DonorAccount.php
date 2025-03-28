@@ -40,13 +40,13 @@ class DonorAccount extends Model
     #[ORM\Embedded(class: 'StripeCustomerId', columnPrefix: false)]
     public readonly StripeCustomerId $stripeCustomerId;
 
-    #[ORM\Column(type: 'string', length: 2, nullable: true)]
+    #[ORM\Column(length: 2, nullable: true)]
     private ?string $billingCountryCode = null;
 
     /**
      * From residential address, required if donor will claim Gift Aid.
      */
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $homeAddressLine1 = null;
 
     /**
@@ -54,14 +54,14 @@ class DonorAccount extends Model
      *
      * Not embedding postcode VO directly because Doctrine doesn't allow remapping field names.
      */
-    #[ORM\Column(type: 'string', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?string $homePostcode = null;
 
     /**
      * May be a post code or equivilent from anywhere in the world,
      * so we allow up to 15 chars which has been enough for all donors in the last 12 months.
      */
-    #[ORM\Column(type: 'string', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?string $billingPostcode = null;
 
     /**
@@ -71,7 +71,7 @@ class DonorAccount extends Model
      *
      * String not embeddable because ORM does not support nullable embeddables.
      */
-    #[ORM\Column(type: 'string', nullable: true, length: 255)]
+    #[ORM\Column(nullable: true, length: 255)]
     private ?string $regularGivingPaymentMethod = null;
 
     /**

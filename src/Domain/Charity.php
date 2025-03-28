@@ -62,37 +62,31 @@ class Charity extends SalesforceReadProxy
     /**
      * URI of the charity's logo, hosted as part of the Big Give website.
      */
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     protected ?string $logoUri = null;
 
     /**
      * URI of the charity's own website, for linking to.
      */
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     protected ?string $websiteUri = null;
 
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     protected ?string $phoneNumber = null;
 
     /**
      * Not using EmailAddress as embedded because of nullability requirement.
      */
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $emailAddress;
 
     #[ORM\Embedded(columnPrefix: 'address_')]
     protected PostalAddress $postalAddress;
 
-    /**
-     * @var string
-     */
-    #[ORM\Column(type: 'string', length: 255, unique: true, nullable: true)]
+    #[ORM\Column(length: 255, unique: true, nullable: true)]
     protected ?string $stripeAccountId = null;
 
-    /**
-     * @var ?string
-     */
-    #[ORM\Column(type: 'string', length: 7, unique: true, nullable: true)]
+    #[ORM\Column(length: 7, unique: true, nullable: true)]
     protected ?string $hmrcReferenceNumber = null;
 
     /**
@@ -101,13 +95,10 @@ class Charity extends SalesforceReadProxy
      *
      * @var key-of<self::REGULATORS> |null
      */
-    #[ORM\Column(type: 'string', length: 4, nullable: true)]
+    #[ORM\Column(length: 4, nullable: true)]
     protected ?string $regulator = null;
 
-    /**
-     * @var ?string
-     */
-    #[ORM\Column(type: 'string', length: 10, nullable: true)]
+    #[ORM\Column(length: 10, nullable: true)]
     protected ?string $regulatorNumber = null;
 
     /**
