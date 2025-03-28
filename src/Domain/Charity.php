@@ -86,9 +86,6 @@ class Charity extends SalesforceReadProxy
     #[ORM\Column(length: 255, unique: true, nullable: true)]
     protected ?string $stripeAccountId = null;
 
-    /**
-     * @var ?string
-     */
     #[ORM\Column(length: 7, unique: true, nullable: true)]
     protected ?string $hmrcReferenceNumber = null;
 
