@@ -98,9 +98,6 @@ class Charity extends SalesforceReadProxy
     #[ORM\Column(length: 4, nullable: true)]
     protected ?string $regulator = null;
 
-    /**
-     * @var ?string
-     */
     #[ORM\Column(length: 10, nullable: true)]
     protected ?string $regulatorNumber = null;
 
