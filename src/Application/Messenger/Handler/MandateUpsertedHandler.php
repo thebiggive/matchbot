@@ -63,6 +63,7 @@ readonly class MandateUpsertedHandler
             }
         } catch (NotFoundException $_exception) {
             // Thrown only for *sandbox* 404s -> quietly stop trying to push mandate to a removed campaign.
+            Assertion::notEq(\MatchBot\Application\Environment::Production, \MatchBot\Application\Environment::current());
             $this->logger->info(
                 "Marking 404 campaign Salesforce mandate {$message->uuid} as complete; won't push again."
             );
