@@ -42,7 +42,7 @@ class CampaignFunding extends Model
     /**
      * @var string  ISO 4217 code for the currency in which all monetary values are denominated.
      */
-    #[ORM\Column(type: 'string', length: 3)]
+    #[ORM\Column(length: 3)]
     protected string $currencyCode;
 
     /**

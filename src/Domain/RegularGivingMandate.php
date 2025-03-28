@@ -81,16 +81,16 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Embedded(columnPrefix: false)]
     private DayOfMonth $dayOfMonth;
 
-    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $activeFrom = null;
 
-    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $donationsCreatedUpTo = null;
 
-    #[ORM\Column(type: 'string', enumType: MandateStatus::class)]
+    #[ORM\Column]
     private MandateStatus $status = MandateStatus::Pending;
 
-    #[ORM\Column(type: 'string', length: 50, enumType: MandateCancellationType::class, nullable: true)]
+    #[ORM\Column(length: 50, nullable: true)]
     private ?MandateCancellationType $cancellationType = null;
 
     /**
@@ -101,10 +101,10 @@ class RegularGivingMandate extends SalesforceWriteProxy
     #[ORM\Column()]
     private bool $isMatched;
 
-    #[ORM\Column(type: 'string', length: 500, nullable: true)]
+    #[ORM\Column(length: 500, nullable: true)]
     private ?string $cancellationReason = null;
 
-    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $cancelledAt = null;
 
     /**

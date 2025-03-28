@@ -38,7 +38,7 @@ class Campaign extends SalesforceReadProxy
     /**
      * @var string  ISO 4217 code for the currency in which donations can be accepted and matching's organised.
      */
-    #[ORM\Column(type: 'string', length: 3)]
+    #[ORM\Column(length: 3)]
     protected ?string $currencyCode;
 
     /**
@@ -50,7 +50,7 @@ class Campaign extends SalesforceReadProxy
      * Default null because campaigns not recently updated in matchbot have not pulled this field from SF.
      * @psalm-suppress UnusedProperty
      */
-    #[ORM\Column(type: 'string', length: 64, nullable: true, options: ['default' => null])]
+    #[ORM\Column(length: 64, nullable: true, options: ['default' => null])]
     private ?string $status = null;
 
     /**
@@ -105,7 +105,7 @@ class Campaign extends SalesforceReadProxy
      * Custom message from the charity to donors thanking them for donating. Used here for regular giving
      * confirmation emails, also used from SF for ad-hoc giving thanks pages and emails.
      */
-    #[ORM\Column(type: 'string', length: 500, nullable: true, options: ['default' => null])]
+    #[ORM\Column(length: 500, nullable: true, options: ['default' => null])]
     private ?string $thankYouMessage;
 
     /**

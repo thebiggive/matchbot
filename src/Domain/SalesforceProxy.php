@@ -20,7 +20,7 @@ abstract class SalesforceProxy extends Model
      *
      * @var string|null Nullable because write proxies may be created before the first Salesforce push
      */
-    #[ORM\Column(type: 'string', length: 18, unique: true, nullable: true)]
+    #[ORM\Column(length: 18, unique: true, nullable: true)]
     protected ?string $salesforceId = null;
 
     /**

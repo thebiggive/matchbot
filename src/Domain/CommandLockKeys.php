@@ -18,13 +18,13 @@ class CommandLockKeys
      * @var string
      */
     #[ORM\Id]
-    #[ORM\Column(type: 'string', length: 64)]
+    #[ORM\Column(length: 64)]
     public string $key_id;
 
     /**
      * @var string
      */
-    #[ORM\Column(type: 'string', length: 44)]
+    #[ORM\Column(length: 44)]
     public string $key_token;
 
     /**
