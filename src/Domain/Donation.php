@@ -304,7 +304,7 @@ class Donation extends SalesforceWriteProxy
      * @psalm-suppress PossiblyUnusedProperty - used in DB queries
      * @var ?DateTimeImmutable When a queued message that should lead to a Gift Aid claim was sent.
      */
-    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     protected ?DateTimeImmutable $tbgGiftAidRequestQueuedAt = null;
 
     /**
