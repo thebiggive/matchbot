@@ -83,9 +83,6 @@ class Charity extends SalesforceReadProxy
     #[ORM\Embedded(columnPrefix: 'address_')]
     protected PostalAddress $postalAddress;
 
-    /**
-     * @var string
-     */
     #[ORM\Column(length: 255, unique: true, nullable: true)]
     protected ?string $stripeAccountId = null;
 
