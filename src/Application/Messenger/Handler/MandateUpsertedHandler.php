@@ -61,7 +61,15 @@ readonly class MandateUpsertedHandler
                 Assertion::notNull($donationInMandate->getMandate()?->getSalesforceId(), 'Expected mandate to have SF ID after push');
                 $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donationInMandate));
             }
-        } catch (BadRequestException | BadResponseException | NotFoundException $exception) {
+        } catch (NotFoundException $_exception) {
+            // Thrown only for *sandbox* 404s -> quietly stop trying to push mandate to a removed campaign.
+            $this->logger->info(
+                "Marking 404 campaign Salesforce mandate {$message->uuid} as complete; won't push again."
+            );
+            $this->setSalesforceFields($uuid, null);
+
+            return;
+        } catch (BadRequestException | BadResponseException $exception) {
             // no trace needed for these exception types.
             $this->logger->error(sprintf(
                 "MUH: %s on attempt to push donation %s: %s",

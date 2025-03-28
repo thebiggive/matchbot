@@ -99,7 +99,7 @@ abstract class Common
             $contents = $response->getBody()->getContents();
         } catch (RequestException $ex) {
             $this->logger->info("Client Push RequestException: {$ex->getMessage()}");
-            // Sandboxes that 404 on POST may be trying to sync up donations for non-existent campaigns and
+            // Sandboxes that 404 on POST may be trying to sync up donations or mandates for non-existent campaigns and
             // so have probably just been refreshed. In this case we want to update the local state of play
             // to stop them getting pushed, instead of treating this as an error. So throw this for appropriate
             // handling in the caller without an error level log. In production, 404s should not happen and
