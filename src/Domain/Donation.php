@@ -76,13 +76,13 @@ class Donation extends SalesforceWriteProxy
     /**
      * @var string  Which Payment Service Provider (PSP) is expected to (or did) process the donation.
      */
-    #[ORM\Column(type: 'string', length: 20)]
+    #[ORM\Column(length: 20)]
     protected string $psp;
 
     /**
      * @var ?DateTimeImmutable  When the donation first moved to status Collected, i.e. the donor finished paying.
      */
-    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?DateTimeImmutable $collectedAt = null;
 
     /**
@@ -90,13 +90,13 @@ class Donation extends SalesforceWriteProxy
      *
      * In the case of stripe (which is the only thing we support at present, this is the payment intent ID)
      */
-    #[ORM\Column(type: 'string', unique: true, nullable: true)]
+    #[ORM\Column(unique: true, nullable: true)]
     protected ?string $transactionId = null;
 
     /**
      * @var string|null PSP's charge ID assigned on their processing.
      */
-    #[ORM\Column(type: 'string', unique: true, nullable: true)]
+    #[ORM\Column(unique: true, nullable: true)]
     protected ?string $chargeId = null;
 
     /**
@@ -105,13 +105,13 @@ class Donation extends SalesforceWriteProxy
      *                  the Connected Account for the charity receiving the transferred
      *                  donation balance.
      */
-    #[ORM\Column(type: 'string', unique: true, nullable: true)]
+    #[ORM\Column(unique: true, nullable: true)]
     protected ?string $transferId = null;
 
     /**
      * @var string  ISO 4217 code for the currency in which all monetary values are denominated, e.g. 'GBP'.
      */
-    #[ORM\Column(type: 'string', length: 3)]
+    #[ORM\Column(length: 3)]
     protected readonly string $currencyCode;
 
     /**
@@ -171,7 +171,7 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(type: 'decimal', precision: 18, scale: 2)]
     protected string $originalPspFee = '0.00';
 
-    #[ORM\Column(type: 'string', enumType: DonationStatus::class)]
+    #[ORM\Column]
     protected DonationStatus $donationStatus = DonationStatus::Pending;
 
     /**
@@ -207,20 +207,20 @@ class Donation extends SalesforceWriteProxy
     /**
      * @var string|null  *Billing* country code.
      */
-    #[ORM\Column(type: 'string', length: 2, nullable: true)]
+    #[ORM\Column(length: 2, nullable: true)]
     protected ?string $donorCountryCode = null;
 
     /**
      * Ideally we would type this as ?EmailAddress instead of ?string but that will require changing
      * the column name to match the property inside the VO. Might be easy and worth doing.
      */
-    #[ORM\Column(type: 'string', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?string $donorEmailAddress = null;
 
-    #[ORM\Column(type: 'string', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?string $donorFirstName = null;
 
-    #[ORM\Column(type: 'string', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?string $donorLastName = null;
 
     /**
@@ -231,7 +231,7 @@ class Donation extends SalesforceWriteProxy
      *
      * @psalm-suppress PossiblyUnusedProperty - used in DQL
      */
-    #[ORM\Column(type: 'integer', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?int $mandateSequenceNumber = null;
 
     /**
@@ -251,19 +251,19 @@ class Donation extends SalesforceWriteProxy
      *
      * @var string|null
      */
-    #[ORM\Column(type: 'string', nullable: true, name: 'donorPostalAddress')]
+    #[ORM\Column(nullable: true, name: 'donorPostalAddress')]
     protected ?string $donorBillingPostcode = null;
 
     /**
      * @var string|null From residential address, if donor is claiming Gift Aid.
      */
-    #[ORM\Column(type: 'string', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?string $donorHomeAddressLine1 = null;
 
     /**
      * @var string|null From residential address, if donor is claiming Gift Aid.
      */
-    #[ORM\Column(type: 'string', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?string $donorHomePostcode = null;
 
     /**
@@ -287,7 +287,7 @@ class Donation extends SalesforceWriteProxy
     /**
      * @var bool    Whether Gift Aid was claimed on the 'tip' donation to the Big Give.
      */
-    #[ORM\Column(type: 'boolean', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?bool $tipGiftAid = null;
 
     /**
@@ -297,33 +297,33 @@ class Donation extends SalesforceWriteProxy
      *              because it's true.
      * @see Donation::$giftAid
      */
-    #[ORM\Column(type: 'boolean', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?bool $tbgShouldProcessGiftAid = null;
 
     /**
      * @psalm-suppress PossiblyUnusedProperty - used in DB queries
      * @var ?DateTimeImmutable When a queued message that should lead to a Gift Aid claim was sent.
      */
-    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?DateTimeImmutable $tbgGiftAidRequestQueuedAt = null;
 
     /**
      * @var ?DateTime   When a claim submission attempt was detected to have an error returned.
      */
-    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?DateTime $tbgGiftAidRequestFailedAt = null;
 
     /**
      * @var ?DateTime   When a claim was detected accepted via an async poll.
      */
-    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?DateTime $tbgGiftAidRequestConfirmedCompleteAt = null;
 
     /**
      * @var ?string Provided by HMRC upon initial claim submission acknowledgement.
      *              Doesn't imply success.
      */
-    #[ORM\Column(type: 'string', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?string $tbgGiftAidRequestCorrelationId = null;
 
     /**
@@ -333,10 +333,10 @@ class Donation extends SalesforceWriteProxy
     #[ORM\Column(type: 'text', length: 65535, nullable: true)]
     protected ?string $tbgGiftAidResponseDetail = null;
 
-    #[ORM\Column(type: 'string', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?string $pspCustomerId = null;
 
-    #[ORM\Column(type: 'string', enumType: PaymentMethodType::class, nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?PaymentMethodType $paymentMethodType = PaymentMethodType::Card;
 
     /**

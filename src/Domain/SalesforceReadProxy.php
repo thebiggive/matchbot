@@ -17,7 +17,7 @@ abstract class SalesforceReadProxy extends SalesforceProxy
     /**
      * @psalm-suppress PossiblyUnusedProperty - used in DB queries
      */
-    #[ORM\Column(type: 'datetime', nullable: true)]
+    #[ORM\Column(nullable: true)]
     protected ?DateTime $salesforceLastPull = null;
 
     /**
