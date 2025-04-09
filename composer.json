@@ -65,7 +65,7 @@
         "symfony/redis-messenger": "^6.0",
         "symfony/serializer": "^7.1.0",
         "symfony/slack-notifier": "^6.2",
-        "thebiggive/messages": "^3.3.0"
+        "thebiggive/messages": "^3.3.1"
     },
     "require-dev": {
         "doctrine/event-manager": "^2.0",

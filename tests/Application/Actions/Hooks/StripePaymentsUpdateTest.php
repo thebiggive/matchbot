@@ -8,7 +8,6 @@ use DI\Container;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Email\EmailMessage;
-use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Client\Mailer;
 use MatchBot\Domain\CampaignRepository;
@@ -17,8 +16,8 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\EmailVerificationTokenRepository;
 use MatchBot\Domain\RegularGivingMandateRepository;
-use MatchBot\Domain\RegularGivingService;
 use MatchBot\Tests\Domain\InMemoryDonationRepository;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -166,6 +165,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $this->mailerClientProphecy->send(Argument::type(EmailMessage::class))->shouldBeCalledOnce();
 
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
+        $container->set(EmailVerificationTokenRepository::class, $this->createStub(EmailVerificationTokenRepository::class));
         $container->set(StripeClient::class, $stripeClientProphecy->reveal());
         $container->set(Mailer::class, $this->mailerClientProphecy->reveal());
 
