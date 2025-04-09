@@ -58,7 +58,7 @@ a donation funds user transfers cash into their account.
 To start the app and its dependencies (`db` and `redis`) locally:
 
 ```shell
-    docker compose up -d app
+    docker compose up -d
 ```
 
 
