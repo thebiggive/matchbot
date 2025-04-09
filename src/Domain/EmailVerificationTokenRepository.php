@@ -17,10 +17,10 @@ class EmailVerificationTokenRepository
     {
         $emailVerificationToken = $this->em->createQuery(
             dql: <<<'DQL'
-                SELECT t from Matchbot\Domain\EmailVerificationToken t 
+                SELECT t FROM MatchBot\Domain\EmailVerificationToken t
                 WHERE t.emailAddress = :email
                 AND t.createdAt > :created_since
-                ORDER BY createdAt DESC 
+                ORDER BY t.createdAt DESC
                 DQL
         )->setParameters([
             'email' => $emailAddress->email,
