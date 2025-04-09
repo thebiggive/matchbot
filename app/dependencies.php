@@ -25,6 +25,7 @@ use MatchBot\Application\Messenger\Handler\FundTotalUpdatedHandler;
 use MatchBot\Application\Messenger\Handler\GiftAidResultHandler;
 use MatchBot\Application\Messenger\Handler\MandateUpsertedHandler;
 use MatchBot\Application\Messenger\Handler\PersonHandler;
+use MatchBot\Application\Messenger\Handler\EmailVerificationTokenHandler;
 use MatchBot\Application\Messenger\Handler\StripePayoutHandler;
 use MatchBot\Application\Messenger\MandateUpserted;
 use MatchBot\Application\Messenger\Middleware\AddOrLogMessageId;
@@ -366,6 +367,7 @@ return function (ContainerBuilder $containerBuilder) {
                     CharityUpdated::class => [fn($msg) => $c->get(CharityUpdatedHandler::class)($msg)],
                     Messages\Donation::class => [fn($msg) => $c->get(GiftAidResultHandler::class)($msg)],
                     Messages\Person::class => [fn($msg) => $c->get(PersonHandler::class)($msg)],
+                    Messages\EmailVerificationToken::class => [fn($msg) => $c->get(EmailVerificationTokenHandler::class)($msg)],
                     StripePayout::class => [fn($msg) => $c->get(StripePayoutHandler::class)($msg)],
                     DonationUpserted::class => [fn($msg) => $c->get(DonationUpsertedHandler::class)($msg)],
                     MandateUpserted::class => [fn($msg) => $c->get(MandateUpsertedHandler::class)($msg)],

@@ -12,12 +12,16 @@ class DonationNotifier
      * @psalm-suppress PossiblyUnusedMethod - used by DI container
      */
     public function __construct(
-        private Mailer $mailer
+        private Mailer $mailer,
+        private EmailVerificationTokenRepository $emailVerificationTokenRepository,
+        private \DateTimeImmutable $now,
     ) {
     }
 
-    public static function emailMessageForCollectedDonation(Donation $donation): EmailMessage
-    {
+    public static function emailMessageForCollectedDonation(
+        Donation $donation,
+        ?EmailVerificationToken $emailVerificationToken = null
+    ): EmailMessage {
         if (! $donation->getDonationStatus()->isSuccessful()) {
             throw new \RuntimeException("{$donation} is not successful - cannot send success email");
         }
@@ -78,12 +82,7 @@ class DonationNotifier
             'charityPhoneNumber' => $charity->getPhoneNumber(),
             'charityEmailAddress' => $charity->getEmailAddress()?->email,
             'charityPostalAddress' => $charity->getPostalAddress()->format(),
-
-            // There are other params that are currently sent from SF but not officially required by mailer.
-            // These should be added before this function is used in production, but the data for them is not yet
-            // available in matchbot DB. Params needed:
-            //
-            // - charityEmailAddress
+            'emailVerificationToken' => $emailVerificationToken?->randomCode,
         ]);
     }
 
@@ -96,9 +95,17 @@ class DonationNotifier
      * @param EmailAddress|null $to
      * @return void
      */
-    public function notifyDonorOfDonationSuccess(Donation $donation, ?EmailAddress $to = null): void
-    {
-        $emailMessage = self::emailMessageForCollectedDonation($donation);
+    public function notifyDonorOfDonationSuccess(
+        Donation $donation,
+        ?EmailAddress $to = null,
+    ): void {
+        $emailAddress = $donation->getDonorEmailAddress();
+        Assertion::notNull($emailAddress);
+        $emailVerificationToken = $this->emailVerificationTokenRepository->findRecentTokenForEmailAddress(
+            $emailAddress,
+            $this->now,
+        );
+        $emailMessage = self::emailMessageForCollectedDonation($donation, $emailVerificationToken);
 
         if ($to !== null) {
             $emailMessage = $emailMessage->withToAddress($to);

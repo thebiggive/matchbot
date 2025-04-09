@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3b3b82341c7300142e0b90ddbe7d7c4e",
+    "content-hash": "0a502f175fec3e5d981510603db2b65c",
     "packages": [
         {
             "name": "async-aws/core",
@@ -6737,16 +6737,16 @@
         },
         {
             "name": "thebiggive/messages",
-            "version": "v3.2.0",
+            "version": "v3.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thebiggive/messages.git",
-                "reference": "82b413ca05058d518bb6424d3f093f4e15aaea7f"
+                "reference": "62759b920438c37187a2332c8d225380c776e7fb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thebiggive/messages/zipball/82b413ca05058d518bb6424d3f093f4e15aaea7f",
-                "reference": "82b413ca05058d518bb6424d3f093f4e15aaea7f",
+                "url": "https://api.github.com/repos/thebiggive/messages/zipball/62759b920438c37187a2332c8d225380c776e7fb",
+                "reference": "62759b920438c37187a2332c8d225380c776e7fb",
                 "shasum": ""
             },
             "require": {
@@ -6776,9 +6776,9 @@
             "description": "Shared message / model classes for cross-service communication",
             "support": {
                 "issues": "https://github.com/thebiggive/messages/issues",
-                "source": "https://github.com/thebiggive/messages/tree/v3.2.0"
+                "source": "https://github.com/thebiggive/messages/tree/v3.3.1"
             },
-            "time": "2024-12-27T08:14:49+00:00"
+            "time": "2025-04-09T09:35:36+00:00"
         },
         {
             "name": "webmozart/assert",

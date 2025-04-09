@@ -35,6 +35,7 @@
                 <!-- Constructors in the following directories are called by the DI container not by us -->
                 <directory name="src/Application/Actions"/>
                 <directory name="src/Application/Commands"/>
+                <directory name="src/Application/Messenger/Handler"/>
             </errorLevel>
         </PossiblyUnusedMethod>
     </issueHandlers>
