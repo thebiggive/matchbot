@@ -1,12 +1,12 @@
 version: 2.1
 
 orbs:
-  aws-ecr: circleci/aws-ecr@9.3.1
-  aws-ecs: circleci/aws-ecs@4.1.0
-  aws-cli: circleci/aws-cli@5.0.0
-  codecov: codecov/codecov@4.1.0
-  jira: circleci/jira@2.1.0
-  slack: circleci/slack@4.13.3
+  aws-ecr: circleci/aws-ecr@9.5.0
+  aws-ecs: circleci/aws-ecs@7.0.0
+  aws-cli: circleci/aws-cli@5.2.0
+  codecov: codecov/codecov@5.3.0
+  jira: circleci/jira@2.2.0
+  slack: circleci/slack@5.1.1
 
 jobs:
   test: # Also lints first
@@ -76,9 +76,7 @@ jobs:
           path: reports
 
       - codecov/upload:
-          file: 'coverage.xml'
-      - codecov/upload:
-          file: 'coverage-integration.xml'
+          files: 'coverage.xml,coverage-integration.xml'
 
   mutation_coverage:
     resource_class: large
@@ -225,7 +223,7 @@ workflows:
             - slack
           requires:
             - aws-ecr/build_and_push_image
-          family: 'tbg-regression-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}'
+          family: 'tbg-regression-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}-consumer'
           service_name: 'tbg-regression-${AWS_REGION}-matchbot-consumer-tasks'
           cluster: 'tbg-regression-${AWS_REGION}'
           container_image_name_updates: 'container=matchbot_tasks,tag=regression-${CIRCLE_SHA1}'
@@ -323,7 +321,7 @@ workflows:
             - slack
           requires:
             - aws-ecr/build_and_push_image
-          family: 'tbg-staging-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}'
+          family: 'tbg-staging-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}-consumer'
           service_name: 'tbg-staging-${AWS_REGION}-matchbot-consumer-tasks'
           cluster: 'tbg-staging-${AWS_REGION}'
           container_image_name_updates: 'container=matchbot_tasks,tag=staging-${CIRCLE_SHA1}'
@@ -420,7 +418,7 @@ workflows:
             - slack
           requires:
             - aws-ecr/build_and_push_image
-          family: 'tbg-production-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}'
+          family: 'tbg-production-${AWS_REGION}-${AWS_ECS_SERVICE_SUFFIX_TASKS}-consumer'
           service_name: 'tbg-production-${AWS_REGION}-matchbot-consumer-tasks'
           cluster: 'tbg-production-${AWS_REGION}'
           container_image_name_updates: 'container=matchbot_tasks,tag=production-${CIRCLE_SHA1}'
