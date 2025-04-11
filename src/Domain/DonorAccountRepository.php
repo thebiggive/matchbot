@@ -25,6 +25,20 @@ class DonorAccountRepository extends EntityRepository
         return $this->findOneBy(['stripeCustomerId.stripeCustomerId' => $stripeAccountId->stripeCustomerId]);
     }
 
+    public function shouldInviteRegistration(Donation $donation): bool
+    {
+        $stripeCustomerId = $donation->getPspCustomerId();
+        if (!$stripeCustomerId) {
+            // We don't really expect missing Customer ID at this point for new donors, but seems
+            // marginally more logical to treat this like a missing DonorAccount(?)
+            return true;
+        }
+
+        // Identity sends key info for MB DonorAccount iff a password was set via \Messages\Person, so
+        // we can use record existence to decide whether to send a register link.
+        return $this->findByStripeIdOrNull($stripeCustomerId) === null;
+    }
+
     public function findByPersonId(PersonId $personId): ?DonorAccount
     {
         return $this->findOneBy(['uuid' => $personId->id]);

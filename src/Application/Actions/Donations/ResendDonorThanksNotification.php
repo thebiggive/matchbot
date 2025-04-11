@@ -63,15 +63,9 @@ class ResendDonorThanksNotification extends Action
             throw new BadRequestException('Donation status is not successful');
         }
 
-        $sendRegisterUri = true;
-        $pspCustomerId = $donation->getPspCustomerId();
-        if ($pspCustomerId !== null) {
-            $sendRegisterUri = $this->donorAccountRepository->findByStripeIdOrNull($pspCustomerId) === null;
-        }
-
         $this->donationNotifier->notifyDonorOfDonationSuccess(
             donation: $donation,
-            sendRegisterUri: $sendRegisterUri,
+            sendRegisterUri: $this->donorAccountRepository->shouldInviteRegistration($donation),
             to: $toEmailAddress,
         );
 
