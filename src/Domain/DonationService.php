@@ -729,6 +729,13 @@ class DonationService
             chargeCreationTimestamp: $charge->created,
         );
 
+        $sendRegisterUri = true;
+        $pspCustomerId = $donation->getPspCustomerId();
+        // Identity sends key info for MB DonorAccount iff a password was set via \Messages\Person, so
+        // we can use record existence to decide whether to send a register link.
+        if ($pspCustomerId !== null) {
+            $sendRegisterUri = $this->donorAccountRepository->findByStripeIdOrNull($pspCustomerId) === null;
+        }
 
         $dateTimeImmutable = $donation->getCollectedAt();
 
@@ -738,8 +745,7 @@ class DonationService
         ) {
             // Regular giving donors get an email confirming the setup of the mandate, but not an email for
             // each individual donation.
-
-            $this->donationNotifier->notifyDonorOfDonationSuccess($donation);
+            $this->donationNotifier->notifyDonorOfDonationSuccess(donation: $donation, sendRegisterUri: $sendRegisterUri);
         }
     }
 

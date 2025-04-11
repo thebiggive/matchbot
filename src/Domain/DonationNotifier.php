@@ -15,11 +15,13 @@ class DonationNotifier
         private Mailer $mailer,
         private EmailVerificationTokenRepository $emailVerificationTokenRepository,
         private \DateTimeImmutable $now,
+        private string $donateBaseUri,
     ) {
     }
 
     public static function emailMessageForCollectedDonation(
         Donation $donation,
+        string $donateBaseUri,
         ?EmailVerificationToken $emailVerificationToken = null
     ): EmailMessage {
         if (! $donation->getDonationStatus()->isSuccessful()) {
@@ -48,6 +50,16 @@ class DonationNotifier
         $campaign = $donation->getCampaign();
         $charity = $campaign->getCharity();
 
+        $createAccountUri = null;
+        if ($emailVerificationToken) {
+            $createAccountUri = sprintf(
+                '%s/register?c=%d&u=%s',
+                $donateBaseUri,
+                $donation->getDonorUuid()->toString(), // TODO add getter once field-adding PR merged
+                $emailVerificationToken->randomCode,
+            );
+        }
+
         return EmailMessage::donorDonationSuccess($emailAddress, [
             // see required params in mailer:
             // https://github.com/thebiggive/mailer/blob/ca2c70f10720a66ff8fb041d3af430a07f49d625/app/settings.php#L27
@@ -60,6 +72,8 @@ class DonationNotifier
             // charityIsExempt is not yet used by mailer as it has its own logic
             // to work out if a charity is exempt. I'm hoping we can remove that soon.
             'charityIsExempt' => $charity->isExempt(),
+
+            'createAccountUri' => $createAccountUri,
             'currencyCode' => $donation->currency()->isoCode(),
 
             'donationAmount' => (float)$donation->getAmount(),
@@ -97,15 +111,21 @@ class DonationNotifier
      */
     public function notifyDonorOfDonationSuccess(
         Donation $donation,
+        bool $sendRegisterUri,
         ?EmailAddress $to = null,
     ): void {
         $emailAddress = $donation->getDonorEmailAddress();
         Assertion::notNull($emailAddress);
-        $emailVerificationToken = $this->emailVerificationTokenRepository->findRecentTokenForEmailAddress(
-            $emailAddress,
-            $this->now,
-        );
-        $emailMessage = self::emailMessageForCollectedDonation($donation, $emailVerificationToken);
+
+        $emailVerificationToken = null;
+        if ($sendRegisterUri) {
+            $emailVerificationToken = $this->emailVerificationTokenRepository->findRecentTokenForEmailAddress(
+                $emailAddress,
+                $this->now,
+            );
+        }
+
+        $emailMessage = self::emailMessageForCollectedDonation($donation, $this->donateBaseUri, $emailVerificationToken);
 
         if ($to !== null) {
             $emailMessage = $emailMessage->withToAddress($to);

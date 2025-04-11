@@ -54,6 +54,10 @@ return function (ContainerBuilder $containerBuilder) {
                 ],
             ],
 
+            'donate' => [
+                'baseUri' => getenv('ACCOUNT_MANAGEMENT_BASE_URI'),
+            ],
+
             'identity' => [
                 'baseUri' => getenv('ID_BASE_URI'),
             ],

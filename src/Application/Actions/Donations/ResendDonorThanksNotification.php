@@ -9,6 +9,7 @@ use MatchBot\Client\BadRequestException;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\EmailAddress;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -22,8 +23,12 @@ use Slim\Exception\HttpBadRequestException;
  */
 class ResendDonorThanksNotification extends Action
 {
-    public function __construct(private DonationRepository $donationRepository, private DonationNotifier $donationNotifier, LoggerInterface $logger)
-    {
+    public function __construct(
+        private DonationRepository $donationRepository,
+        private DonationNotifier $donationNotifier,
+        private DonorAccountRepository $donorAccountRepository,
+        LoggerInterface $logger,
+    ) {
         parent::__construct($logger);
     }
 
@@ -58,7 +63,17 @@ class ResendDonorThanksNotification extends Action
             throw new BadRequestException('Donation status is not successful');
         }
 
-        $this->donationNotifier->notifyDonorOfDonationSuccess($donation, $toEmailAddress);
+        $sendRegisterUri = true;
+        $pspCustomerId = $donation->getPspCustomerId();
+        if ($pspCustomerId !== null) {
+            $sendRegisterUri = $this->donorAccountRepository->findByStripeIdOrNull($pspCustomerId) === null;
+        }
+
+        $this->donationNotifier->notifyDonorOfDonationSuccess(
+            donation: $donation,
+            sendRegisterUri: $sendRegisterUri,
+            to: $toEmailAddress,
+        );
 
         return new JsonResponse(['message' => 'Notification sent to donor for ' . $donation->__toString()], 200);
     }
