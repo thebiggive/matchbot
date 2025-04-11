@@ -730,7 +730,6 @@ class DonationService
             chargeCreationTimestamp: $charge->created,
         );
 
-
         $dateTimeImmutable = $donation->getCollectedAt();
 
         if (
@@ -739,8 +738,10 @@ class DonationService
         ) {
             // Regular giving donors get an email confirming the setup of the mandate, but not an email for
             // each individual donation.
-
-            $this->donationNotifier->notifyDonorOfDonationSuccess($donation);
+            $this->donationNotifier->notifyDonorOfDonationSuccess(
+                donation: $donation,
+                sendRegisterUri: $this->donorAccountRepository->shouldInviteRegistration($donation),
+            );
         }
     }
 
