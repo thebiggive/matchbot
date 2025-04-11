@@ -9,8 +9,10 @@ use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Los\RateLimit\Exception\MissingRequirement;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\HttpModels\DonationCreate;
+use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use Doctrine\ORM\EntityManagerInterface;
+use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Client\Fund;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\Campaign;
@@ -18,6 +20,7 @@ use MatchBot\Domain\CampaignFunding;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
+use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
@@ -32,9 +35,11 @@ use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
 use MatchBot\Tests\TestData;
 use Override;
+use PHPUnit\Framework\MockObject\MockObject;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Slim\App;
 use Slim\Exception\HttpUnauthorizedException;
@@ -44,7 +49,10 @@ use Symfony\Component\Clock\Clock;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\RoutableMessageBus;
+use Symfony\Component\Notifier\Chatter;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use UnexpectedValueException;
 
 class CreateTest extends TestCase
@@ -65,8 +73,7 @@ class CreateTest extends TestCase
      */
     private ClockInterface $previousClock;
     private \DateTimeImmutable $now;
-    private $fundRepositoryProphecy;
-    private $donationRepoProphecy;
+    private DonationService&MockObject $donationServicePartialMock;
 
     public function setUp(): void
     {
@@ -122,16 +129,14 @@ class CreateTest extends TestCase
 
         $this->previousClock = $this->diContainer()->get(ClockInterface::class);
         $this->diContainer()->set(ClockInterface::class, new MockClock($this->now));
-        $this->fundRepositoryProphecy = $this->prophesize(FundRepository::class);
 
-        $this->diContainer()->set(FundRepository::class, $this->fundRepositoryProphecy->reveal());
+        $fundRepositoryProphecy = $this->prophesize(FundRepository::class);
+        $this->diContainer()->set(FundRepository::class, $fundRepositoryProphecy->reveal());
 
-        $this->donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $this->diContainer()->set(DonationRepository::class, $this->donationRepoProphecy->reveal());
+        $donationRepositoryProphecy = $this->prophesize(DonationRepository::class);
+        $this->diContainer()->set(DonationRepository::class, $donationRepositoryProphecy->reveal());
 
-        $this->donationRepoProphecy->findOneBy(Argument::any())->shouldNotBeCalled();
-        // if it is to be called individual test has to specify return value
-        $this->donationRepoProphecy->allocateMatchFunds(Argument::any())->willReturn('0.0');
+        $this->rebuildDonationServicePartialMock();
     }
 
     #[Override] public function tearDown(): void
@@ -173,12 +178,10 @@ class CreateTest extends TestCase
 
         $app = $this->getAppInstance();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+
+        $this->donationServicePartialMock->method('buildFromApiRequest')->willReturn($donation);
+
         $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
-
-        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoProphecy->findOneBy(Argument::any())->willReturn($donation->getCampaign());
-        $this->diContainer()->set(CampaignRepository::class, $campaignRepoProphecy->reveal());
-
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -205,14 +208,9 @@ class CreateTest extends TestCase
 
         $app = $this->getAppInstance();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
         $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
-
-        $donationServiceProphecy = $this->prophesize(DonationService::class);
-        $donationServiceProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class))
-            ->willReturn($donationToReturn);
+        $this->donationServicePartialMock->method('buildFromApiRequest')->willReturn($donationToReturn);
 
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
         // No change – campaign still has a charity without a Stripe Account ID.
@@ -234,6 +232,7 @@ class CreateTest extends TestCase
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
+        $this->rebuildDonationServicePartialMock();
         $response = $app->handle($this->addDummyPersonAuth($request));
 
         $payload = (string) $response->getBody();
@@ -253,14 +252,9 @@ class CreateTest extends TestCase
 
         $app = $this->getAppInstance();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-
+        $this->donationServicePartialMock->method('buildFromApiRequest')->willThrowException(
+            new UnexpectedValueException('Currency CAD is invalid for campaign'));
         $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
-
-        $donationServiceProphecy = $this->prophesize(DonationService::class);
-        $donationServiceProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class))
-            ->willThrow(new UnexpectedValueException('Currency CAD is invalid for campaign'));
-
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -297,14 +291,11 @@ class CreateTest extends TestCase
 
         $app = $this->getAppInstance();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
-
-        $donationServiceProphecy = $this->prophesize(DonationService::class);
-
-        $donationServiceProphecy
+        $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class))
             ->shouldNotBeCalled();
+        $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
+        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->persist(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -341,7 +332,6 @@ class CreateTest extends TestCase
             skipEmExpectations: true,
         );
         $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $campaignRepoProphecy->findOneBy(Argument::any())->willReturn($donation->getCampaign());
         $campaignRepoProphecy->updateFromSf(Argument::type(Campaign::class))
             ->will(/**
              * @param array{0: Campaign} $args
@@ -398,8 +388,7 @@ class CreateTest extends TestCase
         ]);
 
         $stripeProphecy = $this->prophesize(Stripe::class);
-        $stripeProphecy->createPaymentIntent(Argument::any())
-            ->will(fn($args) => TestCase::assertEquals($expectedPaymentIntentArgs, $args))
+        $stripeProphecy->createPaymentIntent($expectedPaymentIntentArgs)
             ->willReturn($paymentIntentMockResult)
             ->shouldBeCalledOnce();
         $this->prophesizeCustomerSession($stripeProphecy);
@@ -708,14 +697,13 @@ class CreateTest extends TestCase
         $app = $this->getAppInstance();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
 
-        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
-
         // Use a custom Prophecy Promise to vary the simulated behaviour.
-        $donationServiceProphecy = $this->prophesize(DonationService::class);
-        $donationServiceProphecy
+        $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class))
             ->will(new CreateDupeCampaignThrowThenSucceedPromise($donationToReturn))
             ->shouldBeCalledTimes(2); // One exception, one success
+
+        $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
 
         $entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
         $entityManagerProphecy->isOpen()->willReturn(true);
@@ -948,10 +936,8 @@ class CreateTest extends TestCase
         bool $skipEmExpectations = false,
     ): App {
         $app = $this->getAppInstance();
-        $donationRepoProphecy = $this->donationRepoProphecy;
-
-        $donationServiceProphecy = $this->prophesize(DonationService::class);
-        $donationServiceProphecy
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class))
             ->willReturn($donation);
 
@@ -1092,5 +1078,34 @@ class CreateTest extends TestCase
         $customerSession->client_secret = 'customer_session_client_secret';
         $stripeProphecy->createCustomerSession(StripeCustomerId::of(self::PSPCUSTOMERID))
             ->willReturn($customerSession);
+    }
+
+    public function rebuildDonationServicePartialMock(): void
+    {
+        $this->donationServicePartialMock = $this->createPartialMock(DonationService::class, ['buildFromApiRequest']);
+
+        $rateLimiterFactory = $this->diContainer()->get('donation-creation-rate-limiter-factory');
+        \assert($rateLimiterFactory instanceof RateLimiterFactory);
+
+        $this->donationServicePartialMock->__construct(
+            donationRepository: $this->diContainer()->get(DonationRepository::class),
+            campaignRepository: $this->diContainer()->get(CampaignRepository::class),
+            logger: $this->diContainer()->get(LoggerInterface::class),
+            entityManager: $this->diContainer()->get(EntityManagerInterface::class),
+            stripe: $this->diContainer()->get(Stripe::class),
+            matchingAdapter: $this->diContainer()->get(Adapter::class),
+            chatter: $this->diContainer()->get(StripeChatterInterface::class),
+            clock: $this->diContainer()->get(ClockInterface::class),
+            rateLimiterFactory: $rateLimiterFactory,
+            donorAccountRepository: $this->diContainer()->get(DonorAccountRepository::class),
+            bus: $this->diContainer()->get(RoutableMessageBus::class),
+            donationNotifier: $this->diContainer()->get(DonationNotifier::class),
+            fundRepository: $this->diContainer()->get(FundRepository::class),
+        );
+
+        $this->diContainer()->set(
+            DonationService::class,
+            $this->donationServicePartialMock
+        );
     }
 }
