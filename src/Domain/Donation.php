@@ -224,6 +224,17 @@ class Donation extends SalesforceWriteProxy
     protected ?string $donorLastName = null;
 
     /**
+     * The UUID of the donor as recorded in Identity service. Note that in most cases this may refer to an
+     * account that no-longer exists, as we auto delete old accounts if no password is set.
+     *
+     * Non-null for all donations from April 2025 and later, will be null for old donations.
+     *
+     * @psalm-suppress PossiblyUnusedProperty - to be used soon for sending set password links
+     */
+    #[ORM\Column(type: 'uuid', nullable: true)]
+    protected ?UuidInterface $donorUUID;
+
+    /**
      * Position in sequence of donations taken in relation to a regular giving mandate, e.g. 1st
      * (taken at mandate creation time), 2nd, 3rd etc.
      *
@@ -383,6 +394,7 @@ class Donation extends SalesforceWriteProxy
         ?string $tipAmount,
         ?RegularGivingMandate $mandate,
         ?DonationSequenceNumber $mandateSequenceNumber,
+        PersonId $donorId,
         bool $giftAid = false,
         ?bool $tipGiftAid = null,
         ?string $homeAddress = null,
@@ -437,13 +449,15 @@ class Donation extends SalesforceWriteProxy
         $this->mandate = $mandate;
         $this->mandateSequenceNumber = $mandateSequenceNumber?->number;
         $this->donorBillingPostcode = $billingPostcode;
+        $this->donorUUID = $donorId->toUUID();
     }
 
     /**
+     * @param PersonId $donorId
      * @throws \Assert\AssertionFailedException
      * @throws \UnexpectedValueException
      */
-    public static function fromApiModel(DonationCreate $donationData, Campaign $campaign): Donation
+    public static function fromApiModel(DonationCreate $donationData, Campaign $campaign, PersonId $donorId): Donation
     {
         Assertion::eq($donationData->psp, 'stripe');
         return new self(
@@ -464,13 +478,14 @@ class Donation extends SalesforceWriteProxy
             // Main form starts off with this null on init in the API model, so effectively it's ignored here
             // then as `false` is also the constructor's default. Donation Funds tips should send a bool value
             // from the start.
-            giftAid: $donationData->giftAid ?? false,
+            donorId: $donorId,
             // Not meaningfully used yet (typical donations set it on Update instead; Donation Funds
             // tips don't have a "tip" because the donation is to BG), but map just in case.
+            giftAid: $donationData->giftAid ?? false,
             tipGiftAid: $donationData->tipGiftAid,
             homeAddress: $donationData->homeAddress,
-            homePostcode: $donationData->homePostcode,
-            billingPostcode: null, // no support for billing post code on donation creation in API - only on update.
+            homePostcode: $donationData->homePostcode, // no support for billing post code on donation creation in API - only on update.
+            billingPostcode: null
         );
     }
 

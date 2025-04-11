@@ -200,6 +200,7 @@ class SetupTestMandate extends LockingCommand
             tipAmount: '0',
             mandate: $mandate,
             mandateSequenceNumber: $number,
+            donorId: $donor->id(),
             giftAid: false,
             tipGiftAid: null,
             homeAddress: null,

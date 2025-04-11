@@ -25,6 +25,7 @@ use MatchBot\Domain\Fund as FundEntity;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\FundType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use MatchBot\Tests\TestCase;
@@ -160,7 +161,7 @@ class CreateTest extends TestCase
         $app = $this->getAppInstance();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class))
             ->willReturn($donation);
 
         $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
@@ -191,7 +192,7 @@ class CreateTest extends TestCase
         $app = $this->getAppInstance();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class))
             ->willReturn($donationToReturn);
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
         $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
@@ -236,7 +237,7 @@ class CreateTest extends TestCase
         $app = $this->getAppInstance();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class))
             ->willThrow(new UnexpectedValueException('Currency CAD is invalid for campaign'));
         $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
 
@@ -276,7 +277,7 @@ class CreateTest extends TestCase
         $app = $this->getAppInstance();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class))
             ->shouldNotBeCalled();
         $donationRepoProphecy->push(Argument::type(DonationUpserted::class));
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldNotBeCalled();
@@ -683,7 +684,7 @@ class CreateTest extends TestCase
 
         // Use a custom Prophecy Promise to vary the simulated behaviour.
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class))
             ->will(new CreateDupeCampaignThrowThenSucceedPromise($donationToReturn))
             ->shouldBeCalledTimes(2); // One exception, one success
 
@@ -922,7 +923,7 @@ class CreateTest extends TestCase
         $app = $this->getAppInstance();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
-            ->buildFromApiRequest(Argument::type(DonationCreate::class))
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class))
             ->willReturn($donation);
 
         /**

@@ -106,6 +106,7 @@ class DonationPersistenceTest extends IntegrationTest
             'mandateSequenceNumber' => null,
             'tipRefundAmount' => null,
             'giftAidRemovedAt' => null,
+            'donorUUID' => '00000000-0000-0000-0000-000000000000',
 
             'updatedAt' => '1970-01-01',
             'createdAt' => '1970-01-01'

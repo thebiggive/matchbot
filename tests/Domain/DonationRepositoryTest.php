@@ -26,6 +26,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\TestCase;
@@ -107,7 +108,7 @@ class DonationRepositoryTest extends TestCase
         );
 
         $donation = $this->getRepo(null, $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload);
+            ->buildFromApiRequest($createPayload, PersonId::nil());
 
         $this->assertEquals('USD', $donation->currency()->isoCode());
         $this->assertEquals('123', $donation->getAmount());
@@ -147,7 +148,7 @@ class DonationRepositoryTest extends TestCase
         $donationRepository->setFundRepository($fundRepositoryProphecy->reveal());
 
         $donation = $donationRepository
-            ->buildFromApiRequest($createPayload);
+            ->buildFromApiRequest($createPayload, PersonId::nil());
 
         $this->assertSame('testProject1234567', $donation->getCampaign()->getSalesforceId());
     }
@@ -175,7 +176,7 @@ class DonationRepositoryTest extends TestCase
         );
 
         $this->getRepo(campaignRepoProphecy: $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload);
+            ->buildFromApiRequest($createPayload, PersonId::nil());
     }
 
     /**

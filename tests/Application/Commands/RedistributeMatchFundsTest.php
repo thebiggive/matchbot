@@ -16,6 +16,7 @@ use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -227,7 +228,7 @@ class RedistributeMatchFundsTest extends TestCase
             donationAmount: $donationAmount,
             projectId: 'projectid012345678',
             psp: 'stripe',
-        ), $this->getMinimalCampaign());
+        ), $this->getMinimalCampaign(), PersonId::nil());
         $donation->setSalesforceId('sf_1244');
         $donation->setTransactionId('pi_tenPound123');
 

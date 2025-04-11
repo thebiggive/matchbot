@@ -24,6 +24,7 @@ use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\PersonId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -94,7 +95,7 @@ class Create extends Action
         }
 
         try {
-            $donation = $this->donationService->createDonation($donationData, $customerId);
+            $donation = $this->donationService->createDonation($donationData, $customerId, PersonId::nil());
         } catch (RateLimitExceededException $e) {
             $retryDelaySeconds = ($e->getRetryAfter()->getTimestamp() - time());
             return $this->respond(
