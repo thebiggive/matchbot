@@ -81,7 +81,7 @@ class DonationServiceTest extends TestCase
         $donationCreate = $this->getDonationCreate();
         $donation = $this->getDonation();
 
-        $this->donationRepoProphecy->buildFromApiRequest($donationCreate, Argument::type(PersonId::class))->willReturn($donation);
+//        $this->donationRepoProphecy->buildFromApiRequest($donationCreate, Argument::type(PersonId::class))->willReturn($donation);
 
         $this->chatterProphecy->send(
             new ChatMessage(
@@ -123,7 +123,7 @@ class DonationServiceTest extends TestCase
         $donationCreate = $this->getDonationCreate();
         $donation = $this->getDonation();
 
-        $this->donationRepoProphecy->buildFromApiRequest($donationCreate, Argument::type(PersonId::class))->willReturn($donation);
+//        $this->donationRepoProphecy->buildFromApiRequest($donationCreate, Argument::type(PersonId::class))->willReturn($donation);
         $this->stripeProphecy->createPaymentIntent(Argument::any())
             ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
 
@@ -283,5 +283,59 @@ class DonationServiceTest extends TestCase
         $this->getDonationService()->confirmOnSessionDonation($donation, $confirmationTokenId);
 
         $this->assertEquals('0.52', $donation->getCharityFeeGross());
+    }
+
+
+    public function testBuildFromApiRequestSuccess(): void
+    {
+        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
+
+        $dummyCampaign->setCurrencyCode('USD');
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        // No change – campaign still has a charity without a Stripe Account ID.
+        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject1234567'])
+            ->willReturn($dummyCampaign);
+
+        $createPayload = new DonationCreate(
+            currencyCode: 'USD',
+            donationAmount: '123',
+            projectId: 'testProject1234567',
+            psp: 'stripe',
+            pspMethodType: PaymentMethodType::Card,
+        );
+
+        $donation = $this->sut
+            ->buildFromApiRequest($createPayload, PersonId::nil());
+
+        $this->assertEquals('USD', $donation->currency()->isoCode());
+        $this->assertEquals('123', $donation->getAmount());
+        $this->assertEquals(12_300, $donation->getAmountFractionalIncTip());
+    }
+
+
+    public function testBuildFromApiRequestWithCurrencyMismatch(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Currency CAD is invalid for campaign');
+
+        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
+
+        $dummyCampaign->setCurrencyCode('USD');
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        // No change – campaign still has a charity without a Stripe Account ID.
+        $campaignRepoProphecy->findOneBy(Argument::type('array'))
+            ->willReturn($dummyCampaign)
+            ->shouldBeCalledOnce();
+
+        $createPayload = new DonationCreate(
+            currencyCode: 'CAD',
+            donationAmount: '144.0',
+            projectId: 'testProject1234567',
+            psp: 'stripe',
+            pspMethodType: PaymentMethodType::Card,
+        );
+
+        $this->sut
+            ->buildFromApiRequest($createPayload, PersonId::nil());
     }
 }

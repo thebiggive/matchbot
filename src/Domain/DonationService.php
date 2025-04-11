@@ -2,9 +2,11 @@
 
 namespace MatchBot\Domain;
 
+use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
+use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
@@ -89,7 +91,8 @@ class DonationService
         private DonorAccountRepository $donorAccountRepository,
         private RoutableMessageBus $bus,
         private DonationNotifier $donationNotifier,
-    ) {
+        private FundRepository $fundRepository,
+) {
     }
 
     /**
@@ -116,7 +119,7 @@ class DonationService
         $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
 
         try {
-            $donation = $this->donationRepository->buildFromApiRequest($donationData, $donorId);
+            $donation = $this->buildFromApiRequest($donationData, $donorId);
         } catch (\UnexpectedValueException $e) {
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $e->getMessage());
@@ -133,7 +136,7 @@ class DonationService
                 'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
                 $donationData->projectId->value,
             ));
-            $donation = $this->donationRepository->buildFromApiRequest($donationData, $donorId);
+            $donation = $this->buildFromApiRequest($donationData, $donorId);
         }
 
         if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
@@ -149,6 +152,58 @@ class DonationService
         }
 
         $this->enrollNewDonation($donation, attemptMatching: true);
+
+        return $donation;
+    }
+
+    /**
+     * @param DonationCreate $donationData
+     * @return Donation
+     * @throws \UnexpectedValueException if inputs invalid, including projectId being unrecognised
+     * @throws NotFoundException
+     */
+    public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId): Donation
+    {
+        if ($donationData->psp !== 'stripe') {
+            throw new \UnexpectedValueException(sprintf(
+                'PSP %s is invalid',
+                $donationData->psp,
+            ));
+        }
+
+        $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId->value]);
+
+        if (!$campaign) {
+            // Fetch data for as-yet-unknown campaigns on-demand
+            $this->logger->info("Loading unknown campaign ID {$donationData->projectId} on-demand");
+            try {
+                $campaign = $this->campaignRepository->pullNewFromSf($donationData->projectId);
+            } catch (ClientException $exception) {
+                $this->logger->error("Pull error for campaign ID {$donationData->projectId}: {$exception->getMessage()}");
+                throw new \UnexpectedValueException('Campaign does not exist');
+            }
+            $this->fundRepository->pullForCampaign($campaign);
+
+            $this->entityManager->flush();
+
+            // Because this case of campaigns being set up individually is relatively rare,
+            // it is the one place outside of `UpdateCampaigns` where we clear the whole
+            // result cache. It's currently the only user-invoked or single item place where
+            // we do so.
+            /** @var CacheProvider $cacheDriver */
+            $cacheDriver = $this->entityManager->getConfiguration()->getResultCacheImpl();
+            $cacheDriver->deleteAll();
+        }
+
+        if ($donationData->currencyCode !== $campaign->getCurrencyCode()) {
+            throw new \UnexpectedValueException(sprintf(
+                'Currency %s is invalid for campaign',
+                $donationData->currencyCode,
+            ));
+        }
+
+        $donation = Donation::fromApiModel($donationData, $campaign, $donorId);
+        $donation->deriveFees(null, null);
 
         return $donation;
     }
