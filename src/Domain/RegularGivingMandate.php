@@ -316,6 +316,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             homeAddress: $donor->getHomeAddressLine1(),
             homePostcode: $donor->getHomePostcode(),
             billingPostcode: null,
+            donorId: $donor->id(),
         );
 
         Assertion::true(
@@ -492,6 +493,7 @@ class RegularGivingMandate extends SalesforceWriteProxy
             homeAddress: $donor->getHomeAddressLine1(),
             homePostcode: $donor->isHomeOutsideUK() ? Donation::OVERSEAS : $donor->getHomePostcode(),
             billingPostcode: $donor->getBillingPostcode(),
+            donorId: $donor->id(),
         );
     }
 
