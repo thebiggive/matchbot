@@ -50,7 +50,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $this->matchingAdapter = $adapter;
     }
 
-    public function buildFromApiRequest(DonationCreate $donationData): Donation
+    public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId): Donation
     {
         if (!in_array($donationData->psp, ['stripe'], true)) {
             throw new \UnexpectedValueException(sprintf(
@@ -90,7 +90,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
             ));
         }
 
-        $donation = Donation::fromApiModel($donationData, $campaign);
+        $donation = Donation::fromApiModel($donationData, $campaign, $donorId);
         $donation->deriveFees(null, null);
 
         return $donation;

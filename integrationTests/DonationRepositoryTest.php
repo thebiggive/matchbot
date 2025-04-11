@@ -19,6 +19,7 @@ use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -80,7 +81,7 @@ class DonationRepositoryTest extends IntegrationTest
             projectId: 'ccampaign123456789',
             psp: 'stripe',
             pspMethodType: PaymentMethodType::CustomerBalance
-        ), $campaign);
+        ), $campaign, PersonId::nil());
 
         $donation->update(
             giftAid: true,
@@ -203,7 +204,8 @@ class DonationRepositoryTest extends IntegrationTest
                 pspCustomerId: self::PSP_CUSTOMER_ID,
                 emailAddress: $randomEmailAddress,
             ),
-            campaign: $campaign
+            campaign: $campaign,
+            donorId: PersonId::nil()
         );
         if ($donationStatus === DonationStatus::Cancelled) {
             $oldPendingDonation->cancel();

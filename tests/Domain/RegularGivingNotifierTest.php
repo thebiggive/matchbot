@@ -168,6 +168,7 @@ class RegularGivingNotifierTest extends TestCase
             homeAddress: null,
             homePostcode: null,
             billingPostcode: null,
+            donorId: $donor->id(),
         );
         $firstDonation->setTransactionId('[PSP Transaction ID]');
         $this->addFundingWithdrawal($firstDonation, '64');
