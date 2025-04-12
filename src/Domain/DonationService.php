@@ -139,7 +139,7 @@ class DonationService
             // saw this 3 times in the opening minutes of CC20 on 1 Dec 2020.
             // If this happens, the latest campaign data should already have been pulled and
             // persisted in the last second. So give the same call one more try, as
-            // buildFromAppleSauceAPIRequest() should perform a fresh call to `CampaignRepository::findOneBy()`.
+            // buildFromAPIRequest() should perform a fresh call to `CampaignRepository::findOneBy()`.
             $this->logger->info(sprintf(
                 'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
                 $donationData->projectId->value,
