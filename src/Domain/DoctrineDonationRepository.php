@@ -48,15 +48,6 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $this->matchingAdapter = $adapter;
     }
 
-    #[\Override]
-    public function buildFromApiRequest(
-        DonationCreate $donationData,
-        PersonId $donorId,
-        DonationService $donationService
-    ): Donation {
-        return $donationService->buildFromAPIRequest($donationData, $donorId);
-    }
-
     public function allocateMatchFunds(Donation $donation): string
     {
         // We look up matching withdrawals to allow for the case where retrospective matching was required

@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -76,6 +77,14 @@ class DonationService
     // and MAT-395
     private const array ASYNC_CAPTURE_OPT_OUT = ['capture_method' => 'automatic'];
 
+
+    /**
+     * Previously donations were genereated from API requests in a separate class. That code has now been
+     * consolidated into this class, but this closure is retained to allow donations to be set for test scenarios.
+     * @var \Closure():Donation|null
+     */
+    private ?\Closure $fakeDonationProviderForTestUseOnly = null;
+
     public function __construct(
         private DonationRepository $donationRepository,
         private CampaignRepository $campaignRepository,
@@ -117,8 +126,11 @@ class DonationService
         $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
 
         try {
-            /** @psalm-suppress DeprecatedMethod */
-            $donation = $this->donationRepository->buildFromApiRequest($donationData, $donorId, $this);
+            if ($this->fakeDonationProviderForTestUseOnly) {
+                $donation = $this->fakeDonationProviderForTestUseOnly->__invoke();
+            } else {
+                $donation = $this->buildFromAppleSauceAPIRequest($donationData, $donorId);
+            }
         } catch (\UnexpectedValueException $e) {
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $e->getMessage());
@@ -130,13 +142,13 @@ class DonationService
             // saw this 3 times in the opening minutes of CC20 on 1 Dec 2020.
             // If this happens, the latest campaign data should already have been pulled and
             // persisted in the last second. So give the same call one more try, as
-            // buildFromApiRequest() should perform a fresh call to `CampaignRepository::findOneBy()`.
+            // buildFromAppleSauceAPIRequest() should perform a fresh call to `CampaignRepository::findOneBy()`.
             $this->logger->info(sprintf(
                 'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
                 $donationData->projectId->value,
             ));
 
-            $donation = $this->buildFromApiRequest($donationData, $donorId);
+            $donation = $this->buildFromAppleSauceAPIRequest($donationData, $donorId);
         }
 
         if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
@@ -163,7 +175,7 @@ class DonationService
      * @throws \UnexpectedValueException if inputs invalid, including projectId being unrecognised
      * @throws NotFoundException
      */
-    public function buildFromAPIRequest(DonationCreate $donationData, PersonId $donorId): Donation
+    public function buildFromAppleSauceAPIRequest(DonationCreate $donationData, PersonId $donorId): Donation
     {
 
         if (!in_array($donationData->psp, ['stripe'], true)) {
@@ -892,5 +904,14 @@ class DonationService
                 throw new StripeAccountIdNotSetForAccount();
             }
         }
+    }
+
+    /**
+     * @param null|Closure():Donation $fakeDonationProviderForTestUseOnly = null;
+     */
+    public function setFakeDonationProviderForTestUseOnly(?\Closure $fakeDonationProviderForTestUseOnly): void
+    {
+        Assertion::true(Environment::current() === Environment::Test);
+        $this->fakeDonationProviderForTestUseOnly = $fakeDonationProviderForTestUseOnly;
     }
 }
