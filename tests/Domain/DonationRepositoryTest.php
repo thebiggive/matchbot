@@ -23,6 +23,7 @@ use MatchBot\Domain\Country;
 use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
@@ -108,7 +109,7 @@ class DonationRepositoryTest extends TestCase
         );
 
         $donation = $this->getRepo(null, $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload, PersonId::nil());
+            ->buildFromApiRequest($createPayload, PersonId::nil(), $this->createStub(DonationService::class));
 
         $this->assertEquals('USD', $donation->currency()->isoCode());
         $this->assertEquals('123', $donation->getAmount());
@@ -147,8 +148,13 @@ class DonationRepositoryTest extends TestCase
         Assertion::isInstanceOf($donationRepository, DoctrineDonationRepository::class);
         $donationRepository->setFundRepository($fundRepositoryProphecy->reveal());
 
+        /** @psalm-suppress DeprecatedMethod */
         $donation = $donationRepository
-            ->buildFromApiRequest($createPayload, PersonId::nil());
+            ->buildFromApiRequest(
+                $createPayload,
+                PersonId::nil(),
+                $this->createStub(DonationService::class)
+            );
 
         $this->assertSame('testProject1234567', $donation->getCampaign()->getSalesforceId());
     }
@@ -176,7 +182,7 @@ class DonationRepositoryTest extends TestCase
         );
 
         $this->getRepo(campaignRepoProphecy: $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload, PersonId::nil());
+            ->buildFromApiRequest($createPayload, PersonId::nil(), $this->createStub(DonationService::class));
     }
 
     /**

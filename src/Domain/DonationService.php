@@ -116,7 +116,7 @@ class DonationService
         $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
 
         try {
-            $donation = $this->donationRepository->buildFromApiRequest($donationData, $donorId);
+            $donation = $this->donationRepository->buildFromApiRequest($donationData, $donorId, $this);
         } catch (\UnexpectedValueException $e) {
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $e->getMessage());
@@ -133,7 +133,7 @@ class DonationService
                 'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
                 $donationData->projectId->value,
             ));
-            $donation = $this->donationRepository->buildFromApiRequest($donationData, $donorId);
+            $donation = $this->donationRepository->buildFromApiRequest($donationData, $donorId, $this);
         }
 
         if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {

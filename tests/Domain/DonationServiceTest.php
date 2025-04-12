@@ -81,7 +81,12 @@ class DonationServiceTest extends TestCase
         $donationCreate = $this->getDonationCreate();
         $donation = $this->getDonation();
 
-        $this->donationRepoProphecy->buildFromApiRequest($donationCreate, Argument::type(PersonId::class))->willReturn($donation);
+        /** @psalm-suppress DeprecatedMethod */
+        $this->donationRepoProphecy->buildFromApiRequest(
+            $donationCreate,
+            Argument::type(PersonId::class),
+            Argument::type(DonationService::class)
+        )->willReturn($donation);
 
         $this->chatterProphecy->send(
             new ChatMessage(
@@ -123,7 +128,7 @@ class DonationServiceTest extends TestCase
         $donationCreate = $this->getDonationCreate();
         $donation = $this->getDonation();
 
-        $this->donationRepoProphecy->buildFromApiRequest($donationCreate, Argument::type(PersonId::class))->willReturn($donation);
+        $this->donationRepoProphecy->buildFromApiRequest($donationCreate, Argument::type(PersonId::class), Argument::type(DonationService::class))->willReturn($donation);
         $this->stripeProphecy->createPaymentIntent(Argument::any())
             ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
 

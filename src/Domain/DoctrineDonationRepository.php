@@ -50,7 +50,10 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $this->matchingAdapter = $adapter;
     }
 
-    public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId): Donation
+    /**
+     * @deprecated
+     */
+    public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId, DonationService $_donationService): Donation
     {
         if (!in_array($donationData->psp, ['stripe'], true)) {
             throw new \UnexpectedValueException(sprintf(
