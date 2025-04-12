@@ -169,8 +169,12 @@ class CreateTest extends TestCase
         $donation = $this->getTestDonation(false, false);
 
         $app = $this->getAppInstance();
+        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy
+            ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class), Argument::type(DonationService::class))
+            ->willReturn($donation);
 
-        $this->setFakeDonationRepoForBuildFromApiRequestOnly();
+        $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -897,7 +901,6 @@ class CreateTest extends TestCase
         bool $skipEmExpectations = false,
     ): App {
         $app = $this->getAppInstance();
-        $this->setFakeDonationRepoForBuildFromApiRequestOnly();
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy
             ->buildFromApiRequest(Argument::type(DonationCreate::class), Argument::type(PersonId::class), Argument::type(DonationService::class))
@@ -1045,14 +1048,5 @@ class CreateTest extends TestCase
         $customerSession->client_secret = 'customer_session_client_secret';
         $stripeProphecy->createCustomerSession(StripeCustomerId::of(self::PSPCUSTOMERID))
             ->willReturn($customerSession);
-    }
-
-    public function setFakeDonationRepoForBuildFromApiRequestOnly(): void
-    {
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
-        $donationRepoProphecy
-            ->buildFromApiRequest(Argument::cetera())
-            ->will(fn($args) => $args[2]->buildFromApiRequest($args[0], $args[1]));
-        $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
     }
 }
