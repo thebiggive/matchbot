@@ -136,8 +136,7 @@ class DonationService
                 $donationData->projectId->value,
             ));
 
-            /** @psalm-suppress DeprecatedMethod */
-            $donation = $this->donationRepository->buildFromApiRequest($donationData, $donorId, $this);
+            $donation = $this->buildFromApiRequest($donationData, $donorId);
         }
 
         if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
