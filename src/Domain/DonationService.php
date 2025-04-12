@@ -76,6 +76,7 @@ class DonationService
     // https://docs.stripe.com/payments/payment-intents/asynchronous-capture#listen-webhooks
     // and MAT-395
     private const array ASYNC_CAPTURE_OPT_OUT = ['capture_method' => 'automatic'];
+    public const string STRIPE_DESTINATION_ACCOUNT_NEEDS_CAPABILITIES_MESSAGE = 'Your destination account needs to have at least one of the following capabilities enabled';
 
 
     /**
@@ -138,7 +139,7 @@ class DonationService
             // saw this 3 times in the opening minutes of CC20 on 1 Dec 2020.
             // If this happens, the latest campaign data should already have been pulled and
             // persisted in the last second. So give the same call one more try, as
-            // buildFromAppleSauceAPIRequest() should perform a fresh call to `CampaignRepository::findOneBy()`.
+            // buildFromAPIRequest() should perform a fresh call to `CampaignRepository::findOneBy()`.
             $this->logger->info(sprintf(
                 'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
                 $donationData->projectId->value,
@@ -508,9 +509,7 @@ class DonationService
 
             $accountLacksCapabilities = str_contains(
                 $message,
-                // this message is an issue the charity needs to fix, we can't fix it for them.
-                // We likely want to let the team know to hide the campaign from prominents views though.
-                'Your destination account needs to have at least one of the following capabilities enabled'
+                self::STRIPE_DESTINATION_ACCOUNT_NEEDS_CAPABILITIES_MESSAGE
             );
 
             $failureMessage = sprintf(

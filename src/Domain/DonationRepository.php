@@ -5,7 +5,6 @@
 use DateTime;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use MatchBot\Application\Commands\ExpirePendingMandates;
-use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
 use Ramsey\Uuid\UuidInterface;
