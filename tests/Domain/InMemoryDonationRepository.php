@@ -106,7 +106,7 @@ class InMemoryDonationRepository implements DonationRepository
         $this->matchFundsReleased = bcadd($this->matchFundsReleased, $donation->getAmount());
     }
 
-    #[\Override] public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId,  DonationService $_donationService): Donation
+    #[\Override] public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId,  DonationService $donationService): Donation
     {
         throw new \Exception("Method not implemented in test double");
     }

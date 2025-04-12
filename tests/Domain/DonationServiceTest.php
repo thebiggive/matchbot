@@ -24,6 +24,7 @@ use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PaymentMethodType;
@@ -208,6 +209,7 @@ class DonationServiceTest extends TestCase
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
             bus: $this->createStub(RoutableMessageBus::class),
             donationNotifier: $this->createStub(DonationNotifier::class),
+            fundRepository: $this->createStub(FundRepository::class),
         );
     }
 

@@ -115,6 +115,8 @@ class CreateTest extends TestCase
         $campaignRepositoryProphecy = $this->prophesize(CampaignRepository::class);
         $this->diContainer()->set(CampaignRepository::class, $campaignRepositoryProphecy->reveal());
         $this->diContainer()->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
+        $this->diContainer()->set(FundRepository::class, $this->prophesize(FundRepository::class)->reveal());
+
 
         $this->messageBusProphecy = $this->prophesize(RoutableMessageBus::class);
 

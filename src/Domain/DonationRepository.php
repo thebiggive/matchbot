@@ -23,7 +23,7 @@ interface DonationRepository
      * @return Donation
      * @throws \UnexpectedValueException if inputs invalid, including projectId being unrecognised
      * @throws NotFoundException
-     */public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId, DonationService $_donationService): Donation;
+     */public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId, DonationService $donationService): Donation;
 
     /**
      * Create all funding allocations, with `FundingWithdrawal` links to this donation, and safely update the funds'

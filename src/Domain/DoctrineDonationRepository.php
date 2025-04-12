@@ -51,52 +51,11 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
     }
 
     /**
-     * @deprecated
+     * @deprecated - use {@see DonationService::buildFromAPIRequest() directly instead}
      */
-    public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId, DonationService $_donationService): Donation
+    public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId, DonationService $donationService): Donation
     {
-        if (!in_array($donationData->psp, ['stripe'], true)) {
-            throw new \UnexpectedValueException(sprintf(
-                'PSP %s is invalid',
-                $donationData->psp,
-            ));
-        }
-
-        $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId->value]);
-
-        if (!$campaign) {
-            // Fetch data for as-yet-unknown campaigns on-demand
-            $this->logInfo("Loading unknown campaign ID {$donationData->projectId} on-demand");
-            try {
-                $campaign = $this->campaignRepository->pullNewFromSf($donationData->projectId);
-            } catch (ClientException $exception) {
-                $this->logError("Pull error for campaign ID {$donationData->projectId}: {$exception->getMessage()}");
-                throw new \UnexpectedValueException('Campaign does not exist');
-            }
-            $this->fundRepository->pullForCampaign($campaign);
-
-            $this->getEntityManager()->flush();
-
-            // Because this case of campaigns being set up individually is relatively rare,
-            // it is the one place outside of `UpdateCampaigns` where we clear the whole
-            // result cache. It's currently the only user-invoked or single item place where
-            // we do so.
-            /** @var CacheProvider $cacheDriver */
-            $cacheDriver = $this->getEntityManager()->getConfiguration()->getResultCacheImpl();
-            $cacheDriver->deleteAll();
-        }
-
-        if ($donationData->currencyCode !== $campaign->getCurrencyCode()) {
-            throw new \UnexpectedValueException(sprintf(
-                'Currency %s is invalid for campaign',
-                $donationData->currencyCode,
-            ));
-        }
-
-        $donation = Donation::fromApiModel($donationData, $campaign, $donorId);
-        $donation->deriveFees(null, null);
-
-        return $donation;
+        return $donationService->buildFromAPIRequest($donationData, $donorId);
     }
 
     public function allocateMatchFunds(Donation $donation): string
