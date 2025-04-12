@@ -3,15 +3,11 @@
 namespace MatchBot\Tests\Domain;
 
 use DateTime;
-use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Messenger\DonationUpserted;
-use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationSequenceNumber;
-use MatchBot\Domain\DonationService;
 use MatchBot\Domain\PaymentMethodType;
-use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use Ramsey\Uuid\UuidInterface;

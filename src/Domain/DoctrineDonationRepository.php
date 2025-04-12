@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
-use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Query;
 use GuzzleHttp\Exception\BadResponseException;
-use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
 use MatchBot\Application\HttpModels\DonationCreate;
@@ -19,7 +17,6 @@ use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
 use MatchBot\Client\NotFoundException;
 use Ramsey\Uuid\UuidInterface;
-use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
