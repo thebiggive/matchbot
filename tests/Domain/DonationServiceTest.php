@@ -336,7 +336,7 @@ class DonationServiceTest extends TestCase
         );
 
         $donation = $this->getDonationService(campaignRepoProphecy: $campaignRepoProphecy)
-            ->buildFromAppleSauceAPIRequest($createPayload, PersonId::nil());
+            ->buildFromAPIRequest($createPayload, PersonId::nil());
 
         $this->assertEquals('USD', $donation->currency()->isoCode());
         $this->assertEquals('123', $donation->getAmount());
@@ -374,7 +374,7 @@ class DonationServiceTest extends TestCase
             campaignRepoProphecy: $campaignRepoProphecy,
             fundRepoProphecy: $fundRepositoryProphecy
         )
-            ->buildFromAppleSauceAPIRequest(
+            ->buildFromAPIRequest(
                 $createPayload,
                 PersonId::nil(),
             );
@@ -405,6 +405,6 @@ class DonationServiceTest extends TestCase
         );
 
         $this->getDonationService(campaignRepoProphecy: $campaignRepoProphecy)
-            ->buildFromAppleSauceAPIRequest($createPayload, PersonId::nil());
+            ->buildFromAPIRequest($createPayload, PersonId::nil());
     }
 }
