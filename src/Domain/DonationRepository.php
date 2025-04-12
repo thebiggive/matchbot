@@ -8,7 +8,6 @@ use MatchBot\Application\Commands\ExpirePendingMandates;
 use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
-use MatchBot\Client\NotFoundException;
 use Ramsey\Uuid\UuidInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -19,10 +18,8 @@ use Symfony\Component\Messenger\MessageBusInterface;
 interface DonationRepository
 {
     /**
-     * @param DonationCreate $donationData
-     * @return Donation
-     * @throws \UnexpectedValueException if inputs invalid, including projectId being unrecognised
-     * @throws NotFoundException
+     *
+     * @deprecated - use {@see DonationService::buildFromAPIRequest() directly instead}
      */public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId, DonationService $donationService): Donation;
 
     /**
@@ -115,8 +112,6 @@ interface DonationRepository
      * @return int  Number of donations updated to 'complete'.
      */
     public function abandonOldCancelled(): int;
-
-    public function setCampaignRepository(CampaignRepository $campaignRepository): void;
 
     /**
      * Locks row in DB to prevent concurrent updates. See jira MAT-260

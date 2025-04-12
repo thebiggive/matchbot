@@ -146,6 +146,5 @@ class CancelAsAdminTest extends TestCase
         $container->set(RegularGivingMandateRepository::class, $this->getMockMandateRepository($mandate));
         $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
         $container->set(FundRepository::class, $this->createStub(FundRepository::class));
-
     }
 }

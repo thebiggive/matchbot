@@ -106,7 +106,7 @@ class InMemoryDonationRepository implements DonationRepository
         $this->matchFundsReleased = bcadd($this->matchFundsReleased, $donation->getAmount());
     }
 
-    #[\Override] public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId,  DonationService $donationService): Donation
+    #[\Override] public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId, DonationService $donationService): Donation
     {
         throw new \Exception("Method not implemented in test double");
     }
@@ -162,11 +162,6 @@ class InMemoryDonationRepository implements DonationRepository
     }
 
     #[\Override] public function abandonOldCancelled(): int
-    {
-        throw new \Exception("Method not implemented in test double");
-    }
-
-    #[\Override] public function setCampaignRepository(CampaignRepository $campaignRepository): void
     {
         throw new \Exception("Method not implemented in test double");
     }

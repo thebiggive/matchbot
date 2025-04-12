@@ -90,106 +90,6 @@ class DonationRepositoryTest extends TestCase
         $donationRepository->push(self::someUpsertedMessage());
     }
 
-    public function testBuildFromApiRequestSuccess(): void
-    {
-        $this->markTestSkipped();
-
-        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
-
-        $dummyCampaign->setCurrencyCode('USD');
-        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject1234567'])
-            ->willReturn($dummyCampaign);
-
-        $createPayload = new DonationCreate(
-            currencyCode: 'USD',
-            donationAmount: '123',
-            projectId: 'testProject1234567',
-            psp: 'stripe',
-            pspMethodType: PaymentMethodType::Card,
-        );
-
-        $donation = $this->getRepo(null, $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload, PersonId::nil(), $this->createStub(DonationService::class));
-
-        $this->assertEquals('USD', $donation->currency()->isoCode());
-        $this->assertEquals('123', $donation->getAmount());
-        $this->assertEquals(12_300, $donation->getAmountFractionalIncTip());
-    }
-
-    public function testItPullsCampaignFromSFIfNotInRepo(): void
-    {
-        $this->markTestSkipped();
-        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        $fundRepositoryProphecy = $this->prophesize(FundRepository::class);
-        $this->entityManagerProphecy->flush()->shouldBeCalled();
-
-        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
-        $dummyCampaign->setCurrencyCode('GBP');
-
-
-        // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject1234567'])
-            ->willReturn(null);
-        $campaignRepoProphecy->pullNewFromSf(Salesforce18Id::ofCampaign('testProject1234567'))
-            ->willReturn($dummyCampaign);
-
-        $fundRepositoryProphecy->pullForCampaign(Argument::type(Campaign::class))->shouldBeCalled();
-
-        $createPayload = new DonationCreate(
-            currencyCode: 'GBP',
-            donationAmount: '123',
-            projectId: 'testProject1234567',
-            psp: 'stripe',
-            pspMethodType: PaymentMethodType::Card,
-        );
-
-        $donationRepository = $this->getRepo(
-            campaignRepoProphecy: $campaignRepoProphecy,
-        );
-        Assertion::isInstanceOf($donationRepository, DoctrineDonationRepository::class);
-        $donationRepository->setFundRepository($fundRepositoryProphecy->reveal());
-
-        /** @psalm-suppress DeprecatedMethod */
-        $donation = $donationRepository
-            ->buildFromApiRequest(
-                $createPayload,
-                PersonId::nil(),
-                $this->createStub(DonationService::class)
-            );
-
-        $this->assertSame('testProject1234567', $donation->getCampaign()->getSalesforceId());
-    }
-
-    public function testBuildFromApiRequestWithCurrencyMismatch(): void
-    {
-        $this->markTestSkipped();
-
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Currency CAD is invalid for campaign');
-
-        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
-
-        $dummyCampaign->setCurrencyCode('USD');
-        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
-        // No change – campaign still has a charity without a Stripe Account ID.
-        $campaignRepoProphecy->findOneBy(Argument::type('array'))
-            ->willReturn($dummyCampaign)
-            ->shouldBeCalledOnce();
-
-        $createPayload = new DonationCreate(
-            currencyCode: 'CAD',
-            donationAmount: '144.0',
-            projectId: 'testProject1234567',
-            psp: 'stripe',
-            pspMethodType: PaymentMethodType::Card,
-        );
-
-        $this->getRepo(campaignRepoProphecy: $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload, PersonId::nil(), $this->createStub(DonationService::class));
-    }
-
     /**
      * Logs an error too – but for the purposes of this test just verify it doesn't crash unhandled
      * for now.
@@ -508,34 +408,23 @@ class DonationRepositoryTest extends TestCase
     /**
      * @param ObjectProphecy<Client\Donation> $donationClientProphecy
      * @param ObjectProphecy<Adapter> $matchingAdapterProphecy
-     * @param ObjectProphecy<CampaignRepository> $campaignRepoProphecy
      */
     private function getRepo(
         ?ObjectProphecy $donationClientProphecy = null,
-        ?ObjectProphecy $campaignRepoProphecy = null,
         ?ObjectProphecy $matchingAdapterProphecy = null,
     ): DonationRepository {
         if (!$donationClientProphecy) {
             $donationClientProphecy = $this->prophesize(Client\Donation::class);
         }
 
-        $configurationProphecy = $this->prophesize(\Doctrine\ORM\Configuration::class);
-        $config = $configurationProphecy->reveal();
-        $configurationProphecy->getResultCacheImpl()->willReturn($this->createStub(CacheProvider::class));
-
         $entityManagerProphecy = $this->entityManagerProphecy;
 
-        $entityManagerProphecy->getConfiguration()->willReturn($config);
         $repo = new DoctrineDonationRepository(
             $entityManagerProphecy->reveal(),
             new ClassMetadata(Donation::class),
         );
         $repo->setClient($donationClientProphecy->reveal());
         $repo->setLogger(new NullLogger());
-
-        if ($campaignRepoProphecy) {
-            $repo->setCampaignRepository($campaignRepoProphecy->reveal());
-        }
 
         if ($matchingAdapterProphecy) {
             $repo->setMatchingAdapter($matchingAdapterProphecy->reveal());

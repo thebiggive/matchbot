@@ -2,6 +2,8 @@
 
 namespace MatchBot\Tests\Domain;
 
+use Assert\Assertion;
+use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Driver\PDO\Exception;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\Environment;
@@ -10,9 +12,11 @@ use MatchBot\Application\Matching\Adapter;
 use MatchBot\Application\Notifier\StripeChatterInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Client\Stripe;
+use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Country;
 use MatchBot\Domain\DayOfMonth;
+use MatchBot\Domain\DoctrineDonationRepository;
 use MatchBot\Domain\DomainException\CharityAccountLacksNeededCapaiblities;
 use MatchBot\Domain\DomainException\MandateNotActive;
 use MatchBot\Domain\Donation;
@@ -67,12 +71,25 @@ class DonationServiceTest extends TestCase
     /** @var ObjectProphecy<DonorAccountRepository> */
     private ObjectProphecy $donorAccountRepoProphecy;
 
+    /**
+     * @var ObjectProphecy<EntityManagerInterface>
+     */
+    private ObjectProphecy $entityManagerProphecy;
+
     public function setUp(): void
     {
         $this->donorAccountRepoProphecy = $this->prophesize(DonorAccountRepository::class);
         $this->donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $this->stripeProphecy = $this->prophesize(Stripe::class);
         $this->chatterProphecy = $this->prophesize(StripeChatterInterface::class);
+
+        $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+
+        $configurationProphecy = $this->prophesize(\Doctrine\ORM\Configuration::class);
+        $config = $configurationProphecy->reveal();
+        $configurationProphecy->getResultCacheImpl()->willReturn($this->createStub(CacheProvider::class));
+
+        $this->entityManagerProphecy->getConfiguration()->willReturn($config);
     }
 
     public function testIdentifiesCharityLackingCapabilities(): void
@@ -175,11 +192,17 @@ class DonationServiceTest extends TestCase
         $this->getDonationService()->confirmPreAuthorized($donation);
     }
 
+    /**
+     * @param ObjectProphecy<CampaignRepository>|null $campaignRepoProphecy
+     * @param ObjectProphecy<FundRepository>|null $fundRepoProphecy
+     */
     private function getDonationService(
         bool $withAlwaysCrashingEntityManager = false,
         LoggerInterface $logger = null,
+        ?ObjectProphecy $campaignRepoProphecy = null,
+        ?ObjectProphecy $fundRepoProphecy = null,
     ): DonationService {
-        $emProphecy = $this->prophesize(EntityManagerInterface::class);
+        $emProphecy = $this->entityManagerProphecy;
         if ($withAlwaysCrashingEntityManager) {
             /**
              * @psalm-suppress InternalMethod
@@ -196,9 +219,12 @@ class DonationServiceTest extends TestCase
         $logger = $logger ?? new NullLogger();
 
 
+        $campaignRepoProphecy ??= $this->prophesize(CampaignRepository::class);
+        $fundRepoProphecy ??= $this->prophesize(FundRepository::class);
+
         return new DonationService(
             donationRepository: $this->donationRepoProphecy->reveal(),
-            campaignRepository: $this->prophesize(CampaignRepository::class)->reveal(),
+            campaignRepository: $campaignRepoProphecy->reveal(),
             logger: $logger,
             entityManager: $emProphecy->reveal(),
             stripe: $this->stripeProphecy->reveal(),
@@ -209,7 +235,7 @@ class DonationServiceTest extends TestCase
             donorAccountRepository: $this->donorAccountRepoProphecy->reveal(),
             bus: $this->createStub(RoutableMessageBus::class),
             donationNotifier: $this->createStub(DonationNotifier::class),
-            fundRepository: $this->createStub(FundRepository::class),
+            fundRepository: $fundRepoProphecy->reveal(),
         );
     }
 
@@ -290,5 +316,99 @@ class DonationServiceTest extends TestCase
         $this->getDonationService()->confirmOnSessionDonation($donation, $confirmationTokenId);
 
         $this->assertEquals('0.52', $donation->getCharityFeeGross());
+    }
+
+
+    public function testBuildFromApiRequestSuccess(): void
+    {
+
+        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
+
+        $dummyCampaign->setCurrencyCode('USD');
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        // No change – campaign still has a charity without a Stripe Account ID.
+        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject1234567'])
+            ->willReturn($dummyCampaign);
+
+
+        $createPayload = new DonationCreate(
+            currencyCode: 'USD',
+            donationAmount: '123',
+            projectId: 'testProject1234567',
+            psp: 'stripe',
+            pspMethodType: PaymentMethodType::Card,
+        );
+
+        $donation = $this->getDonationService(campaignRepoProphecy: $campaignRepoProphecy)
+            ->buildFromApiRequest($createPayload, PersonId::nil());
+
+        $this->assertEquals('USD', $donation->currency()->isoCode());
+        $this->assertEquals('123', $donation->getAmount());
+        $this->assertEquals(12_300, $donation->getAmountFractionalIncTip());
+    }
+
+
+    public function testItPullsCampaignFromSFIfNotInRepo(): void
+    {
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        $fundRepositoryProphecy = $this->prophesize(FundRepository::class);
+        $this->entityManagerProphecy->flush()->shouldBeCalled();
+
+        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
+        $dummyCampaign->setCurrencyCode('GBP');
+
+
+        // No change – campaign still has a charity without a Stripe Account ID.
+        $campaignRepoProphecy->findOneBy(['salesforceId' => 'testProject1234567'])
+            ->willReturn(null);
+        $campaignRepoProphecy->pullNewFromSf(Salesforce18Id::ofCampaign('testProject1234567'))
+            ->willReturn($dummyCampaign);
+
+        $fundRepositoryProphecy->pullForCampaign(Argument::type(Campaign::class))->shouldBeCalled();
+
+        $createPayload = new DonationCreate(
+            currencyCode: 'GBP',
+            donationAmount: '123',
+            projectId: 'testProject1234567',
+            psp: 'stripe',
+            pspMethodType: PaymentMethodType::Card,
+        );
+
+        $donation = $this->getDonationService(
+            campaignRepoProphecy: $campaignRepoProphecy,
+            fundRepoProphecy: $fundRepositoryProphecy
+        )
+            ->buildFromApiRequest(
+                $createPayload,
+                PersonId::nil(),
+            );
+
+        $this->assertSame('testProject1234567', $donation->getCampaign()->getSalesforceId());
+    }
+
+    public function testBuildFromApiRequestWithCurrencyMismatch(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Currency CAD is invalid for campaign');
+
+        $dummyCampaign = TestCase::someCampaign(sfId: Salesforce18Id::ofCampaign('testProject1234567'));
+
+        $dummyCampaign->setCurrencyCode('USD');
+        $campaignRepoProphecy = $this->prophesize(CampaignRepository::class);
+        // No change – campaign still has a charity without a Stripe Account ID.
+        $campaignRepoProphecy->findOneBy(Argument::type('array'))
+            ->willReturn($dummyCampaign)
+            ->shouldBeCalledOnce();
+
+        $createPayload = new DonationCreate(
+            currencyCode: 'CAD',
+            donationAmount: '144.0',
+            projectId: 'testProject1234567',
+            psp: 'stripe',
+            pspMethodType: PaymentMethodType::Card,
+        );
+
+        $this->getDonationService(campaignRepoProphecy: $campaignRepoProphecy)
+            ->buildFromApiRequest($createPayload, PersonId::nil());
     }
 }
