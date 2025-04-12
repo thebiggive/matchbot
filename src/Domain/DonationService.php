@@ -503,8 +503,7 @@ class DonationService
         $donation->checkPreAuthDateAllowsCollectionAt($now);
 
         try {
-            $payload = $donation->createStripePaymentIntentPayload();
-            $intent = $this->stripe->createPaymentIntent($payload);
+            $intent = $this->stripe->createPaymentIntent($donation->createStripePaymentIntentPayload());
         } catch (ApiErrorException $exception) {
             $message = $exception->getMessage();
 
