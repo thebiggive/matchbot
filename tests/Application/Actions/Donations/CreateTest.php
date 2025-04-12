@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Tests\Application\Actions\Donations;
 
 use DI\Container;
+use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Los\RateLimit\Exception\MissingRequirement;
@@ -130,7 +131,12 @@ class CreateTest extends TestCase
         $testCase = $this;
         $this->campaignRepositoryProphecy->findOneBy(['salesforceId' => '123CampaignId12345'])->will(fn() => $testCase->campaign);
 
+        $configurationProphecy = $this->prophesize(\Doctrine\ORM\Configuration::class);
+        $config = $configurationProphecy->reveal();
+        $configurationProphecy->getResultCacheImpl()->willReturn($this->createStub(CacheProvider::class));
+
         $this->entityManagerProphecy = $this->prophesize(EntityManagerInterface::class);
+        $this->entityManagerProphecy->getConfiguration()->willReturn($config);
         $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
 
         $this->diContainer()->set(CampaignRepository::class, $this->campaignRepositoryProphecy->reveal());
@@ -188,7 +194,6 @@ class CreateTest extends TestCase
         $donation = $this->getTestDonation(false, false);
 
         $app = $this->getAppInstance();
-        $this->diContainer()->get(DonationService::class)->setFakeDonationProviderForTestUseOnly(fn() => $donation);
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -221,6 +226,7 @@ class CreateTest extends TestCase
         // No change – campaign still has a charity without a Stripe Account ID.
         $campaignRepoProphecy->updateFromSf(Argument::type(Campaign::class))
             ->shouldBeCalledOnce();
+        $campaignRepoProphecy->findOneBy(['salesforceId' => '123CampaignId12345'])->willReturn($donation->getCampaign());
 
         $this->entityManagerProphecy->isOpen()->willReturn(true);
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledOnce();
@@ -232,7 +238,6 @@ class CreateTest extends TestCase
         $this->diContainer()->set(DonationRepository::class, $this->donationRepoProphecy->reveal());
         $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
         $this->diContainer()->set(Stripe::class, $this->stripeProphecy->reveal());
-        $this->diContainer()->get(DonationService::class)->setFakeDonationProviderForTestUseOnly(fn() => $donationToReturn);
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -261,9 +266,6 @@ class CreateTest extends TestCase
 
         $this->diContainer()->set(DonationRepository::class, $this->donationRepoProphecy->reveal());
         $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
-        $this->diContainer()->get(DonationService::class)->setFakeDonationProviderForTestUseOnly(
-            fn() => throw new UnexpectedValueException('Currency CAD is invalid for campaign')
-        );
 
         $data = $this->encode($donation);
         $request = $this->createRequest('POST', TestData\Identity::getTestPersonNewDonationEndpoint(), $data);
@@ -329,6 +331,8 @@ class CreateTest extends TestCase
             donation: $donationToReturn,
             skipEmExpectations: true,
         );
+        $this->setupFakeDonationProvider($donation);
+
         $this->campaignRepositoryProphecy->updateFromSf(Argument::type(Campaign::class))
             ->will(/**
              * @param array{0: Campaign} $args
@@ -442,7 +446,10 @@ class CreateTest extends TestCase
             donationPushed: true,
             donationMatched: true,
             donation: $donationToReturn,
+            skipEmExpectations: false,
         );
+        $this->setupFakeDonationProvider($donation);
+
         $expectedPaymentIntentArgs = [
             'automatic_payment_methods' => [
                 'enabled' => true,
@@ -533,7 +540,10 @@ class CreateTest extends TestCase
             donationPushed: true,
             donationMatched: true,
             donation: $donationToReturn,
+            skipEmExpectations: false,
         );
+        $this->setupFakeDonationProvider($donation);
+
         $expectedPaymentIntentArgs = [
             'amount' => 1311, // Pence including tip
             'currency' => 'gbp',
@@ -625,6 +635,7 @@ class CreateTest extends TestCase
             donationPushed: false,
             donationMatched: false,
             donation: $donationToReturn,
+            skipEmExpectations: true,
         );
         $this->stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
@@ -652,7 +663,10 @@ class CreateTest extends TestCase
             donationPushed: false,
             donationMatched: false,
             donation: $donationToReturn,
+            skipEmExpectations: false
         );
+        $this->setupFakeDonationProvider($donation);
+
         $this->stripeProphecy->createPaymentIntent(Argument::type('array'))
             ->shouldNotBeCalled();
 
@@ -693,7 +707,7 @@ class CreateTest extends TestCase
         $this->entityManagerProphecy->isOpen()->willReturn(true);
         // These are called once after initial ID setup and once after Stripe fields added.
         $this->entityManagerProphecy->persist(Argument::type(Donation::class))->shouldBeCalledTimes(2);
-        $this->entityManagerProphecy->flush()->shouldBeCalledTimes(2);
+        $this->entityManagerProphecy->flush()->shouldBeCalledTimes(3);
 
 
         $this->stripeProphecy->createPaymentIntent(Argument::type('array'))
@@ -704,15 +718,17 @@ class CreateTest extends TestCase
         $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
         $this->diContainer()->set(Stripe::class, $this->stripeProphecy->reveal());
+        $this->campaignRepositoryProphecy->findOneBy(['salesforceId' => '123CampaignId12345'])->willReturn(null);
 
+        $testCase = $this;
         $invocationCount = 0;
-        $this->diContainer()->get(DonationService::class)->setFakeDonationProviderForTestUseOnly(
-            function () use ($donation, &$invocationCount) {
+        $this->campaignRepositoryProphecy->pullNewFromSf('123CampaignId12345')->will(
+            function () use ($testCase, $donation, &$invocationCount) {
                 $invocationCount++;
                 if ($invocationCount > 1) {
-                    return $donation;
+                    return $donation->getCampaign();
                 }
-                throw $this->createStub(UniqueConstraintViolationException::class);
+                throw $testCase->createStub(UniqueConstraintViolationException::class);
             }
         );
 
@@ -757,7 +773,10 @@ class CreateTest extends TestCase
             donationPushed: true,
             donationMatched: false,
             donation: $donation,
+            skipEmExpectations: false,
         );
+        $this->setupFakeDonationProvider($donation);
+
         $this->stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
             ->willReturn(self::$somePaymentIntentResult)
             ->shouldBeCalledOnce();
@@ -807,7 +826,10 @@ class CreateTest extends TestCase
             donationPushed: true,
             donationMatched: false,
             donation: $donation,
+            skipEmExpectations: false,
         );
+        $this->setupFakeDonationProvider($donation);
+
         $this->stripeProphecy->createPaymentIntent(self::$somePaymentIntentArgs)
             ->willReturn(self::$somePaymentIntentResult)
             ->shouldBeCalledOnce();
@@ -854,6 +876,7 @@ class CreateTest extends TestCase
             donationPushed: false,
             donationMatched: false,
             donation: $donation,
+            skipEmExpectations: true,
         );
 
         $this->entityManagerProphecy->isOpen()->willReturn(true);
@@ -895,10 +918,10 @@ class CreateTest extends TestCase
         bool $donationPushed,
         bool $donationMatched,
         Donation $donation,
-        bool $skipEmExpectations = false,
+        bool $skipEmExpectations = false
     ): App {
         $app = $this->getAppInstance();
-        $donationRepoProphecy = $this->prophesize(DonationRepository::class);
+        $donationRepoProphecy = $this->donationRepoProphecy;
         $this->campaignRepositoryProphecy->findOneBy(['salesforceId' => '123CampaignId12345'])->willReturn($this->campaign);
 
         /**
@@ -939,7 +962,6 @@ class CreateTest extends TestCase
         $this->diContainer()->set(CampaignRepository::class, $this->campaignRepositoryProphecy->reveal());
         $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $this->diContainer()->set(RoutableMessageBus::class, $this->messageBusProphecy->reveal());
-        $this->diContainer()->get(DonationService::class)->setFakeDonationProviderForTestUseOnly(fn() => $donation);
 
         return $app;
     }
@@ -1036,5 +1058,10 @@ class CreateTest extends TestCase
         $customerSession->client_secret = 'customer_session_client_secret';
         $stripeProphecy->createCustomerSession(StripeCustomerId::of(self::PSPCUSTOMERID))
             ->willReturn($customerSession);
+    }
+
+    public function setupFakeDonationProvider(Donation $donation): void
+    {
+        $this->diContainer()->get(DonationService::class)->setFakeDonationProviderForTestUseOnly(fn() => $donation);
     }
 }

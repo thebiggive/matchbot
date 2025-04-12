@@ -76,6 +76,7 @@ class DonationService
     // https://docs.stripe.com/payments/payment-intents/asynchronous-capture#listen-webhooks
     // and MAT-395
     private const array ASYNC_CAPTURE_OPT_OUT = ['capture_method' => 'automatic'];
+    public const string STRIPE_DESTINATION_ACCOUNT_NEEDS_CAPABILITIES_MESSAGE = 'Your destination account needs to have at least one of the following capabilities enabled';
 
 
     /**
@@ -502,15 +503,14 @@ class DonationService
         $donation->checkPreAuthDateAllowsCollectionAt($now);
 
         try {
-            $intent = $this->stripe->createPaymentIntent($donation->createStripePaymentIntentPayload());
+            $payload = $donation->createStripePaymentIntentPayload();
+            $intent = $this->stripe->createPaymentIntent($payload);
         } catch (ApiErrorException $exception) {
             $message = $exception->getMessage();
 
             $accountLacksCapabilities = str_contains(
                 $message,
-                // this message is an issue the charity needs to fix, we can't fix it for them.
-                // We likely want to let the team know to hide the campaign from prominents views though.
-                'Your destination account needs to have at least one of the following capabilities enabled'
+                self::STRIPE_DESTINATION_ACCOUNT_NEEDS_CAPABILITIES_MESSAGE
             );
 
             $failureMessage = sprintf(
