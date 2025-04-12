@@ -680,13 +680,12 @@ class CreateTest extends TestCase
         $donation = $this->getTestDonation(true, true);
         $donation->setCharityFee('0.38'); // Calculator is tested elsewhere.
 
-        $donationToReturn = $donation;
-        $donationToReturn->setDonationStatus(DonationStatus::Pending);
-        $donationToReturn->addFundingWithdrawal(self::someWithdrawal($donation));
+        $donation->setDonationStatus(DonationStatus::Pending);
+        $donation->addFundingWithdrawal(self::someWithdrawal($donation));
 
         $app = $this->getAppInstance();
 
-        $this->campaignRepositoryProphecy->pullNewFromSf($donation->getCampaign()->getSalesforceId())->willReturn($this->campaign);
+        $this->campaignRepositoryProphecy->pullNewFromSf($donation->getCampaign()->getSalesforceId())->willReturn($donation->getCampaign());
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $donationRepoProphecy->allocateMatchFunds(Argument::type(Donation::class))->shouldBeCalledOnce();
@@ -705,8 +704,16 @@ class CreateTest extends TestCase
         $this->diContainer()->set(DonationRepository::class, $donationRepoProphecy->reveal());
         $this->diContainer()->set(EntityManagerInterface::class, $this->entityManagerProphecy->reveal());
         $this->diContainer()->set(Stripe::class, $this->stripeProphecy->reveal());
+
+        $invocationCount = 0;
         $this->diContainer()->get(DonationService::class)->setFakeDonationProviderForTestUseOnly(
-            fn() => (throw $this->createStub(UniqueConstraintViolationException::class))
+            function () use ($donation, &$invocationCount) {
+                $invocationCount++;
+                if ($invocationCount > 1) {
+                    return $donation;
+                }
+                throw $this->createStub(UniqueConstraintViolationException::class);
+            }
         );
 
         $data = $this->encode($donation);

@@ -126,11 +126,7 @@ class DonationService
         $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
 
         try {
-            if ($this->fakeDonationProviderForTestUseOnly) {
-                $donation = $this->fakeDonationProviderForTestUseOnly->__invoke();
-            } else {
-                $donation = $this->buildFromAppleSauceAPIRequest($donationData, $donorId);
-            }
+            $donation = $this->buildFromAPIRequest($donationData, $donorId);
         } catch (\UnexpectedValueException $e) {
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $e->getMessage());
@@ -148,7 +144,7 @@ class DonationService
                 $donationData->projectId->value,
             ));
 
-            $donation = $this->buildFromAppleSauceAPIRequest($donationData, $donorId);
+            $donation = $this->buildFromAPIRequest($donationData, $donorId, false);
         }
 
         if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
@@ -175,8 +171,15 @@ class DonationService
      * @throws \UnexpectedValueException if inputs invalid, including projectId being unrecognised
      * @throws NotFoundException
      */
-    public function buildFromAppleSauceAPIRequest(DonationCreate $donationData, PersonId $donorId): Donation
+    public function buildFromAPIRequest(DonationCreate $donationData, PersonId $donorId, bool $useFake = true): Donation
     {
+        // can't work out why one test (testSuccessWithMatchedCampaignAndInitialCampaignDuplicateError)
+        // is failing if we don't pass useFake false here - the verison on develop seems to also return a
+        // donation object passed in from the test case on the second invocation.
+
+        if ($this->fakeDonationProviderForTestUseOnly && $useFake) {
+            return $this->fakeDonationProviderForTestUseOnly->__invoke();
+        }
 
         if (!in_array($donationData->psp, ['stripe'], true)) {
             throw new \UnexpectedValueException(sprintf(
