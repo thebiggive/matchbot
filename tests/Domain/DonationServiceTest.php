@@ -99,12 +99,7 @@ class DonationServiceTest extends TestCase
         $donationCreate = $this->getDonationCreate();
         $donation = $this->getDonation();
 
-        /** @psalm-suppress DeprecatedMethod */
-        $this->donationRepoProphecy->buildFromApiRequest(
-            $donationCreate,
-            Argument::type(PersonId::class),
-            Argument::type(DonationService::class)
-        )->willReturn($donation);
+        $this->sut->setFakeDonationProviderForTestUseOnly(fn() => $donation);
 
         $this->chatterProphecy->send(
             new ChatMessage(
@@ -146,7 +141,8 @@ class DonationServiceTest extends TestCase
         $donationCreate = $this->getDonationCreate();
         $donation = $this->getDonation();
 
-        $this->donationRepoProphecy->buildFromApiRequest($donationCreate, Argument::type(PersonId::class), Argument::type(DonationService::class))->willReturn($donation);
+        $this->sut->setFakeDonationProviderForTestUseOnly(fn() => $donation);
+
         $this->stripeProphecy->createPaymentIntent(Argument::any())
             ->willReturn($this->prophesize(\Stripe\PaymentIntent::class)->reveal());
 
@@ -340,7 +336,7 @@ class DonationServiceTest extends TestCase
         );
 
         $donation = $this->getDonationService(campaignRepoProphecy: $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload, PersonId::nil());
+            ->buildFromAppleSauceAPIRequest($createPayload, PersonId::nil());
 
         $this->assertEquals('USD', $donation->currency()->isoCode());
         $this->assertEquals('123', $donation->getAmount());
@@ -378,7 +374,7 @@ class DonationServiceTest extends TestCase
             campaignRepoProphecy: $campaignRepoProphecy,
             fundRepoProphecy: $fundRepositoryProphecy
         )
-            ->buildFromApiRequest(
+            ->buildFromAppleSauceAPIRequest(
                 $createPayload,
                 PersonId::nil(),
             );
@@ -409,6 +405,6 @@ class DonationServiceTest extends TestCase
         );
 
         $this->getDonationService(campaignRepoProphecy: $campaignRepoProphecy)
-            ->buildFromApiRequest($createPayload, PersonId::nil());
+            ->buildFromAppleSauceAPIRequest($createPayload, PersonId::nil());
     }
 }

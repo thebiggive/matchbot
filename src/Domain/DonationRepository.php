@@ -18,11 +18,6 @@ use Symfony\Component\Messenger\MessageBusInterface;
 interface DonationRepository
 {
     /**
-     *
-     * @deprecated - use {@see DonationService::buildFromAPIRequest() directly instead}
-     */public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId, DonationService $donationService): Donation;
-
-    /**
      * Create all funding allocations, with `FundingWithdrawal` links to this donation, and safely update the funds'
      * available amount figures.
      *
