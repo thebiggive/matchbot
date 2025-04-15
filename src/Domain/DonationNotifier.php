@@ -58,8 +58,8 @@ class DonationNotifier
                 $createAccountUri = sprintf(
                     '%s/register?c=%s&u=%s',
                     $donateBaseUri,
-                    $personId->id,
                     $emailVerificationToken->randomCode,
+                    $personId->id,
                 );
             }
         }
