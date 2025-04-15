@@ -134,6 +134,7 @@ class RetrospectivelyMatch extends LockingCommand
         // campaigns processed above, even if the previous work took a long time.
         $funds = $this->fundRepository->findForCampaignsClosedSince(new DateTime('now'), $oneHourBeforeExecStarted);
         foreach ($funds as $fund) {
+            // TODO maybe: could skip pledges to reduce load, until we are doing something with the info.
             $this->bus->dispatch(new Envelope(FundTotalUpdated::fromFund($fund)));
         }
 

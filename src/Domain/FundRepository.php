@@ -215,6 +215,31 @@ EOT;
     }
 
     /**
+     * @param DateTime $openAtDate Typically now
+     * @return Fund[]
+     */
+    public function findForCampaignsOpenAt(DateTime $openAtDate): array
+    {
+        $query = <<<EOT
+            SELECT fund FROM MatchBot\Domain\Fund fund
+            JOIN fund.campaignFundings campaignFunding
+            JOIN campaignFunding.campaigns campaign
+            WHERE
+                campaign.startDate < :openAtDate AND
+                campaign.endDate > :openAtDate
+            GROUP BY fund
+        EOT;
+
+        /** @var Fund[] $result */
+        $result = $this->getEntityManager()->createQuery($query)
+            ->setParameter('openAtDate', $openAtDate)
+            ->disableResultCache()
+            ->getResult();
+
+        return $result;
+    }
+
+    /**
      * Get live data for the object (which might be empty apart from the Salesforce ID) and return a full object.
      * No need to `setSalesforceLastPull()`, or EM `persist()` - just populate the fields specific to the object.
      *
