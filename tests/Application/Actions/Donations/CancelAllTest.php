@@ -12,6 +12,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\Application\Auth\IdentityTokenTest;
@@ -183,6 +184,7 @@ class CancelAllTest extends TestCase
         $container->set(EntityManagerInterface::class, $entityManagerProphecy->reveal());
         $container->set(CampaignRepository::class, $this->prophesize(CampaignRepository::class)->reveal());
         $container->set(DonorAccountRepository::class, $this->prophesize(DonorAccountRepository::class)->reveal());
+        $container->set(FundRepository::class, $this->createStub(FundRepository::class));
 
         if ($stripeProphecy !== null) {
             $container->set(Stripe::class, $stripeProphecy->reveal());

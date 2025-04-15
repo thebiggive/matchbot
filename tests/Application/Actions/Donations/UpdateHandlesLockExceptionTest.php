@@ -21,6 +21,7 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -212,6 +213,7 @@ class UpdateHandlesLockExceptionTest extends TestCase
             new DonationService(
                 donationRepository: $donationRepository,
                 campaignRepository: $this->createStub(CampaignRepository::class),
+                fundRepository: $this->createStub(FundRepository::class),
                 logger: new NullLogger(),
                 entityManager: $entityManager,
                 stripe: $this->createStub(Stripe::class),

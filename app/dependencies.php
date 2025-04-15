@@ -43,6 +43,7 @@ use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
@@ -574,6 +575,7 @@ return function (ContainerBuilder $containerBuilder) {
                 return new DonationService(
                     donationRepository: $c->get(DonationRepository::class),
                     campaignRepository: $c->get(CampaignRepository::class),
+                    fundRepository: $c->get(FundRepository::class),
                     logger: $c->get(LoggerInterface::class),
                     entityManager: $c->get(EntityManagerInterface::class),
                     stripe: $c->get(\MatchBot\Client\Stripe::class),
