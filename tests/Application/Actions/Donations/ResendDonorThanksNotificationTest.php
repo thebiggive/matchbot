@@ -30,7 +30,6 @@ class ResendDonorThanksNotificationTest extends TestCase
         $sut = new ResendDonorThanksNotification(
             $donationRepositoryProphecy->reveal(),
             $notifierProphecy->reveal(),
-            $this->createStub(DonorAccountRepository::class),
             new NullLogger(),
         );
 

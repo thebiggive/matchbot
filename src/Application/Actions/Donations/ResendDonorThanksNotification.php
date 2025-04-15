@@ -26,7 +26,6 @@ class ResendDonorThanksNotification extends Action
     public function __construct(
         private DonationRepository $donationRepository,
         private DonationNotifier $donationNotifier,
-        private DonorAccountRepository $donorAccountRepository,
         LoggerInterface $logger,
     ) {
         parent::__construct($logger);

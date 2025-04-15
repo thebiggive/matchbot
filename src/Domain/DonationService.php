@@ -740,7 +740,7 @@ class DonationService
             // each individual donation.
             $this->donationNotifier->notifyDonorOfDonationSuccess(
                 donation: $donation,
-                sendRegisterUri: $this->donorAccountRepository->shouldInviteRegistration($donation),
+                sendRegisterUri: $this->shouldInviteRegistration($donation),
             );
         }
     }
@@ -833,5 +833,18 @@ class DonationService
                 throw new StripeAccountIdNotSetForAccount();
             }
         }
+    }
+
+    private function shouldInviteRegistration(Donation $donation): bool
+    {
+        $donorId = $donation->getDonorId();
+        if (!$donorId) {
+            // must be an old donation
+            return false;
+        }
+
+        // Identity sends key info for MB DonorAccount iff a password was set via \Messages\Person, so
+        // we can use record existence to decide whether to send a register link.
+        return $this->donorAccountRepository->findByPersonId($donorId) === null;
     }
 }
