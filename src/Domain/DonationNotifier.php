@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Email\EmailMessage;
+use MatchBot\Application\Environment;
 use MatchBot\Client\Mailer;
 
 class DonationNotifier
@@ -52,12 +53,15 @@ class DonationNotifier
 
         $createAccountUri = null;
         if ($emailVerificationToken) {
-            $createAccountUri = sprintf(
-                '%s/register?c=%d&u=%s',
-                $donateBaseUri,
-                $donation->getDonorUuid()->toString(), // TODO add getter once field-adding PR merged
-                $emailVerificationToken->randomCode,
-            );
+            $personId = $donation->getDonorId();
+            if ($personId) {
+                $createAccountUri = sprintf(
+                    '%s/register?c=%d&u=%s',
+                    $donateBaseUri,
+                    $personId->id,
+                    $emailVerificationToken->randomCode,
+                );
+            }
         }
 
         return EmailMessage::donorDonationSuccess($emailAddress, [
@@ -118,7 +122,7 @@ class DonationNotifier
         Assertion::notNull($emailAddress);
 
         $emailVerificationToken = null;
-        if ($sendRegisterUri) {
+        if ($sendRegisterUri && ! Environment::current()->isProduction()) {
             $emailVerificationToken = $this->emailVerificationTokenRepository->findRecentTokenForEmailAddress(
                 $emailAddress,
                 $this->now,
