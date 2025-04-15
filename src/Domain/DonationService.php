@@ -97,6 +97,7 @@ class DonationService
      *
      * @param DonationCreate $donationData Details of the desired donation, as sent from the browser
      * @param string $pspCustomerId The Stripe customer ID of the donor
+     * @param PersonId $donorId
      *
      * @throws CampaignNotOpen
      * @throws CharityAccountLacksNeededCapaiblities
@@ -110,12 +111,12 @@ class DonationService
      * @throws WrongCampaignType
      * @throws \MatchBot\Client\NotFoundException
      */
-    public function createDonation(DonationCreate $donationData, string $pspCustomerId): Donation
+    public function createDonation(DonationCreate $donationData, string $pspCustomerId, PersonId $donorId): Donation
     {
         $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
 
         try {
-            $donation = $this->donationRepository->buildFromApiRequest($donationData);
+            $donation = $this->donationRepository->buildFromApiRequest($donationData, $donorId);
         } catch (\UnexpectedValueException $e) {
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $e->getMessage());
@@ -132,7 +133,7 @@ class DonationService
                 'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
                 $donationData->projectId->value,
             ));
-            $donation = $this->donationRepository->buildFromApiRequest($donationData);
+            $donation = $this->donationRepository->buildFromApiRequest($donationData, $donorId);
         }
 
         if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {

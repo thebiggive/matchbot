@@ -24,6 +24,7 @@ use MatchBot\Domain\DomainException\DonationCreateModelLoadFailure;
 use MatchBot\Domain\DomainException\StripeAccountIdNotSetForAccount;
 use MatchBot\Domain\DomainException\WrongCampaignType;
 use MatchBot\Domain\DonationService;
+use MatchBot\Domain\PersonId;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -55,9 +56,9 @@ class Create extends Action
         // as the person, and sets this attribute to the Stripe Customer ID based on JWS claims, all
         // in `PersonManagementAuthMiddleware`. If the legacy route was used or if no such ID was in the
         // JWS, this is null.
-        $customerId = $request->getAttribute(PersonWithPasswordAuthMiddleware::PSP_ATTRIBUTE_NAME);
-        \assert(is_string($customerId) || is_null($customerId));
-        if (! (is_string($customerId) && trim($customerId) !== '')) {
+        $pspCustomerId = $request->getAttribute(PersonManagementAuthMiddleware::PSP_ATTRIBUTE_NAME);
+        \assert(is_string($pspCustomerId) || is_null($pspCustomerId));
+        if (! (is_string($pspCustomerId) && trim($pspCustomerId) !== '')) {
             return $this->validationError(
                 $response,
                 "Customer ID required to create donation",
@@ -94,7 +95,14 @@ class Create extends Action
         }
 
         try {
-            $donation = $this->donationService->createDonation($donationData, $customerId);
+            $donorId = $request->getAttribute(PersonManagementAuthMiddleware::PERSON_ID_ATTRIBUTE_NAME);
+            \assert($donorId instanceof PersonId);
+
+            $donation = $this->donationService->createDonation(
+                $donationData,
+                $pspCustomerId,
+                $donorId
+            );
         } catch (RateLimitExceededException $e) {
             $retryDelaySeconds = ($e->getRetryAfter()->getTimestamp() - time());
             return $this->respond(

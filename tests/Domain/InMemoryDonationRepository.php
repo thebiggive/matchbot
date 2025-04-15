@@ -11,6 +11,7 @@ use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationSequenceNumber;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Domain\StripeCustomerId;
 use Ramsey\Uuid\UuidInterface;
@@ -105,7 +106,7 @@ class InMemoryDonationRepository implements DonationRepository
         $this->matchFundsReleased = bcadd($this->matchFundsReleased, $donation->getAmount());
     }
 
-    #[\Override] public function buildFromApiRequest(DonationCreate $donationData): Donation
+    #[\Override] public function buildFromApiRequest(DonationCreate $donationData, PersonId $donorId): Donation
     {
         throw new \Exception("Method not implemented in test double");
     }

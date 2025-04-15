@@ -310,6 +310,7 @@ class TestCase extends PHPUnitTestCase
             homeAddress: null,
             homePostcode: null,
             billingPostcode: null,
+            donorId: PersonId::of(Uuid::NIL),
         );
 
         $donation->setUuid($uuid ?? Uuid::uuid4());
