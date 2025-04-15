@@ -72,7 +72,6 @@ class DonationNotifierTest extends TestCase
                     'charityPhoneNumber' => '0191 498 0000',
                     'charityEmailAddress' => 'charity@charitiesareus.com',
                     'charityPostalAddress' => 'anyone, pretty how town, (with up so floating many bells down), SSAU, sun moon stars rain',
-                    'emailVerificationToken' => '123456',
                 ]
             ],
             [$emailCommand->templateKey, $emailCommand->emailAddress->email, $emailCommand->params]
