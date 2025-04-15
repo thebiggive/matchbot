@@ -134,6 +134,7 @@ class DonationService
 
             throw new DonationCreateModelLoadFailure(previous: $e);
         } catch (UniqueConstraintViolationException) {
+            $this->logger->error('Unique Constraint Vio caught, will retry but expecting EM closed error');
             // If we get this, the most likely explanation is that another donation request
             // created the same campaign a very short time before this request tried to. We
             // saw this 3 times in the opening minutes of CC20 on 1 Dec 2020.
@@ -200,6 +201,11 @@ class DonationService
                 $this->logger->error("Pull error for campaign ID {$donationData->projectId}: {$exception->getMessage()}");
                 throw new \UnexpectedValueException('Campaign does not exist');
             }
+
+            if ($this->clock->now() > new \DateTimeImmutable("Wed Apr 16 10:00:00 AM BST 2025")) {
+                $this->logger->error("Unexpected individual campaign {$campaign->getSalesforceId()} pulled from SF - should have been prewarmed");
+            }
+
             $this->fundRepository->pullForCampaign($campaign);
 
             $this->entityManager->flush();
