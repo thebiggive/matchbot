@@ -923,6 +923,10 @@ class DonationService
             return false;
         }
 
+        // In most cases if there is already a donor account then identity wouldn't have sent us a token so
+        // we wouldn't be able to invite registration here anway. But we need this check in case there is a recent
+        // token from just before the donor registered their account very recently.
+
         // Identity sends key info for MB DonorAccount iff a password was set via \Messages\Person, so
         // we can use record existence to decide whether to send a register link.
         return $this->donorAccountRepository->findByPersonId($donorId) === null;
