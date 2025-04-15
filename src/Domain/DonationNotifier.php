@@ -56,7 +56,7 @@ class DonationNotifier
             $personId = $donation->getDonorId();
             if ($personId) {
                 $createAccountUri = sprintf(
-                    '%s/register?c=%d&u=%s',
+                    '%s/register?c=%s&u=%s',
                     $donateBaseUri,
                     $personId->id,
                     $emailVerificationToken->randomCode,
