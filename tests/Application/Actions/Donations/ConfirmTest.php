@@ -19,6 +19,7 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\StripeConfirmationTokenId;
 use MatchBot\Tests\TestCase;
@@ -91,6 +92,7 @@ class ConfirmTest extends TestCase
                 donorAccountRepository: $this->createStub(DonorAccountRepository::class),
                 bus: $this->createStub(RoutableMessageBus::class),
                 donationNotifier: $this->createStub(DonationNotifier::class),
+                fundRepository: $this->createStub(FundRepository::class),
             )
         );
     }

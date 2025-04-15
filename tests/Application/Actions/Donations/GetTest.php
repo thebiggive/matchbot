@@ -9,6 +9,7 @@ use MatchBot\Application\Auth\DonationToken;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Tests\Application\DonationTestDataTrait;
 use MatchBot\Tests\Domain\InMemoryDonationRepository;
 use MatchBot\Tests\TestCase;
@@ -34,6 +35,7 @@ class GetTest extends TestCase
         $container->set(DonationRepository::class, $this->donationRepository);
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
         $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
+        $container->set(FundRepository::class, $this->createStub(FundRepository::class));
     }
 
     public function testMissingId(): void

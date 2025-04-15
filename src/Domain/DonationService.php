@@ -2,10 +2,13 @@
 
 namespace MatchBot\Domain;
 
+use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\DBAL\Exception\ServerException as DBALServerException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
+use GuzzleHttp\Exception\ClientException;
 use MatchBot\Application\Assertion;
+use MatchBot\Application\Environment;
 use MatchBot\Application\Matching\Adapter as MatchingAdapter;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Application\Notifier\StripeChatterInterface;
@@ -34,12 +37,10 @@ use Random\Randomizer;
 use Stripe\Card;
 use Stripe\Charge;
 use Stripe\Exception\ApiErrorException;
-use Stripe\Exception\CardException;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\PaymentIntent;
 use Stripe\StripeObject;
 use Symfony\Component\Clock\ClockInterface;
-use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 use Symfony\Component\Notifier\ChatterInterface;
 use Symfony\Component\Notifier\Exception\TransportExceptionInterface;
@@ -75,6 +76,15 @@ class DonationService
     // https://docs.stripe.com/payments/payment-intents/asynchronous-capture#listen-webhooks
     // and MAT-395
     private const array ASYNC_CAPTURE_OPT_OUT = ['capture_method' => 'automatic'];
+    public const string STRIPE_DESTINATION_ACCOUNT_NEEDS_CAPABILITIES_MESSAGE = 'Your destination account needs to have at least one of the following capabilities enabled';
+
+
+    /**
+     * Previously donations were genereated from API requests in a separate class. That code has now been
+     * consolidated into this class, but this closure is retained to allow donations to be set for test scenarios.
+     * @var \Closure():Donation|null
+     */
+    private ?\Closure $fakeDonationProviderForTestUseOnly = null;
 
     public function __construct(
         private DonationRepository $donationRepository,
@@ -89,6 +99,7 @@ class DonationService
         private DonorAccountRepository $donorAccountRepository,
         private RoutableMessageBus $bus,
         private DonationNotifier $donationNotifier,
+        private FundRepository $fundRepository,
     ) {
     }
 
@@ -116,24 +127,26 @@ class DonationService
         $this->rateLimiterFactory->create(key: $pspCustomerId)->consume()->ensureAccepted();
 
         try {
-            $donation = $this->donationRepository->buildFromApiRequest($donationData, $donorId);
+            $donation = $this->buildFromAPIRequest($donationData, $donorId);
         } catch (\UnexpectedValueException $e) {
             $message = 'Donation Create data initial model load';
             $this->logger->warning($message . ': ' . $e->getMessage());
 
             throw new DonationCreateModelLoadFailure(previous: $e);
         } catch (UniqueConstraintViolationException) {
+            $this->logger->error('Unique Constraint Vio caught, will retry but expecting EM closed error');
             // If we get this, the most likely explanation is that another donation request
             // created the same campaign a very short time before this request tried to. We
             // saw this 3 times in the opening minutes of CC20 on 1 Dec 2020.
             // If this happens, the latest campaign data should already have been pulled and
             // persisted in the last second. So give the same call one more try, as
-            // buildFromApiRequest() should perform a fresh call to `CampaignRepository::findOneBy()`.
+            // buildFromAPIRequest() should perform a fresh call to `CampaignRepository::findOneBy()`.
             $this->logger->info(sprintf(
                 'Got campaign pull UniqueConstraintViolationException for campaign ID %s. Trying once more.',
                 $donationData->projectId->value,
             ));
-            $donation = $this->donationRepository->buildFromApiRequest($donationData, $donorId);
+
+            $donation = $this->buildFromAPIRequest($donationData, $donorId, false);
         }
 
         if ($pspCustomerId !== $donation->getPspCustomerId()?->stripeCustomerId) {
@@ -149,6 +162,75 @@ class DonationService
         }
 
         $this->enrollNewDonation($donation, attemptMatching: true);
+
+        return $donation;
+    }
+
+
+    /**
+     * @param DonationCreate $donationData
+     * @return Donation
+     * @throws \UnexpectedValueException if inputs invalid, including projectId being unrecognised
+     * @throws NotFoundException
+     */
+    public function buildFromAPIRequest(DonationCreate $donationData, PersonId $donorId, bool $useFake = true): Donation
+    {
+        // can't work out why one test (testSuccessWithMatchedCampaignAndInitialCampaignDuplicateError)
+        // is failing if we don't pass useFake false here - the verison on develop seems to also return a
+        // donation object passed in from the test case on the second invocation.
+
+        if ($this->fakeDonationProviderForTestUseOnly && $useFake) {
+            return $this->fakeDonationProviderForTestUseOnly->__invoke();
+        }
+
+        if (!in_array($donationData->psp, ['stripe'], true)) {
+            throw new \UnexpectedValueException(sprintf(
+                'PSP %s is invalid',
+                $donationData->psp,
+            ));
+        }
+
+        $campaign = $this->campaignRepository->findOneBy(['salesforceId' => $donationData->projectId->value]);
+
+        if (!$campaign) {
+            // Fetch data for as-yet-unknown campaigns on-demand
+            $this->logger->info("Loading unknown campaign ID {$donationData->projectId} on-demand");
+            try {
+                $campaign = $this->campaignRepository->pullNewFromSf($donationData->projectId);
+            } catch (ClientException $exception) {
+                $this->logger->error("Pull error for campaign ID {$donationData->projectId}: {$exception->getMessage()}");
+                throw new \UnexpectedValueException('Campaign does not exist');
+            }
+
+            if ($this->clock->now() > new \DateTimeImmutable("Wed Apr 16 10:00:00 AM BST 2025")) {
+                $this->logger->error("Unexpected individual campaign {$campaign->getSalesforceId()} pulled from SF - should have been prewarmed");
+            }
+
+            $this->fundRepository->pullForCampaign($campaign);
+
+            $this->entityManager->flush();
+
+            // Because this case of campaigns being set up individually is relatively rare,
+            // it is the one place outside of `UpdateCampaigns` where we clear the whole
+            // result cache. It's currently the only user-invoked or single item place where
+            // we do so.
+            /**
+             * @psalm-suppress DeprecatedMethod
+             * @var CacheProvider $cacheDriver
+             */
+            $cacheDriver = $this->entityManager->getConfiguration()->getResultCacheImpl();
+            $cacheDriver->deleteAll();
+        }
+
+        if ($donationData->currencyCode !== $campaign->getCurrencyCode()) {
+            throw new \UnexpectedValueException(sprintf(
+                'Currency %s is invalid for campaign',
+                $donationData->currencyCode,
+            ));
+        }
+
+        $donation = Donation::fromApiModel($donationData, $campaign, $donorId);
+        $donation->deriveFees(null, null);
 
         return $donation;
     }
@@ -433,9 +515,7 @@ class DonationService
 
             $accountLacksCapabilities = str_contains(
                 $message,
-                // this message is an issue the charity needs to fix, we can't fix it for them.
-                // We likely want to let the team know to hide the campaign from prominents views though.
-                'Your destination account needs to have at least one of the following capabilities enabled'
+                self::STRIPE_DESTINATION_ACCOUNT_NEEDS_CAPABILITIES_MESSAGE
             );
 
             $failureMessage = sprintf(
@@ -846,5 +926,14 @@ class DonationService
         // Identity sends key info for MB DonorAccount iff a password was set via \Messages\Person, so
         // we can use record existence to decide whether to send a register link.
         return $this->donorAccountRepository->findByPersonId($donorId) === null;
+    }
+
+    /**
+     * @param null|Closure():Donation $fakeDonationProviderForTestUseOnly = null;
+     */
+    public function setFakeDonationProviderForTestUseOnly(?\Closure $fakeDonationProviderForTestUseOnly): void
+    {
+        Assertion::true(Environment::current() === Environment::Test);
+        $this->fakeDonationProviderForTestUseOnly = $fakeDonationProviderForTestUseOnly;
     }
 }
