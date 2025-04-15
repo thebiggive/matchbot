@@ -63,9 +63,13 @@ class ResendDonorThanksNotification extends Action
             throw new BadRequestException('Donation status is not successful');
         }
 
+        // We can't invite donor to register based on an old donation - donation based registration only works
+        // for new person records in identity and new email verification tokens.
+        $sendRegisterUri = false;
+
         $this->donationNotifier->notifyDonorOfDonationSuccess(
             donation: $donation,
-            sendRegisterUri: $this->donorAccountRepository->shouldInviteRegistration($donation),
+            sendRegisterUri: $sendRegisterUri,
             to: $toEmailAddress,
         );
 

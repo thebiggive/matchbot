@@ -562,11 +562,19 @@ return function (ContainerBuilder $containerBuilder) {
 
         DonationNotifier::class =>
             static function (ContainerInterface $c): DonationNotifier {
+            // todo - make a settings class.
+                $settings = $c->get('settings');
+                \assert(is_array($settings));
+                $donateSettings = $settings['donate'];
+                \assert(is_array($donateSettings));
+                $donateBaseUri = $donateSettings['baseUri'];
+                \assert(is_string($donateBaseUri));
+
                 return new DonationNotifier(
                     mailer: $c->get(Client\Mailer::class),
                     emailVerificationTokenRepository: $c->get(EmailVerificationTokenRepository::class),
                     now: new \DateTimeImmutable('now'),
-                    donateBaseUri: $c->get('settings')['donate']['baseUri'],
+                    donateBaseUri: $donateBaseUri,
                 );
             },
 

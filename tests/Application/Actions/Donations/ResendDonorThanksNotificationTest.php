@@ -38,7 +38,7 @@ class ResendDonorThanksNotificationTest extends TestCase
 
         $notifierProphecy->notifyDonorOfDonationSuccess(
             $donation,
-            true,
+            false,
             EmailAddress::of('new-email@example.com')
         )->shouldBeCalled();
 
