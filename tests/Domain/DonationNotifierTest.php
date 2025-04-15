@@ -2,9 +2,7 @@
 
 namespace MatchBot\Tests\Domain;
 
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonorName;
@@ -13,8 +11,6 @@ use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\PostalAddress;
-use MatchBot\Domain\Salesforce18Id;
-use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Tests\TestCase;
 
 class DonationNotifierTest extends TestCase
@@ -27,7 +23,7 @@ class DonationNotifierTest extends TestCase
             tipAmount: '2',
         );
 
-        $emailCommand = DonationNotifier::emailMessageForCollectedDonation($donation);
+        $emailCommand = DonationNotifier::emailMessageForCollectedDonation($donation, 'https://donate.example.org');
 
         $this->assertEquals(
             [
@@ -44,6 +40,7 @@ class DonationNotifierTest extends TestCase
                     'charityNumber' => 'Reg-no',
                     'charityIsExempt' => false,
                     'charityRegistrationAuthority' => 'Charity Commission for England and Wales',
+                    'createAccountUri' => null,
                     'currencyCode' => 'GBP',
 
                     'donationAmount' => 10.0,

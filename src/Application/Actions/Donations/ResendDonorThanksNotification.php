@@ -9,6 +9,7 @@ use MatchBot\Client\BadRequestException;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
+use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\EmailAddress;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -22,8 +23,11 @@ use Slim\Exception\HttpBadRequestException;
  */
 class ResendDonorThanksNotification extends Action
 {
-    public function __construct(private DonationRepository $donationRepository, private DonationNotifier $donationNotifier, LoggerInterface $logger)
-    {
+    public function __construct(
+        private DonationRepository $donationRepository,
+        private DonationNotifier $donationNotifier,
+        LoggerInterface $logger,
+    ) {
         parent::__construct($logger);
     }
 
@@ -58,7 +62,15 @@ class ResendDonorThanksNotification extends Action
             throw new BadRequestException('Donation status is not successful');
         }
 
-        $this->donationNotifier->notifyDonorOfDonationSuccess($donation, $toEmailAddress);
+        // We can't invite donor to register based on an old donation - donation based registration only works
+        // for new person records in identity and new email verification tokens.
+        $sendRegisterUri = false;
+
+        $this->donationNotifier->notifyDonorOfDonationSuccess(
+            donation: $donation,
+            sendRegisterUri: $sendRegisterUri,
+            to: $toEmailAddress,
+        );
 
         return new JsonResponse(['message' => 'Notification sent to donor for ' . $donation->__toString()], 200);
     }

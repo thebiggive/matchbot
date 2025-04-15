@@ -43,6 +43,7 @@ use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\EmailVerificationTokenRepository;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
@@ -557,6 +558,24 @@ return function (ContainerBuilder $containerBuilder) {
                 return new Auth\SalesforceAuthMiddleware(
                     sfApiKey: $c->get('settings')['salesforce']['apiKey'],
                     logger: $c->get(LoggerInterface::class)
+                );
+            },
+
+        DonationNotifier::class =>
+            static function (ContainerInterface $c): DonationNotifier {
+            // todo - make a settings class.
+                $settings = $c->get('settings');
+                \assert(is_array($settings));
+                $donateSettings = $settings['donate'];
+                \assert(is_array($donateSettings));
+                $donateBaseUri = $donateSettings['baseUri'];
+                \assert(is_string($donateBaseUri));
+
+                return new DonationNotifier(
+                    mailer: $c->get(Client\Mailer::class),
+                    emailVerificationTokenRepository: $c->get(EmailVerificationTokenRepository::class),
+                    now: new \DateTimeImmutable('now'),
+                    donateBaseUri: $donateBaseUri,
                 );
             },
 

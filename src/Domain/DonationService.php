@@ -810,7 +810,6 @@ class DonationService
             chargeCreationTimestamp: $charge->created,
         );
 
-
         $dateTimeImmutable = $donation->getCollectedAt();
 
         if (
@@ -819,8 +818,10 @@ class DonationService
         ) {
             // Regular giving donors get an email confirming the setup of the mandate, but not an email for
             // each individual donation.
-
-            $this->donationNotifier->notifyDonorOfDonationSuccess($donation);
+            $this->donationNotifier->notifyDonorOfDonationSuccess(
+                donation: $donation,
+                sendRegisterUri: $this->shouldInviteRegistration($donation),
+            );
         }
     }
 
@@ -912,6 +913,23 @@ class DonationService
                 throw new StripeAccountIdNotSetForAccount();
             }
         }
+    }
+
+    private function shouldInviteRegistration(Donation $donation): bool
+    {
+        $donorId = $donation->getDonorId();
+        if (!$donorId) {
+            // must be an old donation
+            return false;
+        }
+
+        // In most cases if there is already a donor account then identity wouldn't have sent us a token so
+        // we wouldn't be able to invite registration here anway. But we need this check in case there is a recent
+        // token from just before the donor registered their account very recently.
+
+        // Identity sends key info for MB DonorAccount iff a password was set via \Messages\Person, so
+        // we can use record existence to decide whether to send a register link.
+        return $this->donorAccountRepository->findByPersonId($donorId) === null;
     }
 
     /**
