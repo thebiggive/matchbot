@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use DateTimeImmutable;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching;
@@ -218,7 +219,7 @@ EOT;
      * @param DateTime $openAtDate Typically now
      * @return Fund[]
      */
-    public function findForCampaignsOpenAt(DateTime $openAtDate): array
+    public function findForCampaignsOpenAt(DateTimeImmutable $openAtDate): array
     {
         $query = <<<EOT
             SELECT fund FROM MatchBot\Domain\Fund fund

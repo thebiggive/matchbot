@@ -4,7 +4,6 @@ namespace MatchBot\Application\Commands;
 
 use MatchBot\Application\Messenger\FundTotalUpdated;
 use MatchBot\Domain\FundRepository;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -22,7 +21,6 @@ class PushDailyFundTotals extends LockingCommand
 {
     public function __construct(
         private readonly FundRepository $fundRepository,
-        private readonly LoggerInterface $logger,
         private readonly RoutableMessageBus $bus,
     ) {
         parent::__construct();
@@ -30,7 +28,7 @@ class PushDailyFundTotals extends LockingCommand
 
     public function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $funds = $this->fundRepository->findForCampaignsOpenAt(new \DateTime('now'));
+        $funds = $this->fundRepository->findForCampaignsOpenAt(new \DateTimeImmutable('now'));
         foreach ($funds as $fund) {
             if ($fund->getFundType()->isPledge()) {
                 // Skip pledges from daily total push as Salesforce doesn't yet do anything with that info
@@ -41,7 +39,7 @@ class PushDailyFundTotals extends LockingCommand
             $this->bus->dispatch(new Envelope(FundTotalUpdated::fromFund($fund)));
         }
 
-        $this->logger->info(sprintf('Pushed %d fund totals to Salesforce for open campaigns', count($funds)));
+        $output->writeln(sprintf('Pushed %d fund totals to Salesforce for open campaigns', count($funds)));
 
         return 0;
     }
