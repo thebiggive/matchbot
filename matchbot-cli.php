@@ -14,6 +14,7 @@ use MatchBot\Application\Commands\HandleOutOfSyncFunds;
 use MatchBot\Application\Commands\LockingCommand;
 use MatchBot\Application\Commands\PullIndividualCampaignFromSF;
 use MatchBot\Application\Commands\PullMetaCampaignFromSF;
+use MatchBot\Application\Commands\PushDailyFundTotals;
 use MatchBot\Application\Commands\PushDonations;
 use MatchBot\Application\Commands\RedistributeMatchFunds;
 use MatchBot\Application\Commands\ResetMatching;
@@ -51,6 +52,7 @@ $commands = array_map($psr11App->get(...), [
 
     PullIndividualCampaignFromSF::class,
     PullMetaCampaignFromSF::class,
+    PushDailyFundTotals::class,
     PushDonations::class,
     RedistributeMatchFunds::class,
 

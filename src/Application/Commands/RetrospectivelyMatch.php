@@ -33,6 +33,8 @@ use Symfony\Component\Notifier\Message\ChatMessage;
  * 1. Redistributes any match funds to higher allocation order funds (e.g. from champion funds to pledges) if appropriate.
  * 2. If running without --days-back and campaigns just closed, pushes their funds' amounts used to Salesforce.
  *
+ * @see PushDailyFundTotals which does similar to (2) but for all open campaigns, typically scheduled daily.
+ *
  * If not argument (number of days) is given, campaigns which closed within the last hour are checked
  * and all of their donations are eligible for matching.
  */
@@ -134,6 +136,7 @@ class RetrospectivelyMatch extends LockingCommand
         // campaigns processed above, even if the previous work took a long time.
         $funds = $this->fundRepository->findForCampaignsClosedSince(new DateTime('now'), $oneHourBeforeExecStarted);
         foreach ($funds as $fund) {
+            // TODO maybe: could skip pledges to reduce load, until we are doing something with the info.
             $this->bus->dispatch(new Envelope(FundTotalUpdated::fromFund($fund)));
         }
 
