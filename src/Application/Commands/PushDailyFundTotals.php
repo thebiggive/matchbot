@@ -5,11 +5,19 @@ namespace MatchBot\Application\Commands;
 use MatchBot\Application\Messenger\FundTotalUpdated;
 use MatchBot\Domain\FundRepository;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\RoutableMessageBus;
 
+/**
+ * @see RetrospectivelyMatch which does a similar thing for just-closed campaigns as one of the last campaign close tasks.
+ */
+#[AsCommand(
+    name: 'matchbot:push-daily-fund-totals',
+    description: 'Pushes champion funds used totals to Salesforce, for all associated with open campaigns'
+)]
 class PushDailyFundTotals extends LockingCommand
 {
     public function __construct(
