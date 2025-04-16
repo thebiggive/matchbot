@@ -179,6 +179,10 @@
             "php matchbot-cli.php matchbot:unpaid-donations-check"
         ],
         "matchbot:list-commands": "php matchbot-cli.php list",
+        "matchbot:push-daily-fund-totals": [
+            "Composer\\Config::disableProcessTimeout",
+            "php matchbot-cli.php matchbot:push-daily-fund-totals"
+        ],
         "matchbot:push-donations": [
             "Composer\\Config::disableProcessTimeout",
             "php matchbot-cli.php matchbot:push-donations"

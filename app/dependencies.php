@@ -43,6 +43,8 @@ use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\EmailVerificationTokenRepository;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Monolog\Handler\SlackHandler;
 use MatchBot\Monolog\Processor\AwsTraceIdProcessor;
 use Mezzio\ProblemDetails\ProblemDetailsResponseFactory;
@@ -559,6 +561,24 @@ return function (ContainerBuilder $containerBuilder) {
                 );
             },
 
+        DonationNotifier::class =>
+            static function (ContainerInterface $c): DonationNotifier {
+            // todo - make a settings class.
+                $settings = $c->get('settings');
+                \assert(is_array($settings));
+                $donateSettings = $settings['donate'];
+                \assert(is_array($donateSettings));
+                $donateBaseUri = $donateSettings['baseUri'];
+                \assert(is_string($donateBaseUri));
+
+                return new DonationNotifier(
+                    mailer: $c->get(Client\Mailer::class),
+                    emailVerificationTokenRepository: $c->get(EmailVerificationTokenRepository::class),
+                    now: new \DateTimeImmutable('now'),
+                    donateBaseUri: $donateBaseUri,
+                );
+            },
+
         DonationService::class =>
             static function (ContainerInterface $c): DonationService {
             /**
@@ -574,6 +594,7 @@ return function (ContainerBuilder $containerBuilder) {
                 return new DonationService(
                     donationRepository: $c->get(DonationRepository::class),
                     campaignRepository: $c->get(CampaignRepository::class),
+                    fundRepository: $c->get(FundRepository::class),
                     logger: $c->get(LoggerInterface::class),
                     entityManager: $c->get(EntityManagerInterface::class),
                     stripe: $c->get(\MatchBot\Client\Stripe::class),

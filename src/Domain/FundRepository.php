@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MatchBot\Domain;
 
 use DateTime;
+use DateTimeImmutable;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Matching;
@@ -208,6 +209,31 @@ EOT;
         $result = $this->getEntityManager()->createQuery($query)
             ->setParameter('closedBeforeDate', $closedBeforeDate)
             ->setParameter('closedSinceDate', $closedSinceDate)
+            ->disableResultCache()
+            ->getResult();
+
+        return $result;
+    }
+
+    /**
+     * @param DateTimeImmutable $openAtDate Typically now
+     * @return Fund[]
+     */
+    public function findForCampaignsOpenAt(DateTimeImmutable $openAtDate): array
+    {
+        $query = <<<EOT
+            SELECT fund FROM MatchBot\Domain\Fund fund
+            JOIN fund.campaignFundings campaignFunding
+            JOIN campaignFunding.campaigns campaign
+            WHERE
+                campaign.startDate < :openAtDate AND
+                campaign.endDate > :openAtDate
+            GROUP BY fund
+        EOT;
+
+        /** @var Fund[] $result */
+        $result = $this->getEntityManager()->createQuery($query)
+            ->setParameter('openAtDate', $openAtDate)
             ->disableResultCache()
             ->getResult();
 

@@ -19,6 +19,7 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\PaymentMethodType;
+use MatchBot\Domain\PersonId;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
 use Prophecy\Argument;
 use Prophecy\Prophecy\ObjectProphecy;
@@ -149,11 +150,11 @@ class RedistributeMatchingCommandTest extends IntegrationTest
     ): Donation {
         $donation = Donation::fromApiModel(new DonationCreate(
             currencyCode: 'GBP',
-            donationAmount: (string) $amount,
+            donationAmount: (string)$amount,
             projectId: 'projectid012345678',
             psp: 'stripe',
             pspMethodType: PaymentMethodType::Card,
-        ), $campaign);
+        ), $campaign, PersonId::nil());
         $randomizer = new Randomizer();
 
         $donation->setTransactionId('pi_' . $this->randomString());

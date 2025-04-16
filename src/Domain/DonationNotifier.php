@@ -4,6 +4,7 @@ namespace MatchBot\Domain;
 
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Email\EmailMessage;
+use MatchBot\Application\Environment;
 use MatchBot\Client\Mailer;
 
 class DonationNotifier
@@ -15,11 +16,13 @@ class DonationNotifier
         private Mailer $mailer,
         private EmailVerificationTokenRepository $emailVerificationTokenRepository,
         private \DateTimeImmutable $now,
+        private string $donateBaseUri,
     ) {
     }
 
     public static function emailMessageForCollectedDonation(
         Donation $donation,
+        string $donateBaseUri,
         ?EmailVerificationToken $emailVerificationToken = null
     ): EmailMessage {
         if (! $donation->getDonationStatus()->isSuccessful()) {
@@ -48,6 +51,19 @@ class DonationNotifier
         $campaign = $donation->getCampaign();
         $charity = $campaign->getCharity();
 
+        $createAccountUri = null;
+        if ($emailVerificationToken) {
+            $personId = $donation->getDonorId();
+            if ($personId) {
+                $createAccountUri = sprintf(
+                    '%s/register?c=%s&u=%s',
+                    $donateBaseUri,
+                    $emailVerificationToken->randomCode,
+                    $personId->id,
+                );
+            }
+        }
+
         return EmailMessage::donorDonationSuccess($emailAddress, [
             // see required params in mailer:
             // https://github.com/thebiggive/mailer/blob/ca2c70f10720a66ff8fb041d3af430a07f49d625/app/settings.php#L27
@@ -60,6 +76,8 @@ class DonationNotifier
             // charityIsExempt is not yet used by mailer as it has its own logic
             // to work out if a charity is exempt. I'm hoping we can remove that soon.
             'charityIsExempt' => $charity->isExempt(),
+
+            'createAccountUri' => $createAccountUri,
             'currencyCode' => $donation->currency()->isoCode(),
 
             'donationAmount' => (float)$donation->getAmount(),
@@ -82,7 +100,6 @@ class DonationNotifier
             'charityPhoneNumber' => $charity->getPhoneNumber(),
             'charityEmailAddress' => $charity->getEmailAddress()?->email,
             'charityPostalAddress' => $charity->getPostalAddress()->format(),
-            'emailVerificationToken' => $emailVerificationToken?->randomCode,
         ]);
     }
 
@@ -97,15 +114,21 @@ class DonationNotifier
      */
     public function notifyDonorOfDonationSuccess(
         Donation $donation,
+        bool $sendRegisterUri,
         ?EmailAddress $to = null,
     ): void {
         $emailAddress = $donation->getDonorEmailAddress();
         Assertion::notNull($emailAddress);
-        $emailVerificationToken = $this->emailVerificationTokenRepository->findRecentTokenForEmailAddress(
-            $emailAddress,
-            $this->now,
-        );
-        $emailMessage = self::emailMessageForCollectedDonation($donation, $emailVerificationToken);
+
+        $emailVerificationToken = null;
+        if ($sendRegisterUri && ! Environment::current()->isProduction()) {
+            $emailVerificationToken = $this->emailVerificationTokenRepository->findRecentTokenForEmailAddress(
+                $emailAddress,
+                $this->now,
+            );
+        }
+
+        $emailMessage = self::emailMessageForCollectedDonation($donation, $this->donateBaseUri, $emailVerificationToken);
 
         if ($to !== null) {
             $emailMessage = $emailMessage->withToAddress($to);

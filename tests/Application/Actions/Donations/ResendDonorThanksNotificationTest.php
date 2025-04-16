@@ -2,33 +2,18 @@
 
 declare(strict_types=1);
 
-namespace MatchBot\Tests\Application\Actions\Donations\ResendDonorThanks;
+namespace MatchBot\Tests\Application\Actions\Donations;
 
-use DI\Container;
 use GuzzleHttp\Psr7\ServerRequest;
-use Laminas\Diactoros\Request;
-use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Actions\Donations\ResendDonorThanksNotification;
-use MatchBot\Domain\CampaignRepository;
-use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\EmailAddress;
-use MatchBot\Domain\MandateCancellationType;
-use MatchBot\Domain\Money;
-use MatchBot\Domain\PersonId;
-use MatchBot\Domain\RegularGivingMandate;
-use MatchBot\Domain\RegularGivingMandateRepository;
-use MatchBot\Domain\Salesforce18Id;
 use MatchBot\Tests\TestCase;
 use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
-use Slim\App;
-use Slim\CallableResolver;
-use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Psr7\Response;
-use Slim\Routing\Route;
 
 class ResendDonorThanksNotificationTest extends TestCase
 {
@@ -52,6 +37,7 @@ class ResendDonorThanksNotificationTest extends TestCase
 
         $notifierProphecy->notifyDonorOfDonationSuccess(
             $donation,
+            false,
             EmailAddress::of('new-email@example.com')
         )->shouldBeCalled();
 

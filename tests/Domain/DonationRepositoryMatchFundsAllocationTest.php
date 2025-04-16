@@ -16,6 +16,7 @@ use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\Fund;
+use MatchBot\Domain\PersonId;
 use MatchBot\Tests\Application\Matching\ArrayMatchingStorage;
 use MatchBot\Tests\TestCase;
 use Prophecy\Argument;
@@ -85,6 +86,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
                 pspMethodType: PaymentMethodType::Card
             ),
             $this->campaign,
+            PersonId::nil(),
         );
 
         // No entities to actually change but we always flush & let Doctrine check that.
@@ -123,6 +125,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
                 pspMethodType: PaymentMethodType::Card
             ),
             $this->campaign,
+            PersonId::nil(),
         );
 
         $this->emProphecy->flush()->shouldBeCalled();
@@ -210,6 +213,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
                 pspMethodType: PaymentMethodType::Card
             ),
             $this->campaign,
+            PersonId::nil(),
         );
 
         $this->emProphecy->flush()->shouldBeCalled();
@@ -254,6 +258,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
                 pspMethodType: PaymentMethodType::Card
             ),
             $this->campaign,
+            PersonId::nil(),
         );
         $fundingWithdrawal = new FundingWithdrawal($campaignFunding);
         $fundingWithdrawal->setAmount('1.00');
@@ -293,6 +298,7 @@ class DonationRepositoryMatchFundsAllocationTest extends TestCase
                 pspMethodType: PaymentMethodType::Card
             ),
             $this->campaign,
+            PersonId::nil(),
         );
 
         $this->emProphecy->flush()->shouldNotBeCalled();

@@ -17,6 +17,7 @@ use MatchBot\Domain\DonationService;
 use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\EmailVerificationTokenRepository;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\RegularGivingMandateRepository;
 use MatchBot\Tests\Domain\InMemoryDonationRepository;
 use Prophecy\Argument;
@@ -47,6 +48,7 @@ class StripePaymentsUpdateTest extends StripeTest
         $container->set(EntityManagerInterface::class, $this->createStub(EntityManagerInterface::class));
         $container->set(CampaignRepository::class, $this->createStub(CampaignRepository::class));
         $container->set(RegularGivingMandateRepository::class, $this->createStub(RegularGivingMandateRepository::class));
+        $container->set(FundRepository::class, $this->createStub(FundRepository::class));
 
         $this->donationRepository = new InMemoryDonationRepository();
         $container->set(DonationRepository::class, $this->donationRepository);

@@ -2,19 +2,16 @@
 
 namespace MatchBot\Tests\Domain;
 
-use MatchBot\Domain\Campaign;
 use MatchBot\Domain\CampaignFunding;
-use MatchBot\Domain\Charity;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationNotifier;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\EmailVerificationToken;
 use MatchBot\Domain\Fund;
 use MatchBot\Domain\FundingWithdrawal;
 use MatchBot\Domain\FundType;
 use MatchBot\Domain\PostalAddress;
-use MatchBot\Domain\Salesforce18Id;
-use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Tests\TestCase;
 
 class DonationNotifierTest extends TestCase
@@ -27,7 +24,15 @@ class DonationNotifierTest extends TestCase
             tipAmount: '2',
         );
 
-        $emailCommand = DonationNotifier::emailMessageForCollectedDonation($donation);
+        $emailCommand = DonationNotifier::emailMessageForCollectedDonation(
+            $donation,
+            'https://donate.example.org',
+            new EmailVerificationToken(
+                '123456',
+                'not-relavent@example.com',
+                new \DateTimeImmutable()
+            )
+        );
 
         $this->assertEquals(
             [
@@ -44,6 +49,7 @@ class DonationNotifierTest extends TestCase
                     'charityNumber' => 'Reg-no',
                     'charityIsExempt' => false,
                     'charityRegistrationAuthority' => 'Charity Commission for England and Wales',
+                    'createAccountUri' => 'https://donate.example.org/register?c=123456&u=00000000-0000-0000-0000-000000000000',
                     'currencyCode' => 'GBP',
 
                     'donationAmount' => 10.0,
@@ -66,7 +72,6 @@ class DonationNotifierTest extends TestCase
                     'charityPhoneNumber' => '0191 498 0000',
                     'charityEmailAddress' => 'charity@charitiesareus.com',
                     'charityPostalAddress' => 'anyone, pretty how town, (with up so floating many bells down), SSAU, sun moon stars rain',
-                    'emailVerificationToken' => null,
                 ]
             ],
             [$emailCommand->templateKey, $emailCommand->emailAddress->email, $emailCommand->params]

@@ -52,5 +52,6 @@
     <env name="STRIPE_WEBHOOK_SIGNING_SECRET" value="whsec_test_unitTestFakeKey" force="true"/>
     <env name="STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET" value="whsec_test_unitTestFakeConnectKey" force="true"/>
     <env name="WEBHOOK_DONATION_SECRET" value="unitTestCchSecret" force="true"/>
+    <env name="ACCOUNT_MANAGEMENT_BASE_URI" value="https://unit-test-fake-donate.thebiggive.org.uk" />
   </php>
 </phpunit>

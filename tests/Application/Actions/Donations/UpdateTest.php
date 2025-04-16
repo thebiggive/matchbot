@@ -12,6 +12,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DonorAccountRepository;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Tests\Domain\DonationTest;
 use MatchBot\Tests\Domain\InMemoryDonationRepository;
 use Override;
@@ -59,6 +60,7 @@ class UpdateTest extends TestCase
         $container = $app->getContainer();
         assert($container instanceof Container);
         $container->set(DonationRepository::class, $this->donationRepository);
+        $container->set(FundRepository::class, $this->prophesize(FundRepository::class)->reveal());
     }
 
     public function testMissingId(): void

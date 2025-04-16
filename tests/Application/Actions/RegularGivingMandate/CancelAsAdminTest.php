@@ -10,6 +10,7 @@ use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonorAccountRepository;
+use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\MandateCancellationType;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\PersonId;
@@ -144,5 +145,6 @@ class CancelAsAdminTest extends TestCase
         $container->set(DonationRepository::class, $this->getMockDonationRepository($mandate));
         $container->set(RegularGivingMandateRepository::class, $this->getMockMandateRepository($mandate));
         $container->set(DonorAccountRepository::class, $this->createStub(DonorAccountRepository::class));
+        $container->set(FundRepository::class, $this->createStub(FundRepository::class));
     }
 }
