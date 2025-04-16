@@ -216,7 +216,7 @@ EOT;
     }
 
     /**
-     * @param DateTime $openAtDate Typically now
+     * @param DateTimeImmutable $openAtDate Typically now
      * @return Fund[]
      */
     public function findForCampaignsOpenAt(DateTimeImmutable $openAtDate): array
