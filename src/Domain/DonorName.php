@@ -26,9 +26,15 @@ class DonorName
      */
     private function __construct(string $first, string $last)
     {
+        // long numbers are almost certainly mistakes, could be sensitive e.g. payment card no.
+        // Even if spaces between digits.
+        $sixDigitsRegex = '/\d\s?\d\s?\d\s?\d\s?\d\s?\d/';
+
         Assert::lazy()
             ->that($first, 'first')->betweenLength(1, 255)
             ->that($last, 'last')->betweenLength(1, 255)
+            ->that($first)->notRegex($sixDigitsRegex)
+            ->that($last)->notRegex($sixDigitsRegex)
             ->verifyNow();
 
         $this->first = $first;
