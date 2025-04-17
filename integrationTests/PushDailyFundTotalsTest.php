@@ -6,7 +6,6 @@ use MatchBot\Application\Commands\PushDailyFundTotals;
 use MatchBot\Domain\FundRepository;
 use MatchBot\Domain\FundType;
 use MatchBot\Tests\Application\Commands\AlwaysAvailableLockStore;
-use Psr\Log\NullLogger;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -57,6 +56,9 @@ class PushDailyFundTotalsTest extends IntegrationTest
 
     private function prepareData(): void
     {
+        // Avoid both extra funds the command would want to push, and negative balances from other
+        // tests causing assertion errors.
+        $this->clearPreviousCampaignsCharitiesAndRelated();
         $this->addFundedCampaignAndCharityToDB(
             campaignSfId: $this->randomString(),
             fundWithAmountInPounds: 5,
