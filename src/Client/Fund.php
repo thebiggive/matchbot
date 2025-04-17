@@ -63,6 +63,14 @@ class Fund extends Common
                 'headers' => $this->getVerifyHeaders(json_encode($jsonSnapshot, \JSON_THROW_ON_ERROR)),
             ]);
         } catch (RequestException $exception) {
+            // In the case of Staging -> Full, we have two error scenarios we want to mostly ignore for
+            // now:
+            // 1. Entirely missing funds (which 404) – this is due to sandbox refresh not always having
+            //    an accompanying full MatchBot data reset.
+            // 2. Mismatched fund totals (which 500) – this is due to some but not all campaigns not
+            //    being in MatchBot in the first place, which is the case for a handful of e.g. GMF25
+            //    funds with one or more campaigns whose charities have still not reached a campaign
+            //    ready state.
             $logLevel = Environment::current()->isProduction() ? LogLevel::ERROR : LogLevel::INFO;
             $this->logger->log(
                 $logLevel,
