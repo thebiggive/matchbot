@@ -14,6 +14,7 @@ use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\AssertionFailedException;
 use MatchBot\Application\HttpModels;
+use MatchBot\Application\LazyAssertionException;
 use MatchBot\Client\Stripe;
 use MatchBot\Domain\DomainException\CouldNotCancelStripePaymentIntent;
 use MatchBot\Domain\DomainException\DomainRecordNotFoundException;
@@ -88,6 +89,7 @@ class Update extends Action
             UnexpectedValueException | // the Serializer one, not the global one
             AssertionFailedException |
             MissingConstructorArgumentsException |
+            LazyAssertionException |
             TypeError $exception
         ) {
             $this->logger->info("Donation Update non-serialisable payload was: $body");
