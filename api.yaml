@@ -579,7 +579,6 @@ components:
           maximum: 25000.00
         tipRefundAmount:
           type: number
-          required: false
           description: Size of tip that was collected by BG and then refunded, e.g. in case donor tipped 
                        by mistake.
                        Initially will only exist in the SF salesforceUpsert operation. In

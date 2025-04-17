@@ -121,7 +121,7 @@ class DonationNotifier
         Assertion::notNull($emailAddress);
 
         $emailVerificationToken = null;
-        if ($sendRegisterUri && ! Environment::current()->isProduction()) {
+        if ($sendRegisterUri) {
             $emailVerificationToken = $this->emailVerificationTokenRepository->findRecentTokenForEmailAddress(
                 $emailAddress,
                 $this->now,
