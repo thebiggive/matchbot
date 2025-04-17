@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace MatchBot\Client;
 
 use GuzzleHttp\Exception\RequestException;
+use MatchBot\Application\Environment;
 use MatchBot\Application\Messenger\FundTotalUpdated;
+use Psr\Log\LogLevel;
 
 class Fund extends Common
 {
@@ -61,13 +63,17 @@ class Fund extends Common
                 'headers' => $this->getVerifyHeaders(json_encode($jsonSnapshot, \JSON_THROW_ON_ERROR)),
             ]);
         } catch (RequestException $exception) {
-            $this->logger->error(sprintf(
-                'Failed to push amount available for fund %s. Got %s: %s. Data snapshot: %s',
-                $fundMessage->salesforceId,
-                $exception->getCode(),
-                $exception->getMessage(),
-                $encodedJson,
-            ));
+            $logLevel = Environment::current()->isProduction() ? LogLevel::ERROR : LogLevel::INFO;
+            $this->logger->log(
+                $logLevel,
+                sprintf(
+                    'Failed to push amount available for fund %s. Got %s: %s. Data snapshot: %s',
+                    $fundMessage->salesforceId,
+                    $exception->getCode(),
+                    $exception->getMessage(),
+                    $encodedJson,
+                ),
+            );
 
             return;
         }
