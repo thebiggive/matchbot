@@ -361,9 +361,11 @@ class CampaignRepository extends SalesforceReadProxyRepository
             $postalAddress
         );
 
+        // For now, treat whole address as null if there's no `line1`. This can happen with allowed
+        // Salesforce addresses for now. For example, a charity may fill in just a country in the
+        // portal and save that as their own address. We're better off omitting it from donor emails
+        // if that happens.
         if (is_null($postalAddress['line1'])) {
-            Assertion::allNull($postalAddress);
-
             return PostalAddress::null();
         }
 
