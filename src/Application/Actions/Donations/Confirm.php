@@ -112,7 +112,11 @@ EOF
             );
         } catch (InvalidRequestException $exception) {
             if (!DonationService::errorMessageFromStripeIsExpected($exception)) {
-                throw $exception;
+                throw new InvalidRequestException(
+                    'Donation UUID: ' . $donation->getUuid()->toString() . $exception->getMessage(),
+                    $exception->getCode(),
+                    $exception
+                );
             }
 
             $exceptionClass = get_class($exception);
