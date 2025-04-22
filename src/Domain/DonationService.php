@@ -203,7 +203,7 @@ class DonationService
             }
 
             if ($this->clock->now() > new \DateTimeImmutable("Wed Apr 16 10:00:00 AM BST 2025")) {
-                $this->logger->error("Unexpected individual campaign {$campaign->getSalesforceId()} pulled from SF - should have been prewarmed");
+                $this->logger->warning("Unexpected individual campaign {$campaign->getSalesforceId()} pulled from SF - should have been prewarmed");
             }
 
             $this->fundRepository->pullForCampaign($campaign);
