@@ -113,7 +113,7 @@ EOF
         } catch (InvalidRequestException $exception) {
             if (!DonationService::errorMessageFromStripeIsExpected($exception)) {
                 throw new InvalidRequestException(
-                    'Donation UUID: ' . $donation->getUuid()->toString() . $exception->getMessage(),
+                    'Donation UUID: ' . $donation->getUuid()->toString() . ', ' . $exception->getMessage(),
                     $exception->getCode(),
                     $exception
                 );
