@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use Assert\AssertionFailedException;
 use DateTime;
 use MatchBot\Application\Assertion;
 use MatchBot\Client;
@@ -366,6 +367,15 @@ class CampaignRepository extends SalesforceReadProxyRepository
         // portal and save that as their own address. We're better off omitting it from donor emails
         // if that happens.
         if (is_null($postalAddress['line1'])) {
+            try {
+                Assertion::allNull($postalAddress);
+            } catch (AssertionFailedException $e) {
+                // If this happens more than a couple of times in late April 2025, probaby reduce to warning
+                // level. If it happens a lot more, build stronger Salesforce validation to stop it at
+                // source.
+                $this->logError('Postal address from Salesforce is missing line1 but had other parts; treating as all-null');
+            }
+
             return PostalAddress::null();
         }
 
