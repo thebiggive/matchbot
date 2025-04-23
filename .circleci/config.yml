@@ -137,6 +137,23 @@ workflows:
   build:
     jobs:
       - test:
+          filters:
+            branches:
+              # These are the only long-lived branches, have their own workflow.
+              ignore: [ 'main', 'develop', 'trunk']
+          context:
+            - docker-hub-creds
+      - mutation_coverage:
+          context:
+            - docker-hub-creds
+          requires:
+            - test
+  build-and-notify:
+    jobs:
+      - test:
+          filters:
+            branches:
+              only: [ 'main', 'develop', 'trunk']
           context:
             - docker-hub-creds
             - jira
