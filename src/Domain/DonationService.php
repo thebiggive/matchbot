@@ -580,7 +580,7 @@ class DonationService
             // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
 
             throw new DonationAlreadyFinalised(
-                'Donation ID {$donation->getUuid()} could not be cancelled as {$donation->getDonationStatus()->value}'
+                "Donation ID {$donation->getUuid()} could not be cancelled as {$donation->getDonationStatus()->value}"
             );
         }
 

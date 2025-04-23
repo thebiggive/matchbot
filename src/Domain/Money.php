@@ -26,7 +26,7 @@ readonly class Money implements \JsonSerializable, \Stringable
         Assertion::between(
             $this->amountInPence,
             0,
-            20_000_000_00 // this is nearly PHP_INT_MAX on 32 bit systems.
+            9_999_999_999_00, // Max. fund value we use in Salesforce sandboxes
         );
     }
 
