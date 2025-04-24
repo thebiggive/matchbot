@@ -181,13 +181,16 @@ class TakeRegularGivingDonations extends LockingCommand
             $io->writeln("processing donation #{$donation->getId()}");
             $io->writeln(
                 "Donation #{$donation->getId()} is pre-authorized to pay on" .
-                " <options=bold>{$preAuthDate->format('Y-m-d H:i:s')}</>}
+                " <options=bold>{$preAuthDate->format('Y-m-d H:i:s')}</>
                 "
             );
             $oldStatus = $donation->getDonationStatus();
             try {
                 try {
                     $this->donationService->confirmPreAuthorized($donation);
+                    $io->writeln(
+                        "Donation {$donation->getUuid()} is expected to become Collected when Stripe calls back"
+                    );
                 } catch (MandateNotActive $exception) {
                     $io->info($exception->getMessage());
                     continue;
@@ -202,11 +205,6 @@ class TakeRegularGivingDonations extends LockingCommand
                 $io->error('Exception, skipping donation: ' . $exception->getMessage());
                 continue;
             }
-            // status change not expected here - status will be changed by stripe callback to tell us its paid.
-            $io->writeln(
-                "Donation {$donation->getUuid()} went from " .
-                "<options=bold>{$oldStatus->name}</> to <options=bold>{$donation->getDonationStatus()->name}</>"
-            );
         }
 
         $this->em->flush();
