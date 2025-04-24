@@ -653,8 +653,10 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
                 $snapshot = 'no-snapshot-in-prod';
             }
 
+            // We throw a BadRequestException in one SF 500 case, so the actual HTTP code
+            // upstream could be either 400 or 500.
             $this->logError(
-                "Pushing Salesforce donation {$changeMessage->uuid} got 400: {$exception->getMessage()}, donation snapshot was: $snapshot"
+                "Pushing Salesforce donation {$changeMessage->uuid} got 400/500: {$exception->getMessage()}, donation snapshot was: $snapshot"
             );
 
             return;
