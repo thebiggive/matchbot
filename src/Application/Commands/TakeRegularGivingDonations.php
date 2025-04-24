@@ -184,7 +184,6 @@ class TakeRegularGivingDonations extends LockingCommand
                 " <options=bold>{$preAuthDate->format('Y-m-d H:i:s')}</>
                 "
             );
-            $oldStatus = $donation->getDonationStatus();
             try {
                 try {
                     $this->donationService->confirmPreAuthorized($donation);
