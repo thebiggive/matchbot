@@ -129,7 +129,16 @@ class TakeRegularGivingDonations extends LockingCommand
     {
         $mandates = $this->mandateRepository->findMandatesWithDonationsToCreateOn($now, self::MAXBATCHSIZE);
 
-        $io->block(count($mandates) . " mandates may have donations to create at this time");
+        $mandateUUIDs = array_map(
+            fn(array $mandate_charity) => $mandate_charity[0]->getUuid()->toString(),
+            $mandates
+        );
+
+        $io->block(sprintf(
+            "%s mandates may have donations to create at this time: %s",
+            count($mandates),
+            implode(', ', $mandateUUIDs)
+        ));
 
         foreach ($mandates as [$mandate]) {
             try {
@@ -137,8 +146,6 @@ class TakeRegularGivingDonations extends LockingCommand
                 if ($donation) {
                     $this->reportableEventHappened = true;
                     $io->writeln("created donation {$donation}");
-                } else {
-                    $io->writeln("no donation created for {$mandate} at this time");
                 }
             } catch (AssertionFailedException | WrongCampaignType $e) {
                 $io->error($e->getMessage());
@@ -158,7 +165,7 @@ class TakeRegularGivingDonations extends LockingCommand
             $this->reportableEventHappened = true;
             try {
                 $this->donationService->createPaymentIntent($donation);
-                $io->writeln("setting payment intent on donation #{$donation->getId()}");
+                $io->writeln("setting payment intent on donation {$donation->getUuid()}");
             } catch (RegularGivingDonationToOldToCollect $e) {
                 $this->logger->error($e->getMessage());
                 $io->error($e->getMessage());
@@ -180,7 +187,7 @@ class TakeRegularGivingDonations extends LockingCommand
             \assert($preAuthDate instanceof \DateTimeImmutable);
             $io->writeln("processing donation #{$donation->getId()}");
             $io->writeln(
-                "Donation #{$donation->getId()} is pre-authorized to pay on" .
+                "Donation #{$donation->getUuid()} is pre-authorized to pay on" .
                 " <options=bold>{$preAuthDate->format('Y-m-d H:i:s')}</>
                 "
             );
@@ -231,7 +238,6 @@ class TakeRegularGivingDonations extends LockingCommand
         }
 
         $chatMessage = new ChatMessage('Regular giving collection report');
-        $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
 
         $options = (new SlackOptions())
             ->block((new SlackHeaderBlock(sprintf(
@@ -239,16 +245,7 @@ class TakeRegularGivingDonations extends LockingCommand
                 $this->environment->name,
                 'Regular giving collection report',
             ))))
-            ->block((new SlackSectionBlock())->text(<<<EOF
-                Regular giving collection report
-                
-                {$now}
-                
-                Generated when at least one mandate has something to do.
-                
-                $outputText
-                EOF
-            ));
+            ->block((new SlackSectionBlock())->text($outputText));
         $chatMessage->options($options);
 
         $this->chatter->send($chatMessage);
