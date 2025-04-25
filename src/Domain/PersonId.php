@@ -14,7 +14,7 @@ use Ramsey\Uuid\UuidInterface;
 #[Embeddable]
 class PersonId
 {
-    #[Column]
+    #[Column(type: 'uuid')]
     public readonly UuidInterface $id;
 
     private function __construct(string $personId)
