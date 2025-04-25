@@ -299,7 +299,6 @@ class DonationServiceTest extends TestCase
 
         $this->stripeProphecy->confirmPaymentIntent($paymentIntentId, [
             'confirmation_token' => $confirmationTokenId->stripeConfirmationTokenId,
-            'capture_method' => 'automatic',
         ])
             ->willReturn($paymentIntent)
             ->shouldBeCalledOnce();

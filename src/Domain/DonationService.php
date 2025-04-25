@@ -59,10 +59,6 @@ class DonationService
         'The provided PaymentMethod has failed authentication',
         'You must collect the security code (CVC) for this card from the cardholder before you can use it',
 
-        // Donor ignoring 3DS then reusing the donation seems to occasionally get this
-        // see ticket DON-1140
-        'This PaymentIntent\'s capture_method could not be updated because it has a status of requires_action.',
-
         // When a donation is cancelled we update it to cancelled in the DB, which stops it being confirmed later. But
         // we can still get this error if the cancellation is too late to stop us attempting to confirm.
         // phpcs:ignore
@@ -74,12 +70,6 @@ class DonationService
         'The parameter application_fee_amount cannot be updated on a PaymentIntent after a capture has already been made.',
     ];
 
-
-    // for now we are opting out of async - when we go to async capture we will need to listen to the
-    // webhooks to update donations and also regular giving mandates. See
-    // https://docs.stripe.com/payments/payment-intents/asynchronous-capture#listen-webhooks
-    // and MAT-395
-    private const array ASYNC_CAPTURE_OPT_OUT = ['capture_method' => 'automatic'];
     public const string STRIPE_DESTINATION_ACCOUNT_NEEDS_CAPABILITIES_MESSAGE = 'Your destination account needs to have at least one of the following capabilities enabled';
 
 
@@ -322,7 +312,6 @@ class DonationService
             $paymentIntentId,
             [
                 'confirmation_token' => $tokenId->stripeConfirmationTokenId,
-                ...self::ASYNC_CAPTURE_OPT_OUT
             ]
         );
 
@@ -725,7 +714,6 @@ class DonationService
             $paymentIntentId,
             [
                 'payment_method' => $paymentMethod->stripePaymentMethodId,
-                ...self::ASYNC_CAPTURE_OPT_OUT
             ]
         );
 

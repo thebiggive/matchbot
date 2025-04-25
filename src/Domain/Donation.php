@@ -1675,8 +1675,8 @@ class Donation extends SalesforceWriteProxy
             'amount' => $this->getAmountFractionalIncTip(),
             'currency' => $this->currency()->isoCode(case: 'lower'),
             'description' => $this->getDescription(),
-            'capture_method' => 'automatic', // 'automatic' was default in previous API versions,
-            // default is now 'automatic_async'
+            // for now we are opting out of async, see MAT-395
+            'capture_method' => 'automatic',
             'metadata' => [
                 /**
                  * Keys like comms opt ins are set only later. See the counterpart
