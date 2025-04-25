@@ -187,7 +187,7 @@ class TakeRegularGivingDonations extends LockingCommand
             \assert($preAuthDate instanceof \DateTimeImmutable);
             $io->writeln("processing donation #{$donation->getId()}");
             $io->writeln(
-                "Donation #{$donation->getUuid()} is pre-authorized to pay on" .
+                "Donation {$donation->getUuid()} is pre-authorized to pay on" .
                 " <options=bold>{$preAuthDate->format('Y-m-d H:i:s')}</>
                 "
             );
