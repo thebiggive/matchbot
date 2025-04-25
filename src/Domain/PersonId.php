@@ -39,7 +39,7 @@ class PersonId
 
     public function toUUID(): UuidInterface
     {
-        return Uuid::fromString($this->id);
+        return $this->id;
     }
 
     public static function nil(): self
