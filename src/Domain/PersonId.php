@@ -4,7 +4,6 @@ namespace MatchBot\Domain;
 
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Embeddable;
-use MatchBot\Application\Assertion;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
@@ -16,13 +15,11 @@ use Ramsey\Uuid\UuidInterface;
 class PersonId
 {
     #[Column(type: 'uuid')]
-    public readonly string $id;
+    public readonly UuidInterface $id;
 
-    private function __construct(
-        string $personId
-    ) {
-        $this->id = $personId;
-        Assertion::uuid($personId);
+    private function __construct(string $personId)
+    {
+        $this->id = Uuid::fromString($personId);
     }
 
     public static function of(string $personId): self
@@ -42,7 +39,7 @@ class PersonId
 
     public function toUUID(): UuidInterface
     {
-        return Uuid::fromString($this->id);
+        return $this->id;
     }
 
     public static function nil(): self

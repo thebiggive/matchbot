@@ -1675,8 +1675,11 @@ class Donation extends SalesforceWriteProxy
             'amount' => $this->getAmountFractionalIncTip(),
             'currency' => $this->currency()->isoCode(case: 'lower'),
             'description' => $this->getDescription(),
-            'capture_method' => 'automatic', // 'automatic' was default in previous API versions,
-            // default is now 'automatic_async'
+            // For now we are opting out of async, see MAT-395.
+            // When we go to async we will probably need to listen to the charge.updated
+            // webhook to set the original fee correctly via `balance_transactions`.
+            // https://docs.stripe.com/payments/payment-intents/asynchronous-capture#listen-webhooks
+            'capture_method' => 'automatic',
             'metadata' => [
                 /**
                  * Keys like comms opt ins are set only later. See the counterpart
