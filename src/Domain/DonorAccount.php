@@ -93,7 +93,7 @@ class DonorAccount extends Model
         $this->emailAddress = $emailAddress;
         $this->stripeCustomerId = $stripeCustomerId;
         $this->donorName = $donorName;
-        $this->uuid = Uuid::fromString($uuid->id);
+        $this->uuid = $uuid->id;
     }
 
     public static function fromPersonMessage(Person $person): self
