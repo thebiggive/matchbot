@@ -59,6 +59,10 @@ class DonationService
         'The provided PaymentMethod has failed authentication',
         'You must collect the security code (CVC) for this card from the cardholder before you can use it',
 
+        // Donor ignoring 3DS then reusing the donation seems to occasionally get this
+        // see ticket DON-1140
+        'This PaymentIntent\'s capture_method could not be updated because it has a status of requires_action.',
+
         // When a donation is cancelled we update it to cancelled in the DB, which stops it being confirmed later. But
         // we can still get this error if the cancellation is too late to stop us attempting to confirm.
         // phpcs:ignore
