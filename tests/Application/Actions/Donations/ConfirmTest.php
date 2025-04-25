@@ -360,8 +360,6 @@ class ConfirmTest extends TestCase
                 $paymentIntentId,
                 [
                     "confirmation_token" => $confirmationTokenId,
-                    'capture_method' => 'automatic'
-
                 ]
             )->willReturn($updatedPaymentIntent);
         } else {
@@ -369,7 +367,6 @@ class ConfirmTest extends TestCase
                 $paymentIntentId,
                 [
                     "payment_method" => $paymentMethodId,
-                    'capture_method' => 'automatic'
                 ]
             )->willReturn($updatedPaymentIntent);
         }
