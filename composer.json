@@ -81,7 +81,6 @@
         "phpstan/phpstan-symfony": "^2.0",
         "phpunit/phpunit": "^9.6",
         "psalm/plugin-phpunit": "^0.19.2",
-        "roave/infection-static-analysis-plugin": "^1.36",
         "roave/security-advisories": "dev-latest",
         "squizlabs/php_codesniffer": "^3.10",
         "vimeo/psalm": "^6.0.0",
@@ -247,8 +246,7 @@
         ],
         "mutation-test": [
             "Composer\\Config::disableProcessTimeout",
-            "vendor/bin/psalm --clear-cache",
-            "vendor/bin/roave-infection-static-analysis-plugin"
+            "vendor/bin/infection --threads=4"
         ],
         "check": [
             "@test",
