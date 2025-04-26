@@ -5,7 +5,8 @@ namespace MatchBot\Domain;
 use PHPUnit\Framework\TestCase;
 use Ramsey\Uuid\Uuid;
 
-class PersonIdTest extends TestCase {
+class PersonIdTest extends TestCase
+{
     public function testTwoIdsFromSameStringAreEqual(): void
     {
         $anyUUID = 'b13e4c9c-229a-11f0-bf58-1f1f1db0aefb';
