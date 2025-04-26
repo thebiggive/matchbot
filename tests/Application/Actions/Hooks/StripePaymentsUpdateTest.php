@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use MatchBot\Application\Actions\ActionPayload;
 use MatchBot\Application\Email\EmailMessage;
 use MatchBot\Application\Notifier\StripeChatterInterface;
+use MatchBot\Application\Settings;
 use MatchBot\Client\Mailer;
 use MatchBot\Domain\CampaignRepository;
 use MatchBot\Domain\Donation;
@@ -618,15 +619,8 @@ class StripePaymentsUpdateTest extends StripeTest
 
     private function getValidWebhookSecret(Container $container): string
     {
-        /**
-         * @var array{
-         *    stripe: array{
-         *      accountWebhookSecret: string
-         *    }
-         *  } $settings
-         */
-        $settings = $container->get('settings');
-        return $settings['stripe']['accountWebhookSecret'];
+        $settings = $container->get(Settings::class);
+        return $settings->stripe['accountWebhookSecret'];
     }
 
     public function getContainer(): ContainerInterface

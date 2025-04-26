@@ -6,6 +6,7 @@ namespace MatchBot\Application\Actions\Hooks;
 
 use MatchBot\Application\Actions\Action;
 use MatchBot\Application\Actions\ActionPayload;
+use MatchBot\Application\Settings;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -17,12 +18,12 @@ abstract class Stripe extends Action
 {
     protected ?Event $event = null;
 
-    /** @var array{connectAppWebhookSecret: string, accountWebhookSecret: string} */
+    /** @var array{connectAppWebhookSecret: string, accountWebhookSecret: string, apiKey: non-empty-string} */
     protected array $stripeSettings;
 
     public function __construct(ContainerInterface $container, LoggerInterface $logger)
     {
-        $this->stripeSettings = $container->get('settings')['stripe'];
+        $this->stripeSettings = $container->get(Settings::class)->stripe;
 
         parent::__construct($logger);
     }

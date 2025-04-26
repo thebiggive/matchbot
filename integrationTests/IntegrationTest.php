@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\ServerRequest;
 use Los\RateLimit\RateLimitMiddleware;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Settings;
 use MatchBot\Client\Mandate as MandateSFClient;
 use MatchBot\Domain\Campaign;
 use MatchBot\Domain\DoctrineDonationRepository;
@@ -34,6 +35,9 @@ use Stripe\StripeClient;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
+/**
+ * @psalm-import-type ApiClient from Settings
+ */
 abstract class IntegrationTest extends TestCase
 {
     use ProphecyTrait;
@@ -59,9 +63,8 @@ abstract class IntegrationTest extends TestCase
         $container->set(RateLimitMiddleware::class, $noOpMiddleware);
         $container->set(\Psr\Log\LoggerInterface::class, new \Psr\Log\NullLogger());
 
-        $settings = $container->get('settings');
-        \assert(is_array($settings));
-        $settings['apiClient'] = $this->fakeApiClientSettingsThatAlwaysThrow();
+        $settings = $container->get(Settings::class);
+        $settings = $settings->withApiClient($this->fakeApiClientSettingsThatAlwaysThrow());
         $container->set('settings', $settings);
 
         $container->set(
@@ -107,9 +110,13 @@ abstract class IntegrationTest extends TestCase
         self::$app = $app;
     }
 
+    /**
+     * @return ApiClient
+     */
     private function fakeApiClientSettingsThatAlwaysThrow(): array
     {
-        return [
+        /** @var ApiClient $client */
+        $client = [
             'global' => new /** @implements ArrayAccess<string, never> */ class implements ArrayAccess {
                 public function offsetExists(mixed $offset): bool
                 {
@@ -138,6 +145,8 @@ abstract class IntegrationTest extends TestCase
                 'baseUri' => 'dummy-salesforce-base-uri',
             ],
         ];
+
+        return $client;
     }
 
     protected function getContainer(): Container

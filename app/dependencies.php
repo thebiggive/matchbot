@@ -35,6 +35,7 @@ use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\Persistence\RegularGivingMandateEventSubscriber;
 use MatchBot\Application\RealTimeMatchingStorage;
 use MatchBot\Application\RedisMatchingStorage;
+use MatchBot\Application\Settings;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Client;
 use MatchBot\Domain\CampaignRepository;
@@ -97,6 +98,8 @@ return function (ContainerBuilder $containerBuilder) {
     // https://github.com/PHP-DI/PHP-DI/blob/a7410e4ee4f61312183af2d7e26a9e6592d2d974/src/Compiler/Compiler.php#L389
 
     $containerBuilder->addDefinitions([
+        Settings::class => Settings::fromEnvVars(...),
+
         Auth\DonationPublicAuthMiddleware::class =>
             function (ContainerInterface $c): Auth\DonationPublicAuthMiddleware {
                 return new Auth\DonationPublicAuthMiddleware($c->get(LoggerInterface::class));
@@ -115,10 +118,10 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         ChatterInterface::class => static function (ContainerInterface $c): ChatterInterface {
-            $settings = $c->get('settings');
+            $settings = $c->get(Settings::class);
             $transport = new SlackTransport(
-                $settings['notifier']['slack']['api_token'],
-                $settings['notifier']['slack']['channel'],
+                $settings->notifier['slack']['api_token'],
+                $settings->notifier['slack']['channel'],
             );
 
             return new Chatter($transport);
@@ -154,28 +157,16 @@ return function (ContainerBuilder $containerBuilder) {
         // Don't inject this directly for now, since its return type doesn't actually implement
         // our custom interface. We're working around needing two services with distinct channels.
         StripeChatterInterface::class => static function (ContainerInterface $c): ChatterInterface {
-            /**
-             * @var array{
-             *    notifier: array{
-             *      slack: array{
-             *        stripe_channel: string
-             *      }
-             *    }
-             *  } $settings
-             */
-            $settings = $c->get('settings');
-            $stripeChannel = $settings['notifier']['slack']['stripe_channel'];
+            $settings = $c->get(Settings::class);
+            $stripeChannel = $settings->notifier['slack']['stripe_channel'];
 
             return $c->get(SlackChannelChatterFactory::class)->makeChatter($stripeChannel);
         },
 
         SlackChannelChatterFactory::class => static function (ContainerInterface $c): SlackChannelChatterFactory {
-            $settings = $c->get('settings');
-            assert(is_array($settings));
-            /** @psalm-suppress MixedArrayAccess $token */
-            $token = $settings['notifier']['slack']['api_token'];
-            assert(is_string($token));
-            return new SlackChannelChatterFactory($token);
+            return new SlackChannelChatterFactory(
+                $c->get(Settings::class)->notifier['slack']['api_token']
+            );
         },
 
         Transports::TRANSPORT_CLAIMBOT => static function (): TransportInterface {
@@ -183,27 +174,23 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         Client\Campaign::class => function (ContainerInterface $c): Client\Campaign {
-            return new Client\Campaign($c->get('settings'), $c->get(LoggerInterface::class));
+            return new Client\Campaign($c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
         Client\Donation::class => function (ContainerInterface $c): Client\Donation {
-            return new Client\Donation($c->get('settings'), $c->get(LoggerInterface::class));
+            return new Client\Donation($c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
         Client\Mandate::class => function (ContainerInterface $c): Client\Mandate {
-            return new Client\Mandate($c->get('settings'), $c->get(LoggerInterface::class));
+            return new Client\Mandate($c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
         Client\Fund::class => function (ContainerInterface $c): Client\Fund {
-            $settings = $c->get('settings');
-            \assert(is_array($settings));
-            return new Client\Fund($settings, $c->get(LoggerInterface::class));
+            return new Client\Fund($c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
         Client\Mailer::class => function (ContainerInterface $c): Client\Mailer {
-            $settings = $c->get('settings');
-            \assert(is_array($settings));
-            return new Client\Mailer($settings, $c->get(LoggerInterface::class));
+            return new Client\Mailer($c->get(Settings::class), $c->get(LoggerInterface::class));
         },
 
         Client\Stripe::class => function (ContainerInterface $c): Client\Stripe {
@@ -235,7 +222,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         IdentityToken::class => function (ContainerInterface $c): IdentityToken {
-            return new IdentityToken($c->get('settings')['identity']['baseUri']);
+            return new IdentityToken($c->get(Settings::class)->identity['baseUri']);
         },
 
         LockFactory::class => function (ContainerInterface $c): LockFactory {
@@ -252,9 +239,9 @@ return function (ContainerBuilder $containerBuilder) {
             $commitId = $c->get('commit-id');
             \assert(is_string($commitId));
 
-            $settings = $c->get('settings');
+            $settings = $c->get(Settings::class);
 
-            $loggerSettings = $settings['logger'];
+            $loggerSettings = $settings->logger;
             $logger = new Logger($loggerSettings['name']);
 
             $awsTraceIdProcessor = new AwsTraceIdProcessor();
@@ -391,7 +378,7 @@ return function (ContainerBuilder $containerBuilder) {
         'commit-id' => static fn(ContainerInterface $_c): string => require __DIR__ . "/../.build-commit-id.php",
 
         ORM\Configuration::class => static function (ContainerInterface $c): ORM\Configuration {
-            $settings = $c->get('settings');
+            $settings = $c->get(Settings::class);
             $commitId = $c->get('commit-id');
             \assert(is_string($commitId));
 
@@ -401,17 +388,17 @@ return function (ContainerBuilder $containerBuilder) {
             // on construct.
             $redis = new Redis();
             try {
-                $redis->connect($settings['redis']['host']);
+                $redis->connect($settings->redis['host']);
                 $cacheAdapter = new RedisAdapter(
                     redis: $redis,
-                    namespace: "matchbot-{$settings['appEnv']}-{$commitId}"
+                    namespace: "matchbot-{$settings->appEnv}-{$commitId}"
                 );
             } catch (RedisException $exception) {
                 // This essentially means Doctrine is not using a cache. `/ping` should fail separately based on
                 // Redis being down whenever this happens, so we should find out without relying on this warning log.
                 $logger = $c->get(LoggerInterface::class);
                 $logger->warning(
-                    'Doctrine falling back to array cache - Redis host ' . $c->get('settings')['redis']['host']
+                    'Doctrine falling back to array cache - Redis host ' . $c->get(Settings::class)->redis['host']
                 );
                 $logger->error(sprintf(
                     'Doctrine bootstrap error %s: %s',
@@ -422,18 +409,18 @@ return function (ContainerBuilder $containerBuilder) {
             }
 
             $config = ORM\ORMSetup::createAttributeMetadataConfiguration(
-                $settings['doctrine']['metadata_dirs'],
-                $settings['doctrine']['dev_mode'],
-                $settings['doctrine']['cache_dir'] . '/proxies',
+                $settings->doctrine['metadata_dirs'],
+                $settings->doctrine['dev_mode'],
+                $settings->doctrine['cache_dir'] . '/proxies',
                 $cacheAdapter,
             );
 
             // Turn off auto-proxies in ECS envs, where we explicitly generate them on startup entrypoint and cache all
             // files indefinitely.
-            $config->setAutoGenerateProxyClasses($settings['doctrine']['dev_mode']);
+            $config->setAutoGenerateProxyClasses($settings->doctrine['dev_mode']);
 
             $config->setMetadataDriverImpl(
-                new ORM\Mapping\Driver\AttributeDriver($settings['doctrine']['metadata_dirs'])
+                new ORM\Mapping\Driver\AttributeDriver($settings->doctrine['metadata_dirs'])
             );
 
             $config->setMetadataCache($cacheAdapter);
@@ -449,7 +436,7 @@ return function (ContainerBuilder $containerBuilder) {
             return new RateLimitMiddleware(
                 $c->get(CacheInterface::class),
                 $c->get(ProblemDetailsResponseFactory::class),
-                new RateLimitOptions($c->get('settings')['los_rate_limit']),
+                new RateLimitOptions($c->get(Settings::class)->los_rate_limit),
             );
         },
 
@@ -460,7 +447,7 @@ return function (ContainerBuilder $containerBuilder) {
         Redis::class => static function (ContainerInterface $c): ?Redis {
             $redis = new Redis();
             try {
-                $connected = $redis->connect($c->get('settings')['redis']['host']);
+                $connected = $redis->connect($c->get(Settings::class)->redis['host']);
                 if ($connected) {
                     // Required for incr/decr commands
                     $redis->setOption(Redis::OPT_SERIALIZER, Redis::SERIALIZER_NONE);
@@ -469,7 +456,7 @@ return function (ContainerBuilder $containerBuilder) {
                 $c->get(LoggerInterface::class)->warning(sprintf(
                     'Redis connect() got RedisException: "%s". Host %s',
                     $exception->getMessage(),
-                    $c->get('settings')['redis']['host'],
+                    $c->get(Settings::class)->redis['host'],
                 ));
 
                 return null;
@@ -479,7 +466,7 @@ return function (ContainerBuilder $containerBuilder) {
         },
 
         ORM\EntityManager::class =>  static function (ContainerInterface $c): EntityManager {
-            $connection = DBALDriverManager::getConnection($c->get('settings')['doctrine']['connection']);
+            $connection = DBALDriverManager::getConnection($c->get(Settings::class)->doctrine['connection']);
             $config = $c->get(ORM\Configuration::class);
 
             $em = new ORM\EntityManager(conn: $connection, config: $config);
@@ -531,7 +518,7 @@ return function (ContainerBuilder $containerBuilder) {
             // https://github.com/thebiggive/matchbot/pull/927/files/5fa930f3eee3b0c919bcc1027319dc7ae9d0be05#diff-c4fef49ee08946228bb39de898c8770a1a6a8610fc281627541ec2e49c67b118
             \assert(ApiVersion::CURRENT === '2024-06-20');
             return new StripeClient([
-                'api_key' => $c->get('settings')['stripe']['apiKey'],
+                'api_key' => $c->get(Settings::class)->stripe['apiKey'],
                 'stripe_version' => ApiVersion::CURRENT,
             ]);
         },
@@ -556,7 +543,7 @@ return function (ContainerBuilder $containerBuilder) {
                 * @psalm-suppress MixedArgument
                 */
                 return new Auth\SalesforceAuthMiddleware(
-                    sfApiKey: $c->get('settings')['salesforce']['apiKey'],
+                    sfApiKey: $c->get(Settings::class)->salesforce['apiKey'],
                     logger: $c->get(LoggerInterface::class)
                 );
             },
@@ -564,12 +551,9 @@ return function (ContainerBuilder $containerBuilder) {
         DonationNotifier::class =>
             static function (ContainerInterface $c): DonationNotifier {
             // todo - make a settings class.
-                $settings = $c->get('settings');
-                \assert(is_array($settings));
-                $donateSettings = $settings['donate'];
-                \assert(is_array($donateSettings));
+                $settings = $c->get(Settings::class);
+                               $donateSettings = $settings->donate;
                 $donateBaseUri = $donateSettings['baseUri'];
-                \assert(is_string($donateBaseUri));
 
                 return new DonationNotifier(
                     mailer: $c->get(Client\Mailer::class),

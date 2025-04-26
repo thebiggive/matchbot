@@ -1,85 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <files psalm-version="6.0.0@b8e96bb617bf59382113b1b56cef751f648a7dc9">
-  <file src="app/dependencies.php">
-    <MixedArgument>
-      <code><![CDATA[$c->get('settings')]]></code>
-      <code><![CDATA[$c->get('settings')]]></code>
-      <code><![CDATA[$c->get('settings')]]></code>
-      <code><![CDATA[$c->get('settings')['doctrine']['connection']]]></code>
-      <code><![CDATA[$c->get('settings')['identity']['baseUri']]]></code>
-      <code><![CDATA[$c->get('settings')['los_rate_limit']]]></code>
-      <code><![CDATA[$c->get('settings')['redis']['host']]]></code>
-      <code><![CDATA[$c->get('settings')['redis']['host']]]></code>
-      <code><![CDATA[$loggerSettings['name']]]></code>
-      <code><![CDATA[$loggerSettings['path']]]></code>
-      <code><![CDATA[$settings['doctrine']['dev_mode']]]></code>
-      <code><![CDATA[$settings['doctrine']['dev_mode']]]></code>
-      <code><![CDATA[$settings['doctrine']['metadata_dirs']]]></code>
-      <code><![CDATA[$settings['doctrine']['metadata_dirs']]]></code>
-      <code><![CDATA[$settings['notifier']['slack']['api_token']]]></code>
-      <code><![CDATA[$settings['notifier']['slack']['channel']]]></code>
-      <code><![CDATA[$settings['redis']['host']]]></code>
-    </MixedArgument>
-    <MixedArrayAccess>
-      <code><![CDATA[$c->get('settings')['doctrine']]]></code>
-      <code><![CDATA[$c->get('settings')['identity']]]></code>
-      <code><![CDATA[$c->get('settings')['los_rate_limit']]]></code>
-      <code><![CDATA[$c->get('settings')['redis']]]></code>
-      <code><![CDATA[$c->get('settings')['redis']]]></code>
-      <code><![CDATA[$c->get('settings')['redis']]]></code>
-      <code><![CDATA[$c->get('settings')['stripe']]]></code>
-      <code><![CDATA[$loggerSettings['level']]]></code>
-      <code><![CDATA[$loggerSettings['name']]]></code>
-      <code><![CDATA[$loggerSettings['path']]]></code>
-      <code><![CDATA[$settings['appEnv']]]></code>
-      <code><![CDATA[$settings['doctrine']]]></code>
-      <code><![CDATA[$settings['doctrine']]]></code>
-      <code><![CDATA[$settings['doctrine']]]></code>
-      <code><![CDATA[$settings['doctrine']]]></code>
-      <code><![CDATA[$settings['doctrine']]]></code>
-      <code><![CDATA[$settings['doctrine']['cache_dir']]]></code>
-      <code><![CDATA[$settings['doctrine']['dev_mode']]]></code>
-      <code><![CDATA[$settings['doctrine']['dev_mode']]]></code>
-      <code><![CDATA[$settings['doctrine']['metadata_dirs']]]></code>
-      <code><![CDATA[$settings['doctrine']['metadata_dirs']]]></code>
-      <code><![CDATA[$settings['logger']]]></code>
-      <code><![CDATA[$settings['notifier']]]></code>
-      <code><![CDATA[$settings['notifier']]]></code>
-      <code><![CDATA[$settings['notifier']['slack']]]></code>
-      <code><![CDATA[$settings['notifier']['slack']]]></code>
-      <code><![CDATA[$settings['notifier']['slack']['api_token']]]></code>
-      <code><![CDATA[$settings['notifier']['slack']['channel']]]></code>
-      <code><![CDATA[$settings['redis']]]></code>
-      <code><![CDATA[$settings['redis']['host']]]></code>
-    </MixedArrayAccess>
-    <MixedAssignment>
-      <code><![CDATA[$loggerSettings]]></code>
-      <code><![CDATA[$settings]]></code>
-      <code><![CDATA[$settings]]></code>
-      <code><![CDATA[$settings]]></code>
-    </MixedAssignment>
-    <MixedOperand>
-      <code><![CDATA[$c->get('settings')['redis']['host']]]></code>
-      <code><![CDATA[$settings['doctrine']['cache_dir']]]></code>
-    </MixedOperand>
-  </file>
   <file src="app/settings.php">
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[getenv('MAX_CREATES_PER_IP_PER_5M')]]></code>
     </RiskyTruthyFalsyComparison>
-  </file>
-  <file src="public/index.php">
-    <MixedArrayAccess>
-      <code><![CDATA[$container->get('settings')['displayErrorDetails']]]></code>
-    </MixedArrayAccess>
-  </file>
-  <file src="src/Application/Actions/Hooks/Stripe.php">
-    <MixedArrayAccess>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-    </MixedArrayAccess>
-    <MixedAssignment>
-      <code><![CDATA[$this->stripeSettings]]></code>
-    </MixedAssignment>
   </file>
   <file src="src/Application/Actions/Hooks/StripePaymentsUpdate.php">
     <MixedArgument>
@@ -282,23 +206,6 @@
       <code><![CDATA[$payloadArray]]></code>
       <code><![CDATA[$payloadArray]]></code>
       <code><![CDATA[$payloadArray]]></code>
-    </MixedAssignment>
-  </file>
-  <file src="tests/Application/Actions/Hooks/StripePayoutUpdateTest.php">
-    <MixedArgument>
-      <code><![CDATA[$webhookSecret]]></code>
-      <code><![CDATA[$webhookSecret]]></code>
-      <code><![CDATA[$webhookSecret]]></code>
-    </MixedArgument>
-    <MixedArrayAccess>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-      <code><![CDATA[$container->get('settings')['stripe']]]></code>
-    </MixedArrayAccess>
-    <MixedAssignment>
-      <code><![CDATA[$webhookSecret]]></code>
-      <code><![CDATA[$webhookSecret]]></code>
-      <code><![CDATA[$webhookSecret]]></code>
     </MixedAssignment>
   </file>
   <file src="tests/Application/Fees/WebsiteExamplesCalculatorTest.php">

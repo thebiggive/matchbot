@@ -5,6 +5,7 @@ declare(strict_types=1);
 use MatchBot\Application\Handlers\HttpErrorHandler;
 use MatchBot\Application\Handlers\ShutdownHandler;
 use MatchBot\Application\Security\CorsMiddleware;
+use MatchBot\Application\Settings;
 use Psr\Log\LoggerInterface;
 use Slim\Factory\AppFactory;
 use Slim\Factory\ServerRequestCreatorFactory;
@@ -21,8 +22,7 @@ $callableResolver = $app->getCallableResolver();
 $routes = require __DIR__ . '/../app/routes.php';
 $routes($app);
 
-/** @var bool $displayErrorDetails */
-$displayErrorDetails = $container->get('settings')['displayErrorDetails'];
+$displayErrorDetails = $container->get(Settings::class)->displayErrorDetails;
 
 // Create Request object from globals
 $serverRequestCreator = ServerRequestCreatorFactory::create();
