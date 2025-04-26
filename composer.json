@@ -70,8 +70,15 @@
     "require-dev": {
         "doctrine/event-manager": "^2.0",
         "infection/infection": "^0.29.10",
+        "jangregor/phpstan-prophecy": "^2.1",
         "phpspec/prophecy": "^1.19",
         "phpspec/prophecy-phpunit": "^v2.1.0",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-beberlei-assert": "^2.0",
+        "phpstan/phpstan-doctrine": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-symfony": "^2.0",
         "phpunit/phpunit": "^9.6",
         "psalm/plugin-phpunit": "^0.19.2",
         "roave/infection-static-analysis-plugin": "^1.36",
@@ -84,7 +91,8 @@
         "allow-plugins": {
             "composer/package-versions-deprecated": true,
             "infection/extension-installer": true,
-            "cweagans/composer-patches": true
+            "cweagans/composer-patches": true,
+            "phpstan/extension-installer": true
         },
         "optimize-autoloader": true,
         "platform": {
@@ -131,7 +139,7 @@
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
         "doctrine:migrate:generate": "doctrine-migrations generate",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
-        "sa:check": "vendor/bin/psalm --threads=4",
+        "sa:check": "vendor/bin/psalm --threads=4 && vendor/bin/phpstan",
         "sa:check-with-new-cache": "vendor/bin/psalm --clear-cache; vendor/bin/psalm",
         "lint:check": "phpcs --standard=phpcs.xml -s . --ignore=reports",
         "lint:fix": "phpcbf --standard=phpcs.xml -s . --ignore=reports",
