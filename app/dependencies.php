@@ -98,7 +98,7 @@ return function (ContainerBuilder $containerBuilder) {
     // https://github.com/PHP-DI/PHP-DI/blob/a7410e4ee4f61312183af2d7e26a9e6592d2d974/src/Compiler/Compiler.php#L389
 
     $containerBuilder->addDefinitions([
-        Settings::class => Settings::fromEnvVars(...),
+        Settings::class => fn() => Settings::fromEnvVars(getenv()),
 
         Auth\DonationPublicAuthMiddleware::class =>
             function (ContainerInterface $c): Auth\DonationPublicAuthMiddleware {

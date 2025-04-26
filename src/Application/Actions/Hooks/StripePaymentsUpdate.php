@@ -261,7 +261,7 @@ class StripePaymentsUpdate extends Stripe
         $donation->recordRefundAt($refundDate);
         $this->doPostMarkRefundedUpdates($donation, true);
 
-        return $this->respondWithData($response, $event->data->object);
+        return $this->respondWithData($response, $dispute);
     }
 
     private function handleChargeRefunded(Event $event, Response $response): Response

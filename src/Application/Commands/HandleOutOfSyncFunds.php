@@ -72,7 +72,9 @@ class HandleOutOfSyncFunds extends LockingCommand
         }
 
         $excludedFundingIds = [];
-        if ($excludeJson = getenv('KNOWN_OVERMATCHED_FUNDING_IDS')) {
+        $excludeJson = getenv('KNOWN_OVERMATCHED_FUNDING_IDS');
+        if (is_string($excludeJson) && $excludeJson !== '') {
+            /** @var array $excludedFundingIds */
             $excludedFundingIds = json_decode($excludeJson, true, 512, \JSON_THROW_ON_ERROR);
         }
 

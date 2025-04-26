@@ -164,7 +164,7 @@ class TestCase extends PHPUnitTestCase
      * @param string $method
      * @param string $path
      * @param string $bodyString
-     * @param array $headers
+     * @param array<string, string> $headers
      * @param array $serverParams
      * @param array $cookies
      * @return Request

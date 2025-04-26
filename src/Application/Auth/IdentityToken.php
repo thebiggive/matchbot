@@ -10,6 +10,9 @@ use JetBrains\PhpStorm\Pure;
 use MatchBot\Domain\PersonId;
 use Psr\Log\LoggerInterface;
 
+/**
+ * @psalm-type IdentityJWT object{sub: object{person_id: string, psp_id: ?string, complete?: boolean|null}}
+ */
 class IdentityToken
 {
     public function __construct(private string $baseUri)
@@ -24,6 +27,17 @@ class IdentityToken
     private static string $algorithm = 'HS256';
 
     /**
+     * @return IdentityJWT
+     */
+    public static function decodeJWT(string $jws): object
+    {
+        /** @var IdentityJWT $decodedJwtBody */
+        $decodedJwtBody = JWT::decode($jws, static::getKey());
+
+        return $decodedJwtBody;
+    }
+
+    /**
      * Checks an Identity app token is valid. For the purpose of linking new donations to
      * a Person we don't mind if there's a password so the `complete` claim is not checked.
      *
@@ -35,7 +49,7 @@ class IdentityToken
     public function check(?string $personId, string $jws, LoggerInterface $logger): bool
     {
         try {
-            $decodedJwtBody = JWT::decode($jws, static::getKey());
+            $decodedJwtBody = self::decodeJWT($jws);
         } catch (\Exception $exception) {
             $type = get_class($exception);
             // This is only a warning for now. We've seen likely crawlers + bots send invalid
@@ -64,18 +78,14 @@ class IdentityToken
 
     public static function getPersonId(string $jws): PersonId
     {
-        /**
-         * @var object{sub: object{person_id: string}} $decodedJwtBody
-         */
-        $decodedJwtBody = JWT::decode($jws, static::getKey());
-
+        $decodedJwtBody = self::decodeJWT($jws);
         return PersonId::of($decodedJwtBody->sub->person_id);
     }
 
     public static function getPspId(string $jws): ?string
     {
         try {
-            $decodedJwtBody = JWT::decode($jws, static::getKey());
+            $decodedJwtBody = self::decodeJWT($jws);
         } catch (\Exception $exception) {
             // Should never happen in practice because we `check()` first.
             return null;
@@ -108,7 +118,7 @@ class IdentityToken
         }
 
         try {
-            $decodedJwtBody = JWT::decode($jws, static::getKey());
+            $decodedJwtBody = self::decodeJWT($jws);
         } catch (\Exception $exception) {
             // Should never happen in practice because we `check()` first.
             return false;

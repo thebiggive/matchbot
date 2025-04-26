@@ -37,6 +37,7 @@ $errorHandler = new HttpErrorHandler(
     $callableResolver,
     $responseFactory,
     $appContainer->get(LoggerInterface::class),
+    $request,
 );
 
 // Create Shutdown Handler

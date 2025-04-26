@@ -288,7 +288,7 @@ class UpdateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $payloadArray = json_decode($payload, true);
+        $payloadArray = $this->decodePaylode($payload);
         $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
         $this->assertEquals('N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
@@ -340,7 +340,7 @@ class UpdateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $payloadArray = json_decode($payload, true);
+        $payloadArray = $this->decodePaylode($payload);
         $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
         $this->assertEquals('N1 1AA', $payloadArray['billingPostalAddress']);
         $this->assertTrue($payloadArray['giftAid']);
@@ -449,7 +449,7 @@ class UpdateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $payloadArray = json_decode($payload, true);
+        $payloadArray = $this->decodePaylode($payload);
         $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
     }
 
@@ -486,7 +486,7 @@ class UpdateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $payloadArray = json_decode($payload, true);
+        $payloadArray = $this->decodePaylode($payload);
         $this->assertEquals(DonationStatus::Cancelled->value, $payloadArray['status']);
         $this->assertFalse($payloadArray['giftAid']);
         $this->assertEquals(124.56, $payloadArray['donationAmount']); // Attempt to patch this is ignored
@@ -756,7 +756,7 @@ class UpdateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(500, $response->getStatusCode());
 
-        $payloadArray = json_decode($payload, true);
+        $payloadArray = $this->decodePaylode($payload);
         $this->assertEquals([
             'error' => [
                 'type' => 'SERVER_ERROR',
@@ -838,7 +838,7 @@ class UpdateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $payloadArray = json_decode($payload, true);
+        $payloadArray = $this->decodePaylode($payload);
         $this->assertEquals(3.08, $payloadArray['charityFee']);
     }
 
@@ -917,7 +917,7 @@ class UpdateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(500, $response->getStatusCode());
 
-        $payloadArray = json_decode($payload, true);
+        $payloadArray = $this->decodePaylode($payload);
         $this->assertEquals([
             'error' => [
                 'type' => 'SERVER_ERROR',
@@ -999,7 +999,7 @@ class UpdateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $payloadArray = json_decode($payload, true);
+        $payloadArray = $this->decodePaylode($payload);
         $this->assertEquals(3.08, $payloadArray['charityFee']);
     }
 
@@ -1076,7 +1076,7 @@ class UpdateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(500, $response->getStatusCode());
 
-        $payloadArray = json_decode($payload, true);
+        $payloadArray = $this->decodePaylode($payload);
         $this->assertEquals([
             'error' => [
                 'type' => 'SERVER_ERROR',
@@ -1161,7 +1161,7 @@ class UpdateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $payloadArray = json_decode($payload, true);
+        $payloadArray = $this->decodePaylode($payload);
         $this->assertEquals(3.08, $payloadArray['charityFee']);
     }
 
@@ -1275,7 +1275,7 @@ class UpdateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(200, $response->getStatusCode());
 
-        $payloadArray = json_decode($payload, true);
+        $payloadArray = $this->decodePaylode($payload);
 
         // These values are unchanged but still returned. Confirming alone doesn't change the
         // response payload.
@@ -1336,7 +1336,7 @@ class UpdateTest extends TestCase
         /**
          * @psalm-var array{donationAmount:float, status:string} $payloadArray
          */
-        $payloadArray = json_decode($payload, true);
+        $payloadArray = $this->decodePaylode($payload);
 
         $this->assertEquals(123.45, $payloadArray['donationAmount']);
         // Bank transfer is still required -> status remains pending.
@@ -1666,5 +1666,13 @@ class UpdateTest extends TestCase
         }
 
         return $entityManagerProphecy;
+    }
+
+    private function decodePaylode(string $payload): array
+    {
+        $decoded = json_decode($payload, true, \JSON_THROW_ON_ERROR);
+        \assert(is_array($decoded));
+
+        return $decoded;
     }
 }

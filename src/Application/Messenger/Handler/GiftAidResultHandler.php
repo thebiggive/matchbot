@@ -39,11 +39,11 @@ class GiftAidResultHandler
             $donation->setTbgGiftAidRequestConfirmedCompleteAt(new \DateTime());
         }
 
-        if (!empty($donationMessage->submission_correlation_id)) {
+        if ($donationMessage->submission_correlation_id !== null && $donationMessage->submission_correlation_id !== '') {
             $donation->setTbgGiftAidRequestCorrelationId($donationMessage->submission_correlation_id);
         }
 
-        if (!empty($donationMessage->response_detail)) {
+        if ($donationMessage->response_detail !== null && $donationMessage->response_detail !== '') {
             $donation->setTbgGiftAidResponseDetail($donationMessage->response_detail);
         }
 

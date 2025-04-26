@@ -102,9 +102,13 @@ EOT
         // This task is expected to bulk change lots of campaigns + funds in some cases.
         // After the loop is the most efficient time to clear the query result
         // cache so future processes see all the new data straight away.
-        /** @var CacheProvider $cacheDriver */
+        /**
+         * @psalm-suppress DeprecatedMethod
+         * @var CacheProvider $cacheDriver
+         */
         $cacheDriver = $this->entityManager->getConfiguration()->getResultCacheImpl();
         $cacheDriver->deleteAll();
+        ;
 
         return 0;
     }

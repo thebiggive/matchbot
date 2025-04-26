@@ -55,27 +55,27 @@ class Settings
     /** @var array{apiKey: non-empty-string, accountWebhookSecret: string, connectAppWebhookSecret: string} */
     public array $stripe;
 
-    private function __construct()
+    private function __construct(array $env)
     {
         $doctrineConnectionOptions = [];
-        $appEnv = $this->getNonEmptyStringEnv('APP_ENV');
+        $appEnv = $this->getNonEmptyStringEnv($env, 'APP_ENV', true);
 
         $this->appEnv = $appEnv;
         if (!in_array($appEnv, ['local', 'test'])) {
             $doctrineConnectionOptions[PDO::MYSQL_ATTR_SSL_CA] =
-                dirname(__DIR__) . '/deploy/rds-ca-eu-west-1-bundle.pem';
+                dirname(__DIR__) . '/../deploy/rds-ca-eu-west-1-bundle.pem';
         }
 
         $this->apiClient = [
             'global' => [
-                'timeout' => $this->getStringEnv('SALESFORCE_CLIENT_TIMEOUT'), // in seconds
+                'timeout' => $this->getStringEnv($env, 'SALESFORCE_CLIENT_TIMEOUT', false), // in seconds
             ],
             'salesforce' => [
-                'baseUri' => $this->getStringEnv('SALESFORCE_API_BASE'),
+                'baseUri' => $this->getStringEnv($env, 'SALESFORCE_API_BASE', false),
             ],
             'mailer' => [
-                'baseUri' => $this->getStringEnv('MAILER_BASE_URI'),
-                'sendSecret' => $this->getStringEnv('MAILER_SEND_SECRET'),
+                'baseUri' => $this->getStringEnv($env, 'MAILER_BASE_URI', false),
+                'sendSecret' => $this->getStringEnv($env, 'MAILER_SEND_SECRET', false),
             ],
         ];
 
@@ -85,16 +85,16 @@ class Settings
             // if true, metadata caching is forcefully disabled
             'dev_mode' => in_array($appEnv, ['local', 'test'], true),
 
-            'cache_dir' => __DIR__ . '/../var/doctrine',
-            'metadata_dirs' => [__DIR__ . '/../src/Domain'],
+            'cache_dir' => __DIR__ . '/../../var/doctrine',
+            'metadata_dirs' => [__DIR__ . '/../../src/Domain'],
 
             'connection' => [
                 'driver' => 'pdo_mysql',
-                'host' => $this->getStringEnv('MYSQL_HOST'),
+                'host' => $this->getStringEnv($env, 'MYSQL_HOST'),
                 'port' => 3306,
-                'dbname' => $this->getStringEnv('MYSQL_SCHEMA'),
-                'user' => $this->getStringEnv('MYSQL_USER'),
-                'password' => $this->getStringEnv('MYSQL_PASSWORD'),
+                'dbname' => $this->getStringEnv($env, 'MYSQL_SCHEMA'),
+                'user' => $this->getStringEnv($env, 'MYSQL_USER'),
+                'password' => $this->getStringEnv($env, 'MYSQL_PASSWORD'),
                 'charset' => 'utf8mb4',
                 'defaultTableOptions' => ['collate' => 'utf8mb4_unicode_ci'],
                 'driverOptions' => $doctrineConnectionOptions,
@@ -102,11 +102,11 @@ class Settings
         ];
 
         $this->donate = [
-            'baseUri' => $this->getStringEnv('ACCOUNT_MANAGEMENT_BASE_URI'),
+            'baseUri' => $this->getStringEnv($env, 'ACCOUNT_MANAGEMENT_BASE_URI', false),
         ];
 
         $this->identity = [
-            'baseUri' => $this->getStringEnv('ID_BASE_URI'),
+            'baseUri' => $this->getStringEnv($env, 'ID_BASE_URI', false),
         ];
 
         $this->logger = [
@@ -115,7 +115,8 @@ class Settings
             'level' => $appEnv === 'local' ? Logger::DEBUG : Logger::INFO,
         ];
 
-        $maxCreatesPerIpPerSM = getenv('MAX_CREATES_PER_IP_PER_5M');
+        /** @var string|null $maxCreatesPerIpPerSM */
+        $maxCreatesPerIpPerSM = $env['MAX_CREATES_PER_IP_PER_5M'] ?? null;
         if (is_string($maxCreatesPerIpPerSM)) {
             $this->los_rate_limit = [
                 // Dynamic so we can increase it for load tests or as needed based on observed
@@ -148,52 +149,62 @@ class Settings
 
         $this->notifier = [
             'slack' => [
-                'api_token' => $this->getStringEnv('SLACK_API_TOKEN'),
+                'api_token' => $this->getStringEnv($env, 'SLACK_API_TOKEN', false),
                 // e.g. '#matchbot' – channel for app's own general actions.
-                'channel' => $this->getStringEnv('SLACK_CHANNEL'),
+                'channel' => $this->getStringEnv($env, 'SLACK_CHANNEL', false),
                 // Override channel for administrative Stripe notifications.
                 'stripe_channel' => 'stripe',
             ],
         ];
 
         $this->redis = [
-            'host' => $this->getNonEmptyStringEnv('REDIS_HOST'),
+            'host' => $this->getNonEmptyStringEnv($env, 'REDIS_HOST', true),
         ];
 
         $this->stripe = [
-            'apiKey' => $this->getNonEmptyStringEnv('STRIPE_SECRET_KEY'),
-            'accountWebhookSecret' => $this->getStringEnv('STRIPE_WEBHOOK_SIGNING_SECRET'),
-            'connectAppWebhookSecret' => $this->getStringEnv('STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET'),
+            'apiKey' => $this->getNonEmptyStringEnv($env, 'STRIPE_SECRET_KEY', false),
+            'accountWebhookSecret' => $this->getStringEnv($env, 'STRIPE_WEBHOOK_SIGNING_SECRET', false),
+            'connectAppWebhookSecret' => $this->getStringEnv($env, 'STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET', false),
         ];
 
         $this->salesforce = [
             // authenticates requests originating from salesforce to matchbot:
-            'apiKey' => $this->getNonEmptyStringEnv('SALESFORCE_SECRET_KEY'),
+            'apiKey' => $this->getNonEmptyStringEnv($env, 'SALESFORCE_SECRET_KEY', false),
         ];
     }
 
-    /** @return non-empty-string */
-    private function getNonEmptyStringEnv(string $varName): string
+    /** @param array $env
+     * @return non-empty-string
+     */
+    private function getNonEmptyStringEnv(array $env, string $varName, bool $throwIfMissing = true): string
     {
-        $value = getenv($varName);
-        assert(is_string($value));
-        assert($value !== '');
+        $value = $this->getStringEnv($env, $varName, $throwIfMissing);
+        if ($value === '') {
+            throw new \Exception("Required environment variable $varName is empty");
+        }
 
         return $value;
     }
 
-    private function getStringEnv(string $varName): string
+    private function getStringEnv(array $env, string $varName, bool $throwIfMissing = true): string
     {
-        $value = getenv($varName);
-        assert(is_string($value));
+        $value = $env[$varName] ?? null;
+
+        if ((! is_string($value))) {
+            if ($throwIfMissing) {
+                throw new \Exception("Required environment variable $varName is missing.");
+            }
+
+            return "Env var $varName not set";
+        }
+
 
         return $value;
     }
 
-    public static function fromEnvVars(): self
+    public static function fromEnvVars(array $env): self
     {
-
-        return new self();
+        return new self($env);
     }
 
     /**
