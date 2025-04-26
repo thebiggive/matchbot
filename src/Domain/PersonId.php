@@ -34,8 +34,7 @@ class PersonId
 
     public function equals(self $that): bool
     {
-        // Must not use object equality because various code instantiates new objects from the string representation.
-        return $this->id->toString() === $that->id->toString();
+        return $this->id->equals($that->id);
     }
 
     public function toUUID(): UuidInterface
