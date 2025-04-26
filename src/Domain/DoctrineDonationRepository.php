@@ -568,7 +568,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         do {
             try {
                 if ($tries > 0) {
-                    $this->logger->error('Retrying setting Salesforce fields for donation $uuid after $tries tries');
+                    $this->logger->info('Retrying setting Salesforce fields for donation $uuid after $tries tries');
                 }
                 $this->setSalesforceFields($uuid, $salesforceId);
                 return;

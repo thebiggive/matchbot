@@ -70,12 +70,6 @@ class DonationService
         'The parameter application_fee_amount cannot be updated on a PaymentIntent after a capture has already been made.',
     ];
 
-
-    // for now we are opting out of async - when we go to async capture we will need to listen to the
-    // webhooks to update donations and also regular giving mandates. See
-    // https://docs.stripe.com/payments/payment-intents/asynchronous-capture#listen-webhooks
-    // and MAT-395
-    private const array ASYNC_CAPTURE_OPT_OUT = ['capture_method' => 'automatic'];
     public const string STRIPE_DESTINATION_ACCOUNT_NEEDS_CAPABILITIES_MESSAGE = 'Your destination account needs to have at least one of the following capabilities enabled';
 
 
@@ -203,7 +197,7 @@ class DonationService
             }
 
             if ($this->clock->now() > new \DateTimeImmutable("Wed Apr 16 10:00:00 AM BST 2025")) {
-                $this->logger->error("Unexpected individual campaign {$campaign->getSalesforceId()} pulled from SF - should have been prewarmed");
+                $this->logger->warning("Unexpected individual campaign {$campaign->getSalesforceId()} pulled from SF - should have been prewarmed");
             }
 
             $this->fundRepository->pullForCampaign($campaign);
@@ -318,7 +312,6 @@ class DonationService
             $paymentIntentId,
             [
                 'confirmation_token' => $tokenId->stripeConfirmationTokenId,
-                ...self::ASYNC_CAPTURE_OPT_OUT
             ]
         );
 
@@ -580,7 +573,7 @@ class DonationService
             // a Cancel dialog and send a cancellation attempt to this endpoint after finishing the donation.
 
             throw new DonationAlreadyFinalised(
-                'Donation ID {$donation->getUuid()} could not be cancelled as {$donation->getDonationStatus()->value}'
+                "Donation ID {$donation->getUuid()} could not be cancelled as {$donation->getDonationStatus()->value}"
             );
         }
 
@@ -721,7 +714,6 @@ class DonationService
             $paymentIntentId,
             [
                 'payment_method' => $paymentMethod->stripePaymentMethodId,
-                ...self::ASYNC_CAPTURE_OPT_OUT
             ]
         );
 
