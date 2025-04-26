@@ -38,8 +38,6 @@ class DonationPersistenceTest extends IntegrationTest
         $connection = $this->getService(EntityManagerInterface::class)->getConnection();
         $donationRepo = $this->getService(DonationRepository::class);
         $donationRow = $this->donationRow();
-
-        /** @phpstan-ignore dba.keyValue */
         $connection->insert('Donation', $donationRow);
 
         $donation = $donationRepo->findOneBy(['uuid' => $donationRow['uuid']]);
