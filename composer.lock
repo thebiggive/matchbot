@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d1ae47c9aa89a93ddd24e79bb0b18521",
+    "content-hash": "65aaece92703bec03d40271b1f512a1f",
     "packages": [
         {
             "name": "async-aws/core",
@@ -12640,6 +12640,84 @@
                 }
             ],
             "time": "2025-01-23T17:04:15+00:00"
+        },
+        {
+            "name": "staabm/phpstan-dba",
+            "version": "0.3.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/staabm/phpstan-dba.git",
+                "reference": "f33136c81acc3ae6aae576df98e292024e2cff2e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/staabm/phpstan-dba/zipball/f33136c81acc3ae6aae576df98e292024e2cff2e",
+                "reference": "f33136c81acc3ae6aae576df98e292024e2cff2e",
+                "shasum": ""
+            },
+            "require": {
+                "composer-runtime-api": "^2.0",
+                "composer/semver": "^3.2",
+                "doctrine/dbal": "3.*",
+                "php": "^7.4 || ^8.0",
+                "phpstan/phpstan": "^2.0"
+            },
+            "conflict": {
+                "sqlftw/sqlftw": "<0.1.16"
+            },
+            "require-dev": {
+                "dibi/dibi": "^4.2",
+                "ext-mysqli": "*",
+                "ext-pdo": "*",
+                "php-parallel-lint/php-parallel-lint": "^1.4",
+                "phpstan/extension-installer": "^1.4",
+                "phpstan/phpstan-deprecation-rules": "^2.0",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpstan/phpstan-strict-rules": "^2.0",
+                "phpunit/phpunit": "^8.5|^9.5",
+                "symplify/easy-coding-standard": "^12.5",
+                "tomasvotruba/unused-public": "^2.0",
+                "vlucas/phpdotenv": "^5.4"
+            },
+            "type": "phpstan-extension",
+            "extra": {
+                "phpstan": {
+                    "includes": [
+                        "config/dba.neon"
+                    ]
+                },
+                "branch-alias": {
+                    "dev-main": "0.3.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "staabm\\PHPStanDba\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "keywords": [
+                "Database Access Layer",
+                "PHPStan",
+                "code quality",
+                "dev",
+                "phpstan-extension",
+                "static analysis"
+            ],
+            "support": {
+                "issues": "https://github.com/staabm/phpstan-dba/issues",
+                "source": "https://github.com/staabm/phpstan-dba/tree/0.3.6"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/staabm",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-03-06T15:23:27+00:00"
         },
         {
             "name": "symfony/filesystem",

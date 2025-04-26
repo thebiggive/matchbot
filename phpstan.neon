@@ -8,3 +8,7 @@ parameters:
 		- tests
 		- integrationTests
 		- app
+	bootstrapFiles:
+		- phpstan-dba-bootstrap.php
+	ignoreErrors:
+		- identifier: function.alreadyNarrowedType
