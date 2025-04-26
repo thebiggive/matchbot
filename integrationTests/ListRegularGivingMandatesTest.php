@@ -40,6 +40,8 @@ class ListRegularGivingMandatesTest extends IntegrationTest
             DonorName::of('first', 'last'),
             StripeCustomerId::of('cus_' . $this->randomString())
         ));
+
+        $this->confirmFindByPersonIdWorks($donorAccountRepo);
     }
 
     /**
@@ -167,5 +169,12 @@ class ListRegularGivingMandatesTest extends IntegrationTest
             charityName: $charityName
         );
         return [$campaignSfId, $charitySfId, $charityName];
+    }
+
+    private function confirmFindByPersonIdWorks(DonorAccountRepository $donorAccountRepo): void
+    {
+        $accountFromFind = $donorAccountRepo->findByPersonId($this->donorId);
+        $this->assertInstanceOf(DonorAccount::class, $accountFromFind);
+        $this->assertTrue($this->donorId->equals($accountFromFind->id()));
     }
 }
