@@ -135,9 +135,6 @@
     <DeprecatedMethod>
       <code><![CDATA[getResultCacheImpl]]></code>
     </DeprecatedMethod>
-    <MixedArgument>
-      <code><![CDATA[static::$defaultName]]></code>
-    </MixedArgument>
   </file>
   <file src="src/Application/Handlers/HttpErrorHandler.php">
     <PropertyNotSetInConstructor>
@@ -164,21 +161,12 @@
       <code><![CDATA[$query->getOneOrNullResult()]]></code>
       <code><![CDATA[$query->getOneOrNullResult()]]></code>
     </MixedReturnStatement>
-    <MixedReturnTypeCoercion>
-      <code><![CDATA[$query->getResult()]]></code>
-      <code><![CDATA[CampaignFunding[]]]></code>
-    </MixedReturnTypeCoercion>
   </file>
   <file src="src/Domain/Charity.php">
     <RiskyTruthyFalsyComparison>
       <code><![CDATA[empty($hmrcReferenceNumber)]]></code>
       <code><![CDATA[empty($hmrcReferenceNumber)]]></code>
     </RiskyTruthyFalsyComparison>
-  </file>
-  <file src="src/Domain/DoctrineDonationRepository.php">
-    <DeprecatedMethod>
-      <code><![CDATA[getResultCacheImpl]]></code>
-    </DeprecatedMethod>
   </file>
   <file src="src/Domain/Fund.php">
     <DeprecatedProperty>
@@ -210,9 +198,6 @@
     <MixedOperand>
       <code><![CDATA[$fundData['id']]]></code>
     </MixedOperand>
-    <PossiblyNullOperand>
-      <code><![CDATA[$fund->getId()]]></code>
-    </PossiblyNullOperand>
   </file>
   <file src="src/Domain/SalesforceProxyRepository.php">
     <MissingConstructor>
@@ -296,20 +281,6 @@
       <code><![CDATA[$payloadArray]]></code>
       <code><![CDATA[$payloadArray]]></code>
       <code><![CDATA[$payloadArray]]></code>
-      <code><![CDATA[$payloadArray]]></code>
-    </MixedAssignment>
-  </file>
-  <file src="tests/Application/Actions/GetPaymentMethodsTest.php">
-    <MixedArgument>
-      <code><![CDATA[$payloadArray]]></code>
-    </MixedArgument>
-    <MixedArrayAccess>
-      <code><![CDATA[$payloadArray['data']]]></code>
-      <code><![CDATA[$payloadArray['data'][0]]]></code>
-      <code><![CDATA[$payloadArray['data'][0]['card']]]></code>
-      <code><![CDATA[$payloadArray['data'][0]['card']['last4']]]></code>
-    </MixedArrayAccess>
-    <MixedAssignment>
       <code><![CDATA[$payloadArray]]></code>
     </MixedAssignment>
   </file>
