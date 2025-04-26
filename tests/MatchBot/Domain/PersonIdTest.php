@@ -16,7 +16,7 @@ class PersonIdTest extends TestCase
 
     public function testIsEqualToItself(): void
     {
-        $personId = PersonId::of(Uuid::uuid4());
+        $personId = PersonId::of(Uuid::uuid4()->toString());
         $itSelf = $personId;
 
         self::assertTrue($personId->equals($itSelf));
@@ -33,6 +33,6 @@ class PersonIdTest extends TestCase
     public function testRoundTripFromUUID(): void
     {
         $uuid = Uuid::uuid4();
-        $this->assertTrue(PersonId::of($uuid)->id->equals($uuid));
+        $this->assertTrue(PersonId::of($uuid->toString())->id->equals($uuid));
     }
 }
