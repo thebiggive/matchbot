@@ -83,7 +83,7 @@
         "psalm/plugin-phpunit": "^0.19.2",
         "roave/security-advisories": "dev-latest",
         "squizlabs/php_codesniffer": "^3.10",
-        "vimeo/psalm": "^6.0.0",
+        "vimeo/psalm": "6.0.0",
         "weirdan/doctrine-psalm-plugin": "^2.10"
     },
     "config": {
@@ -126,7 +126,8 @@
             "@doctrine:cache:clear",
             "doctrine orm:schema-tool:drop --full-database --force",
             "MYSQL_SCHEMA=matchbot_test vendor/bin/doctrine orm:schema-tool:drop --full-database --force",
-            "@doctrine:migrate"
+            "@doctrine:migrate",
+            "./matchbot matchbot:write-schema-file"
         ],
         "doctrine:ensure-prod": "doctrine orm:ensure-production-settings",
         "doctrine:generate-proxies": "doctrine orm:generate-proxies",
@@ -252,7 +253,8 @@
             "@test",
             "@integration-test",
             "@sa:check",
-            "@lint:check"
+            "@lint:check",
+            "./matchbot matchbot:write-schema-file --check"
         ]
     },
     "extra": {

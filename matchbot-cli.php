@@ -24,6 +24,7 @@ use MatchBot\Application\Commands\SendStatistics;
 use MatchBot\Application\Commands\SetupTestMandate;
 use MatchBot\Application\Commands\TakeRegularGivingDonations;
 use MatchBot\Application\Commands\UpdateCampaigns;
+use MatchBot\Application\Commands\WriteSchemaFile;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
@@ -64,6 +65,7 @@ $commands = array_map($psr11App->get(...), [
     SetupTestMandate::class,
     TakeRegularGivingDonations::class,
     UpdateCampaigns::class,
+    WriteSchemaFile::class,
 ]);
 
 $dispatcher = new EventDispatcher();
