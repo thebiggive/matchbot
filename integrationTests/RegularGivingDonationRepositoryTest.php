@@ -3,18 +3,15 @@
 namespace MatchBot\IntegrationTests;
 
 use Doctrine\ORM\EntityManagerInterface;
-use MatchBot\Client\Mandate as MandateSFClient;
 use MatchBot\Domain\DayOfMonth;
 use MatchBot\Domain\Donation;
 use MatchBot\Domain\DonationRepository;
 use MatchBot\Domain\DonationSequenceNumber;
-use MatchBot\Domain\DonationStatus;
 use MatchBot\Domain\DonorAccount;
 use MatchBot\Domain\DonorName;
 use MatchBot\Domain\EmailAddress;
 use MatchBot\Domain\Money;
 use MatchBot\Domain\Country;
-use MatchBot\Domain\PaymentMethodType;
 use MatchBot\Domain\PersonId;
 use MatchBot\Domain\RegularGivingMandate;
 use MatchBot\Domain\Salesforce18Id;
