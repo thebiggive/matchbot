@@ -127,7 +127,13 @@
             "doctrine orm:schema-tool:drop --full-database --force",
             "MYSQL_SCHEMA=matchbot_test vendor/bin/doctrine orm:schema-tool:drop --full-database --force",
             "@doctrine:migrate",
-            "./matchbot matchbot:write-schema-file"
+            "./matchbot matchbot:write-schema-files"
+        ],
+        "doctrine:update-schema": [
+            "@doctrine:cache:clear",
+            "doctrine-migrations diff --allow-empty-diff",
+            "@doctrine:migrate",
+            "./matchbot matchbot:write-schema-files"
         ],
         "doctrine:ensure-prod": "doctrine orm:ensure-production-settings",
         "doctrine:generate-proxies": "doctrine orm:generate-proxies",
@@ -254,7 +260,7 @@
             "@integration-test",
             "@sa:check",
             "@lint:check",
-            "./matchbot matchbot:write-schema-file --check"
+            "./matchbot matchbot:write-schema-files --check"
         ]
     },
     "extra": {
