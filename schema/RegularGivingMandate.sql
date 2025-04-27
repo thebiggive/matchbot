@@ -3,7 +3,7 @@
 
 -- Note that CHARSET and COLLATE details have been removed to allow sucessful comparisons between schemas
 -- on dev machines and CircleCI. Do not use these files to create a database. They are provided for
--- developer information only.
+-- information only.
 
 CREATE TABLE `RegularGivingMandate` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
