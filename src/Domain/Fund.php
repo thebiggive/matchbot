@@ -62,6 +62,7 @@ class Fund extends SalesforceReadProxy
 
         $this->currencyCode = $currencyCode;
         $this->name = $name;
+        /** @psalm-suppress DeprecatedProperty we just constructed this so we know its not a proxy. */
         $this->salesforceId = $salesforceId?->value;
         $this->fundType = $fundType;
         $this->setAllocationOrder($fundType->allocationOrder());

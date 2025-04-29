@@ -66,7 +66,10 @@ class DonationToken
             return false;
         }
 
-        if ($donationId !== $decodedJwtBody->sub->donationId) {
+        /** @var object{donationId: string} $sub */
+        $sub = $decodedJwtBody->sub;
+
+        if ($donationId !== $sub->donationId) {
             // We've seen this rarely from things like sharing thank you URLs across browsers / devices.
             // We want stats of this on dashboards to monitor frequency, but not error alarms.
             $logger->warning("JWT error: Not authorised for donation ID $donationId");

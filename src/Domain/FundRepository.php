@@ -18,8 +18,8 @@ use MatchBot\Domain\DomainException\DomainCurrencyMustNotChangeException;
  */
 class FundRepository extends SalesforceReadProxyRepository
 {
-    private CampaignFundingRepository $campaignFundingRepository;
-    private Matching\Adapter $matchingAdapter;
+    private ?CampaignFundingRepository $campaignFundingRepository = null;
+    private ?Matching\Adapter $matchingAdapter = null;
 
     public function setCampaignFundingRepository(CampaignFundingRepository $repository): void
     {
@@ -76,9 +76,9 @@ class FundRepository extends SalesforceReadProxyRepository
             // iff the fund is shareable. Otherwise look up only fundings for this campaign. In both cases,
             // if the funding is new the lookup result is null and we must make a new funding.
             if ($fundData['isShared']) {
-                $campaignFunding = $this->campaignFundingRepository->getFunding($fund);
+                $campaignFunding = $this->getCampaignFundingRepository()->getFunding($fund);
             } else {
-                $campaignFunding = $this->campaignFundingRepository->getFundingForCampaign($campaign, $fund);
+                $campaignFunding = $this->getCampaignFundingRepository()->getFundingForCampaign($campaign, $fund);
             }
 
             // We must now support funds' totals changing over time, even after a campaign opens. This must play
@@ -96,9 +96,14 @@ class FundRepository extends SalesforceReadProxyRepository
                 $increaseInAmount = bcsub($amountForCampaign, $campaignFunding->getAmount(), 2);
 
                 if (bccomp($increaseInAmount, '0.00', 2) === 1) {
-                    $newTotal = $this->matchingAdapter->addAmount($campaignFunding, $increaseInAmount);
+                    $matchingAdapter = $this->matchingAdapter;
+                    if ($matchingAdapter === null) {
+                        throw new \Exception("Matching Adapter not set");
+                    }
 
-                    $this->logger->info(
+                    $newTotal = $matchingAdapter->addAmount($campaignFunding, $increaseInAmount);
+
+                    $this->getLogger()->info(
                         "Funding ID {$campaignFunding->getId()} balance increased " .
                         "£{$increaseInAmount} to £{$newTotal}"
                     );
@@ -107,7 +112,7 @@ class FundRepository extends SalesforceReadProxyRepository
                 }
 
                 if (bccomp($increaseInAmount, '0.00', 2) === -1) {
-                    $this->logger->error(
+                    $this->getLogger()->error(
                         "Funding ID {$campaignFunding->getId()} balance could not be negative-increased by " .
                         "£{$increaseInAmount}. Salesforce Fund ID {$fundData['id']}."
                     );
@@ -138,7 +143,10 @@ class FundRepository extends SalesforceReadProxyRepository
         }
     }
 
-    protected function setAnyFundData(Fund $fund, array $fundData): Fund
+    /**
+     * @param array{currencyCode: string, name: string, type: string, id:string, ...} $fundData
+     */
+    private function setAnyFundData(Fund $fund, array $fundData): Fund
     {
         if ($fund->hasBeenPersisted() && $fund->getCurrencyCode() !== $fundData['currencyCode']) {
             $this->logWarning(sprintf(
@@ -156,7 +164,6 @@ class FundRepository extends SalesforceReadProxyRepository
         // At the end of a campaign however we want to treat them as Topups during redistribution. So until we have
         // a form that gets it right from the start, we allow a type change from Pledge to TopupPledge based on
         // Salesforce Pledge__c record edits.
-        /** @var string $type */
         $type = $fundData['type'];
         try {
             $fund->changeTypeIfNecessary(FundType::from($type));
@@ -180,10 +187,12 @@ class FundRepository extends SalesforceReadProxyRepository
         $currencyCode = $fundData['currencyCode'] ?? 'GBP';
         $name = $fundData['name'] ?? '';
         $type = $fundData['type'];
+        $id = $fundData['id'];
         Assertion::string($currencyCode);
         Assertion::string($name);
         Assertion::string($type);
-        $fund = new Fund(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($fundData['id']), fundType: FundType::from($type));
+        Assertion::string($id);
+        $fund = new Fund(currencyCode: $currencyCode, name: $name, salesforceId: Salesforce18Id::of($id), fundType: FundType::from($type));
 
         return $fund;
     }
@@ -238,6 +247,11 @@ EOT;
             ->getResult();
 
         return $result;
+    }
+
+    private function getCampaignFundingRepository(): CampaignFundingRepository
+    {
+        return $this->campaignFundingRepository ?? throw new \Exception('CampaignFundingRepository not set');
     }
 
     /**

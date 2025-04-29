@@ -143,7 +143,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
     public function fetchAllForMetaCampaign(string $metaCampaginSlug): array
     {
         /** @var list<array{id: string}> $campaignList */
-        $campaignList = $this->client->findCampaignsForMetaCampaign($metaCampaginSlug, limit: 10_000);
+        $campaignList = $this->getClient()->findCampaignsForMetaCampaign($metaCampaginSlug, limit: 10_000);
 
         $campaignIds = array_map(function (array $campaign) {
             return Salesforce18Id::ofCampaign($campaign['id']);
@@ -168,7 +168,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
                 $campaign = $this->pullNewFromSf($id);
                 $newFetchCount++;
             }
-            $this->logger->info("Fetched campaign $i of $count, '{$campaign->getCampaignName()}'\n");
+            $this->getLogger()->info("Fetched campaign $i of $count, '{$campaign->getCampaignName()}'\n");
 
             $campaigns[] = $campaign;
         }
@@ -307,7 +307,7 @@ class CampaignRepository extends SalesforceReadProxyRepository
         Assertion::null($feePercentage, "Fee percentages are no-longer supported, should always be null");
 
         if ($campaignData['status'] === null) {
-            $this->logger->debug("null status from SF for campaign " . $campaignData['id']);
+            $this->getLogger()->debug("null status from SF for campaign " . $campaignData['id']);
         }
 
         $regularGivingCollectionEnd = $campaignData['regularGivingCollectionEnd'] ?? null;

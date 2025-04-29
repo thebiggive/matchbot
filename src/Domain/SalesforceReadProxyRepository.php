@@ -36,22 +36,24 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
     ): void {
         // Make sure we update existing object if passed in a partial copy and we already have that Salesforce object
         // persisted, otherwise we'll try to insert a duplicate and get an ORM crash.
+        $salesforceId = $proxy->getSalesforceId();
+        if ($salesforceId === null) {
+            $this->logWarning(
+                'Cannot update ' .
+                get_class($proxy) . ' without SF ID for internal ID ' .
+                ($proxy->getId() ?? -1)
+            );
+            return;
+        }
+
         if (
             $proxy->hasBeenPersisted() &&
-            ($existingProxy = $this->findOneBy(['salesforceId' => $proxy->getSalesforceId()]))
+            ($existingProxy = $this->findOneBy(['salesforceId' => $salesforceId]))
         ) {
-            $this->logInfo('Updating ' . get_class($proxy) . ' ' . $proxy->getSalesforceId() . '...');
-            if ($proxy->getSalesforceId() === null) {
-                $this->logWarning(
-                    'Cannot update ' .
-                    get_class($proxy) . ' without SF ID for internal ID ' .
-                    ($proxy->getId() ?? -1)
-                );
-                return;
-            }
+            $this->logInfo('Updating ' . get_class($proxy) . ' ' . $salesforceId . '...');
             $proxy = $existingProxy;
         } else {
-            $this->logInfo('Creating ' . get_class($proxy) . ' ' . $proxy->getSalesforceId());
+            $this->logInfo('Creating ' . get_class($proxy) . ' ' . $salesforceId);
         }
 
         $this->doUpdateFromSf($proxy, $withCache);
@@ -62,6 +64,6 @@ abstract class SalesforceReadProxyRepository extends SalesforceProxyRepository
             $this->getEntityManager()->flush();
         }
 
-        $this->logInfo('Done persisting ' . get_class($proxy) . ' ' . $proxy->getSalesforceId());
+        $this->logInfo('Done persisting ' . get_class($proxy) . ' ' . $salesforceId);
     }
 }

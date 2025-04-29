@@ -1,0 +1,745 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/dependencies.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between ''2024\-06\-20'' and ''2024\-06\-20'' will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: app/dependencies.php
+
+		-
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/repositories.php
+
+		-
+			message: '#^Instanceof between MatchBot\\Domain\\DonorAccountRepository\<MatchBot\\Domain\\DonorAccount\> and MatchBot\\Domain\\DonorAccountRepository will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/repositories.php
+
+		-
+			message: '#^Call to static method Assert\\Assertion\:\:isInstanceOf\(\) with MatchBot\\Domain\\Campaign and ''MatchBot\\\\Domain\\\\Campaign'' will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
+			count: 1
+			path: integrationTests/CampaignRepositoryTest.php
+
+		-
+			message: '#^Property MatchBot\\Application\\Matching\\Adapter@anonymous/integrationTests/DonationMatchingTest\.php\:96\:\:\$inTransaction is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: integrationTests/DonationMatchingTest.php
+
+		-
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: integrationTests/DonationRepositoryTest.php
+
+		-
+			message: '#^Instanceof between DateTimeImmutable and DateTimeImmutable will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: integrationTests/DonationRepositoryTest.php
+
+		-
+			message: '#^Call to static method Assert\\Assertion\:\:allInteger\(\) with array\{charityId\: int, campaignId\: int, fundId\: int, campaignFundingId\: int\} will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
+			count: 1
+			path: integrationTests/IntegrationTest.php
+
+		-
+			message: '#^PHPDoc tag @var with type array\{global\: array\{timeout\: string\}, salesforce\: array\{baseUri\: string\}, mailer\: array\{baseUri\: string, sendSecret\: string\}\} is not subtype of native type array\{global\: ArrayAccess@anonymous/integrationTests/IntegrationTest\.php\:120, mailer\: array\{baseUri\: ''dummy\-mailer\-base…''\}, salesforce\: array\{baseUri\: ''dummy\-salesforce…''\}\}\.$#'
+			identifier: varTag.nativeType
+			count: 1
+			path: integrationTests/IntegrationTest.php
+
+		-
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''MatchBot\\\\Application\\\\Messenger\\\\CharityUpdated'' and MatchBot\\Application\\Messenger\\CharityUpdated will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
+			count: 1
+			path: integrationTests/PullCharityUpdatedBasedOnSfHookTest.php
+
+		-
+			message: '#^Access to an undefined property Stripe\\StripeObject\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Application/Actions/Donations/Update.php
+
+		-
+			message: '#^Call to function assert\(\) with true and ''If we\\''ve got as far…'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Application/Actions/Donations/Update.php
+
+		-
+			message: '#^Dead catch \- MatchBot\\Domain\\DomainException\\DonationAlreadyFinalised is never thrown in the try block\.$#'
+			identifier: catch.neverThrown
+			count: 1
+			path: src/Application/Actions/Donations/Update.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Application/Actions/Donations/Update.php
+
+		-
+			message: '#^Variable \$donation in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.variable
+			count: 1
+			path: src/Application/Actions/Donations/Update.php
+
+		-
+			message: '#^Instanceof between Stripe\\Event and Stripe\\Event will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Application/Actions/Hooks/Stripe.php
+
+		-
+			message: '#^Access to an undefined property Stripe\\StripeObject\:\:\$object\.$#'
+			identifier: property.notFound
+			count: 4
+			path: src/Application/Actions/Hooks/StripePaymentsUpdate.php
+
+		-
+			message: '#^Variable \$donation in PHPDoc tag @var does not exist\.$#'
+			identifier: varTag.variableNotFound
+			count: 1
+			path: src/Application/Actions/Hooks/StripePaymentsUpdate.php
+
+		-
+			message: '#^Variable \$intentId on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 2
+			path: src/Application/Actions/Hooks/StripePaymentsUpdate.php
+
+		-
+			message: '#^Access to an undefined property Stripe\\StripeObject\:\:\$object\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Application/Actions/Hooks/StripePayoutUpdate.php
+
+		-
+			message: '#^Unsafe access to private property MatchBot\\Application\\Auth\\DonationToken\:\:\$algorithm through static\:\:\.$#'
+			identifier: staticClassAccess.privateProperty
+			count: 2
+			path: src/Application/Auth/DonationToken.php
+
+		-
+			message: '#^Unsafe call to private method MatchBot\\Application\\Auth\\DonationToken\:\:getSecret\(\) through static\:\:\.$#'
+			identifier: staticClassAccess.privateMethod
+			count: 2
+			path: src/Application/Auth/DonationToken.php
+
+		-
+			message: '#^PHPDoc tag @var with type object\{sub\: object\{person_id\: string, psp_id\: string\|null, complete\?\: bool\|null\}\} is not subtype of native type stdClass\.$#'
+			identifier: varTag.nativeType
+			count: 1
+			path: src/Application/Auth/IdentityToken.php
+
+		-
+			message: '#^Unsafe access to private property MatchBot\\Application\\Auth\\IdentityToken\:\:\$algorithm through static\:\:\.$#'
+			identifier: staticClassAccess.privateProperty
+			count: 1
+			path: src/Application/Auth/IdentityToken.php
+
+		-
+			message: '#^Unsafe call to private method MatchBot\\Application\\Auth\\IdentityToken\:\:getKey\(\) through static\:\:\.$#'
+			identifier: staticClassAccess.privateMethod
+			count: 1
+			path: src/Application/Auth/IdentityToken.php
+
+		-
+			message: '#^Unsafe call to private method MatchBot\\Application\\Auth\\IdentityToken\:\:getSecret\(\) through static\:\:\.$#'
+			identifier: staticClassAccess.privateMethod
+			count: 1
+			path: src/Application/Auth/IdentityToken.php
+
+		-
+			message: '#^PHPDoc tag @var with type Psr\\Http\\Message\\ResponseInterface is not subtype of native type Slim\\Psr7\\Response\.$#'
+			identifier: varTag.nativeType
+			count: 1
+			path: src/Application/Auth/SalesforceAuthMiddleware.php
+
+		-
+			message: '#^Call to static method Assert\\Assertion\:\:allIsInstanceOf\(\) with array\{Symfony\\Component\\Console\\Command\\Command, Symfony\\Component\\Console\\Command\\Command, Symfony\\Component\\Console\\Command\\Command, Symfony\\Component\\Console\\Command\\Command\} and ''Symfony\\\\Component\\\\Console\\\\Command\\\\Command'' will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
+			count: 1
+			path: src/Application/Commands/CallFrequentTasks.php
+
+		-
+			message: '#^Unsafe access to private constant MatchBot\\Application\\Commands\\DeleteStalePaymentDetails\:\:STRIPE_PAGE_SIZE through static\:\:\.$#'
+			identifier: staticClassAccess.privateConstant
+			count: 2
+			path: src/Application/Commands/DeleteStalePaymentDetails.php
+
+		-
+			message: '#^Dead catch \- GuzzleHttp\\Exception\\RequestException is never thrown in the try block\.$#'
+			identifier: catch.neverThrown
+			count: 1
+			path: src/Application/Commands/PullIndividualCampaignFromSF.php
+
+		-
+			message: '#^Dead catch \- GuzzleHttp\\Exception\\TransferException is never thrown in the try block\.$#'
+			identifier: catch.neverThrown
+			count: 1
+			path: src/Application/Commands/UpdateCampaigns.php
+
+		-
+			message: '#^Dead catch \- MatchBot\\Domain\\DomainException\\DomainCurrencyMustNotChangeException is never thrown in the try block\.$#'
+			identifier: catch.neverThrown
+			count: 1
+			path: src/Application/Commands/UpdateCampaigns.php
+
+		-
+			message: '#^Variable \$campaigns in PHPDoc tag @var does not exist\.$#'
+			identifier: varTag.variableNotFound
+			count: 1
+			path: src/Application/Commands/UpdateCampaigns.php
+
+		-
+			message: '#^Call to static method Assert\\Assertion\:\:numeric\(\) with numeric\-string will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
+			count: 2
+			path: src/Application/Fees/Fees.php
+
+		-
+			message: '#^Instanceof between Error and Throwable will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Application/Handlers/HttpErrorHandler.php
+
+		-
+			message: '#^Result of \|\| is always true\.$#'
+			identifier: booleanOr.alwaysTrue
+			count: 1
+			path: src/Application/Handlers/HttpErrorHandler.php
+
+		-
+			message: '#^Constructor of class MatchBot\\Application\\HttpModels\\Donation has an unused parameter \$charityId\.$#'
+			identifier: constructor.unusedParameter
+			count: 1
+			path: src/Application/HttpModels/Donation.php
+
+		-
+			message: '#^Constructor of class MatchBot\\Application\\HttpModels\\Donation has an unused parameter \$donationMatched\.$#'
+			identifier: constructor.unusedParameter
+			count: 1
+			path: src/Application/HttpModels/Donation.php
+
+		-
+			message: '#^Constructor of class MatchBot\\Application\\HttpModels\\Donation has an unused parameter \$projectId\.$#'
+			identifier: constructor.unusedParameter
+			count: 1
+			path: src/Application/HttpModels/Donation.php
+
+		-
+			message: '#^Constructor of class MatchBot\\Application\\HttpModels\\Donation has an unused parameter \$transactionId\.$#'
+			identifier: constructor.unusedParameter
+			count: 1
+			path: src/Application/HttpModels/Donation.php
+
+		-
+			message: '#^Offset ''postcode'' on array\{addressLine1\: string, postcode\: string, isOutsideUK\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Application/HttpModels/MandateCreate.php
+
+		-
+			message: '#^Call to static method Assert\\Assertion\:\:numeric\(\) with numeric\-string will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
+			count: 1
+			path: src/Application/Matching/Adapter.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Application/Messenger/Handler/StripePayoutHandler.php
+
+		-
+			message: '#^@readonly property MatchBot\\Application\\Settings\:\:\$apiClient is assigned outside of the constructor\.$#'
+			identifier: property.readOnlyByPhpDocAssignNotInConstructor
+			count: 1
+			path: src/Application/Settings.php
+
+		-
+			message: '#^Offset ''salesforceId'' on array\{salesforceId\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Client/Common.php
+
+		-
+			message: '#^Dead catch \- Error is never thrown in the try block\.$#'
+			identifier: catch.neverThrown
+			count: 1
+			path: src/Domain/Campaign.php
+
+		-
+			message: '#^Property MatchBot\\Domain\\Campaign\:\:\$campaignFundings type mapping mismatch\: property can contain Doctrine\\Common\\Collections\\Collection but database expects Doctrine\\Common\\Collections\\Collection&iterable\<MatchBot\\Domain\\CampaignFunding\>\.$#'
+			identifier: doctrine.associationType
+			count: 1
+			path: src/Domain/Campaign.php
+
+		-
+			message: '#^Property MatchBot\\Domain\\Campaign\:\:\$charity type mapping mismatch\: database can contain MatchBot\\Domain\\Charity\|null but property expects MatchBot\\Domain\\Charity\.$#'
+			identifier: doctrine.associationType
+			count: 1
+			path: src/Domain/Campaign.php
+
+		-
+			message: '#^Property MatchBot\\Domain\\Campaign\:\:\$currencyCode type mapping mismatch\: property can contain string\|null but database expects string\.$#'
+			identifier: doctrine.columnType
+			count: 1
+			path: src/Domain/Campaign.php
+
+		-
+			message: '#^Property MatchBot\\Domain\\CampaignFunding\:\:\$fund type mapping mismatch\: database can contain MatchBot\\Domain\\Fund\|null but property expects MatchBot\\Domain\\Fund\.$#'
+			identifier: doctrine.associationType
+			count: 1
+			path: src/Domain/CampaignFunding.php
+
+		-
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Domain/CampaignRepository.php
+
+		-
+			message: '#^Instanceof between MatchBot\\Domain\\Campaign and MatchBot\\Domain\\Campaign will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Domain/CampaignRepository.php
+
+		-
+			message: '#^Offset ''currencyCode'' on array\{charity\: array\{id\: string, name\: string, logoUri\: string\|null, phoneNumber\: string\|null, emailAddress\: string\|null, postalAddress\: array\{city\: string\|null, line1\: string\|null, line2\: string\|null, country\: string\|null, postalCode\: string\|null\}\|null, twitter\: string\|null, website\: string\|null, \.\.\.\}, endDate\: string, feePercentage\: float\|null, id\: string, isMatched\: bool, ready\: bool, startDate\: string, status\: string\|null, \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Domain/CampaignRepository.php
+
+		-
+			message: '#^Property MatchBot\\Domain\\Charity\:\:\$regulator type mapping mismatch\: database can contain string\|null but property expects ''CCEW''\|''CCNI''\|''OSCR''\|null\.$#'
+			identifier: doctrine.columnType
+			count: 1
+			path: src/Domain/Charity.php
+
+		-
+			message: '#^Call to static method Assert\\Assertion\:\:numeric\(\) with numeric\-string will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
+			count: 1
+			path: src/Domain/DoctrineDonationRepository.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Domain/DoctrineDonationRepository.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: array\{MatchBot\\Domain\\FundType\:\:ChampionFund\|MatchBot\\Domain\\FundType\:\:Pledge\|MatchBot\\Domain\\FundType\:\:TopupPledge, bool, bool\}$#'
+			identifier: match.unhandled
+			count: 1
+			path: src/Domain/Donation.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: null$#'
+			identifier: match.unhandled
+			count: 1
+			path: src/Domain/Donation.php
+
+		-
+			message: '#^Property MatchBot\\Domain\\Donation\:\:\$campaign type mapping mismatch\: database can contain MatchBot\\Domain\\Campaign\|null but property expects MatchBot\\Domain\\Campaign\.$#'
+			identifier: doctrine.associationType
+			count: 1
+			path: src/Domain/Donation.php
+
+		-
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Domain/DonationService.php
+
+		-
+			message: '#^Call to function is_float\(\) with float will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Domain/DonationService.php
+
+		-
+			message: '#^Dead catch \- Doctrine\\DBAL\\Exception\\UniqueConstraintViolationException is never thrown in the try block\.$#'
+			identifier: catch.neverThrown
+			count: 1
+			path: src/Domain/DonationService.php
+
+		-
+			message: '#^Dead catch \- GuzzleHttp\\Exception\\ClientException is never thrown in the try block\.$#'
+			identifier: catch.neverThrown
+			count: 1
+			path: src/Domain/DonationService.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$fakeDonationProviderForTestUseOnly contains unresolvable type\.$#'
+			identifier: parameter.unresolvableType
+			count: 1
+			path: src/Domain/DonationService.php
+
+		-
+			message: '#^PHPDoc tag @var with type Stripe\\Card is not subtype of native type stdClass\.$#'
+			identifier: varTag.nativeType
+			count: 1
+			path: src/Domain/DonationService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>stripeCustomerId" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Domain/DonationService.php
+
+		-
+			message: '#^Offset ''currencyCode'' on array\{currencyCode\: string, name\: string, type\: string, id\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Domain/FundRepository.php
+
+		-
+			message: '#^Offset ''name'' on array\{currencyCode\: string, id\: string, name\: string, type\: string, amountForCampaign\: float\|int\|string\|null, isShared\: bool\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Domain/FundRepository.php
+
+		-
+			message: '#^Offset ''name'' on array\{currencyCode\: string, name\: string, type\: string, id\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Domain/FundRepository.php
+
+		-
+			message: '#^Property MatchBot\\Domain\\FundingWithdrawal\:\:\$campaignFunding type mapping mismatch\: database can contain MatchBot\\Domain\\CampaignFunding\|null but property expects MatchBot\\Domain\\CampaignFunding\.$#'
+			identifier: doctrine.associationType
+			count: 1
+			path: src/Domain/FundingWithdrawal.php
+
+		-
+			message: '#^Property MatchBot\\Domain\\FundingWithdrawal\:\:\$donation type mapping mismatch\: database can contain MatchBot\\Domain\\Donation\|null but property expects MatchBot\\Domain\\Donation\.$#'
+			identifier: doctrine.associationType
+			count: 1
+			path: src/Domain/FundingWithdrawal.php
+
+		-
+			message: '#^Call to static method Assert\\Assertion\:\:integerish\(\) with float will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
+			count: 2
+			path: src/Domain/Money.php
+
+		-
+			message: '#^Call to an undefined static method MatchBot\\Application\\Assertion\:\:nullOrbetweenLength\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 5
+			path: src/Domain/PostalAddress.php
+
+		-
+			message: '#^Call to static method Assert\\Assertion\:\:isInstanceOf\(\) with DateTimeImmutable and ''DateTimeImmutable'' will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
+			count: 1
+			path: src/Domain/RegularGivingMandate.php
+
+		-
+			message: '#^Constructor of class MatchBot\\Domain\\Salesforce18Id has an unused parameter \$_entityClass\.$#'
+			identifier: constructor.unusedParameter
+			count: 1
+			path: src/Domain/Salesforce18Id.php
+
+		-
+			message: '#^PHPDoc tag @var with type array\{array\{campaignId\: int, campaignFundingId\: int, fundId\: int\}\} is not subtype of native type array\{array\{campaignId\: 7438, campaignFundingId\: 31205, fundId\: 25353, amount\: 500\}, array\{campaignId\: 7836, campaignFundingId\: 33424, fundId\: 27195, amount\: 336\.5\}, array\{campaignId\: 7735, campaignFundingId\: 32828, fundId\: 26696, amount\: 100\}, array\{campaignId\: 7735, campaignFundingId\: 32829, fundId\: 26697, amount\: 100\}, array\{campaignId\: 7735, campaignFundingId\: 32830, fundId\: 26698, amount\: 100\}, array\{campaignId\: 7735, campaignFundingId\: 32831, fundId\: 26699, amount\: 500\}, array\{campaignId\: 7735, campaignFundingId\: 32832, fundId\: 26700, amount\: 110\}, array\{campaignId\: 7735, campaignFundingId\: 32833, fundId\: 26701, amount\: 100\}, \.\.\.\}\.$#'
+			identifier: varTag.nativeType
+			count: 1
+			path: src/Migrations/Version20241126163843.php
+
+		-
+			message: '#^PHPDoc tag @var with type array\{array\{campaignId\: int, campaignFundingId\: int, fundId\: int, amount\: float\}\} is not subtype of native type array\{array\{campaignId\: 8289, campaignFundingId\: 36212, fundId\: 29542, amount\: 900\}\}\.$#'
+			identifier: varTag.nativeType
+			count: 1
+			path: src/Migrations/Version20241128165753.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Monolog/Handler/SlackHandler.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertArrayHasKey\(\) with ''donations'' and array\{donations\: list\<array\{donationAmount\: float, status\: string\}\>\} will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: tests/Application/Actions/Donations/CancelAllTest.php
+
+		-
+			message: '#^Property Stripe\\PaymentMethod\:\:\$card \(Stripe\\StripeObject\|null\) does not accept array\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: tests/Application/Actions/Donations/ConfirmTest.php
+
+		-
+			message: '#^PHPDoc tag @var for property MatchBot\\Tests\\Application\\Actions\\Donations\\CreateTest\:\:\$previousClock with type mixed is not subtype of native type Symfony\\Component\\Clock\\ClockInterface\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: tests/Application/Actions/Donations/CreateTest.php
+
+		-
+			message: '#^Unsafe access to private property MatchBot\\Tests\\Application\\Actions\\Donations\\CreateTest\:\:\$somePaymentIntentArgs through static\:\:\.$#'
+			identifier: staticClassAccess.privateProperty
+			count: 1
+			path: tests/Application/Actions/Donations/CreateTest.php
+
+		-
+			message: '#^Unsafe access to private property MatchBot\\Tests\\Application\\Actions\\Donations\\CreateTest\:\:\$somePaymentIntentResult through static\:\:\.$#'
+			identifier: staticClassAccess.privateProperty
+			count: 1
+			path: tests/Application/Actions/Donations/CreateTest.php
+
+		-
+			message: '#^Variable \$container in PHPDoc tag @var does not match assigned variable \$testDonation\.$#'
+			identifier: varTag.differentVariable
+			count: 1
+			path: tests/Application/Actions/Donations/GetTest.php
+
+		-
+			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$customers\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Application/Actions/GetPaymentMethodsTest.php
+
+		-
+			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$balanceTransactions\.$#'
+			identifier: property.notFound
+			count: 2
+			path: tests/Application/Actions/Hooks/StripePaymentsUpdateTest.php
+
+		-
+			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$customers\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Application/Commands/DeleteStalePaymentDetailsTest.php
+
+		-
+			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$paymentMethods\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Application/Commands/DeleteStalePaymentDetailsTest.php
+
+		-
+			message: '#^Method MatchBot\\Tests\\Application\\Commands\\HandleOutOfSyncFundsTest\:\:getCampaignFundingRepoPropechy\(\) never returns MatchBot\\Domain\\CampaignFundingRepository so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: tests/Application/Commands/HandleOutOfSyncFundsTest.php
+
+		-
+			message: '#^Method MatchBot\\Tests\\Application\\Commands\\HandleOutOfSyncFundsTest\:\:getFundingWithdrawalRepoProphecy\(\) never returns MatchBot\\Domain\\FundingWithdrawalRepository so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: tests/Application/Commands/HandleOutOfSyncFundsTest.php
+
+		-
+			message: '#^Variable \$card_brand might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: tests/Application/Fees/WebsiteExamplesCalculatorTest.php
+
+		-
+			message: '#^Variable \$country might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: tests/Application/Fees/WebsiteExamplesCalculatorTest.php
+
+		-
+			message: '#^Variable \$donation_amount might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: tests/Application/Fees/WebsiteExamplesCalculatorTest.php
+
+		-
+			message: '#^Variable \$fee_vat might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: tests/Application/Fees/WebsiteExamplesCalculatorTest.php
+
+		-
+			message: '#^Variable \$processing_fee might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: tests/Application/Fees/WebsiteExamplesCalculatorTest.php
+
+		-
+			message: '#^Variable \$processing_fee_subtotal might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: tests/Application/Fees/WebsiteExamplesCalculatorTest.php
+
+		-
+			message: '#^Variable \$total_fee might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: tests/Application/Fees/WebsiteExamplesCalculatorTest.php
+
+		-
+			message: '#^Variable \$total_transferred_to_charity might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: tests/Application/Fees/WebsiteExamplesCalculatorTest.php
+
+		-
+			message: '#^Variable \$with_gift_aid might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: tests/Application/Fees/WebsiteExamplesCalculatorTest.php
+
+		-
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 3
+			path: tests/Application/Matching/AdapterTest.php
+
+		-
+			message: '#^Parameter \#1 \$callBack of method MatchBot\\Tests\\Application\\Matching\\ArrayMatchingStorage\:\:setPreIncrCallBack\(\) expects Closure\(string\)\: void, Closure\(string\)\: MatchBot\\Tests\\Application\\Matching\\ArrayMatchingStorage given\.$#'
+			identifier: argument.type
+			count: 1
+			path: tests/Application/Matching/AdapterTest.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between \-220 and \-220 will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: tests/Application/Matching/AdapterTest.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between 39\.9 and 39\.9 will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: tests/Application/Matching/AdapterTest.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between 62\.53 and 62\.53 will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: tests/Application/Matching/AdapterTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''DateTime'' and null will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: tests/Application/Messenger/Handler/GiftAidResultHandlerTest.php
+
+		-
+			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$balanceTransactions\.$#'
+			identifier: property.notFound
+			count: 5
+			path: tests/Application/Messenger/Handler/StripePayoutHandlerTest.php
+
+		-
+			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$charges\.$#'
+			identifier: property.notFound
+			count: 4
+			path: tests/Application/Messenger/Handler/StripePayoutHandlerTest.php
+
+		-
+			message: '#^Access to an undefined property Prophecy\\Prophecy\\ObjectProphecy\<Stripe\\StripeClient\>\:\:\$payouts\.$#'
+			identifier: property.notFound
+			count: 1
+			path: tests/Application/Messenger/Handler/StripePayoutHandlerTest.php
+
+		-
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: tests/Domain/DonationRepositoryMatchFundsAllocationTest.php
+
+		-
+			message: '#^Loose comparison using \=\= between 4 and 4 will always evaluate to true\.$#'
+			identifier: equal.alwaysTrue
+			count: 1
+			path: tests/Domain/DonationRepositoryMatchFundsAllocationTest.php
+
+		-
+			message: '#^Property Stripe\\ConfirmationToken\:\:\$payment_method_preview \(Stripe\\StripeObject\|null\) does not accept array\<string, array\<string, string\>\>\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: tests/Domain/DonationServiceTest.php
+
+		-
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: tests/Domain/DonationTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertTrue\(\) with true will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: tests/Domain/DonationTest.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between 3 and 3 will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: tests/Domain/DonationTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertInstanceOf\(\) with ''DateTime'' and DateTime will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: tests/Domain/FundRepositoryTest.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: array$#'
+			identifier: match.unhandled
+			count: 1
+			path: tests/Domain/FundRepositoryTest.php
+
+		-
+			message: '#^@dataProvider amountsToSummarise related method must be public\.$#'
+			identifier: phpunit.dataProviderPublic
+			count: 1
+			path: tests/Domain/FundTest.php
+
+		-
+			message: '#^Call to static method PHPUnit\\Framework\\Assert\:\:assertSame\(\) with array\{currencyCode\: ''GBP'', fundId\: null, fundType\: ''championFund'', salesforceFundId\: ''sfFundId4567890abc'', totalAmount\: 123\.45, usedAmount\: 23\.45\} and array\{fundId\: int\|null, fundType\: ''championFund''\|''pledge''\|''topupPledge''\|''unknownFund'', salesforceFundId\: string, totalAmount\: float, usedAmount\: float, currencyCode\: string\} will always evaluate to false\.$#'
+			identifier: staticMethod.impossibleType
+			count: 1
+			path: tests/Domain/FundTest.php
+
+		-
+			message: '#^Method MatchBot\\Tests\\Domain\\FundTest\:\:amountsToSummarise\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: tests/Domain/FundTest.php
+
+		-
+			message: '#^PHPDoc tag @var with type array\{array\{amountAvailable\: MatchBot\\Domain\\Money, expectedUsedAmount\: MatchBot\\Domain\\Money, totalAmount\: MatchBot\\Domain\\Money\}\} is not subtype of native type array\{array\{totalAmount\: MatchBot\\Domain\\Money, amountAvailable\: MatchBot\\Domain\\Money, expectedUsedAmount\: MatchBot\\Domain\\Money\}, array\{totalAmount\: MatchBot\\Domain\\Money, amountAvailable\: MatchBot\\Domain\\Money, expectedUsedAmount\: MatchBot\\Domain\\Money\}, array\{totalAmount\: MatchBot\\Domain\\Money, amountAvailable\: MatchBot\\Domain\\Money, expectedUsedAmount\: MatchBot\\Domain\\Money\}, array\{totalAmount\: MatchBot\\Domain\\Money, amountAvailable\: MatchBot\\Domain\\Money, expectedUsedAmount\: MatchBot\\Domain\\Money\}\}\.$#'
+			identifier: varTag.nativeType
+			count: 1
+			path: tests/Domain/FundTest.php
+
+		-
+			message: '#^Call to static method Assert\\Assertion\:\:isInstanceOf\(\) with Doctrine\\Common\\Collections\\Collection\<int, MatchBot\\Domain\\FundingWithdrawal\> and ''Doctrine\\\\Common\\\\Collections\\\\Collection'' will always evaluate to true\.$#'
+			identifier: staticMethod.alreadyNarrowedType
+			count: 1
+			path: tests/Domain/RegularGivingNotifierTest.php
+
+		-
+			message: '#^Call to method PHPUnit\\Framework\\Assert\:\:assertFalse\(\) with true will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: tests/Domain/RegularGivingServiceTest.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: tests/TestCase.php
