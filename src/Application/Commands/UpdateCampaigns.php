@@ -108,7 +108,6 @@ EOT
          */
         $cacheDriver = $this->entityManager->getConfiguration()->getResultCacheImpl();
         $cacheDriver->deleteAll();
-        ;
 
         return 0;
     }
