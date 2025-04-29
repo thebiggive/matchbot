@@ -115,13 +115,13 @@ class Settings
             'level' => $appEnv === 'local' ? Logger::DEBUG : Logger::INFO,
         ];
 
-        /** @var string|null $maxCreatesPerIpPerSM */
-        $maxCreatesPerIpPerSM = $env['MAX_CREATES_PER_IP_PER_5M'] ?? null;
-        if (is_string($maxCreatesPerIpPerSM)) {
+        /** @var string|null $maxCreatesPerIpPer5M */
+        $maxCreatesPerIpPer5M = $env['MAX_CREATES_PER_IP_PER_5M'] ?? null;
+        if (is_string($maxCreatesPerIpPer5M)) {
             $this->los_rate_limit = [
                 // Dynamic so we can increase it for load tests or as needed based on observed
                 // Production behaviour.
-                'ip_max_requests' => (int)($maxCreatesPerIpPerSM),
+                'ip_max_requests' => (int)($maxCreatesPerIpPer5M),
                 'ip_reset_time' => 300, // 5 minutes
                 // All non-local envs, including 'test', assume ALB-style forwarded headers will be used.
                 'prefer_forwarded' => $appEnv !== 'local',
