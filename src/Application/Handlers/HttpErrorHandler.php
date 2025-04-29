@@ -7,7 +7,10 @@ namespace MatchBot\Application\Handlers;
 use Exception;
 use MatchBot\Application\Actions\ActionError;
 use MatchBot\Application\Actions\ActionPayload;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpBadRequestException;
 use Slim\Exception\HttpException;
 use Slim\Exception\HttpForbiddenException;
@@ -16,10 +19,27 @@ use Slim\Exception\HttpNotFoundException;
 use Slim\Exception\HttpNotImplementedException;
 use Slim\Exception\HttpUnauthorizedException;
 use Slim\Handlers\ErrorHandler as SlimErrorHandler;
+use Slim\Interfaces\CallableResolverInterface;
 use Throwable;
 
+/**
+ * @psalm-suppress PropertyNotSetInConstructor - not possible to set following properties in constructor as they
+ * are not known at construction time.
+ * {@see SlimErrorHandler::$statusCode}, {@see SlimErrorHandler::$exception}
+ */
 class HttpErrorHandler extends SlimErrorHandler
 {
+    public function __construct(
+        CallableResolverInterface $callableResolver,
+        ResponseFactoryInterface $responseFactory,
+        ?LoggerInterface $logger,
+        ServerRequestInterface $request,
+    ) {
+        $this->request = $request;
+        $this->logErrors = false;
+        parent::__construct($callableResolver, $responseFactory, $logger);
+    }
+
     /**
      * @inheritdoc
      */

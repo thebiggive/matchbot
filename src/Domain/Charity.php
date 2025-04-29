@@ -293,11 +293,11 @@ class Charity extends SalesforceReadProxy
         $this->setStripeAccountId($stripeAccountId);
 
         $tbgCanClaimGiftAid = (
-            !empty($hmrcReferenceNumber) &&
+            $hmrcReferenceNumber !== null && $hmrcReferenceNumber !== '' &&
             in_array($giftAidOnboardingStatus, self::GIFT_AID_ONBOARDED_STATUSES, true)
         );
         $tbgApprovedToClaimGiftAid = (
-            !empty($hmrcReferenceNumber) &&
+            $hmrcReferenceNumber !== null && $hmrcReferenceNumber !== '' &&
             $giftAidOnboardingStatus === self::GIFT_AID_APPROVED_STATUS
         );
 

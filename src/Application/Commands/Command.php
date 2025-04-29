@@ -32,7 +32,7 @@ abstract class Command extends SymfonyCommand
             return;
         }
 
-        $output->writeln($this->getName() . ' starting!');
+        $output->writeln(($this->getName() ?? self::class) . ' starting!');
     }
 
     protected function finish(InputInterface $input, OutputInterface $output): void
@@ -41,7 +41,7 @@ abstract class Command extends SymfonyCommand
             return;
         }
 
-        $output->writeln($this->getName() . ' complete!');
+        $output->writeln(($this->getName() ?? self::class) . ' complete!');
     }
 
     private function noLog(InputInterface $input): bool

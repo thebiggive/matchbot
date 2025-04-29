@@ -47,6 +47,13 @@
     <env name="MYSQL_HOST" value="dummy-mysql-hostname" force="true"/>
     <env name="REDIS_HOST" value="dummy-redis-hostname" force="true"/>
     <env name="SALESFORCE_SECRET_KEY" value="topsecret" force="true"/>
+    <env name="SALESFORCE_CLIENT_TIMEOUT" value="" force="false"/>
+    <env name="MAILER_BASE_URI" value="" force="false"/>
+    <env name="MAILER_SEND_SECRET" value="" force="false"/>
+    <env name="MYSQL_SCHEMA" value="" force="false"/>
+    <env name="MYSQL_USER" value="" force="false"/>
+    <env name="MYSQL_PASSWORD" value="" force="false"/>
+    <env name="SLACK_CHANNEL" value="" force="false"/>
     <env name="SLACK_API_TOKEN" value="xoxb-**-test" />
     <env name="STRIPE_SECRET_KEY" value="sk_test_unitTestFakeKey" force="true"/>
     <env name="STRIPE_WEBHOOK_SIGNING_SECRET" value="whsec_test_unitTestFakeKey" force="true"/>

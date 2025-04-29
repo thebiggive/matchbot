@@ -203,6 +203,9 @@ class CreateTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
+    /**
+     * @psalm-suppress MixedArrayAccess
+     */
     public function testStripeWithMissingStripeAccountID(): void
     {
         $donation = $this->getTestDonation(true, true);
@@ -242,6 +245,7 @@ class CreateTest extends TestCase
         $this->assertEquals(500, $response->getStatusCode());
 
         $payloadArray = json_decode($payload, true);
+        \assert(is_array($payloadArray));
 
         $this->assertEquals('SERVER_ERROR', $payloadArray['error']['type']);
         $this->assertEquals('Could not make Stripe Payment Intent (A)', $payloadArray['error']['description']);
@@ -307,6 +311,9 @@ class CreateTest extends TestCase
         $app->handle($this->addDummyPersonAuth($request)); // Rate limit middleware should bail out.
     }
 
+    /**
+     * @psalm-suppress MixedArrayAccess
+     */
     public function testSuccessWithStripeAccountIDMissingInitiallyButFoundOnRefetch(): void
     {
         $donation = $this->getTestDonation(true, true);
@@ -421,6 +428,9 @@ class CreateTest extends TestCase
         $this->assertEquals('pi_dummyIntent456_id', $payloadArray['donation']['transactionId']);
     }
 
+    /**
+     * @psalm-suppress MixedArrayAccess
+     */
     public function testSuccessWithMatchedCampaign(): void
     {
         $donation = $this->getTestDonation(true, true);
@@ -514,6 +524,9 @@ class CreateTest extends TestCase
         $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
     }
 
+    /**
+     * @psalm-suppress MixedArrayAccess
+     */
     public function testSuccessWithMatchedCampaignAndPspCustomerId(): void
     {
         $donation = $this->getTestDonation(true, true);
@@ -682,6 +695,9 @@ class CreateTest extends TestCase
         $this->assertEquals(400, $response->getStatusCode());
     }
 
+    /**
+     * @psalm-suppress MixedArrayAccess
+     */
     public function testSuccessWithMatchedCampaignAndInitialCampaignDuplicateError(): void
     {
         $donation = $this->getTestDonation(true, true);
@@ -757,6 +773,9 @@ class CreateTest extends TestCase
         $this->assertEquals('pi_dummyIntent_id', $payloadArray['donation']['transactionId']);
     }
 
+    /**
+     * @psalm-suppress MixedArrayAccess
+     */
     public function testSuccessWithUnmatchedCampaign(): void
     {
         $donation = $this->getTestDonation(true, false);
@@ -810,6 +829,8 @@ class CreateTest extends TestCase
     /**
      * Use unmatched campaign in previous test but also omit all donor-supplied
      * detail except donation and tip amount, to test new 2-step Create setup.
+     *
+     * @psalm-suppress MixedArrayAccess
      */
     public function testSuccessWithMinimalData(): void
     {
@@ -839,6 +860,7 @@ class CreateTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(201, $response->getStatusCode());
 
+        /** @var array<string, string|numeric|boolean|array> $payloadArray */
         $payloadArray = json_decode($payload, true);
 
         $this->assertIsString($payloadArray['jwt']);

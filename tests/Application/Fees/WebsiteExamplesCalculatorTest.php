@@ -80,6 +80,8 @@ class WebsiteExamplesCalculatorTest extends TestCase
      * @psalm-suppress MixedReturnStatement
      * @psalm-suppress MoreSpecificReturnType
      * @psalm-suppress LessSpecificReturnStatement
+     *
+     * @return array<string, array<array>>
      */
     public function getFeeWorkedExamples(): array
     {

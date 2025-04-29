@@ -11,10 +11,10 @@ use MatchBot\Application\Notifier\StripeChatterInterface;
 use MatchBot\Application\SlackChannelChatterFactory;
 use MatchBot\Domain\DonationRepository;
 use Prophecy\Argument;
+use MatchBot\Application\Settings;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
-use Symfony\Component\Messenger\Transport\TransportInterface;
 use Symfony\Component\Notifier\Message\ChatMessage;
 
 class StripePayoutUpdateTest extends StripeTest
@@ -27,7 +27,7 @@ class StripePayoutUpdateTest extends StripeTest
 
         // Should 204 no-op if hook mistakenly configured to send this event.
         $body = $this->getStripeHookMock('po_created');
-        $webhookSecret = $container->get('settings')['stripe']['connectAppWebhookSecret'];
+        $webhookSecret = $container->get(Settings::class)->stripe['connectAppWebhookSecret'];
         $time = (string) time();
 
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
@@ -88,7 +88,7 @@ class StripePayoutUpdateTest extends StripeTest
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $webhookSecret = $container->get('settings')['stripe']['connectAppWebhookSecret'];
+        $webhookSecret = $container->get(Settings::class)->stripe['connectAppWebhookSecret'];
         $time = (string) time();
 
         $request = $this->createRequest('POST', '/hooks/stripe-connect', $body)
@@ -112,7 +112,7 @@ class StripePayoutUpdateTest extends StripeTest
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        $webhookSecret = $container->get('settings')['stripe']['connectAppWebhookSecret'];
+        $webhookSecret = $container->get(Settings::class)->stripe['connectAppWebhookSecret'];
         $time = (string) time();
 
         $request = $this->createRequest('POST', '/hooks/stripe-connect', $body)
@@ -136,10 +136,9 @@ class StripePayoutUpdateTest extends StripeTest
         $donationRepoProphecy = $this->prophesize(DonationRepository::class);
         $container->set(DonationRepository::class, $donationRepoProphecy->reveal());
 
-        /** @var array<string,array<string>> $settings */
-        $settings = $container->get('settings');
+        $settings = $container->get(Settings::class);
 
-        $webhookSecret = $settings['stripe']['connectAppWebhookSecret'];
+        $webhookSecret = $settings->stripe['connectAppWebhookSecret'];
         $time = (string) time();
 
         $request = $this->createRequest('POST', '/hooks/stripe-connect', $this->getStripeHookMock('po_failed'))
