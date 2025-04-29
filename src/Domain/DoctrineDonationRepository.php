@@ -11,7 +11,6 @@ use Doctrine\ORM\Query;
 use GuzzleHttp\Exception\BadResponseException;
 use MatchBot\Application\Assertion;
 use MatchBot\Application\Environment;
-use MatchBot\Application\HttpModels\DonationCreate;
 use MatchBot\Application\Matching;
 use MatchBot\Application\Messenger\DonationUpserted;
 use MatchBot\Client\BadRequestException;
@@ -570,7 +569,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
                 if ($tries > 0) {
                     $this->logger->info('Retrying setting Salesforce fields for donation $uuid after $tries tries');
                 }
-                $this->setSalesforceFields($uuid, $salesforceId);
+                $this->setSalesforcePushComplete($uuid, $salesforceId);
                 return;
             } catch (DBALException\RetryableException $exception) {
                 $tries++;
@@ -609,7 +608,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
      *
      * @throws DBALException\LockWaitTimeoutException if some other transaction is holding a lock
      */
-    private function setSalesforceFields(string $uuid, ?Salesforce18Id $salesforceId): void
+    private function setSalesforcePushComplete(string $uuid, ?Salesforce18Id $salesforceId): void
     {
         $now = new \DateTimeImmutable('now');
         $query = $this->getEntityManager()->createQuery(
@@ -625,6 +624,24 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
         $query->setParameter('now', $now);
         $query->setParameter('salesforceId', $salesforceId?->value);
         $query->setParameter('uuid', $uuid);
+        $query->execute();
+    }
+
+    /**
+     * Flag a donation for a re-push. Only use after Salesforce callout failures. Should lead
+     * to a scheduled job's new attempt in the next ~30 minutes in most cases.
+     */
+    private function setSalesforceRePushNeeded(string $donationUUID): void
+    {
+        $query = $this->getEntityManager()->createQuery(
+            <<<'DQL'
+            UPDATE Matchbot\Domain\Donation donation
+            SET donation.salesforcePushStatus = :status
+            WHERE donation.uuid = :uuid
+            DQL
+        );
+        $query->setParameter('status', SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE);
+        $query->setParameter('uuid', $donationUUID);
         $query->execute();
     }
 
@@ -661,6 +678,7 @@ class DoctrineDonationRepository extends SalesforceProxyRepository implements Do
 
             return;
         } catch (BadResponseException $exception) {
+            $this->setSalesforceRePushNeeded($changeMessage->uuid);
             $this->logError(
                 "Pushing Salesforce donation {$changeMessage->uuid} got bad response: {$exception->getMessage()}"
             );
