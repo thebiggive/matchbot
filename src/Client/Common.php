@@ -8,6 +8,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use MatchBot\Application\Messenger\DonationUpserted;
+use MatchBot\Application\Settings;
 use MatchBot\Domain\Salesforce18Id;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
@@ -37,10 +38,10 @@ abstract class Common
      * @psalm-suppress MixedArrayAccess
      */
     public function __construct(
-        array $settings,
+        Settings $settings,
         protected LoggerInterface $logger
     ) {
-        $this->clientSettings = $settings['apiClient'];
+        $this->clientSettings = $settings->apiClient;
         $this->sfApiBaseUrl = $this->clientSettings['salesforce']['baseUri'];
     }
 

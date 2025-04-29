@@ -81,6 +81,7 @@ class StripePayoutUpdate extends Stripe
                 /**
                  * @var string $id
                  * @psalm-suppress UndefinedMagicPropertyFetch
+                 * @psalm-suppress MixedPropertyFetch
                  */
                 $id = $event->data->object->id;
                 $failureMessage = sprintf(

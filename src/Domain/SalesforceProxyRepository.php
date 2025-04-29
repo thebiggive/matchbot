@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace MatchBot\Domain;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use MatchBot\Client;
 use Psr\Log\LoggerInterface;
 
@@ -20,22 +22,31 @@ abstract class SalesforceProxyRepository extends EntityRepository
     /**
      * @psalm-var C
      */
-    protected Client\Common $client;
-    protected LoggerInterface $logger;
+    protected ?Client\Common $client = null;
+    protected ?LoggerInterface $logger = null;
+
+    protected function getLogger(): LoggerInterface
+    {
+        if ($this->logger === null) {
+            throw new \Exception('Logger not set');
+        }
+
+        return $this->logger;
+    }
 
     protected function logError(string $message): void
     {
-        $this->logger->error($message);
+        $this->getLogger()->error($message);
     }
 
     protected function logWarning(string $message): void
     {
-        $this->logger->warning($message);
+        $this->getLogger()->warning($message);
     }
 
     protected function logInfo(string $message): void
     {
-        $this->logger->info($message);
+        $this->getLogger()->info($message);
     }
 
     /**

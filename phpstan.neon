@@ -1,0 +1,10 @@
+includes:
+	- phpstan-baseline.neon
+parameters:
+	# Phpstan levels go the opposite way to Psalm - 1 is the laxest, 10 is the strictest.
+	level: 5
+	paths:
+		- src
+		- tests
+		- integrationTests
+		- app

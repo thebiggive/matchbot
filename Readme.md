@@ -127,16 +127,27 @@ offers a way to avoid locks in all cases and retries in a much higher proportion
 
 ### Doctrine ORM
 
-Our MySQL DB schema is generated from annotations on Doctrine Entities (Campaign, Donation etc). 
+Our MySQL DB schema is generated from annotations on Doctrine Entities (Campaign, Donation etc). Copies of create table
+statements are available for reference in the [schema directory](./schema).
 To update the schema, edit the properties on the entity, then run:
 
 ```shell
-vendor/bin/doctrine-migrations diff
-vendor/bin/doctrine-migrations migrate
+  composer doctrine:update-schema
 ```
 
 This will generate and run new migration file for changing the DB schema from what you had before to the one required
-for your updated entity classes.
+for your updated entity classes, execute it, and then output the reference schema files. Alternatively you may run
+commands one at a time:
+
+```shell
+  composer doctrine:cache:clear
+  vendor/bin/doctrine-migrations diff --allow-empty-diff
+  vendor/bin/doctrine-migrations migrate
+  ./matchbot matchbot:write-schema-files
+```
+
+However, in dev environments there are two databases, one for manual tests and one for automated tests, so the migrations
+step will need to be run for both. Using `composer doctrine:update-schema` does this for you.
 
 ### Redis
 

@@ -70,20 +70,28 @@
     "require-dev": {
         "doctrine/event-manager": "^2.0",
         "infection/infection": "^0.29.10",
+        "jangregor/phpstan-prophecy": "^2.1",
         "phpspec/prophecy": "^1.19",
         "phpspec/prophecy-phpunit": "^v2.1.0",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-beberlei-assert": "^2.0",
+        "phpstan/phpstan-doctrine": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-symfony": "^2.0",
         "phpunit/phpunit": "^9.6",
         "psalm/plugin-phpunit": "^0.19.2",
         "roave/security-advisories": "dev-latest",
         "squizlabs/php_codesniffer": "^3.10",
-        "vimeo/psalm": "^6.0.0",
+        "vimeo/psalm": "6.0.0",
         "weirdan/doctrine-psalm-plugin": "^2.10"
     },
     "config": {
         "allow-plugins": {
             "composer/package-versions-deprecated": true,
             "infection/extension-installer": true,
-            "cweagans/composer-patches": true
+            "cweagans/composer-patches": true,
+            "phpstan/extension-installer": true
         },
         "optimize-autoloader": true,
         "platform": {
@@ -118,7 +126,14 @@
             "@doctrine:cache:clear",
             "doctrine orm:schema-tool:drop --full-database --force",
             "MYSQL_SCHEMA=matchbot_test vendor/bin/doctrine orm:schema-tool:drop --full-database --force",
-            "@doctrine:migrate"
+            "@doctrine:migrate",
+            "./matchbot matchbot:write-schema-files"
+        ],
+        "doctrine:update-schema": [
+            "@doctrine:cache:clear",
+            "doctrine-migrations diff --allow-empty-diff",
+            "@doctrine:migrate",
+            "./matchbot matchbot:write-schema-files"
         ],
         "doctrine:ensure-prod": "doctrine orm:ensure-production-settings",
         "doctrine:generate-proxies": "doctrine orm:generate-proxies",
@@ -130,7 +145,7 @@
         "doctrine:migrate:diff": ["@doctrine:cache:clear", "doctrine-migrations diff"],
         "doctrine:migrate:generate": "doctrine-migrations generate",
         "doctrine:validate": ["@doctrine:cache:clear", "doctrine orm:validate-schema"],
-        "sa:check": "vendor/bin/psalm --threads=4",
+        "sa:check": "vendor/bin/psalm --threads=4 && vendor/bin/phpstan",
         "sa:check-with-new-cache": "vendor/bin/psalm --clear-cache; vendor/bin/psalm",
         "lint:check": "phpcs --standard=phpcs.xml -s . --ignore=reports",
         "lint:fix": "phpcbf --standard=phpcs.xml -s . --ignore=reports",
@@ -244,7 +259,8 @@
             "@test",
             "@integration-test",
             "@sa:check",
-            "@lint:check"
+            "@lint:check",
+            "./matchbot matchbot:write-schema-files --check"
         ]
     },
     "extra": {

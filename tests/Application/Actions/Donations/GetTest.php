@@ -115,6 +115,7 @@ class GetTest extends TestCase
         $this->assertJson($payload);
         $this->assertEquals(200, $response->getStatusCode());
 
+        /** @var array<string, string|numeric|boolean> $payloadArray */
         $payloadArray = json_decode($payload, true);
         $this->assertNotEmpty($payloadArray['createdTime']);
         $this->assertEquals('N1 1AA', $payloadArray['billingPostalAddress']);
