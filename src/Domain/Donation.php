@@ -1891,4 +1891,15 @@ class Donation extends SalesforceWriteProxy
     {
         return $this->donorUUID ? PersonId::ofUUID($this->donorUUID) : null;
     }
+
+    /**
+     * Callers should typically do this just when the Donation is already in the ORM
+     * unit of work, and dispatch a message to the queue alongside this call. Typically
+     * the status will be changed by the queue worker within a few seconds, but this is
+     * belt and braces against crashes on either side.
+     */
+    public function setSalesforceUpdatePending(): void
+    {
+        $this->salesforcePushStatus = SalesforceWriteProxy::PUSH_STATUS_PENDING_UPDATE;
+    }
 }
