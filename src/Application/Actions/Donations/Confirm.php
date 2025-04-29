@@ -165,6 +165,8 @@ EOF
 
         $this->bus->dispatch(DonationUpserted::fromDonationEnveloped($donation));
 
+        $donation->setSalesforceUpdatePending();
+
         return new JsonResponse([
             'paymentIntent' => [
                 'status' => $updatedIntent->status,
